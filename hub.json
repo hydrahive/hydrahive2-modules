@@ -1,5 +1,6 @@
 {
   "modules": [
-    { "id": "example", "name": "Beispiel-Modul", "path": "example" }
+    { "id": "example", "name": "Beispiel-Modul", "path": "example" },
+    { "id": "notizbuch", "name": "Notizbuch", "path": "notizbuch" }
   ]
 }
