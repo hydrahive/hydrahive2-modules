@@ -190,10 +190,15 @@ def get_log(
     n = min(max(n, 10), 500)
     try:
         out = subprocess.run(
-            ["journalctl", "-u", "hydrahive2", "-n", str(n * 5), "--no-pager", "-o", "short"],
+            ["sudo", "/bin/bash", "-c",
+             f"journalctl -u hydrahive2 -n {n * 5} --no-pager -o short 2>&1"],
             capture_output=True, text=True, timeout=10,
         )
-        lines = [l for l in out.stdout.splitlines() if "archiver" in l.lower()][-n:]
+        all_lines = out.stdout.splitlines()
+        lines = [l for l in all_lines if "archiver" in l.lower()][-n:]
+        if not lines and all_lines:
+            # Fallback: letzte n Zeilen ohne Filter zeigen
+            lines = all_lines[-n:]
     except Exception as exc:
         logger.warning("archiver log: journalctl fehlgeschlagen: %s", exc)
         lines = [f"[Kein journald-Zugriff: {exc}]"]

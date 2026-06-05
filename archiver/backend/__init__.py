@@ -9,6 +9,7 @@ import logging
 from .routes import router
 
 logger = logging.getLogger(__name__)
+logging.getLogger("hydrahive.modules.archiver").setLevel(logging.INFO)
 
 
 def register(ctx) -> None:
