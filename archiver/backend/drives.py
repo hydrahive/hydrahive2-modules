@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from dataclasses import dataclass
 
 _EXCLUDED_MOUNTS = frozenset(["/", "/boot", "/home", "/tmp", "/var", "/usr", "/opt"])
 _EXCLUDED_FS = frozenset(["squashfs", "tmpfs", "devtmpfs", "sysfs", "proc", "cifs", "nfs"])
+_DEVICE_RE = re.compile(r"^/dev/(sd[a-z]\d*|nvme\d+n\d+(?:p\d+)?|mmcblk\d+(?:p\d+)?)$")
 
 
 @dataclass
@@ -34,15 +36,14 @@ def list_drives() -> list[Drive]:
         return []
 
     drives: list[Drive] = []
-    _walk(data.get("blockdevices", []), drives)
+    for dev in data.get("blockdevices", []):
+        _walk(dev, drives, parent_tran=dev.get("tran") or "")
     return drives
 
 
 def mount_drive(device: str) -> str:
     """Mountet ein Device via udisksctl. Gibt den Mountpoint zurück."""
-    # Sicherheit: nur /dev/sd*, /dev/nvme*, /dev/mmcblk* erlaubt
-    import re
-    if not re.match(r"^/dev/(sd[a-z]\d+|nvme\d+n\d+p\d+|mmcblk\d+p\d+)$", device):
+    if not _DEVICE_RE.match(device):
         raise ValueError(f"Ungültiges Device: {device!r}")
 
     result = subprocess.run(
@@ -59,26 +60,24 @@ def mount_drive(device: str) -> str:
     raise RuntimeError(f"Mountpoint nicht erkannt in: {result.stdout!r}")
 
 
-def _walk(devices: list[dict], result: list[Drive]) -> None:
-    for dev in devices:
-        _collect(dev, result)
-        for child in dev.get("children") or []:
-            _collect(child, result)
+def _walk(dev: dict, result: list[Drive], parent_tran: str) -> None:
+    """Rekursiv — gibt parent_tran an Partitionen weiter (lsblk setzt tran nur am Parent)."""
+    tran = dev.get("tran") or parent_tran
+    _collect(dev, result, effective_tran=tran)
+    for child in dev.get("children") or []:
+        _walk(child, result, parent_tran=tran)
 
 
-def _collect(dev: dict, result: list[Drive]) -> None:
+def _collect(dev: dict, result: list[Drive], effective_tran: str) -> None:
     fstype = dev.get("fstype") or ""
-    tran = dev.get("tran") or ""
     removable = str(dev.get("rm", "0")) in ("1", "true")
     mountpoint = dev.get("mountpoint") or ""
     device = dev.get("path") or f"/dev/{dev.get('name', '')}"
 
-    # Partitionen ohne Dateisystem überspringen (raw device, extended partition etc.)
-    if not fstype:
+    if not fstype or fstype in _EXCLUDED_FS:
         return
-    if fstype in _EXCLUDED_FS:
-        return
-    if not (removable or tran == "usb"):
+    # USB-Kriterium: entweder removable ODER USB-Transport irgendwo im Baum
+    if not (removable or effective_tran == "usb"):
         return
     if mountpoint and any(mountpoint == m or mountpoint.startswith(m + "/") for m in _EXCLUDED_MOUNTS):
         return
@@ -88,6 +87,6 @@ def _collect(dev: dict, result: list[Drive]) -> None:
         label=dev.get("label") or dev.get("name", ""),
         size=dev.get("size", "?"),
         mountpoint=mountpoint,
-        transport=tran,
+        transport=effective_tran,
         device=device,
     ))
