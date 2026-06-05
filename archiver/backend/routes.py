@@ -1,11 +1,11 @@
-"""Archiver API: Drives, Jobs, SSE-Stream, Wallet-Scan."""
+"""Archiver API: Drives, Jobs, SSE-Stream, Wallet-Scan, Diagnose, Reparatur."""
 from __future__ import annotations
 
 import asyncio
 import json
 import logging
 import subprocess
-from typing import Annotated
+from typing import Annotated, Literal
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +18,9 @@ from hydrahive.api.middleware.errors import coded
 from hydrahive.db.connection import db
 from hydrahive.projects._paths import workspace_path, ensure_workspace
 
-from .drives import list_drives, mount_drive, unmount_drive
+from .drives import list_drives, mount_drive, unmount_drive, smart_drive, dmesg_drive
 from . import jobs as job_mgr
+from . import repair as repair_mgr
 
 router = APIRouter()
 
@@ -44,6 +45,11 @@ class StartJobBody(BaseModel):
     drive_label: str = Field(default="", max_length=256)
     project_id: str = Field(min_length=1, max_length=128)
     folder_name: str = Field(min_length=1, max_length=256)
+    direction: Literal["archive", "export"] = "archive"
+
+
+class RepairStartBody(BaseModel):
+    tool: Literal["ntfsfix", "fsck"]
 
 
 # ── Drives ────────────────────────────────────────────────────────
@@ -52,9 +58,34 @@ class StartJobBody(BaseModel):
 def get_drives(auth: Annotated[tuple[str, str], Depends(require_auth)]) -> list[dict]:
     return [
         {"name": d.name, "label": d.label, "size": d.size,
-         "mountpoint": d.mountpoint, "transport": d.transport, "device": d.device}
+         "mountpoint": d.mountpoint, "transport": d.transport,
+         "device": d.device, "fstype": d.fstype}
         for d in list_drives()
     ]
+
+
+@router.get("/drives/{device_name}/smart")
+def drive_smart(
+    device_name: str,
+    auth: Annotated[tuple[str, str], Depends(require_auth)],
+) -> dict:
+    device = f"/dev/{device_name}"
+    try:
+        return smart_drive(device)
+    except ValueError as exc:
+        raise coded(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+
+
+@router.get("/drives/{device_name}/dmesg")
+def drive_dmesg(
+    device_name: str,
+    auth: Annotated[tuple[str, str], Depends(require_auth)],
+) -> dict:
+    device = f"/dev/{device_name}"
+    try:
+        return {"lines": dmesg_drive(device)}
+    except ValueError as exc:
+        raise coded(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
 
 
 @router.post("/drives/mount")
@@ -88,6 +119,47 @@ def remount_device(body: RemountBody, auth: Annotated[tuple[str, str], Depends(r
     return {"mountpoint": mountpoint}
 
 
+# ── Repair ────────────────────────────────────────────────────────
+
+@router.post("/repair/{device_name}/start")
+async def repair_start(
+    device_name: str,
+    body: RepairStartBody,
+    auth: Annotated[tuple[str, str], Depends(require_auth)],
+) -> dict:
+    device = f"/dev/{device_name}"
+    try:
+        repair_mgr.start_repair(device, body.tool)
+    except ValueError as exc:
+        raise coded(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    return {"ok": True}
+
+
+@router.get("/repair/{device_name}/stream")
+async def repair_stream(
+    device_name: str,
+    auth: Annotated[tuple[str, str], Depends(require_auth)],
+) -> StreamingResponse:
+    device = f"/dev/{device_name}"
+
+    async def _events():
+        yield ": connected\n\n"
+        while True:
+            job = repair_mgr.get_repair(device)
+            if job is None:
+                yield f"data: {json.dumps({'lines': [], 'status': 'not_found'})}\n\n"
+                break
+            yield f"data: {json.dumps({'lines': job.lines, 'status': job.status})}\n\n"
+            if job.status in ("done", "failed"):
+                break
+            await asyncio.sleep(0.5)
+
+    return StreamingResponse(
+        _events(), media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
+
+
 # ── Jobs ──────────────────────────────────────────────────────────
 
 @router.get("/jobs")
@@ -115,22 +187,31 @@ async def start_job(body: StartJobBody, auth: Annotated[tuple[str, str], Depends
     user, _ = auth
 
     ws = ensure_workspace(body.project_id)
-    target = str(ws / body.folder_name)
+
+    if body.direction == "export":
+        # Export: Projekt-Workspace ist Quelle, drive_path ist Zielordner auf Platte
+        target = str(ws)
+        drive_dst = body.drive_path
+    else:
+        # Archiv: drive_path ist Quelle, Projekt-Workspace/folder_name ist Ziel
+        target = str(ws / body.folder_name)
+        drive_dst = body.drive_path
 
     with db() as c:
         cur = c.execute(
             "INSERT INTO module_archiver_jobs "
             "(\"user\", drive_path, drive_label, project_id, folder_name, target_path) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            (user, body.drive_path, body.drive_label, body.project_id, body.folder_name, target),
+            (user, drive_dst, body.drive_label, body.project_id, body.folder_name, target),
         )
         job_id = cur.lastrowid
 
     job = job_mgr.Job(
         id=job_id, user=user,
-        drive_path=body.drive_path, drive_label=body.drive_label,
+        drive_path=drive_dst, drive_label=body.drive_label,
         project_id=body.project_id, folder_name=body.folder_name,
         target_path=target,
+        direction=body.direction,
     )
     job_mgr.start_job(job)
     return {"id": job_id, "target_path": target}

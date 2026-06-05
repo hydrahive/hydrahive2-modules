@@ -37,6 +37,7 @@ class Job:
     project_id: str
     folder_name: str
     target_path: str
+    direction: str = "archive"  # "archive" = drive→project, "export" = project→drive
     status: str = "running"
     pct: int = 0
     files_done: int = 0
@@ -53,6 +54,7 @@ class Job:
             "project_id": self.project_id,
             "folder_name": self.folder_name,
             "target_path": self.target_path,
+            "direction": self.direction,
             "status": self.status,
             "pct": self.pct,
             "files_done": self.files_done,
@@ -87,15 +89,23 @@ def cancel_job(job_id: int) -> bool:
 
 
 async def _run(job: Job) -> None:
-    target = Path(job.target_path)
-    target.mkdir(parents=True, exist_ok=True)
-
-    logger.info("archiver job %d: rsync %s → %s", job.id, job.drive_path, job.target_path)
+    if job.direction == "export":
+        # Exportrichtung: Projekt-Workspace → Laufwerk
+        src = job.target_path   # target_path enthält bei export den Projekt-Workspace
+        dst = job.drive_path    # drive_path enthält den Zielordner auf der Platte
+        Path(dst).mkdir(parents=True, exist_ok=True)
+        logger.info("archiver job %d (export): rsync %s → %s", job.id, src, dst)
+    else:
+        # Archivrichtung: Laufwerk → Projekt-Workspace
+        src = job.drive_path
+        dst = job.target_path
+        Path(dst).mkdir(parents=True, exist_ok=True)
+        logger.info("archiver job %d: rsync %s → %s", job.id, src, dst)
 
     # nsenter -t 1 -m: Host-Mount-Namespace (PrivateTmp=true isoliert sonst den Service)
     # stdbuf -o0: verhindert Output-Buffering von rsync in Pipe-Umgebung
     rsync_cmd = ["rsync", "-av", "--progress", "--ignore-errors",
-                 f"{job.drive_path}/", f"{job.target_path}/"]
+                 f"{src}/", f"{dst}/"]
     if shutil.which("stdbuf"):
         rsync_cmd = ["stdbuf", "-o0"] + rsync_cmd
     cmd = ["sudo", "/bin/bash", "-c",

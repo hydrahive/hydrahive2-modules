@@ -58,7 +58,9 @@ export function JobCard({ job, onCancel }: { job: ArchiveJob; onCancel?: () => v
       <div className="flex items-center gap-2">
         {icon}
         <span className="text-sm font-medium text-zinc-200 flex-1 truncate">
-          {job.drive_label || "Drive"} → {job.folder_name}
+          {job.direction === "export"
+            ? `${job.folder_name} → ${job.drive_label || "Drive"}`
+            : `${job.drive_label || "Drive"} → ${job.folder_name}`}
         </span>
         {job.status === "running" && onCancel && (
           <button onClick={onCancel} title="Abbrechen"

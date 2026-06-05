@@ -30,6 +30,7 @@ export interface Drive {
   mountpoint: string
   transport: string
   device: string
+  fstype: string
 }
 
 export interface ArchiveJob {
@@ -38,6 +39,7 @@ export interface ArchiveJob {
   project_id: string
   folder_name: string
   target_path: string
+  direction: "archive" | "export"
   status: "running" | "done" | "failed" | "cancelled"
   pct: number
   files_done: number
@@ -55,18 +57,57 @@ export interface WalletFile {
   size_bytes: number
 }
 
+export interface SmartResult {
+  health: "PASSED" | "FAILED" | "UNKNOWN"
+  raw: string
+  available: boolean
+}
+
+export interface RepairUpdate {
+  lines: string[]
+  status: "running" | "done" | "failed" | "not_found"
+}
+
 export const archiverApi = {
   drives: () => get<Drive[]>("/drives"),
   mountDrive: (device: string) => post<{ mountpoint: string }>("/drives/mount", { device }),
   unmountDrive: (mountpoint: string) => post<{ ok: boolean }>("/drives/unmount", { mountpoint }),
   remountDrive: (device: string, mountpoint: string) =>
     post<{ mountpoint: string }>("/drives/remount", { device, mountpoint }),
+
+  smart: (deviceName: string) => get<SmartResult>(`/drives/${deviceName}/smart`),
+  dmesg: (deviceName: string) => get<{ lines: string[] }>(`/drives/${deviceName}/dmesg`),
+
+  startRepair: (deviceName: string, tool: string) =>
+    post<{ ok: boolean }>(`/repair/${deviceName}/start`, { tool }),
+
+  streamRepair(
+    deviceName: string,
+    onUpdate: (data: RepairUpdate) => void,
+    onDone: () => void,
+  ): () => void {
+    const token = useAuthStore.getState().token ?? ""
+    const url = `${BASE}/repair/${deviceName}/stream`
+    const es = new EventSource(token ? `${url}?token=${token}` : url)
+    es.onmessage = (e) => {
+      const data: RepairUpdate = JSON.parse(e.data)
+      onUpdate(data)
+      if (data.status === "done" || data.status === "failed" || data.status === "not_found") {
+        es.close()
+        onDone()
+      }
+    }
+    es.onerror = () => { es.close(); onDone() }
+    return () => es.close()
+  },
+
   jobs: () => get<ArchiveJob[]>("/jobs"),
   startJob: (body: {
     drive_path: string
     drive_label: string
     project_id: string
     folder_name: string
+    direction?: "archive" | "export"
   }) => post<{ id: number; target_path: string }>("/jobs", body),
   cancelJob: (id: number) => post<{ ok: boolean }>(`/jobs/${id}/cancel`),
   scanWallets: (id: number) => get<{ wallets: WalletFile[] }>(`/jobs/${id}/wallets`),

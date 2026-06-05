@@ -24,6 +24,7 @@ class Drive:
     mountpoint: str   # leer = nicht gemountet
     transport: str
     device: str       # z.B. /dev/sdb1
+    fstype: str = ""  # Dateisystem-Typ
 
 
 def _sudo_host(cmd: list[str]) -> list[str]:
@@ -132,6 +133,66 @@ def unmount_drive(mountpoint: str) -> None:
     logger.info("archiver: unmount erfolgreich %s", mountpoint)
 
 
+def smart_drive(device: str) -> dict:
+    """SMART-Status eines Devices via smartctl.
+
+    Gibt {"health": "PASSED"|"FAILED"|"UNKNOWN", "raw": str, "available": bool} zurück.
+    """
+    if not _DEVICE_RE.match(device):
+        raise ValueError(f"Ungültiges Device: {device!r}")
+    try:
+        result = subprocess.run(
+            _sudo_host(["smartctl", "-a", device]),
+            capture_output=True, text=True, timeout=30,
+        )
+        raw = result.stdout + result.stderr
+        available = result.returncode not in (2, 4)  # rc 2/4 = kein SMART-Support
+        if "SMART overall-health self-assessment test result: PASSED" in raw:
+            health = "PASSED"
+        elif "SMART overall-health self-assessment test result: FAILED" in raw:
+            health = "FAILED"
+        else:
+            health = "UNKNOWN"
+        return {"health": health, "raw": raw, "available": available}
+    except Exception as exc:
+        return {"health": "UNKNOWN", "raw": str(exc), "available": False}
+
+
+def dmesg_drive(device: str) -> list[str]:
+    """dmesg-Zeilen gefiltert nach Device-Basename + Fehler-Keywords."""
+    if not _DEVICE_RE.match(device):
+        raise ValueError(f"Ungültiges Device: {device!r}")
+
+    # sdb1 → sdb, nvme0n1p1 → nvme0n1
+    basename = os.path.basename(device)
+    # Partitionsnummer abschneiden
+    base_no_part = re.sub(r"(sd[a-z])\d+$", r"\1", basename)
+    base_no_part = re.sub(r"(nvme\d+n\d+)p\d+$", r"\1", base_no_part)
+    base_no_part = re.sub(r"(mmcblk\d+)p\d+$", r"\1", base_no_part)
+
+    try:
+        result = subprocess.run(
+            _sudo_host(["dmesg", "--time-format=reltime"]),
+            capture_output=True, text=True, timeout=15,
+        )
+        lines = result.stdout.splitlines()
+    except Exception:
+        return []
+
+    keywords = {base_no_part.lower(), basename.lower(), "ext4", "ntfs", "i/o error", "blk_update_request"}
+    error_kw = {"error", "failed", "failure", "i/o error", "blk_update_request", "ata", "reset"}
+
+    filtered: list[str] = []
+    for line in lines:
+        lower = line.lower()
+        device_match = base_no_part.lower() in lower or basename.lower() in lower
+        error_match = any(k in lower for k in error_kw)
+        if device_match or (error_match and any(k in lower for k in keywords)):
+            filtered.append(line)
+
+    return filtered[-200:]  # max 200 Zeilen
+
+
 def _walk(dev: dict, result: list[Drive], parent_tran: str) -> None:
     tran = dev.get("tran") or parent_tran
     _collect(dev, result, effective_tran=tran)
@@ -159,4 +220,5 @@ def _collect(dev: dict, result: list[Drive], effective_tran: str) -> None:
         mountpoint=mountpoint,
         transport=effective_tran,
         device=device,
+        fstype=fstype,
     ))
