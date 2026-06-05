@@ -3,7 +3,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
+import subprocess
 from typing import Annotated
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import StreamingResponse
@@ -142,6 +146,27 @@ def scan_wallets(job_id: int, auth: Annotated[tuple[str, str], Depends(require_a
     if not row:
         raise coded(status.HTTP_404_NOT_FOUND, "job_not_found")
     return {"wallets": job_mgr.scan_wallets(row["target_path"])}
+
+
+# ── Log ───────────────────────────────────────────────────────────
+
+@router.get("/log")
+def get_log(
+    auth: Annotated[tuple[str, str], Depends(require_auth)],
+    n: int = 100,
+) -> dict:
+    """Letzten N relevanten Log-Zeilen aus journald (nur archiver-Meldungen)."""
+    n = min(max(n, 10), 500)
+    try:
+        out = subprocess.run(
+            ["journalctl", "-u", "hydrahive2", "-n", str(n * 5), "--no-pager", "-o", "short"],
+            capture_output=True, text=True, timeout=10,
+        )
+        lines = [l for l in out.stdout.splitlines() if "archiver" in l.lower()][-n:]
+    except Exception as exc:
+        logger.warning("archiver log: journalctl fehlgeschlagen: %s", exc)
+        lines = [f"[Kein journald-Zugriff: {exc}]"]
+    return {"lines": lines}
 
 
 # ── Intern ────────────────────────────────────────────────────────

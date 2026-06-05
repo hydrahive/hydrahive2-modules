@@ -68,6 +68,8 @@ export const archiverApi = {
   cancelJob: (id: number) => post<{ ok: boolean }>(`/jobs/${id}/cancel`),
   scanWallets: (id: number) => get<{ wallets: WalletFile[] }>(`/jobs/${id}/wallets`),
 
+  log: (n = 100) => get<{ lines: string[] }>(`/log?n=${n}`),
+
   streamJob(id: number, onUpdate: (job: ArchiveJob) => void, onDone: () => void): () => void {
     const token = useAuthStore.getState().token ?? ""
     const url = `${BASE}/jobs/${id}/stream`

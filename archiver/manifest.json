@@ -1,7 +1,7 @@
 {
   "id": "archiver",
   "name": "Archiver",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icon": "HardDrive",
   "nav_group": "working",
   "permissions": [],

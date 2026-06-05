@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-# Regex für rsync --progress Ausgabe
+logger = logging.getLogger(__name__)
+
+# rsync --progress liefert (xfr#N, ir-chk=M/T) oder (xfr#N, to-chk=M/T)
 _XFR_RE = re.compile(r"\(xfr#(\d+),\s*(?:ir|to)-chk=(\d+)/(\d+)\)")
 _SPEED_RE = re.compile(r"[\d,\.]+\s+\d+%\s+(\S+/s)")
 
@@ -85,21 +89,53 @@ async def _run(job: Job) -> None:
     target = Path(job.target_path)
     target.mkdir(parents=True, exist_ok=True)
 
-    proc = await asyncio.create_subprocess_exec(
-        "rsync", "-av", "--progress", "--ignore-errors",
-        f"{job.drive_path}/", f"{job.target_path}/",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
+    logger.info("archiver job %d: rsync %s → %s", job.id, job.drive_path, job.target_path)
+
+    # stdbuf -o0: verhindert Output-Buffering von rsync in Pipe-Umgebung
+    cmd = ["rsync", "-av", "--progress", "--ignore-errors",
+           f"{job.drive_path}/", f"{job.target_path}/"]
+    if shutil.which("stdbuf"):
+        cmd = ["stdbuf", "-o0"] + cmd
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+    except Exception as exc:
+        logger.error("archiver job %d: rsync start fehlgeschlagen: %s", job.id, exc)
+        job.status = "failed"
+        job.errors.append(str(exc))
+        return
+
     job.process = proc
 
     assert proc.stdout
-    async for raw in proc.stdout:
-        line = raw.decode("utf-8", errors="replace")
-        _parse_line(job, line)
+    buf = ""
+    while True:
+        # Chunk lesen statt readline — verarbeitet auch \r-getrennte Fortschrittszeilen
+        chunk = await proc.stdout.read(4096)
+        if not chunk:
+            break
+        buf += chunk.decode("utf-8", errors="replace")
+        # Split nach \r und \n
+        segments = re.split(r"[\r\n]", buf)
+        # Letztes Segment ist ggf. unvollständig → zurückbehalten
+        buf = segments.pop()
+        for seg in segments:
+            seg = seg.strip()
+            if seg:
+                _parse_line(job, seg)
+
+    # Rest-Buffer verarbeiten
+    if buf.strip():
+        _parse_line(job, buf.strip())
 
     await proc.wait()
-    job.status = "done" if proc.returncode in (0, 23, 24) else "failed"
+    rc = proc.returncode
+    logger.info("archiver job %d: rsync beendet (rc=%d, %d/%d Dateien)", job.id, rc, job.files_done, job.files_total)
+    job.status = "done" if rc in (0, 23, 24) else "failed"
     if job.files_total > 0:
         job.pct = 100
 

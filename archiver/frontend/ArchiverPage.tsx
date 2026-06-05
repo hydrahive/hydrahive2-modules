@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react"
-import { HardDrive, RefreshCw, Play, Plug } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { ChevronDown, ChevronRight, HardDrive, RefreshCw, Play, Plug, Terminal } from "lucide-react"
 import { archiverApi, type Drive, type ArchiveJob } from "./api"
 import { JobCard } from "./_JobCard"
 import { useAuthStore } from "@/features/auth/useAuthStore"
@@ -49,6 +49,57 @@ function useProjects() {
       .catch(() => {})
   }, [])
   return projects
+}
+
+function LogPanel() {
+  const [open, setOpen] = useState(false)
+  const [lines, setLines] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  const fetchLog = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { lines: l } = await archiverApi.log(100)
+      setLines(l)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    fetchLog()
+    const t = setInterval(fetchLog, 3000)
+    return () => clearInterval(t)
+  }, [open, fetchLog])
+
+  useEffect(() => {
+    if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [lines, open])
+
+  return (
+    <div className="rounded-xl border border-white/[8%] bg-white/[2%] overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 w-full px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors"
+      >
+        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        <Terminal size={12} />
+        Diagnose-Log
+        {loading && <RefreshCw size={10} className="animate-spin ml-auto" />}
+      </button>
+      {open && (
+        <div className="border-t border-white/[6%] bg-black/30 px-3 py-2 h-56 overflow-y-auto font-mono text-[10px] leading-relaxed text-zinc-400">
+          {lines.length === 0
+            ? <span className="text-zinc-600">Keine archiver-Einträge in journald.</span>
+            : lines.map((l, i) => <div key={i}>{l}</div>)
+          }
+          <div ref={bottomRef} />
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function ArchiverPage() {
@@ -200,6 +251,9 @@ export function ArchiverPage() {
           ))}
         </div>
       )}
+
+      {/* Log */}
+      <LogPanel />
     </div>
   )
 }

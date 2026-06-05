@@ -1,10 +1,13 @@
-"""USB drive detection via lsblk + udisksctl mount."""
+"""USB drive detection via lsblk + mount."""
 from __future__ import annotations
 
 import json
+import logging
 import re
 import subprocess
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 _EXCLUDED_MOUNTS = frozenset(["/", "/boot", "/home", "/tmp", "/var", "/usr", "/opt"])
 _EXCLUDED_FS = frozenset(["squashfs", "tmpfs", "devtmpfs", "sysfs", "proc", "cifs", "nfs"])
@@ -80,14 +83,18 @@ def mount_drive(device: str) -> str:
         mount_args += ["-t", fstype]
     mount_args += [device, mountpoint]
 
+    logger.info("archiver: mounting %s → %s (fstype=%s)", device, mountpoint, fstype or "auto")
     # sudo bash -c "..." — nutzt bestehenden NOPASSWD:/bin/bash-Eintrag
     result = subprocess.run(
         ["sudo", "/bin/bash", "-c", shlex.join(mount_args)],
         capture_output=True, text=True, timeout=30,
     )
     if result.returncode != 0:
-        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or f"mount fehlgeschlagen (code {result.returncode})")
+        err = result.stderr.strip() or result.stdout.strip() or f"code {result.returncode}"
+        logger.error("archiver: mount %s fehlgeschlagen: %s", device, err)
+        raise RuntimeError(err)
 
+    logger.info("archiver: mount erfolgreich %s → %s", device, mountpoint)
     return mountpoint
 
 
