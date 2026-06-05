@@ -76,12 +76,23 @@ def mount_drive(device: str) -> str:
     # Mount-Argumente zusammenstellen
     mount_args = ["/usr/bin/mount"]
     if fstype == "ntfs":
-        mount_args += ["-t", "ntfs3"]
+        # force: ignoriert Dirty-Bit falls ntfsfix nicht verfügbar
+        # noatime: reduziert Schreibzugriffe auf die Platte
+        # ro-fallback: kein ro hier, wir brauchen Lesezugriff ohne Schreibfehler
+        mount_args += ["-t", "ntfs3", "-o", "force,noatime,nls=utf8"]
     elif fstype in ("vfat", "exfat"):
-        mount_args += ["-o", "utf8,umask=0022"]
+        mount_args += ["-o", "utf8,umask=0022,noatime"]
     elif fstype:
-        mount_args += ["-t", fstype]
+        mount_args += ["-t", fstype, "-o", "noatime"]
     mount_args += [device, mountpoint]
+
+    # NTFS: Dirty-Bit löschen damit der Kernel die Platte nicht zwangsweise aushängt
+    if fstype == "ntfs":
+        logger.info("archiver: ntfsfix -d %s (Dirty-Bit bereinigen)", device)
+        subprocess.run(
+            ["sudo", "/bin/bash", "-c", shlex.join(["ntfsfix", "-d", device])],
+            capture_output=True, text=True, timeout=30,
+        )  # Fehler ignorieren — ntfsfix ist optional
 
     logger.info("archiver: mounting %s → %s (fstype=%s)", device, mountpoint, fstype or "auto")
     # sudo bash -c "..." — nutzt bestehenden NOPASSWD:/bin/bash-Eintrag
