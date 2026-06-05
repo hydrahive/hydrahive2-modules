@@ -6,17 +6,17 @@ Frontend-relevanten Feldern; Body auf 600 Zeichen gekürzt.
 """
 from __future__ import annotations
 
-import os
 from typing import Any
 
 import httpx
+from hydrahive.settings.overrides import resolve
 
 _URL = "https://min-api.cryptocompare.com/data/v2/news/"
 _TIMEOUT = 15.0
 
 
 def _key() -> str:
-    return (os.environ.get("HH_CRYPTOCOMPARE_API_KEY") or "").strip()
+    return resolve("cryptocompare_api_key").strip()
 
 
 def _headers() -> dict[str, str]:

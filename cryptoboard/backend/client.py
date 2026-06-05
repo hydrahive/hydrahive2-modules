@@ -9,17 +9,17 @@ Frontend braucht), nicht die rohen CoinGecko-Payloads.
 """
 from __future__ import annotations
 
-import os
 from typing import Any
 
 import httpx
+from hydrahive.settings.overrides import resolve
 
 _BASE = "https://api.coingecko.com/api/v3"
 _TIMEOUT = 15.0
 
 
 def _key() -> str:
-    return (os.environ.get("HH_COINGECKO_API_KEY") or "").strip()
+    return resolve("coingecko_api_key").strip()
 
 
 def _headers() -> dict[str, str]:
