@@ -42,12 +42,13 @@ def list_drives() -> list[Drive]:
 
 
 def mount_drive(device: str) -> str:
-    """Mountet ein Device via sudo mount. Gibt den Mountpoint zurück.
+    """Mountet ein Device via 'sudo bash -c mount'.
 
-    Benötigt sudoers-Eintrag:
-      hydrahive ALL=(ALL) NOPASSWD: /usr/bin/mount, /usr/bin/umount
+    Nutzt den bestehenden NOPASSWD:/bin/bash-Eintrag aus hydrahive2-extensions —
+    kein eigener sudoers-Eintrag nötig, funktioniert auf jeder HH-Installation.
     """
     import os
+    import shlex
     if not _DEVICE_RE.match(device):
         raise ValueError(f"Ungültiges Device: {device!r}")
 
@@ -69,28 +70,23 @@ def mount_drive(device: str) -> str:
     mountpoint = f"/media/hydrahive/{safe_name}"
     os.makedirs(mountpoint, exist_ok=True)
 
-    # Optionen je Dateisystem
-    cmd = ["sudo", "mount"]
+    # Mount-Argumente zusammenstellen
+    mount_args = ["/usr/bin/mount"]
     if fstype == "ntfs":
-        cmd += ["-t", "ntfs3"]          # Kernel-NTFS (Ubuntu 22+)
+        mount_args += ["-t", "ntfs3"]
     elif fstype in ("vfat", "exfat"):
-        cmd += ["-o", "utf8,umask=0022"]
+        mount_args += ["-o", "utf8,umask=0022"]
     elif fstype:
-        cmd += ["-t", fstype]
+        mount_args += ["-t", fstype]
+    mount_args += [device, mountpoint]
 
-    cmd += [device, mountpoint]
-
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    # sudo bash -c "..." — nutzt bestehenden NOPASSWD:/bin/bash-Eintrag
+    result = subprocess.run(
+        ["sudo", "/bin/bash", "-c", shlex.join(mount_args)],
+        capture_output=True, text=True, timeout=30,
+    )
     if result.returncode != 0:
-        err = result.stderr.strip() or result.stdout.strip()
-        # Hilfreiche Meldung wenn sudoers-Regel fehlt
-        if "sudo" in err.lower() or "permission" in err.lower():
-            raise RuntimeError(
-                f"{err}\n\nSudoers-Regel fehlt. Als root einmalig ausführen:\n"
-                "echo 'hydrahive ALL=(ALL) NOPASSWD: /usr/bin/mount, /usr/bin/umount' "
-                "| sudo tee /etc/sudoers.d/hydrahive-mount && sudo chmod 440 /etc/sudoers.d/hydrahive-mount"
-            )
-        raise RuntimeError(err)
+        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or f"mount fehlgeschlagen (code {result.returncode})")
 
     return mountpoint
 
