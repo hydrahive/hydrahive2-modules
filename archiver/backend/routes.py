@@ -14,12 +14,16 @@ from hydrahive.api.middleware.errors import coded
 from hydrahive.db.connection import db
 from hydrahive.projects._paths import workspace_path, ensure_workspace
 
-from .drives import list_drives
+from .drives import list_drives, mount_drive
 from . import jobs as job_mgr
 
 router = APIRouter()
 
 _NOW = "strftime('%Y-%m-%dT%H:%M:%SZ','now')"
+
+
+class MountBody(BaseModel):
+    device: str = Field(min_length=5, max_length=64)
 
 
 class StartJobBody(BaseModel):
@@ -35,9 +39,18 @@ class StartJobBody(BaseModel):
 def get_drives(auth: Annotated[tuple[str, str], Depends(require_auth)]) -> list[dict]:
     return [
         {"name": d.name, "label": d.label, "size": d.size,
-         "mountpoint": d.mountpoint, "transport": d.transport}
+         "mountpoint": d.mountpoint, "transport": d.transport, "device": d.device}
         for d in list_drives()
     ]
+
+
+@router.post("/drives/mount")
+def mount_device(body: MountBody, auth: Annotated[tuple[str, str], Depends(require_auth)]) -> dict:
+    try:
+        mountpoint = mount_drive(body.device)
+    except (ValueError, RuntimeError) as exc:
+        raise coded(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    return {"mountpoint": mountpoint}
 
 
 # ── Jobs ──────────────────────────────────────────────────────────

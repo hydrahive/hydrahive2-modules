@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { HardDrive, RefreshCw, Play } from "lucide-react"
+import { HardDrive, RefreshCw, Play, Plug } from "lucide-react"
 import { archiverApi, type Drive, type ArchiveJob } from "./api"
 import { JobCard } from "./_JobCard"
 import { useAuthStore } from "@/features/auth/useAuthStore"
@@ -9,12 +9,30 @@ interface Project { id: string; name: string }
 function useDrives() {
   const [drives, setDrives] = useState<Drive[]>([])
   const [loading, setLoading] = useState(false)
+  const [mounting, setMounting] = useState<string | null>(null)
+
   async function refresh() {
     setLoading(true)
     try { setDrives(await archiverApi.drives()) } finally { setLoading(false) }
   }
+
+  async function mountDrive(device: string) {
+    setMounting(device)
+    try {
+      const { mountpoint } = await archiverApi.mountDrive(device)
+      setDrives(prev => prev.map(d =>
+        d.device === device ? { ...d, mountpoint } : d
+      ))
+    } catch (e) {
+      alert(`Mount fehlgeschlagen: ${e instanceof Error ? e.message : e}`)
+    } finally {
+      setMounting(null)
+      await refresh()
+    }
+  }
+
   useEffect(() => { refresh() }, [])
-  return { drives, loading, refresh }
+  return { drives, loading, mounting, refresh, mountDrive }
 }
 
 function useProjects() {
@@ -34,7 +52,7 @@ function useProjects() {
 }
 
 export function ArchiverPage() {
-  const { drives, loading: drvLoading, refresh } = useDrives()
+  const { drives, loading: drvLoading, mounting, refresh, mountDrive } = useDrives()
   const projects = useProjects()
   const [jobs, setJobs] = useState<ArchiveJob[]>([])
 
@@ -107,18 +125,35 @@ export function ArchiverPage() {
         {drives.length > 0 ? (
           <div className="grid gap-2">
             {drives.map(d => (
-              <button key={d.mountpoint} onClick={() => handleDriveSelect(d)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors ${
-                  selectedDrive?.mountpoint === d.mountpoint
-                    ? "border-violet-500/50 bg-violet-500/10 text-zinc-100"
-                    : "border-white/[6%] hover:border-white/[12%] text-zinc-300"
-                }`}>
-                <HardDrive size={14} className="text-violet-400 flex-shrink-0" />
+              <div key={d.device}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-colors ${
+                  d.mountpoint
+                    ? selectedDrive?.device === d.device
+                      ? "border-violet-500/50 bg-violet-500/10 text-zinc-100 cursor-pointer"
+                      : "border-white/[6%] hover:border-white/[12%] text-zinc-300 cursor-pointer"
+                    : "border-white/[4%] text-zinc-500"
+                }`}
+                onClick={() => d.mountpoint && handleDriveSelect(d)}
+              >
+                <HardDrive size={14} className={d.mountpoint ? "text-violet-400" : "text-zinc-600"} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{d.label}</div>
-                  <div className="text-[11px] text-zinc-500 truncate">{d.mountpoint} · {d.size}</div>
+                  <div className="text-[11px] text-zinc-500 truncate">
+                    {d.mountpoint || <span className="text-amber-500/80">nicht gemountet</span>}
+                    {" · "}{d.size}
+                  </div>
                 </div>
-              </button>
+                {!d.mountpoint && (
+                  <button
+                    onClick={e => { e.stopPropagation(); mountDrive(d.device) }}
+                    disabled={mounting === d.device}
+                    className="flex items-center gap-1 px-2 py-1 rounded text-[11px] bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 disabled:opacity-40 transition-colors flex-shrink-0"
+                  >
+                    <Plug size={10} />
+                    {mounting === d.device ? "…" : "Mounten"}
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         ) : (

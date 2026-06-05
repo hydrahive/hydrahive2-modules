@@ -29,6 +29,7 @@ export interface Drive {
   size: string
   mountpoint: string
   transport: string
+  device: string
 }
 
 export interface ArchiveJob {
@@ -56,6 +57,7 @@ export interface WalletFile {
 
 export const archiverApi = {
   drives: () => get<Drive[]>("/drives"),
+  mountDrive: (device: string) => post<{ mountpoint: string }>("/drives/mount", { device }),
   jobs: () => get<ArchiveJob[]>("/jobs"),
   startJob: (body: {
     drive_path: string
