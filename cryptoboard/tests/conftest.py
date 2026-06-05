@@ -47,7 +47,9 @@ def setup_test_env():
 
         from hydrahive.api import main
         from backend.routes import router as market_router
+        from backend.watchlist_routes import router as watchlist_router
         main.app.include_router(market_router, prefix=MOD_PREFIX)
+        main.app.include_router(watchlist_router, prefix=MOD_PREFIX)
         yield tmp_path
 
 
@@ -87,3 +89,17 @@ def _clear_cache():
     cache.clear()
     yield
     cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def _watchlist_db(setup_test_env):
+    """Migrierte + leere Watchlist-Tabelle vor jedem Test."""
+    from hydrahive.db import init_db
+    from hydrahive.db.connection import db
+    from hydrahive.modules.migrations import apply_module_migrations
+
+    init_db()
+    apply_module_migrations("cryptoboard", MODULE_DIR / "migrations")
+    with db() as c:
+        c.execute("DELETE FROM module_cryptoboard_watchlist")
+    yield
