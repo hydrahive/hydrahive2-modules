@@ -59,7 +59,7 @@ function useDrives() {
   }
 
   useEffect(() => { refresh() }, [])
-  return { drives, loading, mounting, refresh, mountDrive }
+  return { drives, loading, mounting, refresh, mountDrive, unmountDrive, remountDrive }
 }
 
 function useProjects() {
@@ -130,7 +130,7 @@ function LogPanel() {
 }
 
 export function ArchiverPage() {
-  const { drives, loading: drvLoading, mounting, refresh, mountDrive } = useDrives()
+  const { drives, loading: drvLoading, mounting, refresh, mountDrive, unmountDrive, remountDrive } = useDrives()
   const projects = useProjects()
   const [jobs, setJobs] = useState<ArchiveJob[]>([])
 
