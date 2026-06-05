@@ -4,6 +4,7 @@
     { "id": "notizbuch", "name": "Notizbuch", "path": "notizbuch" },
     { "id": "scratchpad", "name": "Scratchpad", "path": "scratchpad" },
     { "id": "patientenakte", "name": "Meine Akte", "path": "patientenakte" },
-    { "id": "cryptoboard", "name": "Cryptoboard", "path": "cryptoboard" }
+    { "id": "cryptoboard", "name": "Cryptoboard", "path": "cryptoboard" },
+    { "id": "archiver", "name": "Archiver", "path": "archiver" }
   ]
 }

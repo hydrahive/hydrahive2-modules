@@ -1,0 +1,10 @@
+{
+  "id": "archiver",
+  "name": "Archiver",
+  "version": "1.0.0",
+  "icon": "HardDrive",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "min_core_version": "2.0.0"
+}
