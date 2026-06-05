@@ -42,22 +42,57 @@ def list_drives() -> list[Drive]:
 
 
 def mount_drive(device: str) -> str:
-    """Mountet ein Device via udisksctl. Gibt den Mountpoint zurück."""
+    """Mountet ein Device via sudo mount. Gibt den Mountpoint zurück.
+
+    Benötigt sudoers-Eintrag:
+      hydrahive ALL=(ALL) NOPASSWD: /usr/bin/mount, /usr/bin/umount
+    """
+    import os
     if not _DEVICE_RE.match(device):
         raise ValueError(f"Ungültiges Device: {device!r}")
 
-    result = subprocess.run(
-        ["udisksctl", "mount", "-b", device, "--no-user-interaction"],
-        capture_output=True, text=True, timeout=15,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(result.stderr.strip() or f"udisksctl fehlgeschlagen (code {result.returncode})")
+    # Filesystem + Label ermitteln
+    try:
+        out = subprocess.check_output(
+            ["lsblk", "-J", "-o", "FSTYPE,LABEL", device],
+            text=True, timeout=5,
+        )
+        info = json.loads(out).get("blockdevices", [{}])[0]
+    except Exception:
+        info = {}
 
-    # Ausgabe: "Mounted /dev/sdb1 at /media/hydrahive/LABEL."
-    for part in result.stdout.split():
-        if part.startswith("/media/") or part.startswith("/run/media/"):
-            return part.rstrip(".")
-    raise RuntimeError(f"Mountpoint nicht erkannt in: {result.stdout!r}")
+    fstype = info.get("fstype") or ""
+    label = info.get("label") or ""
+
+    # Sicherer Mountpoint-Name
+    safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", label or os.path.basename(device))
+    mountpoint = f"/media/hydrahive/{safe_name}"
+    os.makedirs(mountpoint, exist_ok=True)
+
+    # Optionen je Dateisystem
+    cmd = ["sudo", "mount"]
+    if fstype == "ntfs":
+        cmd += ["-t", "ntfs3"]          # Kernel-NTFS (Ubuntu 22+)
+    elif fstype in ("vfat", "exfat"):
+        cmd += ["-o", "utf8,umask=0022"]
+    elif fstype:
+        cmd += ["-t", fstype]
+
+    cmd += [device, mountpoint]
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    if result.returncode != 0:
+        err = result.stderr.strip() or result.stdout.strip()
+        # Hilfreiche Meldung wenn sudoers-Regel fehlt
+        if "sudo" in err.lower() or "permission" in err.lower():
+            raise RuntimeError(
+                f"{err}\n\nSudoers-Regel fehlt. Als root einmalig ausführen:\n"
+                "echo 'hydrahive ALL=(ALL) NOPASSWD: /usr/bin/mount, /usr/bin/umount' "
+                "| sudo tee /etc/sudoers.d/hydrahive-mount && sudo chmod 440 /etc/sudoers.d/hydrahive-mount"
+            )
+        raise RuntimeError(err)
+
+    return mountpoint
 
 
 def _walk(dev: dict, result: list[Drive], parent_tran: str) -> None:

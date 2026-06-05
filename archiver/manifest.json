@@ -5,6 +5,6 @@
   "icon": "HardDrive",
   "nav_group": "working",
   "permissions": [],
-  "has_service": false,
+  "has_service": true,
   "min_core_version": "2.0.0"
 }
