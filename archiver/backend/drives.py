@@ -1,9 +1,11 @@
-"""USB drive detection via lsblk + mount."""
+"""USB drive detection via lsblk + mount (host-namespace-aware)."""
 from __future__ import annotations
 
 import json
 import logging
+import os
 import re
+import shlex
 import subprocess
 from dataclasses import dataclass
 
@@ -24,11 +26,22 @@ class Drive:
     device: str       # z.B. /dev/sdb1
 
 
+def _sudo_host(cmd: list[str]) -> list[str]:
+    """Führt cmd im Host-Mount-Namespace aus.
+
+    PrivateTmp=true im systemd-Unit erstellt einen privaten Namespace —
+    ohne nsenter wären Mounts nur innerhalb des Service sichtbar.
+    """
+    return ["sudo", "/bin/bash", "-c",
+            shlex.join(["nsenter", "-t", "1", "-m", "--"] + cmd)]
+
+
 def list_drives() -> list[Drive]:
+    # lsblk im Host-Namespace: zeigt korrekte Mountpoints
     try:
         out = subprocess.check_output(
-            ["lsblk", "-J", "-o", "NAME,LABEL,SIZE,MOUNTPOINT,TRAN,RM,FSTYPE,PATH"],
-            text=True, timeout=5,
+            _sudo_host(["lsblk", "-J", "-o", "NAME,LABEL,SIZE,MOUNTPOINT,TRAN,RM,FSTYPE,PATH"]),
+            text=True, timeout=10,
         )
     except (subprocess.SubprocessError, FileNotFoundError):
         return []
@@ -45,21 +58,15 @@ def list_drives() -> list[Drive]:
 
 
 def mount_drive(device: str) -> str:
-    """Mountet ein Device via 'sudo bash -c mount'.
-
-    Nutzt den bestehenden NOPASSWD:/bin/bash-Eintrag aus hydrahive2-extensions —
-    kein eigener sudoers-Eintrag nötig, funktioniert auf jeder HH-Installation.
-    """
-    import os
-    import shlex
+    """Mountet ein Device im Host-Mount-Namespace."""
     if not _DEVICE_RE.match(device):
         raise ValueError(f"Ungültiges Device: {device!r}")
 
-    # Filesystem + Label ermitteln
+    # Filesystem + Label im Host-Namespace ermitteln
     try:
         out = subprocess.check_output(
-            ["lsblk", "-J", "-o", "FSTYPE,LABEL", device],
-            text=True, timeout=5,
+            _sudo_host(["lsblk", "-J", "-o", "FSTYPE,LABEL", device]),
+            text=True, timeout=10,
         )
         info = json.loads(out).get("blockdevices", [{}])[0]
     except Exception:
@@ -68,17 +75,26 @@ def mount_drive(device: str) -> str:
     fstype = info.get("fstype") or ""
     label = info.get("label") or ""
 
-    # Sicherer Mountpoint-Name
     safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", label or os.path.basename(device))
     mountpoint = f"/media/hydrahive/{safe_name}"
-    os.makedirs(mountpoint, exist_ok=True)
 
-    # Mount-Argumente zusammenstellen
+    # Verzeichnis im Host-Namespace anlegen
+    subprocess.run(
+        _sudo_host(["mkdir", "-p", mountpoint]),
+        capture_output=True, text=True, timeout=10,
+    )
+
+    # NTFS: Dirty-Bit löschen
+    if fstype == "ntfs":
+        logger.info("archiver: ntfsfix -d %s", device)
+        subprocess.run(
+            _sudo_host(["ntfsfix", "-d", device]),
+            capture_output=True, text=True, timeout=30,
+        )
+
+    # Mount-Argumente
     mount_args = ["/usr/bin/mount"]
     if fstype == "ntfs":
-        # force: ignoriert Dirty-Bit falls ntfsfix nicht verfügbar
-        # noatime: reduziert Schreibzugriffe auf die Platte
-        # ro-fallback: kein ro hier, wir brauchen Lesezugriff ohne Schreibfehler
         mount_args += ["-t", "ntfs3", "-o", "force,noatime,nls=utf8"]
     elif fstype in ("vfat", "exfat"):
         mount_args += ["-o", "utf8,umask=0022,noatime"]
@@ -86,23 +102,14 @@ def mount_drive(device: str) -> str:
         mount_args += ["-t", fstype, "-o", "noatime"]
     mount_args += [device, mountpoint]
 
-    # NTFS: Dirty-Bit löschen damit der Kernel die Platte nicht zwangsweise aushängt
-    if fstype == "ntfs":
-        logger.info("archiver: ntfsfix -d %s (Dirty-Bit bereinigen)", device)
-        subprocess.run(
-            ["sudo", "/bin/bash", "-c", shlex.join(["ntfsfix", "-d", device])],
-            capture_output=True, text=True, timeout=30,
-        )  # Fehler ignorieren — ntfsfix ist optional
-
     logger.info("archiver: mounting %s → %s (fstype=%s)", device, mountpoint, fstype or "auto")
-    # sudo bash -c "..." — nutzt bestehenden NOPASSWD:/bin/bash-Eintrag
     result = subprocess.run(
-        ["sudo", "/bin/bash", "-c", shlex.join(mount_args)],
+        _sudo_host(mount_args),
         capture_output=True, text=True, timeout=30,
     )
     if result.returncode != 0:
         err = result.stderr.strip() or result.stdout.strip() or f"code {result.returncode}"
-        logger.error("archiver: mount %s fehlgeschlagen: %s", device, err)
+        logger.error("archiver: mount fehlgeschlagen: %s", err)
         raise RuntimeError(err)
 
     logger.info("archiver: mount erfolgreich %s → %s", device, mountpoint)
@@ -110,25 +117,22 @@ def mount_drive(device: str) -> str:
 
 
 def unmount_drive(mountpoint: str) -> None:
-    """Hängt einen Mountpoint sauber aus."""
-    import shlex
-    # Nur /media/hydrahive/... erlaubt
+    """Hängt einen Mountpoint im Host-Namespace aus."""
     if not mountpoint.startswith("/media/hydrahive/"):
         raise ValueError(f"Ungültiger Mountpoint: {mountpoint!r}")
     logger.info("archiver: unmounting %s", mountpoint)
     result = subprocess.run(
-        ["sudo", "/bin/bash", "-c", shlex.join(["/usr/bin/umount", mountpoint])],
+        _sudo_host(["/usr/bin/umount", mountpoint]),
         capture_output=True, text=True, timeout=30,
     )
     if result.returncode != 0:
         err = result.stderr.strip() or result.stdout.strip() or f"code {result.returncode}"
-        logger.error("archiver: umount %s fehlgeschlagen: %s", mountpoint, err)
+        logger.error("archiver: umount fehlgeschlagen: %s", err)
         raise RuntimeError(err)
     logger.info("archiver: unmount erfolgreich %s", mountpoint)
 
 
 def _walk(dev: dict, result: list[Drive], parent_tran: str) -> None:
-    """Rekursiv — gibt parent_tran an Partitionen weiter (lsblk setzt tran nur am Parent)."""
     tran = dev.get("tran") or parent_tran
     _collect(dev, result, effective_tran=tran)
     for child in dev.get("children") or []:
@@ -143,7 +147,6 @@ def _collect(dev: dict, result: list[Drive], effective_tran: str) -> None:
 
     if not fstype or fstype in _EXCLUDED_FS:
         return
-    # USB-Kriterium: entweder removable ODER USB-Transport irgendwo im Baum
     if not (removable or effective_tran == "usb"):
         return
     if mountpoint and any(mountpoint == m or mountpoint.startswith(m + "/") for m in _EXCLUDED_MOUNTS):

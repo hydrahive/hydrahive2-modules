@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import shlex
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -91,11 +92,14 @@ async def _run(job: Job) -> None:
 
     logger.info("archiver job %d: rsync %s → %s", job.id, job.drive_path, job.target_path)
 
+    # nsenter -t 1 -m: Host-Mount-Namespace (PrivateTmp=true isoliert sonst den Service)
     # stdbuf -o0: verhindert Output-Buffering von rsync in Pipe-Umgebung
-    cmd = ["rsync", "-av", "--progress", "--ignore-errors",
-           f"{job.drive_path}/", f"{job.target_path}/"]
+    rsync_cmd = ["rsync", "-av", "--progress", "--ignore-errors",
+                 f"{job.drive_path}/", f"{job.target_path}/"]
     if shutil.which("stdbuf"):
-        cmd = ["stdbuf", "-o0"] + cmd
+        rsync_cmd = ["stdbuf", "-o0"] + rsync_cmd
+    cmd = ["sudo", "/bin/bash", "-c",
+           " ".join(["nsenter", "-t", "1", "-m", "--"] + [shlex.quote(a) for a in rsync_cmd])]
 
     try:
         proc = await asyncio.create_subprocess_exec(
