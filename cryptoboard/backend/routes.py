@@ -7,7 +7,6 @@ URLs/Params fließen (kein Pfad-/Param-Schmuggel).
 """
 from __future__ import annotations
 
-import re
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
@@ -16,6 +15,7 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
 from . import cache, client, news
+from .validators import CATS_RE, DAYS_RE, ID_RE, LANG_RE, VS_RE
 
 router = APIRouter()
 
@@ -26,30 +26,24 @@ _TTL_COIN = 300.0
 _TTL_NEWS = 300.0
 _DEFAULT_VS = "eur"
 
-_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
-_VS_RE = re.compile(r"^[a-z]{2,10}$")
-_DAYS_RE = re.compile(r"^(\d{1,5}|max)$")
-_CATS_RE = re.compile(r"^[A-Za-z0-9,]{0,100}$")
-_LANG_RE = re.compile(r"^[A-Za-z]{2,5}$")
-
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
 
 
 def _valid_id(coin_id: str) -> str:
-    if not _ID_RE.match(coin_id):
+    if not ID_RE.match(coin_id):
         raise coded(status.HTTP_400_BAD_REQUEST, "invalid_coin_id")
     return coin_id
 
 
 def _valid_vs(vs: str) -> str:
     vs = vs.lower()
-    if not _VS_RE.match(vs):
+    if not VS_RE.match(vs):
         raise coded(status.HTTP_400_BAD_REQUEST, "invalid_currency")
     return vs
 
 
 def _valid_days(days: str) -> str:
-    if not _DAYS_RE.match(days):
+    if not DAYS_RE.match(days):
         raise coded(status.HTTP_400_BAD_REQUEST, "invalid_days")
     return days
 
@@ -66,7 +60,7 @@ async def search(auth: Auth, q: str = "") -> list[dict]:
 async def markets(auth: Auth, ids: str = "", vs: str = _DEFAULT_VS) -> list[dict]:
     vs = _valid_vs(vs)
     id_list = [i.strip().lower() for i in ids.split(",") if i.strip()]
-    id_list = [i for i in id_list if _ID_RE.match(i)]
+    id_list = [i for i in id_list if ID_RE.match(i)]
     if not id_list:
         return []
     key = f"markets:{vs}:{','.join(sorted(id_list))}"
@@ -100,10 +94,10 @@ async def coin(coin_id: str, auth: Auth, vs: str = _DEFAULT_VS) -> dict:
 @router.get("/news")
 async def news_feed(auth: Auth, categories: str = "", lang: str = "EN") -> list[dict]:
     categories = categories.strip()
-    if categories and not _CATS_RE.match(categories):
+    if categories and not CATS_RE.match(categories):
         raise coded(status.HTTP_400_BAD_REQUEST, "invalid_categories")
     lang = lang.strip().upper()
-    if not _LANG_RE.match(lang):
+    if not LANG_RE.match(lang):
         raise coded(status.HTTP_400_BAD_REQUEST, "invalid_lang")
     cats = categories or None
     key = f"news:{lang}:{cats or 'all'}"

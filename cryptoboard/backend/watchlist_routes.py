@@ -1,7 +1,6 @@
 """Watchlist-Routen — /api/modules/cryptoboard/watchlist (per-User CRUD)."""
 from __future__ import annotations
 
-import re
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
@@ -11,11 +10,11 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
 from . import watchlist_store as store
+from .validators import ID_RE
 
 router = APIRouter()
 
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
-_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
 
 
 class WatchIn(BaseModel):
@@ -34,7 +33,7 @@ def list_watchlist(auth: Auth) -> list[dict]:
 def add_watchlist(body: WatchIn, auth: Auth) -> dict:
     user, _ = auth
     coin_id = body.coin_id.strip().lower()
-    if not _ID_RE.match(coin_id):
+    if not ID_RE.match(coin_id):
         raise coded(status.HTTP_400_BAD_REQUEST, "invalid_coin_id")
     try:
         store.add(user, coin_id, body.symbol.strip().upper(), body.name.strip())
