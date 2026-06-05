@@ -51,7 +51,8 @@ export function RepairBox({ drive }: Props) {
   }
 
   const ntfsVisible = drive && (drive.fstype === "ntfs" || drive.fstype === "ntfs3")
-  const fsckVisible = drive && (drive.fstype?.startsWith("ext") || drive.fstype === "")
+  // fsck bei ext* oder unbekanntem Typ (korrupter Superblock → lsblk liefert kein fstype)
+  const fsckVisible = drive && !ntfsVisible
 
   const statusIcon =
     status === "running" ? <Loader2 size={13} className="text-violet-400 animate-spin" />

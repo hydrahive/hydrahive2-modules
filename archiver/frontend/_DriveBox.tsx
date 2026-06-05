@@ -50,7 +50,7 @@ export function DriveBox({
                     : "border-white/[6%] hover:border-white/[12%] text-zinc-300 cursor-pointer"
                   : "border-white/[4%] text-zinc-500"
               }`}
-              onClick={() => d.mountpoint && onSelect(d)}
+              onClick={() => onSelect(d)}
             >
               <HardDrive size={14} className={d.mountpoint ? "text-violet-400" : "text-zinc-600"} />
               <div className="flex-1 min-w-0">
