@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, status
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import cache, client
+from . import cache, client, news
 
 router = APIRouter()
 
@@ -23,11 +23,14 @@ _TTL_SEARCH = 3600.0
 _TTL_MARKETS = 60.0
 _TTL_CHART = 300.0
 _TTL_COIN = 300.0
+_TTL_NEWS = 300.0
 _DEFAULT_VS = "eur"
 
 _ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
 _VS_RE = re.compile(r"^[a-z]{2,10}$")
 _DAYS_RE = re.compile(r"^(\d{1,5}|max)$")
+_CATS_RE = re.compile(r"^[A-Za-z0-9,]{0,100}$")
+_LANG_RE = re.compile(r"^[A-Za-z]{2,5}$")
 
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
 
@@ -92,3 +95,16 @@ async def coin(coin_id: str, auth: Auth, vs: str = _DEFAULT_VS) -> dict:
     coin_id = _valid_id(coin_id)
     vs = _valid_vs(vs)
     return await cache.cached(f"coin:{coin_id}:{vs}", _TTL_COIN, lambda: client.coin_detail(coin_id, vs))
+
+
+@router.get("/news")
+async def news_feed(auth: Auth, categories: str = "", lang: str = "EN") -> list[dict]:
+    categories = categories.strip()
+    if categories and not _CATS_RE.match(categories):
+        raise coded(status.HTTP_400_BAD_REQUEST, "invalid_categories")
+    lang = lang.strip().upper()
+    if not _LANG_RE.match(lang):
+        raise coded(status.HTTP_400_BAD_REQUEST, "invalid_lang")
+    cats = categories or None
+    key = f"news:{lang}:{cats or 'all'}"
+    return await cache.cached(key, _TTL_NEWS, lambda: news.latest(categories=cats, lang=lang))
