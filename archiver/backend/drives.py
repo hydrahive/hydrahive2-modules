@@ -98,6 +98,24 @@ def mount_drive(device: str) -> str:
     return mountpoint
 
 
+def unmount_drive(mountpoint: str) -> None:
+    """Hängt einen Mountpoint sauber aus."""
+    import shlex
+    # Nur /media/hydrahive/... erlaubt
+    if not mountpoint.startswith("/media/hydrahive/"):
+        raise ValueError(f"Ungültiger Mountpoint: {mountpoint!r}")
+    logger.info("archiver: unmounting %s", mountpoint)
+    result = subprocess.run(
+        ["sudo", "/bin/bash", "-c", shlex.join(["/usr/bin/umount", mountpoint])],
+        capture_output=True, text=True, timeout=30,
+    )
+    if result.returncode != 0:
+        err = result.stderr.strip() or result.stdout.strip() or f"code {result.returncode}"
+        logger.error("archiver: umount %s fehlgeschlagen: %s", mountpoint, err)
+        raise RuntimeError(err)
+    logger.info("archiver: unmount erfolgreich %s", mountpoint)
+
+
 def _walk(dev: dict, result: list[Drive], parent_tran: str) -> None:
     """Rekursiv — gibt parent_tran an Partitionen weiter (lsblk setzt tran nur am Parent)."""
     tran = dev.get("tran") or parent_tran

@@ -58,6 +58,9 @@ export interface WalletFile {
 export const archiverApi = {
   drives: () => get<Drive[]>("/drives"),
   mountDrive: (device: string) => post<{ mountpoint: string }>("/drives/mount", { device }),
+  unmountDrive: (mountpoint: string) => post<{ ok: boolean }>("/drives/unmount", { mountpoint }),
+  remountDrive: (device: string, mountpoint: string) =>
+    post<{ mountpoint: string }>("/drives/remount", { device, mountpoint }),
   jobs: () => get<ArchiveJob[]>("/jobs"),
   startJob: (body: {
     drive_path: string

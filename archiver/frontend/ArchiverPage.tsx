@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ChevronDown, ChevronRight, HardDrive, RefreshCw, Play, Plug, Terminal } from "lucide-react"
+import { ChevronDown, ChevronRight, HardDrive, RefreshCw, Play, Plug, PlugZap, Unplug, Terminal } from "lucide-react"
 import { archiverApi, type Drive, type ArchiveJob } from "./api"
 import { JobCard } from "./_JobCard"
 import { useAuthStore } from "@/features/auth/useAuthStore"
@@ -25,6 +25,33 @@ function useDrives() {
       ))
     } catch (e) {
       alert(`Mount fehlgeschlagen: ${e instanceof Error ? e.message : e}`)
+    } finally {
+      setMounting(null)
+      await refresh()
+    }
+  }
+
+  async function unmountDrive(device: string, mountpoint: string) {
+    setMounting(device)
+    try {
+      await archiverApi.unmountDrive(mountpoint)
+    } catch (e) {
+      alert(`Unmount fehlgeschlagen: ${e instanceof Error ? e.message : e}`)
+    } finally {
+      setMounting(null)
+      await refresh()
+    }
+  }
+
+  async function remountDrive(device: string, mountpoint: string) {
+    setMounting(device)
+    try {
+      const { mountpoint: mp } = await archiverApi.remountDrive(device, mountpoint)
+      setDrives(prev => prev.map(d =>
+        d.device === device ? { ...d, mountpoint: mp } : d
+      ))
+    } catch (e) {
+      alert(`Remount fehlgeschlagen: ${e instanceof Error ? e.message : e}`)
     } finally {
       setMounting(null)
       await refresh()
@@ -194,7 +221,7 @@ export function ArchiverPage() {
                     {" · "}{d.size}
                   </div>
                 </div>
-                {!d.mountpoint && (
+                {!d.mountpoint ? (
                   <button
                     onClick={e => { e.stopPropagation(); mountDrive(d.device) }}
                     disabled={mounting === d.device}
@@ -203,6 +230,26 @@ export function ArchiverPage() {
                     <Plug size={10} />
                     {mounting === d.device ? "…" : "Mounten"}
                   </button>
+                ) : (
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button
+                      onClick={e => { e.stopPropagation(); remountDrive(d.device, d.mountpoint) }}
+                      disabled={mounting === d.device}
+                      title="Remounten (aushängen + neu einhängen)"
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[11px] bg-blue-500/10 border border-blue-500/20 text-blue-300 hover:bg-blue-500/20 disabled:opacity-40 transition-colors"
+                    >
+                      <PlugZap size={10} />
+                      {mounting === d.device ? "…" : "Remount"}
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); unmountDrive(d.device, d.mountpoint) }}
+                      disabled={mounting === d.device}
+                      title="Sauber aushängen"
+                      className="flex items-center gap-1 px-2 py-1 rounded text-[11px] bg-zinc-700/50 border border-white/[6%] text-zinc-400 hover:text-zinc-200 disabled:opacity-40 transition-colors"
+                    >
+                      <Unplug size={10} />
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
