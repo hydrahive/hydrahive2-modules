@@ -217,6 +217,21 @@ async def start_job(body: StartJobBody, auth: Annotated[tuple[str, str], Depends
     return {"id": job_id, "target_path": target}
 
 
+@router.delete("/jobs/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_job(job_id: int, auth: Annotated[tuple[str, str], Depends(require_auth)]) -> None:
+    user, _ = auth
+    with db() as c:
+        row = c.execute(
+            "SELECT status FROM module_archiver_jobs WHERE id = ? AND \"user\" = ?",
+            (job_id, user),
+        ).fetchone()
+        if row is None:
+            raise coded(status.HTTP_404_NOT_FOUND, "job_not_found")
+        if row[0] == "running":
+            raise coded(status.HTTP_409_CONFLICT, "job_still_running")
+        c.execute("DELETE FROM module_archiver_jobs WHERE id = ?", (job_id,))
+
+
 @router.post("/jobs/{job_id}/cancel")
 def cancel_job(job_id: int, auth: Annotated[tuple[str, str], Depends(require_auth)]) -> dict:
     if not job_mgr.cancel_job(job_id):

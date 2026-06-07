@@ -110,6 +110,7 @@ export const archiverApi = {
     direction?: "archive" | "export"
   }) => post<{ id: number; target_path: string }>("/jobs", body),
   cancelJob: (id: number) => post<{ ok: boolean }>(`/jobs/${id}/cancel`),
+  deleteJob: (id: number) => fetch(BASE + `/jobs/${id}`, { method: "DELETE", headers: headers() }).then(r => { if (!r.ok) throw new Error() }),
   scanWallets: (id: number) => get<{ wallets: WalletFile[] }>(`/jobs/${id}/wallets`),
 
   log: (n = 100) => get<{ lines: string[] }>(`/log?n=${n}`),

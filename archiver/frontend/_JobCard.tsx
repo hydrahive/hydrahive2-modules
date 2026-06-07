@@ -26,7 +26,7 @@ function WalletResult({ wallets }: { wallets: WalletFile[] }) {
   )
 }
 
-export function JobCard({ job, onCancel }: { job: ArchiveJob; onCancel?: () => void }) {
+export function JobCard({ job, onCancel, onDelete }: { job: ArchiveJob; onCancel?: () => void; onDelete?: () => void }) {
   const [wallets, setWallets] = useState<WalletFile[] | null>(null)
   const [scanning, setScanning] = useState(false)
 
@@ -65,6 +65,12 @@ export function JobCard({ job, onCancel }: { job: ArchiveJob; onCancel?: () => v
         {job.status === "running" && onCancel && (
           <button onClick={onCancel} title="Abbrechen"
             className="text-zinc-600 hover:text-rose-400 transition-colors">
+            <X size={14} />
+          </button>
+        )}
+        {job.status !== "running" && onDelete && (
+          <button onClick={onDelete} title="Eintrag löschen"
+            className="text-zinc-700 hover:text-zinc-400 transition-colors">
             <X size={14} />
           </button>
         )}

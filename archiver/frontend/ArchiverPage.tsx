@@ -138,6 +138,10 @@ export function ArchiverPage() {
     setJobs(prev => prev.map(j => j.id === id ? { ...j, status: "cancelled" } : j))
   }
 
+  function handleDelete(id: number) {
+    setJobs(prev => prev.filter(j => j.id !== id))
+  }
+
   function handleSelect(drive: Drive) {
     setSelectedDevice(drive.device)
   }
@@ -180,7 +184,7 @@ export function ArchiverPage() {
         onJobStart={handleJobStart}
       />
 
-      <JobsBox jobs={jobs} onCancel={handleCancel} />
+      <JobsBox jobs={jobs} onCancel={handleCancel} onDelete={handleDelete} />
 
       <LogPanel />
     </div>
