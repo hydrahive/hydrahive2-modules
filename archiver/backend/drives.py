@@ -85,29 +85,34 @@ def mount_drive(device: str) -> str:
         capture_output=True, text=True, timeout=10,
     )
 
-    # NTFS: Dirty-Bit löschen
-    if fstype == "ntfs":
+    is_ntfs = "ntfs" in fstype.lower()
+
+    # NTFS: Dirty-Bit löschen (Windows Fast-Startup hinterlässt dirty flag)
+    if is_ntfs:
         logger.info("archiver: ntfsfix -d %s", device)
         subprocess.run(
             _sudo_host(["ntfsfix", "-d", device]),
             capture_output=True, text=True, timeout=30,
         )
 
-    # Mount-Argumente
-    mount_args = ["/usr/bin/mount"]
-    if fstype == "ntfs":
-        mount_args += ["-t", "ntfs3", "-o", "force,noatime,nls=utf8"]
-    elif fstype in ("vfat", "exfat"):
-        mount_args += ["-o", "utf8,umask=0022,noatime"]
-    elif fstype:
-        mount_args += ["-t", fstype, "-o", "noatime"]
-    mount_args += [device, mountpoint]
+    # Mount-Argumente — NTFS: ntfs3 (Kernel) mit Fallback auf ntfs-3g (FUSE)
+    def _mount_attempt(extra_args: list[str]) -> subprocess.CompletedProcess:
+        args = _sudo_host(["/usr/bin/mount"] + extra_args + [device, mountpoint])
+        logger.info("archiver: mount %s → %s mit %s", device, mountpoint, extra_args)
+        return subprocess.run(args, capture_output=True, text=True, timeout=30)
 
-    logger.info("archiver: mounting %s → %s (fstype=%s)", device, mountpoint, fstype or "auto")
-    result = subprocess.run(
-        _sudo_host(mount_args),
-        capture_output=True, text=True, timeout=30,
-    )
+    if is_ntfs:
+        result = _mount_attempt(["-t", "ntfs3", "-o", "force,noatime,nls=utf8"])
+        if result.returncode != 0:
+            logger.warning("archiver: ntfs3 fehlgeschlagen, Fallback ntfs-3g: %s", result.stderr.strip())
+            result = _mount_attempt(["-t", "ntfs-3g", "-o", "noatime,nls=utf8,remove_hiberfile"])
+    elif fstype in ("vfat", "exfat"):
+        result = _mount_attempt(["-o", "utf8,umask=0022,noatime"])
+    elif fstype:
+        result = _mount_attempt(["-t", fstype, "-o", "noatime"])
+    else:
+        result = _mount_attempt([])
+
     if result.returncode != 0:
         err = result.stderr.strip() or result.stdout.strip() or f"code {result.returncode}"
         logger.error("archiver: mount fehlgeschlagen: %s", err)
