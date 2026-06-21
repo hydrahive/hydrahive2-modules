@@ -1,4 +1,4 @@
-"""Setzt den self-contained Editorial-HTML-Report zusammen."""
+"""Setzt den self-contained Editorial-HTML-Report zusammen (Struktur 1:1 nach odysseus)."""
 from __future__ import annotations
 
 import html as _html
@@ -22,6 +22,14 @@ def _domain(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
+def _strip_leading_h1(md: str) -> str:
+    """Hero zeigt den Titel — eine führende '# …'-Zeile aus dem Body entfernen."""
+    lines = md.lstrip("\n").splitlines()
+    if lines and lines[0].lstrip().startswith("# "):
+        return "\n".join(lines[1:]).lstrip("\n")
+    return md
+
+
 def _inject_images(body_html: str, imgs: list[str]) -> str:
     """Ein Sektionsbild nach jedem 2. </h2> einsetzen, solange Bilder da sind."""
     if not imgs:
@@ -33,8 +41,8 @@ def _inject_images(body_html: str, imgs: list[str]) -> str:
         out = "</h2>"
         if state["count"] % 2 == 0 and state["i"] < len(imgs):
             out += (
-                f'<figure class="shot"><img src="{_esc(imgs[state["i"]])}" '
-                f'loading="lazy" alt="" onerror="this.closest(\'figure\').remove()"></figure>'
+                f'<div class="section-image"><img src="{_esc(imgs[state["i"]])}" '
+                f'loading="lazy" alt="" onerror="this.closest(\'.section-image\').remove()"></div>'
             )
             state["i"] += 1
         return out
@@ -46,9 +54,9 @@ def _toc(headings: list[markdown_render.Heading]) -> str:
     if not headings:
         return ""
     items = "".join(
-        f'<a class="lvl{h.level}" href="#{h.id}">{_esc(h.text)}</a>' for h in headings
+        f'<a class="depth-{h.level}" href="#{h.id}">{_esc(h.text)}</a>' for h in headings
     )
-    return f'<nav class="toc"><div class="toc-title">Inhalt</div>{items}</nav>'
+    return f'<aside class="toc-sidebar"><nav>{items}</nav></aside>'
 
 
 def _stats_bar(stats: dict) -> str:
@@ -59,27 +67,28 @@ def _stats_bar(stats: dict) -> str:
         (str(stats.get("sources", stats.get("urls", "?"))), "Quellen"),
         (_esc(str(stats.get("model", "default"))), "Modell"),
     ]
-    cells = "".join(f"<div class='stat'><b>{v}</b><span>{k}</span></div>" for v, k in pairs)
-    return f'<div class="stats">{cells}</div>'
+    cells = "".join(f'<div class="stat"><span class="stat-value">{v}</span> {k}</div>' for v, k in pairs)
+    return f'<div class="stats-bar">{cells}</div>'
 
 
 def _sources(sources: list[dict]) -> str:
     if not sources:
         return ""
     items = "".join(
-        f'<li><a href="{_esc(s["url"])}" target="_blank" rel="noopener noreferrer">'
-        f'{_esc(s.get("title") or s["url"])}</a> '
-        f'<span class="dom">{_esc(_domain(s["url"]))}</span></li>'
-        for s in sources
+        f'<a href="{_esc(s["url"])}" target="_blank" rel="noopener noreferrer">'
+        f'<span class="snum">{i + 1}</span>{_esc(s.get("title") or s["url"])}'
+        f'<span class="sdomain">{_esc(_domain(s["url"]))}</span></a>'
+        for i, s in enumerate(sources)
     )
     return (
-        f'<details class="sources" open><summary>Quellen ({len(sources)})</summary>'
-        f"<ol>{items}</ol></details>"
+        '<div class="sources-panel"><details open>'
+        f'<summary>Quellen ({len(sources)})</summary>'
+        f'<div class="sources-list">{items}</div></details></div>'
     )
 
 
 _TOOLBAR = (
-    '<div class="toolbar"><div style="position:relative">'
+    '<div class="toolbar"><div class="dropdown">'
     '<button id="btn-export">⤓ Export ▾</button>'
     '<div class="menu" id="export-menu">'
     '<button id="btn-pdf">Als PDF drucken</button>'
@@ -89,7 +98,7 @@ _TOOLBAR = (
 
 
 def generate_report_html(question: str, result: dict) -> str:
-    markdown = result.get("markdown", "") or ""
+    markdown = _strip_leading_h1(result.get("markdown", "") or "")
     sources = result.get("sources", []) or []
     stats = result.get("stats", {}) or {}
 
@@ -97,9 +106,9 @@ def generate_report_html(question: str, result: dict) -> str:
     hero, section_imgs = images.pick_images(sources)
     body_html = _inject_images(body_html, section_imgs)
 
-    hero_html = (
-        f'<img class="hero-img" src="{_esc(hero)}" alt="" loading="eager" '
-        f'onerror="this.remove()">' if hero else ""
+    hero_image = (
+        f'<div class="hero-image"><img src="{_esc(hero)}" alt="" loading="eager" '
+        f'onerror="this.closest(\'.hero-image\').remove()"></div>' if hero else ""
     )
 
     return (
@@ -107,16 +116,13 @@ def generate_report_html(question: str, result: dict) -> str:
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         f"<title>{_esc(question)}</title><style>" + CSS + "</style></head><body>"
         + _TOOLBAR
-        + '<div class="wrap"><header class="hero">'
-        + '<p class="eyebrow">HydraHive — Deep Research</p>'
-        + f"<h1>{_esc(question)}</h1>"
-        + hero_html
+        + f'<header class="hero"><div class="hero-label">HydraHive — Deep Research</div><h1>{_esc(question)}</h1></header>'
+        + hero_image
         + _stats_bar(stats)
-        + "</header>"
         + '<div class="layout">'
         + _toc(headings)
         + f'<main class="content">{body_html}{_sources(sources)}'
-        + '<div class="foot">Erstellt mit HydraHive Deep Research</div>'
-        + "</main></div></div>"
+        + '<div class="report-footer">Erstellt mit HydraHive Deep Research</div>'
+        + "</main></div>"
         + "<script>" + JS + "</script></body></html>"
     )
