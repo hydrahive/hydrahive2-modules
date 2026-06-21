@@ -6,6 +6,7 @@
     { "id": "patientenakte", "name": "Meine Akte", "path": "patientenakte" },
     { "id": "cryptoboard", "name": "Cryptoboard", "path": "cryptoboard" },
     { "id": "archiver", "name": "Archiver", "path": "archiver" },
-    { "id": "tasks", "name": "Aufgaben", "path": "tasks" }
+    { "id": "tasks", "name": "Aufgaben", "path": "tasks" },
+    { "id": "deepresearch", "name": "Deep Research", "path": "deepresearch" }
   ]
 }
