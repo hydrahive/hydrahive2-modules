@@ -54,6 +54,12 @@ def get_run(run_id: str, auth: Auth) -> dict[str, Any]:
     return run
 
 
+@router.delete("/runs/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_run(run_id: str, auth: Auth) -> None:
+    if not service.delete_run(auth[0], run_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Lauf nicht gefunden")
+
+
 @router.get("/runs/{run_id}/report")
 async def get_report(run_id: str, auth: Auth) -> HTMLResponse:
     """Liefert den präsentationsfertigen, self-contained HTML-Report.

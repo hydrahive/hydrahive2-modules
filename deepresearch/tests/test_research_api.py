@@ -18,7 +18,7 @@ def test_start_and_get_run(client, alice):
     assert g.status_code == 200
     body = g.json()
     assert body["question"] == "Was ist X?"
-    assert body["status"] in {"running", "done", "error"}
+    assert body["status"] in {"queued", "running", "done", "error"}
     assert "progress" in body
 
 
@@ -48,3 +48,26 @@ def test_user_isolation(client, alice, bob):
 def test_short_question_rejected(client, alice):
     r = client.post(f"{BASE}/runs", json={"question": "x"}, headers=alice)
     assert r.status_code == 422
+
+
+def test_delete_run(client, alice):
+    r = client.post(f"{BASE}/runs", json={"question": "Zu löschen bitte"}, headers=alice)
+    run_id = r.json()["run_id"]
+    d = client.delete(f"{BASE}/runs/{run_id}", headers=alice)
+    assert d.status_code == 204
+    g = client.get(f"{BASE}/runs/{run_id}", headers=alice)
+    assert g.status_code == 404
+
+
+def test_delete_unknown_returns_404(client, alice):
+    r = client.delete(f"{BASE}/runs/does-not-exist", headers=alice)
+    assert r.status_code == 404
+
+
+def test_options_forwarded(client, alice):
+    r = client.post(
+        f"{BASE}/runs",
+        json={"question": "Mit Optionen", "max_rounds": 3, "category": "product"},
+        headers=alice,
+    )
+    assert r.status_code == 201

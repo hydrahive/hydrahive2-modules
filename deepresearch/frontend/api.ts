@@ -57,6 +57,17 @@ export const listRuns = () => api.get<RunListItem[]>(`${BASE}/runs`)
 
 export const getRun = (id: string) => api.get<Run>(`${BASE}/runs/${id}`)
 
+export const deleteRun = (id: string) => api.delete<void>(`${BASE}/runs/${id}`)
+
+export interface ModelInfo {
+  id: string
+  label: string
+  is_free?: boolean
+}
+
+/** Modell-Liste aus dem zentralen LLM-Katalog (require_auth, nicht admin). */
+export const listModels = () => api.get<{ default: string; models: ModelInfo[] }>("/llm/models")
+
 /** Report ist text/html → Raw-Fetch mit Bearer (der api-Client kann nur JSON). */
 export async function fetchReportHtml(id: string): Promise<string> {
   const token = useAuthStore.getState().token

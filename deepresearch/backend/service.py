@@ -1,8 +1,10 @@
 """Deep-Research-Modul — Lauf-Persistenz + Ausführung.
 
-Ein Lauf = eine Zeile in module_research_runs. Zwei Ausführungsarten:
-- start_run(): Hintergrund-Task (UI pollt den Status), gibt sofort run_id zurück
-- run_blocking(): wartet bis fertig (für das Agent-Tool, das das Ergebnis braucht)
+Ein Lauf = eine Zeile in module_research_runs.
+- start_run(): legt Lauf an (Status 'queued'), startet Hintergrund-Task, gibt run_id zurück
+- run_blocking(): wartet bis fertig (für das Agent-Tool)
+Eine globale Semaphore serialisiert die Ausführung (Such-Queue) — sinnvoll für lokale
+Modelle, die nur einen Lauf gleichzeitig stemmen.
 """
 from __future__ import annotations
 
@@ -18,6 +20,10 @@ from .research import run_research
 from .research.models import RunState
 
 logger = logging.getLogger(__name__)
+
+# ponytail: ein Lauf gleichzeitig (Queue). Auf >1 erhöhen, wenn Modell/Hardware es trägt.
+_MAX_CONCURRENT = 1
+_SEM = asyncio.Semaphore(_MAX_CONCURRENT)
 
 _UPDATABLE = {"status", "category", "progress_json", "result_json", "error"}
 
@@ -35,7 +41,7 @@ def create_run(username: str, question: str, model: str | None) -> dict[str, Any
     with db() as c:
         c.execute(
             "INSERT INTO module_research_runs (id, username, question, model, status) "
-            "VALUES (?, ?, ?, ?, 'running')",
+            "VALUES (?, ?, ?, ?, 'queued')",
             (run_id, username, question, model or None),
         )
     return get_run(username, run_id)  # type: ignore[return-value]
@@ -61,6 +67,15 @@ def list_runs(username: str, limit: int = 50) -> list[dict[str, Any]]:
     return [_row(r) for r in rows]
 
 
+def delete_run(username: str, run_id: str) -> bool:
+    with db() as c:
+        cur = c.execute(
+            "DELETE FROM module_research_runs WHERE id = ? AND username = ?",
+            (run_id, username),
+        )
+        return cur.rowcount > 0
+
+
 def _update(run_id: str, **fields: Any) -> None:
     fields = {k: v for k, v in fields.items() if k in _UPDATABLE}
     if not fields:
@@ -83,20 +98,22 @@ async def _execute_run(
     def progress(p: dict) -> None:
         _update(run_id, status="running", progress_json=json.dumps(p), category=p.get("category", "general"))
 
-    try:
-        result = await run_research(
-            state, progress=progress, max_rounds=max_rounds or 6, category=category,
-        )
-        _update(
-            run_id,
-            status="done",
-            category=result["category"],
-            progress_json=json.dumps(result["stats"]),
-            result_json=json.dumps(result, ensure_ascii=False),
-        )
-    except Exception as e:  # noqa: BLE001 - Lauf-Grenze: Fehler in die Zeile, nicht in den Loop
-        logger.exception("deepresearch: Lauf %s fehlgeschlagen", run_id)
-        _update(run_id, status="error", error=str(e))
+    async with _SEM:   # Queue: wartet, bis ein Slot frei ist
+        _update(run_id, status="running")
+        try:
+            result = await run_research(
+                state, progress=progress, max_rounds=max_rounds or 6, category=category,
+            )
+            _update(
+                run_id,
+                status="done",
+                category=result["category"],
+                progress_json=json.dumps(result["stats"]),
+                result_json=json.dumps(result, ensure_ascii=False),
+            )
+        except Exception as e:  # noqa: BLE001 - Lauf-Grenze: Fehler in die Zeile, nicht in den Loop
+            logger.exception("deepresearch: Lauf %s fehlgeschlagen", run_id)
+            _update(run_id, status="error", error=str(e))
 
 
 async def start_run(
