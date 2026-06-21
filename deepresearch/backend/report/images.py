@@ -8,7 +8,11 @@ _ICONISH = re.compile(r"(favicon|sprite|logo|icon|avatar|placeholder|1x1|pixel)"
 
 
 def _usable(url: str) -> bool:
-    if not url or not url.startswith(("http://", "https://")):
+    if not url:
+        return False
+    if url.startswith("data:image/"):   # bereits eingebettet + validiert
+        return True
+    if not url.startswith(("http://", "https://")):
         return False
     low = url.lower().split("?")[0]
     if low.endswith(_BAD_EXT):
