@@ -8,8 +8,11 @@ from .models import RunState
 _CATEGORIES = {"product", "comparison", "howto", "factcheck", "general"}
 
 
-async def make_plan(state: RunState) -> None:
-    """Befüllt state.subquestions und state.category (mutiert state in-place)."""
+async def make_plan(state: RunState, forced_category: str | None = None) -> None:
+    """Befüllt state.subquestions und state.category (mutiert state in-place).
+
+    forced_category (aus den UI-Einstellungen) überschreibt die Auto-Klassifikation.
+    """
     system = prompts.SYSTEM.format(date=prompts.today_str())
     raw = await ask(prompts.plan(state.question), model=state.model, system=system, max_tokens=600)
     data = parse_json(raw, {})
@@ -19,5 +22,9 @@ async def make_plan(state: RunState) -> None:
     if not state.subquestions:
         state.subquestions = [state.question]  # Fallback: nackte Frage
 
+    forced = (forced_category or "").strip().lower()
+    if forced in _CATEGORIES:
+        state.category = forced
+        return
     cat = str(data.get("category", "general")).strip().lower() if isinstance(data, dict) else "general"
     state.category = cat if cat in _CATEGORIES else "general"

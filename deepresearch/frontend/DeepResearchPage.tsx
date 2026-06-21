@@ -15,6 +15,8 @@ export function DeepResearchPage() {
   const [list, setList] = useState<RunListItem[]>([])
   const [active, setActive] = useState<Run | null>(null)
   const [question, setQuestion] = useState("")
+  const [depth, setDepth] = useState(6)
+  const [category, setCategory] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const pollRef = useRef<number | null>(null)
@@ -57,7 +59,7 @@ export function DeepResearchPage() {
     setBusy(true)
     stopPoll()
     try {
-      const { run_id } = await startRun(q)
+      const { run_id } = await startRun(q, { max_rounds: depth, category: category || undefined })
       setQuestion("")
       await loadList()
       poll(run_id)
@@ -94,6 +96,31 @@ export function DeepResearchPage() {
           }}
           className="w-full h-28 px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-100 text-sm resize-none"
         />
+        <div className="flex gap-2">
+          <select
+            value={depth}
+            onChange={(e) => setDepth(Number(e.target.value))}
+            className="flex-1 px-2 py-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs"
+            title="Recherche-Tiefe"
+          >
+            <option value={3}>Schnell · 3 Runden</option>
+            <option value={6}>Standard · 6 Runden</option>
+            <option value={8}>Tief · 8 Runden</option>
+          </select>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="flex-1 px-2 py-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs"
+            title="Kategorie"
+          >
+            <option value="">Auto-Kategorie</option>
+            <option value="product">Produkt</option>
+            <option value="comparison">Vergleich</option>
+            <option value="howto">How-to</option>
+            <option value="factcheck">Faktencheck</option>
+            <option value="general">Allgemein</option>
+          </select>
+        </div>
         <button
           onClick={start}
           disabled={busy || !question.trim()}

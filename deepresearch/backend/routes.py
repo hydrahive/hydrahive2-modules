@@ -28,11 +28,16 @@ Auth = Annotated[tuple[str, str], Depends(require_auth)]
 class RunIn(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
     model: str | None = None
+    max_rounds: int | None = Field(default=None, ge=1, le=10)
+    category: str | None = None
 
 
 @router.post("/runs", status_code=status.HTTP_201_CREATED)
 async def start_run(body: RunIn, auth: Auth) -> dict[str, Any]:
-    run_id = await service.start_run(auth[0], body.question.strip(), body.model)
+    run_id = await service.start_run(
+        auth[0], body.question.strip(), body.model,
+        max_rounds=body.max_rounds, category=body.category,
+    )
     return {"run_id": run_id}
 
 

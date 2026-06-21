@@ -19,7 +19,6 @@ from .research.models import RunState
 
 logger = logging.getLogger(__name__)
 
-_JSON_FIELDS = ("progress_json", "result_json")
 _UPDATABLE = {"status", "category", "progress_json", "result_json", "error"}
 
 
@@ -75,14 +74,19 @@ def _update(run_id: str, **fields: Any) -> None:
         )
 
 
-async def _execute_run(run_id: str, question: str, model: str | None) -> None:
+async def _execute_run(
+    run_id: str, question: str, model: str | None,
+    max_rounds: int | None, category: str | None,
+) -> None:
     state = RunState(question=question, model=model or None)
 
     def progress(p: dict) -> None:
         _update(run_id, status="running", progress_json=json.dumps(p), category=p.get("category", "general"))
 
     try:
-        result = await run_research(state, progress=progress)
+        result = await run_research(
+            state, progress=progress, max_rounds=max_rounds or 6, category=category,
+        )
         _update(
             run_id,
             status="done",
@@ -95,13 +99,19 @@ async def _execute_run(run_id: str, question: str, model: str | None) -> None:
         _update(run_id, status="error", error=str(e))
 
 
-async def start_run(username: str, question: str, model: str | None = None) -> str:
+async def start_run(
+    username: str, question: str, model: str | None = None,
+    max_rounds: int | None = None, category: str | None = None,
+) -> str:
     run = create_run(username, question, model)
-    asyncio.create_task(_execute_run(run["id"], question, model))
+    asyncio.create_task(_execute_run(run["id"], question, model, max_rounds, category))
     return run["id"]
 
 
-async def run_blocking(username: str, question: str, model: str | None = None) -> dict[str, Any]:
+async def run_blocking(
+    username: str, question: str, model: str | None = None,
+    max_rounds: int | None = None, category: str | None = None,
+) -> dict[str, Any]:
     run = create_run(username, question, model)
-    await _execute_run(run["id"], question, model)
+    await _execute_run(run["id"], question, model, max_rounds, category)
     return get_run(username, run["id"])  # type: ignore[return-value]

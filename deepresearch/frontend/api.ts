@@ -44,8 +44,14 @@ export interface Run {
   created_at: string
 }
 
-export const startRun = (question: string, model?: string) =>
-  api.post<{ run_id: string }>(`${BASE}/runs`, { question, model })
+export interface RunOptions {
+  model?: string
+  max_rounds?: number
+  category?: string
+}
+
+export const startRun = (question: string, opts: RunOptions = {}) =>
+  api.post<{ run_id: string }>(`${BASE}/runs`, { question, ...opts })
 
 export const listRuns = () => api.get<RunListItem[]>(`${BASE}/runs`)
 

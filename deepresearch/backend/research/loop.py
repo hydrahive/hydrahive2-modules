@@ -45,13 +45,14 @@ async def run_research(
     max_rounds: int = 6,
     min_rounds: int = 2,
     max_time: float = 300.0,
+    category: str | None = None,
 ) -> dict:
     """Führt den Lauf aus und gibt {markdown, sources, stats, category} zurück."""
     started = time.monotonic()
     emit = _make_emit(state, started, progress)
 
     emit("planning")
-    await planner.make_plan(state)
+    await planner.make_plan(state, forced_category=category)
 
     for rnd in range(1, max_rounds + 1):
         state.round = rnd
