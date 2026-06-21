@@ -1,40 +1,9 @@
 import { useEffect, useRef, useState } from "react"
-import { useTranslation } from "react-i18next"
-import ReactMarkdown from "react-markdown"
-import { api } from "@/shared/api-client"
+import { getRun, listRuns, startRun, type Run, type RunListItem } from "./api"
+import { LiveProgress } from "./LiveProgress"
+import { ReportFrame } from "./ReportFrame"
 
-interface RunListItem {
-  id: string
-  question: string
-  status: string
-  created_at: string
-}
-
-interface Source {
-  url: string
-  title: string
-  image: string
-}
-
-interface RunResult {
-  markdown: string
-  sources: Source[]
-  stats: Record<string, unknown>
-  category: string
-}
-
-interface Run {
-  id: string
-  question: string
-  status: string // running | done | error
-  category: string
-  progress: Record<string, unknown>
-  result: RunResult | null
-  error: string | null
-}
-
-const BASE = "/modules/deepresearch"
-const POLL_MS = 1500
+const POLL_MS = 1200
 
 function statusIcon(status: string): string {
   if (status === "done") return "✓"
@@ -42,15 +11,7 @@ function statusIcon(status: string): string {
   return "⋯"
 }
 
-function progressLine(p: Record<string, unknown>): string {
-  const round = typeof p.round === "number" ? p.round : undefined
-  const urls = typeof p.urls === "number" ? p.urls : undefined
-  if (!round) return ""
-  return ` · Runde ${round}${urls ? `, ${urls} Quellen` : ""}`
-}
-
 export function DeepResearchPage() {
-  const { t } = useTranslation("deepresearch")
   const [list, setList] = useState<RunListItem[]>([])
   const [active, setActive] = useState<Run | null>(null)
   const [question, setQuestion] = useState("")
@@ -58,19 +19,22 @@ export function DeepResearchPage() {
   const [error, setError] = useState<string | null>(null)
   const pollRef = useRef<number | null>(null)
 
-  const loadList = () =>
-    api.get<RunListItem[]>(`${BASE}/runs`).then(setList).catch((e) => setError(String(e)))
+  const loadList = () => listRuns().then(setList).catch((e) => setError(String(e)))
+
+  function stopPoll() {
+    if (pollRef.current) {
+      window.clearTimeout(pollRef.current)
+      pollRef.current = null
+    }
+  }
 
   useEffect(() => {
     loadList()
-    return () => {
-      if (pollRef.current) window.clearTimeout(pollRef.current)
-    }
+    return stopPoll
   }, [])
 
   function poll(id: string) {
-    api
-      .get<Run>(`${BASE}/runs/${id}`)
+    getRun(id)
       .then((run) => {
         setActive(run)
         if (run.status === "running") {
@@ -91,9 +55,9 @@ export function DeepResearchPage() {
     if (!q || busy) return
     setError(null)
     setBusy(true)
-    setActive(null)
+    stopPoll()
     try {
-      const { run_id } = await api.post<{ run_id: string }>(`${BASE}/runs`, { question: q })
+      const { run_id } = await startRun(q)
       setQuestion("")
       await loadList()
       poll(run_id)
@@ -105,9 +69,9 @@ export function DeepResearchPage() {
 
   async function open(id: string) {
     setError(null)
-    if (pollRef.current) window.clearTimeout(pollRef.current)
+    stopPoll()
     try {
-      const run = await api.get<Run>(`${BASE}/runs/${id}`)
+      const run = await getRun(id)
       setActive(run)
       if (run.status === "running") {
         setBusy(true)
@@ -118,27 +82,28 @@ export function DeepResearchPage() {
     }
   }
 
-  const running = active?.status === "running" || busy
-
   return (
-    <div className="flex gap-4 h-full">
+    <div className="flex gap-5 h-full">
       <aside className="w-72 shrink-0 space-y-3">
         <textarea
           value={question}
-          placeholder={t("placeholder")}
+          placeholder="Worüber soll recherchiert werden?"
           onChange={(e) => setQuestion(e.target.value)}
-          className="w-full h-24 px-3 py-2 rounded-lg bg-zinc-900 border border-white/10 text-zinc-100 text-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) start()
+          }}
+          className="w-full h-28 px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-100 text-sm resize-none"
         />
         <button
           onClick={start}
-          disabled={running || !question.trim()}
-          className="w-full px-3 py-2 rounded-lg bg-sky-500/15 text-sky-300 text-sm hover:bg-sky-500/25 disabled:opacity-40"
+          disabled={busy || !question.trim()}
+          className="w-full px-3 py-2.5 rounded-xl text-sm font-medium bg-orange-500/15 text-orange-300 hover:bg-orange-500/25 disabled:opacity-40"
         >
-          {running ? t("running") : t("start")}
+          {busy ? "Recherchiere …" : "Recherche starten"}
         </button>
 
-        <div className="space-y-1 pt-2 border-t border-white/5">
-          {list.length === 0 && <p className="text-zinc-600 text-sm py-2">{t("empty")}</p>}
+        <div className="space-y-1 pt-3 border-t border-white/5">
+          {list.length === 0 && <p className="text-zinc-600 text-sm py-1">Noch keine Recherchen</p>}
           {list.map((r) => (
             <button
               key={r.id}
@@ -148,7 +113,7 @@ export function DeepResearchPage() {
               }`}
             >
               <span className="mr-2 text-zinc-500">{statusIcon(r.status)}</span>
-              {r.question || t("untitled")}
+              {r.question || "Ohne Titel"}
             </button>
           ))}
         </div>
@@ -160,58 +125,28 @@ export function DeepResearchPage() {
             {error}
           </div>
         )}
-        {!active && <p className="text-zinc-600 text-sm">{t("hint")}</p>}
-        {active && (
-          <div className="space-y-4">
-            <h1 className="text-xl font-semibold text-zinc-100">{active.question}</h1>
 
-            {active.status === "running" && (
-              <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-300 text-sm">
-                {t("working")}
-                {progressLine(active.progress)} …
-              </div>
-            )}
-
-            {active.status === "error" && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
-                {active.error || t("failed")}
-              </div>
-            )}
-
-            {active.status === "done" && active.result && (
-              <>
-                {/* Kein rehype-raw: roher HTML im Bericht wird escaped (Bericht stammt aus
-                    ungetrustetem Web-Inhalt). Der hübsche HTML-Report kommt später separat. */}
-                <article className="prose prose-invert max-w-none">
-                  <ReactMarkdown>{active.result.markdown}</ReactMarkdown>
-                </article>
-
-                {active.result.sources.length > 0 && (
-                  <div className="pt-3 border-t border-white/5">
-                    <h2 className="text-sm font-semibold text-zinc-400 mb-2">
-                      {t("sources")} ({active.result.sources.length})
-                    </h2>
-                    <ol className="space-y-1 text-sm">
-                      {active.result.sources.map((s, i) => (
-                        <li key={s.url} className="text-zinc-400">
-                          {i + 1}.{" "}
-                          <a
-                            href={s.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sky-400 hover:underline"
-                          >
-                            {s.title || s.url}
-                          </a>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-              </>
-            )}
+        {!active && (
+          <div className="h-full flex items-center justify-center text-center">
+            <div className="max-w-sm">
+              <div className="text-4xl mb-3">🔭</div>
+              <p className="text-zinc-400 text-sm">
+                Stelle links eine Frage. Deep Research durchsucht das Web in mehreren Runden und
+                erstellt einen bebilderten, quellenbasierten Bericht.
+              </p>
+            </div>
           </div>
         )}
+
+        {active?.status === "running" && <LiveProgress run={active} />}
+
+        {active?.status === "error" && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+            {active.error || "Recherche fehlgeschlagen"}
+          </div>
+        )}
+
+        {active?.status === "done" && <ReportFrame runId={active.id} />}
       </section>
     </div>
   )

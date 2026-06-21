@@ -1,7 +1,11 @@
-"""Schritt 2-3 einer Runde: suchen → neue URLs holen → extrahieren (parallel, gedrosselt)."""
+"""Schritt 2-3 einer Runde: suchen → neue URLs holen → extrahieren (parallel, gedrosselt).
+
+Emittiert pro gelesener Quelle ein 'reading'-Event (für die Live-Anzeige: „liest: ‹Titel›").
+"""
 from __future__ import annotations
 
 import asyncio
+from typing import Callable
 
 from .extractor import extract_finding
 from .fetch import fetch_page
@@ -12,7 +16,11 @@ _FETCH_CONCURRENCY = 3   # schont langsame lokale Modelle + freundlich zu Quell-
 _MAX_NEW_PER_ROUND = 8
 
 
-async def gather_round(state: RunState, queries: list[str]) -> int:
+async def gather_round(
+    state: RunState,
+    queries: list[str],
+    emit: Callable[..., None] | None = None,
+) -> int:
     """Sucht alle queries parallel, holt+extrahiert neue URLs. Gibt #neue Findings zurück."""
     search_results = await asyncio.gather(*(searxng_search(q) for q in queries))
 
@@ -30,6 +38,8 @@ async def gather_round(state: RunState, queries: list[str]) -> int:
 
     async def _process(item: dict) -> Finding | None:
         async with sem:
+            if emit is not None:
+                emit("reading", current={"title": item.get("title") or item["url"], "url": item["url"]})
             text, image = await fetch_page(item["url"])
             return await extract_finding(state, item, text, image)
 
