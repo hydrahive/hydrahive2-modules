@@ -144,6 +144,25 @@ def test_coin_detail(client, auth_headers):
     assert len(data["transactions"]) == 1
 
 
+def test_portfolio_nur_abgaenge_crasht_nicht(client, auth_headers):
+    """Regression: CSV-Import nur von Auszahlungen (transfer_out ohne Bestand)
+    darf die Portfolio-Ansicht NICHT mit 500 crashen (insufficient_holdings)."""
+    out = _buy(coin="bitcoin", qty=1.0, at="2026-01-01")
+    out["kind"] = "transfer_out"
+    out["price"] = 0.0
+    r = client.post(f"{PREFIX}/portfolio/transactions", json=out, headers=auth_headers)
+    assert r.status_code == 200
+    # Summary lädt sauber, Position ist geschlossen (quantity 0)
+    data = client.get(f"{PREFIX}/portfolio", headers=auth_headers)
+    assert data.status_code == 200
+    summary = data.json()
+    assert summary["totals"]["open_count"] == 0
+    # Coin-Detail crasht ebenfalls nicht
+    cd = client.get(f"{PREFIX}/portfolio/coin/bitcoin", headers=auth_headers)
+    assert cd.status_code == 200
+    assert cd.json()["quantity"] == pytest.approx(0.0)
+
+
 # ---------------------------------------------------------------- Isolation
 def test_per_user_isolation(client, auth_headers, other_headers):
     client.post(f"{PREFIX}/portfolio/transactions", json=_buy(), headers=auth_headers)

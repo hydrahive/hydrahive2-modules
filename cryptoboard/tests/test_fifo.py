@@ -64,9 +64,26 @@ def test_verkauf_mit_fee_mindert_erloes():
     assert r.realized_pnl == pytest.approx(40.0)
 
 
-def test_verkauf_ueber_bestand_wirft():
+def test_verkauf_ueber_bestand_wirft_im_strict_modus():
     with pytest.raises(ValueError, match="insufficient_holdings"):
-        fifo.compute([_tx("buy", 1, 100.0), _tx("sell", 2, 150.0)])
+        fifo.compute([_tx("buy", 1, 100.0), _tx("sell", 2, 150.0)], strict=True)
+
+
+def test_verkauf_ueber_bestand_tolerant_default():
+    # Default (strict=False): kein Wurf, Bestand 0, Rest gegen Cost-Basis 0 realisiert.
+    # buy 1 @ 100, sell 2 @ 150: 1 Stück gegen Lot (50 Gewinn) + 1 Stück gegen 0 (150 Gewinn)
+    r = fifo.compute([_tx("buy", 1, 100.0), _tx("sell", 2, 150.0)])
+    assert r.quantity == pytest.approx(0.0)
+    assert r.realized_pnl == pytest.approx(200.0)  # (150-100) + (150-0)
+
+
+def test_nur_abgaenge_kein_crash():
+    # Reale Lage: CSV-Import nur von Auszahlungen, keine vorherigen Käufe.
+    r = fifo.compute([_tx("transfer_out", 3017.44), _tx("transfer_out", 2729.44)])
+    assert r.quantity == pytest.approx(0.0)
+    assert r.cost_basis == pytest.approx(0.0)
+    # transfer_out @ 0 → Erlös 0, Cost-Basis 0 → realized 0
+    assert r.realized_pnl == pytest.approx(0.0)
 
 
 def test_transfer_in_ohne_preis_ist_gewinn_beim_verkauf():

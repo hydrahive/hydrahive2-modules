@@ -51,11 +51,18 @@ def _open_lot(qty: float, price: float, fee: float) -> Lot:
     return Lot(quantity=qty, unit_cost=unit)
 
 
-def compute(transactions: list[dict]) -> CoinResult:
+def compute(transactions: list[dict], *, strict: bool = False) -> CoinResult:
     """Wertet die (chronologisch sortierten) Transaktionen EINES Coins aus.
 
-    Wirft ValueError('insufficient_holdings'), wenn ein Verkauf/Transfer-out
-    mehr Menge abbaut, als zu diesem Zeitpunkt vorhanden ist.
+    strict=True  → wirft ValueError('insufficient_holdings'), wenn ein Verkauf/
+                   Transfer-out mehr abbaut als vorhanden. Für die manuelle
+                   Einzel-Erfassung, wo der User den vollen Kontext hat.
+    strict=False → toleranter Anzeige-Modus (Default): ein Abgang ohne (genug)
+                   Bestand wird auf den vorhandenen Bestand begrenzt; die
+                   überschüssige Menge gilt als Realisierung gegen Cost-Basis 0.
+                   So bricht die Portfolio-Anzeige nie an unvollständigen
+                   Ledgern (z.B. CSV-Import nur von Auszahlungen, deren Käufe
+                   in einer anderen, nicht importierten Quelle lagen).
     """
     lots: list[Lot] = []
     realized = 0.0
@@ -81,7 +88,12 @@ def compute(transactions: list[dict]) -> CoinResult:
             unit_proceed = sale_proceeds / qty if qty > _EPS else 0.0
             while remaining > _EPS:
                 if not lots:
-                    raise ValueError("insufficient_holdings")
+                    if strict:
+                        raise ValueError("insufficient_holdings")
+                    # Tolerant: Rest gegen Cost-Basis 0 realisieren, Bestand
+                    # bleibt bei 0 (keine Negativ-Position).
+                    realized += remaining * unit_proceed
+                    break
                 lot = lots[0]
                 take = min(lot.quantity, remaining)
                 realized += take * (unit_proceed - lot.unit_cost)
