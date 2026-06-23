@@ -1,10 +1,11 @@
-import { CandlestickChart, LayoutGrid, Newspaper, Receipt, Wallet } from "lucide-react"
+import { CandlestickChart, GitCompareArrows, LayoutGrid, Newspaper, Receipt, Wallet } from "lucide-react"
 import type { CSSProperties } from "react"
 import { NavLink, Route, Routes } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { rgbFor } from "@/shared/colors"
 import { CoinSearch } from "./components/CoinSearch"
 import { CoinDetailView } from "./views/CoinDetailView"
+import { CompareView } from "./views/CompareView"
 import { DashboardView } from "./views/DashboardView"
 import { NewsView } from "./views/NewsView"
 import { PortfolioView } from "./views/PortfolioView"
@@ -56,6 +57,9 @@ function Header() {
         <NavLink to="/cryptoboard/trades" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><Receipt size={14} />{t("nav_tradelog")}</span>
         </NavLink>
+        <NavLink to="/cryptoboard/compare" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+          <span className="flex items-center gap-1.5"><GitCompareArrows size={14} />{t("nav_compare")}</span>
+        </NavLink>
         <NavLink to="/cryptoboard/news" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><Newspaper size={14} />{t("nav_news")}</span>
         </NavLink>
@@ -74,6 +78,7 @@ export function CryptoboardApp() {
             <Route index element={<DashboardView />} />
             <Route path="portfolio" element={<PortfolioView />} />
             <Route path="trades" element={<TradeLogView />} />
+            <Route path="compare" element={<CompareView />} />
             <Route path="coin/:id" element={<CoinDetailView />} />
             <Route path="news" element={<NewsView />} />
           </Routes>

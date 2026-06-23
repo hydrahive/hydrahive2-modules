@@ -1,7 +1,7 @@
 import { api } from "@/shared/api-client"
 import type {
-  ChartResponse, CoinDetail, CoinPnl, MarketRow, NewsItem,
-  PortfolioSummary, SearchResult, Transaction, TxInput, WatchItem,
+  ChartResponse, CoinDetail, CoinPnl, IndicatorData, MarketRow, NewsItem,
+  PortfolioSummary, SearchResult, Sentiment, Transaction, TxInput, WatchItem,
 } from "./types"
 
 const BASE = "/modules/cryptoboard"
@@ -52,4 +52,11 @@ export const cryptoApi = {
 
   deleteTx: (id: number): Promise<{ ok: boolean }> =>
     api.delete<{ ok: boolean }>(`${BASE}/portfolio/transactions/${id}`),
+
+  // ---- Analyse ----
+  indicators: (id: string, days = "90", vs = "eur"): Promise<IndicatorData> =>
+    api.get<IndicatorData>(`${BASE}/indicators/${id}?days=${days}&vs=${vs}`),
+
+  sentiment: (limit = 30): Promise<Sentiment> =>
+    api.get<Sentiment>(`${BASE}/sentiment?limit=${limit}`),
 }

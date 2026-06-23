@@ -17,6 +17,7 @@ from __future__ import annotations
 from .routes import router
 from .watchlist_routes import router as watchlist_router
 from .portfolio_routes import router as portfolio_router
+from .analysis_routes import router as analysis_router
 # Submodule importieren (NICHT `from .crypto_tool import TOOL`), damit
 # `backend.crypto_tool` das Modul bleibt und nicht vom Tool-Objekt überschattet wird.
 from . import alerts, crypto_tool
@@ -26,6 +27,7 @@ def register(ctx) -> None:
     ctx.register_router(router)
     ctx.register_router(watchlist_router)
     ctx.register_router(portfolio_router)
+    ctx.register_router(analysis_router)
     ctx.register_tool(crypto_tool.TOOL)
     ctx.register_butler_trigger(alerts.TRIGGER)
     ctx.register_butler_condition(alerts.CONDITION)

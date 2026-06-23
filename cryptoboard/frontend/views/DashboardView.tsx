@@ -5,6 +5,7 @@ import { CollapsibleBox } from "@/shared/CollapsibleBox"
 import { rgbFor } from "@/shared/colors"
 import { cryptoApi } from "../api"
 import { CoinRow } from "../components/CoinRow"
+import { FearGreedGauge } from "../components/FearGreedGauge"
 import { PriceCard } from "../components/PriceCard"
 import type { MarketRow, WatchItem } from "../types"
 import { useVs } from "../vsContext"
@@ -48,6 +49,10 @@ export function DashboardView() {
 
   return (
     <div className="p-5 space-y-4 max-w-6xl mx-auto">
+      <div className="rounded-xl border border-white/[6%] bg-white/[2%]">
+        <FearGreedGauge />
+      </div>
+
       <CollapsibleBox boxId="cryptoboard-watchlist" color={C} icon={<Star size={14} />} title={t("watchlist")}>
         <div className="box-b">
           {watchRows.length === 0 ? (

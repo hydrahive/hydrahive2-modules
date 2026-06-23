@@ -140,3 +140,27 @@ export interface CoinPnl {
   proceeds: number
   transactions: Transaction[]
 }
+
+export interface IndicatorData {
+  times: number[]
+  prices: number[]
+  sma20: (number | null)[]
+  sma50: (number | null)[]
+  ema12: (number | null)[]
+  ema26: (number | null)[]
+  rsi14: (number | null)[]
+  macd: (number | null)[]
+  macd_signal: (number | null)[]
+  macd_histogram: (number | null)[]
+}
+
+export interface FngEntry {
+  value: number | null
+  classification: string | null
+  timestamp: number | null
+}
+
+export interface Sentiment {
+  current: FngEntry | null
+  history: FngEntry[]
+}

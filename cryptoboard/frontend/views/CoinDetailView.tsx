@@ -2,11 +2,17 @@ import { ArrowLeft, Check, Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useTranslation } from "react-i18next"
+import { LineChart } from "lucide-react"
+import { CollapsibleBox } from "@/shared/CollapsibleBox"
+import { rgbFor } from "@/shared/colors"
 import { cryptoApi } from "../api"
+import { IndicatorPanel } from "../components/IndicatorPanel"
 import { PriceChart } from "../components/PriceChart"
 import { fmtCompact, fmtPct, fmtPrice, fmtSupply, trendClass } from "../format"
 import type { CoinDetail, WatchItem } from "../types"
 import { useVs } from "../vsContext"
+
+const C = rgbFor("/cryptoboard")
 
 const TIMEFRAMES = [
   { key: "tf_24h", days: "1" },
@@ -112,6 +118,12 @@ export function CoinDetailView() {
           </div>
         ))}
       </div>
+
+      <CollapsibleBox boxId="cryptoboard-indicators" color={C} icon={<LineChart size={14} />} title={t("ind_title")} defaultCollapsed>
+        <div className="box-b py-2">
+          <IndicatorPanel coinId={id} vs={vs} />
+        </div>
+      </CollapsibleBox>
 
       {coin.description && (
         <p className="text-xs text-zinc-500 leading-relaxed">
