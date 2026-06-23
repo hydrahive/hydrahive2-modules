@@ -52,6 +52,7 @@ def add(
     fee: float,
     executed_at: str,
     note: str,
+    import_hash: str | None = None,
 ) -> int:
     if kind not in KINDS:
         raise ValueError("invalid_kind")
@@ -64,11 +65,25 @@ def add(
             raise ValueError("ledger_full")
         cur = c.execute(
             'INSERT INTO module_cryptoboard_transactions '
-            '("user", coin_id, symbol, name, kind, quantity, price, fee, executed_at, note, created_at) '
-            f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, {_NOW})",
-            (user, coin_id, symbol, name, kind, quantity, price, fee, executed_at, note),
+            '("user", coin_id, symbol, name, kind, quantity, price, fee, executed_at, note, import_hash, created_at) '
+            f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, {_NOW})",
+            (user, coin_id, symbol, name, kind, quantity, price, fee, executed_at, note, import_hash),
         )
         return int(cur.lastrowid)
+
+
+def existing_hashes(user: str, hashes: list[str]) -> set[str]:
+    """Welche der gegebenen import_hashes hat der User bereits? (Dedup)."""
+    if not hashes:
+        return set()
+    with db() as c:
+        placeholders = ",".join("?" * len(hashes))
+        rows = c.execute(
+            f'SELECT import_hash FROM module_cryptoboard_transactions '
+            f'WHERE "user" = ? AND import_hash IN ({placeholders})',
+            (user, *hashes),
+        ).fetchall()
+        return {r[0] for r in rows if r[0]}
 
 
 def update(

@@ -1,8 +1,8 @@
 import { api } from "@/shared/api-client"
 import type {
   Alert, AlertEventsResponse, AlertInput, ChartResponse, CoinDetail, CoinPnl,
-  IndicatorData, MarketRow, NewsItem, PortfolioSummary, SearchResult, Sentiment,
-  Transaction, TxInput, WatchItem,
+  ImportPreview, ImportResult, ImportTx, IndicatorData, MarketRow, NewsItem,
+  PortfolioSummary, SearchResult, Sentiment, Transaction, TxInput, WatchItem,
 } from "./types"
 
 const BASE = "/modules/cryptoboard"
@@ -53,6 +53,13 @@ export const cryptoApi = {
 
   deleteTx: (id: number): Promise<{ ok: boolean }> =>
     api.delete<{ ok: boolean }>(`${BASE}/portfolio/transactions/${id}`),
+
+  // ---- CSV-Import ----
+  importPreview: (csv: string, mapping?: Record<string, string | null>): Promise<ImportPreview> =>
+    api.post<ImportPreview>(`${BASE}/portfolio/import/preview`, mapping ? { csv, mapping } : { csv }),
+
+  importCommit: (transactions: Partial<ImportTx>[]): Promise<ImportResult> =>
+    api.post<ImportResult>(`${BASE}/portfolio/import/commit`, { transactions }),
 
   // ---- Analyse ----
   indicators: (id: string, days = "90", vs = "eur"): Promise<IndicatorData> =>

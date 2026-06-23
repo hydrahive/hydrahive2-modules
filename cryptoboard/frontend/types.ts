@@ -208,3 +208,38 @@ export interface AlertEventsResponse {
   events: AlertEvent[]
   unseen: number
 }
+
+export interface ImportTx {
+  kind: TxKind
+  symbol: string
+  quantity: number
+  price: number
+  fee: number
+  executed_at: string
+  hash: string
+  coin_id: string | null
+  coin_name: string | null
+  resolved: boolean
+  duplicate: boolean
+}
+
+export interface ImportError {
+  row: number
+  missing: string[]
+}
+
+export interface ImportPreview {
+  header: string[]
+  mapping: Record<string, string | null>
+  fields: string[]
+  transactions: ImportTx[]
+  errors: ImportError[]
+  unresolved_symbols: string[]
+  duplicate_count: number
+}
+
+export interface ImportResult {
+  ok: boolean
+  imported: number
+  skipped: number
+}

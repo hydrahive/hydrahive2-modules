@@ -1,9 +1,10 @@
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { Pencil, Plus, Trash2, Upload } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CollapsibleBox } from "@/shared/CollapsibleBox"
 import { rgbFor } from "@/shared/colors"
 import { cryptoApi } from "../api"
+import { ImportDialog } from "../components/ImportDialog"
 import { TxForm } from "../components/TxForm"
 import { fmtPrice, fmtQty } from "../format"
 import type { Transaction, TxKind } from "../types"
@@ -23,6 +24,7 @@ export function TradeLogView() {
   const [txs, setTxs] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [editing, setEditing] = useState<Transaction | null>(null)
 
   const load = useCallback(async () => {
@@ -59,11 +61,27 @@ export function TradeLogView() {
         </div>
       )}
 
-      {!adding && !editing && (
-        <button onClick={() => setAdding(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[4%] text-sm text-zinc-300 hover:bg-white/[7%] transition-colors">
-          <Plus size={15} /> {t("tx_add_title")}
-        </button>
+      {importing && (
+        <div className="rounded-xl border border-white/[8%] bg-white/[2%] p-4">
+          <h3 className="text-sm font-semibold text-zinc-200 mb-3">{t("imp_title")}</h3>
+          <ImportDialog
+            onDone={() => { setImporting(false); void load() }}
+            onCancel={() => setImporting(false)}
+          />
+        </div>
+      )}
+
+      {!adding && !editing && !importing && (
+        <div className="flex items-center gap-2">
+          <button onClick={() => setAdding(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[4%] text-sm text-zinc-300 hover:bg-white/[7%] transition-colors">
+            <Plus size={15} /> {t("tx_add_title")}
+          </button>
+          <button onClick={() => setImporting(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[4%] text-sm text-zinc-300 hover:bg-white/[7%] transition-colors">
+            <Upload size={15} /> {t("imp_title")}
+          </button>
+        </div>
       )}
 
       <CollapsibleBox boxId="cryptoboard-tradelog" color={C} title={t("nav_tradelog")}>

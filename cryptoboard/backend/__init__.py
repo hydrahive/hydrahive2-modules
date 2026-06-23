@@ -17,6 +17,7 @@ from __future__ import annotations
 from .routes import router
 from .watchlist_routes import router as watchlist_router
 from .portfolio_routes import router as portfolio_router
+from .import_routes import router as import_router
 from .analysis_routes import router as analysis_router
 from .alerts_routes import router as alerts_router
 # Submodule importieren (NICHT `from .crypto_tool import TOOL`), damit
@@ -28,6 +29,7 @@ def register(ctx) -> None:
     ctx.register_router(router)
     ctx.register_router(watchlist_router)
     ctx.register_router(portfolio_router)
+    ctx.register_router(import_router)
     ctx.register_router(analysis_router)
     ctx.register_router(alerts_router)
     ctx.register_tool(crypto_tool.TOOL)
