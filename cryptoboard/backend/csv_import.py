@@ -27,14 +27,17 @@ __all__ = [
 FIELDS = ("kind", "symbol", "quantity", "price", "fee", "executed_at")
 
 # Heuristik: Header-Schlüsselwörter (lowercase, Teilstring-Match) → Zielfeld.
-# Reihenfolge = Priorität; erste passende Spalte gewinnt.
+# WICHTIG: Felder werden in dieser dict-Reihenfolge zugeordnet und eine einmal
+# vergebene Spalte ist gesperrt. Darum die SPEZIFISCHEN Felder zuerst (fee/
+# quantity/price/date/symbol), kind ZULETZT — sonst kapert ein gieriges
+# kind-Hint wie "transaction" die Spalte "Transaction amount".
 _HINTS: dict[str, tuple[str, ...]] = {
-    "kind": ("type", "side", "art", "typ", "operation", "transaction", "richtung", "buy/sell"),
-    "symbol": ("symbol", "asset", "coin", "currency", "währung", "wahrung", "token", "pair", "markt", "market"),
-    "quantity": ("amount", "quantity", "menge", "qty", "anzahl", "units", "volume", "stück", "stueck"),
+    "fee": ("fee", "gebühr", "gebuehr", "commission", "provision"),
+    "quantity": ("amount", "quantity", "menge", "qty", "anzahl", "units", "volume", "stück", "stueck", "betrag"),
     "price": ("price", "preis", "kurs", "rate", "unit price", "stückpreis", "stueckpreis"),
-    "fee": ("fee", "gebühr", "gebuehr", "commission", "provision", "kosten"),
     "executed_at": ("date", "datum", "time", "zeit", "timestamp", "executed", "created", "filled"),
+    "symbol": ("symbol", "asset", "coin", "currency", "währung", "wahrung", "token", "pair", "markt", "market"),
+    "kind": ("type", "typ", "side", "art", "operation", "richtung", "buy/sell", "direction"),
 }
 
 _MAX_ROWS = 5000
@@ -110,11 +113,19 @@ def parse_rows(rows: list[dict], mapping: dict[str, str | None], default_kind: s
 
     for i, row in enumerate(rows, start=2):  # Zeile 1 = Header
         symbol = clean_symbol(row.get(col_symbol, "")) if col_symbol else ""
-        qty = parse_number(row.get(col_qty, "")) if col_qty else None
+        qty_raw = parse_number(row.get(col_qty, "")) if col_qty else None
         price = parse_number(row.get(col_price, "")) if col_price else 0.0
         fee = parse_number(row.get(col_fee, "")) if col_fee else 0.0
         date = parse_date(row.get(col_date, "")) if col_date else None
-        kind = (classify_kind(row.get(col_kind, "")) if col_kind else None) or default_kind
+        kind = classify_kind(row.get(col_kind, "")) if col_kind else None
+
+        # Vorzeichen = Richtung: Wallet-Logs nutzen -Betrag für Abgang. Menge ist
+        # immer der Betrag (abs). Ein negatives Vorzeichen ist ein EXPLIZITES
+        # Abgang-Signal → transfer_out (wenn der Typ nicht ohnehin buy/sell sagt).
+        # Positive Beträge ohne erkannten Typ fallen auf default_kind zurück.
+        qty = abs(qty_raw) if qty_raw is not None else None
+        if kind is None:
+            kind = "transfer_out" if (qty_raw is not None and qty_raw < 0) else default_kind
 
         problems = []
         if not symbol:

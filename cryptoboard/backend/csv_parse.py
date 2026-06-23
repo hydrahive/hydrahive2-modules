@@ -15,8 +15,10 @@ from datetime import datetime
 # bewusst NICHT als Buy/Sell — die landen über die Transfer-Marker.
 _BUY = ("buy", "kauf", "purchase", "long", "credit")
 _SELL = ("sell", "verkauf", "sale", "short", "debit")
-_TRANSFER_IN = ("deposit", "eingang", "receive", "received", "transfer in", "transfer-in")
-_TRANSFER_OUT = ("withdraw", "withdrawal", "ausgang", "send", "sent", "transfer out", "transfer-out")
+_TRANSFER_IN = ("deposit", "eingang", "receive", "received", "transfer in", "transfer-in",
+                "topup", "top-up", "top up", "incoming", "reward", "airdrop")
+_TRANSFER_OUT = ("withdraw", "withdrawal", "ausgang", "send", "sent", "transfer out",
+                 "transfer-out", "payout", "payment", "outgoing")
 
 _DATE_FORMATS = (
     "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d",
