@@ -1,7 +1,8 @@
 import { api } from "@/shared/api-client"
 import type {
-  ChartResponse, CoinDetail, CoinPnl, IndicatorData, MarketRow, NewsItem,
-  PortfolioSummary, SearchResult, Sentiment, Transaction, TxInput, WatchItem,
+  Alert, AlertEventsResponse, AlertInput, ChartResponse, CoinDetail, CoinPnl,
+  IndicatorData, MarketRow, NewsItem, PortfolioSummary, SearchResult, Sentiment,
+  Transaction, TxInput, WatchItem,
 } from "./types"
 
 const BASE = "/modules/cryptoboard"
@@ -59,4 +60,22 @@ export const cryptoApi = {
 
   sentiment: (limit = 30): Promise<Sentiment> =>
     api.get<Sentiment>(`${BASE}/sentiment?limit=${limit}`),
+
+  // ---- Alerts ----
+  alerts: (): Promise<Alert[]> => api.get<Alert[]>(`${BASE}/alerts`),
+
+  addAlert: (a: AlertInput): Promise<{ ok: boolean; id: number }> =>
+    api.post<{ ok: boolean; id: number }>(`${BASE}/alerts`, a),
+
+  toggleAlert: (id: number, active: boolean): Promise<{ ok: boolean }> =>
+    api.patch<{ ok: boolean }>(`${BASE}/alerts/${id}`, { active }),
+
+  deleteAlert: (id: number): Promise<{ ok: boolean }> =>
+    api.delete<{ ok: boolean }>(`${BASE}/alerts/${id}`),
+
+  alertEvents: (limit = 50): Promise<AlertEventsResponse> =>
+    api.get<AlertEventsResponse>(`${BASE}/alerts/events?limit=${limit}`),
+
+  markAlertsSeen: (): Promise<{ ok: boolean }> =>
+    api.post<{ ok: boolean }>(`${BASE}/alerts/events/seen`, {}),
 }

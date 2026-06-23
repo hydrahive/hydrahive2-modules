@@ -50,10 +50,12 @@ def setup_test_env():
         from backend.watchlist_routes import router as watchlist_router
         from backend.portfolio_routes import router as portfolio_router
         from backend.analysis_routes import router as analysis_router
+        from backend.alerts_routes import router as alerts_router
         main.app.include_router(market_router, prefix=MOD_PREFIX)
         main.app.include_router(watchlist_router, prefix=MOD_PREFIX)
         main.app.include_router(portfolio_router, prefix=MOD_PREFIX)
         main.app.include_router(analysis_router, prefix=MOD_PREFIX)
+        main.app.include_router(alerts_router, prefix=MOD_PREFIX)
         yield tmp_path
 
 
@@ -107,4 +109,6 @@ def _watchlist_db(setup_test_env):
     with db() as c:
         c.execute("DELETE FROM module_cryptoboard_watchlist")
         c.execute("DELETE FROM module_cryptoboard_transactions")
+        c.execute("DELETE FROM module_cryptoboard_alerts")
+        c.execute("DELETE FROM module_cryptoboard_alert_events")
     yield

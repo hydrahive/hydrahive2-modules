@@ -1,9 +1,11 @@
-import { CandlestickChart, GitCompareArrows, LayoutGrid, Newspaper, Receipt, Wallet } from "lucide-react"
-import type { CSSProperties } from "react"
+import { Bell, CandlestickChart, GitCompareArrows, LayoutGrid, Newspaper, Receipt, Wallet } from "lucide-react"
+import { useEffect, useState, type CSSProperties } from "react"
 import { NavLink, Route, Routes } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { rgbFor } from "@/shared/colors"
+import { cryptoApi } from "./api"
 import { CoinSearch } from "./components/CoinSearch"
+import { AlertsView } from "./views/AlertsView"
 import { CoinDetailView } from "./views/CoinDetailView"
 import { CompareView } from "./views/CompareView"
 import { DashboardView } from "./views/DashboardView"
@@ -34,6 +36,15 @@ function CurrencyToggle() {
 function Header() {
   const { t } = useTranslation("cryptoboard")
   const tab = "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+  const [unseen, setUnseen] = useState(0)
+
+  useEffect(() => {
+    let alive = true
+    const poll = () => cryptoApi.alertEvents(1).then((r) => { if (alive) setUnseen(r.unseen) }).catch(() => {})
+    poll()
+    const h = setInterval(poll, 60000)
+    return () => { alive = false; clearInterval(h) }
+  }, [])
   return (
     <div className="border-b border-white/[6%] px-5 py-4">
       <div className="flex items-center gap-3 flex-wrap">
@@ -60,6 +71,14 @@ function Header() {
         <NavLink to="/cryptoboard/compare" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><GitCompareArrows size={14} />{t("nav_compare")}</span>
         </NavLink>
+        <NavLink to="/cryptoboard/alerts" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+          <span className="flex items-center gap-1.5 relative">
+            <Bell size={14} />{t("nav_alerts")}
+            {unseen > 0 && (
+              <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 grid place-items-center rounded-full bg-rose-500 text-white text-[10px] font-bold tabular-nums">{unseen}</span>
+            )}
+          </span>
+        </NavLink>
         <NavLink to="/cryptoboard/news" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><Newspaper size={14} />{t("nav_news")}</span>
         </NavLink>
@@ -79,6 +98,7 @@ export function CryptoboardApp() {
             <Route path="portfolio" element={<PortfolioView />} />
             <Route path="trades" element={<TradeLogView />} />
             <Route path="compare" element={<CompareView />} />
+            <Route path="alerts" element={<AlertsView />} />
             <Route path="coin/:id" element={<CoinDetailView />} />
             <Route path="news" element={<NewsView />} />
           </Routes>

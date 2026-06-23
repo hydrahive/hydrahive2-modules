@@ -164,3 +164,47 @@ export interface Sentiment {
   current: FngEntry | null
   history: FngEntry[]
 }
+
+export type AlertKind =
+  | "price_above" | "price_below"
+  | "pct_change_24h_above" | "pct_change_24h_below"
+  | "portfolio_above" | "portfolio_below"
+
+export interface Alert {
+  id: number
+  kind: AlertKind
+  coin_id: string
+  symbol: string
+  threshold: number
+  active: number
+  last_value: number | null
+  last_fired: string
+  note: string
+  created_at: string
+}
+
+export interface AlertInput {
+  kind: AlertKind
+  coin_id: string
+  symbol: string
+  threshold: number
+  note: string
+}
+
+export interface AlertEvent {
+  id: number
+  alert_id: number
+  kind: AlertKind
+  coin_id: string
+  symbol: string
+  threshold: number
+  value: number
+  message: string
+  seen: number
+  created_at: string
+}
+
+export interface AlertEventsResponse {
+  events: AlertEvent[]
+  unseen: number
+}

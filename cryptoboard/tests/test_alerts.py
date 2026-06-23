@@ -117,9 +117,10 @@ def test_register_verkabelt_alles():
 
     ctx = ModuleContext("cryptoboard")
     backend.register(ctx)
-    assert len(ctx.routers) == 4  # markt + watchlist + portfolio + analysis
+    assert len(ctx.routers) == 5  # markt + watchlist + portfolio + analysis + alerts
     assert any(t.name == "query_crypto_price" for t in ctx.tools)
     assert any(s.subtype == "crypto_price" for s in ctx.butler_triggers)
     assert any(s.subtype == "crypto_threshold" for s in ctx.butler_conditions)
     assert any(j.name == "price_poll" for j in ctx.jobs)
+    assert any(j.name == "alert_poll" for j in ctx.jobs)
     assert ctx.migrations_rel == "migrations"
