@@ -16,7 +16,7 @@ from datetime import datetime
 _BUY = ("buy", "kauf", "purchase", "long", "credit")
 _SELL = ("sell", "verkauf", "sale", "short", "debit")
 _TRANSFER_IN = ("deposit", "eingang", "receive", "received", "transfer in", "transfer-in",
-                "topup", "top-up", "top up", "incoming", "reward", "airdrop")
+                "topup", "top-up", "top up", "incoming", "reward", "airdrop", "payin", "pay-in")
 _TRANSFER_OUT = ("withdraw", "withdrawal", "ausgang", "send", "sent", "transfer out",
                  "transfer-out", "payout", "payment", "outgoing")
 

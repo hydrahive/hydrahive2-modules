@@ -37,8 +37,14 @@ _HINTS: dict[str, tuple[str, ...]] = {
     "price": ("price", "preis", "kurs", "rate", "unit price", "stückpreis", "stueckpreis"),
     "executed_at": ("date", "datum", "time", "zeit", "timestamp", "executed", "created", "filled"),
     "symbol": ("symbol", "asset", "coin", "currency", "währung", "wahrung", "token", "pair", "markt", "market"),
+    "status": ("status", "state", "zustand"),
     "kind": ("type", "typ", "side", "art", "operation", "richtung", "buy/sell", "direction"),
 }
+
+# Status-Werte, die eine NICHT durchgeführte Transaktion bedeuten → übersprungen.
+# (z.B. fehlgeschlagene/abgebrochene Auszahlungen, die nie den Bestand bewegten.)
+_BAD_STATUS = ("failed", "fehlgeschlagen", "cancelled", "canceled", "storniert",
+               "pending", "rejected", "abgelehnt", "error", "declined", "expired")
 
 _MAX_ROWS = 5000
 
@@ -106,12 +112,22 @@ def parse_rows(rows: list[dict], mapping: dict[str, str | None], default_kind: s
     col_price = mapping.get("price")
     col_fee = mapping.get("fee")
     col_date = mapping.get("executed_at")
+    col_status = mapping.get("status")
 
     txs: list[dict] = []
     errors: list[dict] = []
     symbols: set[str] = set()
+    skipped_status = 0
 
     for i, row in enumerate(rows, start=2):  # Zeile 1 = Header
+        # Nicht durchgeführte Transaktionen (failed/cancelled/…) überspringen —
+        # sie haben den Bestand nie bewegt. Kein Fehler, nur ignoriert.
+        if col_status:
+            st = str(row.get(col_status, "")).strip().lower()
+            if any(bad in st for bad in _BAD_STATUS):
+                skipped_status += 1
+                continue
+
         symbol = clean_symbol(row.get(col_symbol, "")) if col_symbol else ""
         qty_raw = parse_number(row.get(col_qty, "")) if col_qty else None
         price = parse_number(row.get(col_price, "")) if col_price else 0.0
@@ -119,13 +135,19 @@ def parse_rows(rows: list[dict], mapping: dict[str, str | None], default_kind: s
         date = parse_date(row.get(col_date, "")) if col_date else None
         kind = classify_kind(row.get(col_kind, "")) if col_kind else None
 
-        # Vorzeichen = Richtung: Wallet-Logs nutzen -Betrag für Abgang. Menge ist
-        # immer der Betrag (abs). Ein negatives Vorzeichen ist ein EXPLIZITES
-        # Abgang-Signal → transfer_out (wenn der Typ nicht ohnehin buy/sell sagt).
-        # Positive Beträge ohne erkannten Typ fallen auf default_kind zurück.
+        # Vorzeichen = Richtung: Wallet-Logs nutzen -Betrag für Abgang, +Betrag
+        # für Zugang. Menge ist immer der Betrag (abs). Ist der Typ nicht als
+        # buy/sell erkannt, leitet das Vorzeichen die Transfer-Richtung ab —
+        # bei reinen Bewegungslogs ist transfer_in/out die neutrale Wahrheit
+        # (kein „Gratis-Kauf", der bei späterem Verkauf voll als Gewinn zählt).
         qty = abs(qty_raw) if qty_raw is not None else None
         if kind is None:
-            kind = "transfer_out" if (qty_raw is not None and qty_raw < 0) else default_kind
+            if qty_raw is not None and qty_raw < 0:
+                kind = "transfer_out"
+            elif qty_raw is not None:
+                kind = "transfer_in"
+            else:
+                kind = default_kind
 
         problems = []
         if not symbol:
@@ -146,7 +168,10 @@ def parse_rows(rows: list[dict], mapping: dict[str, str | None], default_kind: s
         symbols.add(symbol)
         txs.append(tx)
 
-    return {"transactions": txs, "errors": errors, "symbols": sorted(symbols)}
+    return {
+        "transactions": txs, "errors": errors, "symbols": sorted(symbols),
+        "skipped_status": skipped_status,
+    }
 
 
 # ------------------------------------------------------------------ row_hash

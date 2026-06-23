@@ -157,11 +157,20 @@ def test_parse_rows_fehlerhafte_zeile():
     assert out["errors"][0]["row"] == 3  # Header=1, Zeile1=2, Zeile2=3
 
 
-def test_parse_rows_default_kind():
+def test_positiver_betrag_ohne_typ_wird_transfer_in():
+    # Positiver Betrag ohne kind-Spalte → Zugang (transfer_in), nicht "Gratis-Kauf".
     rows = [{"Date": "2026-01-01", "Asset": "BTC", "Amount": "1"}]
     mapping = {"symbol": "Asset", "quantity": "Amount", "executed_at": "Date", "kind": None, "price": None, "fee": None}
-    out = ci.parse_rows(rows, mapping, default_kind="buy")
-    assert out["transactions"][0]["kind"] == "buy"
+    out = ci.parse_rows(rows, mapping)
+    assert out["transactions"][0]["kind"] == "transfer_in"
+
+
+def test_negativer_betrag_ohne_typ_wird_transfer_out():
+    rows = [{"Date": "2026-01-01", "Asset": "BTC", "Amount": "-1"}]
+    mapping = {"symbol": "Asset", "quantity": "Amount", "executed_at": "Date", "kind": None, "price": None, "fee": None}
+    out = ci.parse_rows(rows, mapping)
+    assert out["transactions"][0]["kind"] == "transfer_out"
+    assert out["transactions"][0]["quantity"] == 1.0  # Betrag (abs)
 
 
 # ---------------------------------------------------------------- row_hash
