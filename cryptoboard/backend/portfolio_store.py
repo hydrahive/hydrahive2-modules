@@ -118,6 +118,33 @@ def remove(user: str, tx_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def count_for(user: str, coin_id: str | None = None) -> int:
+    """Anzahl Transaktionen des Users (optional auf einen Coin gefiltert)."""
+    sql = 'SELECT COUNT(*) FROM module_cryptoboard_transactions WHERE "user" = ?'
+    args: list = [user]
+    if coin_id:
+        sql += " AND coin_id = ?"
+        args.append(coin_id)
+    with db() as c:
+        return int(c.execute(sql, tuple(args)).fetchone()[0])
+
+
+def clear_all(user: str, coin_id: str | None = None) -> int:
+    """Löscht alle Transaktionen des Users (optional nur eines Coins).
+
+    Strikt user-scoped — fremde Daten bleiben unberührt. Gibt die Anzahl der
+    gelöschten Zeilen zurück.
+    """
+    sql = 'DELETE FROM module_cryptoboard_transactions WHERE "user" = ?'
+    args: list = [user]
+    if coin_id:
+        sql += " AND coin_id = ?"
+        args.append(coin_id)
+    with db() as c:
+        cur = c.execute(sql, tuple(args))
+        return cur.rowcount
+
+
 def distinct_coins(user: str) -> list[dict]:
     """Coins, zu denen der User Transaktionen hat (für Bulk-Preisabruf)."""
     with db() as c:

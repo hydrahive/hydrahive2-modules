@@ -46,6 +46,12 @@ export function TradeLogView() {
     await load()
   }
 
+  async function clearAll() {
+    if (!window.confirm(t("tx_confirm_clear").replace("{n}", String(txs.length)))) return
+    await cryptoApi.clearTransactions()
+    await load()
+  }
+
   if (loading && txs.length === 0) return <p className="p-8 text-center text-sm text-zinc-500">{t("loading")}</p>
 
   return (
@@ -81,6 +87,12 @@ export function TradeLogView() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[4%] text-sm text-zinc-300 hover:bg-white/[7%] transition-colors">
             <Upload size={15} /> {t("imp_title")}
           </button>
+          {txs.length > 0 && (
+            <button onClick={clearAll}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-500/10 text-sm text-rose-300 hover:bg-rose-500/20 transition-colors ml-auto">
+              <Trash2 size={15} /> {t("tx_clear_all")} ({txs.length})
+            </button>
+          )}
         </div>
       )}
 

@@ -54,6 +54,11 @@ export const cryptoApi = {
   deleteTx: (id: number): Promise<{ ok: boolean }> =>
     api.delete<{ ok: boolean }>(`${BASE}/portfolio/transactions/${id}`),
 
+  clearTransactions: (coinId?: string): Promise<{ ok: boolean; deleted: number }> =>
+    api.delete<{ ok: boolean; deleted: number }>(
+      `${BASE}/portfolio/transactions${coinId ? `?coin_id=${coinId}` : ""}`,
+    ),
+
   // ---- CSV-Import ----
   importPreview: (csv: string, mapping?: Record<string, string | null>): Promise<ImportPreview> =>
     api.post<ImportPreview>(`${BASE}/portfolio/import/preview`, mapping ? { csv, mapping } : { csv }),

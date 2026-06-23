@@ -181,6 +181,46 @@ def test_portfolio_nur_abgaenge_crasht_nicht(client, auth_headers):
 
 
 # ---------------------------------------------------------------- Isolation
+def test_count_transactions(client, auth_headers):
+    assert client.get(f"{PREFIX}/portfolio/transactions/count", headers=auth_headers).json()["count"] == 0
+    client.post(f"{PREFIX}/portfolio/transactions", json=_buy(coin="bitcoin"), headers=auth_headers)
+    client.post(f"{PREFIX}/portfolio/transactions", json=_buy(coin="ethereum"), headers=auth_headers)
+    assert client.get(f"{PREFIX}/portfolio/transactions/count", headers=auth_headers).json()["count"] == 2
+    # gefiltert auf einen Coin
+    assert client.get(f"{PREFIX}/portfolio/transactions/count?coin_id=bitcoin", headers=auth_headers).json()["count"] == 1
+
+
+def test_clear_all_transactions(client, auth_headers):
+    client.post(f"{PREFIX}/portfolio/transactions", json=_buy(coin="bitcoin"), headers=auth_headers)
+    client.post(f"{PREFIX}/portfolio/transactions", json=_buy(coin="ethereum"), headers=auth_headers)
+    r = client.delete(f"{PREFIX}/portfolio/transactions", headers=auth_headers)
+    assert r.status_code == 200
+    assert r.json()["deleted"] == 2
+    assert client.get(f"{PREFIX}/portfolio/transactions", headers=auth_headers).json() == []
+
+
+def test_clear_one_coin(client, auth_headers):
+    client.post(f"{PREFIX}/portfolio/transactions", json=_buy(coin="bitcoin"), headers=auth_headers)
+    client.post(f"{PREFIX}/portfolio/transactions", json=_buy(coin="ethereum"), headers=auth_headers)
+    r = client.delete(f"{PREFIX}/portfolio/transactions?coin_id=bitcoin", headers=auth_headers)
+    assert r.json()["deleted"] == 1
+    rest = client.get(f"{PREFIX}/portfolio/transactions", headers=auth_headers).json()
+    assert len(rest) == 1
+    assert rest[0]["coin_id"] == "ethereum"
+
+
+def test_clear_all_user_scoped(client, auth_headers, other_headers):
+    client.post(f"{PREFIX}/portfolio/transactions", json=_buy(), headers=auth_headers)
+    client.post(f"{PREFIX}/portfolio/transactions", json=_buy(), headers=other_headers)
+    # other löscht nur SEINE — testusers Trade bleibt
+    client.delete(f"{PREFIX}/portfolio/transactions", headers=other_headers)
+    assert client.get(f"{PREFIX}/portfolio/transactions/count", headers=auth_headers).json()["count"] == 1
+
+
+def test_clear_braucht_auth(client):
+    assert client.delete(f"{PREFIX}/portfolio/transactions").status_code == 401
+
+
 def test_per_user_isolation(client, auth_headers, other_headers):
     client.post(f"{PREFIX}/portfolio/transactions", json=_buy(), headers=auth_headers)
     # other sieht nichts

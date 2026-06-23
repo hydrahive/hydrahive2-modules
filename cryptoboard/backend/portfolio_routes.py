@@ -79,6 +79,26 @@ def list_transactions(auth: Auth, coin_id: str = "") -> list[dict]:
     return store.list_for(user, coin_id=cid)
 
 
+@router.get("/portfolio/transactions/count")
+def count_transactions(auth: Auth, coin_id: str = "") -> dict:
+    user, _ = auth
+    cid = coin_id.strip().lower() or None
+    if cid and not ID_RE.match(cid):
+        raise coded(status.HTTP_400_BAD_REQUEST, "invalid_coin_id")
+    return {"count": store.count_for(user, coin_id=cid)}
+
+
+@router.delete("/portfolio/transactions")
+def clear_transactions(auth: Auth, coin_id: str = "") -> dict:
+    """Löscht ALLE Transaktionen des Users (optional nur eines Coins)."""
+    user, _ = auth
+    cid = coin_id.strip().lower() or None
+    if cid and not ID_RE.match(cid):
+        raise coded(status.HTTP_400_BAD_REQUEST, "invalid_coin_id")
+    deleted = store.clear_all(user, coin_id=cid)
+    return {"ok": True, "deleted": deleted}
+
+
 @router.post("/portfolio/transactions")
 def add_transaction(body: TxIn, auth: Auth) -> dict:
     user, _ = auth
