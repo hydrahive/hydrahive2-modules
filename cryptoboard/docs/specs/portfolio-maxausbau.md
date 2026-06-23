@@ -1,6 +1,14 @@
 # Cryptoboard — Maximalausbau zum Crypto-Management-Cockpit
 
-Status: **Spec genehmigt** · Cost-Basis-Methode: **FIFO** · Default-Währung: **EUR**
+Status: **✅ Vollständig umgesetzt (v1.1.0)** · Cost-Basis-Methode: **FIFO** · Default-Währung: **EUR**
+
+> Alle 4 Phasen sind auf `main` gemergt:
+> 1. Portfolio-Core (FIFO-Ledger, Trade-Log, P&L) — Commit `4034991`
+> 2. Analyse (Indikatoren, Sentiment, Compare) — Commit `5813d00`
+> 3. Alerts-Ausbau (Preis-/Portfolio-Alarme, In-App-Benachrichtigung) — Commit `e7de8aa`
+> 4. Agent-Tools (query_portfolio, query_crypto_analysis) — Commit `f95b7fe`
+>
+> 112 Backend-Tests grün · TSC + Vite-Build grün · alle Dateien ≤ 200 Zeilen.
 
 ## Was
 

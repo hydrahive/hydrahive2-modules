@@ -1,7 +1,7 @@
 {
   "id": "cryptoboard",
   "name": "Cryptoboard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icon": "CandlestickChart",
   "nav_group": "working",
   "permissions": [],
