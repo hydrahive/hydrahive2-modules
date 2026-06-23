@@ -79,11 +79,36 @@ def test_verkauf_ueber_bestand_tolerant_default():
 
 def test_nur_abgaenge_kein_crash():
     # Reale Lage: CSV-Import nur von Auszahlungen, keine vorherigen Käufe.
-    r = fifo.compute([_tx("transfer_out", 3017.44), _tx("transfer_out", 2729.44)])
+    r = fifo.compute([_tx("transfer_out", 300.0), _tx("transfer_out", 250.0)])
     assert r.quantity == pytest.approx(0.0)
     assert r.cost_basis == pytest.approx(0.0)
     # transfer_out @ 0 → Erlös 0, Cost-Basis 0 → realized 0
     assert r.realized_pnl == pytest.approx(0.0)
+
+
+def test_netto_bilanz_unabhaengig_von_reihenfolge():
+    # Wallet-Verlauf: Bestand = Σ Eingänge − Σ Abgänge, egal wie sortiert.
+    # Auch wenn ein Abgang VOR dem zugehörigen Eingang steht (toleranter Modus),
+    # darf der Abgang nicht "verschluckt" werden.
+    txs = [
+        _tx("transfer_out", 200.0),    # Abgang zuerst (Bestand noch ~0)
+        _tx("transfer_out", 100.0),
+        _tx("transfer_in", 5000.0),    # große Einzahlung später
+        _tx("transfer_in", 3000.0),
+    ]
+    r = fifo.compute(txs)
+    # 5000 + 3000 − 200 − 100 = 7700
+    assert r.quantity == pytest.approx(7700.0)
+
+
+def test_netto_bilanz_eingang_dann_abgang():
+    txs = [
+        _tx("transfer_in", 1000.0),
+        _tx("transfer_in", 500.0),
+        _tx("transfer_out", 300.0),
+    ]
+    r = fifo.compute(txs)
+    assert r.quantity == pytest.approx(1200.0)  # 1500 − 300
 
 
 def test_transfer_in_ohne_preis_ist_gewinn_beim_verkauf():

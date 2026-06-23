@@ -57,18 +57,25 @@ async def summary(user: str) -> dict:
     total_value = 0.0
     total_cost = 0.0
     total_realized = 0.0
+    total_unrealized = 0.0  # Summe nur der Positionen mit bekannter Cost-Basis
 
     for cid, p in positions.items():
         market = prices.get(cid) or {}
         price = market.get("price")
         qty = p["quantity"]
         value = (price or 0.0) * qty if qty > _EPS else 0.0
-        unrealized = value - p["cost_basis"] if qty > _EPS else 0.0
         cost = p["cost_basis"]
-        pct = (unrealized / cost * 100.0) if cost > _EPS else 0.0
+        # Unrealisierter G/V nur, wenn echte Einstandskosten bekannt sind. Bei
+        # Cost-Basis 0 (z.B. reine Transfers ohne erfassten Kaufpreis) wäre
+        # "value - 0" ein Fantasie-Gewinn in Höhe des vollen Werts → stattdessen
+        # 0 (unbekannt). So zeigt das Portfolio den Wert, aber keinen Fake-Gewinn.
+        has_cost = cost > _EPS
+        unrealized = (value - cost) if (qty > _EPS and has_cost) else 0.0
+        pct = (unrealized / cost * 100.0) if has_cost else 0.0
 
         total_value += value
         total_cost += cost
+        total_unrealized += unrealized
         total_realized += p["realized_pnl"]
 
         out_positions.append({
@@ -89,7 +96,8 @@ async def summary(user: str) -> dict:
     # Offene zuerst (nach Wert), dann geschlossene.
     out_positions.sort(key=lambda x: (not x["is_open"], -x["value"]))
 
-    total_unrealized = total_value - total_cost
+    # total_unrealized ist bereits über die Positionen summiert (nur die mit
+    # bekannter Cost-Basis). Prozent relativ zu den Kosten DIESER Positionen.
     total_pct = (total_unrealized / total_cost * 100.0) if total_cost > _EPS else 0.0
 
     return {
@@ -115,7 +123,8 @@ async def coin_detail(user: str, coin_id: str) -> dict:
     market = prices.get(coin_id) or {}
     price = market.get("price")
     value = (price or 0.0) * res.quantity
-    unrealized = value - res.cost_basis if res.quantity > _EPS else 0.0
+    # Wie in summary(): kein Fantasie-Gewinn bei Cost-Basis 0.
+    unrealized = (value - res.cost_basis) if (res.quantity > _EPS and res.cost_basis > _EPS) else 0.0
     return {
         "coin_id": coin_id,
         "currency": _VS.upper(),

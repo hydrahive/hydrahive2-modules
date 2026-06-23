@@ -144,6 +144,23 @@ def test_coin_detail(client, auth_headers):
     assert len(data["transactions"]) == 1
 
 
+def test_transfer_in_ohne_preis_kein_fantasie_gewinn(client, auth_headers):
+    """Regression: ein transfer_in mit Preis 0 (Wallet-Eingang ohne Kaufkurs)
+    darf NICHT den vollen aktuellen Wert als unrealisierten Gewinn ausweisen."""
+    tin = _buy(coin="bitcoin", qty=1.0, at="2026-01-01")
+    tin["kind"] = "transfer_in"
+    tin["price"] = 0.0
+    r = client.post(f"{PREFIX}/portfolio/transactions", json=tin, headers=auth_headers)
+    assert r.status_code == 200
+    data = client.get(f"{PREFIX}/portfolio", headers=auth_headers).json()
+    pos = next(p for p in data["positions"] if p["coin_id"] == "bitcoin")
+    # Wert wird angezeigt (1 BTC * 50000), aber KEIN Gewinn (Einstand unbekannt)
+    assert pos["value"] == pytest.approx(50000.0)
+    assert pos["unrealized_pnl"] == pytest.approx(0.0)
+    assert pos["unrealized_pct"] == pytest.approx(0.0)
+    assert data["totals"]["unrealized_pnl"] == pytest.approx(0.0)
+
+
 def test_portfolio_nur_abgaenge_crasht_nicht(client, auth_headers):
     """Regression: CSV-Import nur von Auszahlungen (transfer_out ohne Bestand)
     darf die Portfolio-Ansicht NICHT mit 500 crashen (insufficient_holdings)."""

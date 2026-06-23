@@ -68,6 +68,8 @@ def compute(transactions: list[dict], *, strict: bool = False) -> CoinResult:
     realized = 0.0
     invested = 0.0
     proceeds = 0.0
+    total_in = 0.0   # Summe aller Zugänge (Menge)
+    total_out = 0.0  # Summe aller Abgänge (Menge)
 
     for tx in transactions:
         kind = tx["kind"]
@@ -78,9 +80,11 @@ def compute(transactions: list[dict], *, strict: bool = False) -> CoinResult:
             continue
 
         if kind in _OPEN:
+            total_in += qty
             lots.append(_open_lot(qty, price, fee))
             invested += qty * price + fee
         elif kind in _CLOSE:
+            total_out += qty
             remaining = qty
             sale_proceeds = qty * price - fee
             proceeds += sale_proceeds
@@ -103,9 +107,21 @@ def compute(transactions: list[dict], *, strict: bool = False) -> CoinResult:
                     lots.pop(0)
         # unbekannte kinds werden ignoriert (Validierung passiert im Store/Route)
 
-    quantity = sum(l.quantity for l in lots)
+    lot_quantity = sum(l.quantity for l in lots)
     cost_basis = sum(l.quantity * l.unit_cost for l in lots)
-    avg_cost = cost_basis / quantity if quantity > _EPS else 0.0
+
+    if strict:
+        # Strikt: Bestand == verbliebene Lots (Reihenfolge garantiert korrekt).
+        quantity = lot_quantity
+    else:
+        # Tolerant (Anzeige): Mengen-Bilanz ist immer Zugänge − Abgänge, auf 0
+        # begrenzt. Unabhängig von FIFO-Reihenfolge — so summieren sich Ein-/
+        # Auszahlungen eines Wallet-Verlaufs korrekt, auch bei unvollständigem
+        # oder unsortiertem Ledger. Die Cost-Basis bleibt aus den realen Lots
+        # (kann nicht aus Transfer-Daten ohne Preis rekonstruiert werden).
+        quantity = max(0.0, total_in - total_out)
+
+    avg_cost = cost_basis / quantity if (quantity > _EPS and cost_basis > _EPS) else 0.0
 
     return CoinResult(
         quantity=quantity,
