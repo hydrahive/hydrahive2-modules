@@ -61,3 +61,82 @@ export interface WatchItem {
   name: string
   added_at: string
 }
+
+export type TxKind = "buy" | "sell" | "transfer_in" | "transfer_out"
+
+export interface Transaction {
+  id: number
+  coin_id: string
+  symbol: string
+  name: string
+  kind: TxKind
+  quantity: number
+  price: number
+  fee: number
+  executed_at: string
+  note: string
+  created_at: string
+}
+
+export interface TxInput {
+  coin_id: string
+  symbol: string
+  name: string
+  kind: TxKind
+  quantity: number
+  price: number
+  fee: number
+  executed_at: string
+  note: string
+}
+
+export interface Position {
+  coin_id: string
+  symbol: string
+  name: string
+  image: string | null
+  quantity: number
+  avg_cost: number
+  cost_basis: number
+  price: number | null
+  change_24h: number | null
+  value: number
+  unrealized_pnl: number
+  unrealized_pct: number
+  realized_pnl: number
+  invested: number
+  proceeds: number
+  allocation: number
+  is_open: boolean
+}
+
+export interface PortfolioTotals {
+  value: number
+  cost_basis: number
+  unrealized_pnl: number
+  unrealized_pct: number
+  realized_pnl: number
+  open_count: number
+  position_count: number
+}
+
+export interface PortfolioSummary {
+  currency: string
+  positions: Position[]
+  totals: PortfolioTotals
+}
+
+export interface CoinPnl {
+  coin_id: string
+  currency: string
+  quantity: number
+  avg_cost: number
+  cost_basis: number
+  price: number | null
+  value: number
+  unrealized_pnl: number
+  realized_pnl: number
+  invested: number
+  proceeds: number
+  transactions: Transaction[]
+}

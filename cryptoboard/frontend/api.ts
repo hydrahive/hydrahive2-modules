@@ -1,5 +1,8 @@
 import { api } from "@/shared/api-client"
-import type { ChartResponse, CoinDetail, MarketRow, NewsItem, SearchResult, WatchItem } from "./types"
+import type {
+  ChartResponse, CoinDetail, CoinPnl, MarketRow, NewsItem,
+  PortfolioSummary, SearchResult, Transaction, TxInput, WatchItem,
+} from "./types"
 
 const BASE = "/modules/cryptoboard"
 
@@ -31,4 +34,22 @@ export const cryptoApi = {
 
   removeWatch: (coin_id: string): Promise<{ ok: boolean }> =>
     api.delete<{ ok: boolean }>(`${BASE}/watchlist/${coin_id}`),
+
+  // ---- Portfolio (FIFO-Ledger, EUR) ----
+  portfolio: (): Promise<PortfolioSummary> => api.get<PortfolioSummary>(`${BASE}/portfolio`),
+
+  portfolioCoin: (coin_id: string): Promise<CoinPnl> =>
+    api.get<CoinPnl>(`${BASE}/portfolio/coin/${coin_id}`),
+
+  transactions: (coin_id?: string): Promise<Transaction[]> =>
+    api.get<Transaction[]>(`${BASE}/portfolio/transactions${coin_id ? `?coin_id=${coin_id}` : ""}`),
+
+  addTx: (tx: TxInput): Promise<{ ok: boolean; id: number }> =>
+    api.post<{ ok: boolean; id: number }>(`${BASE}/portfolio/transactions`, tx),
+
+  updateTx: (id: number, tx: TxInput): Promise<{ ok: boolean }> =>
+    api.patch<{ ok: boolean }>(`${BASE}/portfolio/transactions/${id}`, tx),
+
+  deleteTx: (id: number): Promise<{ ok: boolean }> =>
+    api.delete<{ ok: boolean }>(`${BASE}/portfolio/transactions/${id}`),
 }

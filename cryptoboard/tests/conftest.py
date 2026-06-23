@@ -48,8 +48,10 @@ def setup_test_env():
         from hydrahive.api import main
         from backend.routes import router as market_router
         from backend.watchlist_routes import router as watchlist_router
+        from backend.portfolio_routes import router as portfolio_router
         main.app.include_router(market_router, prefix=MOD_PREFIX)
         main.app.include_router(watchlist_router, prefix=MOD_PREFIX)
+        main.app.include_router(portfolio_router, prefix=MOD_PREFIX)
         yield tmp_path
 
 
@@ -102,4 +104,5 @@ def _watchlist_db(setup_test_env):
     apply_module_migrations("cryptoboard", MODULE_DIR / "migrations")
     with db() as c:
         c.execute("DELETE FROM module_cryptoboard_watchlist")
+        c.execute("DELETE FROM module_cryptoboard_transactions")
     yield

@@ -1,4 +1,4 @@
-import { CandlestickChart, LayoutGrid, Newspaper } from "lucide-react"
+import { CandlestickChart, LayoutGrid, Newspaper, Receipt, Wallet } from "lucide-react"
 import type { CSSProperties } from "react"
 import { NavLink, Route, Routes } from "react-router-dom"
 import { useTranslation } from "react-i18next"
@@ -7,6 +7,8 @@ import { CoinSearch } from "./components/CoinSearch"
 import { CoinDetailView } from "./views/CoinDetailView"
 import { DashboardView } from "./views/DashboardView"
 import { NewsView } from "./views/NewsView"
+import { PortfolioView } from "./views/PortfolioView"
+import { TradeLogView } from "./views/TradeLogView"
 import { useVs, VsProvider } from "./vsContext"
 
 const C = rgbFor("/cryptoboard")
@@ -48,6 +50,12 @@ function Header() {
         <NavLink end to="/cryptoboard" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><LayoutGrid size={14} />{t("nav_dashboard")}</span>
         </NavLink>
+        <NavLink to="/cryptoboard/portfolio" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+          <span className="flex items-center gap-1.5"><Wallet size={14} />{t("nav_portfolio")}</span>
+        </NavLink>
+        <NavLink to="/cryptoboard/trades" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+          <span className="flex items-center gap-1.5"><Receipt size={14} />{t("nav_tradelog")}</span>
+        </NavLink>
         <NavLink to="/cryptoboard/news" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><Newspaper size={14} />{t("nav_news")}</span>
         </NavLink>
@@ -64,6 +72,8 @@ export function CryptoboardApp() {
         <div className="flex-1 overflow-y-auto">
           <Routes>
             <Route index element={<DashboardView />} />
+            <Route path="portfolio" element={<PortfolioView />} />
+            <Route path="trades" element={<TradeLogView />} />
             <Route path="coin/:id" element={<CoinDetailView />} />
             <Route path="news" element={<NewsView />} />
           </Routes>

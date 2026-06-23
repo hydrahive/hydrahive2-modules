@@ -46,3 +46,19 @@ export function timeAgo(unixSeconds: number): string {
   if (diff < 86400) return `${Math.round(diff / 3600)}h`
   return `${Math.round(diff / 86400)}d`
 }
+
+// Coin-Menge: bis 6 signifikante Nachkommastellen, ohne Trailing-Nullen.
+export function fmtQty(value: number | null): string {
+  if (value == null) return "—"
+  const digits = Math.abs(value) >= 1 ? 4 : 8
+  return value.toLocaleString(undefined, { maximumFractionDigits: digits })
+}
+
+// P&L mit Vorzeichen, z.B. "+1.234,56 €".
+export function fmtSigned(value: number | null, vs: string): string {
+  if (value == null) return "—"
+  const sign = value > 0 ? "+" : ""
+  return `${sign}${fmtPrice(value, vs)}`
+}
+
+
