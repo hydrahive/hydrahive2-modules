@@ -235,6 +235,38 @@ export interface PortfolioStats {
   change_1y: Delta
 }
 
+export type WalletChain = "base" | "tron" | "bitcoin"
+
+export interface WalletAddress {
+  id: number
+  chain: WalletChain
+  address: string
+  label: string
+  added_at: string
+}
+
+export interface WalletAsset {
+  symbol: string
+  amount: number
+  coin_id: string
+  price: number
+  value: number
+}
+
+export interface WalletBalanceRow {
+  id: number
+  chain: WalletChain
+  address: string
+  label: string
+  assets: WalletAsset[]
+}
+
+export interface WalletBalances {
+  currency: string
+  addresses: WalletBalanceRow[]
+  total: number
+}
+
 export interface ImportTx {
   kind: TxKind
   symbol: string

@@ -3,7 +3,7 @@ import type {
   Alert, AlertEventsResponse, AlertInput, ChartResponse, CoinDetail, CoinPnl,
   ImportPreview, ImportResult, ImportTx, IndicatorData, MarketRow, NewsItem,
   PortfolioStats, PortfolioSummary, SearchResult, Sentiment, Transaction,
-  TxInput, ValueHistory, WatchItem,
+  TxInput, ValueHistory, WalletAddress, WalletBalances, WatchItem,
 } from "./types"
 
 const BASE = "/modules/cryptoboard"
@@ -102,4 +102,16 @@ export const cryptoApi = {
   refreshHistory: (force = false): Promise<{ ok: boolean; loaded: Record<string, number>; coins: number }> =>
     api.post<{ ok: boolean; loaded: Record<string, number>; coins: number }>(
       `${BASE}/portfolio/history/refresh${force ? "?force=true" : ""}`, {}),
+
+  // ---- Wallets (On-Chain) ----
+  wallets: (): Promise<WalletAddress[]> => api.get<WalletAddress[]>(`${BASE}/wallets`),
+
+  addWallet: (chain: string, address: string, label: string): Promise<{ ok: boolean; id: number }> =>
+    api.post<{ ok: boolean; id: number }>(`${BASE}/wallets`, { chain, address, label }),
+
+  deleteWallet: (id: number): Promise<{ ok: boolean }> =>
+    api.delete<{ ok: boolean }>(`${BASE}/wallets/${id}`),
+
+  walletBalances: (): Promise<WalletBalances> =>
+    api.get<WalletBalances>(`${BASE}/wallets/balances`),
 }

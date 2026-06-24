@@ -1,4 +1,4 @@
-import { Bell, CandlestickChart, GitCompareArrows, LayoutGrid, Newspaper, Receipt, TrendingUp, Wallet } from "lucide-react"
+import { Bell, CandlestickChart, GitCompareArrows, LayoutGrid, Link2, Newspaper, Receipt, TrendingUp, Wallet } from "lucide-react"
 import { useEffect, useState, type CSSProperties } from "react"
 import { NavLink, Route, Routes } from "react-router-dom"
 import { useTranslation } from "react-i18next"
@@ -13,6 +13,7 @@ import { DashboardView } from "./views/DashboardView"
 import { NewsView } from "./views/NewsView"
 import { PortfolioView } from "./views/PortfolioView"
 import { TradeLogView } from "./views/TradeLogView"
+import { WalletsView } from "./views/WalletsView"
 import { useVs, VsProvider } from "./vsContext"
 
 const C = rgbFor("/cryptoboard")
@@ -72,6 +73,9 @@ function Header() {
         <NavLink to="/cryptoboard/trades" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><Receipt size={14} />{t("nav_tradelog")}</span>
         </NavLink>
+        <NavLink to="/cryptoboard/wallets" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+          <span className="flex items-center gap-1.5"><Link2 size={14} />{t("nav_wallets")}</span>
+        </NavLink>
         <NavLink to="/cryptoboard/compare" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><GitCompareArrows size={14} />{t("nav_compare")}</span>
         </NavLink>
@@ -102,6 +106,7 @@ export function CryptoboardApp() {
             <Route path="portfolio" element={<PortfolioView />} />
             <Route path="analytics" element={<AnalyticsView />} />
             <Route path="trades" element={<TradeLogView />} />
+            <Route path="wallets" element={<WalletsView />} />
             <Route path="compare" element={<CompareView />} />
             <Route path="alerts" element={<AlertsView />} />
             <Route path="coin/:id" element={<CoinDetailView />} />
