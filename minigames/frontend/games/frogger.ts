@@ -54,7 +54,6 @@ function mount(canvas: HTMLCanvasElement, opts: GameMountOpts): GameInstance {
   function update() {
     frame++
     const froggerX = fx * CELL + CELL / 2
-    const froggerY = fy * CELL + CELL / 2
 
     // Fluss: auf Log mitschwimmen, sonst ertrinken
     if (RIVER.includes(fy)) {
