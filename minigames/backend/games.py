@@ -9,6 +9,8 @@ from __future__ import annotations
 # game_id → maximal plausibler Score (Müll-Schutz)
 GAMES: dict[str, int] = {
     "snake": 100_000,
+    "invaders": 500_000,
+    "frogger": 200_000,
 }
 
 

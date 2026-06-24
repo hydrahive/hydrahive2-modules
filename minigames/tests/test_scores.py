@@ -38,6 +38,25 @@ def test_unbekanntes_spiel_400(client, auth_headers):
     assert r.status_code == 400
 
 
+def test_neue_spiele_akzeptiert(client, auth_headers):
+    # invaders + frogger sind jetzt in der Whitelist
+    for gid, sc in (("invaders", 120), ("frogger", 60)):
+        r = client.post(f"{PREFIX}/scores", json={"game_id": gid, "score": sc}, headers=auth_headers)
+        assert r.status_code == 200 and r.json()["is_personal_best"] is True
+        assert client.get(f"{PREFIX}/scores/mine?game_id={gid}", headers=auth_headers).json()["best"] == sc
+
+
+def test_scores_pro_spiel_getrennt(client, auth_headers):
+    client.post(f"{PREFIX}/scores", json={"game_id": "snake", "score": 90}, headers=auth_headers)
+    client.post(f"{PREFIX}/scores", json={"game_id": "invaders", "score": 40}, headers=auth_headers)
+    # Bestleistung je Spiel unabhängig
+    assert client.get(f"{PREFIX}/scores/mine?game_id=snake", headers=auth_headers).json()["best"] == 90
+    assert client.get(f"{PREFIX}/scores/mine?game_id=invaders", headers=auth_headers).json()["best"] == 40
+    # Leaderboard ist game-spezifisch
+    lb_snake = client.get(f"{PREFIX}/scores/leaderboard?game_id=snake", headers=auth_headers).json()
+    assert len(lb_snake) == 1 and lb_snake[0]["score"] == 90
+
+
 def test_implausibler_score_400(client, auth_headers):
     r = client.post(f"{PREFIX}/scores", json={"game_id": "snake", "score": 999999999}, headers=auth_headers)
     assert r.status_code == 400
