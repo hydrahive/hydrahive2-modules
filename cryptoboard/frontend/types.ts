@@ -235,7 +235,7 @@ export interface PortfolioStats {
   change_1y: Delta
 }
 
-export type WalletChain = "base" | "tron" | "bitcoin"
+export type WalletChain = "base" | "ethereum" | "tron" | "bitcoin"
 
 export interface WalletAddress {
   id: number
@@ -248,9 +248,29 @@ export interface WalletAddress {
 export interface WalletAsset {
   symbol: string
   amount: number
-  coin_id: string
-  price: number
+  coin_id?: string | null
+  value: number | null
+  price_trx?: number | null
+  verified?: boolean
+  name?: string
+  token_id?: string
+}
+
+export interface WalletTokenWallet {
+  label: string
+  chain: WalletChain
+  amount: number
+  value: number | null
+}
+
+export interface WalletTokenAgg {
+  symbol: string
+  amount: number
   value: number
+  value_known: boolean
+  verified: boolean
+  chain: WalletChain
+  wallets: WalletTokenWallet[]
 }
 
 export interface WalletBalanceRow {
@@ -263,6 +283,7 @@ export interface WalletBalanceRow {
 
 export interface WalletBalances {
   currency: string
+  tokens: WalletTokenAgg[]
   addresses: WalletBalanceRow[]
   total: number
 }

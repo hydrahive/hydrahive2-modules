@@ -8,7 +8,7 @@ interface Props {
   onCancel: () => void
 }
 
-const CHAINS: WalletChain[] = ["base", "tron", "bitcoin"]
+const CHAINS: WalletChain[] = ["base", "ethereum", "tron", "bitcoin"]
 
 export function AddressForm({ onSaved, onCancel }: Props) {
   const { t } = useTranslation("cryptoboard")
@@ -36,7 +36,7 @@ export function AddressForm({ onSaved, onCancel }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-4 gap-1.5">
         {CHAINS.map((c) => (
           <button key={c} onClick={() => setChain(c)}
             className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${chain === c ? "bg-white/10 text-white" : "bg-white/[3%] text-zinc-400 hover:text-zinc-200"}`}>

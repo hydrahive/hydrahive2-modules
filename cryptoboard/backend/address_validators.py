@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import re
 
-CHAINS = ("base", "tron", "bitcoin")
+CHAINS = ("base", "ethereum", "tron", "bitcoin")
 
-# EVM (Base): 0x + 40 Hex
+# EVM (Base/Ethereum): 0x + 40 Hex
 _EVM_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 # Tron: T + 33 Base58
 _TRON_RE = re.compile(r"^T[1-9A-HJ-NP-Za-km-z]{33}$")
@@ -19,6 +19,7 @@ _BTC_RE = re.compile(r"^(bc1[a-z0-9]{20,80}|[13][a-km-zA-HJ-NP-Z1-9]{25,39})$")
 
 _VALIDATORS = {
     "base": _EVM_RE,
+    "ethereum": _EVM_RE,
     "tron": _TRON_RE,
     "bitcoin": _BTC_RE,
 }
