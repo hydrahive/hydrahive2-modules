@@ -10,15 +10,24 @@ from hydrahive.db.connection import db
 _NOW = "strftime('%Y-%m-%dT%H:%M:%SZ','now')"
 
 
-def add(title: str, filename: str, size_bytes: int, uploaded_by: str) -> int:
+def add(title: str, filename: str, size_bytes: int, uploaded_by: str, source: str = "") -> int:
     with db() as c:
         cur = c.execute(
             "INSERT INTO module_musicplayer_tracks "
-            "(title, filename, size_bytes, uploaded_by, created_at) "
-            f"VALUES (?, ?, ?, ?, {_NOW})",
-            (title, filename, size_bytes, uploaded_by),
+            "(title, filename, size_bytes, uploaded_by, source, created_at) "
+            f"VALUES (?, ?, ?, ?, ?, {_NOW})",
+            (title, filename, size_bytes, uploaded_by, source),
         )
         return int(cur.lastrowid)
+
+
+def imported_sources() -> set[str]:
+    """Alle bereits importierten Quell-Pfade (für Dedup beim Import)."""
+    with db() as c:
+        rows = c.execute(
+            "SELECT source FROM module_musicplayer_tracks WHERE source <> ''"
+        ).fetchall()
+    return {r["source"] for r in rows}
 
 
 def list_all() -> list[dict]:
