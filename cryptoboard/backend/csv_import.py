@@ -166,7 +166,14 @@ def parse_rows(rows: list[dict], mapping: dict[str, str | None], default_kind: s
             "kind": kind, "symbol": symbol, "quantity": qty,
             "price": price or 0.0, "fee": fee or 0.0, "executed_at": date,
         }
-        tx["hash"] = row_hash(tx)
+        # Dedup-Hash inkl. CSV-Zeilenposition (i): Wallet-Exporte enthalten oft
+        # ECHTE, aber wertgleiche Transaktionen (z.B. 4x exakt -50 XMR an
+        # verschiedenen Tagen — und executed_at ist nur das Datum, also gleich).
+        # Ohne Position kollabiert der Hash diese zu einem "Duplikat" und
+        # verschluckt legitime Abgänge → Bestände falsch. Die Position macht
+        # jede Zeile eindeutig; ein erneuter Import DERSELBEN Datei erzeugt
+        # dieselben Positionen → echtes Dedup (Doppel-Import) bleibt erhalten.
+        tx["hash"] = row_hash(tx, seq=i)
         symbols.add(symbol)
         txs.append(tx)
 
@@ -177,7 +184,16 @@ def parse_rows(rows: list[dict], mapping: dict[str, str | None], default_kind: s
 
 
 # ------------------------------------------------------------------ row_hash
-def row_hash(tx: dict) -> str:
-    """Stabiler Dedup-Hash aus den wertbestimmenden Feldern."""
-    key = "|".join(str(tx.get(k, "")) for k in ("kind", "symbol", "quantity", "price", "executed_at"))
+def row_hash(tx: dict, seq: int | None = None) -> str:
+    """Stabiler Dedup-Hash aus den wertbestimmenden Feldern.
+
+    `seq` (CSV-Zeilenposition) unterscheidet ECHTE wertgleiche Transaktionen
+    voneinander, kollabiert sie also nicht fälschlich zu Duplikaten. Beim
+    erneuten Import derselben Datei sind die Positionen identisch → echtes
+    Dedup gegen Doppel-Importe bleibt intakt.
+    """
+    fields = (str(tx.get(k, "")) for k in ("kind", "symbol", "quantity", "price", "executed_at"))
+    key = "|".join(fields)
+    if seq is not None:
+        key = f"{seq}|{key}"
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]

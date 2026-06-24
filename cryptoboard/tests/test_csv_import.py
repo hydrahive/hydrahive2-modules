@@ -181,3 +181,26 @@ def test_row_hash_stabil_und_unterscheidend():
     assert ci.row_hash(tx1) == ci.row_hash(tx2)
     assert ci.row_hash(tx1) != ci.row_hash(tx3)
     assert len(ci.row_hash(tx1)) == 32
+
+
+def test_row_hash_seq_unterscheidet_wertgleiche():
+    # ECHTE wertgleiche Transaktionen (z.B. mehrfach -50 XMR am selben Tag)
+    # dürfen NICHT denselben Hash bekommen, sonst verschluckt der Dedup sie.
+    tx = {"kind": "transfer_out", "symbol": "XMR", "quantity": 50.0001, "price": 0, "executed_at": "2021-01-01"}
+    assert ci.row_hash(tx, seq=5) != ci.row_hash(tx, seq=6)
+    # Gleiche Position → gleicher Hash (echtes Dedup bei Re-Import derselben Datei)
+    assert ci.row_hash(tx, seq=5) == ci.row_hash(tx, seq=5)
+
+
+def test_parse_rows_wertgleiche_zeilen_nicht_dedupliziert():
+    # Vier identische XMR-Abgänge → vier verschiedene Hashes (kein Kollabieren)
+    rows = [
+        {"D": "2021-01-01", "A": "-50.0001", "C": "xmr", "T": "payout", "S": "committed"}
+        for _ in range(4)
+    ]
+    mapping = {"quantity": "A", "symbol": "C", "kind": "T", "status": "S",
+               "executed_at": "D", "price": None, "fee": None}
+    out = ci.parse_rows(rows, mapping)
+    hashes = [t["hash"] for t in out["transactions"]]
+    assert len(out["transactions"]) == 4
+    assert len(set(hashes)) == 4  # alle eindeutig
