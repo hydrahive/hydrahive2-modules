@@ -144,6 +144,34 @@ def test_coin_detail(client, auth_headers):
     assert len(data["transactions"]) == 1
 
 
+def test_mehrere_coins_zeitlich_gemischt(client, auth_headers):
+    """Regression: Transaktionen verschiedener Coins zeitlich verschachtelt
+    (wie ein echter Wallet-Verlauf) müssen pro Coin korrekt summiert werden.
+    Früher zerstückelte groupby die chronologisch sortierten Daten → falsche
+    Bestände (z.B. TRX 0 statt Hunderttausende)."""
+    def tx(coin, kind, qty, at):
+        b = _buy(coin=coin, qty=qty, at=at)
+        b["kind"] = kind
+        b["price"] = 0.0
+        return b
+
+    # Reihenfolge bewusst zeitlich gemischt (verschiedene Coins abwechselnd)
+    rows = [
+        tx("bitcoin", "transfer_in", 1.0, "2018-01-01"),
+        tx("ethereum", "transfer_in", 10.0, "2018-02-01"),
+        tx("bitcoin", "transfer_in", 0.5, "2018-03-01"),
+        tx("ethereum", "transfer_out", 3.0, "2018-04-01"),
+        tx("bitcoin", "transfer_out", 0.2, "2018-05-01"),
+    ]
+    for r in rows:
+        assert client.post(f"{PREFIX}/portfolio/transactions", json=r, headers=auth_headers).status_code == 200
+
+    data = client.get(f"{PREFIX}/portfolio", headers=auth_headers).json()
+    qty = {p["coin_id"]: p["quantity"] for p in data["positions"]}
+    assert qty["bitcoin"] == pytest.approx(1.3)   # 1.0 + 0.5 − 0.2
+    assert qty["ethereum"] == pytest.approx(7.0)  # 10 − 3
+
+
 def test_transfer_in_ohne_preis_kein_fantasie_gewinn(client, auth_headers):
     """Regression: ein transfer_in mit Preis 0 (Wallet-Eingang ohne Kaufkurs)
     darf NICHT den vollen aktuellen Wert als unrealisierten Gewinn ausweisen."""

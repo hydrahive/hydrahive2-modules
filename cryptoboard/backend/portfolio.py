@@ -19,7 +19,13 @@ def _positions_from_ledger(user: str) -> dict[str, dict]:
     Positionen (quantity == 0) bleiben enthalten — wegen realized_pnl."""
     txs = store.list_for(user)
     out: dict[str, dict] = {}
-    for coin_id, group in groupby(txs, key=lambda t: t["coin_id"]):
+    # WICHTIG: groupby gruppiert nur AUFEINANDERFOLGENDE gleiche Keys. Der Store
+    # liefert chronologisch (executed_at), also sind die Coins zeitlich gemischt.
+    # Darum hier ZWINGEND nach coin_id (sekundär executed_at für FIFO) sortieren,
+    # sonst entstehen viele Mini-Gruppen pro Coin und out[coin_id] behält nur die
+    # letzte → Bestände komplett falsch (z.B. 0 statt Hunderttausende).
+    by_coin = sorted(txs, key=lambda t: (t["coin_id"], t["executed_at"], t["id"]))
+    for coin_id, group in groupby(by_coin, key=lambda t: t["coin_id"]):
         rows = list(group)
         res = fifo.compute(rows)
         last = rows[-1]
