@@ -8,6 +8,7 @@
     { "id": "archiver", "name": "Archiver", "path": "archiver" },
     { "id": "tasks", "name": "Aufgaben", "path": "tasks" },
     { "id": "deepresearch", "name": "Deep Research", "path": "deepresearch" },
-    { "id": "minigames", "name": "Minigames", "path": "minigames" }
+    { "id": "minigames", "name": "Minigames", "path": "minigames" },
+    { "id": "boardgames", "name": "Brettspiele", "path": "boardgames" }
   ]
 }
