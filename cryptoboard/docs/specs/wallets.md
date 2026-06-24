@@ -95,3 +95,57 @@ GET    /wallets/balances     -> [{chain, address, label, assets:[{symbol, amount
 1. **Adress-Verwaltung + Bestände**: Migration, store, chain_clients, wallets,
    routes, WalletsView + AddressForm, Tests.
 2. (später, separat) Transaktions-Import — NICHT Teil dieser Spec.
+
+---
+
+# Erweiterung — ETH-Mainnet + Token-Übersicht (Option B)
+
+Status: **Genehmigt** (2026-06-24) · additiv zur Basis oben
+
+## Was
+- **ETH-Mainnet** als vierte Chain (`ethereum`), keyless via publicnode-RPC.
+- **Token-zentrierte Übersicht**: über ALLE Wallets aggregiert (Symbol → Gesamt-
+  menge, EUR-Wert, auf welchen Wallets) — zusätzlich zur adressweisen Ansicht.
+
+## Warum (entscheidender Kontext)
+Till hat ~30 Tron-Wallets. „Spam-aussehende" Token waren teils **real wertvoll**
+(tausende €). Daher: **nichts pauschal wegfiltern** — alle Token werden gezeigt,
+nur **priorisiert** (Wert zuerst) und gekennzeichnet (verifiziert / Wert unbekannt).
+Die frühere USDT-Whitelist (Filtern) ist damit **verworfen**.
+
+## Datenquellen (getestet 2026-06-24)
+| Chain | Endpoint | Holt |
+|-------|----------|------|
+| ethereum | `https://ethereum-rpc.publicnode.com` (JSON-RPC, keyless) | ETH + ERC-20 (USDT, USDC) via balanceOf |
+| tron | Tronscan `account` (wie oben) | TRX + **alle** TRC20 inkl. `tokenPriceInTrx`, `vip`-Flag |
+
+Live verifiziert: publicnode liefert ETH + ERC-20-Token korrekt.
+
+## Wert-Ermittlung je Asset (Reihenfolge)
+1. `coin_id` bekannt → CoinGecko-Kurs (`client.markets`)
+2. sonst `price_trx` vorhanden → Tronscan-Preis × TRX-EUR-Kurs
+3. sonst → **Wert unbekannt** (`value=null`) — Token bleibt **sichtbar**
+
+## Aggregation & Sortierung (`wallets.balances`)
+- Token über alle Adressen zusammengefasst: `{symbol, amount, value, value_known,
+  verified, chain, wallets:[{label, chain, amount, value}]}`
+- Sortierung: bekannter Wert (absteigend) → verifiziert ohne Preis → Rest.
+- `total` summiert nur Token mit bekanntem Wert.
+
+## EVM generisch
+`chain_clients._EVM` (chain → RPC, native-coin, ERC-20-Liste); `evm_balance(chain, addr)`
+ersetzt das frühere `base_balance`. `base` + `ethereum` teilen denselben Code.
+
+## Frontend
+- `WalletsView`: neue **Token-Übersicht**-Box (aggregiert, Token mit >1 Wallet
+  aufklappbar zu den einzelnen Wallets), darunter die Adress-Verwaltung.
+- Verifiziert-Badge, „Wert unbekannt" statt Ausblenden, Hinweis dass unbekannt ≠ wertlos.
+- `ethereum` als Chain-Option in `AddressForm` + Validator (gleiche EVM-Regex wie Base).
+
+## Akzeptanzkriterien (Erweiterung)
+- [x] ETH-Mainnet hinzufügbar, liefert ETH + ERC-20 (live getestet)
+- [x] Alle Tron-Token sichtbar — kein pauschales Filtern von „Spam"
+- [x] Wert via CoinGecko ODER Tronscan price_trx; sonst „Wert unbekannt"
+- [x] Token über alle Wallets aggregiert + pro Wallet aufschlüsselbar
+- [x] verifiziert-Flag (Tronscan `vip`) gekennzeichnet
+- [x] Tests gemockt, alle grün (232); TS-Typecheck sauber; Dateien ≤200 Z. (außer types.ts, reine Deklarationen)
