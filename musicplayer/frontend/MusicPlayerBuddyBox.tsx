@@ -6,6 +6,7 @@ import { useAuthStore } from "@/features/auth/useAuthStore"
 import { CollapsibleBox } from "@/shared/CollapsibleBox"
 import { musicApi } from "./api"
 import { Equalizer } from "./Equalizer"
+import { GeneratedImport } from "./GeneratedImport"
 import { UploadButton } from "./UploadButton"
 import { useAudioPlayer } from "./useAudioPlayer"
 import type { Track } from "./types"
@@ -130,6 +131,7 @@ export function MusicPlayerBuddyBox(_: { onPrompt?: (text: string) => void }) {
         )}
 
         {isAdmin && <UploadButton onDone={load} />}
+        {isAdmin && <GeneratedImport onImported={load} />}
 
         {/* Das eine versteckte Audio-Element */}
         <audio ref={p.audioRef} preload="metadata" className="hidden" />

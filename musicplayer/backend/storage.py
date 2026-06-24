@@ -11,6 +11,48 @@ from pathlib import Path
 
 from hydrahive.settings import settings
 
+
+def workspaces_root() -> Path:
+    """Erlaubter Scan-Root für generierte Musik (= Media-Root in core files.py)."""
+    return (settings.data_dir / "workspaces").resolve()
+
+
+def resolve_in_workspaces(rel_path: str) -> Path | None:
+    """Validiert einen relativen Pfad gegen den Workspaces-Root.
+
+    Gibt den absoluten Pfad zurück, wenn er sicher unter dem Root liegt, eine
+    .mp3-Datei in einem 'generated'-Ordner ist und existiert — sonst None.
+    Schützt gegen Traversal/Symlink-Ausbruch via resolve()+relative_to().
+    """
+    if not rel_path or rel_path.endswith("/"):
+        return None
+    root = workspaces_root()
+    candidate = (root / rel_path).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        return None
+    if candidate.suffix.lower() != ".mp3":
+        return None
+    if "generated" not in candidate.parts:
+        return None
+    return candidate if candidate.is_file() else None
+
+
+def scan_generated() -> list[Path]:
+    """Alle generated/*.mp3 unterhalb des Workspaces-Roots (sortiert, neueste zuerst)."""
+    root = workspaces_root()
+    if not root.is_dir():
+        return []
+    files = [p for p in root.glob("*/*/generated/*.mp3") if p.is_file()]
+    files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return files
+
+
+def copy_into_pool(src: Path) -> str:
+    """Kopiert eine Quelldatei in den Pool (neuer UUID-Name). Quelle bleibt."""
+    return save_bytes(src.read_bytes())
+
 MAX_BYTES = 30 * 1024 * 1024  # 30 MB pro Track
 _ALLOWED_SUFFIX = ".mp3"
 _ALLOWED_MIME = {"audio/mpeg", "audio/mp3"}

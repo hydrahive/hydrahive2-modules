@@ -1,6 +1,6 @@
 import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { Track } from "./types"
+import type { GeneratedTrack, Track } from "./types"
 
 const BASE = "/modules/musicplayer"
 
@@ -22,4 +22,11 @@ export const musicApi = {
     const token = useAuthStore.getState().token ?? ""
     return `/api${BASE}/tracks/${id}/stream?token=${encodeURIComponent(token)}`
   },
+
+  // --- Import generierter Musik (Admin) ---
+  listGenerated: (): Promise<GeneratedTrack[]> =>
+    api.get<GeneratedTrack[]>(`${BASE}/generated`),
+
+  importGenerated: (path: string): Promise<{ id: number; title: string }> =>
+    api.post<{ id: number; title: string }>(`${BASE}/generated/import`, { path }),
 }

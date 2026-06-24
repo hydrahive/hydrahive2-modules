@@ -22,6 +22,10 @@ export const i18n = {
       mp_upload: "MP3 hochladen",
       mp_uploading: "Lädt hoch…",
       mp_upload_error: "Upload fehlgeschlagen",
+      mp_generated: "Generierte Musik",
+      mp_generated_empty: "Nichts gefunden.",
+      mp_loading: "Lädt…",
+      mp_import: "In den Player holen",
     },
   },
   en: {
@@ -39,6 +43,10 @@ export const i18n = {
       mp_upload: "Upload MP3",
       mp_uploading: "Uploading…",
       mp_upload_error: "Upload failed",
+      mp_generated: "Generated music",
+      mp_generated_empty: "Nothing found.",
+      mp_loading: "Loading…",
+      mp_import: "Add to player",
     },
   },
 }
