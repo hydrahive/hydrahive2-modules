@@ -74,22 +74,41 @@ def value_series(
     prices: dict[str, dict[str, float]],
     today: str,
 ) -> list[dict]:
-    """Tägliche Portfolio-Wertreihe [{day, value}] von der ersten Transaktion
-    bis `today`. `prices` = {coin_id: {day: price}}.
+    """Tägliche Portfolio-Wertreihe [{day, value}] bis `today`.
+    `prices` = {coin_id: {day: price}}.
+
+    Start der Kurve = max(erste Transaktion, frühester verfügbarer Kurstag).
+    Im Free-Tier reichen die Kurse nur ~365 Tage zurück; Transaktionen davor
+    werden korrekt in den Anfangsbestand eingerechnet, damit die Kurve mit dem
+    richtigen Bestand × Kurs beginnt (statt bei 0).
     """
     deltas = daily_deltas(transactions)
     if not deltas:
         return []
 
     all_tx_days = [d for coin in deltas.values() for d in coin]
-    start = min(all_tx_days)
+    first_tx = min(all_tx_days)
+
+    # Frühester Tag, für den überhaupt Kurse vorliegen.
+    price_days = [d for s in prices.values() for d in s]
+    earliest_price = min(price_days) if price_days else None
+
+    start = first_tx if earliest_price is None else max(first_tx, earliest_price)
     if start > today:
         return []
-    timeline = _date_range(start, today)
 
     coins = list(deltas.keys())
     holding = {c: 0.0 for c in coins}          # laufender Bestand
     last_price = {c: None for c in coins}       # für forward-fill
+
+    # Bestand aus allen Transaktionen VOR dem Start vorab aufbauen, damit die
+    # Kurve nicht bei 0 startet, obwohl schon Coins gehalten wurden.
+    for c in coins:
+        for day, delta in deltas[c].items():
+            if day < start:
+                holding[c] = max(0.0, holding[c] + delta)
+
+    timeline = _date_range(start, today)
 
     out: list[dict] = []
     for day in timeline:

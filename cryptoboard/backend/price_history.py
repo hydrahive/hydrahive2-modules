@@ -36,11 +36,17 @@ def _to_daily(raw: list) -> dict[str, float]:
     return out
 
 
+# CoinGecko Free/Demo-Tier erlaubt nur 365 Tage Historie (max/730 → HTTP 401).
+# Voller Verlauf bräuchte einen Bezahl-Plan. Daher 365 Tage; der Cache wächst
+# mit jedem Abruf-Tag weiter, da bestehende Tage erhalten bleiben (upsert).
+_MAX_DAYS = "365"
+
+
 async def fetch_coin(coin_id: str) -> int:
-    """Holt die volle Historie eines Coins und schreibt sie in den Cache.
+    """Holt die (im Free-Tier verfügbare) Historie eines Coins in den Cache.
     Gibt die Anzahl gecachter Tage zurück. Fehler werden geloggt, nicht geworfen."""
     try:
-        raw = await client.market_chart(coin_id, _VS, "max")
+        raw = await client.market_chart(coin_id, _VS, _MAX_DAYS)
     except Exception as exc:
         logger.warning("price_history: Abruf für %s fehlgeschlagen: %s", coin_id, exc)
         return 0

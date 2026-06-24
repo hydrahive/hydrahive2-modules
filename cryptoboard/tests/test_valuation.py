@@ -83,6 +83,32 @@ def test_value_series_leer_ohne_transaktionen():
     assert v.value_series([], {}, "2020-01-01") == []
 
 
+def test_value_series_altbestand_vor_kursfenster():
+    # Coins von 2018 (vor verfügbarem Kursfenster), Kurse erst ab 2024.
+    # Die Kurve startet beim ersten Kurstag MIT dem korrekten Altbestand.
+    txs = [
+        _tx("tron", "transfer_in", 100.0, "2018-05-01"),
+        _tx("tron", "transfer_in", 50.0, "2024-06-02"),
+    ]
+    prices = {"tron": {"2024-06-01": 0.10, "2024-06-02": 0.12, "2024-06-03": 0.11}}
+    series = v.value_series(txs, prices, "2024-06-03")
+    assert series[0] == {"day": "2024-06-01", "value": pytest.approx(10.0)}   # 100 * 0.10
+    assert series[1]["value"] == pytest.approx(18.0)                          # 150 * 0.12
+    assert series[2]["value"] == pytest.approx(16.5)                          # 150 * 0.11
+
+
+def test_value_series_kein_doppelzaehlen_am_start():
+    # Ein Delta GENAU am Start-Tag darf nicht zusätzlich zum Vor-Start-Bestand
+    # doppelt gezählt werden.
+    txs = [
+        _tx("tron", "transfer_in", 100.0, "2018-01-01"),  # vor Start
+        _tx("tron", "transfer_in", 10.0, "2024-06-01"),   # am Start-Tag
+    ]
+    prices = {"tron": {"2024-06-01": 1.0}}
+    series = v.value_series(txs, prices, "2024-06-01")
+    assert series[0]["value"] == pytest.approx(110.0)  # 100 + 10, nicht 210
+
+
 def test_value_series_coin_ohne_kurs_traegt_nichts_bei():
     txs = [_tx("obscure", "transfer_in", 10.0, "2020-01-01")]
     series = v.value_series(txs, {}, "2020-01-02")
