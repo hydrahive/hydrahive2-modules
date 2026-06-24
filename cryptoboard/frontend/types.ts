@@ -209,6 +209,32 @@ export interface AlertEventsResponse {
   unseen: number
 }
 
+export interface ValuePoint {
+  day: string
+  value: number
+}
+
+export interface ValueHistory {
+  currency: string
+  points: ValuePoint[]
+  missing_prices: string[]
+}
+
+export interface Delta {
+  abs: number
+  pct: number
+}
+
+export interface PortfolioStats {
+  currency: string
+  current: number
+  ath: { value: number; day: string | null }
+  change_24h: Delta
+  change_7d: Delta
+  change_30d: Delta
+  change_1y: Delta
+}
+
 export interface ImportTx {
   kind: TxKind
   symbol: string

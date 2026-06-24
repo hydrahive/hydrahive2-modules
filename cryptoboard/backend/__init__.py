@@ -20,6 +20,7 @@ from .portfolio_routes import router as portfolio_router
 from .import_routes import router as import_router
 from .analysis_routes import router as analysis_router
 from .alerts_routes import router as alerts_router
+from .valuation_routes import router as valuation_router
 # Submodule importieren (NICHT `from .crypto_tool import TOOL`), damit
 # `backend.crypto_tool` das Modul bleibt und nicht vom Tool-Objekt überschattet wird.
 from . import alerts, alert_poller, crypto_tool, portfolio_tool, analysis_tool
@@ -32,6 +33,7 @@ def register(ctx) -> None:
     ctx.register_router(import_router)
     ctx.register_router(analysis_router)
     ctx.register_router(alerts_router)
+    ctx.register_router(valuation_router)
     ctx.register_tool(crypto_tool.TOOL)
     ctx.register_tool(portfolio_tool.TOOL)
     ctx.register_tool(analysis_tool.TOOL)

@@ -1,4 +1,4 @@
-import { Bell, CandlestickChart, GitCompareArrows, LayoutGrid, Newspaper, Receipt, Wallet } from "lucide-react"
+import { Bell, CandlestickChart, GitCompareArrows, LayoutGrid, Newspaper, Receipt, TrendingUp, Wallet } from "lucide-react"
 import { useEffect, useState, type CSSProperties } from "react"
 import { NavLink, Route, Routes } from "react-router-dom"
 import { useTranslation } from "react-i18next"
@@ -7,6 +7,7 @@ import { cryptoApi } from "./api"
 import { CoinSearch } from "./components/CoinSearch"
 import { AlertsView } from "./views/AlertsView"
 import { CoinDetailView } from "./views/CoinDetailView"
+import { AnalyticsView } from "./views/AnalyticsView"
 import { CompareView } from "./views/CompareView"
 import { DashboardView } from "./views/DashboardView"
 import { NewsView } from "./views/NewsView"
@@ -65,6 +66,9 @@ function Header() {
         <NavLink to="/cryptoboard/portfolio" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><Wallet size={14} />{t("nav_portfolio")}</span>
         </NavLink>
+        <NavLink to="/cryptoboard/analytics" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+          <span className="flex items-center gap-1.5"><TrendingUp size={14} />{t("nav_analytics")}</span>
+        </NavLink>
         <NavLink to="/cryptoboard/trades" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
           <span className="flex items-center gap-1.5"><Receipt size={14} />{t("nav_tradelog")}</span>
         </NavLink>
@@ -96,6 +100,7 @@ export function CryptoboardApp() {
           <Routes>
             <Route index element={<DashboardView />} />
             <Route path="portfolio" element={<PortfolioView />} />
+            <Route path="analytics" element={<AnalyticsView />} />
             <Route path="trades" element={<TradeLogView />} />
             <Route path="compare" element={<CompareView />} />
             <Route path="alerts" element={<AlertsView />} />

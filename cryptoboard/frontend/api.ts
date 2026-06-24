@@ -2,7 +2,8 @@ import { api } from "@/shared/api-client"
 import type {
   Alert, AlertEventsResponse, AlertInput, ChartResponse, CoinDetail, CoinPnl,
   ImportPreview, ImportResult, ImportTx, IndicatorData, MarketRow, NewsItem,
-  PortfolioSummary, SearchResult, Sentiment, Transaction, TxInput, WatchItem,
+  PortfolioStats, PortfolioSummary, SearchResult, Sentiment, Transaction,
+  TxInput, ValueHistory, WatchItem,
 } from "./types"
 
 const BASE = "/modules/cryptoboard"
@@ -90,4 +91,15 @@ export const cryptoApi = {
 
   markAlertsSeen: (): Promise<{ ok: boolean }> =>
     api.post<{ ok: boolean }>(`${BASE}/alerts/events/seen`, {}),
+
+  // ---- Auswertung / Wertverlauf ----
+  valueHistory: (): Promise<ValueHistory> =>
+    api.get<ValueHistory>(`${BASE}/portfolio/history`),
+
+  portfolioStats: (): Promise<PortfolioStats> =>
+    api.get<PortfolioStats>(`${BASE}/portfolio/stats`),
+
+  refreshHistory: (force = false): Promise<{ ok: boolean; loaded: Record<string, number>; coins: number }> =>
+    api.post<{ ok: boolean; loaded: Record<string, number>; coins: number }>(
+      `${BASE}/portfolio/history/refresh${force ? "?force=true" : ""}`, {}),
 }
