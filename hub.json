@@ -9,6 +9,7 @@
     { "id": "tasks", "name": "Aufgaben", "path": "tasks" },
     { "id": "deepresearch", "name": "Deep Research", "path": "deepresearch" },
     { "id": "minigames", "name": "Minigames", "path": "minigames" },
-    { "id": "boardgames", "name": "Brettspiele", "path": "boardgames" }
+    { "id": "boardgames", "name": "Brettspiele", "path": "boardgames" },
+    { "id": "musicplayer", "name": "Musicplayer", "path": "musicplayer" }
   ]
 }
