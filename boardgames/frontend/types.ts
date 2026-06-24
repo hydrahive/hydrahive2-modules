@@ -36,3 +36,19 @@ export interface LeaderboardEntry {
   wins: number
   games: number
 }
+
+// ----------------------------------------------------------------- LLM-Gegner
+/** Eintrag aus GET /api/llm/models (auf das Nötige reduziert). */
+export interface LlmModel {
+  id: string
+  label: string
+  provider: string
+  is_free: boolean
+}
+
+/** Antwort von POST /chess/llm-move. move=null → Frontend nutzt Minimax-Fallback. */
+export interface LlmMoveResult {
+  move: string | null
+  index: number
+  source: "llm" | "invalid"
+}

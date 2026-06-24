@@ -1,5 +1,5 @@
 import { api } from "@/shared/api-client"
-import type { GameMode, GameResult, LeaderboardEntry, MyRecord } from "./types"
+import type { GameMode, GameResult, LeaderboardEntry, LlmModel, LlmMoveResult, MyRecord } from "./types"
 
 const BASE = "/modules/boardgames"
 
@@ -12,4 +12,12 @@ export const boardgamesApi = {
 
   leaderboard: (gameId: string, limit = 10): Promise<LeaderboardEntry[]> =>
     api.get<LeaderboardEntry[]>(`${BASE}/results/leaderboard?game_id=${encodeURIComponent(gameId)}&limit=${limit}`),
+
+  /** Chat-Modelle aus dem zentralen Katalog (für die Gegner-Auswahl). */
+  listModels: (): Promise<{ default: string; models: LlmModel[] }> =>
+    api.get<{ default: string; models: LlmModel[] }>("/llm/models?modality=chat"),
+
+  /** Lässt das gewählte Modell einen Zug aus `moves` (UCI) wählen. */
+  llmMove: (model: string, fen: string, moves: string[], history: string[]): Promise<LlmMoveResult> =>
+    api.post<LlmMoveResult>(`${BASE}/chess/llm-move`, { model, fen, moves, history }),
 }
