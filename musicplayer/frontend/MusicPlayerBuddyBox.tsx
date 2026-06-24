@@ -1,5 +1,5 @@
 // Buddy-Box: kompakter MP3-Player + Track-Liste. Upload/Delete nur für Admin.
-import { Music, Pause, Play, SkipBack, SkipForward, Trash2, Volume2 } from "lucide-react"
+import { Music, Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward, Trash2, Volume2 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useAuthStore } from "@/features/auth/useAuthStore"
@@ -71,7 +71,13 @@ export function MusicPlayerBuddyBox(_: { onPrompt?: (text: string) => void }) {
           </div>
 
           {/* Buttons */}
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-2.5">
+            <button onClick={p.toggleShuffle}
+              className={p.shuffle ? "" : "text-zinc-500 hover:text-fuchsia-200"}
+              style={p.shuffle ? { color: accent } : undefined}
+              title={t("mp_shuffle")}>
+              <Shuffle size={14} />
+            </button>
             <button onClick={p.prev} className="text-zinc-400 hover:text-fuchsia-200" title={t("mp_prev")}>
               <SkipBack size={16} />
             </button>
@@ -82,6 +88,12 @@ export function MusicPlayerBuddyBox(_: { onPrompt?: (text: string) => void }) {
             </button>
             <button onClick={p.next} className="text-zinc-400 hover:text-fuchsia-200" title={t("mp_next")}>
               <SkipForward size={16} />
+            </button>
+            <button onClick={p.cycleRepeat}
+              className={p.repeat === "off" ? "text-zinc-500 hover:text-fuchsia-200" : ""}
+              style={p.repeat === "off" ? undefined : { color: accent }}
+              title={t(p.repeat === "one" ? "mp_repeat_one" : "mp_repeat")}>
+              {p.repeat === "one" ? <Repeat1 size={14} /> : <Repeat size={14} />}
             </button>
           </div>
 
