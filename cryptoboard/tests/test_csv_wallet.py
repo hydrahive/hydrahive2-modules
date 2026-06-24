@@ -57,6 +57,21 @@ def test_wallet_failed_status_wird_uebersprungen():
     assert out["skipped_status"] == 1
 
 
+def test_wallet_rolled_back_status_wird_uebersprungen():
+    # rolled_back = zurückgerollt → hat den Bestand per Saldo nie verändert.
+    csv = (
+        "Date\tTransaction amount\tCurrency\tTransaction type\tStatus\n"
+        "2024-01-01T00:00:00+0000\t1000\ttrx\tpayin\tcommitted\n"
+        "2024-02-01T00:00:00+0000\t-500\ttrx\tpayout\trolled_back\n"
+        "2024-03-01T00:00:00+0000\t-200\ttrx\tpayout\tcommitted\n"
+    )
+    header, rows = ci.sniff(csv)
+    out = ci.parse_rows(rows, ci.guess_map(header))
+    # Nur die committed-Zeilen: 1000 rein, 200 raus = 2 Transaktionen
+    assert len(out["transactions"]) == 2
+    assert out["skipped_status"] == 1  # der rolled_back payout
+
+
 def test_wallet_positiver_betrag_ohne_typ_wird_zugang():
     csv = (
         "Date\tTransaction amount\tCurrency\tTransaction type\n"

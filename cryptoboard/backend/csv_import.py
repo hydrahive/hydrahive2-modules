@@ -41,10 +41,12 @@ _HINTS: dict[str, tuple[str, ...]] = {
     "kind": ("type", "typ", "side", "art", "operation", "richtung", "buy/sell", "direction"),
 }
 
-# Status-Werte, die eine NICHT durchgeführte Transaktion bedeuten → übersprungen.
-# (z.B. fehlgeschlagene/abgebrochene Auszahlungen, die nie den Bestand bewegten.)
+# Status-Werte, die eine NICHT durchgeführte ODER rückgängig gemachte Transaktion
+# bedeuten → übersprungen (sie haben den Bestand per Saldo nie verändert).
 _BAD_STATUS = ("failed", "fehlgeschlagen", "cancelled", "canceled", "storniert",
-               "pending", "rejected", "abgelehnt", "error", "declined", "expired")
+               "pending", "rejected", "abgelehnt", "error", "declined", "expired",
+               "rolled_back", "rolled back", "rolledback", "reverted", "reversed",
+               "zurückgerollt", "rückgängig")
 
 _MAX_ROWS = 5000
 
