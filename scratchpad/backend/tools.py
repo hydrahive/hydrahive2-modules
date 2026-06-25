@@ -6,19 +6,19 @@ from . import service
 from .service import ScratchpadTooLarge
 
 _READ_DESCRIPTION = (
-    "Liest das Scratchpad des Users: Tills handgeschriebene Ideen plus deine "
+    "Liest das Scratchpad des Users: die handgeschriebenen Ideen des Users plus deine "
     "eigenen Agent-Notizen. Nutze es, wenn die Aufgabe auf notierte Ideen Bezug nimmt."
 )
 _READ_SCHEMA = {"type": "object", "properties": {}, "required": []}
 _PROMPT_HINT = (
-    "\n\nScratchpad: Till hinterlegt hier Ideen und Notizen. Lies sie mit "
+    "\n\nScratchpad: Der User hinterlegt hier Ideen und Notizen. Lies sie mit "
     "`read_scratchpad`, wenn die Aufgabe darauf Bezug nimmt. Eigene Notizen "
-    "schreibst du mit `write_scratchpad` — nur in deinen Bereich; Tills Bereich ist tabu."
+    "schreibst du mit `write_scratchpad` — nur in deinen Bereich; der Bereich des Users ist tabu."
 )
 
 _WRITE_DESCRIPTION = (
     "Schreibt in DEINE Agent-Notiz-Zone des Scratchpads (ersetzt sie komplett). "
-    "Tills eigener Bereich ist tabu und kann hierüber nicht verändert werden. "
+    "Der eigene Bereich des Users ist tabu und kann hierüber nicht verändert werden. "
     "Lies vorher mit read_scratchpad, damit du deine bestehenden Notizen nicht verlierst."
 )
 _WRITE_SCHEMA = {

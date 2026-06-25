@@ -61,7 +61,7 @@ export function ArchiveBox({ selectedDrive, projects, onJobStart }: Props) {
           <input
             value={customPath}
             onChange={e => setCustomPath(e.target.value)}
-            placeholder="Pfad manuell: /media/till/..."
+            placeholder="Pfad manuell: /media/<user>/..."
             className="w-full rounded-lg bg-zinc-900 border border-white/[8%] px-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500/50"
           />
         )}

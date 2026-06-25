@@ -8,7 +8,7 @@ from backend import chain_clients, client as cg
 
 PREFIX = "/api/modules/cryptoboard"
 
-# Synthetische, formatgültige Adressen (nicht Tills echte)
+# Synthetische, formatgültige Adressen (keine echten Wallets)
 ADDR = {
     "base": "0x" + "a" * 40,
     "tron": "T" + "9" * 33,

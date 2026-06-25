@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS health_ingest (
     period          TEXT,
     aggregation     TEXT,
     payload         TEXT NOT NULL,
-    user_id         TEXT NOT NULL DEFAULT 'till'
+    user_id         TEXT NOT NULL DEFAULT 'default'
 );
 CREATE INDEX IF NOT EXISTS idx_health_ingest_received_at ON health_ingest (received_at DESC);
 CREATE INDEX IF NOT EXISTS idx_health_ingest_automation_id ON health_ingest (automation_id);
@@ -20,7 +20,7 @@ CREATE INDEX IF NOT EXISTS idx_health_ingest_user_id ON health_ingest (user_id);
 CREATE TABLE IF NOT EXISTS health_daily (
     date        TEXT NOT NULL,
     metric_name TEXT NOT NULL,
-    user_id     TEXT NOT NULL DEFAULT 'till',
+    user_id     TEXT NOT NULL DEFAULT 'default',
     unit        TEXT NOT NULL DEFAULT '',
     value       REAL NOT NULL,
     PRIMARY KEY (date, metric_name, user_id)

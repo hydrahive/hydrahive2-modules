@@ -6,7 +6,7 @@ def test_ingest_ignoriert_user_query_param(client, monkeypatch):
     """Regression H2: ein angreifergesteuerter ?user= darf user_id NICHT bestimmen."""
     from hydrahive.settings import settings
     monkeypatch.setattr(settings, "health_api_key", "k")
-    monkeypatch.setattr(settings, "health_ingest_user", "till")
+    monkeypatch.setattr(settings, "health_ingest_user", "default")
 
     captured: dict = {}
     import backend.health_routes as mod
@@ -24,7 +24,7 @@ def test_ingest_ignoriert_user_query_param(client, monkeypatch):
     )
 
     assert r.status_code == 200
-    assert captured["user_id"] == "till"
+    assert captured["user_id"] == "default"
 
 
 def test_ingest_nutzt_konfigurierten_user(client, monkeypatch):
@@ -71,7 +71,7 @@ def test_ingest_query_key_logs_deprecation_warning(client, monkeypatch, caplog):
 
     from hydrahive.settings import settings
     monkeypatch.setattr(settings, "health_api_key", "k")
-    monkeypatch.setattr(settings, "health_ingest_user", "till")
+    monkeypatch.setattr(settings, "health_ingest_user", "default")
     import backend.health_routes as mod
     monkeypatch.setattr(mod.health_db, "insert", lambda **kw: "rec1")
 
@@ -89,7 +89,7 @@ def test_ingest_header_key_no_deprecation_warning(client, monkeypatch, caplog):
 
     from hydrahive.settings import settings
     monkeypatch.setattr(settings, "health_api_key", "k")
-    monkeypatch.setattr(settings, "health_ingest_user", "till")
+    monkeypatch.setattr(settings, "health_ingest_user", "default")
     import backend.health_routes as mod
     monkeypatch.setattr(mod.health_db, "insert", lambda **kw: "rec1")
 

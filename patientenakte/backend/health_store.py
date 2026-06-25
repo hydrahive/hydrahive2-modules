@@ -148,7 +148,7 @@ def _process_payload_to_daily(payload: dict, user_id: str, conn) -> None:
     )
 
 
-def backfill_daily(user_id: str = "till") -> int:
+def backfill_daily(user_id: str = "default") -> int:
     """Verarbeitet alle health_ingest Records eines Users in health_daily."""
     with db() as conn:
         rows = conn.execute(

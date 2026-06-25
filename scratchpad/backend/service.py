@@ -71,4 +71,4 @@ def get_combined(user_id: str) -> str:
     """Beide Zonen klar beschriftet — Format das der Agent via read_scratchpad sieht."""
     user = get_user(user_id).strip() or "_(leer)_"
     agent = get_agent(user_id).strip() or "_(leer)_"
-    return f"## Tills Ideen\n\n{user}\n\n## Agent-Notizen (dein Bereich)\n\n{agent}"
+    return f"## Ideen des Users\n\n{user}\n\n## Agent-Notizen (dein Bereich)\n\n{agent}"

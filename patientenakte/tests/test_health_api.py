@@ -34,12 +34,12 @@ def _insert_payload(metrics: list[dict], days_ago: int = 0) -> str:
             (record_id, received, "Test", "test-id", "sess", "Default", "Default",
              _json.dumps(payload)),
         )
-        _process_payload_to_daily(payload, "till", conn)
+        _process_payload_to_daily(payload, "default", conn)
     return record_id
 
 
 def test_get_metrics_summary_leer():
-    result = health_db.get_metrics_summary("till", days=7)
+    result = health_db.get_metrics_summary("default", days=7)
     assert "metrics" in result
     assert "last_ingest" in result
     assert result["metrics"] == {}
@@ -57,7 +57,7 @@ def test_get_metrics_summary_schritte_summiert():
         {"name": "step_count", "units": "count",
          "data": [{"date": today2, "qty": 3000}]}
     ], days_ago=0)
-    result = health_db.get_metrics_summary("till", days=7)
+    result = health_db.get_metrics_summary("default", days=7)
     step = result["metrics"].get("step_count")
     assert step is not None
     assert step["latest"] == 8000  # summiert
@@ -74,7 +74,7 @@ def test_get_metrics_summary_herzfrequenz_gemittelt():
              {"date": f"{today} 12:00:00 +0000", "qty": 80},
          ]}
     ], days_ago=0)
-    result = health_db.get_metrics_summary("till", days=7)
+    result = health_db.get_metrics_summary("default", days=7)
     hr = result["metrics"].get("heart_rate")
     assert hr is not None
     assert hr["latest"] == 70  # Mittelwert
@@ -90,7 +90,7 @@ def test_get_metrics_summary_metric_filter(setup_test_env):
         {"name": "heart_rate", "units": "bpm",
          "data": [{"date": today, "qty": 70}]},
     ], days_ago=0)
-    result = health_db.get_metrics_summary("till", days=7, metric="step_count")
+    result = health_db.get_metrics_summary("default", days=7, metric="step_count")
     assert "step_count" in result["metrics"]
     assert "heart_rate" not in result["metrics"]
 
