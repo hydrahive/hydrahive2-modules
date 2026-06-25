@@ -2,7 +2,7 @@
 
 register(ctx) →
   - Router    /api/modules/deepresearch/runs*
-  - Tool      deep_research
+  - Tool      research_report
   - Migration 001_deepresearch.sql
 """
 from __future__ import annotations

@@ -1,8 +1,12 @@
-"""deep_research — gründliche Web-Recherche, liefert einen zitierten Bericht.
+"""research_report — gründliche Web-Recherche, liefert einen zitierten Bericht.
 
 Blockiert bis der Lauf fertig ist (bis ~max_time im Loop), damit der Agent das
 Ergebnis direkt verwenden kann. Den hübschen HTML-Report holt der Mensch über
 report_url (Phase 2).
+
+Hinweis: Der Tool-Name DARF NICHT "deep_research" sein — dieser String wird von
+der Anthropic-API (OAuth/Abo-Pfad) reserviert/blockiert und führt zu HTTP 400
+("out of extra usage") bei JEDEM Call des Agenten. Siehe Commit-Historie.
 """
 from __future__ import annotations
 
@@ -26,7 +30,7 @@ _SCHEMA = {
 }
 
 _HINT = """
-Nutze deep_research, wenn der Nutzer eine gründliche, quellenbasierte Recherche oder
+Nutze research_report, wenn der Nutzer eine gründliche, quellenbasierte Recherche oder
 einen Bericht zu einem Thema will ("recherchiere", "mach mir einen Überblick/Bericht
 über", "was gibt es Neues zu …", Vergleich/Kaufberatung/Faktencheck mit Belegen).
 
@@ -59,7 +63,7 @@ async def _execute(args: dict, ctx: ToolContext) -> ToolResult:
 
 
 TOOL = Tool(
-    name="deep_research",
+    name="research_report",
     description=(
         "Führt eine mehrstufige Web-Recherche durch (Plan → Suche → Synthese) und liefert "
         "einen zitierten Markdown-Bericht mit Quellen. Dauert Minuten."
