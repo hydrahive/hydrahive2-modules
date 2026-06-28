@@ -6,7 +6,7 @@
  *    links/rechts (horizontaler Datenfluss).
  * Beide teilen sich ein Board und sind frei verbindbar (jeder Handle an jeden).
  */
-import { Handle, Position, type NodeTypes } from "@xyflow/react"
+import { Handle, NodeResizer, Position, type NodeTypes } from "@xyflow/react"
 import { moduleIcon } from "@/shared/module-icon"
 import { iconOf, labelOf } from "./palette-data"
 import type { BlueprintNodeData } from "./types"
@@ -28,37 +28,50 @@ const FLOW_COLOR: Record<string, { border: string; bg: string; text: string; dot
   note: { border: "border-yellow-500/50", bg: "bg-yellow-950/30", text: "text-yellow-200", dot: "#eab308" },
 }
 
-function Shell({ data, selected, children, accent }: {
-  data: BlueprintNodeData; selected: boolean; children?: React.ReactNode; accent: string
+function Shell({ data, selected, children, accent, resizeColor }: {
+  data: BlueprintNodeData; selected: boolean; children?: React.ReactNode
+  accent: string; resizeColor: string
 }) {
   const Icon = moduleIcon(iconOf(data.subtype))
   return (
-    <div className={`min-w-[150px] max-w-[230px] rounded-xl border-2 px-3 py-2 shadow-lg select-none ${accent} ${
-      selected ? "ring-2 ring-white/30" : ""
-    }`}>
-      <div className="mb-0.5 flex items-center gap-1.5">
-        <Icon size={12} />
-        <span className="text-[0.5rem] font-bold uppercase tracking-widest opacity-70">
-          {labelOf(data.subtype)}
-        </span>
+    <>
+      {/* Resize-Handles: erscheinen bei Selektion, ziehen die Box größer/kleiner.
+          Die äußere Node-Größe wird von xyflow gesetzt; h-full/w-full füllt sie. */}
+      <NodeResizer
+        color={resizeColor}
+        isVisible={selected}
+        minWidth={150}
+        minHeight={60}
+        handleStyle={{ width: 8, height: 8 }}
+      />
+      <div className={`flex h-full w-full flex-col overflow-hidden rounded-xl border-2 px-3 py-2 shadow-lg select-none ${accent} ${
+        selected ? "ring-2 ring-white/30" : ""
+      }`}>
+        <div className="mb-0.5 flex items-center gap-1.5">
+          <Icon size={12} />
+          <span className="text-[0.5rem] font-bold uppercase tracking-widest opacity-70">
+            {labelOf(data.subtype)}
+          </span>
+        </div>
+        <p className="text-sm font-medium leading-tight text-white">{data.label || "—"}</p>
+        {data.note && <p className="mt-0.5 text-[11px] leading-snug opacity-60">{data.note}</p>}
+        {children}
       </div>
-      <p className="text-sm font-medium leading-tight text-white">{data.label || "—"}</p>
-      {data.note && <p className="mt-0.5 text-[11px] leading-snug opacity-60">{data.note}</p>}
-      {children}
-    </div>
+    </>
   )
 }
 
 // Layout-Node: neutral, Handles oben (Input) + unten (Output) für Hierarchie.
 export function LayoutNodeComp({ data, selected }: NodeProps) {
   return (
-    <>
+    <div className="h-full w-full">
       <Handle type="target" position={Position.Top} id="in"
         style={{ ...DOT, background: "#71717a", border: "2px solid #52525b" }} />
-      <Shell data={data} selected={selected} accent="border-zinc-600/70 bg-zinc-800/70 text-zinc-200" />
+      <Shell data={data} selected={selected} resizeColor="#a1a1aa"
+        accent="border-zinc-600/70 bg-zinc-800/70 text-zinc-200" />
       <Handle type="source" position={Position.Bottom} id="out"
         style={{ ...DOT, background: "#71717a", border: "2px solid #52525b" }} />
-    </>
+    </div>
   )
 }
 
@@ -72,12 +85,12 @@ export function FlowNodeComp({ data, selected }: NodeProps) {
   const isCondition = data.subtype === "condition"
 
   return (
-    <>
+    <div className="h-full w-full">
       {!isEvent && !isNote && (
         <Handle type="target" position={Position.Left} id="in"
           style={{ ...DOT, background: c.dot, border: `2px solid ${c.dot}` }} />
       )}
-      <Shell data={data} selected={selected} accent={`${c.border} ${c.bg} ${c.text}`}>
+      <Shell data={data} selected={selected} resizeColor={c.dot} accent={`${c.border} ${c.bg} ${c.text}`}>
         {isCondition && (
           <div className="relative mt-1.5 h-6">
             <Handle type="source" position={Position.Right} id="true"
@@ -93,7 +106,7 @@ export function FlowNodeComp({ data, selected }: NodeProps) {
         <Handle type="source" position={Position.Right} id="out"
           style={{ ...DOT, background: c.dot, border: `2px solid ${c.dot}` }} />
       )}
-    </>
+    </div>
   )
 }
 
