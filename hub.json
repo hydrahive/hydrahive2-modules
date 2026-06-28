@@ -10,6 +10,7 @@
     { "id": "deepresearch", "name": "Deep Research", "path": "deepresearch" },
     { "id": "minigames", "name": "Minigames", "path": "minigames" },
     { "id": "boardgames", "name": "Brettspiele", "path": "boardgames" },
-    { "id": "musicplayer", "name": "Musicplayer", "path": "musicplayer" }
+    { "id": "musicplayer", "name": "Musicplayer", "path": "musicplayer" },
+    { "id": "homeassistant", "name": "Home Assistant", "path": "homeassistant" }
   ]
 }
