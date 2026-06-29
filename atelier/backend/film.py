@@ -10,11 +10,9 @@ Job-Store dateibasiert: atelier/films/<job_id>.json; Ergebnis films/<uuid>.mp4.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
-from datetime import datetime, timezone
 
-from . import _ffmpeg, storage
+from . import _ffmpeg, _jobstore, storage
 
 logger = logging.getLogger("hhmod_atelier.film")
 
@@ -22,30 +20,18 @@ _SEM = asyncio.Semaphore(1)  # ffmpeg ist CPU-lastig → seriell
 _RESOLUTIONS = {"16:9": (1280, 720), "9:16": (720, 1280), "1:1": (1080, 1080)}
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _job_path(project_id: str, job_id: str):
-    return storage.films_dir(project_id) / f"{job_id}.json"
-
-
 def _write_job(project_id: str, job: dict) -> None:
-    _job_path(project_id, job["job_id"]).write_text(
-        json.dumps(job, ensure_ascii=False, indent=2), "utf-8"
-    )
+    _jobstore.write_job(storage.films_dir(project_id), job)
+
+
+def delete_film_job(project_id: str, job_id: str) -> bool:
+    """Löscht einen Film-Job (JSON + fertige mp4). True bei Erfolg."""
+    return _jobstore.delete_job(project_id, storage.films_dir(project_id), job_id, "film_rel")
 
 
 def list_film_jobs(project_id: str) -> list[dict]:
     """Alle Film-Jobs des Projekts (neueste zuerst)."""
-    jobs: list[dict] = []
-    for p in storage.films_dir(project_id).glob("*.json"):
-        try:
-            jobs.append(json.loads(p.read_text("utf-8")))
-        except (json.JSONDecodeError, OSError):
-            continue
-    jobs.sort(key=lambda j: j.get("created_at") or "", reverse=True)
-    return jobs
+    return _jobstore.list_jobs(storage.films_dir(project_id))
 
 
 def _resolve(project_id: str, rels: list[str]):
@@ -72,7 +58,7 @@ def start_film_job(project_id: str, req: dict) -> dict:
         "music_rel": music_rel,
         "film_rel": None,
         "error": None,
-        "created_at": _now(),
+        "created_at": _jobstore.now(),
     }
     _write_job(project_id, job)
     asyncio.create_task(_run_job(project_id, job))

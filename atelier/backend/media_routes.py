@@ -42,6 +42,14 @@ def list_videos(project_id: str, auth: Auth) -> list[dict]:
     return video.list_video_jobs(project_id)
 
 
+@router.delete("/projects/{project_id}/videos/{job_id}")
+def delete_video(project_id: str, job_id: str, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    if not video.delete_video_job(project_id, job_id):
+        raise coded(status.HTTP_404_NOT_FOUND, "video_not_found")
+    return {"ok": True}
+
+
 @router.post("/projects/{project_id}/videos")
 async def create_video(project_id: str, body: VideoIn, auth: Auth) -> dict:
     # async, damit start_video_job() einen laufenden Event-Loop für
@@ -70,6 +78,14 @@ class FilmIn(BaseModel):
 def list_films(project_id: str, auth: Auth) -> list[dict]:
     _guard(auth[0], project_id)
     return film.list_film_jobs(project_id)
+
+
+@router.delete("/projects/{project_id}/films/{job_id}")
+def delete_film(project_id: str, job_id: str, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    if not film.delete_film_job(project_id, job_id):
+        raise coded(status.HTTP_404_NOT_FOUND, "film_not_found")
+    return {"ok": True}
 
 
 @router.post("/projects/{project_id}/films")

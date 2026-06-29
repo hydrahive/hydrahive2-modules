@@ -26,6 +26,12 @@ export function Gallery({ projectId, items, characters, onPromoted, onVideoStart
     onPromoted()
   }
 
+  async function del(it: GalleryItem) {
+    if (!confirm(t("delete_image_confirm"))) return
+    await atelierApi.deleteImage(projectId, it.rel)
+    onPromoted()  // reload
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-sm font-semibold text-slate-200">{t("gallery")}</h3>
@@ -53,6 +59,13 @@ export function Gallery({ projectId, items, characters, onPromoted, onVideoStart
                 title={t("make_video")}
               >
                 🎬
+              </button>
+              <button
+                onClick={() => del(it)}
+                className="text-[10px] px-1.5 py-0.5 rounded bg-red-600/80 hover:bg-red-500"
+                title={t("delete")}
+              >
+                🗑️
               </button>
             </div>
           </div>

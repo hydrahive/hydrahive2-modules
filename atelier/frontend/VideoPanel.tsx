@@ -20,26 +20,25 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
   const [textDialog, setTextDialog] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  async function load() {
+    try {
+      const list = await atelierApi.listVideos(projectId)
+      setJobs(list)
+      if (list.some((j) => ACTIVE.has(j.status))) timer.current = setTimeout(load, 5000)
+    } catch { /* retry beim nächsten Trigger */ }
+  }
+
   useEffect(() => {
-    let alive = true
-    async function load() {
-      try {
-        const list = await atelierApi.listVideos(projectId)
-        if (!alive) return
-        setJobs(list)
-        if (list.some((j) => ACTIVE.has(j.status))) {
-          timer.current = setTimeout(load, 5000)
-        }
-      } catch {
-        /* still: nächster Versuch beim nächsten reload */
-      }
-    }
     load()
-    return () => {
-      alive = false
-      if (timer.current) clearTimeout(timer.current)
-    }
+    return () => { if (timer.current) clearTimeout(timer.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
+
+  async function del(job: VideoJob) {
+    if (!confirm(t("delete_video_confirm"))) return
+    await atelierApi.deleteVideo(projectId, job.job_id)
+    setJobs((cur) => cur.filter((j) => j.job_id !== job.job_id))
+  }
 
   return (
     <div className="flex flex-col gap-2 border-t border-slate-700 pt-3">
@@ -65,7 +64,7 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
         />
       )}
       {jobs.map((job) => (
-        <div key={job.job_id} className="rounded border border-slate-700 overflow-hidden">
+        <div key={job.job_id} className="group relative rounded border border-slate-700 overflow-hidden">
           {job.status === "completed" && job.video_rel ? (
             <video
               src={fileUrl(refAbsPath(job.video_rel))}
@@ -88,6 +87,13 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
           {job.prompt && (
             <p className="px-2 py-1 text-[10px] text-slate-500 truncate">{job.prompt}</p>
           )}
+          <button
+            onClick={() => del(job)}
+            title={t("delete")}
+            className="absolute top-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[11px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+          >
+            🗑️
+          </button>
         </div>
       ))}
     </div>

@@ -14,16 +14,14 @@ als ``atelier/videos/<uuid>.mp4`` daneben.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
-from datetime import datetime, timezone
 
 import httpx
 
 from hydrahive.llm._config import openrouter_key
 from hydrahive.tools._openrouter_video import download_video, poll_video_job
 
-from . import storage
+from . import _jobstore, storage
 
 logger = logging.getLogger("hhmod_atelier.video")
 
@@ -42,30 +40,18 @@ _MAX_POLLS = 90  # ~7,5 min Obergrenze
 _SEM = asyncio.Semaphore(2)  # max 2 parallele Video-Jobs
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _job_path(project_id: str, job_id: str):
-    return storage.videos_dir(project_id) / f"{job_id}.json"
-
-
 def _write_job(project_id: str, job: dict) -> None:
-    path = _job_path(project_id, job["job_id"])
-    path.write_text(json.dumps(job, ensure_ascii=False, indent=2), "utf-8")
+    _jobstore.write_job(storage.videos_dir(project_id), job)
+
+
+def delete_video_job(project_id: str, job_id: str) -> bool:
+    """Löscht einen Video-Job (JSON + fertige mp4). True bei Erfolg."""
+    return _jobstore.delete_job(project_id, storage.videos_dir(project_id), job_id, "video_rel")
 
 
 def list_video_jobs(project_id: str) -> list[dict]:
     """Alle Video-Jobs des Projekts (neueste zuerst)."""
-    vdir = storage.videos_dir(project_id)
-    jobs: list[dict] = []
-    for p in vdir.glob("*.json"):
-        try:
-            jobs.append(json.loads(p.read_text("utf-8")))
-        except (json.JSONDecodeError, OSError):
-            continue
-    jobs.sort(key=lambda j: j.get("created_at") or "", reverse=True)
-    return jobs
+    return _jobstore.list_jobs(storage.videos_dir(project_id))
 
 
 def _clamp_duration(model: str, duration: int) -> int:
@@ -93,7 +79,7 @@ def start_video_job(project_id: str, req: dict) -> dict:
         "aspect_ratio": str(req.get("aspect_ratio") or "16:9")[:16],
         "video_rel": None,
         "error": None,
-        "created_at": _now(),
+        "created_at": _jobstore.now(),
     }
     _write_job(project_id, job)
     asyncio.create_task(_run_job(project_id, job))

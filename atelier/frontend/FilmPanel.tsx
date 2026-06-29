@@ -46,6 +46,12 @@ export function FilmPanel({ projectId, refAbsPath }: Props) {
     setOrder((cur) => (cur.includes(rel) ? cur.filter((r) => r !== rel) : [...cur, rel]))
   }
 
+  async function del(job: FilmJob) {
+    if (!confirm(t("delete_film_confirm"))) return
+    await atelierApi.deleteFilm(projectId, job.job_id)
+    setJobs((cur) => cur.filter((j) => j.job_id !== job.job_id))
+  }
+
   async function render() {
     if (order.length < 1) return
     setBusy(true); setError(null)
@@ -59,11 +65,13 @@ export function FilmPanel({ projectId, refAbsPath }: Props) {
     }
   }
 
-  if (clips.length === 0 && jobs.length === 0) return null
-
   return (
-    <div className="flex flex-col gap-2 border-t border-slate-700 pt-3">
+    <div className="flex flex-col gap-2">
       <h3 className="text-sm font-semibold text-slate-200">🎞️ {t("film_title")}</h3>
+
+      {clips.length === 0 && jobs.length === 0 && (
+        <p className="text-xs text-slate-500">{t("film_empty")}</p>
+      )}
 
       {clips.length > 0 && (
         <>
@@ -112,7 +120,7 @@ export function FilmPanel({ projectId, refAbsPath }: Props) {
       {error && <div className="rounded bg-red-500/10 px-2 py-1 text-xs text-red-400">{error}</div>}
 
       {jobs.map((job) => (
-        <div key={job.job_id} className="overflow-hidden rounded border border-slate-700">
+        <div key={job.job_id} className="group relative overflow-hidden rounded border border-slate-700">
           {job.status === "completed" && job.film_rel ? (
             <video src={fileUrl(refAbsPath(job.film_rel))} controls className="w-full" preload="metadata" />
           ) : (
@@ -127,6 +135,13 @@ export function FilmPanel({ projectId, refAbsPath }: Props) {
               )}
             </div>
           )}
+          <button
+            onClick={() => del(job)}
+            title={t("delete")}
+            className="absolute top-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[11px] opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+          >
+            🗑️
+          </button>
         </div>
       ))}
     </div>

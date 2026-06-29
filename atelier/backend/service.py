@@ -21,6 +21,17 @@ def file_to_data_url(path) -> str:
     return f"data:{mime or 'image/png'};base64,{b64}"
 
 
+def delete_gallery_image(project_id: str, rel: str) -> bool:
+    """Löscht ein generiertes Bild + sein Sidecar. True bei Erfolg."""
+    root = storage.atelier_root(project_id)
+    img = storage.safe_under(root, rel)
+    if img is None or not img.is_file() or img.parent != storage.output_dir(project_id):
+        return False
+    img.unlink(missing_ok=True)
+    img.with_suffix(img.suffix + ".json").unlink(missing_ok=True)
+    return True
+
+
 def scan_gallery(project_id: str) -> list[dict]:
     """Generierte Bilder des Projekts (neueste zuerst) + Sidecar-Metadaten."""
     out_dir = storage.output_dir(project_id)

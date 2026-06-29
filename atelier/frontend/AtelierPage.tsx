@@ -24,6 +24,7 @@ export function AtelierPage() {
   const [presets, setPresets] = useState<PresetCatalog>({})
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [videoTick, setVideoTick] = useState(0)
+  const [tab, setTab] = useState<"generate" | "gallery" | "clips">("generate")
 
   useEffect(() => {
     projectsApi.list().then((ps) => {
@@ -85,7 +86,7 @@ export function AtelierPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-[280px_1fr_360px] gap-4 p-4 flex-1 overflow-auto">
+      <div className="grid grid-cols-[280px_1fr_360px] gap-4 p-4 flex-1 overflow-hidden">
         <section className="overflow-auto">
           <CharacterLibrary
             projectId={projectId}
@@ -96,25 +97,53 @@ export function AtelierPage() {
             refAbsPath={refAbsPath}
           />
         </section>
-        <section className="overflow-auto">
-          <GeneratePanel
-            projectId={projectId}
-            ci={ci}
-            characters={characters}
-            selectedIds={selectedIds}
-            presets={presets}
-            onGenerated={() => reload(projectId)}
-          />
+
+        <section className="flex flex-col overflow-hidden">
+          <div className="mb-3 flex gap-1 rounded-lg bg-slate-800/60 p-1">
+            {([
+              ["generate", `✨ ${t("tab_generate")}`],
+              ["gallery", `🖼️ ${t("tab_gallery")}`],
+              ["clips", `🎬 ${t("tab_clips")}`],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  tab === key ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 overflow-auto">
+            {tab === "generate" && (
+              <GeneratePanel
+                projectId={projectId}
+                ci={ci}
+                characters={characters}
+                selectedIds={selectedIds}
+                presets={presets}
+                onGenerated={() => { reload(projectId); setTab("gallery") }}
+              />
+            )}
+            {tab === "gallery" && (
+              <Gallery
+                projectId={projectId}
+                items={gallery}
+                characters={characters}
+                onPromoted={() => reload(projectId)}
+                onVideoStarted={() => { setVideoTick((n) => n + 1); setTab("clips") }}
+              />
+            )}
+            {tab === "clips" && (
+              <VideoPanel key={`${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
+            )}
+          </div>
         </section>
-        <section className="overflow-auto flex flex-col gap-3">
-          <Gallery
-            projectId={projectId}
-            items={gallery}
-            characters={characters}
-            onPromoted={() => reload(projectId)}
-            onVideoStarted={() => setVideoTick((n) => n + 1)}
-          />
-          <VideoPanel key={`${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
+
+        <section className="overflow-auto">
           <FilmPanel key={`film-${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
         </section>
       </div>

@@ -36,6 +36,8 @@ export const atelierApi = {
     api.get<PresetCatalog>(`${BASE}/presets`),
   gallery: (pid: string): Promise<GalleryItem[]> =>
     api.get<GalleryItem[]>(`${BASE}/projects/${pid}/gallery`),
+  deleteImage: (pid: string, rel: string): Promise<{ ok: boolean }> =>
+    api.post<{ ok: boolean }>(`${BASE}/projects/${pid}/gallery/delete`, { rel }),
   generate: (pid: string, req: GenerateRequest): Promise<GenerateResult> =>
     api.post<GenerateResult>(`${BASE}/projects/${pid}/generate`, req),
   promote: (pid: string, charId: string, rel: string): Promise<AtelierCharacter> =>
@@ -44,10 +46,14 @@ export const atelierApi = {
     api.get<VideoJob[]>(`${BASE}/projects/${pid}/videos`),
   createVideo: (pid: string, req: VideoRequest): Promise<VideoJob> =>
     api.post<VideoJob>(`${BASE}/projects/${pid}/videos`, req),
+  deleteVideo: (pid: string, jobId: string): Promise<{ ok: boolean }> =>
+    api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/videos/${jobId}`),
   listFilms: (pid: string): Promise<FilmJob[]> =>
     api.get<FilmJob[]>(`${BASE}/projects/${pid}/films`),
   createFilm: (pid: string, clips: string[], resolution: string): Promise<FilmJob> =>
     api.post<FilmJob>(`${BASE}/projects/${pid}/films`, { clips, resolution }),
+  deleteFilm: (pid: string, jobId: string): Promise<{ ok: boolean }> =>
+    api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/films/${jobId}`),
   uploadReference: (pid: string, charId: string, file: File): Promise<AtelierCharacter> => {
     const form = new FormData()
     form.append("file", file)

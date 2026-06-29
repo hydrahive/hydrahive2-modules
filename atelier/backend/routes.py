@@ -124,6 +124,18 @@ def list_gallery(project_id: str, auth: Auth) -> list[dict]:
     return service.scan_gallery(project_id)
 
 
+class DeleteImageIn(BaseModel):
+    rel: str = Field(max_length=300)
+
+
+@router.post("/projects/{project_id}/gallery/delete")
+def delete_image(project_id: str, body: DeleteImageIn, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    if not service.delete_gallery_image(project_id, body.rel):
+        raise coded(status.HTTP_404_NOT_FOUND, "image_not_found")
+    return {"ok": True}
+
+
 # Video- und Film-Routen liegen in media_routes.py (eigener Router) — hält
 # diese Datei schlank. Beide werden im Modul-register zusätzlich eingehängt.
 
