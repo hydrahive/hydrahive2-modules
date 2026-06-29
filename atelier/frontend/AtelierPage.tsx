@@ -7,6 +7,7 @@ import { CharacterLibrary } from "./CharacterLibrary"
 import { GeneratePanel } from "./GeneratePanel"
 import { Gallery } from "./Gallery"
 import { VideoPanel } from "./VideoPanel"
+import { FilmPanel } from "./FilmPanel"
 import type { AtelierCharacter, AtelierCI, GalleryItem, PresetCatalog } from "./types"
 
 const DEFAULT_CI: AtelierCI = { palette: [], style_anchor: "", default_model: "", aspect_ratio: "1:1" }
@@ -114,6 +115,7 @@ export function AtelierPage() {
             onVideoStarted={() => setVideoTick((n) => n + 1)}
           />
           <VideoPanel key={`${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
+          <FilmPanel key={`film-${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
         </section>
       </div>
     </div>

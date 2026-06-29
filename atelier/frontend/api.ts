@@ -10,6 +10,7 @@ import type {
   PresetCatalog,
   VideoJob,
   VideoRequest,
+  FilmJob,
 } from "./types"
 
 const BASE = "/modules/atelier"
@@ -43,6 +44,10 @@ export const atelierApi = {
     api.get<VideoJob[]>(`${BASE}/projects/${pid}/videos`),
   createVideo: (pid: string, req: VideoRequest): Promise<VideoJob> =>
     api.post<VideoJob>(`${BASE}/projects/${pid}/videos`, req),
+  listFilms: (pid: string): Promise<FilmJob[]> =>
+    api.get<FilmJob[]>(`${BASE}/projects/${pid}/films`),
+  createFilm: (pid: string, clips: string[], resolution: string): Promise<FilmJob> =>
+    api.post<FilmJob>(`${BASE}/projects/${pid}/films`, { clips, resolution }),
   uploadReference: (pid: string, charId: string, file: File): Promise<AtelierCharacter> => {
     const form = new FormData()
     form.append("file", file)

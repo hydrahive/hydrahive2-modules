@@ -1,0 +1,76 @@
+"""Atelier — Media-Job-Routen (Video + Film, async).
+
+Eigener Router für die lang laufenden Media-Jobs (Image-to-Video und
+Film-Schnitt), ausgelagert aus routes.py um diese schlank zu halten. Wird vom
+Modul über register_router zusätzlich eingehängt — gleicher /api/modules/atelier
+Prefix, daher dieselben /projects/{id}/...-Pfade.
+"""
+from __future__ import annotations
+
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
+from pydantic import BaseModel, Field
+
+from hydrahive.api.middleware.auth import require_auth
+from hydrahive.api.middleware.errors import coded
+
+from . import film, storage, video
+
+router = APIRouter()
+Auth = Annotated[tuple[str, str], Depends(require_auth)]
+
+
+def _guard(user: str, project_id: str) -> None:
+    if not storage.is_project_id(project_id) or not storage.user_can_access(user, project_id):
+        raise coded(status.HTTP_404_NOT_FOUND, "project_not_found")
+
+
+# ---- Video (Image-to-Video) -------------------------------------------------
+
+class VideoIn(BaseModel):
+    source_rel: str = Field(max_length=300)
+    prompt: str = Field(default="", max_length=2000)
+    model: str = Field(default="", max_length=200)
+    duration: int = Field(default=5, ge=1, le=20)
+    aspect_ratio: str = Field(default="16:9", max_length=16)
+
+
+@router.get("/projects/{project_id}/videos")
+def list_videos(project_id: str, auth: Auth) -> list[dict]:
+    _guard(auth[0], project_id)
+    return video.list_video_jobs(project_id)
+
+
+@router.post("/projects/{project_id}/videos")
+async def create_video(project_id: str, body: VideoIn, auth: Auth) -> dict:
+    # async, damit start_video_job() einen laufenden Event-Loop für
+    # asyncio.create_task hat (sync-Routen laufen im Thread-Pool ohne Loop).
+    _guard(auth[0], project_id)
+    src = storage.safe_under(storage.atelier_root(project_id), body.source_rel)
+    if src is None or not src.is_file():
+        raise coded(status.HTTP_404_NOT_FOUND, "image_not_found")
+    return video.start_video_job(project_id, body.model_dump())
+
+
+# ---- Film-Schnitt (Clips zusammenfügen, ffmpeg) -----------------------------
+
+class FilmIn(BaseModel):
+    clips: list[str] = Field(default_factory=list)
+    resolution: str = Field(default="16:9", max_length=8)
+    music_rel: str = Field(default="", max_length=300)
+
+
+@router.get("/projects/{project_id}/films")
+def list_films(project_id: str, auth: Auth) -> list[dict]:
+    _guard(auth[0], project_id)
+    return film.list_film_jobs(project_id)
+
+
+@router.post("/projects/{project_id}/films")
+async def create_film(project_id: str, body: FilmIn, auth: Auth) -> dict:
+    # async wegen asyncio.create_task im Job-Start (wie create_video).
+    _guard(auth[0], project_id)
+    if len(body.clips) < 1:
+        raise coded(status.HTTP_400_BAD_REQUEST, "no_clips")
+    return film.start_film_job(project_id, body.model_dump())

@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import characters, presets, service, storage, video
+from . import characters, presets, service, storage
 
 router = APIRouter()
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
@@ -124,31 +124,8 @@ def list_gallery(project_id: str, auth: Auth) -> list[dict]:
     return service.scan_gallery(project_id)
 
 
-# ---- Video (Image-to-Video, async) ------------------------------------------
-
-class VideoIn(BaseModel):
-    source_rel: str = Field(max_length=300)
-    prompt: str = Field(default="", max_length=2000)
-    model: str = Field(default="", max_length=200)
-    duration: int = Field(default=5, ge=1, le=20)
-    aspect_ratio: str = Field(default="16:9", max_length=16)
-
-
-@router.get("/projects/{project_id}/videos")
-def list_videos(project_id: str, auth: Auth) -> list[dict]:
-    _guard(auth[0], project_id)
-    return video.list_video_jobs(project_id)
-
-
-@router.post("/projects/{project_id}/videos")
-async def create_video(project_id: str, body: VideoIn, auth: Auth) -> dict:
-    # async, damit start_video_job() einen laufenden Event-Loop für
-    # asyncio.create_task hat (sync-Routen laufen im Thread-Pool ohne Loop).
-    _guard(auth[0], project_id)
-    src = storage.safe_under(storage.atelier_root(project_id), body.source_rel)
-    if src is None or not src.is_file():
-        raise coded(status.HTTP_404_NOT_FOUND, "image_not_found")
-    return video.start_video_job(project_id, body.model_dump())
+# Video- und Film-Routen liegen in media_routes.py (eigener Router) — hält
+# diese Datei schlank. Beide werden im Modul-register zusätzlich eingehängt.
 
 
 # ---- Regie-Presets ----------------------------------------------------------

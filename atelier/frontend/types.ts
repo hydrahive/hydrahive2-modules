@@ -61,6 +61,17 @@ export interface VideoRequest {
   aspect_ratio?: string
 }
 
+export interface FilmJob {
+  job_id: string
+  status: "pending" | "processing" | "completed" | "failed"
+  clips: string[]
+  resolution: string
+  music_rel: string
+  film_rel: string | null
+  error: string | null
+  created_at: string
+}
+
 export interface GenerateResult {
   name: string
   rel: string
