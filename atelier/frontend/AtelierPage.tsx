@@ -6,6 +6,7 @@ import { atelierApi } from "./api"
 import { CharacterLibrary } from "./CharacterLibrary"
 import { GeneratePanel } from "./GeneratePanel"
 import { Gallery } from "./Gallery"
+import { VideoPanel } from "./VideoPanel"
 import type { AtelierCharacter, AtelierCI, GalleryItem, PresetCatalog } from "./types"
 
 const DEFAULT_CI: AtelierCI = { palette: [], style_anchor: "", default_model: "", aspect_ratio: "1:1" }
@@ -21,6 +22,7 @@ export function AtelierPage() {
   const [root, setRoot] = useState<string>("")
   const [presets, setPresets] = useState<PresetCatalog>({})
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [videoTick, setVideoTick] = useState(0)
 
   useEffect(() => {
     projectsApi.list().then((ps) => {
@@ -103,13 +105,15 @@ export function AtelierPage() {
             onGenerated={() => reload(projectId)}
           />
         </section>
-        <section className="overflow-auto">
+        <section className="overflow-auto flex flex-col gap-3">
           <Gallery
             projectId={projectId}
             items={gallery}
             characters={characters}
             onPromoted={() => reload(projectId)}
+            onVideoStarted={() => setVideoTick((n) => n + 1)}
           />
+          <VideoPanel key={`${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
         </section>
       </div>
     </div>

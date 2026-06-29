@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import characters, storage
+from . import characters, presets, service, storage, video
 
 router = APIRouter()
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
@@ -121,9 +121,32 @@ async def upload_reference(project_id: str, char_id: str, file: UploadFile, auth
 @router.get("/projects/{project_id}/gallery")
 def list_gallery(project_id: str, auth: Auth) -> list[dict]:
     _guard(auth[0], project_id)
-    from . import service
-
     return service.scan_gallery(project_id)
+
+
+# ---- Video (Image-to-Video, async) ------------------------------------------
+
+class VideoIn(BaseModel):
+    source_rel: str = Field(max_length=300)
+    prompt: str = Field(default="", max_length=2000)
+    model: str = Field(default="", max_length=200)
+    duration: int = Field(default=5, ge=1, le=20)
+    aspect_ratio: str = Field(default="16:9", max_length=16)
+
+
+@router.get("/projects/{project_id}/videos")
+def list_videos(project_id: str, auth: Auth) -> list[dict]:
+    _guard(auth[0], project_id)
+    return video.list_video_jobs(project_id)
+
+
+@router.post("/projects/{project_id}/videos")
+def create_video(project_id: str, body: VideoIn, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    src = storage.safe_under(storage.atelier_root(project_id), body.source_rel)
+    if src is None or not src.is_file():
+        raise coded(status.HTTP_404_NOT_FOUND, "image_not_found")
+    return video.start_video_job(project_id, body.model_dump())
 
 
 # ---- Regie-Presets ----------------------------------------------------------
@@ -131,8 +154,6 @@ def list_gallery(project_id: str, auth: Auth) -> list[dict]:
 @router.get("/presets")
 def get_presets(auth: Auth) -> dict:
     """Kamera-/Licht-/Wetter-Preset-Katalog {group: [keys]} für die Dropdowns."""
-    from . import presets
-
     return presets.catalog()
 
 
@@ -150,7 +171,6 @@ class GenerateIn(BaseModel):
 @router.post("/projects/{project_id}/generate")
 def post_generate(project_id: str, body: GenerateIn, auth: Auth) -> dict:
     _guard(auth[0], project_id)
-    from . import service
     from .generate import GenerateError
 
     try:

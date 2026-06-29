@@ -8,6 +8,8 @@ import type {
   GenerateRequest,
   GenerateResult,
   PresetCatalog,
+  VideoJob,
+  VideoRequest,
 } from "./types"
 
 const BASE = "/modules/atelier"
@@ -37,6 +39,10 @@ export const atelierApi = {
     api.post<GenerateResult>(`${BASE}/projects/${pid}/generate`, req),
   promote: (pid: string, charId: string, rel: string): Promise<AtelierCharacter> =>
     api.post<AtelierCharacter>(`${BASE}/projects/${pid}/promote`, { char_id: charId, rel }),
+  listVideos: (pid: string): Promise<VideoJob[]> =>
+    api.get<VideoJob[]>(`${BASE}/projects/${pid}/videos`),
+  createVideo: (pid: string, req: VideoRequest): Promise<VideoJob> =>
+    api.post<VideoJob>(`${BASE}/projects/${pid}/videos`, req),
   uploadReference: (pid: string, charId: string, file: File): Promise<AtelierCharacter> => {
     const form = new FormData()
     form.append("file", file)

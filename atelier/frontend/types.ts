@@ -39,6 +39,27 @@ export interface GenerateRequest {
 /** {group: [keys]} — Regie-Preset-Katalog vom Backend. */
 export type PresetCatalog = Record<string, string[]>
 
+export interface VideoJob {
+  job_id: string
+  status: "pending" | "processing" | "completed" | "failed"
+  source_rel: string
+  prompt: string
+  model: string
+  duration: number
+  aspect_ratio: string
+  video_rel: string | null
+  error: string | null
+  created_at: string
+}
+
+export interface VideoRequest {
+  source_rel: string
+  prompt: string
+  model?: string
+  duration?: number
+  aspect_ratio?: string
+}
+
 export interface GenerateResult {
   name: string
   rel: string

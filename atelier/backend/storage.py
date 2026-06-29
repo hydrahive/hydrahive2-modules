@@ -70,6 +70,12 @@ def output_dir(project_id: str) -> Path:
     return d
 
 
+def videos_dir(project_id: str) -> Path:
+    d = atelier_root(project_id) / "videos"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def new_id() -> str:
     """Frische 32-stellige Hex-ID (für Charaktere/Outputs)."""
     return uuid.uuid4().hex

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
+import { VideoDialog } from "./VideoDialog"
 import type { AtelierCharacter, GalleryItem } from "./types"
 
 interface Props {
@@ -8,13 +9,15 @@ interface Props {
   items: GalleryItem[]
   characters: AtelierCharacter[]
   onPromoted: () => void
+  onVideoStarted: () => void
 }
 
-/** Rechte Spalte: Galerie der generierten Bilder + "als Referenz übernehmen". */
-export function Gallery({ projectId, items, characters, onPromoted }: Props) {
+/** Rechte Spalte: Galerie der generierten Bilder + "als Referenz übernehmen" + "zu Video". */
+export function Gallery({ projectId, items, characters, onPromoted, onVideoStarted }: Props) {
   const { t } = useTranslation("atelier")
   const [zoom, setZoom] = useState<GalleryItem | null>(null)
   const [promoteFor, setPromoteFor] = useState<GalleryItem | null>(null)
+  const [videoFor, setVideoFor] = useState<GalleryItem | null>(null)
 
   async function promote(charId: string) {
     if (!promoteFor) return
@@ -37,12 +40,19 @@ export function Gallery({ projectId, items, characters, onPromoted }: Props) {
               className="w-full aspect-square object-cover cursor-zoom-in"
               onClick={() => setZoom(it)}
             />
-            <div className="absolute inset-x-0 bottom-0 p-1 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute inset-x-0 bottom-0 p-1 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
               <button
                 onClick={() => setPromoteFor(it)}
-                className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 w-full"
+                className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 flex-1"
               >
                 {t("promote")}
+              </button>
+              <button
+                onClick={() => setVideoFor(it)}
+                className="text-[10px] px-1.5 py-0.5 rounded bg-sky-600 hover:bg-sky-500"
+                title={t("make_video")}
+              >
+                🎬
               </button>
             </div>
           </div>
@@ -84,6 +94,15 @@ export function Gallery({ projectId, items, characters, onPromoted }: Props) {
             </button>
           </div>
         </div>
+      )}
+
+      {videoFor && (
+        <VideoDialog
+          projectId={projectId}
+          source={videoFor}
+          onClose={() => setVideoFor(null)}
+          onStarted={onVideoStarted}
+        />
       )}
     </div>
   )
