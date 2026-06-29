@@ -64,6 +64,11 @@
       "id": "blueprint",
       "name": "Blueprint",
       "path": "blueprint"
+    },
+    {
+      "id": "atelier",
+      "name": "Atelier",
+      "path": "atelier"
     }
   ]
 }
