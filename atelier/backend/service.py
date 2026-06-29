@@ -6,10 +6,19 @@ generate.py (API-Client), damit die Kette ohne FastAPI testbar bleibt.
 """
 from __future__ import annotations
 
+import base64
 import json
+import mimetypes
 from datetime import datetime, timezone
 
 from . import characters, generate, storage
+
+
+def file_to_data_url(path) -> str:
+    """Lokale Bilddatei → data:-URL (base64) für input_references der Image-API."""
+    mime, _ = mimetypes.guess_type(str(path))
+    b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime or 'image/png'};base64,{b64}"
 
 _DEFAULT_MODEL = "google/gemini-2.5-flash-image"
 # OpenRouter-Image-API begrenzt input_references je Modell (gemini: 0-3).
@@ -97,8 +106,6 @@ def _collect_reference_urls(project_id: str, chosen: list[dict]) -> list[str]:
     Modell nur eine begrenzte Zahl an input_references (gemini: 0-3). Mehr
     führt zu HTTP 400. 3 ist der sichere, modellübergreifende Höchstwert.
     """
-    from .routes import file_to_data_url
-
     urls: list[str] = []
     root = storage.atelier_root(project_id)
     for ch in chosen:

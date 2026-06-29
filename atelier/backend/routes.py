@@ -8,12 +8,10 @@ zurückgegeben. Referenzbilder werden für die Generierung als data:-URL
 """
 from __future__ import annotations
 
-import base64
 import json
-import mimetypes
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, UploadFile, status
 from pydantic import BaseModel, Field
 
 from hydrahive.api.middleware.auth import require_auth
@@ -28,11 +26,6 @@ Auth = Annotated[tuple[str, str], Depends(require_auth)]
 def _guard(user: str, project_id: str) -> None:
     if not storage.is_project_id(project_id) or not storage.user_can_access(user, project_id):
         raise coded(status.HTTP_404_NOT_FOUND, "project_not_found")
-
-
-def _abs_path(project_id: str, rel: str) -> str:
-    """Absoluter Pfad einer Atelier-Datei (für /api/files-URLs im Frontend)."""
-    return str(storage.atelier_root(project_id) / rel)
 
 
 # ---- Charaktere & CI --------------------------------------------------------
@@ -99,6 +92,29 @@ def delete_character(project_id: str, char_id: str, auth: Auth) -> dict:
     if not characters.delete_character(project_id, char_id):
         raise coded(status.HTTP_404_NOT_FOUND, "character_not_found")
     return {"ok": True}
+
+
+_UPLOAD_STATUS = {
+    "not_an_image": status.HTTP_400_BAD_REQUEST,
+    "empty_file": status.HTTP_400_BAD_REQUEST,
+    "file_too_large": status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+}
+
+
+@router.post("/projects/{project_id}/characters/{char_id}/upload")
+async def upload_reference(project_id: str, char_id: str, file: UploadFile, auth: Auth) -> dict:
+    """Lädt ein eigenes Bild hoch und hängt es als Hero-Referenz an die Figur."""
+    _guard(auth[0], project_id)
+    data = await file.read()
+    try:
+        char = characters.save_uploaded_reference(
+            project_id, char_id, data, file.filename or "", file.content_type
+        )
+    except characters.UploadRejected as e:
+        raise coded(_UPLOAD_STATUS.get(e.code, status.HTTP_400_BAD_REQUEST), e.code) from e
+    if char is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "character_not_found")
+    return char
 
 
 # ---- Galerie ----------------------------------------------------------------
@@ -181,10 +197,3 @@ def promote_reference(project_id: str, body: PromoteIn, auth: Auth) -> dict:
     if char is None:
         raise coded(status.HTTP_404_NOT_FOUND, "character_not_found")
     return char
-
-
-def file_to_data_url(path) -> str:
-    """Lokale Bilddatei → data:-URL (base64) für input_references der Image-API."""
-    mime, _ = mimetypes.guess_type(str(path))
-    b64 = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f"data:{mime or 'image/png'};base64,{b64}"

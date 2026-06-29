@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
+import { CharacterReferences } from "./CharacterReferences"
 import type { AtelierCharacter, CharacterInput } from "./types"
 
 interface Props {
@@ -31,17 +32,21 @@ export function CharacterLibrary({
   refAbsPath,
 }: Props) {
   const { t } = useTranslation("atelier")
-  const [editing, setEditing] = useState<AtelierCharacter | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState<CharacterInput>(EMPTY)
   const [busy, setBusy] = useState(false)
 
+  // Editing-Figur immer aus der frischen Liste ableiten → nach Upload/Reload
+  // hat sie die aktuellen Referenzen (kein veralteter lokaler Snapshot).
+  const editing = editingId ? characters.find((c) => c.id === editingId) ?? null : null
+
   function startNew() {
-    setEditing(null)
+    setEditingId(null)
     setDraft(EMPTY)
   }
 
   function startEdit(c: AtelierCharacter) {
-    setEditing(c)
+    setEditingId(c.id)
     setDraft({
       name: c.name,
       description: c.description,
@@ -56,10 +61,13 @@ export function CharacterLibrary({
     if (!draft.name.trim()) return
     setBusy(true)
     try {
-      if (editing) await atelierApi.updateCharacter(projectId, editing.id, draft)
-      else await atelierApi.createCharacter(projectId, draft)
-      setDraft(EMPTY)
-      setEditing(null)
+      if (editing) {
+        await atelierApi.updateCharacter(projectId, editing.id, draft)
+      } else {
+        // Neue Figur direkt in den Edit-Modus → Referenzbilder hochladbar.
+        const created = await atelierApi.createCharacter(projectId, draft)
+        setEditingId(created.id)
+      }
       onChanged()
     } finally {
       setBusy(false)
@@ -69,7 +77,7 @@ export function CharacterLibrary({
   async function remove(id: string) {
     if (!confirm(t("delete_confirm"))) return
     await atelierApi.deleteCharacter(projectId, id)
-    if (editing?.id === id) startNew()
+    if (editingId === id) startNew()
     onChanged()
   }
 
@@ -154,6 +162,17 @@ export function CharacterLibrary({
         >
           {editing ? t("save") : t("create")}
         </button>
+
+        {editing ? (
+          <CharacterReferences
+            projectId={projectId}
+            character={editing}
+            onChanged={onChanged}
+            refAbsPath={refAbsPath}
+          />
+        ) : (
+          <p className="text-[10px] text-slate-500">{t("references_after_create")}</p>
+        )}
       </div>
     </div>
   )

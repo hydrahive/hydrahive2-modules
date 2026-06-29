@@ -23,6 +23,23 @@ from hydrahive.projects._paths import ensure_workspace
 _ID_RE = re.compile(r"^[a-f0-9]{32}$")
 _PROJECT_ID_RE = re.compile(r"^[A-Za-z0-9-]{8,64}$")
 
+# Upload-Limits für Referenzbilder.
+MAX_IMAGE_BYTES = 15 * 1024 * 1024  # 15 MB
+_ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp"}
+_ALLOWED_IMAGE_MIME = {"image/png", "image/jpeg", "image/webp"}
+
+
+def image_ext_from(filename: str, content_type: str | None) -> str | None:
+    """Validiert einen Bild-Upload, gibt die normalisierte Endung zurück (oder None)."""
+    ext = (filename.rsplit(".", 1)[-1] if "." in filename else "").lower()
+    if ext == "jpeg":
+        ext = "jpg"
+    if ext not in _ALLOWED_IMAGE_EXT:
+        return None
+    if content_type and content_type.lower() not in _ALLOWED_IMAGE_MIME:
+        return None
+    return ext
+
 
 def is_project_id(value: str) -> bool:
     """Grobe Form-Prüfung für Projekt-IDs (UUID-artig, mit Bindestrichen)."""

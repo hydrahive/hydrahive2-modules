@@ -108,6 +108,35 @@ def update_character(project_id: str, char_id: str, data: dict) -> dict | None:
     return char
 
 
+class UploadRejected(ValueError):
+    """Upload abgelehnt — code ist ein Fehler-Code (not_an_image/empty_file/file_too_large)."""
+
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
+
+
+def save_uploaded_reference(
+    project_id: str, char_id: str, data: bytes, filename: str, content_type: str | None
+) -> dict | None:
+    """Validiert einen Bild-Upload und hängt ihn als Referenz an die Figur.
+
+    Wirft ``UploadRejected`` mit Fehler-Code bei ungültigem Typ/leer/zu groß.
+    Gibt None, wenn die Figur nicht existiert.
+    """
+    if get_character(project_id, char_id) is None:
+        return None
+    ext = storage.image_ext_from(filename, content_type)
+    if ext is None:
+        raise UploadRejected("not_an_image")
+    if len(data) == 0:
+        raise UploadRejected("empty_file")
+    if len(data) > storage.MAX_IMAGE_BYTES:
+        raise UploadRejected("file_too_large")
+    rel = storage.save_reference_bytes(project_id, char_id, data, ext=ext)
+    return add_reference(project_id, char_id, rel)
+
+
 def add_reference(project_id: str, char_id: str, rel_path: str) -> dict | None:
     char = get_character(project_id, char_id)
     if char is None:
