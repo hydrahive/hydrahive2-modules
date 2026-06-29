@@ -10,17 +10,32 @@ interface Props {
   onStarted: () => void
 }
 
-const MODELS = ["minimax/hailuo-2.3", "kwaivgi/kling-v3.0-std", "bytedance/seedance-2.0-fast"]
-const DURATIONS = [5, 10]
+// Erlaubte Dauern je Modell (aus OpenRouter — Modelle akzeptieren nur bestimmte
+// Werte, sonst HTTP 400). Erster Wert = Default.
+const MODEL_DURATIONS: Record<string, number[]> = {
+  "minimax/hailuo-2.3": [6, 10],
+  "kwaivgi/kling-v3.0-std": [5, 10],
+  "bytedance/seedance-2.0-fast": [5, 10],
+}
+const MODELS = Object.keys(MODEL_DURATIONS)
 
 /** Dialog: aus einem Galerie-Bild ein Video machen (Image-to-Video). */
 export function VideoDialog({ projectId, source, onClose, onStarted }: Props) {
   const { t } = useTranslation("atelier")
   const [prompt, setPrompt] = useState("")
   const [model, setModel] = useState(MODELS[0])
-  const [duration, setDuration] = useState(5)
+  const [duration, setDuration] = useState(MODEL_DURATIONS[MODELS[0]][0])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const durations = MODEL_DURATIONS[model] ?? [5]
+
+  function pickModel(m: string) {
+    setModel(m)
+    // Dauer auf einen für das neue Modell gültigen Wert setzen.
+    const allowed = MODEL_DURATIONS[m] ?? [5]
+    if (!allowed.includes(duration)) setDuration(allowed[0])
+  }
 
   async function start() {
     setBusy(true)
@@ -65,7 +80,7 @@ export function VideoDialog({ projectId, source, onClose, onStarted }: Props) {
             {t("model")}
             <select
               value={model}
-              onChange={(e) => setModel(e.target.value)}
+              onChange={(e) => pickModel(e.target.value)}
               className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
             >
               {MODELS.map((m) => (
@@ -80,7 +95,7 @@ export function VideoDialog({ projectId, source, onClose, onStarted }: Props) {
               onChange={(e) => setDuration(Number(e.target.value))}
               className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
             >
-              {DURATIONS.map((d) => (
+              {durations.map((d) => (
                 <option key={d} value={d}>{d}s</option>
               ))}
             </select>

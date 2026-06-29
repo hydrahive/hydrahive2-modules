@@ -30,6 +30,13 @@ from . import storage
 logger = logging.getLogger("hhmod_atelier.video")
 
 _DEFAULT_MODEL = "minimax/hailuo-2.3"
+# Erlaubte Dauern je Modell (OpenRouter lehnt andere mit HTTP 400 ab).
+# Erster Wert = Default/Fallback. Unbekannte Modelle: keine Korrektur.
+_MODEL_DURATIONS: dict[str, list[int]] = {
+    "minimax/hailuo-2.3": [6, 10],
+    "kwaivgi/kling-v3.0-std": [5, 10],
+    "bytedance/seedance-2.0-fast": [5, 10],
+}
 _POLL_INTERVAL = 5.0
 _MAX_POLLS = 90  # ~7,5 min Obergrenze
 _SEM = asyncio.Semaphore(2)  # max 2 parallele Video-Jobs
@@ -61,17 +68,28 @@ def list_video_jobs(project_id: str) -> list[dict]:
     return jobs
 
 
+def _clamp_duration(model: str, duration: int) -> int:
+    """Zieht die Dauer auf einen vom Modell erlaubten Wert (sonst HTTP 400)."""
+    allowed = _MODEL_DURATIONS.get(model)
+    if not allowed or duration in allowed:
+        return duration
+    # nächstgelegener erlaubter Wert
+    return min(allowed, key=lambda a: abs(a - duration))
+
+
 def start_video_job(project_id: str, req: dict) -> dict:
     """Legt einen Video-Job an und startet den Hintergrund-Task. Gibt den Job zurück."""
     job_id = storage.new_id()
     source_rel = str(req.get("source_rel") or "")
+    model = str(req.get("model") or "").strip() or _DEFAULT_MODEL
+    duration = _clamp_duration(model, int(req.get("duration") or 5))
     job = {
         "job_id": job_id,
         "status": "pending",
         "source_rel": source_rel,
         "prompt": str(req.get("prompt") or "")[:2000],
-        "model": str(req.get("model") or "").strip() or _DEFAULT_MODEL,
-        "duration": int(req.get("duration") or 5),
+        "model": model,
+        "duration": duration,
         "aspect_ratio": str(req.get("aspect_ratio") or "16:9")[:16],
         "video_rel": None,
         "error": None,
