@@ -168,6 +168,7 @@ class GenerateIn(BaseModel):
     seed: int | None = None
     aspect_ratio: str = Field(default="", max_length=16)
     camera: dict[str, str] = Field(default_factory=dict)
+    style: str = Field(default="", max_length=64)
 
 
 @router.post("/projects/{project_id}/generate")

@@ -30,10 +30,12 @@ export function GeneratePanel({ projectId, ci, characters, selectedIds, presets,
   const [ratio, setRatio] = useState("")
   const [seed, setSeed] = useState<string>("")
   const [camera, setCamera] = useState<Record<string, string>>({})
+  const [style, setStyle] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const chosen = characters.filter((c) => selectedIds.includes(c.id))
+  const styleKeys = presets.style ?? []
 
   async function generate() {
     setBusy(true)
@@ -46,6 +48,7 @@ export function GeneratePanel({ projectId, ci, characters, selectedIds, presets,
         aspect_ratio: ratio || undefined,
         seed: seed ? Number(seed) : undefined,
         camera: Object.keys(camera).length > 0 ? camera : undefined,
+        style: style || undefined,
       })
       onGenerated()
     } catch (e) {
@@ -77,6 +80,22 @@ export function GeneratePanel({ projectId, ci, characters, selectedIds, presets,
         rows={4}
         className="text-sm px-3 py-2 rounded bg-slate-800 border border-slate-700 text-slate-100 resize-y"
       />
+
+      {styleKeys.length > 0 && (
+        <label className="flex flex-col gap-1 text-xs text-slate-400">
+          🎨 {t("style")}
+          <select
+            value={style}
+            onChange={(e) => setStyle(e.target.value)}
+            className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
+          >
+            <option value="">{t("style_none")}</option>
+            {styleKeys.map((k) => (
+              <option key={k} value={k}>{t(`style_${k}`)}</option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1 text-xs text-slate-400">

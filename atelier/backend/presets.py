@@ -76,9 +76,37 @@ GROUPS: dict[str, dict[str, str]] = {
 }
 
 
+# Stil-Looks (Kunst-Stil der ganzen Szene). Anders als die Regie-Gruppen ist
+# das EINE Auswahl, und sie kommt im Prompt VOR die Szene (durchgehender Look,
+# wie ein CI-Style-Anker). key stabil (Sidecar), phrase = englischer Prompt-Text.
+STYLES: dict[str, str] = {
+    "photo": "photorealistic, high detail",
+    "cinematic": "cinematic film still, dramatic lighting",
+    "flat_vector": "clean flat vector illustration, bold outlines",
+    "watercolor": "soft watercolor painting, delicate washes",
+    "oil_painting": "classical oil painting, visible brushstrokes",
+    "retro_anime": "retro 90s anime style, cel shaded",
+    "modern_anime": "modern anime style, vibrant, detailed",
+    "comic": "western comic book style, ink and halftone",
+    "pixel_art": "pixel art, 16-bit retro game style",
+    "3d_render": "3d render, octane, soft global illumination",
+    "claymation": "claymation, handmade plasticine look",
+    "pencil_sketch": "detailed pencil sketch, graphite shading",
+    "vintage_tarot": "vintage tarot card art, ornate borders, muted gold",
+    "low_poly": "low poly 3d, faceted geometric shapes",
+    "papercut": "layered paper cut-out, soft shadows",
+    "synthwave": "synthwave, neon grid, retro 80s sci-fi",
+}
+
+
 def phrase_for(group: str, key: str) -> str | None:
     """Englische Prompt-Phrase für eine Auswahl. None bei unbekanntem key."""
     return GROUPS.get(group, {}).get(key)
+
+
+def style_phrase(key: str) -> str | None:
+    """Englische Prompt-Phrase für einen Stil-Look. None bei unbekanntem key."""
+    return STYLES.get(key)
 
 
 def collect_phrases(selection: dict[str, str]) -> list[str]:
@@ -94,5 +122,11 @@ def collect_phrases(selection: dict[str, str]) -> list[str]:
 
 
 def catalog() -> dict[str, list[str]]:
-    """{group: [keys]} für das Frontend (Labels kommen aus i18n)."""
-    return {group: list(opts.keys()) for group, opts in GROUPS.items()}
+    """{group: [keys]} für das Frontend (Labels kommen aus i18n).
+
+    Enthält die Regie-Gruppen plus die Sondergruppe 'style' (Stil-Look, eine
+    Auswahl, kommt im Prompt vor die Szene statt danach).
+    """
+    out = {group: list(opts.keys()) for group, opts in GROUPS.items()}
+    out["style"] = list(STYLES.keys())
+    return out

@@ -34,17 +34,21 @@ def build_prompt(
     ci_anchor: str,
     characters: list[dict],
     camera: list[str] | None = None,
+    style: str | None = None,
 ) -> str:
-    """Baut den vollen Prompt: CI-Anker + Figur-Steckbriefe (verbatim) + Szene
-    + Regie-/Kamera-Spezifikation.
+    """Baut den vollen Prompt: CI-Anker + Stil-Look + Figur-Steckbriefe (verbatim)
+    + Szene + Regie-/Kamera-Spezifikation.
 
-    Reihenfolge bewusst: zuerst der feste Stil (CI), dann die Figuren wörtlich,
-    dann das Variable (Szene), zuletzt die Aufnahme-Spezifikation (Kamera, Licht,
-    Wetter …). So bleibt der konsistente Teil dominant, die Regie modifiziert.
+    Reihenfolge bewusst: zuerst der feste Stil (CI + Stil-Look), dann die Figuren
+    wörtlich, dann das Variable (Szene), zuletzt die Aufnahme-Spezifikation
+    (Kamera, Licht, Wetter …). So bleibt der konsistente Teil dominant, die Regie
+    modifiziert. Der Stil-Look gehört zum durchgehenden Look, daher früh.
     """
     parts: list[str] = []
     if ci_anchor.strip():
         parts.append(ci_anchor.strip())
+    if style and style.strip():
+        parts.append(style.strip())
     for ch in characters:
         desc = (ch.get("description") or "").strip()
         name = (ch.get("name") or "").strip()

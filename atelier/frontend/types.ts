@@ -34,6 +34,7 @@ export interface GenerateRequest {
   seed?: number | null
   aspect_ratio?: string
   camera?: Record<string, string>
+  style?: string
 }
 
 /** {group: [keys]} — Regie-Preset-Katalog vom Backend. */

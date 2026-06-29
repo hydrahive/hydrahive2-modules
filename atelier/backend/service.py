@@ -69,11 +69,14 @@ def generate_for_project(project_id: str, req: dict) -> dict:
 
     camera_sel = req.get("camera") or {}
     camera_phrases = presets.collect_phrases(camera_sel) if isinstance(camera_sel, dict) else []
+    style_key = str(req.get("style") or "")
+    style_phrase = presets.style_phrase(style_key) if style_key else None
     prompt = generate.build_prompt(
         req.get("scene") or "",
         ci_anchor=ci.get("style_anchor") or "",
         characters=chosen,
         camera=camera_phrases,
+        style=style_phrase,
     )
     references = _collect_reference_urls(project_id, chosen)
 
@@ -97,6 +100,7 @@ def generate_for_project(project_id: str, req: dict) -> dict:
         "aspect_ratio": aspect,
         "references": [c["id"] for c in chosen if c.get("references")],
         "camera": camera_sel,
+        "style": style_key,
         "created_at": created,
     }
     _write_sidecar(project_id, name, meta)
