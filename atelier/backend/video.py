@@ -18,16 +18,16 @@ import json
 import logging
 from datetime import datetime, timezone
 
+import httpx
+
 from hydrahive.llm._config import openrouter_key
-from hydrahive.tools._openrouter_video import (
-    download_video,
-    poll_video_job,
-    submit_video_job,
-)
+from hydrahive.tools._openrouter_video import download_video, poll_video_job
 
 from . import storage
 
 logger = logging.getLogger("hhmod_atelier.video")
+
+_VIDEOS_URL = "https://openrouter.ai/api/v1/videos"
 
 _DEFAULT_MODEL = "minimax/hailuo-2.3"
 # Erlaubte Dauern je Modell (OpenRouter lehnt andere mit HTTP 400 ab).
@@ -100,6 +100,47 @@ def start_video_job(project_id: str, req: dict) -> dict:
     return job
 
 
+async def _submit_image_to_video(
+    *, prompt: str, model: str, key: str, duration: int,
+    aspect_ratio: str, image_url: str | None,
+) -> str:
+    """Startet einen Video-Job. Gibt job_id zurück.
+
+    Schickt das Startbild als ``frame_images`` mit ``frame_type=first_frame`` —
+    das ist das von OpenRouter erwartete Image-to-Video-Format. (Das flache
+    ``image_url`` aus dem Core-Tool wird von der Video-API ignoriert → das Modell
+    macht stattdessen Text-to-Video, daher drifteten Figur+Szene komplett weg.)
+    """
+    payload: dict = {
+        "model": model,
+        "prompt": prompt,
+        "duration": duration,
+        "aspect_ratio": aspect_ratio,
+    }
+    if image_url:
+        payload["frame_images"] = [{
+            "type": "image_url",
+            "image_url": {"url": image_url},
+            "frame_type": "first_frame",
+        }]
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                _VIDEOS_URL,
+                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                json=payload,
+            )
+            if resp.status_code >= 400:
+                raise RuntimeError(f"OpenRouter Video-Submit Fehler {resp.status_code}: {resp.text[:400]}")
+            data = resp.json()
+    except httpx.HTTPError as e:
+        raise RuntimeError(f"Netzwerk-Fehler beim Video-Submit: {e}") from e
+    job_id = data.get("id") or data.get("job_id") or ""
+    if not job_id:
+        raise RuntimeError(f"Kein job_id in OpenRouter-Antwort: {str(data)[:200]}")
+    return str(job_id)
+
+
 async def _run_job(project_id: str, job: dict) -> None:
     """Hintergrund-Task: submit → poll bis fertig → download. Schreibt Status."""
     async with _SEM:
@@ -111,8 +152,8 @@ async def _run_job(project_id: str, job: dict) -> None:
             job["status"] = "processing"
             _write_job(project_id, job)
 
-            remote_id = await submit_video_job(
-                job["prompt"], job["model"], key=key,
+            remote_id = await _submit_image_to_video(
+                prompt=job["prompt"], model=job["model"], key=key,
                 duration=job["duration"], aspect_ratio=job["aspect_ratio"],
                 image_url=image_url,
             )
