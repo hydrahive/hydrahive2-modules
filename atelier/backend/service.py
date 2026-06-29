@@ -12,6 +12,9 @@ from datetime import datetime, timezone
 from . import characters, generate, storage
 
 _DEFAULT_MODEL = "google/gemini-2.5-flash-image"
+# OpenRouter-Image-API begrenzt input_references je Modell (gemini: 0-3).
+# 3 ist der sichere modellübergreifende Höchstwert; mehr → HTTP 400.
+_MAX_REFERENCES = 3
 
 
 def generate_for_project(project_id: str, req: dict) -> dict:
@@ -88,7 +91,12 @@ def _resolve_seed(req_seed, chosen: list[dict]) -> int | None:
 
 
 def _collect_reference_urls(project_id: str, chosen: list[dict]) -> list[str]:
-    """Hero-Referenzbilder aller gewählten Figuren als data:-URLs (max 4)."""
+    """Hero-Referenzbilder aller gewählten Figuren als data:-URLs.
+
+    Gekappt auf ``_MAX_REFERENCES``: die OpenRouter-Image-API akzeptiert je
+    Modell nur eine begrenzte Zahl an input_references (gemini: 0-3). Mehr
+    führt zu HTTP 400. 3 ist der sichere, modellübergreifende Höchstwert.
+    """
     from .routes import file_to_data_url
 
     urls: list[str] = []
@@ -98,7 +106,7 @@ def _collect_reference_urls(project_id: str, chosen: list[dict]) -> list[str]:
             p = storage.safe_under(root, rel)
             if p is not None and p.is_file():
                 urls.append(file_to_data_url(p))
-            if len(urls) >= 4:
+            if len(urls) >= _MAX_REFERENCES:
                 return urls
     return urls
 

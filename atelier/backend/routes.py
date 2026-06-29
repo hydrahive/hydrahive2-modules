@@ -150,7 +150,14 @@ class GenerateIn(BaseModel):
 def post_generate(project_id: str, body: GenerateIn, auth: Auth) -> dict:
     _guard(auth[0], project_id)
     from . import service
-    return service.generate_for_project(project_id, body.model_dump())
+    from .generate import GenerateError
+
+    try:
+        return service.generate_for_project(project_id, body.model_dump())
+    except GenerateError as e:
+        # Externe Image-API-Fehler (400/Key/leer) als verständliche 422-Meldung
+        # an den User durchreichen — nicht als nacktes internal_error/500.
+        raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "generation_failed", message=str(e)) from e
 
 
 # ---- Referenz hochladen / aus Output übernehmen -----------------------------
