@@ -5,7 +5,7 @@ import type { GalleryItem } from "./types"
 
 interface Props {
   projectId: string
-  source: GalleryItem
+  source: GalleryItem | null  // null = Text-to-Video (kein Startbild)
   onClose: () => void
   onStarted: () => void
 }
@@ -42,7 +42,7 @@ export function VideoDialog({ projectId, source, onClose, onStarted }: Props) {
     setError(null)
     try {
       await atelierApi.createVideo(projectId, {
-        source_rel: source.rel,
+        source_rel: source?.rel ?? "",
         prompt,
         model,
         duration,
@@ -61,8 +61,12 @@ export function VideoDialog({ projectId, source, onClose, onStarted }: Props) {
         className="bg-slate-900 border border-slate-700 rounded-lg p-4 flex flex-col gap-3 max-w-sm w-full"
         onClick={(e) => e.stopPropagation()}
       >
-        <h4 className="text-sm font-semibold text-slate-200">🎬 {t("make_video")}</h4>
-        <img src={fileUrl(source.path)} alt="" className="w-full rounded max-h-40 object-contain bg-black/30" />
+        <h4 className="text-sm font-semibold text-slate-200">
+          🎬 {source ? t("make_video") : t("make_video_text")}
+        </h4>
+        {source && (
+          <img src={fileUrl(source.path)} alt="" className="w-full rounded max-h-40 object-contain bg-black/30" />
+        )}
 
         <label className="flex flex-col gap-1 text-xs text-slate-400">
           {t("video_motion")}
@@ -111,7 +115,7 @@ export function VideoDialog({ projectId, source, onClose, onStarted }: Props) {
           </button>
           <button
             onClick={start}
-            disabled={busy}
+            disabled={busy || (!source && !prompt.trim())}
             className="text-xs px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 font-medium"
           >
             {busy ? t("video_starting") : t("video_start")}

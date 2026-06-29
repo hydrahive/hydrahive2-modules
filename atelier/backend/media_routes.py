@@ -29,7 +29,7 @@ def _guard(user: str, project_id: str) -> None:
 # ---- Video (Image-to-Video) -------------------------------------------------
 
 class VideoIn(BaseModel):
-    source_rel: str = Field(max_length=300)
+    source_rel: str = Field(default="", max_length=300)  # leer = Text-to-Video
     prompt: str = Field(default="", max_length=2000)
     model: str = Field(default="", max_length=200)
     duration: int = Field(default=5, ge=1, le=20)
@@ -47,9 +47,14 @@ async def create_video(project_id: str, body: VideoIn, auth: Auth) -> dict:
     # async, damit start_video_job() einen laufenden Event-Loop für
     # asyncio.create_task hat (sync-Routen laufen im Thread-Pool ohne Loop).
     _guard(auth[0], project_id)
-    src = storage.safe_under(storage.atelier_root(project_id), body.source_rel)
-    if src is None or not src.is_file():
-        raise coded(status.HTTP_404_NOT_FOUND, "image_not_found")
+    # Startbild ist optional: mit source_rel = Image-to-Video, ohne = Text-to-Video.
+    if body.source_rel:
+        src = storage.safe_under(storage.atelier_root(project_id), body.source_rel)
+        if src is None or not src.is_file():
+            raise coded(status.HTTP_404_NOT_FOUND, "image_not_found")
+    elif not body.prompt.strip():
+        # Ohne Bild MUSS ein Prompt da sein (sonst hat das Modell keine Vorlage).
+        raise coded(status.HTTP_400_BAD_REQUEST, "prompt_required")
     return video.start_video_job(project_id, body.model_dump())
 
 
