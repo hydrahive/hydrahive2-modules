@@ -141,7 +141,9 @@ def list_videos(project_id: str, auth: Auth) -> list[dict]:
 
 
 @router.post("/projects/{project_id}/videos")
-def create_video(project_id: str, body: VideoIn, auth: Auth) -> dict:
+async def create_video(project_id: str, body: VideoIn, auth: Auth) -> dict:
+    # async, damit start_video_job() einen laufenden Event-Loop für
+    # asyncio.create_task hat (sync-Routen laufen im Thread-Pool ohne Loop).
     _guard(auth[0], project_id)
     src = storage.safe_under(storage.atelier_root(project_id), body.source_rel)
     if src is None or not src.is_file():
