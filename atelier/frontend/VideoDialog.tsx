@@ -10,7 +10,7 @@ interface Props {
   onStarted: () => void
 }
 
-const MODELS = ["kling/kling-video-v2-master", "minimax/hailuo-2.3"]
+const MODELS = ["minimax/hailuo-2.3", "kwaivgi/kling-v3.0-std", "bytedance/seedance-2.0-fast"]
 const DURATIONS = [5, 10]
 
 /** Dialog: aus einem Galerie-Bild ein Video machen (Image-to-Video). */

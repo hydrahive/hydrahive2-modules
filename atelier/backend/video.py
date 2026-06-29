@@ -29,7 +29,7 @@ from . import storage
 
 logger = logging.getLogger("hhmod_atelier.video")
 
-_DEFAULT_MODEL = "kling/kling-video-v2-master"
+_DEFAULT_MODEL = "minimax/hailuo-2.3"
 _POLL_INTERVAL = 5.0
 _MAX_POLLS = 90  # ~7,5 min Obergrenze
 _SEM = asyncio.Semaphore(2)  # max 2 parallele Video-Jobs
