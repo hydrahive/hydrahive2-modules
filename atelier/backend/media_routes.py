@@ -50,6 +50,21 @@ def delete_video(project_id: str, job_id: str, auth: Auth) -> dict:
     return {"ok": True}
 
 
+class ContinueIn(BaseModel):
+    video_rel: str = Field(max_length=300)
+
+
+@router.post("/projects/{project_id}/videos/continue")
+async def continue_frame(project_id: str, body: ContinueIn, auth: Auth) -> dict:
+    """Extrahiert den letzten Frame eines Videos als neues Galerie-Bild.
+    Damit lässt sich ein Anschluss-Clip erzeugen (nahtlose Fortsetzung)."""
+    _guard(auth[0], project_id)
+    rel = await video.extract_continuation_frame(project_id, body.video_rel)
+    if rel is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "video_not_found")
+    return {"rel": rel, "path": str(storage.atelier_root(project_id) / rel)}
+
+
 @router.post("/projects/{project_id}/videos")
 async def create_video(project_id: str, body: VideoIn, auth: Auth) -> dict:
     # async, damit start_video_job() einen laufenden Event-Loop für

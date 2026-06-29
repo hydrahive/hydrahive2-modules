@@ -21,7 +21,7 @@ import httpx
 from hydrahive.llm._config import openrouter_key
 from hydrahive.tools._openrouter_video import download_video, poll_video_job
 
-from . import _jobstore, storage
+from . import _ffmpeg, _jobstore, storage
 
 logger = logging.getLogger("hhmod_atelier.video")
 
@@ -171,6 +171,21 @@ async def _poll_until_done(remote_id: str, *, key: str) -> str:
         if status == "failed":
             raise RuntimeError(res.get("error") or "Video-Generierung fehlgeschlagen.")
     raise RuntimeError("Zeitüberschreitung beim Warten auf das Video.")
+
+
+async def extract_continuation_frame(project_id: str, video_rel: str) -> str | None:
+    """Letzten Frame eines Videos als Galerie-Bild speichern (für Fortsetzungen).
+
+    Gibt den output/-rel des neuen Bildes zurück, oder None wenn das Video fehlt.
+    """
+    from .service import write_image_sidecar
+    src = storage.safe_under(storage.atelier_root(project_id), video_rel)
+    if src is None or not src.is_file():
+        return None
+    tmp = storage.output_dir(project_id) / f"{storage.new_id()}.jpg"
+    await _ffmpeg.extract_last_frame(src, tmp)
+    write_image_sidecar(project_id, tmp.name, {"prompt": "(Fortsetzung – letzter Frame)", "scene": ""})
+    return f"output/{tmp.name}"
 
 
 def _source_to_data_url(project_id: str, source_rel: str) -> str | None:

@@ -48,6 +48,8 @@ export const atelierApi = {
     api.post<VideoJob>(`${BASE}/projects/${pid}/videos`, req),
   deleteVideo: (pid: string, jobId: string): Promise<{ ok: boolean }> =>
     api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/videos/${jobId}`),
+  continueFrame: (pid: string, videoRel: string): Promise<{ rel: string; path: string }> =>
+    api.post<{ rel: string; path: string }>(`${BASE}/projects/${pid}/videos/continue`, { video_rel: videoRel }),
   listFilms: (pid: string): Promise<FilmJob[]> =>
     api.get<FilmJob[]>(`${BASE}/projects/${pid}/films`),
   createFilm: (pid: string, clips: string[], resolution: string): Promise<FilmJob> =>

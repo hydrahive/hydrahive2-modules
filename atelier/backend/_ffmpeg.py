@@ -8,9 +8,29 @@ Argumente werden als LISTE gebaut (kein shell=True) → keine Shell-Injection.
 """
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 _FPS = 24
+
+
+async def extract_last_frame(video: Path, out_jpg: Path) -> None:
+    """Extrahiert den letzten Frame eines Videos als JPG (für Fortsetzungen).
+
+    -sseof -0.5: greift 0,5s vor Ende → robust gegen exakte Endzeit. Wirft
+    RuntimeError bei ffmpeg-Fehler.
+    """
+    args = [
+        "ffmpeg", "-y", "-sseof", "-0.5", "-i", str(video),
+        "-update", "1", "-q:v", "2", str(out_jpg),
+    ]
+    proc = await asyncio.create_subprocess_exec(
+        *args, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0 or not out_jpg.is_file():
+        tail = (stderr or b"").decode("utf-8", "replace")[-300:]
+        raise RuntimeError(f"Frame-Extraktion fehlgeschlagen: {tail}")
 
 
 def _norm_chain(idx: int, w: int, h: int, label: str) -> str:

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
 import { VideoDialog } from "./VideoDialog"
-import type { VideoJob } from "./types"
+import type { GalleryItem, VideoJob } from "./types"
 
 interface Props {
   projectId: string
@@ -18,6 +18,8 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
   const { t } = useTranslation("atelier")
   const [jobs, setJobs] = useState<VideoJob[]>([])
   const [textDialog, setTextDialog] = useState(false)
+  const [continueSource, setContinueSource] = useState<GalleryItem | null>(null)
+  const [continuing, setContinuing] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function load() {
@@ -38,6 +40,21 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
     if (!confirm(t("delete_video_confirm"))) return
     await atelierApi.deleteVideo(projectId, job.job_id)
     setJobs((cur) => cur.filter((j) => j.job_id !== job.job_id))
+  }
+
+  async function startContinue(job: VideoJob) {
+    if (!job.video_rel) return
+    setContinuing(job.job_id)
+    try {
+      const res = await atelierApi.continueFrame(projectId, job.video_rel)
+      // Minimal-GalleryItem aus der Antwort (VideoDialog nutzt nur rel + path).
+      setContinueSource({
+        name: "", path: res.path, rel: res.rel,
+        created_at: null, prompt: null, seed: null, model: null, mtime: 0,
+      })
+    } finally {
+      setContinuing(null)
+    }
   }
 
   return (
@@ -87,6 +104,16 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
           {job.prompt && (
             <p className="px-2 py-1 text-[10px] text-slate-500 truncate">{job.prompt}</p>
           )}
+          {job.status === "completed" && job.video_rel && (
+            <button
+              onClick={() => startContinue(job)}
+              disabled={continuing === job.job_id}
+              className="m-1 rounded bg-violet-600/80 px-2 py-1 text-[10px] hover:bg-violet-500 disabled:opacity-40"
+              title={t("continue_hint")}
+            >
+              {continuing === job.job_id ? t("continue_extracting") : `⏩ ${t("continue_video")}`}
+            </button>
+          )}
           <button
             onClick={() => del(job)}
             title={t("delete")}
@@ -96,6 +123,18 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
           </button>
         </div>
       ))}
+
+      {continueSource && (
+        <VideoDialog
+          projectId={projectId}
+          source={continueSource}
+          onClose={() => setContinueSource(null)}
+          onStarted={() => {
+            setContinueSource(null)
+            atelierApi.listVideos(projectId).then(setJobs).catch(() => {})
+          }}
+        />
+      )}
     </div>
   )
 }

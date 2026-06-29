@@ -170,6 +170,12 @@ def _write_sidecar(project_id: str, name: str, meta: dict) -> None:
     path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), "utf-8")
 
 
+def write_image_sidecar(project_id: str, name: str, meta: dict) -> None:
+    """Öffentlicher Wrapper: Sidecar für ein Galerie-Bild (z.B. Fortsetzungs-Frame)."""
+    meta.setdefault("created_at", datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+    _write_sidecar(project_id, name, meta)
+
+
 def _sniff_ext(raw: bytes) -> str:
     if raw[:8] == b"\x89PNG\r\n\x1a\n":
         return "png"
