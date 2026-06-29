@@ -7,6 +7,7 @@ import type {
   GalleryItem,
   GenerateRequest,
   GenerateResult,
+  PresetCatalog,
 } from "./types"
 
 const BASE = "/modules/atelier"
@@ -28,6 +29,8 @@ export const atelierApi = {
   deleteCharacter: (pid: string, id: string): Promise<{ ok: boolean }> =>
     api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/characters/${id}`),
 
+  presets: (): Promise<PresetCatalog> =>
+    api.get<PresetCatalog>(`${BASE}/presets`),
   gallery: (pid: string): Promise<GalleryItem[]> =>
     api.get<GalleryItem[]>(`${BASE}/projects/${pid}/gallery`),
   generate: (pid: string, req: GenerateRequest): Promise<GenerateResult> =>

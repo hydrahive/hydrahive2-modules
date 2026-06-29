@@ -8,7 +8,6 @@ zurückgegeben. Referenzbilder werden für die Generierung als data:-URL
 """
 from __future__ import annotations
 
-import json
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, UploadFile, status
@@ -122,34 +121,19 @@ async def upload_reference(project_id: str, char_id: str, file: UploadFile, auth
 @router.get("/projects/{project_id}/gallery")
 def list_gallery(project_id: str, auth: Auth) -> list[dict]:
     _guard(auth[0], project_id)
-    return _scan_gallery(project_id)
+    from . import service
+
+    return service.scan_gallery(project_id)
 
 
-def _scan_gallery(project_id: str) -> list[dict]:
-    out_dir = storage.output_dir(project_id)
-    items: list[dict] = []
-    for img in out_dir.iterdir():
-        if img.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
-            continue
-        meta_path = img.with_suffix(img.suffix + ".json")
-        meta = {}
-        if meta_path.is_file():
-            try:
-                meta = json.loads(meta_path.read_text("utf-8"))
-            except (json.JSONDecodeError, OSError):
-                meta = {}
-        items.append({
-            "name": img.name,
-            "path": str(img),
-            "rel": f"output/{img.name}",
-            "created_at": meta.get("created_at"),
-            "prompt": meta.get("prompt"),
-            "seed": meta.get("seed"),
-            "model": meta.get("model"),
-            "mtime": img.stat().st_mtime,
-        })
-    items.sort(key=lambda i: i["mtime"], reverse=True)
-    return items
+# ---- Regie-Presets ----------------------------------------------------------
+
+@router.get("/presets")
+def get_presets(auth: Auth) -> dict:
+    """Kamera-/Licht-/Wetter-Preset-Katalog {group: [keys]} für die Dropdowns."""
+    from . import presets
+
+    return presets.catalog()
 
 
 # ---- Generierung ------------------------------------------------------------
@@ -160,6 +144,7 @@ class GenerateIn(BaseModel):
     model: str = Field(default="", max_length=200)
     seed: int | None = None
     aspect_ratio: str = Field(default="", max_length=16)
+    camera: dict[str, str] = Field(default_factory=dict)
 
 
 @router.post("/projects/{project_id}/generate")

@@ -6,7 +6,7 @@ import { atelierApi } from "./api"
 import { CharacterLibrary } from "./CharacterLibrary"
 import { GeneratePanel } from "./GeneratePanel"
 import { Gallery } from "./Gallery"
-import type { AtelierCharacter, AtelierCI, GalleryItem } from "./types"
+import type { AtelierCharacter, AtelierCI, GalleryItem, PresetCatalog } from "./types"
 
 const DEFAULT_CI: AtelierCI = { palette: [], style_anchor: "", default_model: "", aspect_ratio: "1:1" }
 
@@ -19,6 +19,7 @@ export function AtelierPage() {
   const [characters, setCharacters] = useState<AtelierCharacter[]>([])
   const [gallery, setGallery] = useState<GalleryItem[]>([])
   const [root, setRoot] = useState<string>("")
+  const [presets, setPresets] = useState<PresetCatalog>({})
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function AtelierPage() {
       setProjects(ps)
       if (ps.length > 0) setProjectId((cur) => cur || ps[0].id)
     })
+    atelierApi.presets().then(setPresets).catch(() => setPresets({}))
   }, [])
 
   const reload = useCallback(async (pid: string) => {
@@ -97,6 +99,7 @@ export function AtelierPage() {
             ci={ci}
             characters={characters}
             selectedIds={selectedIds}
+            presets={presets}
             onGenerated={() => reload(projectId)}
           />
         </section>

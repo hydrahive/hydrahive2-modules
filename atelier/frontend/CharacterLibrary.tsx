@@ -85,8 +85,11 @@ export function CharacterLibrary({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-200">{t("characters")}</h3>
-        <button onClick={startNew} className="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600">
-          {t("new_character")}
+        <button
+          onClick={startNew}
+          className="text-xs px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 font-medium"
+        >
+          ✚ {t("new_character")}
         </button>
       </div>
 
@@ -117,8 +120,9 @@ export function CharacterLibrary({
         {characters.length === 0 && <li className="text-xs text-slate-500">{t("no_characters")}</li>}
       </ul>
 
-      <div className="border-t border-slate-700 pt-3 flex flex-col gap-2">
-        <h4 className="text-xs font-semibold text-slate-300">
+      <div className="rounded-lg border border-emerald-700/60 bg-emerald-500/5 p-3 flex flex-col gap-2">
+        <h4 className="text-xs font-semibold text-emerald-300 flex items-center gap-1.5">
+          <span>{editing ? "✎" : "✚"}</span>
           {editing ? t("edit_character") : t("new_character")}
         </h4>
         <input

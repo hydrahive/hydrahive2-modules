@@ -28,11 +28,19 @@ class GenerateError(RuntimeError):
     """Generierung fehlgeschlagen (Key fehlt, API-Fehler, leere Antwort)."""
 
 
-def build_prompt(scene: str, *, ci_anchor: str, characters: list[dict]) -> str:
-    """Baut den vollen Prompt: CI-Anker + Figur-Steckbriefe (verbatim) + Szene.
+def build_prompt(
+    scene: str,
+    *,
+    ci_anchor: str,
+    characters: list[dict],
+    camera: list[str] | None = None,
+) -> str:
+    """Baut den vollen Prompt: CI-Anker + Figur-Steckbriefe (verbatim) + Szene
+    + Regie-/Kamera-Spezifikation.
 
     Reihenfolge bewusst: zuerst der feste Stil (CI), dann die Figuren wörtlich,
-    dann das Variable (Szene). So bleibt der konsistente Teil dominant.
+    dann das Variable (Szene), zuletzt die Aufnahme-Spezifikation (Kamera, Licht,
+    Wetter …). So bleibt der konsistente Teil dominant, die Regie modifiziert.
     """
     parts: list[str] = []
     if ci_anchor.strip():
@@ -52,6 +60,8 @@ def build_prompt(scene: str, *, ci_anchor: str, characters: list[dict]) -> str:
         parts.append("color palette: " + ", ".join(palette))
     if scene.strip():
         parts.append(scene.strip())
+    for phrase in camera or []:
+        parts.append(phrase)
     return ". ".join(parts)
 
 

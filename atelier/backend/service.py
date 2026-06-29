@@ -11,7 +11,7 @@ import json
 import mimetypes
 from datetime import datetime, timezone
 
-from . import characters, generate, storage
+from . import characters, generate, presets, storage
 
 
 def file_to_data_url(path) -> str:
@@ -19,6 +19,34 @@ def file_to_data_url(path) -> str:
     mime, _ = mimetypes.guess_type(str(path))
     b64 = base64.b64encode(path.read_bytes()).decode("ascii")
     return f"data:{mime or 'image/png'};base64,{b64}"
+
+
+def scan_gallery(project_id: str) -> list[dict]:
+    """Generierte Bilder des Projekts (neueste zuerst) + Sidecar-Metadaten."""
+    out_dir = storage.output_dir(project_id)
+    items: list[dict] = []
+    for img in out_dir.iterdir():
+        if img.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
+            continue
+        meta_path = img.with_suffix(img.suffix + ".json")
+        meta = {}
+        if meta_path.is_file():
+            try:
+                meta = json.loads(meta_path.read_text("utf-8"))
+            except (json.JSONDecodeError, OSError):
+                meta = {}
+        items.append({
+            "name": img.name,
+            "path": str(img),
+            "rel": f"output/{img.name}",
+            "created_at": meta.get("created_at"),
+            "prompt": meta.get("prompt"),
+            "seed": meta.get("seed"),
+            "model": meta.get("model"),
+            "mtime": img.stat().st_mtime,
+        })
+    items.sort(key=lambda i: i["mtime"], reverse=True)
+    return items
 
 _DEFAULT_MODEL = "google/gemini-2.5-flash-image"
 # OpenRouter-Image-API begrenzt input_references je Modell (gemini: 0-3).
@@ -29,7 +57,7 @@ _MAX_REFERENCES = 3
 def generate_for_project(project_id: str, req: dict) -> dict:
     """Führt eine Generierung für ein Projekt aus. Wirft GenerateError bei Fehler.
 
-    req: { scene, character_ids[], model?, seed?, aspect_ratio? }
+    req: { scene, character_ids[], model?, seed?, aspect_ratio?, camera{group:key} }
     Rückgabe: das Galerie-Item (name, rel, prompt, seed, model, created_at).
     """
     ci = characters.get_ci(project_id)
@@ -39,10 +67,13 @@ def generate_for_project(project_id: str, req: dict) -> dict:
     aspect = (req.get("aspect_ratio") or "").strip() or ci.get("aspect_ratio") or "1:1"
     seed = _resolve_seed(req.get("seed"), chosen)
 
+    camera_sel = req.get("camera") or {}
+    camera_phrases = presets.collect_phrases(camera_sel) if isinstance(camera_sel, dict) else []
     prompt = generate.build_prompt(
         req.get("scene") or "",
         ci_anchor=ci.get("style_anchor") or "",
         characters=chosen,
+        camera=camera_phrases,
     )
     references = _collect_reference_urls(project_id, chosen)
 
@@ -65,6 +96,7 @@ def generate_for_project(project_id: str, req: dict) -> dict:
         "model": model,
         "aspect_ratio": aspect,
         "references": [c["id"] for c in chosen if c.get("references")],
+        "camera": camera_sel,
         "created_at": created,
     }
     _write_sidecar(project_id, name, meta)

@@ -1,13 +1,15 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi } from "./api"
-import type { AtelierCharacter, AtelierCI } from "./types"
+import { CameraControls } from "./CameraControls"
+import type { AtelierCharacter, AtelierCI, PresetCatalog } from "./types"
 
 interface Props {
   projectId: string
   ci: AtelierCI
   characters: AtelierCharacter[]
   selectedIds: string[]
+  presets: PresetCatalog
   onGenerated: () => void
 }
 
@@ -21,12 +23,13 @@ const MODELS = [
 const RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4"]
 
 /** Mittlere Spalte: Szene beschreiben + Parameter, dann generieren. */
-export function GeneratePanel({ projectId, ci, characters, selectedIds, onGenerated }: Props) {
+export function GeneratePanel({ projectId, ci, characters, selectedIds, presets, onGenerated }: Props) {
   const { t } = useTranslation("atelier")
   const [scene, setScene] = useState("")
   const [model, setModel] = useState("")
   const [ratio, setRatio] = useState("")
   const [seed, setSeed] = useState<string>("")
+  const [camera, setCamera] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,6 +45,7 @@ export function GeneratePanel({ projectId, ci, characters, selectedIds, onGenera
         model: model || undefined,
         aspect_ratio: ratio || undefined,
         seed: seed ? Number(seed) : undefined,
+        camera: Object.keys(camera).length > 0 ? camera : undefined,
       })
       onGenerated()
     } catch (e) {
@@ -113,6 +117,10 @@ export function GeneratePanel({ projectId, ci, characters, selectedIds, onGenera
           className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
         />
       </label>
+
+      {Object.keys(presets).length > 0 && (
+        <CameraControls catalog={presets} value={camera} onChange={setCamera} />
+      )}
 
       {error && <div className="text-xs text-red-400 bg-red-500/10 rounded px-2 py-1">{error}</div>}
 

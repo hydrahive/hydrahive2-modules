@@ -33,7 +33,11 @@ export interface GenerateRequest {
   model?: string
   seed?: number | null
   aspect_ratio?: string
+  camera?: Record<string, string>
 }
+
+/** {group: [keys]} — Regie-Preset-Katalog vom Backend. */
+export type PresetCatalog = Record<string, string[]>
 
 export interface GenerateResult {
   name: string
