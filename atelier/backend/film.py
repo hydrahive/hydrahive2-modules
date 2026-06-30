@@ -79,10 +79,15 @@ async def _run_job(project_id: str, job: dict) -> None:
             job["status"] = "processing"
             _write_job(project_id, job)
 
+            # Pro Clip: Audio vorhanden? + Dauer (für korrekten Ton-Erhalt im concat).
+            clip_meta = [await _ffmpeg.probe_clip(c) for c in clips]
+
             w, h = _RESOLUTIONS[job["resolution"]]
             out_name = f"{storage.new_id()}.mp4"
             out_path = storage.films_dir(project_id) / out_name
-            args = _ffmpeg.build_concat_command(clips, out_path, width=w, height=h, music=music)
+            args = _ffmpeg.build_concat_command(
+                clips, out_path, width=w, height=h, clip_meta=clip_meta, music=music
+            )
             await _run_ffmpeg(args)
 
             if not out_path.is_file() or out_path.stat().st_size == 0:
