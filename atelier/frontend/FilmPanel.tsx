@@ -1,22 +1,24 @@
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
-import type { FilmJob, VideoJob } from "./types"
+import type { AudioLibraryItem, FilmJob, VideoJob } from "./types"
 
 interface Props {
   projectId: string
   refAbsPath: (rel: string) => string
+  audioLibrary: AudioLibraryItem[]
 }
 
 const ACTIVE = new Set(["pending", "processing"])
 
 /** Film-Schnitt: fertige Clips in Reihenfolge wählen → rendern → Player.
  *  Pollt alle 5s, solange ein Render-Job läuft. */
-export function FilmPanel({ projectId, refAbsPath }: Props) {
+export function FilmPanel({ projectId, refAbsPath, audioLibrary }: Props) {
   const { t } = useTranslation("atelier")
   const [videos, setVideos] = useState<VideoJob[]>([])
   const [order, setOrder] = useState<string[]>([])
   const [resolution, setResolution] = useState("16:9")
+  const [musicRel, setMusicRel] = useState("")
   const [jobs, setJobs] = useState<FilmJob[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,7 +58,7 @@ export function FilmPanel({ projectId, refAbsPath }: Props) {
     if (order.length < 1) return
     setBusy(true); setError(null)
     try {
-      await atelierApi.createFilm(projectId, order, resolution)
+      await atelierApi.createFilm(projectId, order, resolution, musicRel)
       setOrder([])
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -106,14 +108,25 @@ export function FilmPanel({ projectId, refAbsPath }: Props) {
               <option value="9:16">9:16</option>
               <option value="1:1">1:1</option>
             </select>
-            <button
-              onClick={render}
-              disabled={busy || order.length < 1}
-              className="flex-1 rounded bg-emerald-600 px-3 py-1.5 text-xs font-medium hover:bg-emerald-500 disabled:opacity-40"
+            <select
+              value={musicRel}
+              onChange={(e) => setMusicRel(e.target.value)}
+              title={t("film_music")}
+              className="min-w-0 flex-1 rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs text-slate-100 truncate"
             >
-              {busy ? t("film_rendering") : t("film_render", { n: order.length })}
-            </button>
+              <option value="">{t("film_music_none")}</option>
+              {audioLibrary.map((a) => (
+                <option key={a.rel} value={a.rel}>{a.prompt || a.name}</option>
+              ))}
+            </select>
           </div>
+          <button
+            onClick={render}
+            disabled={busy || order.length < 1}
+            className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-medium hover:bg-emerald-500 disabled:opacity-40"
+          >
+            {busy ? t("film_rendering") : t("film_render", { n: order.length })}
+          </button>
         </>
       )}
 
