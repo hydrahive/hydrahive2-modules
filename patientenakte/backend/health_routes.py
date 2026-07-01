@@ -20,8 +20,15 @@ router = APIRouter(prefix="/health-data", tags=["health"])
 def _check_key(
     x_hh_health_key: str | None,
     authorization: str | None,
-    query_key: str | None = None,
 ) -> None:
+    """Nur Header (X-HH-Health-Key oder Bearer) — kein ?key=-Query mehr (#207).
+
+    Der Query-Pfad wurde entfernt: Secrets in der URL landen in Access-/
+    Proxy-Logs und Referer-Headern. Schritt 1 (Deprecation-Warnung bei
+    Query-Nutzung) lief 14+ Tage ohne einen einzigen echten Ingest-Aufruf
+    (per Log-Check verifiziert) — sicher zu entfernen, kein aktiver Client
+    betroffen.
+    """
     expected = settings.health_api_key
     if not expected:
         raise HTTPException(status_code=403, detail="health_ingest_disabled")
@@ -29,8 +36,7 @@ def _check_key(
     if authorization and authorization.lower().startswith("bearer "):
         bearer = authorization[7:].strip()
     if not (verify_secret(x_hh_health_key, expected)
-            or verify_secret(bearer, expected)
-            or verify_secret(query_key, expected)):
+            or verify_secret(bearer, expected)):
         raise HTTPException(status_code=401, detail="bad_key")
 
 
@@ -40,7 +46,6 @@ async def ingest(
     request: Request,
     x_hh_health_key: Annotated[str | None, Header(alias="X-HH-Health-Key")] = None,
     authorization: Annotated[str | None, Header()] = None,
-    key: str | None = Query(default=None),
     x_automation_name: Annotated[str | None, Header(alias="automation-name")] = None,
     x_automation_id: Annotated[str | None, Header(alias="automation-id")] = None,
     x_session_id: Annotated[str | None, Header(alias="session-id")] = None,
@@ -51,16 +56,7 @@ async def ingest(
     if not allowed:
         raise HTTPException(status_code=429, detail="rate_limited",
                             headers={"Retry-After": str(retry_after)})
-    _check_key(x_hh_health_key, authorization, key)
-
-    if key is not None:
-        # #207: Key im ?key=-Query landet in Access-/Proxy-Logs. Noch akzeptiert
-        # (kein Bruch), aber der Pfad wird entfernt sobald der Client umgestellt ist.
-        logger.warning(
-            "health-ingest: Key via ?key=-Query empfangen — landet in Access-Logs. "
-            "Client bitte auf Header 'X-HH-Health-Key' umstellen; der Query-Pfad "
-            "wird danach entfernt (#207).",
-        )
+    _check_key(x_hh_health_key, authorization)
 
     # user_id kommt NICHT aus dem Request — der Key bindet an genau einen
     # konfigurierten User (Single-Device-Ingest). Verhindert Cross-User-PHI-Schreiben.
