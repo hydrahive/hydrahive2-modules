@@ -83,3 +83,38 @@ export interface GenerateResult {
 }
 
 export type CharacterInput = Omit<AtelierCharacter, "id" | "references">
+
+// ---------------------------------------------------------------- Audio (Musik)
+export interface AudioProfile {
+  id: string
+  name: string
+  description: string
+  model: string
+}
+
+export type AudioProfileInput = Omit<AudioProfile, "id">
+
+export interface AudioLibraryItem {
+  name: string
+  rel: string
+  created_at: string | null
+  prompt: string | null
+  model: string | null
+  profile_ids: string[]
+  mtime: number
+}
+
+export interface MusicGenerateRequest {
+  scene: string
+  profile_ids: string[]
+  model?: string
+}
+
+export interface MusicGenerateResult {
+  name: string
+  rel: string
+  path: string
+  prompt: string
+  model: string
+  created_at: string
+}

@@ -3,12 +3,13 @@ import { useTranslation } from "react-i18next"
 import { projectsApi } from "@/features/projects/api"
 import type { Project } from "@/features/projects/types"
 import { atelierApi } from "./api"
+import { AudioPanel } from "./AudioPanel"
 import { CharacterLibrary } from "./CharacterLibrary"
 import { GeneratePanel } from "./GeneratePanel"
 import { Gallery } from "./Gallery"
 import { VideoPanel } from "./VideoPanel"
 import { FilmPanel } from "./FilmPanel"
-import type { AtelierCharacter, AtelierCI, GalleryItem, PresetCatalog } from "./types"
+import type { AtelierCharacter, AtelierCI, AudioLibraryItem, GalleryItem, PresetCatalog } from "./types"
 
 const DEFAULT_CI: AtelierCI = { palette: [], style_anchor: "", default_model: "", aspect_ratio: "1:1" }
 
@@ -20,11 +21,12 @@ export function AtelierPage() {
   const [ci, setCI] = useState<AtelierCI>(DEFAULT_CI)
   const [characters, setCharacters] = useState<AtelierCharacter[]>([])
   const [gallery, setGallery] = useState<GalleryItem[]>([])
+  const [audioLibrary, setAudioLibrary] = useState<AudioLibraryItem[]>([])
   const [root, setRoot] = useState<string>("")
   const [presets, setPresets] = useState<PresetCatalog>({})
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [videoTick, setVideoTick] = useState(0)
-  const [tab, setTab] = useState<"generate" | "gallery" | "clips">("generate")
+  const [tab, setTab] = useState<"generate" | "gallery" | "clips" | "audio">("generate")
 
   useEffect(() => {
     projectsApi.list().then((ps) => {
@@ -36,16 +38,18 @@ export function AtelierPage() {
 
   const reload = useCallback(async (pid: string) => {
     if (!pid) return
-    const [meta, c, chars, gal] = await Promise.all([
+    const [meta, c, chars, gal, audioLib] = await Promise.all([
       atelierApi.meta(pid),
       atelierApi.getCI(pid),
       atelierApi.listCharacters(pid),
       atelierApi.gallery(pid),
+      atelierApi.audioLibrary(pid),
     ])
     setRoot(meta.root)
     setCI(c)
     setCharacters(chars)
     setGallery(gal)
+    setAudioLibrary(audioLib)
   }, [])
 
   useEffect(() => {
@@ -104,6 +108,7 @@ export function AtelierPage() {
               ["generate", `✨ ${t("tab_generate")}`],
               ["gallery", `🖼️ ${t("tab_gallery")}`],
               ["clips", `🎬 ${t("tab_clips")}`],
+              ["audio", `🎵 ${t("tab_audio")}`],
             ] as const).map(([key, label]) => (
               <button
                 key={key}
@@ -140,11 +145,19 @@ export function AtelierPage() {
             {tab === "clips" && (
               <VideoPanel key={`${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
             )}
+            {tab === "audio" && (
+              <AudioPanel projectId={projectId} refAbsPath={refAbsPath} />
+            )}
           </div>
         </section>
 
         <section className="overflow-auto">
-          <FilmPanel key={`film-${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
+          <FilmPanel
+            key={`film-${projectId}-${videoTick}`}
+            projectId={projectId}
+            refAbsPath={refAbsPath}
+            audioLibrary={audioLibrary}
+          />
         </section>
       </div>
     </div>

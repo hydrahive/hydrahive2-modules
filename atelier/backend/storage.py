@@ -82,6 +82,18 @@ def films_dir(project_id: str) -> Path:
     return d
 
 
+def audio_dir(project_id: str) -> Path:
+    d = atelier_root(project_id) / "audio"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def audio_profiles_dir(project_id: str) -> Path:
+    d = audio_dir(project_id) / "profiles"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def new_id() -> str:
     """Frische 32-stellige Hex-ID (für Charaktere/Outputs)."""
     return uuid.uuid4().hex
@@ -117,3 +129,10 @@ def save_reference_bytes(project_id: str, char_id: str, raw: bytes, *, ext: str 
     name = f"{new_id()}.{ext.lstrip('.').lower()}"
     (cdir / name).write_bytes(raw)
     return f"characters/{char_id}/{name}"
+
+
+def save_audio_bytes(project_id: str, raw: bytes, *, ext: str = "mp3") -> str:
+    """Schreibt einen generierten Track nach audio/ unter UUID-Namen. Gibt den Dateinamen zurück."""
+    name = f"{new_id()}.{ext.lstrip('.').lower()}"
+    (audio_dir(project_id) / name).write_bytes(raw)
+    return name

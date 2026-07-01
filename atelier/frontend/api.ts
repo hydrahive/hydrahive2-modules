@@ -3,10 +3,15 @@ import { useAuthStore } from "@/features/auth/useAuthStore"
 import type {
   AtelierCharacter,
   AtelierCI,
+  AudioLibraryItem,
+  AudioProfile,
+  AudioProfileInput,
   CharacterInput,
   GalleryItem,
   GenerateRequest,
   GenerateResult,
+  MusicGenerateRequest,
+  MusicGenerateResult,
   PresetCatalog,
   VideoJob,
   VideoRequest,
@@ -52,10 +57,30 @@ export const atelierApi = {
     api.post<{ rel: string; path: string }>(`${BASE}/projects/${pid}/videos/continue`, { video_rel: videoRel }),
   listFilms: (pid: string): Promise<FilmJob[]> =>
     api.get<FilmJob[]>(`${BASE}/projects/${pid}/films`),
-  createFilm: (pid: string, clips: string[], resolution: string): Promise<FilmJob> =>
-    api.post<FilmJob>(`${BASE}/projects/${pid}/films`, { clips, resolution }),
+  createFilm: (pid: string, clips: string[], resolution: string, musicRel?: string): Promise<FilmJob> =>
+    api.post<FilmJob>(`${BASE}/projects/${pid}/films`, { clips, resolution, music_rel: musicRel || "" }),
   deleteFilm: (pid: string, jobId: string): Promise<{ ok: boolean }> =>
     api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/films/${jobId}`),
+
+  // ---- Audio (Musik) ----
+  getMusicAnchor: (pid: string): Promise<{ music_style_anchor: string }> =>
+    api.get<{ music_style_anchor: string }>(`${BASE}/projects/${pid}/audio/anchor`),
+  saveMusicAnchor: (pid: string, anchor: string): Promise<{ music_style_anchor: string }> =>
+    api.put<{ music_style_anchor: string }>(`${BASE}/projects/${pid}/audio/anchor`, { music_style_anchor: anchor }),
+  listAudioProfiles: (pid: string): Promise<AudioProfile[]> =>
+    api.get<AudioProfile[]>(`${BASE}/projects/${pid}/audio/profiles`),
+  createAudioProfile: (pid: string, body: AudioProfileInput): Promise<AudioProfile> =>
+    api.post<AudioProfile>(`${BASE}/projects/${pid}/audio/profiles`, body),
+  updateAudioProfile: (pid: string, id: string, body: AudioProfileInput): Promise<AudioProfile> =>
+    api.put<AudioProfile>(`${BASE}/projects/${pid}/audio/profiles/${id}`, body),
+  deleteAudioProfile: (pid: string, id: string): Promise<{ ok: boolean }> =>
+    api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/audio/profiles/${id}`),
+  audioLibrary: (pid: string): Promise<AudioLibraryItem[]> =>
+    api.get<AudioLibraryItem[]>(`${BASE}/projects/${pid}/audio/library`),
+  deleteAudioTrack: (pid: string, rel: string): Promise<{ ok: boolean }> =>
+    api.post<{ ok: boolean }>(`${BASE}/projects/${pid}/audio/library/delete`, { rel }),
+  generateMusic: (pid: string, req: MusicGenerateRequest): Promise<MusicGenerateResult> =>
+    api.post<MusicGenerateResult>(`${BASE}/projects/${pid}/audio/generate`, req),
   uploadReference: (pid: string, charId: string, file: File): Promise<AtelierCharacter> => {
     const form = new FormData()
     form.append("file", file)
