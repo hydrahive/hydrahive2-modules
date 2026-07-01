@@ -12,7 +12,6 @@ import json
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
-from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from hydrahive.api.middleware.auth import require_auth
@@ -34,6 +33,17 @@ def _guard(user: str, project_id: str) -> None:
 
 # ---- Bibliothek --------------------------------------------------------------
 
+def _with_media_paths(project_id: str, meta: dict) -> dict:
+    """Ergänzt absolute Pfade für Proxy/Sprite — der Browser lädt Medien über
+    den zentralen /api/files-Endpoint (unterstützt ?token=), da <video>/<img>
+    keinen Auth-Header senden können. Pfade werden LIVE berechnet, nicht in der
+    Meta-JSON gespeichert (host-spezifisch → sonst Migrations-Problem)."""
+    file_id = meta.get("file_id", "")
+    meta["proxy_abs"] = str(storage.proxy_path(project_id, file_id))
+    meta["sprite_abs"] = str(storage.sprite_path(project_id, file_id))
+    return meta
+
+
 @router.get("/projects/{project_id}/files")
 def list_files(project_id: str, auth: Auth) -> list[dict]:
     _guard(auth[0], project_id)
@@ -43,7 +53,7 @@ def list_files(project_id: str, auth: Auth) -> list[dict]:
         meta_p = storage.meta_path(project_id, file_id)
         if meta_p.is_file():
             try:
-                out.append(json.loads(meta_p.read_text("utf-8")))
+                out.append(_with_media_paths(project_id, json.loads(meta_p.read_text("utf-8"))))
                 continue
             except (json.JSONDecodeError, OSError):
                 pass
@@ -57,7 +67,7 @@ def get_file_meta(project_id: str, file_id: str, auth: Auth) -> dict:
     meta_p = storage.meta_path(project_id, file_id)
     if not meta_p.is_file():
         raise coded(status.HTTP_404_NOT_FOUND, "file_not_found")
-    return json.loads(meta_p.read_text("utf-8"))
+    return _with_media_paths(project_id, json.loads(meta_p.read_text("utf-8")))
 
 
 # ---- Upload + Proxy-Erzeugung (async Job) ------------------------------------
@@ -96,22 +106,9 @@ def get_job(project_id: str, job_id: str, auth: Auth) -> dict:
     return job
 
 
-@router.get("/projects/{project_id}/proxy/{file_id}")
-def get_proxy(project_id: str, file_id: str, auth: Auth) -> FileResponse:
-    _guard(auth[0], project_id)
-    p = storage.proxy_path(project_id, file_id)
-    if not p.is_file():
-        raise coded(status.HTTP_404_NOT_FOUND, "proxy_not_found")
-    return FileResponse(p, media_type="video/mp4")
-
-
-@router.get("/projects/{project_id}/sprite/{file_id}")
-def get_sprite(project_id: str, file_id: str, auth: Auth) -> FileResponse:
-    _guard(auth[0], project_id)
-    p = storage.sprite_path(project_id, file_id)
-    if not p.is_file():
-        raise coded(status.HTTP_404_NOT_FOUND, "sprite_not_found")
-    return FileResponse(p, media_type="image/jpeg")
+# Proxy/Sprite/Export-Medien werden über den zentralen /api/files-Endpoint
+# ausgeliefert (Token-Query-Support für <video>/<img>). Die absoluten Pfade
+# kommen aus der Meta-Antwort (proxy_abs/sprite_abs) bzw. dem Export-Response.
 
 
 # ---- EDL (Schnitt speichern) --------------------------------------------------
@@ -147,9 +144,11 @@ async def export_video(project_id: str, file_id: str, body: ExportIn, auth: Auth
 
 
 @router.get("/projects/{project_id}/exports/{export_id}")
-def download_export(project_id: str, export_id: str, auth: Auth) -> FileResponse:
+def get_export_path(project_id: str, export_id: str, auth: Auth) -> dict:
+    """Liefert den absoluten Export-Pfad — der Browser lädt/spielt ihn über
+    /api/files (Token-Query). Konsistent mit Proxy/Sprite."""
     _guard(auth[0], project_id)
     p = storage.export_path(project_id, export_id)
     if not p.is_file():
         raise coded(status.HTTP_404_NOT_FOUND, "export_not_found")
-    return FileResponse(p, media_type="video/mp4", filename=f"{export_id}.mp4")
+    return {"export_abs": str(p)}
