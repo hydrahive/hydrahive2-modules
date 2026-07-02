@@ -1,4 +1,4 @@
-"""Router-Guards: Auth-Pflicht, Projekt-Zugriffskontrolle, Upload-Validierung."""
+"""Router-Guards: Auth-Pflicht, Projekt-Zugriffskontrolle, Import/Upload-Validierung."""
 from __future__ import annotations
 
 import io
@@ -29,6 +29,31 @@ def test_list_files_empty_initially(client, auth_headers):
     assert r.json() == []
 
 
+def test_browse_empty_workspace(client, auth_headers):
+    """Kein Silo: /browse listet den GANZEN Workspace, nicht nur videoeditor/."""
+    r = client.get(f"{MOD_PREFIX}/projects/{PROJECT_ID}/browse", headers=auth_headers)
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_import_rejects_unknown_source(client, auth_headers):
+    r = client.post(
+        f"{MOD_PREFIX}/projects/{PROJECT_ID}/import",
+        headers=auth_headers,
+        json={"source_rel": "does/not/exist.mp4"},
+    )
+    assert r.status_code == 404
+
+
+def test_import_rejects_traversal(client, auth_headers):
+    r = client.post(
+        f"{MOD_PREFIX}/projects/{PROJECT_ID}/import",
+        headers=auth_headers,
+        json={"source_rel": "../../etc/passwd"},
+    )
+    assert r.status_code == 404
+
+
 def test_upload_rejects_unsupported_extension(client, auth_headers):
     r = client.post(
         f"{MOD_PREFIX}/projects/{PROJECT_ID}/upload",
@@ -47,6 +72,19 @@ def test_upload_accepts_mp4_and_starts_job(client, auth_headers):
     assert r.status_code == 200
     body = r.json()
     assert "file_id" in body and "job_id" in body
+
+
+def test_upload_appears_in_browse_afterwards(client, auth_headers):
+    """Hochgeladene Datei landet sichtbar im Workspace (videoeditor/uploads/),
+    nicht in einem für /browse unsichtbaren Ordner."""
+    client.post(
+        f"{MOD_PREFIX}/projects/{PROJECT_ID}/upload",
+        headers=auth_headers,
+        files={"file": ("clip2.mp4", io.BytesIO(b"\x00" * 10), "video/mp4")},
+    )
+    r = client.get(f"{MOD_PREFIX}/projects/{PROJECT_ID}/browse", headers=auth_headers)
+    assert r.status_code == 200
+    assert r.json() == []  # uploads/ liegt UNTER videoeditor/ -> bewusst ausgeschlossen
 
 
 def test_get_job_404_for_unknown_id(client, auth_headers):

@@ -1,7 +1,11 @@
-"""Video-Editor — Hintergrund-Verarbeitung für Upload- und Export-Jobs.
+"""Video-Editor — Hintergrund-Verarbeitung für Import- und Export-Jobs.
 
 Ausgelagert aus routes.py, damit die Route-Datei schlank bleibt (nur
 HTTP-Dispatch). Läuft via asyncio.create_task, Fortschritt über den Job-Store.
+
+WICHTIG: 'Import' erzeugt NUR Cache-Dateien (Proxy/Sprite/Meta) unter
+videoeditor/ — das Original bleibt unangetastet an seinem Platz im
+Projekt-Workspace (z.B. atelier/videos/..., oder woanders hochgeladen).
 """
 from __future__ import annotations
 
@@ -16,9 +20,14 @@ SPRITE_TILE_W = 160
 SPRITE_TILE_H = 90
 
 
-async def process_upload(project_id: str, file_id: str, ext: str, filename: str, job_id: str) -> None:
+async def process_import(project_id: str, source_rel: str, file_id: str, job_id: str) -> None:
+    """Bereitet ein bestehendes Video im Projekt-Workspace für den Editor auf
+    (Proxy/Keyframes/Sprite) — OHNE das Original zu kopieren oder zu verschieben."""
     jobs_dir = storage.jobs_dir(project_id)
-    src = storage.original_path(project_id, file_id, ext)
+    src = storage.source_path(project_id, source_rel)
+    if src is None or not src.is_file():
+        finish_job(jobs_dir, job_id, ok=False, error="Quelldatei nicht gefunden.")
+        return
     try:
         info = await _ffmpeg.probe(src)
         keyframes = await _ffmpeg.keyframe_timestamps(src)
@@ -30,10 +39,10 @@ async def process_upload(project_id: str, file_id: str, ext: str, filename: str,
             cols=SPRITE_COLS, tile_w=SPRITE_TILE_W, tile_h=SPRITE_TILE_H,
         )
         meta = VideoMeta(
-            file_id=file_id, filename=filename, duration=info["duration"],
-            fps=info["fps"], width=info["width"], height=info["height"],
-            has_audio=info["has_audio"], keyframes=keyframes, sprite=sprite_meta,
-            edl=EDL(file_id=file_id, timeline=[]),
+            file_id=file_id, filename=src.name, source_rel=source_rel,
+            duration=info["duration"], fps=info["fps"], width=info["width"],
+            height=info["height"], has_audio=info["has_audio"], keyframes=keyframes,
+            sprite=sprite_meta, edl=EDL(file_id=file_id, timeline=[]),
         )
         storage.meta_path(project_id, file_id).write_text(
             meta.model_dump_json(indent=2), "utf-8"
@@ -50,10 +59,8 @@ async def process_export(project_id: str, file_id: str, export_id: str, job_id: 
         meta = VideoMeta.model_validate_json(meta_p.read_text("utf-8"))
         if not meta.edl or not meta.edl.timeline:
             raise _ffmpeg.FFmpegError("Keine Clips im EDL.")
-        src = next(
-            (p for p in storage.list_originals(project_id) if p.stem == file_id), None,
-        )
-        if src is None:
+        src = storage.source_path(project_id, meta.source_rel)
+        if src is None or not src.is_file():
             raise _ffmpeg.FFmpegError("Original nicht gefunden.")
         dst = storage.export_path(project_id, export_id)
         await render_export(src, meta.edl.timeline, dst, keyframes=meta.keyframes)

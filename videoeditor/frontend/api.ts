@@ -1,12 +1,20 @@
 import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { EDL, ExportResult, Job, UploadResult, VideoMeta } from "./types"
+import type { BrowseEntry, EDL, ExportResult, Job, UploadResult, VideoMeta } from "./types"
 
 const BASE = "/modules/videoeditor"
 
 export const videoeditorApi = {
   listFiles: (pid: string): Promise<VideoMeta[]> =>
     api.get<VideoMeta[]>(`${BASE}/projects/${pid}/files`),
+
+  /** Alle Videos im GANZEN Projekt-Workspace (kein Silo) — inkl. Import-Status. */
+  browse: (pid: string): Promise<BrowseEntry[]> =>
+    api.get<BrowseEntry[]>(`${BASE}/projects/${pid}/browse`),
+
+  /** Bereitet ein bestehendes Projekt-Video für den Editor auf (Proxy/Keyframes). */
+  importVideo: (pid: string, sourceRel: string): Promise<UploadResult> =>
+    api.post<UploadResult>(`${BASE}/projects/${pid}/import`, { source_rel: sourceRel }),
 
   getMeta: (pid: string, fileId: string): Promise<VideoMeta> =>
     api.get<VideoMeta>(`${BASE}/projects/${pid}/files/${fileId}`),

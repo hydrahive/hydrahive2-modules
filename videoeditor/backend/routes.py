@@ -1,9 +1,16 @@
-"""Video-Editor — API-Routen: Upload, Metadaten, EDL, Export.
+"""Video-Editor — API-Routen: Projekt-Videos browsen/importieren, EDL, Export.
 
 Alle Endpunkte projekt-scoped (/projects/{project_id}/...), Zugriff nur für
 Projekt-Mitglieder (storage.user_can_access). ffmpeg-Jobs laufen als
 asyncio.create_task im Hintergrund (siehe _jobs_processing.py), Status via
 Polling (Job-Store).
+
+WICHTIG (Till, 2026-07-02): Originale bleiben IM Projekt-Workspace — der
+Editor ist kein Silo. /browse listet alle Videos im ganzen Workspace (auch
+z.B. atelier/videos/...), /import bereitet ein gewähltes Video auf (Proxy/
+Keyframes), OHNE es zu kopieren. Direkter Upload bleibt für neue Dateien
+möglich, landet aber sichtbar unter videoeditor/uploads/ im Projekt (Samba-
+erreichbar), nicht in einem versteckten Ordner.
 """
 from __future__ import annotations
 
@@ -18,7 +25,7 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
 from . import storage
-from ._jobs_processing import process_export, process_upload
+from ._jobs_processing import process_export, process_import
 from ._jobstore import new_job, read_job
 from .models import EDL, VideoMeta
 
@@ -31,8 +38,6 @@ def _guard(user: str, project_id: str) -> None:
         raise coded(status.HTTP_404_NOT_FOUND, "project_not_found")
 
 
-# ---- Bibliothek --------------------------------------------------------------
-
 def _with_media_paths(project_id: str, meta: dict) -> dict:
     """Ergänzt absolute Pfade für Proxy/Sprite — der Browser lädt Medien über
     den zentralen /api/files-Endpoint (unterstützt ?token=), da <video>/<img>
@@ -44,20 +49,40 @@ def _with_media_paths(project_id: str, meta: dict) -> dict:
     return meta
 
 
+# ---- Browsen: alle Videos im Projekt-Workspace --------------------------------
+
+@router.get("/projects/{project_id}/browse")
+def browse_project_videos(project_id: str, auth: Auth) -> list[dict]:
+    """Alle Videodateien im GANZEN Projekt-Workspace (Atelier-Videos, eigene
+    Uploads, was auch immer dort liegt) — mit Hinweis ob bereits importiert."""
+    _guard(auth[0], project_id)
+    root = storage.workspace_root(project_id)
+    known = set(storage.list_known_file_ids(project_id))
+    out = []
+    for p in storage.list_project_videos(project_id):
+        rel = str(p.relative_to(root))
+        fid = storage.file_id_for(rel)
+        out.append({
+            "source_rel": rel,
+            "filename": p.name,
+            "file_id": fid,
+            "imported": fid in known,
+            "size_bytes": p.stat().st_size,
+        })
+    return out
+
+
 @router.get("/projects/{project_id}/files")
-def list_files(project_id: str, auth: Auth) -> list[dict]:
+def list_imported_files(project_id: str, auth: Auth) -> list[dict]:
+    """Bereits importierte (aufbereitete) Videos — das ist die Editor-Bibliothek."""
     _guard(auth[0], project_id)
     out = []
-    for p in storage.list_originals(project_id):
-        file_id = p.stem
+    for file_id in storage.list_known_file_ids(project_id):
         meta_p = storage.meta_path(project_id, file_id)
-        if meta_p.is_file():
-            try:
-                out.append(_with_media_paths(project_id, json.loads(meta_p.read_text("utf-8"))))
-                continue
-            except (json.JSONDecodeError, OSError):
-                pass
-        out.append({"file_id": file_id, "filename": p.name})
+        try:
+            out.append(_with_media_paths(project_id, json.loads(meta_p.read_text("utf-8"))))
+        except (json.JSONDecodeError, OSError):
+            continue
     return out
 
 
@@ -70,7 +95,26 @@ def get_file_meta(project_id: str, file_id: str, auth: Auth) -> dict:
     return _with_media_paths(project_id, json.loads(meta_p.read_text("utf-8")))
 
 
-# ---- Upload + Proxy-Erzeugung (async Job) ------------------------------------
+# ---- Import (bestehendes Projekt-Video aufbereiten, async Job) --------------
+
+class ImportIn(BaseModel):
+    source_rel: str = Field(max_length=500)
+
+
+@router.post("/projects/{project_id}/import")
+async def import_video(project_id: str, body: ImportIn, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    src = storage.source_path(project_id, body.source_rel)
+    if src is None or not src.is_file():
+        raise coded(status.HTTP_404_NOT_FOUND, "source_not_found")
+    file_id = storage.file_id_for(body.source_rel)
+    job_id = storage.new_id()
+    new_job(storage.jobs_dir(project_id), job_id, kind="import", file_id=file_id)
+    asyncio.create_task(process_import(project_id, body.source_rel, file_id, job_id))
+    return {"file_id": file_id, "job_id": job_id}
+
+
+# ---- Upload (neue Datei, landet sichtbar unter videoeditor/uploads/) --------
 
 @router.post("/projects/{project_id}/upload")
 async def upload_video(project_id: str, auth: Auth, file: UploadFile = File(...)) -> dict:
@@ -79,8 +123,8 @@ async def upload_video(project_id: str, auth: Auth, file: UploadFile = File(...)
     if not ext:
         raise coded(status.HTTP_400_BAD_REQUEST, "unsupported_format")
 
-    file_id = storage.new_id()
-    dst = storage.original_path(project_id, file_id, ext)
+    safe_name = f"{storage.new_id()}.{ext}"
+    dst = storage.uploads_dir(project_id) / safe_name
     size = 0
     with dst.open("wb") as out:
         while chunk := await file.read(1024 * 1024):
@@ -91,9 +135,11 @@ async def upload_video(project_id: str, auth: Auth, file: UploadFile = File(...)
                 raise coded(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large")
             out.write(chunk)
 
+    source_rel = str(dst.relative_to(storage.workspace_root(project_id)))
+    file_id = storage.file_id_for(source_rel)
     job_id = storage.new_id()
-    new_job(storage.jobs_dir(project_id), job_id, kind="proxy", file_id=file_id)
-    asyncio.create_task(process_upload(project_id, file_id, ext, file.filename or file_id, job_id))
+    new_job(storage.jobs_dir(project_id), job_id, kind="import", file_id=file_id)
+    asyncio.create_task(process_import(project_id, source_rel, file_id, job_id))
     return {"file_id": file_id, "job_id": job_id}
 
 
@@ -104,11 +150,6 @@ def get_job(project_id: str, job_id: str, auth: Auth) -> dict:
     if not job:
         raise coded(status.HTTP_404_NOT_FOUND, "job_not_found")
     return job
-
-
-# Proxy/Sprite/Export-Medien werden über den zentralen /api/files-Endpoint
-# ausgeliefert (Token-Query-Support für <video>/<img>). Die absoluten Pfade
-# kommen aus der Meta-Antwort (proxy_abs/sprite_abs) bzw. dem Export-Response.
 
 
 # ---- EDL (Schnitt speichern) --------------------------------------------------

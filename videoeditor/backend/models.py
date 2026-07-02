@@ -31,6 +31,7 @@ class EDL(BaseModel):
 class VideoMeta(BaseModel):
     file_id: str
     filename: str
+    source_rel: str  # workspace-relativer Pfad zum Original (bleibt im Projekt!)
     duration: float
     fps: float
     width: int

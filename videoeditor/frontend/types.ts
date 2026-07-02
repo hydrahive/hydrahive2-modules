@@ -24,6 +24,7 @@ export interface EDL {
 export interface VideoMeta {
   file_id: string
   filename: string
+  source_rel: string
   duration: number
   fps: number
   width: number
@@ -34,6 +35,14 @@ export interface VideoMeta {
   edl: EDL | null
   proxy_abs?: string
   sprite_abs?: string
+}
+
+export interface BrowseEntry {
+  source_rel: string
+  filename: string
+  file_id: string
+  imported: boolean
+  size_bytes: number
 }
 
 export interface Job {

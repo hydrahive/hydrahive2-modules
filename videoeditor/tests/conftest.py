@@ -100,7 +100,7 @@ def _clean_videoeditor_dirs(setup_test_env):
     import shutil
     from backend import storage
     for pid in (PROJECT_ID, OTHER_PROJECT_ID):
-        root = storage._root(pid)
+        root = storage._editor_root(pid)
         if root.is_dir():
             shutil.rmtree(root)
         root.mkdir(parents=True, exist_ok=True)
