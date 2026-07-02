@@ -104,9 +104,16 @@ async def process_export(
         async def on_progress(pct: float) -> None:
             set_progress(jobs_dir, job_id, int(pct * 100))
 
+        def resolve_audio(source_rel: str):
+            p = storage.source_path(project_id, source_rel)
+            if p is None or not p.is_file():
+                raise _ffmpeg.FFmpegError(f"Audioquelle nicht gefunden: {source_rel}")
+            return p
+
         await render_export(
             src, meta.edl.timeline, dst, keyframes=meta.keyframes,
             profile=profile, source_meta=source_meta, progress_cb=on_progress,
+            edl=meta.edl, resolve_audio=resolve_audio,
         )
         finish_job(jobs_dir, job_id, ok=True)
     except _ffmpeg.FFmpegError as e:

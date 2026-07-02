@@ -16,9 +16,10 @@ import tempfile
 from pathlib import Path
 from typing import Awaitable, Callable
 
+from ._audio_mix import build_filtergraph, mix_input_files
 from ._ffmpeg import FFmpegError
 from ._segment_args import segment_args
-from .models import Clip
+from .models import Clip, EDL
 from .render_presets import OutputProfile, output_forces_reencode
 
 _KEYFRAME_TOLERANCE_SEC = 1 / 24
@@ -58,6 +59,7 @@ async def render_export(
     src: Path, clips: list[Clip], dst: Path, *,
     keyframes: list[float], profile: OutputProfile | None = None,
     source_meta: dict | None = None, progress_cb: ProgressCb = None,
+    edl: EDL | None = None, resolve_audio: "Callable[[str], Path] | None" = None,
 ) -> None:
     if not clips:
         raise FFmpegError("Export ohne Clips.")
@@ -66,6 +68,7 @@ async def render_export(
     source_codec = (source_meta or {}).get("video_codec")
     total = sum(c.src_end - c.src_start for c in clips)
     container = "mp4"
+    do_mix = edl is not None and edl.has_audio_mix() and resolve_audio is not None
 
     with tempfile.TemporaryDirectory(prefix="videoeditor-export-") as tmpdir:
         tmp = Path(tmpdir)
@@ -84,16 +87,53 @@ async def render_export(
             segment_paths.append(seg)
             done += clip.src_end - clip.src_start
 
+        # Concat der Video-Segmente. Ohne Audio-Mix direkt nach dst; mit Mix in
+        # eine Zwischendatei, die dann als Input 0 in den Mix-Schritt geht.
+        cut_video = (tmp / f"cut.{container}") if do_mix else dst
         concat_list = tmp / "concat.txt"
         concat_list.write_text("\n".join(f"file '{p.as_posix()}'" for p in segment_paths) + "\n")
         proc = await asyncio.create_subprocess_exec(
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
             "-f", "concat", "-safe", "0", "-i", str(concat_list),
-            "-c", "copy", str(dst),
+            "-c", "copy", str(cut_video),
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
         _, err = await proc.communicate()
-        if proc.returncode != 0 or not dst.is_file():
+        if proc.returncode != 0 or not cut_video.is_file():
             raise FFmpegError(err.decode("utf-8", "replace")[-400:])
+
+        if do_mix:
+            assert edl is not None and resolve_audio is not None
+            await _mux_audio(cut_video, edl, resolve_audio, dst)
+            if not dst.is_file():
+                raise FFmpegError("Audio-Mix-Ausgabe nicht erzeugt.")
+
         if progress_cb is not None:
             await progress_cb(1.0)
+
+
+async def _mux_audio(
+    cut_video: Path, edl: EDL, resolve_audio: "Callable[[str], Path]", dst: Path,
+) -> None:
+    """Mischt O-Ton + Audiospuren in einem ffmpeg-Schritt über den
+    filter_complex-Graph. Bild wird kopiert (kein Video-Reencode)."""
+    graph, _n = build_filtergraph(edl)
+    if not graph:
+        # Sollte nicht passieren (do_mix prüft has_audio_mix), aber sicher ist sicher.
+        raise FFmpegError("Leerer Audio-Mix-Graph.")
+    audio_inputs = mix_input_files(edl, resolve_audio)
+    args = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", str(cut_video)]
+    for f in audio_inputs:
+        args += ["-i", str(f)]
+    args += [
+        "-filter_complex", graph,
+        "-map", "0:v", "-map", "[aout]",
+        "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+        "-movflags", "+faststart", str(dst),
+    ]
+    proc = await asyncio.create_subprocess_exec(
+        *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    _, err = await proc.communicate()
+    if proc.returncode != 0:
+        raise FFmpegError(err.decode("utf-8", "replace")[-400:])
