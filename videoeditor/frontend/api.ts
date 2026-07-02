@@ -1,6 +1,6 @@
 import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { BrowseEntry, EDL, ExportResult, Job, RenderPreset, UploadResult, VideoMeta } from "./types"
+import type { AudioBrowseEntry, AudioMeta, AudioPeaks, BrowseEntry, EDL, ExportResult, Job, RenderPreset, UploadResult, VideoMeta } from "./types"
 
 const BASE = "/modules/videoeditor"
 
@@ -33,6 +33,20 @@ export const videoeditorApi = {
 
   exportPath: (pid: string, exportId: string): Promise<{ export_abs: string }> =>
     api.get<{ export_abs: string }>(`${BASE}/projects/${pid}/exports/${exportId}`),
+
+  /** Alle Audio-Quellen im Projekt-Workspace — inkl. Aufbereitungs-Status. */
+  audioBrowse: (pid: string): Promise<AudioBrowseEntry[]> =>
+    api.get<AudioBrowseEntry[]>(`${BASE}/projects/${pid}/audio/browse`),
+
+  /** Bereitet eine Audioquelle auf (Peaks/Decode) — liefert audio_id + job_id. */
+  audioPrepare: (pid: string, sourceRel: string): Promise<{ audio_id: string; job_id: string }> =>
+    api.post<{ audio_id: string; job_id: string }>(`${BASE}/projects/${pid}/audio/prepare`, { source_rel: sourceRel }),
+
+  audioMeta: (pid: string, audioId: string): Promise<AudioMeta> =>
+    api.get<AudioMeta>(`${BASE}/projects/${pid}/audio/${audioId}`),
+
+  audioPeaks: (pid: string, audioId: string): Promise<AudioPeaks> =>
+    api.get<AudioPeaks>(`${BASE}/projects/${pid}/audio/${audioId}/peaks`),
 
   upload: async (pid: string, file: File): Promise<UploadResult> => {
     const token = useAuthStore.getState().token || ""

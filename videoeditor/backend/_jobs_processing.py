@@ -9,10 +9,12 @@ Projekt-Workspace (z.B. atelier/videos/..., oder woanders hochgeladen).
 """
 from __future__ import annotations
 
-from . import _ffmpeg, storage
+import json
+
+from . import _audio_peaks, _ffmpeg, storage
 from ._jobstore import finish_job, set_progress
 from .export_service import render_export
-from .models import EDL, VideoMeta
+from .models import EDL, AudioMeta, VideoMeta
 from .render_presets import OutputProfile
 
 SPRITE_INTERVAL_SEC = 5.0
@@ -53,6 +55,36 @@ async def process_import(project_id: str, source_rel: str, file_id: str, job_id:
         finish_job(jobs_dir, job_id, ok=False, error=str(e))
 
 
+async def process_audio_prepare(
+    project_id: str, source_rel: str, audio_id: str, job_id: str,
+) -> None:
+    """Bereitet eine Audiodatei aus dem Projekt-Workspace für die Nachvertonung
+    auf: Dauer proben + Wellenform-Peaks berechnen. Original bleibt unangetastet
+    (nur Sidecar-Meta + Peaks-JSON unter videoeditor/ werden geschrieben)."""
+    jobs_dir = storage.jobs_dir(project_id)
+    src = storage.source_path(project_id, source_rel)
+    if src is None or not src.is_file():
+        finish_job(jobs_dir, job_id, ok=False, error="Audiodatei nicht gefunden.")
+        return
+    try:
+        info = await _ffmpeg.audio_probe(src)
+        peaks = await _audio_peaks.compute_peaks(src, duration=info["duration"])
+        storage.peaks_path(project_id, audio_id).write_text(
+            json.dumps(peaks, ensure_ascii=False), "utf-8"
+        )
+        meta = AudioMeta(
+            audio_id=audio_id, filename=src.name, source_rel=source_rel,
+            duration=info["duration"], sample_rate=info["sample_rate"],
+            channels=info["channels"],
+        )
+        storage.audio_meta_path(project_id, audio_id).write_text(
+            meta.model_dump_json(indent=2), "utf-8"
+        )
+        finish_job(jobs_dir, job_id, ok=True)
+    except _ffmpeg.FFmpegError as e:
+        finish_job(jobs_dir, job_id, ok=False, error=str(e))
+
+
 async def process_export(
     project_id: str, file_id: str, export_id: str, job_id: str,
     profile: OutputProfile | None = None,
@@ -72,9 +104,16 @@ async def process_export(
         async def on_progress(pct: float) -> None:
             set_progress(jobs_dir, job_id, int(pct * 100))
 
+        def resolve_audio(source_rel: str):
+            p = storage.source_path(project_id, source_rel)
+            if p is None or not p.is_file():
+                raise _ffmpeg.FFmpegError(f"Audioquelle nicht gefunden: {source_rel}")
+            return p
+
         await render_export(
             src, meta.edl.timeline, dst, keyframes=meta.keyframes,
             profile=profile, source_meta=source_meta, progress_cb=on_progress,
+            edl=meta.edl, resolve_audio=resolve_audio,
         )
         finish_job(jobs_dir, job_id, ok=True)
     except _ffmpeg.FFmpegError as e:

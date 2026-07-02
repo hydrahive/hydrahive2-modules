@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import type { Clip, VideoMeta } from "./types"
 import { fileUrl } from "./api"
 import { BANDS, drawTimeline, hitClip, timeAtX, type ViewState } from "./_timelineDraw"
@@ -8,6 +8,8 @@ interface Props {
   playhead: number
   selectedClipId: string | null
   playingClipId?: string | null
+  view: ViewState
+  onViewChange: (updater: (v: ViewState) => ViewState) => void
   onSeek: (t: number) => void
   onSelectClip: (id: string | null) => void
   onTrimClip: (id: string, start: number, end: number) => void
@@ -18,12 +20,11 @@ type Drag =
   | { kind: "trim"; edge: "start" | "end"; clipId: string }
   | null
 
-export function TimelineCanvas({ meta, playhead, selectedClipId, playingClipId, onSeek, onSelectClip, onTrimClip }: Props) {
+export function TimelineCanvas({ meta, playhead, selectedClipId, playingClipId, view, onViewChange, onSeek, onSelectClip, onTrimClip }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spriteRef = useRef<HTMLImageElement | null>(null)
   const dragRef = useRef<Drag>(null)
-  const [view, setView] = useState<ViewState>({ pxPerSec: 40, scrollX: 0, width: 800 })
 
   // Sprite-Bild laden
   useEffect(() => {
@@ -59,12 +60,13 @@ export function TimelineCanvas({ meta, playhead, selectedClipId, playingClipId, 
       canvas.height = Math.floor(BANDS.height * dpr)
       canvas.style.width = `${w}px`
       canvas.style.height = `${BANDS.height}px`
-      setView((v) => ({ ...v, width: w }))
+      onViewChange((v) => (v.width === w ? v : { ...v, width: w }))
     }
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(wrap)
     return () => ro.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function localXY(e: React.PointerEvent): [number, number] {
@@ -112,11 +114,11 @@ export function TimelineCanvas({ meta, playhead, selectedClipId, playingClipId, 
 
   function onWheel(e: React.WheelEvent) {
     if (!(e.ctrlKey || e.metaKey)) {
-      setView((v) => ({ ...v, scrollX: Math.max(0, v.scrollX + e.deltaX + e.deltaY) }))
+      onViewChange((v) => ({ ...v, scrollX: Math.max(0, v.scrollX + e.deltaX + e.deltaY) }))
       return
     }
     const [x] = localXY(e as unknown as React.PointerEvent)
-    setView((v) => {
+    onViewChange((v) => {
       const focusT = timeAtX(x, v)
       const pxPerSec = Math.max(4, Math.min(400, v.pxPerSec * (e.deltaY < 0 ? 1.25 : 0.8)))
       return { ...v, pxPerSec, scrollX: Math.max(0, focusT * pxPerSec - x) }
