@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react"
 import type { VideoMeta } from "./types"
-import { fileUrl, videoeditorApi } from "./api"
+import { fileUrl } from "./api"
 import { TimelineCanvas } from "./TimelineCanvas"
 import { useEditorEdl } from "./useEditorEdl"
 import { usePreview } from "./usePreview"
 import { usePlayer } from "./usePlayer"
 import { EditorToolbar } from "./EditorToolbar"
+import { ExportDialog } from "./ExportDialog"
 
 interface Props {
   projectId: string
@@ -17,7 +18,7 @@ export function EditorView({ projectId, meta, onBack }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null)
   const [inPoint, setInPoint] = useState<number | null>(null)
-  const [exporting, setExporting] = useState(false)
+  const [showExport, setShowExport] = useState(false)
 
   const edl = useEditorEdl(projectId, meta)
   const preview = usePreview(
@@ -45,22 +46,6 @@ export function EditorView({ projectId, meta, onBack }: Props) {
     if (!selectedClipId) return
     edl.remove(selectedClipId)
     setSelectedClipId(null)
-  }
-
-  async function doExport() {
-    await edl.saveNow()
-    setExporting(true)
-    try {
-      const { job_id } = await videoeditorApi.startExport(projectId, meta.file_id, `${meta.filename}-schnitt.mp4`)
-      for (let i = 0; i < 600; i++) {
-        await new Promise((r) => setTimeout(r, 2000))
-        const job = await videoeditorApi.getJob(projectId, job_id)
-        if (job.status === "done") break
-        if (job.status === "failed") throw new Error(job.error || "Export fehlgeschlagen")
-      }
-    } finally {
-      setExporting(false)
-    }
   }
 
   // ---- Tastenkürzel ----
@@ -96,9 +81,9 @@ export function EditorView({ projectId, meta, onBack }: Props) {
         <span className="text-[11px] text-zinc-500">{meta.width}×{meta.height} · {meta.fps}fps · {meta.duration.toFixed(1)}s</span>
         <span className="flex-1" />
         <span className="text-[11px] text-zinc-500">{edl.saved ? "gespeichert" : "…"}</span>
-        <button onClick={doExport} disabled={exporting || clips.length === 0}
+        <button onClick={() => setShowExport(true)} disabled={clips.length === 0}
           className="px-3 py-1 text-xs rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-200 disabled:opacity-40">
-          {exporting ? "Rendert…" : "Exportieren"}
+          Exportieren
         </button>
       </div>
 
@@ -123,6 +108,13 @@ export function EditorView({ projectId, meta, onBack }: Props) {
         onSelectClip={setSelectedClipId}
         onTrimClip={edl.trim}
       />
+
+      {showExport && (
+        <ExportDialog
+          projectId={projectId} fileId={meta.file_id} filename={meta.filename}
+          onClose={() => setShowExport(false)} onSaveFirst={edl.saveNow}
+        />
+      )}
     </div>
   )
 }
