@@ -5,6 +5,7 @@ import type { Project } from "@/features/projects/types"
 import type { VideoMeta } from "./types"
 import { videoeditorApi } from "./api"
 import { EditorView } from "./EditorView"
+import { BrowseDialog } from "./BrowseDialog"
 
 export function VideoEditorPage() {
   const { t } = useTranslation("videoeditor")
@@ -12,6 +13,7 @@ export function VideoEditorPage() {
   const [projectId, setProjectId] = useState("")
   const [files, setFiles] = useState<VideoMeta[]>([])
   const [openFile, setOpenFile] = useState<VideoMeta | null>(null)
+  const [showBrowse, setShowBrowse] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -38,7 +40,6 @@ export function VideoEditorPage() {
     setUploading(true); setError(null)
     try {
       const { job_id } = await videoeditorApi.upload(projectId, f)
-      // Proxy/Metadaten-Job pollen
       for (let i = 0; i < 300; i++) {
         await new Promise((r) => setTimeout(r, 2000))
         const job = await videoeditorApi.getJob(projectId, job_id)
@@ -67,13 +68,17 @@ export function VideoEditorPage() {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
         <select value={projectId} onChange={(e) => setProjectId(e.target.value)}
           className="px-2 py-1 text-sm rounded bg-black/30 border border-white/10 text-zinc-200">
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <span className="flex-1" />
+        <button onClick={() => setShowBrowse(true)}
+          className="px-3 py-1.5 text-xs rounded bg-sky-500/15 border border-sky-500/30 text-sky-200">
+          {t("add_from_project")}
+        </button>
         <button onClick={() => fileRef.current?.click()} disabled={uploading}
           className="px-3 py-1.5 text-xs rounded bg-violet-500/15 border border-violet-500/30 text-violet-200 disabled:opacity-40">
           {uploading ? t("uploading") : t("upload")}
@@ -95,11 +100,17 @@ export function VideoEditorPage() {
               </div>
               <div className="p-2">
                 <p className="text-xs text-zinc-200 truncate">{f.filename}</p>
+                <p className="text-[10px] text-zinc-500 truncate">{f.source_rel}</p>
                 <p className="text-[10px] text-zinc-500">{f.duration?.toFixed(1)}s · {f.edl?.timeline?.length ?? 0} {t("clips")}</p>
               </div>
             </button>
           ))}
         </div>
+      )}
+
+      {showBrowse && (
+        <BrowseDialog projectId={projectId} onClose={() => setShowBrowse(false)}
+          onImported={() => reload(projectId)} />
       )}
     </div>
   )
