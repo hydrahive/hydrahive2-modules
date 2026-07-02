@@ -7,6 +7,7 @@ interface Props {
   meta: VideoMeta
   playhead: number
   selectedClipId: string | null
+  playingClipId?: string | null
   onSeek: (t: number) => void
   onSelectClip: (id: string | null) => void
   onTrimClip: (id: string, start: number, end: number) => void
@@ -17,7 +18,7 @@ type Drag =
   | { kind: "trim"; edge: "start" | "end"; clipId: string }
   | null
 
-export function TimelineCanvas({ meta, playhead, selectedClipId, onSeek, onSelectClip, onTrimClip }: Props) {
+export function TimelineCanvas({ meta, playhead, selectedClipId, playingClipId, onSeek, onSelectClip, onTrimClip }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spriteRef = useRef<HTMLImageElement | null>(null)
@@ -40,7 +41,7 @@ export function TimelineCanvas({ meta, playhead, selectedClipId, onSeek, onSelec
     const ctx = canvas.getContext("2d")
     if (!ctx) return
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    drawTimeline({ ctx, v: view, meta, playhead, selectedClipId, sprite: spriteRef.current })
+    drawTimeline({ ctx, v: view, meta, playhead, selectedClipId, playingClipId: playingClipId ?? null, sprite: spriteRef.current })
   }
 
   // Re-Render bei Zustandsänderung
