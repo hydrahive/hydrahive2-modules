@@ -69,6 +69,11 @@
       "id": "atelier",
       "name": "Atelier",
       "path": "atelier"
+    },
+    {
+      "id": "videoeditor",
+      "name": "Video-Editor",
+      "path": "videoeditor"
     }
   ]
 }
