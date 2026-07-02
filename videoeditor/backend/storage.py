@@ -31,6 +31,8 @@ _ID_RE = re.compile(r"^[a-f0-9]{32}$")
 
 MAX_UPLOAD_BYTES = 4 * 1024 * 1024 * 1024  # 4 GiB pro Video
 _ALLOWED_VIDEO_EXT = {"mp4", "mov", "mkv", "webm", "avi"}
+# Nachvertonung: generierte/vorhandene Audiodateien aus dem Projekt-Workspace.
+_ALLOWED_AUDIO_EXT = {"mp3", "wav", "m4a", "ogg", "flac", "aac"}
 
 # Editor-eigene Cache-Unterordner werden NIE als importierbare Quelle gelistet.
 _EDITOR_SUBDIR = "videoeditor"
@@ -55,6 +57,11 @@ def is_valid_id(file_id: str) -> bool:
 def video_ext_from(filename: str) -> str | None:
     ext = (filename.rsplit(".", 1)[-1] if "." in filename else "").lower()
     return ext if ext in _ALLOWED_VIDEO_EXT else None
+
+
+def audio_ext_from(filename: str) -> str | None:
+    ext = (filename.rsplit(".", 1)[-1] if "." in filename else "").lower()
+    return ext if ext in _ALLOWED_AUDIO_EXT else None
 
 
 def workspace_root(project_id: str) -> Path:
@@ -112,6 +119,16 @@ def meta_path(project_id: str, file_id: str) -> Path:
     return _cache_path(project_id, "meta", f"{file_id}.json")
 
 
+def audio_meta_path(project_id: str, audio_id: str) -> Path:
+    """Sidecar-Meta einer aufbereiteten Audiodatei (Dauer + Peaks-Verweis)."""
+    return _cache_path(project_id, "audio_meta", f"{audio_id}.json")
+
+
+def peaks_path(project_id: str, audio_id: str) -> Path:
+    """Vorberechnete Wellenform-Peaks (JSON) einer Audiodatei."""
+    return _cache_path(project_id, "peaks", f"{audio_id}.json")
+
+
 def export_path(project_id: str, export_id: str) -> Path:
     return _cache_path(project_id, "exports", f"{export_id}.mp4")
 
@@ -147,4 +164,26 @@ def list_project_videos(project_id: str) -> list[Path]:
 def list_known_file_ids(project_id: str) -> list[str]:
     """file_ids, für die bereits Meta/Proxy existiert (schon importiert)."""
     d = _cache_subdir(project_id, "meta")
+    return [p.stem for p in d.glob("*.json")]
+
+
+def list_project_audio(project_id: str) -> list[Path]:
+    """Alle Audiodateien im gesamten Projekt-Workspace (mp3/wav/m4a/ogg/...) —
+    außer im videoeditor/-eigenen Cache-Baum. Deckt generierte Musik/Sprache
+    unter generated/ ebenso ab wie sonstwo abgelegte Audiodateien."""
+    root = workspace_root(project_id)
+    out: list[Path] = []
+    for p in root.rglob("*"):
+        if not p.is_file():
+            continue
+        if _EDITOR_SUBDIR in p.relative_to(root).parts:
+            continue
+        if p.suffix.lstrip(".").lower() in _ALLOWED_AUDIO_EXT:
+            out.append(p)
+    return sorted(out)
+
+
+def list_known_audio_ids(project_id: str) -> list[str]:
+    """audio_ids, für die bereits Peaks/Meta aufbereitet wurden."""
+    d = _cache_subdir(project_id, "audio_meta")
     return [p.stem for p in d.glob("*.json")]

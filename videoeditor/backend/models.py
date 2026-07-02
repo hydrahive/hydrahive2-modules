@@ -89,6 +89,16 @@ class EDL(BaseModel):
         return any(t.clips for t in self.audio)
 
 
+class AudioMeta(BaseModel):
+    """Aufbereitete Audiodatei (Sidecar) — Dauer + Verweis auf Peaks-JSON."""
+    audio_id: str
+    filename: str
+    source_rel: str          # bleibt im Projekt-Workspace
+    duration: float
+    sample_rate: int = 0
+    channels: int = 0
+
+
 class VideoMeta(BaseModel):
     file_id: str
     filename: str

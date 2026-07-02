@@ -58,6 +58,32 @@ async def probe(video: Path) -> dict:
     }
 
 
+async def audio_probe(media: Path) -> dict:
+    """Liefert {duration, sample_rate, channels} des ersten Audiostreams.
+
+    Funktioniert für reine Audiodateien (mp3/wav/...) wie auch für Videos mit
+    Tonspur. Wirft FFmpegError, wenn ffprobe fehlschlägt; hat die Datei keinen
+    Audiostream, ist ``duration`` die Container-Dauer und ``channels`` 0.
+    """
+    rc, out, err = await _run(
+        "ffprobe", "-v", "error", "-print_format", "json",
+        "-show_format", "-show_streams", str(media),
+    )
+    if rc != 0:
+        raise FFmpegError(err.decode("utf-8", "replace")[-400:])
+    data = json.loads(out.decode("utf-8", "replace"))
+    a_stream = next(
+        (s for s in data.get("streams", []) if s.get("codec_type") == "audio"), {}
+    )
+    fmt_dur = float(data.get("format", {}).get("duration") or 0)
+    stream_dur = float(a_stream.get("duration") or 0)
+    return {
+        "duration": stream_dur or fmt_dur,
+        "sample_rate": int(a_stream.get("sample_rate") or 0),
+        "channels": int(a_stream.get("channels") or 0),
+    }
+
+
 async def keyframe_timestamps(video: Path) -> list[float]:
     """Zeitstempel aller I-Frames (Keyframes) — Grundlage für den
     Keyframe-Magnet in der Timeline (verlustfreier Schnitt nur an diesen

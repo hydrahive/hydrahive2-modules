@@ -10,27 +10,21 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, File, UploadFile, status
 from pydantic import BaseModel, Field
 
-from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import storage
+from . import audio_routes, storage
+from ._deps import Auth, guard as _guard
 from ._jobs_processing import process_export, process_import
 from ._jobstore import new_job, read_job
 from .render_presets import PRESETS, OutputProfile, get_preset
 from .models import EDL, VideoMeta
 
 router = APIRouter()
-Auth = Annotated[tuple[str, str], Depends(require_auth)]
-
-
-def _guard(user: str, project_id: str) -> None:
-    if not storage.is_project_id(project_id) or not storage.user_can_access(user, project_id):
-        raise coded(status.HTTP_404_NOT_FOUND, "project_not_found")
+router.include_router(audio_routes.router)
 
 
 def _with_media_paths(project_id: str, meta: dict) -> dict:
