@@ -20,12 +20,22 @@ def new_job(job_dir: Path, job_id: str, *, kind: str, file_id: str) -> dict:
         "kind": kind,          # "proxy" | "export"
         "file_id": file_id,
         "status": "running",   # running | done | failed
+        "percent": 0,          # 0..100 (nur für Export sinnvoll)
         "error": None,
         "created_at": now(),
         "finished_at": None,
     }
     write_job(job_dir, job)
     return job
+
+
+def set_progress(job_dir: Path, job_id: str, percent: int) -> None:
+    """Aktualisiert nur den Fortschritt (Live-Anzeige beim Export)."""
+    job = read_job(job_dir, job_id)
+    if not job or job.get("status") != "running":
+        return
+    job["percent"] = max(0, min(100, percent))
+    write_job(job_dir, job)
 
 
 def write_job(job_dir: Path, job: dict) -> None:
@@ -50,6 +60,7 @@ def finish_job(job_dir: Path, job_id: str, *, ok: bool, error: str | None = None
     if not job:
         return
     job["status"] = "done" if ok else "failed"
+    job["percent"] = 100 if ok else job.get("percent", 0)
     job["error"] = error
     job["finished_at"] = now()
     write_job(job_dir, job)

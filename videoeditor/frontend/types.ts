@@ -47,12 +47,20 @@ export interface BrowseEntry {
 
 export interface Job {
   job_id: string
-  kind: "proxy" | "export"
+  kind: "proxy" | "export" | "import"
   file_id: string
   status: "running" | "done" | "failed"
+  percent?: number
   error: string | null
   created_at: string
   finished_at: string | null
+}
+
+export interface RenderPreset {
+  id: string
+  title: string
+  note: string
+  profile: Record<string, unknown>
 }
 
 export interface UploadResult {

@@ -1,16 +1,10 @@
 """Video-Editor — API-Routen: Projekt-Videos browsen/importieren, EDL, Export.
 
-Alle Endpunkte projekt-scoped (/projects/{project_id}/...), Zugriff nur für
-Projekt-Mitglieder (storage.user_can_access). ffmpeg-Jobs laufen als
-asyncio.create_task im Hintergrund (siehe _jobs_processing.py), Status via
-Polling (Job-Store).
-
-WICHTIG (Till, 2026-07-02): Originale bleiben IM Projekt-Workspace — der
-Editor ist kein Silo. /browse listet alle Videos im ganzen Workspace (auch
-z.B. atelier/videos/...), /import bereitet ein gewähltes Video auf (Proxy/
-Keyframes), OHNE es zu kopieren. Direkter Upload bleibt für neue Dateien
-möglich, landet aber sichtbar unter videoeditor/uploads/ im Projekt (Samba-
-erreichbar), nicht in einem versteckten Ordner.
+Alle Endpunkte projekt-scoped, Zugriff nur für Projekt-Mitglieder. ffmpeg-Jobs
+laufen als asyncio.create_task im Hintergrund (_jobs_processing.py), Status via
+Polling (Job-Store). Kein Silo: Originale bleiben IM Projekt-Workspace; /browse
+listet alle Videos, /import bereitet Proxy/Keyframes OHNE Kopie auf, Upload
+landet sichtbar unter videoeditor/uploads/.
 """
 from __future__ import annotations
 
@@ -27,6 +21,7 @@ from hydrahive.api.middleware.errors import coded
 from . import storage
 from ._jobs_processing import process_export, process_import
 from ._jobstore import new_job, read_job
+from .render_presets import PRESETS, OutputProfile, get_preset
 from .models import EDL, VideoMeta
 
 router = APIRouter()
@@ -166,10 +161,18 @@ def save_edl(project_id: str, file_id: str, body: EDL, auth: Auth) -> dict:
     return {"ok": True}
 
 
+# ---- Render-Presets -----------------------------------------------------------
+
+@router.get("/presets")
+def list_presets(auth: Auth) -> list[dict]:
+    return [p.model_dump() for p in PRESETS]
+
+
 # ---- Export (async Job) -------------------------------------------------------
 
 class ExportIn(BaseModel):
     filename: str = Field(default="export.mp4", max_length=200)
+    preset_id: str = Field(default="passthrough", max_length=40)
 
 
 @router.post("/projects/{project_id}/files/{file_id}/export")
@@ -177,10 +180,12 @@ async def export_video(project_id: str, file_id: str, body: ExportIn, auth: Auth
     _guard(auth[0], project_id)
     if not storage.meta_path(project_id, file_id).is_file():
         raise coded(status.HTTP_404_NOT_FOUND, "file_not_found")
+    preset = get_preset(body.preset_id)
+    profile = preset.profile if preset else OutputProfile()
     export_id = storage.new_id()
     job_id = storage.new_id()
     new_job(storage.jobs_dir(project_id), job_id, kind="export", file_id=file_id)
-    asyncio.create_task(process_export(project_id, file_id, export_id, job_id))
+    asyncio.create_task(process_export(project_id, file_id, export_id, job_id, profile))
     return {"export_id": export_id, "job_id": job_id}
 
 

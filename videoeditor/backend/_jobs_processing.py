@@ -10,9 +10,10 @@ Projekt-Workspace (z.B. atelier/videos/..., oder woanders hochgeladen).
 from __future__ import annotations
 
 from . import _ffmpeg, storage
-from ._jobstore import finish_job
+from ._jobstore import finish_job, set_progress
 from .export_service import render_export
 from .models import EDL, VideoMeta
+from .render_presets import OutputProfile
 
 SPRITE_INTERVAL_SEC = 5.0
 SPRITE_COLS = 10
@@ -52,7 +53,10 @@ async def process_import(project_id: str, source_rel: str, file_id: str, job_id:
         finish_job(jobs_dir, job_id, ok=False, error=str(e))
 
 
-async def process_export(project_id: str, file_id: str, export_id: str, job_id: str) -> None:
+async def process_export(
+    project_id: str, file_id: str, export_id: str, job_id: str,
+    profile: OutputProfile | None = None,
+) -> None:
     jobs_dir = storage.jobs_dir(project_id)
     try:
         meta_p = storage.meta_path(project_id, file_id)
@@ -63,7 +67,15 @@ async def process_export(project_id: str, file_id: str, export_id: str, job_id: 
         if src is None or not src.is_file():
             raise _ffmpeg.FFmpegError("Original nicht gefunden.")
         dst = storage.export_path(project_id, export_id)
-        await render_export(src, meta.edl.timeline, dst, keyframes=meta.keyframes)
+        source_meta = {"video_codec": None, "width": meta.width, "height": meta.height}
+
+        async def on_progress(pct: float) -> None:
+            set_progress(jobs_dir, job_id, int(pct * 100))
+
+        await render_export(
+            src, meta.edl.timeline, dst, keyframes=meta.keyframes,
+            profile=profile, source_meta=source_meta, progress_cb=on_progress,
+        )
         finish_job(jobs_dir, job_id, ok=True)
     except _ffmpeg.FFmpegError as e:
         finish_job(jobs_dir, job_id, ok=False, error=str(e))
