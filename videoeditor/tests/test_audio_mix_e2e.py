@@ -98,6 +98,34 @@ def test_multitrack_export_has_audio():
         assert 3.5 <= info["duration"] <= 4.8
 
 
+def test_overlapping_clips_crossfade_render():
+    """Zwei überlappende Clips einer Spur müssen valide rendern (Crossfade)."""
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        video = tmp / "in.mp4"
+        a = tmp / "a.mp3"
+        b = tmp / "b.mp3"
+        _make_video(video, 8)
+        _make_tone(a, 440, 5)
+        _make_tone(b, 660, 5)
+
+        edl = EDL(
+            file_id="f",
+            timeline=[Clip(id="v", src_start=0.0, src_end=6.0, mode="reencode")],
+            audio=[AudioTrack(id="t", clips=[
+                AudioClip(id="a", source_rel="a.mp3", t_start=0.0, src_start=0.0, src_end=4.0),
+                AudioClip(id="b", source_rel="b.mp3", t_start=3.0, src_start=0.0, src_end=4.0),
+            ])],
+        )
+        dst = tmp / "out.mp4"
+        asyncio.run(render_export(
+            video, edl.timeline, dst, keyframes=[0.0],
+            edl=edl, resolve_audio=lambda r: tmp / r,
+        ))
+        assert dst.is_file()
+        assert _probe_audio(dst)["has_audio"] is True
+
+
 def test_export_without_audio_still_works():
     """Rückwärtskompat: EDL ohne Audio-Mix nimmt den Passthrough-Pfad."""
     with tempfile.TemporaryDirectory() as td:

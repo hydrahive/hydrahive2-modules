@@ -46,10 +46,52 @@ def include_original(edl: EDL) -> bool:
     return True
 
 
-def _clip_filter(in_label: str, clip: AudioClip, out_label: str) -> str:
+def _clip_end(clip: AudioClip) -> float:
+    """Ende des Clips auf der Timeline (t_start + Ausschnittdauer)."""
+    return clip.t_start + (clip.src_end - clip.src_start)
+
+
+def crossfade_durations(clips: list[AudioClip]) -> dict[str, tuple[float, float]]:
+    """Leitet pro Clip effektive (fade_in, fade_out)-Dauern ab.
+
+    Überlappen sich zwei aufeinanderfolgende Clips einer Spur zeitlich, entsteht
+    ein Crossfade: der frühere Clip blendet über die Überlappung aus, der spätere
+    blendet über dieselbe Zone ein — ``amix`` addiert beide, das Ergebnis ist ein
+    gleichmäßiger Übergang. Vom Nutzer gesetzte Fades bleiben Untergrenze (der
+    Crossfade kann sie nur verlängern, nie verkürzen).
+
+    Reine Funktion (keine ffmpeg) — separat testbar.
+    """
+    ordered = sorted(clips, key=lambda c: c.t_start)
+    fades: dict[str, tuple[float, float]] = {
+        c.id: (c.fade_in, c.fade_out) for c in ordered
+    }
+    for earlier, later in zip(ordered, ordered[1:]):
+        overlap = _clip_end(earlier) - later.t_start
+        if overlap <= 0.01:
+            continue
+        # Überlappung auf die kürzere der beiden Clipdauern begrenzen.
+        span = min(
+            overlap,
+            earlier.src_end - earlier.src_start,
+            later.src_end - later.src_start,
+        )
+        e_in, e_out = fades[earlier.id]
+        l_in, l_out = fades[later.id]
+        fades[earlier.id] = (e_in, max(e_out, span))
+        fades[later.id] = (max(l_in, span), l_out)
+    return fades
+
+
+def _clip_filter(
+    in_label: str, clip: AudioClip, out_label: str,
+    fades: tuple[float, float] | None = None,
+) -> str:
     """Filter-Kette für einen Clip. src_start/end schneiden, an t_start auf der
-    Timeline platzieren, Gain + Fades anwenden."""
+    Timeline platzieren, Gain + Fades anwenden. ``fades`` überschreibt die
+    Clip-Fades (für aus Überlappung abgeleitete Crossfades)."""
     dur = clip.src_end - clip.src_start
+    fade_in, fade_out = fades if fades is not None else (clip.fade_in, clip.fade_out)
     steps = [
         f"atrim=start={clip.src_start:.3f}:end={clip.src_end:.3f}",
         "asetpts=PTS-STARTPTS",
@@ -60,11 +102,11 @@ def _clip_filter(in_label: str, clip: AudioClip, out_label: str) -> str:
         steps.append(f"adelay=delays={delay}:all=1")
     if clip.gain_db != 0.0:
         steps.append(f"volume={clip.gain_db:.2f}dB")
-    if clip.fade_in > 0:
-        steps.append(f"afade=t=in:st={clip.t_start:.3f}:d={clip.fade_in:.3f}")
-    if clip.fade_out > 0:
-        fade_start = clip.t_start + dur - clip.fade_out
-        steps.append(f"afade=t=out:st={max(0.0, fade_start):.3f}:d={clip.fade_out:.3f}")
+    if fade_in > 0:
+        steps.append(f"afade=t=in:st={clip.t_start:.3f}:d={fade_in:.3f}")
+    if fade_out > 0:
+        fade_start = clip.t_start + dur - fade_out
+        steps.append(f"afade=t=out:st={max(0.0, fade_start):.3f}:d={fade_out:.3f}")
     return f"[{in_label}]" + ",".join(steps) + f"[{out_label}]"
 
 
@@ -85,9 +127,10 @@ def build_filtergraph(edl: EDL) -> tuple[str, int]:
 
     for ti, track in enumerate(tracks):
         clip_labels: list[str] = []
+        fades = crossfade_durations(track.clips)
         for ci, clip in enumerate(track.clips):
             out_lbl = f"c{ti}_{ci}"
-            parts.append(_clip_filter(f"{input_idx}:a", clip, out_lbl))
+            parts.append(_clip_filter(f"{input_idx}:a", clip, out_lbl, fades=fades[clip.id]))
             clip_labels.append(out_lbl)
             input_idx += 1
         track_lbl = f"t{ti}"
