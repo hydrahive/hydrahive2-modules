@@ -2,14 +2,11 @@ import { useCallback, useRef, useState } from "react"
 import type { AudioTrack, Clip, EDL, OriginalAudio, VideoMeta } from "./types"
 import { videoeditorApi } from "./api"
 import * as A from "./_audioEdlOps"
+import * as V from "./_videoEdlOps"
 
 const HIST_MAX = 80
 const SNAP_EPS = 0.05        // Sekunden-Toleranz für Keyframe-Snap-Anzeige
 const AUTOSAVE_MS = 600
-
-function uid(): string {
-  return "c" + Math.random().toString(36).slice(2, 10)
-}
 
 /** Vollständiger, undo-barer Editier-Zustand (Video-Clips + Audio). */
 interface Snapshot {
@@ -134,37 +131,31 @@ export function useEditorEdl(projectId: string, initial: VideoMeta) {
     })
   }, [])
 
-  // ---- Video-Schnitt-Operationen (alle über commit) ------------------------
+  // ---- Video-Schnitt-Operationen (pure Logik in _videoEdlOps) --------------
   const addRange = useCallback((start: number, end: number) => {
-    const s = snapTime(start), e = snapTime(end)
-    if (e - s < 0.1) return
-    const mode: Clip["mode"] = (isOnKeyframe(s) && isOnKeyframe(e)) ? "copy" : "reencode"
-    const clip: Clip = { id: uid(), src_start: Number(s.toFixed(3)), src_end: Number(e.toFixed(3)), mode }
-    commit({ clips: [...clips, clip].sort((a, b) => a.src_start - b.src_start) })
-    return clip.id
+    const r = V.addRange(clips, snapTime(start), snapTime(end), isOnKeyframe)
+    if (!r) return
+    commit({ clips: r.clips })
+    return r.id
   }, [clips, commit, snapTime, isOnKeyframe])
 
   const splitAt = useCallback((t: number): string | null => {
-    const target = clips.find((c) => t > c.src_start + 0.01 && t < c.src_end - 0.01)
-    if (!target) return null
-    const cut = snapTime(t)
-    const right: Clip = { id: uid(), src_start: cut, src_end: target.src_end, mode: target.mode }
-    commit({ clips: clips.flatMap((c) => c.id !== target.id ? [c] : [{ ...c, src_end: cut }, right]) })
-    return right.id
+    const r = V.splitAt(clips, snapTime(t))
+    if (!r) return null
+    commit({ clips: r.clips })
+    return r.id
   }, [clips, commit, snapTime])
 
   const trim = useCallback((id: string, start: number, end: number) => {
-    commit({ clips: clips.map((c) => c.id === id
-      ? { ...c, src_start: Math.max(0, Math.min(start, end)), src_end: Math.max(start, end) }
-      : c).sort((a, b) => a.src_start - b.src_start) })
+    commit({ clips: V.trim(clips, id, start, end) })
   }, [clips, commit])
 
   const remove = useCallback((id: string) => {
-    commit({ clips: clips.filter((c) => c.id !== id) })
+    commit({ clips: V.remove(clips, id) })
   }, [clips, commit])
 
   const toggleMode = useCallback((id: string) => {
-    commit({ clips: clips.map((c) => c.id === id ? { ...c, mode: c.mode === "copy" ? "reencode" : "copy" } : c) })
+    commit({ clips: V.toggleMode(clips, id) })
   }, [clips, commit])
 
   // ---- Audio-Operationen (über commit, delegiert an pure Ops) --------------
