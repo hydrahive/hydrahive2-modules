@@ -52,6 +52,7 @@ interface DrawCtx {
   meta: VideoMeta
   playhead: number
   selectedClipId: string | null
+  playingClipId?: string | null
   sprite: HTMLImageElement | null
 }
 
@@ -120,14 +121,19 @@ function drawFilmstrip(d: DrawCtx): void {
 }
 
 function drawClips(d: DrawCtx): void {
-  const { ctx, v, meta, selectedClipId } = d
+  const { ctx, v, meta, selectedClipId, playingClipId } = d
   for (const c of meta.edl?.timeline ?? []) {
     const x0 = xAtTime(c.src_start, v)
     const w = Math.max(2, xAtTime(c.src_end, v) - x0)
     ctx.fillStyle = c.mode === "copy" ? "#0d9488" : "#6366f1"
     ctx.fillRect(x0, BANDS.clipY, w, BANDS.CLIP_H)
-    ctx.strokeStyle = selectedClipId === c.id ? "#38bdf8" : "rgba(255,255,255,0.15)"
-    ctx.lineWidth = selectedClipId === c.id ? 2 : 1
+    if (playingClipId === c.id) {
+      ctx.fillStyle = "rgba(234,179,8,0.30)"
+      ctx.fillRect(x0, BANDS.clipY, w, BANDS.CLIP_H)
+    }
+    const active = playingClipId === c.id
+    ctx.strokeStyle = active ? "#eab308" : (selectedClipId === c.id ? "#38bdf8" : "rgba(255,255,255,0.15)")
+    ctx.lineWidth = (active || selectedClipId === c.id) ? 2 : 1
     ctx.strokeRect(x0 + 0.5, BANDS.clipY + 0.5, w - 1, BANDS.CLIP_H - 1)
     ctx.fillStyle = "rgba(255,255,255,0.3)"
     ctx.fillRect(x0, BANDS.clipY, 3, BANDS.CLIP_H)
