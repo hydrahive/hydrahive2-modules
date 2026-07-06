@@ -118,3 +118,46 @@ export interface MusicGenerateResult {
   model: string
   created_at: string
 }
+
+// ---------------------------------------------------------------- Regie (Screenplay)
+export interface Screenplay {
+  title: string
+  logline: string
+  description: string
+  film_model: string
+  audio_model: string
+  voice_model: string
+  aspect_ratio: string
+  default_duration: number
+  scene_order: string[]
+  created_at?: string
+  updated_at?: string
+}
+
+export interface SceneDialogue {
+  character_id: string
+  line: string
+  emotion: string
+}
+
+export interface SceneMusic {
+  enabled: boolean
+  prompt: string
+  music_rel: string | null
+}
+
+export interface Scene {
+  id: string
+  title: string
+  description: string
+  character_ids: string[]
+  dialogues: SceneDialogue[]
+  music: SceneMusic
+  camera: Record<string, string>
+  location: string
+  time_of_day: string
+  created_at?: string
+  updated_at?: string
+}
+
+export type SceneInput = Omit<Scene, "id" | "created_at" | "updated_at">

@@ -16,6 +16,9 @@ import type {
   VideoJob,
   VideoRequest,
   FilmJob,
+  Screenplay,
+  Scene,
+  SceneInput,
 } from "./types"
 
 const BASE = "/modules/atelier"
@@ -86,6 +89,22 @@ export const atelierApi = {
     form.append("file", file)
     return api.postForm<AtelierCharacter>(`${BASE}/projects/${pid}/characters/${charId}/upload`, form)
   },
+
+  // ---- Regie (Screenplay) ----
+  getScreenplay: (pid: string): Promise<Screenplay> =>
+    api.get<Screenplay>(`${BASE}/projects/${pid}/screenplay`),
+  saveScreenplay: (pid: string, body: Partial<Screenplay>): Promise<Screenplay> =>
+    api.put<Screenplay>(`${BASE}/projects/${pid}/screenplay`, body),
+  listScenes: (pid: string): Promise<Scene[]> =>
+    api.get<Scene[]>(`${BASE}/projects/${pid}/screenplay/scenes`),
+  createScene: (pid: string, body: Partial<SceneInput>): Promise<Scene> =>
+    api.post<Scene>(`${BASE}/projects/${pid}/screenplay/scenes`, body),
+  updateScene: (pid: string, id: string, body: Partial<SceneInput>): Promise<Scene> =>
+    api.put<Scene>(`${BASE}/projects/${pid}/screenplay/scenes/${id}`, body),
+  deleteScene: (pid: string, id: string): Promise<{ ok: boolean }> =>
+    api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/screenplay/scenes/${id}`),
+  reorderScenes: (pid: string, sceneIds: string[]): Promise<Screenplay> =>
+    api.post<Screenplay>(`${BASE}/projects/${pid}/screenplay/scenes/reorder`, { scene_ids: sceneIds }),
 }
 
 /** Absoluter Dateipfad → /api/files-URL mit Token (Browser-img kann keinen Bearer). */
