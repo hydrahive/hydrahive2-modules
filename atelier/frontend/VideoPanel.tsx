@@ -104,6 +104,26 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
             </div>
           )}
           {job.prompt && <PromptView text={job.prompt} />}
+          <div className="flex flex-wrap items-center gap-1 px-2 pb-1 text-[9px] text-slate-500">
+            {job.model && (
+              <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300" title={t("video_meta_model")}>
+                🤖 {job.model}
+              </span>
+            )}
+            {job.duration != null && (
+              <span className="px-1.5 py-0.5 rounded bg-slate-800" title={t("video_meta_duration")}>
+                ⏱ {job.duration}s
+              </span>
+            )}
+            {job.aspect_ratio && (
+              <span className="px-1.5 py-0.5 rounded bg-slate-800" title={t("video_meta_aspect")}>
+                🖼 {job.aspect_ratio}
+              </span>
+            )}
+            <span className="px-1.5 py-0.5 rounded bg-slate-800" title={t("video_meta_source")}>
+              {job.source_rel ? `🎞 ${t("video_meta_i2v")}` : `📝 ${t("video_meta_t2v")}`}
+            </span>
+          </div>
           <div className="flex flex-wrap gap-1 px-1 pb-1">
             <button
               onClick={() => setRepeat({
