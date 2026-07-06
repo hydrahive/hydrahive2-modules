@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi } from "./api"
 import { CameraControls } from "./CameraControls"
-import type { AtelierCharacter, PresetCatalog, Scene, Screenplay, SceneInput } from "./types"
+import type { AtelierCharacter, MediaModel, PresetCatalog, Scene, Screenplay, SceneInput } from "./types"
 
 interface Props {
   projectId: string
@@ -31,6 +31,13 @@ export function ScreenplayPanel({ projectId, characters, presets }: Props) {
   const [headDirty, setHeadDirty] = useState(false)
   const [savingHead, setSavingHead] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [videoModels, setVideoModels] = useState<MediaModel[]>([])
+  const [audioModels, setAudioModels] = useState<MediaModel[]>([])
+
+  useEffect(() => {
+    atelierApi.mediaModels("video").then((r) => setVideoModels(r.models)).catch(() => setVideoModels([]))
+    atelierApi.mediaModels("audio").then((r) => setAudioModels(r.models)).catch(() => setAudioModels([]))
+  }, [])
 
   const reload = useCallback(async () => {
     if (!projectId) return
@@ -130,20 +137,20 @@ export function ScreenplayPanel({ projectId, characters, presets }: Props) {
         <div className="grid grid-cols-2 gap-2">
           <label className="flex flex-col gap-0.5 text-[11px] text-slate-400">
             {t("regie_film_model")}
-            <input
+            <ModelSelect
               value={head.film_model}
-              onChange={(e) => patchHead({ film_model: e.target.value })}
+              models={videoModels}
               placeholder="google/veo-3.1"
-              className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100 text-xs font-mono"
+              onChange={(v) => patchHead({ film_model: v })}
             />
           </label>
           <label className="flex flex-col gap-0.5 text-[11px] text-slate-400">
             {t("regie_audio_model")}
-            <input
+            <ModelSelect
               value={head.audio_model}
-              onChange={(e) => patchHead({ audio_model: e.target.value })}
+              models={audioModels}
               placeholder="google/lyria-3-pro-preview"
-              className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100 text-xs font-mono"
+              onChange={(v) => patchHead({ audio_model: v })}
             />
           </label>
           <label className="flex flex-col gap-0.5 text-[11px] text-slate-400">
@@ -408,5 +415,42 @@ function SceneCard({
         </div>
       )}
     </div>
+  )
+}
+
+interface ModelSelectProps {
+  value: string
+  models: MediaModel[]
+  placeholder: string
+  onChange: (value: string) => void
+}
+
+/** Dropdown der Live-Modelle (OpenRouter). Ist die Liste leer (kein Key /
+ *  Ladefehler), wird ein Freitext-Feld gezeigt. Ein gespeicherter Wert, der
+ *  nicht in der Liste steht, bleibt als eigene Option erhalten (kein Datenverlust). */
+function ModelSelect({ value, models, placeholder, onChange }: ModelSelectProps) {
+  const { t } = useTranslation("atelier")
+  const inputCls = "px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100 text-xs font-mono"
+
+  if (models.length === 0) {
+    return (
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={inputCls}
+      />
+    )
+  }
+
+  const known = models.some((m) => m.id === value)
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
+      <option value="">{t("model_auto_default")}</option>
+      {value && !known && <option value={value}>{value}</option>}
+      {models.map((m) => (
+        <option key={m.id} value={m.id}>{m.name || m.id}</option>
+      ))}
+    </select>
   )
 }

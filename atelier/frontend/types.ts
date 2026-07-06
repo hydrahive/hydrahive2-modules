@@ -161,3 +161,13 @@ export interface Scene {
 }
 
 export type SceneInput = Omit<Scene, "id" | "created_at" | "updated_at">
+
+export interface MediaModel {
+  id: string
+  name: string
+}
+
+export interface MediaModelList {
+  default: string
+  models: MediaModel[]
+}
