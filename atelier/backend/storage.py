@@ -94,6 +94,19 @@ def audio_profiles_dir(project_id: str) -> Path:
     return d
 
 
+def screenplay_dir(project_id: str) -> Path:
+    """``atelier/screenplay`` — Drehbuch-Kopf + Szenen des Projekts."""
+    d = atelier_root(project_id) / "screenplay"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def scenes_dir(project_id: str) -> Path:
+    d = screenplay_dir(project_id) / "scenes"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def new_id() -> str:
     """Frische 32-stellige Hex-ID (für Charaktere/Outputs)."""
     return uuid.uuid4().hex

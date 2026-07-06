@@ -55,7 +55,9 @@ def setup_test_env():
 
         from hydrahive.api import main
         from backend.audio_routes import router as audio_router
+        from backend.routes import router as main_router
         main.app.include_router(audio_router, prefix=MOD_PREFIX)
+        main.app.include_router(main_router, prefix=MOD_PREFIX)
         yield tmp_path
 
 
