@@ -165,6 +165,9 @@ export type SceneInput = Omit<Scene, "id" | "created_at" | "updated_at">
 export interface MediaModel {
   id: string
   name: string
+  // Nur bei Video-Modellen befüllt — pro Modell erlaubte Werte (sonst HTTP 400).
+  durations?: number[]
+  aspect_ratios?: string[]
 }
 
 export interface MediaModelList {

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { atelierApi } from "./api"
 import { AudioProfiles } from "./AudioProfiles"
 import { AudioLibrary } from "./AudioLibrary"
-import type { AudioLibraryItem, AudioProfile } from "./types"
+import type { AudioLibraryItem, AudioProfile, MediaModel } from "./types"
 
 interface Props {
   projectId: string
@@ -20,9 +20,15 @@ export function AudioPanel({ projectId, refAbsPath }: Props) {
   const [library, setLibrary] = useState<AudioLibraryItem[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [scene, setScene] = useState("")
+  const [models, setModels] = useState<MediaModel[]>([])
+  const [model, setModel] = useState("")
   const [busy, setBusy] = useState(false)
   const [savingAnchor, setSavingAnchor] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    atelierApi.mediaModels("audio").then((r) => setModels(r.models)).catch(() => setModels([]))
+  }, [])
 
   async function reload() {
     if (!projectId) return
@@ -54,7 +60,7 @@ export function AudioPanel({ projectId, refAbsPath }: Props) {
   async function generate() {
     setBusy(true); setError(null)
     try {
-      await atelierApi.generateMusic(projectId, { scene, profile_ids: selectedIds })
+      await atelierApi.generateMusic(projectId, { scene, profile_ids: selectedIds, model: model || undefined })
       setScene("")
       await reload()
     } catch (e) {
@@ -100,6 +106,22 @@ export function AudioPanel({ projectId, refAbsPath }: Props) {
             className="text-xs px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-100 resize-y"
           />
         </div>
+
+        {models.length > 0 && (
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
+            {t("model")}
+            <select
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100 text-xs"
+            >
+              <option value="">{t("model_auto_default")}</option>
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>{m.name || m.id}</option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <button
           onClick={generate}
