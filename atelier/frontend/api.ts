@@ -19,6 +19,7 @@ import type {
   Screenplay,
   Scene,
   SceneInput,
+  MediaModelList,
 } from "./types"
 
 const BASE = "/modules/atelier"
@@ -105,6 +106,10 @@ export const atelierApi = {
     api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/screenplay/scenes/${id}`),
   reorderScenes: (pid: string, sceneIds: string[]): Promise<Screenplay> =>
     api.post<Screenplay>(`${BASE}/projects/${pid}/screenplay/scenes/reorder`, { scene_ids: sceneIds }),
+
+  // ---- Media-Modelle (Live-Liste von OpenRouter, für Dropdowns) ----
+  mediaModels: (category: "video" | "image" | "audio"): Promise<MediaModelList> =>
+    api.get<MediaModelList>(`/llm/media-models?category=${category}`),
 }
 
 /** Absoluter Dateipfad → /api/files-URL mit Token (Browser-img kann keinen Bearer). */
