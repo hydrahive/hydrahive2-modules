@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
 import { VideoDialog } from "./VideoDialog"
+import { PromptView } from "./PromptView"
 import type { AtelierCharacter, GalleryItem } from "./types"
 
 interface Props {
@@ -76,7 +77,11 @@ export function Gallery({ projectId, items, characters, onPromoted, onVideoStart
         <div className="fixed inset-0 z-50 bg-black/80 grid place-items-center p-6" onClick={() => setZoom(null)}>
           <div className="max-w-3xl flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
             <img src={fileUrl(zoom.path)} alt="" className="max-h-[70vh] rounded-lg" />
-            {zoom.prompt && <p className="text-xs text-slate-300 bg-slate-800 rounded p-2">{zoom.prompt}</p>}
+            {zoom.prompt && (
+              <div className="bg-slate-800 rounded p-2">
+                <PromptView text={zoom.prompt} clamp={4} />
+              </div>
+            )}
             <div className="flex gap-3 text-xs text-slate-400">
               {zoom.model && <span>{t("model")}: {zoom.model}</span>}
               {zoom.seed != null && <span>seed: {zoom.seed}</span>}
