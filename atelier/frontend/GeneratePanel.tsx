@@ -1,8 +1,8 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi } from "./api"
 import { CameraControls } from "./CameraControls"
-import type { AtelierCharacter, AtelierCI, PresetCatalog } from "./types"
+import type { AtelierCharacter, AtelierCI, MediaModel, PresetCatalog } from "./types"
 
 interface Props {
   projectId: string
@@ -13,20 +13,18 @@ interface Props {
   onGenerated: () => void
 }
 
-const MODELS = [
-  "google/gemini-2.5-flash-image",
-  "google/gemini-3-pro-image",
-  "openai/gpt-image-1",
-  "black-forest-labs/flux.2-max",
-  "bytedance-seed/seedream-4.5",
-]
 const RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4"]
 
 /** Mittlere Spalte: Szene beschreiben + Parameter, dann generieren. */
 export function GeneratePanel({ projectId, ci, characters, selectedIds, presets, onGenerated }: Props) {
   const { t } = useTranslation("atelier")
+  const [models, setModels] = useState<MediaModel[]>([])
   const [scene, setScene] = useState("")
   const [model, setModel] = useState("")
+
+  useEffect(() => {
+    atelierApi.mediaModels("image").then((r) => setModels(r.models)).catch(() => setModels([]))
+  }, [])
   const [ratio, setRatio] = useState("")
   const [seed, setSeed] = useState<string>("")
   const [camera, setCamera] = useState<Record<string, string>>({})
@@ -105,9 +103,9 @@ export function GeneratePanel({ projectId, ci, characters, selectedIds, presets,
             onChange={(e) => setModel(e.target.value)}
             className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
           >
-            <option value="">{ci.default_model || MODELS[0]} ({t("default")})</option>
-            {MODELS.map((m) => (
-              <option key={m} value={m}>{m}</option>
+            <option value="">{ci.default_model || t("default")} ({t("default")})</option>
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>{m.name || m.id}</option>
             ))}
           </select>
         </label>

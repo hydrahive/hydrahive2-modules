@@ -1,7 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
-import type { GalleryItem } from "./types"
+import type { GalleryItem, MediaModel } from "./types"
 
 interface Props {
   projectId: string
@@ -10,41 +10,49 @@ interface Props {
   onStarted: () => void
 }
 
-// Erlaubte Dauern je Modell (aus OpenRouter — Modelle akzeptieren nur bestimmte
-// Werte, sonst HTTP 400). Erster Wert = Default.
-const MODEL_DURATIONS: Record<string, number[]> = {
-  "minimax/hailuo-2.3": [6, 10],
-  "kwaivgi/kling-v3.0-std": [5, 10],
-  "bytedance/seedance-2.0-fast": [5, 10],
-}
-// Erlaubte Formate je Modell (supported_aspect_ratios der OpenRouter-API).
-// Erster Wert = Default. hailuo kann nur 16:9, seedance fast alles.
-const MODEL_ASPECTS: Record<string, string[]> = {
-  "minimax/hailuo-2.3": ["16:9"],
-  "kwaivgi/kling-v3.0-std": ["16:9", "9:16", "1:1"],
-  "bytedance/seedance-2.0-fast": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9", "9:21"],
-}
-const MODELS = Object.keys(MODEL_DURATIONS)
+// Fallback-Werte, wenn ein Modell keine Metadaten liefert.
+const FALLBACK_DURATIONS = [5, 10]
+const FALLBACK_ASPECTS = ["16:9", "9:16", "1:1"]
+
+const durationsOf = (m?: MediaModel) =>
+  (m?.durations && m.durations.length ? m.durations : FALLBACK_DURATIONS)
+const aspectsOf = (m?: MediaModel) =>
+  (m?.aspect_ratios && m.aspect_ratios.length ? m.aspect_ratios : FALLBACK_ASPECTS)
 
 /** Dialog: aus einem Galerie-Bild ein Video machen (Image-to-Video). */
 export function VideoDialog({ projectId, source, onClose, onStarted }: Props) {
   const { t } = useTranslation("atelier")
+  const [models, setModels] = useState<MediaModel[]>([])
   const [prompt, setPrompt] = useState("")
-  const [model, setModel] = useState(MODELS[0])
-  const [duration, setDuration] = useState(MODEL_DURATIONS[MODELS[0]][0])
-  const [aspect, setAspect] = useState(MODEL_ASPECTS[MODELS[0]][0])
+  const [model, setModel] = useState("")
+  const [duration, setDuration] = useState(FALLBACK_DURATIONS[0])
+  const [aspect, setAspect] = useState(FALLBACK_ASPECTS[0])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const durations = MODEL_DURATIONS[model] ?? [5]
-  const aspects = MODEL_ASPECTS[model] ?? ["16:9"]
+  useEffect(() => {
+    atelierApi.mediaModels("video").then((r) => {
+      setModels(r.models)
+      const first = r.default || r.models[0]?.id || ""
+      if (first) {
+        setModel(first)
+        const meta = r.models.find((m) => m.id === first)
+        setDuration(durationsOf(meta)[0])
+        setAspect(aspectsOf(meta)[0])
+      }
+    }).catch(() => setModels([]))
+  }, [])
+
+  const current = models.find((m) => m.id === model)
+  const durations = durationsOf(current)
+  const aspects = aspectsOf(current)
 
   function pickModel(m: string) {
     setModel(m)
-    // Dauer + Format auf für das neue Modell gültige Werte setzen.
-    const allowedD = MODEL_DURATIONS[m] ?? [5]
+    const meta = models.find((x) => x.id === m)
+    const allowedD = durationsOf(meta)
     if (!allowedD.includes(duration)) setDuration(allowedD[0])
-    const allowedA = MODEL_ASPECTS[m] ?? ["16:9"]
+    const allowedA = aspectsOf(meta)
     if (!allowedA.includes(aspect)) setAspect(allowedA[0])
   }
 
@@ -99,8 +107,9 @@ export function VideoDialog({ projectId, source, onClose, onStarted }: Props) {
               onChange={(e) => pickModel(e.target.value)}
               className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
             >
-              {MODELS.map((m) => (
-                <option key={m} value={m}>{m.split("/")[1]}</option>
+              {models.length === 0 && <option value="">…</option>}
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>{m.name || m.id.split("/")[1] || m.id}</option>
               ))}
             </select>
           </label>
