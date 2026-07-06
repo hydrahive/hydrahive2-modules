@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { projectsApi } from "@/features/projects/api"
 import type { Project } from "@/features/projects/types"
+import { HelpButton } from "@/i18n/HelpButton"
 import { atelierApi } from "./api"
 import { AudioPanel } from "./AudioPanel"
 import { CharacterLibrary } from "./CharacterLibrary"
@@ -74,6 +75,7 @@ export function AtelierPage() {
     <div className="flex flex-col h-full">
       <header className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 bg-slate-900/60">
         <h1 className="text-lg font-semibold text-slate-100">🎨 {t("title")}</h1>
+        <HelpButton topic="atelier" />
         <div className="ml-auto flex items-center gap-2">
           <label className="text-xs text-slate-400">{t("project")}</label>
           <select
