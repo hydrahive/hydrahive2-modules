@@ -13,12 +13,13 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timezone
 from typing import Any
 
 from hydrahive.llm import client as llm_client
 
 from . import characters as chars
-from . import presets, screenplay, storage
+from . import film, presets, screenplay, service, storage, video
 
 logger = logging.getLogger("hhmod_atelier.director")
 
@@ -37,6 +38,10 @@ def _read_json(path, default: Any) -> Any:
 
 def _write_json(path, data: Any) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _shots_path(project_id: str, scene_id: str):
@@ -213,3 +218,107 @@ async def decompose_all(project_id: str, *, model: str | None = None) -> dict:
         per_scene[scene["id"]] = len(shots)
         total_shots += len(shots)
     return {"scenes": len(scenes), "shots": total_shots, "per_scene": per_scene}
+
+
+# ---- Batch-Render (Phase 2, E5) ---------------------------------------------
+
+def _render_job_path(project_id: str):
+    return storage.screenplay_dir(project_id) / "render.json"
+
+
+def get_render_job(project_id: str) -> dict:
+    return _read_json(_render_job_path(project_id), {"status": "idle"})
+
+
+def _write_render_job(project_id: str, job: dict) -> None:
+    _write_json(_render_job_path(project_id), job)
+
+
+def _update_shot_status(project_id: str, scene_id: str, shot_id: str, patch: dict) -> None:
+    shots = get_shots(project_id, scene_id)
+    for i, s in enumerate(shots):
+        if s["id"] == shot_id:
+            shots[i] = _sanitize_shot(scene_id, i, {**s, **patch})
+            break
+    save_shots(project_id, scene_id, shots)
+
+
+async def render_all(project_id: str, *, model: str | None = None) -> dict:
+    """Rendert alle geplanten Shots: je Shot Keyframe → Clip, dann Film-Merge.
+
+    Nutzt ausschließlich vorhandene Pfade (generate_for_project, video.render_clip,
+    film.start_film_job). Fehlerhafte Shots werden übersprungen (status failed),
+    der Batch läuft weiter. Schreibt Fortschritt nach render.json.
+    """
+    head = screenplay.get_screenplay(project_id)
+    film_model = model or head.get("film_model") or ""
+    aspect = head.get("aspect_ratio") or "16:9"
+    scenes = screenplay.list_scenes(project_id)
+
+    # alle geplanten (oder fehlgeschlagenen) Shots einsammeln, in Szenen-Reihenfolge
+    plan: list[tuple[dict, dict]] = []  # (scene, shot)
+    for scene in scenes:
+        for shot in get_shots(project_id, scene["id"]):
+            plan.append((scene, shot))
+
+    job = {
+        "job_id": storage.new_id(),
+        "status": "processing",
+        "total_shots": len(plan),
+        "done_shots": 0,
+        "failed_shots": 0,
+        "current": "",
+        "film_rel": None,
+        "error": None,
+        "created_at": _now(),
+    }
+    _write_render_job(project_id, job)
+
+    done_clips: list[str] = []
+    for scene, shot in plan:
+        job["current"] = f"{scene.get('title') or 'Szene'} / shot #{shot['order'] + 1}"
+        _write_render_job(project_id, job)
+        try:
+            # 1) Keyframe-Bild (mit Charakter-Referenzen + Kamera des Shots)
+            _update_shot_status(project_id, scene["id"], shot["id"], {"status": "image_ready"})
+            img = service.generate_for_project(project_id, {
+                "scene": shot["prompt"],
+                "character_ids": shot.get("character_ids") or [],
+                "aspect_ratio": aspect,
+                "camera": {"shot": shot["shot"]} if shot.get("shot") else {},
+            })
+            image_rel = img["rel"]
+            _update_shot_status(project_id, scene["id"], shot["id"],
+                                {"status": "video_processing", "image_rel": image_rel})
+
+            # 2) Clip aus dem Keyframe
+            video_rel = await video.render_clip(
+                project_id, source_rel=image_rel, prompt=shot["prompt"],
+                model=film_model, duration=shot.get("duration", 5), aspect_ratio=aspect,
+            )
+            _update_shot_status(project_id, scene["id"], shot["id"],
+                                {"status": "done", "video_rel": video_rel})
+            done_clips.append(video_rel)
+            job["done_shots"] += 1
+        except Exception as e:  # noqa: BLE001 - ein Shot-Fehler bricht den Batch nicht ab
+            logger.exception("render shot failed: scene=%s shot=%s", scene["id"], shot["id"])
+            _update_shot_status(project_id, scene["id"], shot["id"],
+                                {"status": "failed", "error": str(e)})
+            job["failed_shots"] += 1
+        _write_render_job(project_id, job)
+
+    # 3) Film aus allen fertigen Clips
+    if done_clips:
+        try:
+            film_job = film.start_film_job(project_id, {
+                "clips": done_clips, "resolution": "720p", "music_rel": "",
+            })
+            job["film_rel"] = film_job.get("job_id")  # Film läuft async; Job-Id zur Nachverfolgung
+        except Exception as e:  # noqa: BLE001
+            logger.exception("render film-merge failed")
+            job["error"] = f"Film-Merge: {e}"
+
+    job["status"] = "completed" if job["failed_shots"] == 0 else "completed_with_errors"
+    job["current"] = ""
+    _write_render_job(project_id, job)
+    return job

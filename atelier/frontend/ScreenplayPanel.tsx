@@ -37,6 +37,7 @@ export function ScreenplayPanel({ projectId, characters, presets }: Props) {
   const [decomposing, setDecomposing] = useState(false)
   const [shotsKey, setShotsKey] = useState(0)
   const [decomposeInfo, setDecomposeInfo] = useState<string | null>(null)
+  const [render, setRender] = useState<import("./types").RenderJob | null>(null)
 
   useEffect(() => {
     atelierApi.mediaModels("video").then((r) => setVideoModels(r.models)).catch(() => setVideoModels([]))
@@ -114,6 +115,34 @@ export function ScreenplayPanel({ projectId, characters, presets }: Props) {
       setDecomposeInfo(t("decompose_failed"))
     } finally {
       setDecomposing(false)
+    }
+  }
+
+  // Render-Status pollen, solange ein Batch läuft
+  useEffect(() => {
+    if (render?.status !== "processing") return
+    const iv = setInterval(async () => {
+      try {
+        const st = await atelierApi.renderStatus(projectId)
+        setRender(st)
+        if (st.status !== "processing") {
+          setShotsKey((k) => k + 1)  // finale Shot-Status übernehmen
+          clearInterval(iv)
+        }
+      } catch { /* nächster Tick */ }
+    }, 4000)
+    return () => clearInterval(iv)
+  }, [render?.status, projectId])
+
+  async function startRender() {
+    if (!confirm(t("render_confirm"))) return
+    setRender({ status: "processing", total_shots: 0, done_shots: 0, failed_shots: 0 })
+    try {
+      await atelierApi.startRender(projectId, head?.film_model || undefined)
+      const st = await atelierApi.renderStatus(projectId)
+      setRender(st)
+    } catch {
+      setRender({ status: "failed" })
     }
   }
 
@@ -219,6 +248,43 @@ export function ScreenplayPanel({ projectId, characters, presets }: Props) {
             {decomposing ? t("decompose_running") : `🎬 ${t("decompose_send")}`}
           </button>
           {decomposeInfo && <span className="text-[11px] text-slate-400">{decomposeInfo}</span>}
+        </div>
+      )}
+
+      {/* Freigeben & generieren (Phase 2) */}
+      {scenes.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={startRender}
+              disabled={render?.status === "processing"}
+              className="text-xs px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40"
+              title={t("render_hint")}
+            >
+              {render?.status === "processing" ? t("render_running") : `▶️ ${t("render_send")}`}
+            </button>
+            {render && render.status !== "idle" && (
+              <span className="text-[11px] text-slate-400">
+                {render.status === "processing" && render.current
+                  ? `${render.done_shots ?? 0}/${render.total_shots ?? 0} · ${render.current}`
+                  : render.status === "completed"
+                  ? t("render_done", { n: render.done_shots ?? 0 })
+                  : render.status === "completed_with_errors"
+                  ? t("render_done_errors", { done: render.done_shots ?? 0, failed: render.failed_shots ?? 0 })
+                  : render.status === "failed"
+                  ? t("render_failed")
+                  : ""}
+              </span>
+            )}
+          </div>
+          {render?.status === "processing" && (render.total_shots ?? 0) > 0 && (
+            <div className="h-1 w-full rounded bg-slate-700 overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 transition-all"
+                style={{ width: `${Math.round(((render.done_shots ?? 0) + (render.failed_shots ?? 0)) / (render.total_shots || 1) * 100)}%` }}
+              />
+            </div>
+          )}
         </div>
       )}
 

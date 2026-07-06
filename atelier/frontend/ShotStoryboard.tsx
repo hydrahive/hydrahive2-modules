@@ -11,6 +11,13 @@ interface Props {
   reloadKey: number
 }
 
+function statusClass(status: string): string {
+  if (status === "done") return "bg-emerald-500/20 text-emerald-300"
+  if (status === "failed") return "bg-rose-500/20 text-rose-300"
+  if (status === "video_processing" || status === "image_ready") return "bg-amber-500/20 text-amber-300"
+  return "bg-slate-600/30 text-slate-300"
+}
+
 /** Storyboard-Vorschau: die vom Regieagenten erzeugten Shots einer Szene.
  *  Editierbar (Prompt/Dauer) + löschbar. Reiner Planungs-Zustand (status
  *  "planned") — Batch-Render folgt in E5. */
@@ -52,6 +59,11 @@ export function ShotStoryboard({ projectId, sceneId, characters, reloadKey }: Pr
             <span className="text-[10px] text-violet-300 font-mono">#{i + 1}</span>
             {sh.shot && <span className="text-[9px] px-1 rounded bg-violet-500/20 text-violet-200">{sh.shot}</span>}
             <span className="text-[9px] text-slate-500">{sh.duration}s</span>
+            {sh.status && sh.status !== "planned" && (
+              <span className={`text-[9px] px-1 rounded ${statusClass(sh.status)}`}>
+                {t(`shot_status_${sh.status}`, sh.status)}
+              </span>
+            )}
             <div className="flex-1" />
             <button onClick={() => remove(sh.id)} className="text-slate-500 hover:text-rose-400 text-xs">✕</button>
           </div>

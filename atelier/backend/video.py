@@ -133,34 +133,50 @@ async def _submit_image_to_video(
     return str(job_id)
 
 
-async def _run_job(project_id: str, job: dict) -> None:
-    """Hintergrund-Task: submit → poll bis fertig → download. Schreibt Status."""
+async def render_clip(
+    project_id: str, *, source_rel: str, prompt: str, model: str,
+    duration: int = 5, aspect_ratio: str = "16:9",
+) -> str:
+    """Rendert EINEN Clip synchron (await-bar): submit → poll → download.
+
+    Gibt den ``videos/<name>``-rel zurück. Wirft bei Fehler (Aufrufer behandelt).
+    Ohne eigene Job-Datei — für Orchestrierung (E5 Batch-Render) wiederverwendbar.
+    Teilt sich das Semaphor mit den normalen Video-Jobs (Rate-Limit-Schutz).
+    """
     async with _SEM:
-        try:
-            key = openrouter_key()
-            if not key:
-                raise RuntimeError("Kein OpenRouter-API-Key konfiguriert.")
-            image_url = _source_to_data_url(project_id, job["source_rel"])
-            job["status"] = "processing"
-            _write_job(project_id, job)
+        key = openrouter_key()
+        if not key:
+            raise RuntimeError("Kein OpenRouter-API-Key konfiguriert.")
+        image_url = _source_to_data_url(project_id, source_rel) if source_rel else None
+        model = model.strip() or _DEFAULT_MODEL
+        remote_id = await _submit_image_to_video(
+            prompt=prompt, model=model, key=key,
+            duration=_clamp_duration(model, duration), aspect_ratio=aspect_ratio,
+            image_url=image_url,
+        )
+        url = await _poll_until_done(remote_id, key=key, duration=duration)
+        path = await download_video(url, storage.videos_dir(project_id), key=key)
+        return f"videos/{path.name}"
 
-            remote_id = await _submit_image_to_video(
-                prompt=job["prompt"], model=job["model"], key=key,
-                duration=job["duration"], aspect_ratio=job["aspect_ratio"],
-                image_url=image_url,
-            )
-            url = await _poll_until_done(remote_id, key=key, duration=job.get("duration", 5))
-            path = await download_video(url, storage.videos_dir(project_id), key=key)
 
-            job["status"] = "completed"
-            job["video_rel"] = f"videos/{path.name}"
-            _write_job(project_id, job)
-            logger.info("atelier video done: job=%s file=%s", job["job_id"], path.name)
-        except Exception as e:  # noqa: BLE001 - Job-Grenze: Fehler in den Job, nicht in den Loop
-            logger.exception("atelier video failed: job=%s", job["job_id"])
-            job["status"] = "failed"
-            job["error"] = str(e)
-            _write_job(project_id, job)
+async def _run_job(project_id: str, job: dict) -> None:
+    """Hintergrund-Task: nutzt render_clip (hält das Semaphor selbst), schreibt Status."""
+    try:
+        job["status"] = "processing"
+        _write_job(project_id, job)
+        rel = await render_clip(
+            project_id, source_rel=job["source_rel"], prompt=job["prompt"],
+            model=job["model"], duration=job["duration"], aspect_ratio=job["aspect_ratio"],
+        )
+        job["status"] = "completed"
+        job["video_rel"] = rel
+        _write_job(project_id, job)
+        logger.info("atelier video done: job=%s file=%s", job["job_id"], rel)
+    except Exception as e:  # noqa: BLE001 - Job-Grenze: Fehler in den Job, nicht in den Loop
+        logger.exception("atelier video failed: job=%s", job["job_id"])
+        job["status"] = "failed"
+        job["error"] = str(e)
+        _write_job(project_id, job)
 
 
 def _poll_timeout_for(duration: int) -> float:

@@ -194,3 +194,13 @@ export interface DecomposeResult {
   shots: number
   per_scene: Record<string, number>
 }
+
+export interface RenderJob {
+  status: string  // idle | processing | completed | completed_with_errors | failed
+  total_shots?: number
+  done_shots?: number
+  failed_shots?: number
+  current?: string
+  film_rel?: string | null
+  error?: string | null
+}
