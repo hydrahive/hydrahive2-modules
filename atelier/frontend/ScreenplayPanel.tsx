@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi } from "./api"
 import { CameraControls } from "./CameraControls"
+import { ShotStoryboard } from "./ShotStoryboard"
 import type { AtelierCharacter, MediaModel, PresetCatalog, Scene, Screenplay, SceneInput } from "./types"
 
 interface Props {
@@ -33,6 +34,9 @@ export function ScreenplayPanel({ projectId, characters, presets }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [videoModels, setVideoModels] = useState<MediaModel[]>([])
   const [audioModels, setAudioModels] = useState<MediaModel[]>([])
+  const [decomposing, setDecomposing] = useState(false)
+  const [shotsKey, setShotsKey] = useState(0)
+  const [decomposeInfo, setDecomposeInfo] = useState<string | null>(null)
 
   useEffect(() => {
     atelierApi.mediaModels("video").then((r) => setVideoModels(r.models)).catch(() => setVideoModels([]))
@@ -97,6 +101,20 @@ export function ScreenplayPanel({ projectId, characters, presets }: Props) {
     ;[next[index], next[target]] = [next[target], next[index]]
     setScenes(next)
     await atelierApi.reorderScenes(projectId, next.map((s) => s.id))
+  }
+
+  async function sendToDirector() {
+    setDecomposing(true)
+    setDecomposeInfo(null)
+    try {
+      const res = await atelierApi.decompose(projectId, head?.film_model || undefined)
+      setDecomposeInfo(t("decompose_done", { scenes: res.scenes, shots: res.shots }))
+      setShotsKey((k) => k + 1)  // Storyboards neu laden
+    } catch {
+      setDecomposeInfo(t("decompose_failed"))
+    } finally {
+      setDecomposing(false)
+    }
   }
 
   if (!head) return <div className="text-slate-400 text-sm p-2">{t("saving")}</div>
@@ -189,6 +207,21 @@ export function ScreenplayPanel({ projectId, characters, presets }: Props) {
         </button>
       </div>
 
+      {/* Regieagent: Zerlegen (Phase 1) */}
+      {scenes.length > 0 && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={sendToDirector}
+            disabled={decomposing}
+            className="text-xs px-3 py-1.5 rounded bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-40"
+            title={t("decompose_hint")}
+          >
+            {decomposing ? t("decompose_running") : `🎬 ${t("decompose_send")}`}
+          </button>
+          {decomposeInfo && <span className="text-[11px] text-slate-400">{decomposeInfo}</span>}
+        </div>
+      )}
+
       {scenes.length === 0 && (
         <div className="text-slate-500 text-xs p-3 text-center border border-dashed border-slate-700 rounded">
           {t("scenes_empty")}
@@ -208,6 +241,8 @@ export function ScreenplayPanel({ projectId, characters, presets }: Props) {
           onSave={(patch) => saveScene(scene.id, patch)}
           onDelete={() => removeScene(scene.id)}
           onMove={(dir) => move(i, dir)}
+          shotsKey={shotsKey}
+          projectId={projectId}
         />
       ))}
     </div>
@@ -225,10 +260,12 @@ interface SceneCardProps {
   onSave: (patch: Partial<SceneInput>) => void
   onDelete: () => void
   onMove: (dir: -1 | 1) => void
+  shotsKey: number
+  projectId: string
 }
 
 function SceneCard({
-  index, total, scene, characters, presets, expanded, onToggle, onSave, onDelete, onMove,
+  index, total, scene, characters, presets, expanded, onToggle, onSave, onDelete, onMove, shotsKey, projectId,
 }: SceneCardProps) {
   const { t } = useTranslation("atelier")
   const [draft, setDraft] = useState<Scene>(scene)
@@ -414,6 +451,16 @@ function SceneCard({
           </div>
         </div>
       )}
+
+      {/* Storyboard-Vorschau (vom Regieagenten erzeugte Shots) */}
+      <div className="px-3 pb-2">
+        <ShotStoryboard
+          projectId={projectId}
+          sceneId={scene.id}
+          characters={characters}
+          reloadKey={shotsKey}
+        />
+      </div>
     </div>
   )
 }
