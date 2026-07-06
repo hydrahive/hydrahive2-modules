@@ -1,7 +1,8 @@
 {
   "id": "example",
   "name": "Beispiel-Modul",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "description": "Minimales Beispiel-Modul als Vorlage für eigene Entwicklungen. Zeigt den Grundaufbau aus Backend, Frontend und Manifest.",
   "icon": "Boxes",
   "nav_group": "working",
   "permissions": [],

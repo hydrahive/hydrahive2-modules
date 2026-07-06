@@ -1,7 +1,8 @@
 {
   "id": "tasks",
   "name": "Aufgaben",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "description": "Persistente Aufgabenverwaltung, die über alle Chat-Sitzungen hinweg erhalten bleibt. Der Agent kann Aufgaben selbst anlegen, aktualisieren und abhaken.",
   "icon": "CheckSquare",
   "nav_group": "working",
   "permissions": [],

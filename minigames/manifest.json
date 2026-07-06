@@ -1,7 +1,8 @@
 {
   "id": "minigames",
   "name": "Minigames",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "description": "Eine Sammlung kleiner Browser-Spiele für zwischendurch. Schnell gestartet, ohne Installation oder Einrichtung.",
   "icon": "Gamepad2",
   "nav_group": "working",
   "permissions": [],

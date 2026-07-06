@@ -1,7 +1,8 @@
 {
   "id": "boardgames",
   "name": "Brettspiele",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "description": "Klassische Brettspiele wie Schach direkt in HydraHive, spielbar gegen einen Agenten. Ideal für eine Pause oder um die Spielstärke der KI auszuprobieren.",
   "icon": "Crown",
   "nav_group": "working",
   "permissions": [],

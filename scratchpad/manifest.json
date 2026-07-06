@@ -1,7 +1,8 @@
 {
   "id": "scratchpad",
   "name": "Scratchpad",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "description": "Gemeinsamer Notizzettel zwischen dir und dem Agenten für schnelle Ideen. Der Agent hat einen eigenen Bereich, dein Bereich bleibt ihm vorbehalten.",
   "icon": "StickyNote",
   "nav_group": "working",
   "permissions": [],

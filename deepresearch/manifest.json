@@ -1,7 +1,8 @@
 {
   "id": "deepresearch",
   "name": "Deep Research",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "description": "Mehrstufige, quellenbasierte Web-Recherche, die einen zitierten Bericht zu deiner Frage erstellt. Plant, sucht und fasst zusammen — für Überblicke und Faktenchecks mit Belegen.",
   "icon": "Telescope",
   "nav_group": "working",
   "permissions": [],
