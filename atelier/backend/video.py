@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 
 import httpx
 
@@ -36,7 +37,12 @@ _MODEL_DURATIONS: dict[str, list[int]] = {
     "bytedance/seedance-2.0-fast": [5, 10],
 }
 _POLL_INTERVAL = 5.0
-_MAX_POLLS = 90  # ~7,5 min Obergrenze
+# Timeout dauer-abhängig: langsame Premium-Modelle (Sora 2 Pro, Veo) brauchen für
+# lange Clips deutlich länger als die alte feste 7,5-min-Grenze. Basis + Zuschlag
+# pro Sekunde Videolänge. Beispiel: 20s-Video → 15min + 20*45s = 30 min.
+_POLL_TIMEOUT_BASE = 900.0      # 15 min Grundbudget
+_POLL_TIMEOUT_PER_SEC = 45.0    # + pro Sekunde angeforderter Videolänge
+_POLL_TIMEOUT_CAP = 2700.0      # harte Obergrenze 45 min
 _SEM = asyncio.Semaphore(2)  # max 2 parallele Video-Jobs
 
 
@@ -143,7 +149,7 @@ async def _run_job(project_id: str, job: dict) -> None:
                 duration=job["duration"], aspect_ratio=job["aspect_ratio"],
                 image_url=image_url,
             )
-            url = await _poll_until_done(remote_id, key=key)
+            url = await _poll_until_done(remote_id, key=key, duration=job.get("duration", 5))
             path = await download_video(url, storage.videos_dir(project_id), key=key)
 
             job["status"] = "completed"
@@ -157,9 +163,23 @@ async def _run_job(project_id: str, job: dict) -> None:
             _write_job(project_id, job)
 
 
-async def _poll_until_done(remote_id: str, *, key: str) -> str:
-    """Pollt den Remote-Job bis completed; gibt die Video-URL zurück."""
-    for _ in range(_MAX_POLLS):
+def _poll_timeout_for(duration: int) -> float:
+    """Zeitbudget fürs Pollen — länger für längere Clips (langsame Modelle)."""
+    try:
+        secs = max(1, int(duration))
+    except (TypeError, ValueError):
+        secs = 5
+    return min(_POLL_TIMEOUT_CAP, _POLL_TIMEOUT_BASE + secs * _POLL_TIMEOUT_PER_SEC)
+
+
+async def _poll_until_done(remote_id: str, *, key: str, duration: int = 5) -> str:
+    """Pollt den Remote-Job bis completed; gibt die Video-URL zurück.
+
+    Zeitbasierter Timeout (dauer-abhängig) statt fester Poll-Anzahl — Sora 2 Pro
+    & Veo brauchen für lange Clips >7,5 min.
+    """
+    deadline = time.monotonic() + _poll_timeout_for(duration)
+    while time.monotonic() < deadline:
         await asyncio.sleep(_POLL_INTERVAL)
         res = await poll_video_job(remote_id, key=key)
         status = res.get("status")
@@ -170,7 +190,11 @@ async def _poll_until_done(remote_id: str, *, key: str) -> str:
             return url
         if status == "failed":
             raise RuntimeError(res.get("error") or "Video-Generierung fehlgeschlagen.")
-    raise RuntimeError("Zeitüberschreitung beim Warten auf das Video.")
+    raise RuntimeError(
+        "Zeitüberschreitung beim Warten auf das Video. Lange/teure Modelle "
+        "(z.B. Sora 2 Pro bei 20s) können sehr lange dauern — bitte erneut versuchen "
+        "oder ein schnelleres Modell / kürzere Dauer wählen."
+    )
 
 
 async def extract_continuation_frame(project_id: str, video_rel: str) -> str | None:
