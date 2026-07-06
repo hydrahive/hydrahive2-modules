@@ -22,6 +22,7 @@ import type {
   MediaModelList,
   Shot,
   DecomposeResult,
+  RenderJob,
 } from "./types"
 
 const BASE = "/modules/atelier"
@@ -122,6 +123,10 @@ export const atelierApi = {
     api.put<Shot>(`${BASE}/projects/${pid}/screenplay/scenes/${sceneId}/shots/${shotId}`, body),
   deleteShot: (pid: string, sceneId: string, shotId: string): Promise<{ ok: boolean }> =>
     api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/screenplay/scenes/${sceneId}/shots/${shotId}`),
+  startRender: (pid: string, model?: string): Promise<{ status: string }> =>
+    api.post<{ status: string }>(`${BASE}/projects/${pid}/screenplay/render`, { model: model || "" }),
+  renderStatus: (pid: string): Promise<RenderJob> =>
+    api.get<RenderJob>(`${BASE}/projects/${pid}/screenplay/render`),
 }
 
 /** Absoluter Dateipfad → /api/files-URL mit Token (Browser-img kann keinen Bearer). */

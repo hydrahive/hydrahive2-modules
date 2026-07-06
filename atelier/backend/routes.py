@@ -326,3 +326,24 @@ def delete_shot_route(project_id: str, scene_id: str, shot_id: str, auth: Auth) 
     if not director.delete_shot(project_id, scene_id, shot_id):
         raise coded(status.HTTP_404_NOT_FOUND, "shot_not_found")
     return {"ok": True}
+
+
+# ---- Batch-Render (Phase 2, E5) ---------------------------------------------
+
+class RenderIn(BaseModel):
+    model: str = Field(default="", max_length=200)  # Video-Modell; leer = film_model des Drehbuchs
+
+
+@router.post("/projects/{project_id}/screenplay/render")
+async def render_route(project_id: str, body: RenderIn, auth: Auth) -> dict:
+    """Startet den Batch-Render (Keyframe → Clip je Shot, dann Film) im Hintergrund."""
+    _guard(auth[0], project_id)
+    import asyncio
+    asyncio.create_task(director.render_all(project_id, model=body.model or None))
+    return {"status": "started"}
+
+
+@router.get("/projects/{project_id}/screenplay/render")
+def render_status_route(project_id: str, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    return director.get_render_job(project_id)

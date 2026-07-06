@@ -160,3 +160,90 @@ def test_update_shot_route_404(client, auth_headers):
     r = client.put(f"{PREFIX}/screenplay/scenes/{s['id']}/shots/gibtsnicht",
                    json={"prompt": "y"}, headers=auth_headers)
     assert r.status_code == 404
+
+
+# ---------------------------------------------------------------- E5: Batch-Render
+@pytest.mark.asyncio
+async def test_render_all_erzeugt_clips_und_film():
+    a = screenplay.create_scene(PROJECT_ID, {"title": "A"})
+    director.save_shots(PROJECT_ID, a["id"], [
+        {"shot": "wide", "prompt": "p1", "duration": 5},
+        {"shot": "closeup", "prompt": "p2", "duration": 4},
+    ])
+    with (
+        patch("backend.director.service.generate_for_project",
+              side_effect=lambda pid, req: {"rel": "output/key.png"}),
+        patch("backend.director.video.render_clip",
+              new=AsyncMock(side_effect=["videos/c1.mp4", "videos/c2.mp4"])),
+        patch("backend.director.film.start_film_job", return_value={"job_id": "film1"}),
+    ):
+        job = await director.render_all(PROJECT_ID)
+    assert job["total_shots"] == 2
+    assert job["done_shots"] == 2
+    assert job["failed_shots"] == 0
+    assert job["film_rel"] == "film1"
+    # Shots sind jetzt done, mit video_rel
+    shots = director.get_shots(PROJECT_ID, a["id"])
+    assert all(s["status"] == "done" for s in shots)
+    assert shots[0]["video_rel"] == "videos/c1.mp4"
+
+
+@pytest.mark.asyncio
+async def test_render_all_shot_fehler_bricht_nicht_ab():
+    a = screenplay.create_scene(PROJECT_ID, {"title": "A"})
+    director.save_shots(PROJECT_ID, a["id"], [
+        {"shot": "wide", "prompt": "ok"},
+        {"shot": "closeup", "prompt": "boom"},
+    ])
+    with (
+        patch("backend.director.service.generate_for_project",
+              side_effect=lambda pid, req: {"rel": "output/key.png"}),
+        patch("backend.director.video.render_clip",
+              new=AsyncMock(side_effect=["videos/ok.mp4", RuntimeError("clip failed")])),
+        patch("backend.director.film.start_film_job", return_value={"job_id": "film1"}),
+    ):
+        job = await director.render_all(PROJECT_ID)
+    assert job["done_shots"] == 1
+    assert job["failed_shots"] == 1
+    assert job["status"] == "completed_with_errors"
+    shots = director.get_shots(PROJECT_ID, a["id"])
+    assert shots[0]["status"] == "done"
+    assert shots[1]["status"] == "failed"
+
+
+@pytest.mark.asyncio
+async def test_render_all_keine_shots_kein_film():
+    screenplay.create_scene(PROJECT_ID, {"title": "leer"})
+    with patch("backend.director.film.start_film_job") as film_mock:
+        job = await director.render_all(PROJECT_ID)
+    assert job["total_shots"] == 0
+    assert job["film_rel"] is None
+    film_mock.assert_not_called()
+
+
+def test_get_render_job_default_idle():
+    # frisches Projekt (conftest räumt Atelier-Dirs) → idle
+    assert director.get_render_job(PROJECT_ID)["status"] in ("idle", "processing", "completed", "completed_with_errors")
+
+
+# ---------------------------------------------------------------- E5: Render-Routen
+def test_render_route_guard(client, auth_headers):
+    assert client.post(f"{OTHER_PREFIX}/screenplay/render", json={}, headers=auth_headers).status_code == 404
+
+
+def test_render_route_braucht_auth(client):
+    assert client.post(f"{PREFIX}/screenplay/render", json={}).status_code == 401
+
+
+def test_render_status_route(client, auth_headers):
+    r = client.get(f"{PREFIX}/screenplay/render", headers=auth_headers)
+    assert r.status_code == 200
+    assert "status" in r.json()
+
+
+def test_render_route_startet(client, auth_headers):
+    # render_all wird gemockt, damit kein echter Task läuft
+    with patch("backend.director.render_all", new=AsyncMock(return_value={"status": "completed"})):
+        r = client.post(f"{PREFIX}/screenplay/render", json={}, headers=auth_headers)
+    assert r.status_code == 200
+    assert r.json()["status"] == "started"
