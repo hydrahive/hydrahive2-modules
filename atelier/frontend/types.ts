@@ -174,3 +174,23 @@ export interface MediaModelList {
   default: string
   models: MediaModel[]
 }
+
+// ---------------------------------------------------------------- Regie: Shots (E4)
+export interface Shot {
+  id: string
+  scene_id: string
+  order: number
+  shot: string
+  prompt: string
+  character_ids: string[]
+  duration: number
+  status: string
+  image_rel: string | null
+  video_rel: string | null
+}
+
+export interface DecomposeResult {
+  scenes: number
+  shots: number
+  per_scene: Record<string, number>
+}

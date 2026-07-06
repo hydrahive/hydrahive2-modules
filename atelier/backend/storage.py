@@ -107,6 +107,12 @@ def scenes_dir(project_id: str) -> Path:
     return d
 
 
+def shots_dir(project_id: str) -> Path:
+    d = screenplay_dir(project_id) / "shots"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def new_id() -> str:
     """Frische 32-stellige Hex-ID (für Charaktere/Outputs)."""
     return uuid.uuid4().hex

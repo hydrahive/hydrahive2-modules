@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import characters, presets, screenplay, service, storage
+from . import characters, director, presets, screenplay, service, storage
 
 router = APIRouter()
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
@@ -282,3 +282,47 @@ def delete_scene_route(project_id: str, scene_id: str, auth: Auth) -> dict:
 def reorder_scenes_route(project_id: str, body: ReorderIn, auth: Auth) -> dict:
     _guard(auth[0], project_id)
     return screenplay.reorder_scenes(project_id, body.scene_ids)
+
+
+# ---- Regieagent: Zerlegen (Phase 1) + Shot-CRUD (E4) ------------------------
+
+class DecomposeIn(BaseModel):
+    model: str = Field(default="", max_length=200)  # LLM-Modell; leer = Default
+
+
+class ShotIn(BaseModel):
+    shot: str = Field(default="", max_length=60)
+    prompt: str = Field(default="", max_length=2000)
+    character_ids: list[str] = Field(default_factory=list)
+    duration: int = Field(default=5, ge=1, le=60)
+    status: str = Field(default="planned", max_length=32)
+
+
+@router.post("/projects/{project_id}/screenplay/decompose")
+async def decompose_route(project_id: str, body: DecomposeIn, auth: Auth) -> dict:
+    """Regieagent zerlegt ALLE Szenen in Shots (status planned) — generiert nichts."""
+    _guard(auth[0], project_id)
+    return await director.decompose_all(project_id, model=body.model or None)
+
+
+@router.get("/projects/{project_id}/screenplay/scenes/{scene_id}/shots")
+def list_shots_route(project_id: str, scene_id: str, auth: Auth) -> list[dict]:
+    _guard(auth[0], project_id)
+    return director.get_shots(project_id, scene_id)
+
+
+@router.put("/projects/{project_id}/screenplay/scenes/{scene_id}/shots/{shot_id}")
+def update_shot_route(project_id: str, scene_id: str, shot_id: str, body: ShotIn, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    updated = director.update_shot(project_id, scene_id, shot_id, body.model_dump())
+    if updated is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "shot_not_found")
+    return updated
+
+
+@router.delete("/projects/{project_id}/screenplay/scenes/{scene_id}/shots/{shot_id}")
+def delete_shot_route(project_id: str, scene_id: str, shot_id: str, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    if not director.delete_shot(project_id, scene_id, shot_id):
+        raise coded(status.HTTP_404_NOT_FOUND, "shot_not_found")
+    return {"ok": True}

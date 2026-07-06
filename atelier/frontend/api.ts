@@ -20,6 +20,8 @@ import type {
   Scene,
   SceneInput,
   MediaModelList,
+  Shot,
+  DecomposeResult,
 } from "./types"
 
 const BASE = "/modules/atelier"
@@ -110,6 +112,16 @@ export const atelierApi = {
   // ---- Media-Modelle (Live-Liste von OpenRouter, für Dropdowns) ----
   mediaModels: (category: "video" | "image" | "audio"): Promise<MediaModelList> =>
     api.get<MediaModelList>(`/llm/media-models?category=${category}`),
+
+  // ---- Regieagent: Zerlegen (Phase 1) + Shots ----
+  decompose: (pid: string, model?: string): Promise<DecomposeResult> =>
+    api.post<DecomposeResult>(`${BASE}/projects/${pid}/screenplay/decompose`, { model: model || "" }),
+  listShots: (pid: string, sceneId: string): Promise<Shot[]> =>
+    api.get<Shot[]>(`${BASE}/projects/${pid}/screenplay/scenes/${sceneId}/shots`),
+  updateShot: (pid: string, sceneId: string, shotId: string, body: Partial<Shot>): Promise<Shot> =>
+    api.put<Shot>(`${BASE}/projects/${pid}/screenplay/scenes/${sceneId}/shots/${shotId}`, body),
+  deleteShot: (pid: string, sceneId: string, shotId: string): Promise<{ ok: boolean }> =>
+    api.delete<{ ok: boolean }>(`${BASE}/projects/${pid}/screenplay/scenes/${sceneId}/shots/${shotId}`),
 }
 
 /** Absoluter Dateipfad → /api/files-URL mit Token (Browser-img kann keinen Bearer). */
