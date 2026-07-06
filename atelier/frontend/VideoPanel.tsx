@@ -109,6 +109,7 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
               onClick={() => setRepeat({
                 prompt: job.prompt, model: job.model,
                 duration: job.duration, aspect_ratio: job.aspect_ratio,
+                source_rel: job.source_rel,
               })}
               className="rounded bg-slate-700/80 px-2 py-1 text-[10px] hover:bg-slate-600"
               title={t("repeat_hint")}

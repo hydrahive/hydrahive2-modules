@@ -8,6 +8,7 @@ export interface VideoInitial {
   model?: string
   duration?: number
   aspect_ratio?: string
+  source_rel?: string  // Startbild/Referenz des Original-Jobs — beim Wiederholen mitführen
 }
 
 interface Props {
@@ -69,12 +70,15 @@ export function VideoDialog({ projectId, source, onClose, onStarted, initial }: 
     if (!allowedA.includes(aspect)) setAspect(allowedA[0])
   }
 
+  // Startbild/Referenz: aus dem angeklickten Bild ODER (beim Wiederholen) aus initial.
+  const effectiveSourceRel = source?.rel || initial?.source_rel || ""
+
   async function start() {
     setBusy(true)
     setError(null)
     try {
       await atelierApi.createVideo(projectId, {
-        source_rel: source?.rel ?? "",
+        source_rel: effectiveSourceRel,
         prompt,
         model,
         duration,
@@ -99,6 +103,11 @@ export function VideoDialog({ projectId, source, onClose, onStarted, initial }: 
         </h4>
         {source && (
           <img src={fileUrl(source.path)} alt="" className="w-full rounded max-h-40 object-contain bg-black/30" />
+        )}
+        {!source && effectiveSourceRel && (
+          <div className="text-[10px] text-emerald-300 bg-emerald-500/10 rounded px-2 py-1">
+            🖼️ {t("repeat_uses_reference")}
+          </div>
         )}
 
         <label className="flex flex-col gap-1 text-xs text-slate-400">
@@ -163,7 +172,7 @@ export function VideoDialog({ projectId, source, onClose, onStarted, initial }: 
           </button>
           <button
             onClick={start}
-            disabled={busy || (!source && !prompt.trim())}
+            disabled={busy || (!effectiveSourceRel && !prompt.trim())}
             className="text-xs px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 font-medium"
           >
             {busy ? t("video_starting") : t("video_start")}
