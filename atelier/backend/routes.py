@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import characters, presets, service, storage
+from . import characters, presets, screenplay, service, storage
 
 router = APIRouter()
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
@@ -194,3 +194,91 @@ def promote_reference(project_id: str, body: PromoteIn, auth: Auth) -> dict:
     if char is None:
         raise coded(status.HTTP_404_NOT_FOUND, "character_not_found")
     return char
+
+
+# ---- Regie: Drehbuch-Kopf + Szenen (E1) -------------------------------------
+
+class ScreenplayIn(BaseModel):
+    title: str = Field(default="", max_length=200)
+    logline: str = Field(default="", max_length=500)
+    description: str = Field(default="", max_length=4000)
+    film_model: str = Field(default="", max_length=200)
+    audio_model: str = Field(default="", max_length=200)
+    voice_model: str = Field(default="", max_length=200)
+    aspect_ratio: str = Field(default="16:9", max_length=16)
+    default_duration: int = Field(default=5, ge=1, le=60)
+    scene_order: list[str] | None = None
+
+
+class DialogueIn(BaseModel):
+    character_id: str = Field(default="", max_length=32)
+    line: str = Field(default="", max_length=2000)
+    emotion: str = Field(default="", max_length=50)
+
+
+class MusicIn(BaseModel):
+    enabled: bool = False
+    prompt: str = Field(default="", max_length=1000)
+    music_rel: str | None = None
+
+
+class SceneIn(BaseModel):
+    title: str = Field(default="", max_length=200)
+    description: str = Field(default="", max_length=4000)
+    character_ids: list[str] = Field(default_factory=list)
+    dialogues: list[DialogueIn] = Field(default_factory=list)
+    music: MusicIn = Field(default_factory=MusicIn)
+    camera: dict = Field(default_factory=dict)
+    location: str = Field(default="", max_length=200)
+    time_of_day: str = Field(default="", max_length=50)
+
+
+class ReorderIn(BaseModel):
+    scene_ids: list[str] = Field(default_factory=list)
+
+
+@router.get("/projects/{project_id}/screenplay")
+def get_screenplay_route(project_id: str, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    return screenplay.get_screenplay(project_id)
+
+
+@router.put("/projects/{project_id}/screenplay")
+def put_screenplay_route(project_id: str, body: ScreenplayIn, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    return screenplay.save_screenplay(project_id, body.model_dump(exclude_none=False))
+
+
+@router.get("/projects/{project_id}/screenplay/scenes")
+def list_scenes_route(project_id: str, auth: Auth) -> list[dict]:
+    _guard(auth[0], project_id)
+    return screenplay.list_scenes(project_id)
+
+
+@router.post("/projects/{project_id}/screenplay/scenes")
+def create_scene_route(project_id: str, body: SceneIn, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    return screenplay.create_scene(project_id, body.model_dump())
+
+
+@router.put("/projects/{project_id}/screenplay/scenes/{scene_id}")
+def update_scene_route(project_id: str, scene_id: str, body: SceneIn, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    updated = screenplay.update_scene(project_id, scene_id, body.model_dump())
+    if updated is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "scene_not_found")
+    return updated
+
+
+@router.delete("/projects/{project_id}/screenplay/scenes/{scene_id}")
+def delete_scene_route(project_id: str, scene_id: str, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    if not screenplay.delete_scene(project_id, scene_id):
+        raise coded(status.HTTP_404_NOT_FOUND, "scene_not_found")
+    return {"ok": True}
+
+
+@router.post("/projects/{project_id}/screenplay/scenes/reorder")
+def reorder_scenes_route(project_id: str, body: ReorderIn, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    return screenplay.reorder_scenes(project_id, body.scene_ids)
