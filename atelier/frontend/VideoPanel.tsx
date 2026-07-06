@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
-import { VideoDialog } from "./VideoDialog"
+import { VideoDialog, type VideoInitial } from "./VideoDialog"
+import { PromptView } from "./PromptView"
 import type { GalleryItem, VideoJob } from "./types"
 
 interface Props {
@@ -18,6 +19,7 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
   const { t } = useTranslation("atelier")
   const [jobs, setJobs] = useState<VideoJob[]>([])
   const [textDialog, setTextDialog] = useState(false)
+  const [repeat, setRepeat] = useState<VideoInitial | null>(null)
   const [continueSource, setContinueSource] = useState<GalleryItem | null>(null)
   const [continuing, setContinuing] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -101,19 +103,29 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
               )}
             </div>
           )}
-          {job.prompt && (
-            <p className="px-2 py-1 text-[10px] text-slate-500 truncate">{job.prompt}</p>
-          )}
-          {job.status === "completed" && job.video_rel && (
+          {job.prompt && <PromptView text={job.prompt} />}
+          <div className="flex flex-wrap gap-1 px-1 pb-1">
             <button
-              onClick={() => startContinue(job)}
-              disabled={continuing === job.job_id}
-              className="m-1 rounded bg-violet-600/80 px-2 py-1 text-[10px] hover:bg-violet-500 disabled:opacity-40"
-              title={t("continue_hint")}
+              onClick={() => setRepeat({
+                prompt: job.prompt, model: job.model,
+                duration: job.duration, aspect_ratio: job.aspect_ratio,
+              })}
+              className="rounded bg-slate-700/80 px-2 py-1 text-[10px] hover:bg-slate-600"
+              title={t("repeat_hint")}
             >
-              {continuing === job.job_id ? t("continue_extracting") : `⏩ ${t("continue_video")}`}
+              🔁 {t("repeat_video")}
             </button>
-          )}
+            {job.status === "completed" && job.video_rel && (
+              <button
+                onClick={() => startContinue(job)}
+                disabled={continuing === job.job_id}
+                className="rounded bg-violet-600/80 px-2 py-1 text-[10px] hover:bg-violet-500 disabled:opacity-40"
+                title={t("continue_hint")}
+              >
+                {continuing === job.job_id ? t("continue_extracting") : `⏩ ${t("continue_video")}`}
+              </button>
+            )}
+          </div>
           <button
             onClick={() => del(job)}
             title={t("delete")}
@@ -131,6 +143,19 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
           onClose={() => setContinueSource(null)}
           onStarted={() => {
             setContinueSource(null)
+            atelierApi.listVideos(projectId).then(setJobs).catch(() => {})
+          }}
+        />
+      )}
+
+      {repeat && (
+        <VideoDialog
+          projectId={projectId}
+          source={null}
+          initial={repeat}
+          onClose={() => setRepeat(null)}
+          onStarted={() => {
+            setRepeat(null)
             atelierApi.listVideos(projectId).then(setJobs).catch(() => {})
           }}
         />

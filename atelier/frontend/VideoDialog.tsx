@@ -3,11 +3,19 @@ import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
 import type { GalleryItem, MediaModel } from "./types"
 
+export interface VideoInitial {
+  prompt?: string
+  model?: string
+  duration?: number
+  aspect_ratio?: string
+}
+
 interface Props {
   projectId: string
   source: GalleryItem | null  // null = Text-to-Video (kein Startbild)
   onClose: () => void
   onStarted: () => void
+  initial?: VideoInitial  // Vorbefüllung (Wiederholen eines Jobs / letzter Prompt)
 }
 
 // Fallback-Werte, wenn ein Modell keine Metadaten liefert.
@@ -20,27 +28,32 @@ const aspectsOf = (m?: MediaModel) =>
   (m?.aspect_ratios && m.aspect_ratios.length ? m.aspect_ratios : FALLBACK_ASPECTS)
 
 /** Dialog: aus einem Galerie-Bild ein Video machen (Image-to-Video). */
-export function VideoDialog({ projectId, source, onClose, onStarted }: Props) {
+export function VideoDialog({ projectId, source, onClose, onStarted, initial }: Props) {
   const { t } = useTranslation("atelier")
   const [models, setModels] = useState<MediaModel[]>([])
-  const [prompt, setPrompt] = useState("")
-  const [model, setModel] = useState("")
-  const [duration, setDuration] = useState(FALLBACK_DURATIONS[0])
-  const [aspect, setAspect] = useState(FALLBACK_ASPECTS[0])
+  const [prompt, setPrompt] = useState(initial?.prompt ?? "")
+  const [model, setModel] = useState(initial?.model ?? "")
+  const [duration, setDuration] = useState(initial?.duration ?? FALLBACK_DURATIONS[0])
+  const [aspect, setAspect] = useState(initial?.aspect_ratio ?? FALLBACK_ASPECTS[0])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     atelierApi.mediaModels("video").then((r) => {
       setModels(r.models)
-      const first = r.default || r.models[0]?.id || ""
-      if (first) {
-        setModel(first)
-        const meta = r.models.find((m) => m.id === first)
-        setDuration(durationsOf(meta)[0])
-        setAspect(aspectsOf(meta)[0])
+      // Vorbefülltes Modell (Wiederholen) hat Vorrang, sonst Default/erstes.
+      const chosen = initial?.model || r.default || r.models[0]?.id || ""
+      if (chosen) {
+        setModel(chosen)
+        const meta = r.models.find((m) => m.id === chosen)
+        const allowedD = durationsOf(meta)
+        const allowedA = aspectsOf(meta)
+        // Vorbefüllte Dauer/Aspect nur übernehmen, wenn fürs Modell gültig.
+        setDuration(initial?.duration && allowedD.includes(initial.duration) ? initial.duration : allowedD[0])
+        setAspect(initial?.aspect_ratio && allowedA.includes(initial.aspect_ratio) ? initial.aspect_ratio : allowedA[0])
       }
     }).catch(() => setModels([]))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const current = models.find((m) => m.id === model)
