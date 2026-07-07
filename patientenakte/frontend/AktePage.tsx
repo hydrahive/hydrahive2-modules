@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { Navigate, Route, Routes, useLocation } from "react-router-dom"
 import { FolderHeart } from "lucide-react"
+import { HelpButton } from "@/i18n/HelpButton"
 import { AkteSidebar } from "./AkteSidebar"
 import { AkteErrorBoundary } from "./components/AkteErrorBoundary"
 import { AkteDashboard } from "./views/AkteDashboard"
@@ -24,6 +25,7 @@ export function AktePage() {
           <h1 className="text-lg font-semibold text-zinc-100">{t("page_title")}</h1>
           <p className="text-xs text-zinc-500">{t("page_subtitle")}</p>
         </div>
+        <HelpButton topic="patientenakte" />
       </div>
 
       <div className="flex gap-6">

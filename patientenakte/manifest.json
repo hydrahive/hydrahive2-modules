@@ -1,7 +1,7 @@
 {
   "id": "patientenakte",
   "name": "Meine Akte",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Persönliche medizinische Akte für Befunde, Medikamente und Diagnosen. Extrahierte Daten aus Arztbriefen werden strukturiert gespeichert und bleiben abrufbar.",
   "icon": "FolderHeart",
   "nav_group": "overview",
