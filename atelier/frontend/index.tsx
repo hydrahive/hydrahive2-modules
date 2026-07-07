@@ -5,6 +5,19 @@ export const nav = [
   { path: "/atelier", icon: "Palette", labelKey: "atelier", group: "working", roles: [] },
 ]
 
+// Theme-Template-Baustein: <hh-atelier/> in einem Template. Wird vom Core über
+// gen-modules (moduleSlotBlocks) optional eingesammelt — nur vorhanden wenn das
+// Modul installiert ist, daher kein harter Core→Modul-Import mehr.
+export const slotBlocks = [
+  {
+    name: "atelier",
+    label: "Atelier (Bildgenerator)",
+    render: (_attrs: Record<string, string>) => (
+      <div className="min-h-[200px]"><AtelierPage /></div>
+    ),
+  },
+]
+
 export const i18n = {
   de: {
     atelier: {
