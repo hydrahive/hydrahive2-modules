@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import type { CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import { Markdown } from "@/features/chat/Markdown"
+import { HelpButton } from "@/i18n/HelpButton"
 import { rgbFor } from "@/shared/colors"
 import { scratchpadApi } from "./api"
 
@@ -42,6 +43,7 @@ export function ScratchpadPage() {
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
+        <HelpButton topic="scratchpad" />
         <span className="text-xs text-zinc-600">{saved ? t("saved") : t("saving")}</span>
       </div>
 

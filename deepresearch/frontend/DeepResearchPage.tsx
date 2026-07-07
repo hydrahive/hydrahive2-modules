@@ -3,6 +3,7 @@ import {
   deleteRun, getRun, listModels, listRuns, startRun,
   type ModelInfo, type Run, type RunListItem,
 } from "./api"
+import { HelpButton } from "@/i18n/HelpButton"
 import { LiveProgress } from "./LiveProgress"
 import { ReportFrame } from "./ReportFrame"
 import { RunList, type RunFilter } from "./RunList"
@@ -80,6 +81,10 @@ export function DeepResearchPage() {
   return (
     <div className="max-w-6xl mx-auto h-full flex gap-5">
       <aside className="w-72 shrink-0 flex flex-col">
+        <div className="flex items-center gap-2 mb-2">
+          <h1 className="text-sm font-semibold text-zinc-200">Deep Research</h1>
+          <HelpButton topic="deepresearch" />
+        </div>
         <textarea
           value={question}
           placeholder="Worüber soll recherchiert werden?"

@@ -3,6 +3,7 @@ import { useEffect, useState, type CSSProperties } from "react"
 import { NavLink, Route, Routes } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { rgbFor } from "@/shared/colors"
+import { HelpButton } from "@/i18n/HelpButton"
 import { cryptoApi } from "./api"
 import { CoinSearch } from "./components/CoinSearch"
 import { AlertsView } from "./views/AlertsView"
@@ -55,6 +56,7 @@ function Header() {
           <h1 className="text-lg font-bold text-white leading-tight">{t("title")}</h1>
           <p className="text-xs text-zinc-500">{t("subtitle")}</p>
         </div>
+        <HelpButton topic="cryptoboard" />
         <div className="ml-auto flex items-center gap-3">
           <CoinSearch />
           <CurrencyToggle />

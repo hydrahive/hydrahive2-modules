@@ -1,7 +1,7 @@
 {
   "id": "notizbuch",
   "name": "Notizbuch",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Einfaches Notizbuch für Texte und Gedanken, projektübergreifend verfügbar. Halte Ideen fest und finde sie später schnell wieder.",
   "icon": "NotebookPen",
   "nav_group": "working",

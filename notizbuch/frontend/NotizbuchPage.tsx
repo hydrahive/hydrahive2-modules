@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import { api } from "@/shared/api-client"
+import { HelpButton } from "@/i18n/HelpButton"
 
 interface NoteListItem {
   id: number
@@ -84,12 +85,15 @@ export function NotizbuchPage() {
   return (
     <div className="flex gap-4 h-full">
       <aside className="w-64 shrink-0 space-y-2">
-        <button
-          onClick={createNote}
-          className="w-full px-3 py-2 rounded-lg bg-violet-500/15 text-violet-300 text-sm hover:bg-violet-500/25"
-        >
-          + {t("new")}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={createNote}
+            className="flex-1 px-3 py-2 rounded-lg bg-violet-500/15 text-violet-300 text-sm hover:bg-violet-500/25"
+          >
+            + {t("new")}
+          </button>
+          <HelpButton topic="notizbuch" />
+        </div>
         {list.length === 0 && <p className="text-zinc-600 text-sm py-2">{t("empty")}</p>}
         {list.map((n) => (
           <button
