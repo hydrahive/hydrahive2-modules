@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { projectsApi } from "@/features/projects/api"
 import type { Project } from "@/features/projects/types"
+import { HelpButton } from "@/i18n/HelpButton"
 import type { VideoMeta } from "./types"
 import { videoeditorApi } from "./api"
 import { EditorView } from "./EditorView"
@@ -70,6 +71,7 @@ export function VideoEditorPage() {
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
+        <HelpButton topic="videoeditor" />
         <select value={projectId} onChange={(e) => setProjectId(e.target.value)}
           className="px-2 py-1 text-sm rounded bg-black/30 border border-white/10 text-zinc-200">
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}

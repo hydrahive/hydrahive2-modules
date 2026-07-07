@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Plus, Trash2, PenTool } from "lucide-react"
+import { HelpButton } from "@/i18n/HelpButton"
 import type { BoardMeta } from "./types"
 
 interface Props {
@@ -28,6 +29,7 @@ export function BoardSidebar({ boards, activeId, onSelect, onCreate, onDelete }:
       <div className="flex items-center gap-2 border-b border-white/8 px-3 py-3">
         <PenTool size={16} className="text-zinc-400" />
         <span className="text-sm font-semibold text-zinc-200">Boards</span>
+        <HelpButton topic="blueprint" />
         <button
           onClick={() => setAdding((v) => !v)}
           className="ml-auto rounded-lg bg-zinc-800 p-1.5 text-zinc-300 hover:bg-zinc-700"

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { HardDrive, RefreshCw, Terminal, ChevronDown, ChevronRight } from "lucide-react"
 import { archiverApi, type Drive, type ArchiveJob } from "./api"
 import { useAuthStore } from "@/features/auth/useAuthStore"
+import { HelpButton } from "@/i18n/HelpButton"
 import { DriveBox } from "./_DriveBox"
 import { DiagnoseBox } from "./_DiagnoseBox"
 import { RepairBox } from "./_RepairBox"
@@ -154,6 +155,7 @@ export function ArchiverPage() {
           <h1 className="text-xl font-semibold text-zinc-100">Archiver</h1>
           <p className="text-xs text-zinc-500 mt-0.5">Datenträger-Manager</p>
         </div>
+        <HelpButton topic="archiver" />
       </div>
 
       <DriveBox

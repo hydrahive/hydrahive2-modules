@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { moduleIcon } from "@/shared/module-icon"
+import { HelpButton } from "@/i18n/HelpButton"
 import { GameOverlay } from "./components/GameOverlay"
 import { GAMES } from "./games/_registry"
 import type { GameModule } from "./types"
@@ -12,7 +13,10 @@ export function ArcadeView() {
 
   return (
     <div className="p-5 max-w-4xl mx-auto">
-      <h2 className="text-base font-semibold text-zinc-200 mb-1">{t("mg_title")}</h2>
+      <div className="flex items-center gap-2 mb-1">
+        <h2 className="text-base font-semibold text-zinc-200">{t("mg_title")}</h2>
+        <HelpButton topic="minigames" />
+      </div>
       <p className="text-xs text-zinc-500 mb-5">{t("mg_subtitle")}</p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">

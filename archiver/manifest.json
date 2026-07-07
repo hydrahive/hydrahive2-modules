@@ -1,7 +1,7 @@
 {
   "id": "archiver",
   "name": "Archiver",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Archiviert Webseiten, Foren-Threads und Dokumente dauerhaft und durchsuchbar. So bleiben wichtige Inhalte erhalten, auch wenn die Quelle offline geht.",
   "icon": "HardDrive",
   "nav_group": "working",

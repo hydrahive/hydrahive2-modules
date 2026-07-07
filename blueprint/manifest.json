@@ -1,7 +1,7 @@
 {
   "id": "blueprint",
   "name": "Blueprint",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Visueller Node-Canvas, um Layouts und Abläufe nonverbal an den Agenten zu übergeben. Statt lange Wünsche zu beschreiben, steckst du Design- und Flow-Bausteine wie ein Diagramm zusammen.",
   "icon": "PenTool",
   "nav_group": "working",

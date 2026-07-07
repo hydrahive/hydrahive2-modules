@@ -1,7 +1,7 @@
 {
   "id": "videoeditor",
   "name": "Video-Editor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Web-Videoschnitt mit Timeline, Filmstrip-Vorschau und Export. Schneide hochgeladene Clips und exportiere mit verlustarmem Hybrid-Rendering.",
   "icon": "Scissors",
   "nav_group": "working",

@@ -1,7 +1,7 @@
 {
   "id": "homeassistant",
   "name": "Home Assistant",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Bindet dein Home Assistant Smart Home an: Geräte schalten, Zustände lesen und Automationen anstoßen. Der Agent kann Lampen, Thermostate und Szenen direkt steuern.",
   "icon": "House",
   "nav_group": "working",

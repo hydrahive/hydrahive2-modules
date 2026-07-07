@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { RefreshCw, Search, Star, X } from "lucide-react"
+import { HelpButton } from "@/i18n/HelpButton"
 import { useHomeAssistant } from "./useHomeAssistant"
 import { groupByDomain } from "./entityControl"
 import { ConnectionBanner } from "./components/ConnectionBanner"
@@ -58,11 +59,14 @@ export function HomeAssistantPage() {
       {/* Sticky-Header: Titel, Refresh, Suche, Chips */}
       <div className="sticky top-0 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-3 pt-1 bg-zinc-950/80 backdrop-blur space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
-            {test?.ok && test.config?.location_name && (
-              <p className="text-xs text-zinc-500">{test.config.location_name}</p>
-            )}
+          <div className="flex items-center gap-1">
+            <div>
+              <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
+              {test?.ok && test.config?.location_name && (
+                <p className="text-xs text-zinc-500">{test.config.location_name}</p>
+              )}
+            </div>
+            <HelpButton topic="homeassistant" />
           </div>
           <button
             onClick={load}
