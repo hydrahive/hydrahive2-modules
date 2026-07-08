@@ -24,7 +24,24 @@ export interface GalleryItem {
   prompt: string | null
   seed: number | null
   model: string | null
+  // Felder für "Wiederholen" (Vorbefüllen des Generieren-Tabs).
+  scene?: string | null
+  character_ids?: string[]
+  aspect_ratio?: string | null
+  camera?: Record<string, string>
+  style?: string | null
   mtime: number
+}
+
+/** Vorbefüllung des Generieren-Tabs beim "Wiederholen" eines Galerie-Bildes. */
+export interface RepeatInput {
+  scene: string
+  character_ids: string[]
+  model: string
+  seed: number | null
+  aspect_ratio: string
+  camera: Record<string, string>
+  style: string
 }
 
 export interface GenerateRequest {

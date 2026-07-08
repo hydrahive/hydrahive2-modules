@@ -11,6 +11,7 @@ interface Props {
   characters: AtelierCharacter[]
   onPromoted: () => void
   onVideoStarted: () => void
+  onRepeat: (item: GalleryItem) => void
 }
 
 type ViewSize = "small" | "medium" | "large" | "list"
@@ -21,7 +22,7 @@ const GRID_MIN: Record<Exclude<ViewSize, "list">, string> = {
 }
 
 /** Galerie der generierten Bilder + "als Referenz übernehmen" + "zu Video". */
-export function ImageGalleryPanel({ projectId, items, characters, onPromoted, onVideoStarted }: Props) {
+export function ImageGalleryPanel({ projectId, items, characters, onPromoted, onVideoStarted, onRepeat }: Props) {
   const { t } = useTranslation("atelier")
   const [zoom, setZoom] = useState<GalleryItem | null>(null)
   const [promoteFor, setPromoteFor] = useState<GalleryItem | null>(null)
@@ -139,6 +140,13 @@ export function ImageGalleryPanel({ projectId, items, characters, onPromoted, on
                 🎬
               </button>
               <button
+                onClick={() => onRepeat(it)}
+                className="rounded bg-violet-600 px-2 py-1 text-[10px] hover:bg-violet-500"
+                title={t("repeat_image")}
+              >
+                🔁
+              </button>
+              <button
                 onClick={() => del(it)}
                 className="rounded bg-red-600/80 px-2 py-1 text-[10px] hover:bg-red-500"
                 title={t("delete")}
@@ -176,6 +184,7 @@ export function ImageGalleryPanel({ projectId, items, characters, onPromoted, on
                   <span>{t("file")}: {zoom.rel}</span>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
+                  <button onClick={() => { onRepeat(zoom); setZoom(null) }} className="rounded bg-violet-600 px-3 py-1 text-xs hover:bg-violet-500">🔁 {t("repeat_image")}</button>
                   <button onClick={() => setPromoteFor(zoom)} className="rounded bg-emerald-600 px-3 py-1 text-xs hover:bg-emerald-500">{t("promote")}</button>
                   <button onClick={() => setVideoFor(zoom)} className="rounded bg-sky-600 px-3 py-1 text-xs hover:bg-sky-500">🎬 {t("make_video")}</button>
                   <button onClick={() => del(zoom)} className="rounded bg-red-600/80 px-3 py-1 text-xs hover:bg-red-500">🗑️ {t("delete")}</button>

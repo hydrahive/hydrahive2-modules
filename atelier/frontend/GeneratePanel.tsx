@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi } from "./api"
 import { CameraControls } from "./CameraControls"
-import type { AtelierCharacter, AtelierCI, MediaModel, PresetCatalog } from "./types"
+import type { AtelierCharacter, AtelierCI, MediaModel, PresetCatalog, RepeatInput } from "./types"
 
 interface Props {
   projectId: string
@@ -11,12 +11,15 @@ interface Props {
   selectedIds: string[]
   presets: PresetCatalog
   onGenerated: () => void
+  // Vorbefüllung beim "Wiederholen" eines Galerie-Bildes. Ändert sich das Objekt
+  // (neue Referenz), werden die Felder übernommen.
+  repeat?: RepeatInput | null
 }
 
 const RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4"]
 
 /** Mittlere Spalte: Szene beschreiben + Parameter, dann generieren. */
-export function GeneratePanel({ projectId, ci, characters, selectedIds, presets, onGenerated }: Props) {
+export function GeneratePanel({ projectId, ci, characters, selectedIds, presets, onGenerated, repeat }: Props) {
   const { t } = useTranslation("atelier")
   const [models, setModels] = useState<MediaModel[]>([])
   const [scene, setScene] = useState("")
@@ -31,6 +34,18 @@ export function GeneratePanel({ projectId, ci, characters, selectedIds, presets,
   const [style, setStyle] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // "Wiederholen": Felder aus dem gewählten Galerie-Bild übernehmen. Charaktere
+  // werden separat über selectedIds in der AtelierPage gesetzt.
+  useEffect(() => {
+    if (!repeat) return
+    setScene(repeat.scene)
+    setModel(repeat.model)
+    setRatio(repeat.aspect_ratio)
+    setSeed(repeat.seed != null ? String(repeat.seed) : "")
+    setCamera(repeat.camera)
+    setStyle(repeat.style)
+  }, [repeat])
 
   const chosen = characters.filter((c) => selectedIds.includes(c.id))
   const styleKeys = presets.style ?? []

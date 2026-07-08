@@ -66,6 +66,12 @@ def scan_gallery(project_id: str) -> list[dict]:
                 "prompt": meta.get("prompt"),
                 "seed": meta.get("seed"),
                 "model": meta.get("model"),
+                # Felder für "Wiederholen": vorbefüllen des Generieren-Tabs.
+                "scene": meta.get("scene"),
+                "character_ids": meta.get("character_ids") or [],
+                "aspect_ratio": meta.get("aspect_ratio"),
+                "camera": meta.get("camera") or {},
+                "style": meta.get("style"),
                 "mtime": img.stat().st_mtime,
             })
     items.sort(key=lambda i: i["mtime"], reverse=True)

@@ -12,7 +12,7 @@ import { ClipLibraryPanel } from "./ClipLibraryPanel"
 import { FilmComposerPanel } from "./FilmComposerPanel"
 import { DirectorPanel } from "./DirectorPanel"
 import { AtelierCutPanel } from "./AtelierCutPanel"
-import type { AtelierCharacter, AtelierCI, AudioLibraryItem, GalleryItem, PresetCatalog } from "./types"
+import type { AtelierCharacter, AtelierCI, AudioLibraryItem, GalleryItem, PresetCatalog, RepeatInput } from "./types"
 
 const DEFAULT_CI: AtelierCI = { palette: [], style_anchor: "", default_model: "", aspect_ratio: "1:1" }
 type AtelierTab = "characters" | "generate" | "gallery" | "clips" | "audio" | "films" | "cut" | "regie"
@@ -49,6 +49,23 @@ export function AtelierPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [videoTick, setVideoTick] = useState(0)
   const [tab, setTab] = useState<AtelierTab>("generate")
+  const [repeat, setRepeat] = useState<RepeatInput | null>(null)
+
+  /** "Wiederholen" aus der Galerie: Charaktere + Parameter des Bildes
+   *  übernehmen und in den Generieren-Tab wechseln. */
+  const handleRepeat = useCallback((item: GalleryItem) => {
+    setSelectedIds(item.character_ids ?? [])
+    setRepeat({
+      scene: item.scene ?? "",
+      character_ids: item.character_ids ?? [],
+      model: item.model ?? "",
+      seed: item.seed ?? null,
+      aspect_ratio: item.aspect_ratio ?? "",
+      camera: item.camera ?? {},
+      style: item.style ?? "",
+    })
+    setTab("generate")
+  }, [])
 
   useEffect(() => {
     projectsApi.list().then((ps) => {
@@ -153,6 +170,7 @@ export function AtelierPage() {
               characters={characters}
               selectedIds={selectedIds}
               presets={presets}
+              repeat={repeat}
               onGenerated={() => { reload(projectId); setTab("gallery") }}
             />
           )}
@@ -163,6 +181,7 @@ export function AtelierPage() {
               characters={characters}
               onPromoted={() => reload(projectId)}
               onVideoStarted={() => { setVideoTick((n) => n + 1); setTab("clips") }}
+              onRepeat={handleRepeat}
             />
           )}
           {tab === "clips" && (
