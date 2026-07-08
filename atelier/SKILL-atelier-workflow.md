@@ -83,5 +83,14 @@ sinnvollen Schritt im Atelier.
 - `atelier_gallery [project_id] [limit]` — Galerie-Bilder (Prompt/Seed/Modell).
 - `atelier_scenes [project_id]` — Drehbuch-Kopf + Szenen.
 
-## Anlege-Tools (Ebene B — folgt)
-Charakter/CI/Szene/Drehbuch-Kopf voreinstellen. Sobald verfügbar hier ergänzen.
+## Anlege-Tools (Ebene B — gebaut)
+- `atelier_set_ci` — Style-Anchor, Default-Bildmodell, Aspect, Palette.
+- `atelier_character action={create|update|delete}` — Figur voreinstellen
+  (name, description, style_anchor, palette, seed, model). Kein Bild-Upload.
+- `atelier_scene action={create|update|delete|reorder}` — Drehbuch bauen
+  (title, description, character_ids, dialogues, music{enabled,prompt}, camera,
+  location, time_of_day).
+- `atelier_set_screenplay` — Kopf (title, logline, film/audio/voice-Modell,
+  aspect_ratio, default_duration).
+
+Immer erst durchfragen → zusammenfassen → Bestätigung → dann schreiben.
