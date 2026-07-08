@@ -175,13 +175,14 @@ async def test_render_all_erzeugt_clips_und_film():
               side_effect=lambda pid, req: {"rel": "output/key.png"}),
         patch("backend.director.video.render_clip",
               new=AsyncMock(side_effect=["videos/c1.mp4", "videos/c2.mp4"])),
-        patch("backend.director.film.start_film_job", return_value={"job_id": "film1"}),
+        patch("backend.director._director_mux.mux_screenplay_film",
+              new=AsyncMock(return_value="films/final.mp4")),
     ):
         job = await director.render_all(PROJECT_ID)
     assert job["total_shots"] == 2
     assert job["done_shots"] == 2
     assert job["failed_shots"] == 0
-    assert job["film_rel"] == "film1"
+    assert job["film_rel"] == "films/final.mp4"
     # Shots sind jetzt done, mit video_rel
     shots = director.get_shots(PROJECT_ID, a["id"])
     assert all(s["status"] == "done" for s in shots)
@@ -200,7 +201,8 @@ async def test_render_all_shot_fehler_bricht_nicht_ab():
               side_effect=lambda pid, req: {"rel": "output/key.png"}),
         patch("backend.director.video.render_clip",
               new=AsyncMock(side_effect=["videos/ok.mp4", RuntimeError("clip failed")])),
-        patch("backend.director.film.start_film_job", return_value={"job_id": "film1"}),
+        patch("backend.director._director_mux.mux_screenplay_film",
+              new=AsyncMock(return_value="films/final.mp4")),
     ):
         job = await director.render_all(PROJECT_ID)
     assert job["done_shots"] == 1
@@ -214,7 +216,7 @@ async def test_render_all_shot_fehler_bricht_nicht_ab():
 @pytest.mark.asyncio
 async def test_render_all_keine_shots_kein_film():
     screenplay.create_scene(PROJECT_ID, {"title": "leer"})
-    with patch("backend.director.film.start_film_job") as film_mock:
+    with patch("backend.director._director_mux.mux_screenplay_film", new=AsyncMock()) as film_mock:
         job = await director.render_all(PROJECT_ID)
     assert job["total_shots"] == 0
     assert job["film_rel"] is None

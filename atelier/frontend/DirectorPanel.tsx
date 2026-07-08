@@ -494,12 +494,15 @@ function SceneCard({
               🎵 {t("scene_music")}
             </label>
             {draft.music.enabled && (
-              <input
-                value={draft.music.prompt}
-                onChange={(e) => patch({ music: { ...draft.music, prompt: e.target.value } })}
-                placeholder={t("scene_music_placeholder")}
-                className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300 text-xs"
-              />
+              <>
+                <input
+                  value={draft.music.prompt}
+                  onChange={(e) => patch({ music: { ...draft.music, prompt: e.target.value } })}
+                  placeholder={t("scene_music_placeholder")}
+                  className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300 text-xs"
+                />
+                <span className="text-[10px] text-slate-500">{t("scene_music_hint")}</span>
+              </>
             )}
           </div>
 

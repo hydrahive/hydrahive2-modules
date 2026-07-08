@@ -18,8 +18,8 @@ from typing import Any
 
 from hydrahive.llm import client as llm_client
 
-from . import characters as chars
-from . import film, presets, screenplay, service, storage, video
+from . import _director_mux, characters as chars
+from . import presets, screenplay, service, storage, video
 
 logger = logging.getLogger("hhmod_atelier.director")
 
@@ -246,12 +246,14 @@ def _update_shot_status(project_id: str, scene_id: str, shot_id: str, patch: dic
 async def render_all(project_id: str, *, model: str | None = None) -> dict:
     """Rendert alle geplanten Shots: je Shot Keyframe → Clip, dann Film-Merge.
 
-    Nutzt ausschließlich vorhandene Pfade (generate_for_project, video.render_clip,
-    film.start_film_job). Fehlerhafte Shots werden übersprungen (status failed),
-    der Batch läuft weiter. Schreibt Fortschritt nach render.json.
+    Nutzt vorhandene Pfade (generate_for_project, video.render_clip) und mischt
+    am Ende über _director_mux.mux_screenplay_film (Original-Ton + Szenen-Musik).
+    Fehlerhafte Shots werden übersprungen (status failed), der Batch läuft weiter.
+    Schreibt Fortschritt nach render.json.
     """
     head = screenplay.get_screenplay(project_id)
     film_model = model or head.get("film_model") or ""
+    audio_model = head.get("audio_model") or ""
     aspect = head.get("aspect_ratio") or "16:9"
     scenes = screenplay.list_scenes(project_id)
 
@@ -270,10 +272,14 @@ async def render_all(project_id: str, *, model: str | None = None) -> dict:
         "current": "",
         "film_rel": None,
         "error": None,
+        "warnings": [],
         "created_at": _now(),
     }
     _write_render_job(project_id, job)
 
+    # Clips je Szene sammeln, damit die Szenen-Musik später an die richtige
+    # Timeline-Position gelegt werden kann.
+    clips_by_scene: dict[str, list[str]] = {}
     done_clips: list[str] = []
     for scene, shot in plan:
         job["current"] = f"{scene.get('title') or 'Szene'} / shot #{shot['order'] + 1}"
@@ -299,6 +305,7 @@ async def render_all(project_id: str, *, model: str | None = None) -> dict:
             _update_shot_status(project_id, scene["id"], shot["id"],
                                 {"status": "done", "video_rel": video_rel})
             done_clips.append(video_rel)
+            clips_by_scene.setdefault(scene["id"], []).append(video_rel)
             job["done_shots"] += 1
         except Exception as e:  # noqa: BLE001 - ein Shot-Fehler bricht den Batch nicht ab
             logger.exception("render shot failed: scene=%s shot=%s", scene["id"], shot["id"])
@@ -307,13 +314,16 @@ async def render_all(project_id: str, *, model: str | None = None) -> dict:
             job["failed_shots"] += 1
         _write_render_job(project_id, job)
 
-    # 3) Film aus allen fertigen Clips
+    # 3) Film aus allen fertigen Clips — Original-Ton behalten, Szenen-Musik
+    #    zeitversetzt leise darunterlegen (E7).
     if done_clips:
+        job["current"] = "Film wird zusammengeschnitten…"
+        _write_render_job(project_id, job)
         try:
-            film_job = film.start_film_job(project_id, {
-                "clips": done_clips, "resolution": "720p", "music_rel": "",
-            })
-            job["film_rel"] = film_job.get("job_id")  # Film läuft async; Job-Id zur Nachverfolgung
+            job["film_rel"] = await _director_mux.mux_screenplay_film(
+                project_id, scenes=scenes, clips_by_scene=clips_by_scene,
+                aspect=aspect, audio_model=audio_model, job=job,
+            )
         except Exception as e:  # noqa: BLE001
             logger.exception("render film-merge failed")
             job["error"] = f"Film-Merge: {e}"
