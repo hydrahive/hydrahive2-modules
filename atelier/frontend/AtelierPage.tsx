@@ -11,6 +11,7 @@ import { Gallery } from "./Gallery"
 import { VideoPanel } from "./VideoPanel"
 import { FilmPanel } from "./FilmPanel"
 import { ScreenplayPanel } from "./ScreenplayPanel"
+import { AtelierCutPanel } from "./AtelierCutPanel"
 import type { AtelierCharacter, AtelierCI, AudioLibraryItem, GalleryItem, PresetCatalog } from "./types"
 
 const DEFAULT_CI: AtelierCI = { palette: [], style_anchor: "", default_model: "", aspect_ratio: "1:1" }
@@ -178,7 +179,7 @@ export function AtelierPage() {
               audioLibrary={audioLibrary}
             />
           )}
-          {tab === "cut" && <CutPlaceholder />}
+          {tab === "cut" && <AtelierCutPanel projectId={projectId} />}
           {tab === "regie" && (
             <ScreenplayPanel projectId={projectId} characters={characters} presets={presets} />
           )}
@@ -202,18 +203,5 @@ function TabHelp({ title, text }: { title: string; text: string }) {
       </button>
       {open && <p className="mt-1 max-w-5xl text-xs leading-relaxed text-sky-100/80">{text}</p>}
     </aside>
-  )
-}
-
-function CutPlaceholder() {
-  const { t } = useTranslation("atelier")
-  return (
-    <div className="grid min-h-[18rem] place-items-center rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center">
-      <div className="max-w-xl space-y-3">
-        <div className="text-4xl">✂️</div>
-        <h2 className="text-lg font-semibold text-slate-100">{t("cut_coming_title")}</h2>
-        <p className="text-sm leading-relaxed text-slate-400">{t("cut_coming_text")}</p>
-      </div>
-    </div>
   )
 }
