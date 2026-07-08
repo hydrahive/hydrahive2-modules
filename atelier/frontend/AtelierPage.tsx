@@ -14,6 +14,25 @@ import { ScreenplayPanel } from "./ScreenplayPanel"
 import type { AtelierCharacter, AtelierCI, AudioLibraryItem, GalleryItem, PresetCatalog } from "./types"
 
 const DEFAULT_CI: AtelierCI = { palette: [], style_anchor: "", default_model: "", aspect_ratio: "1:1" }
+type AtelierTab = "characters" | "generate" | "gallery" | "clips" | "audio" | "films" | "cut" | "regie"
+
+interface TabInfo {
+  key: AtelierTab
+  labelKey: string
+  icon: string
+  helpKey: string
+}
+
+const TABS: TabInfo[] = [
+  { key: "characters", labelKey: "tab_characters", icon: "👥", helpKey: "tab_help_characters" },
+  { key: "generate", labelKey: "tab_generate", icon: "✨", helpKey: "tab_help_generate" },
+  { key: "gallery", labelKey: "tab_gallery", icon: "🖼️", helpKey: "tab_help_gallery" },
+  { key: "clips", labelKey: "tab_clips", icon: "🎬", helpKey: "tab_help_clips" },
+  { key: "audio", labelKey: "tab_audio", icon: "🎵", helpKey: "tab_help_audio" },
+  { key: "films", labelKey: "tab_films", icon: "🎞️", helpKey: "tab_help_films" },
+  { key: "cut", labelKey: "tab_cut", icon: "✂️", helpKey: "tab_help_cut" },
+  { key: "regie", labelKey: "tab_regie", icon: "🎬", helpKey: "tab_help_regie" },
+]
 
 /** Atelier — Projekt-gebundene Media-Generierung mit Charakter-Konsistenz. */
 export function AtelierPage() {
@@ -28,7 +47,7 @@ export function AtelierPage() {
   const [presets, setPresets] = useState<PresetCatalog>({})
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [videoTick, setVideoTick] = useState(0)
-  const [tab, setTab] = useState<"generate" | "gallery" | "clips" | "audio" | "regie">("generate")
+  const [tab, setTab] = useState<AtelierTab>("generate")
 
   useEffect(() => {
     projectsApi.list().then((ps) => {
@@ -67,13 +86,15 @@ export function AtelierPage() {
     setSelectedIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
   }
 
+  const activeTab = TABS.find((it) => it.key === tab) ?? TABS[1]
+
   if (projects.length === 0) {
     return <div className="p-6 text-slate-400">{t("no_projects")}</div>
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 bg-slate-900/60">
+    <div className="flex h-full min-h-0 flex-col bg-slate-950/40">
+      <header className="flex items-center gap-3 border-b border-slate-700 bg-slate-900/60 px-4 py-3">
         <h1 className="text-lg font-semibold text-slate-100">🎨 {t("title")}</h1>
         <HelpButton topic="atelier" />
         <div className="ml-auto flex items-center gap-2">
@@ -84,7 +105,7 @@ export function AtelierPage() {
               setProjectId(e.target.value)
               setSelectedIds([])
             }}
-            className="text-sm px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
+            className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-100"
           >
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -93,79 +114,105 @@ export function AtelierPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-[280px_1fr_360px] gap-4 p-4 flex-1 overflow-hidden">
-        <section className="overflow-auto">
-          <CharacterLibrary
-            projectId={projectId}
-            characters={characters}
-            selectedIds={selectedIds}
-            onToggle={toggle}
-            onChanged={() => reload(projectId)}
-            refAbsPath={refAbsPath}
-          />
-        </section>
+      <main className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+        <nav className="flex flex-wrap gap-1 rounded-xl border border-slate-800 bg-slate-900/70 p-1">
+          {TABS.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setTab(item.key)}
+              className={`min-w-[7.5rem] flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                tab === item.key
+                  ? "bg-emerald-600 text-white shadow shadow-emerald-950/40"
+                  : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+              }`}
+            >
+              <span className="mr-1.5">{item.icon}</span>
+              {t(item.labelKey)}
+            </button>
+          ))}
+        </nav>
 
-        <section className="flex flex-col overflow-hidden">
-          <div className="mb-3 flex gap-1 rounded-lg bg-slate-800/60 p-1">
-            {([
-              ["generate", `✨ ${t("tab_generate")}`],
-              ["gallery", `🖼️ ${t("tab_gallery")}`],
-              ["clips", `🎬 ${t("tab_clips")}`],
-              ["audio", `🎵 ${t("tab_audio")}`],
-              ["regie", `🎬 ${t("tab_regie")}`],
-            ] as const).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  tab === key ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        <TabHelp title={`${activeTab.icon} ${t(activeTab.labelKey)}`} text={t(activeTab.helpKey)} />
 
-          <div className="flex-1 overflow-auto">
-            {tab === "generate" && (
-              <GeneratePanel
-                projectId={projectId}
-                ci={ci}
-                characters={characters}
-                selectedIds={selectedIds}
-                presets={presets}
-                onGenerated={() => { reload(projectId); setTab("gallery") }}
-              />
-            )}
-            {tab === "gallery" && (
-              <Gallery
-                projectId={projectId}
-                items={gallery}
-                characters={characters}
-                onPromoted={() => reload(projectId)}
-                onVideoStarted={() => { setVideoTick((n) => n + 1); setTab("clips") }}
-              />
-            )}
-            {tab === "clips" && (
-              <VideoPanel key={`${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
-            )}
-            {tab === "audio" && (
-              <AudioPanel projectId={projectId} refAbsPath={refAbsPath} />
-            )}
-            {tab === "regie" && (
-              <ScreenplayPanel projectId={projectId} characters={characters} presets={presets} />
-            )}
-          </div>
+        <section className="min-h-0 flex-1 overflow-auto rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+          {tab === "characters" && (
+            <CharacterLibrary
+              projectId={projectId}
+              characters={characters}
+              selectedIds={selectedIds}
+              onToggle={toggle}
+              onChanged={() => reload(projectId)}
+              refAbsPath={refAbsPath}
+            />
+          )}
+          {tab === "generate" && (
+            <GeneratePanel
+              projectId={projectId}
+              ci={ci}
+              characters={characters}
+              selectedIds={selectedIds}
+              presets={presets}
+              onGenerated={() => { reload(projectId); setTab("gallery") }}
+            />
+          )}
+          {tab === "gallery" && (
+            <Gallery
+              projectId={projectId}
+              items={gallery}
+              characters={characters}
+              onPromoted={() => reload(projectId)}
+              onVideoStarted={() => { setVideoTick((n) => n + 1); setTab("clips") }}
+            />
+          )}
+          {tab === "clips" && (
+            <VideoPanel key={`${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
+          )}
+          {tab === "audio" && (
+            <AudioPanel projectId={projectId} refAbsPath={refAbsPath} />
+          )}
+          {tab === "films" && (
+            <FilmPanel
+              key={`film-${projectId}-${videoTick}`}
+              projectId={projectId}
+              refAbsPath={refAbsPath}
+              audioLibrary={audioLibrary}
+            />
+          )}
+          {tab === "cut" && <CutPlaceholder />}
+          {tab === "regie" && (
+            <ScreenplayPanel projectId={projectId} characters={characters} presets={presets} />
+          )}
         </section>
+      </main>
+    </div>
+  )
+}
 
-        <section className="overflow-auto">
-          <FilmPanel
-            key={`film-${projectId}-${videoTick}`}
-            projectId={projectId}
-            refAbsPath={refAbsPath}
-            audioLibrary={audioLibrary}
-          />
-        </section>
+function TabHelp({ title, text }: { title: string; text: string }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <aside className="rounded-xl border border-sky-500/20 bg-sky-500/10 p-3 text-sm text-sky-100">
+      <button
+        type="button"
+        onClick={() => setOpen((cur) => !cur)}
+        className="flex w-full items-center justify-between gap-3 text-left"
+      >
+        <span className="font-semibold">{title}</span>
+        <span className="text-xs text-sky-300">{open ? "–" : "+"}</span>
+      </button>
+      {open && <p className="mt-1 max-w-5xl text-xs leading-relaxed text-sky-100/80">{text}</p>}
+    </aside>
+  )
+}
+
+function CutPlaceholder() {
+  const { t } = useTranslation("atelier")
+  return (
+    <div className="grid min-h-[18rem] place-items-center rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center">
+      <div className="max-w-xl space-y-3">
+        <div className="text-4xl">✂️</div>
+        <h2 className="text-lg font-semibold text-slate-100">{t("cut_coming_title")}</h2>
+        <p className="text-sm leading-relaxed text-slate-400">{t("cut_coming_text")}</p>
       </div>
     </div>
   )
