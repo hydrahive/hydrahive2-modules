@@ -15,9 +15,13 @@ from __future__ import annotations
 from .audio_routes import router as audio_router
 from .media_routes import router as media_router
 from .routes import router
+from .tools_read import READ_TOOLS
 
 
 def register(ctx) -> None:
     ctx.register_router(router)
     ctx.register_router(media_router)
     ctx.register_router(audio_router)
+    # Buddy-Lese-Tools (Ebene A): der Chat-Agent kann das Atelier „sehen".
+    for tool in READ_TOOLS:
+        ctx.register_tool(tool)
