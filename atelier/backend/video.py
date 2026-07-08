@@ -73,12 +73,14 @@ def start_video_job(project_id: str, req: dict) -> dict:
     """Legt einen Video-Job an und startet den Hintergrund-Task. Gibt den Job zurück."""
     job_id = storage.new_id()
     source_rel = str(req.get("source_rel") or "")
+    end_source_rel = str(req.get("end_source_rel") or "")
     model = str(req.get("model") or "").strip() or _DEFAULT_MODEL
     duration = _clamp_duration(model, int(req.get("duration") or 5))
     job = {
         "job_id": job_id,
         "status": "pending",
         "source_rel": source_rel,
+        "end_source_rel": end_source_rel,
         "prompt": str(req.get("prompt") or "")[:2000],
         "model": model,
         "duration": duration,
@@ -95,6 +97,7 @@ def start_video_job(project_id: str, req: dict) -> dict:
 async def _submit_image_to_video(
     *, prompt: str, model: str, key: str, duration: int,
     aspect_ratio: str, image_url: str | None,
+    end_image_url: str | None = None,
 ) -> str:
     """Startet einen Video-Job. Gibt job_id zurück.
 
@@ -102,6 +105,10 @@ async def _submit_image_to_video(
     das ist das von OpenRouter erwartete Image-to-Video-Format. (Das flache
     ``image_url`` aus dem Core-Tool wird von der Video-API ignoriert → das Modell
     macht stattdessen Text-to-Video, daher drifteten Figur+Szene komplett weg.)
+
+    Optional wird ein Endbild als zweiter ``frame_images``-Eintrag mit
+    ``frame_type=last_frame`` mitgeschickt — nur bei Modellen sinnvoll, die
+    last_frame unterstützen (kling v3, veo 3.1, seedance …).
     """
     payload: dict = {
         "model": model,
@@ -110,11 +117,18 @@ async def _submit_image_to_video(
         "aspect_ratio": aspect_ratio,
     }
     if image_url:
-        payload["frame_images"] = [{
+        frames = [{
             "type": "image_url",
             "image_url": {"url": image_url},
             "frame_type": "first_frame",
         }]
+        if end_image_url:
+            frames.append({
+                "type": "image_url",
+                "image_url": {"url": end_image_url},
+                "frame_type": "last_frame",
+            })
+        payload["frame_images"] = frames
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
@@ -135,24 +149,27 @@ async def _submit_image_to_video(
 
 async def render_clip(
     project_id: str, *, source_rel: str, prompt: str, model: str,
-    duration: int = 5, aspect_ratio: str = "16:9",
+    duration: int = 5, aspect_ratio: str = "16:9", end_source_rel: str = "",
 ) -> str:
     """Rendert EINEN Clip synchron (await-bar): submit → poll → download.
 
     Gibt den ``videos/<name>``-rel zurück. Wirft bei Fehler (Aufrufer behandelt).
     Ohne eigene Job-Datei — für Orchestrierung (E5 Batch-Render) wiederverwendbar.
     Teilt sich das Semaphor mit den normalen Video-Jobs (Rate-Limit-Schutz).
+
+    ``end_source_rel`` (optional) hängt ein Endbild als last_frame an.
     """
     async with _SEM:
         key = openrouter_key()
         if not key:
             raise RuntimeError("Kein OpenRouter-API-Key konfiguriert.")
         image_url = _source_to_data_url(project_id, source_rel) if source_rel else None
+        end_image_url = _source_to_data_url(project_id, end_source_rel) if end_source_rel else None
         model = model.strip() or _DEFAULT_MODEL
         remote_id = await _submit_image_to_video(
             prompt=prompt, model=model, key=key,
             duration=_clamp_duration(model, duration), aspect_ratio=aspect_ratio,
-            image_url=image_url,
+            image_url=image_url, end_image_url=end_image_url,
         )
         url = await _poll_until_done(remote_id, key=key, duration=duration)
         path = await download_video(url, storage.videos_dir(project_id), key=key)
@@ -167,6 +184,7 @@ async def _run_job(project_id: str, job: dict) -> None:
         rel = await render_clip(
             project_id, source_rel=job["source_rel"], prompt=job["prompt"],
             model=job["model"], duration=job["duration"], aspect_ratio=job["aspect_ratio"],
+            end_source_rel=job.get("end_source_rel") or "",
         )
         job["status"] = "completed"
         job["video_rel"] = rel

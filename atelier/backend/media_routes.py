@@ -30,6 +30,7 @@ def _guard(user: str, project_id: str) -> None:
 
 class VideoIn(BaseModel):
     source_rel: str = Field(default="", max_length=300)  # leer = Text-to-Video
+    end_source_rel: str = Field(default="", max_length=300)  # optionales Endbild (last_frame)
     prompt: str = Field(default="", max_length=2000)
     model: str = Field(default="", max_length=200)
     duration: int = Field(default=5, ge=1, le=20)
@@ -78,6 +79,14 @@ async def create_video(project_id: str, body: VideoIn, auth: Auth) -> dict:
     elif not body.prompt.strip():
         # Ohne Bild MUSS ein Prompt da sein (sonst hat das Modell keine Vorlage).
         raise coded(status.HTTP_400_BAD_REQUEST, "prompt_required")
+    # Endbild (last_frame) nur zulassen, wenn es auch ein Startbild gibt und die
+    # Datei existiert — sonst ignorieren.
+    if body.end_source_rel:
+        if not body.source_rel:
+            raise coded(status.HTTP_400_BAD_REQUEST, "end_image_needs_start")
+        end = storage.safe_under(storage.atelier_root(project_id), body.end_source_rel)
+        if end is None or not end.is_file():
+            raise coded(status.HTTP_404_NOT_FOUND, "end_image_not_found")
     return video.start_video_job(project_id, body.model_dump())
 
 

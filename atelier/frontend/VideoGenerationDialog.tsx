@@ -36,6 +36,8 @@ export function VideoGenerationDialog({ projectId, source, onClose, onStarted, i
   const [model, setModel] = useState(initial?.model ?? "")
   const [duration, setDuration] = useState(initial?.duration ?? FALLBACK_DURATIONS[0])
   const [aspect, setAspect] = useState(initial?.aspect_ratio ?? FALLBACK_ASPECTS[0])
+  const [gallery, setGallery] = useState<GalleryItem[]>([])
+  const [endRel, setEndRel] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -57,9 +59,21 @@ export function VideoGenerationDialog({ projectId, source, onClose, onStarted, i
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Galerie nur laden, wenn ein Startbild existiert (Endbild braucht ein Startbild).
+  const effectiveSourceRel = source?.rel || initial?.source_rel || ""
+  useEffect(() => {
+    if (!effectiveSourceRel) return
+    atelierApi.gallery(projectId)
+      .then((items) => setGallery(items.filter((it) => it.rel !== effectiveSourceRel)))
+      .catch(() => setGallery([]))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, effectiveSourceRel])
+
   const current = models.find((m) => m.id === model)
   const durations = durationsOf(current)
   const aspects = aspectsOf(current)
+  const supportsLastFrame = (current?.frame_images ?? []).includes("last_frame")
+  const showEndField = Boolean(effectiveSourceRel) && supportsLastFrame
 
   function pickModel(m: string) {
     setModel(m)
@@ -70,15 +84,13 @@ export function VideoGenerationDialog({ projectId, source, onClose, onStarted, i
     if (!allowedA.includes(aspect)) setAspect(allowedA[0])
   }
 
-  // Startbild/Referenz: aus dem angeklickten Bild ODER (beim Wiederholen) aus initial.
-  const effectiveSourceRel = source?.rel || initial?.source_rel || ""
-
   async function start() {
     setBusy(true)
     setError(null)
     try {
       await atelierApi.createVideo(projectId, {
         source_rel: effectiveSourceRel,
+        end_source_rel: showEndField ? endRel : "",
         prompt,
         model,
         duration,
@@ -162,6 +174,30 @@ export function VideoGenerationDialog({ projectId, source, onClose, onStarted, i
           </select>
         </label>
         {source && <p className="text-[10px] text-slate-500">{t("video_aspect_hint")}</p>}
+
+        {showEndField && (
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
+            {t("video_end_image")}
+            <select
+              value={endRel}
+              onChange={(e) => setEndRel(e.target.value)}
+              className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
+            >
+              <option value="">{t("video_end_image_none")}</option>
+              {gallery.map((it) => (
+                <option key={it.rel} value={it.rel}>{it.name}</option>
+              ))}
+            </select>
+            {endRel && (
+              <img
+                src={fileUrl(gallery.find((it) => it.rel === endRel)?.path || "")}
+                alt=""
+                className="mt-1 w-full rounded max-h-32 object-contain bg-black/30"
+              />
+            )}
+            <span className="text-[10px] text-slate-500">{t("video_end_image_hint")}</span>
+          </label>
+        )}
 
         <p className="text-[10px] text-amber-400">{t("video_cost_hint")}</p>
         {error && <div className="text-xs text-red-400 bg-red-500/10 rounded px-2 py-1">{error}</div>}

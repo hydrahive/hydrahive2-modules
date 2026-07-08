@@ -55,6 +55,7 @@ export interface VideoJob {
 
 export interface VideoRequest {
   source_rel: string
+  end_source_rel?: string
   prompt: string
   model?: string
   duration?: number
@@ -168,6 +169,9 @@ export interface MediaModel {
   // Nur bei Video-Modellen befüllt — pro Modell erlaubte Werte (sonst HTTP 400).
   durations?: number[]
   aspect_ratios?: string[]
+  // Unterstützte Frame-Typen (z.B. "first_frame", "last_frame") — steuert, ob
+  // das Endbild-Feld angeboten wird.
+  frame_images?: string[]
 }
 
 export interface MediaModelList {
