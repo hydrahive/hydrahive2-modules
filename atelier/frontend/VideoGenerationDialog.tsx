@@ -176,27 +176,38 @@ export function VideoGenerationDialog({ projectId, source, onClose, onStarted, i
         {source && <p className="text-[10px] text-slate-500">{t("video_aspect_hint")}</p>}
 
         {showEndField && (
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <div className="flex flex-col gap-1 text-xs text-slate-400">
             {t("video_end_image")}
-            <select
-              value={endRel}
-              onChange={(e) => setEndRel(e.target.value)}
-              className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
-            >
-              <option value="">{t("video_end_image_none")}</option>
+            <div className="grid grid-cols-4 gap-1.5 max-h-40 overflow-y-auto rounded bg-slate-800/60 border border-slate-700 p-1.5">
+              <button
+                type="button"
+                onClick={() => setEndRel("")}
+                className={`aspect-square rounded grid place-items-center text-[9px] leading-tight text-center px-0.5 border ${
+                  endRel === "" ? "border-emerald-500 bg-emerald-500/15 text-emerald-200" : "border-slate-600 bg-slate-900/60 text-slate-400 hover:border-slate-500"
+                }`}
+                title={t("video_end_image_none")}
+              >
+                {t("video_end_image_none")}
+              </button>
               {gallery.map((it) => (
-                <option key={it.rel} value={it.rel}>{it.name}</option>
+                <button
+                  type="button"
+                  key={it.rel}
+                  onClick={() => setEndRel(it.rel)}
+                  title={it.prompt || it.name}
+                  className={`relative aspect-square overflow-hidden rounded border ${
+                    endRel === it.rel ? "border-emerald-500 ring-1 ring-emerald-500" : "border-slate-600 hover:border-slate-400"
+                  }`}
+                >
+                  <img src={fileUrl(it.path)} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  {endRel === it.rel && (
+                    <span className="absolute right-0.5 top-0.5 rounded-full bg-emerald-500 px-1 text-[8px] text-white">✓</span>
+                  )}
+                </button>
               ))}
-            </select>
-            {endRel && (
-              <img
-                src={fileUrl(gallery.find((it) => it.rel === endRel)?.path || "")}
-                alt=""
-                className="mt-1 w-full rounded max-h-32 object-contain bg-black/30"
-              />
-            )}
+            </div>
             <span className="text-[10px] text-slate-500">{t("video_end_image_hint")}</span>
-          </label>
+          </div>
         )}
 
         <p className="text-[10px] text-amber-400">{t("video_cost_hint")}</p>
