@@ -165,7 +165,10 @@ def remove_reference(project_id: str, char_id: str, rel_path: str) -> dict | Non
     _write_json(
         storage.characters_dir(project_id) / char_id / "character.json", char
     )
-    ref = storage.safe_under(storage.atelier_root(project_id), rel_path)
+    # Datei nur löschen, wenn sie tatsächlich im characters/-Baum liegt —
+    # promotete Galerie-Bilder (images/…) sind eigenständige Assets und dürfen
+    # beim Entfernen der Referenz nicht mitgelöscht werden.
+    ref = storage.safe_under(storage.characters_dir(project_id), rel_path.removeprefix("characters/"))
     if ref is not None and ref.is_file():
         ref.unlink(missing_ok=True)
     return char

@@ -222,14 +222,14 @@ async def extract_continuation_frame(project_id: str, video_rel: str) -> str | N
     src = storage.safe_under(storage.atelier_root(project_id), video_rel)
     if src is None or not src.is_file():
         return None
-    rel = storage.save_image_bytes(
-        project_id,
-        b"",
-        ext="jpg",
-        prompt="Fortsetzung letzter Frame",
-    )
-    tmp = storage.atelier_root(project_id) / rel
-    await _ffmpeg.extract_last_frame(src, tmp)
+    name = storage.make_media_name("Fortsetzung letzter Frame", ext="jpg")
+    out = storage.images_dir(project_id) / name
+    try:
+        await _ffmpeg.extract_last_frame(src, out)
+    except Exception:
+        out.unlink(missing_ok=True)
+        raise
+    rel = f"images/{name}"
     write_image_sidecar(project_id, rel, {"prompt": "(Fortsetzung – letzter Frame)", "scene": ""})
     return rel
 
