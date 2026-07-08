@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
-import { VideoDialog } from "./VideoDialog"
+import { VideoGenerationDialog } from "./VideoGenerationDialog"
 import { PromptView } from "./PromptView"
 import type { AtelierCharacter, GalleryItem } from "./types"
 
@@ -21,7 +21,7 @@ const GRID_MIN: Record<Exclude<ViewSize, "list">, string> = {
 }
 
 /** Galerie der generierten Bilder + "als Referenz übernehmen" + "zu Video". */
-export function Gallery({ projectId, items, characters, onPromoted, onVideoStarted }: Props) {
+export function ImageGalleryPanel({ projectId, items, characters, onPromoted, onVideoStarted }: Props) {
   const { t } = useTranslation("atelier")
   const [zoom, setZoom] = useState<GalleryItem | null>(null)
   const [promoteFor, setPromoteFor] = useState<GalleryItem | null>(null)
@@ -208,7 +208,7 @@ export function Gallery({ projectId, items, characters, onPromoted, onVideoStart
       )}
 
       {videoFor && (
-        <VideoDialog
+        <VideoGenerationDialog
           projectId={projectId}
           source={videoFor}
           onClose={() => setVideoFor(null)}

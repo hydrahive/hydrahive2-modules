@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
-import { VideoDialog, type VideoInitial } from "./VideoDialog"
+import { VideoGenerationDialog, type VideoInitial } from "./VideoGenerationDialog"
 import { PromptView } from "./PromptView"
 import type { GalleryItem, VideoJob } from "./types"
 
@@ -13,7 +13,7 @@ interface Props {
 const ACTIVE = new Set(["pending", "processing"])
 
 /** Video-Jobs des Projekts: kompakte Thumbnail-Übersicht + Overlay-Player. */
-export function VideoPanel({ projectId, refAbsPath }: Props) {
+export function ClipLibraryPanel({ projectId, refAbsPath }: Props) {
   const { t } = useTranslation("atelier")
   const [jobs, setJobs] = useState<VideoJob[]>([])
   const [textDialog, setTextDialog] = useState(false)
@@ -49,7 +49,7 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
     setContinuing(job.job_id)
     try {
       const res = await atelierApi.continueFrame(projectId, job.video_rel)
-      // Minimal-GalleryItem aus der Antwort (VideoDialog nutzt nur rel + path).
+      // Minimal-GalleryItem aus der Antwort (VideoGenerationDialog nutzt nur rel + path).
       setContinueSource({
         name: "", path: res.path, rel: res.rel,
         created_at: null, prompt: null, seed: null, model: null, mtime: 0,
@@ -83,7 +83,7 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
       </div>
 
       {textDialog && (
-        <VideoDialog
+        <VideoGenerationDialog
           projectId={projectId}
           source={null}
           onClose={() => setTextDialog(false)}
@@ -111,7 +111,7 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
       </div>
 
       {continueSource && (
-        <VideoDialog
+        <VideoGenerationDialog
           projectId={projectId}
           source={continueSource}
           onClose={() => setContinueSource(null)}
@@ -123,7 +123,7 @@ export function VideoPanel({ projectId, refAbsPath }: Props) {
       )}
 
       {repeat && (
-        <VideoDialog
+        <VideoGenerationDialog
           projectId={projectId}
           source={null}
           initial={repeat}

@@ -13,7 +13,7 @@ const ACTIVE = new Set(["pending", "processing"])
 
 /** Film-Schnitt: fertige Clips in Reihenfolge wählen → rendern → Player.
  *  Pollt alle 5s, solange ein Render-Job läuft. */
-export function FilmPanel({ projectId, refAbsPath, audioLibrary }: Props) {
+export function FilmComposerPanel({ projectId, refAbsPath, audioLibrary }: Props) {
   const { t } = useTranslation("atelier")
   const [videos, setVideos] = useState<VideoJob[]>([])
   const [order, setOrder] = useState<string[]>([])

@@ -7,10 +7,10 @@ import { atelierApi } from "./api"
 import { AudioPanel } from "./AudioPanel"
 import { CharacterLibrary } from "./CharacterLibrary"
 import { GeneratePanel } from "./GeneratePanel"
-import { Gallery } from "./Gallery"
-import { VideoPanel } from "./VideoPanel"
-import { FilmPanel } from "./FilmPanel"
-import { ScreenplayPanel } from "./ScreenplayPanel"
+import { ImageGalleryPanel } from "./ImageGalleryPanel"
+import { ClipLibraryPanel } from "./ClipLibraryPanel"
+import { FilmComposerPanel } from "./FilmComposerPanel"
+import { DirectorPanel } from "./DirectorPanel"
 import { AtelierCutPanel } from "./AtelierCutPanel"
 import type { AtelierCharacter, AtelierCI, AudioLibraryItem, GalleryItem, PresetCatalog } from "./types"
 
@@ -157,7 +157,7 @@ export function AtelierPage() {
             />
           )}
           {tab === "gallery" && (
-            <Gallery
+            <ImageGalleryPanel
               projectId={projectId}
               items={gallery}
               characters={characters}
@@ -166,13 +166,13 @@ export function AtelierPage() {
             />
           )}
           {tab === "clips" && (
-            <VideoPanel key={`${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
+            <ClipLibraryPanel key={`${projectId}-${videoTick}`} projectId={projectId} refAbsPath={refAbsPath} />
           )}
           {tab === "audio" && (
             <AudioPanel projectId={projectId} refAbsPath={refAbsPath} />
           )}
           {tab === "films" && (
-            <FilmPanel
+            <FilmComposerPanel
               key={`film-${projectId}-${videoTick}`}
               projectId={projectId}
               refAbsPath={refAbsPath}
@@ -181,7 +181,7 @@ export function AtelierPage() {
           )}
           {tab === "cut" && <AtelierCutPanel projectId={projectId} />}
           {tab === "regie" && (
-            <ScreenplayPanel projectId={projectId} characters={characters} presets={presets} />
+            <DirectorPanel projectId={projectId} characters={characters} presets={presets} />
           )}
         </section>
       </main>

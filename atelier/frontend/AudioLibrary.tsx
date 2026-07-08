@@ -10,7 +10,7 @@ interface Props {
 }
 
 /** Bibliothek der generierten Tracks: Player + Prompt + Löschen.
- *  refAbsPath (root + rel) kommt von AudioPanel, wie bei Gallery/VideoPanel. */
+ *  refAbsPath (root + rel) kommt von AudioPanel, wie bei ImageGalleryPanel/ClipLibraryPanel. */
 export function AudioLibrary({ projectId, items, refAbsPath, onChanged }: Props) {
   const { t } = useTranslation("atelier")
 

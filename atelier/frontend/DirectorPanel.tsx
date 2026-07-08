@@ -25,7 +25,7 @@ const EMPTY_SCENE: SceneInput = {
 /** Regie-Tab: Drehbuch-Kopf + Szenen-Liste (Beschreibung, Charaktere, Dialoge,
  *  Musik, Kamera-Presets) mit Reorder. Reiner Planer (E1-Backend) — noch kein
  *  Regieagent / Render (folgt in E4/E5). */
-export function ScreenplayPanel({ projectId, characters, presets }: Props) {
+export function DirectorPanel({ projectId, characters, presets }: Props) {
   const { t } = useTranslation("atelier")
   const [head, setHead] = useState<Screenplay | null>(null)
   const [scenes, setScenes] = useState<Scene[]>([])

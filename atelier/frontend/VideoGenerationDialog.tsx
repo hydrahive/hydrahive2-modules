@@ -29,7 +29,7 @@ const aspectsOf = (m?: MediaModel) =>
   (m?.aspect_ratios && m.aspect_ratios.length ? m.aspect_ratios : FALLBACK_ASPECTS)
 
 /** Dialog: aus einem Galerie-Bild ein Video machen (Image-to-Video). */
-export function VideoDialog({ projectId, source, onClose, onStarted, initial }: Props) {
+export function VideoGenerationDialog({ projectId, source, onClose, onStarted, initial }: Props) {
   const { t } = useTranslation("atelier")
   const [models, setModels] = useState<MediaModel[]>([])
   const [prompt, setPrompt] = useState(initial?.prompt ?? "")
