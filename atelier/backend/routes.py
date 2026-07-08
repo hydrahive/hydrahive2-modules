@@ -116,6 +116,19 @@ async def upload_reference(project_id: str, char_id: str, file: UploadFile, auth
     return char
 
 
+class DeleteReferenceIn(BaseModel):
+    rel: str = Field(max_length=300)
+
+
+@router.post("/projects/{project_id}/characters/{char_id}/references/delete")
+def delete_reference(project_id: str, char_id: str, body: DeleteReferenceIn, auth: Auth) -> dict:
+    _guard(auth[0], project_id)
+    char = characters.remove_reference(project_id, char_id, body.rel)
+    if char is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "reference_not_found")
+    return char
+
+
 # ---- Galerie ----------------------------------------------------------------
 
 @router.get("/projects/{project_id}/gallery")

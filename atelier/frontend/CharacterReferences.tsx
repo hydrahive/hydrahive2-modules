@@ -33,6 +33,20 @@ export function CharacterReferences({ projectId, character, onChanged, refAbsPat
     }
   }
 
+  async function deleteRef(rel: string) {
+    if (!window.confirm(t("delete_reference_confirm"))) return
+    setBusy(true)
+    setError(null)
+    try {
+      await atelierApi.deleteReference(projectId, character.id, rel)
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const refs = character.references ?? []
 
   return (
@@ -60,15 +74,25 @@ export function CharacterReferences({ projectId, character, onChanged, refAbsPat
       {refs.length > 0 && (
         <div className="flex gap-1.5 flex-wrap">
           {refs.map((rel) => (
-            <img
-              key={rel}
-              src={fileUrl(refAbsPath(rel))}
-              alt=""
-              title={refs.indexOf(rel) >= 3 ? t("reference_unused") : undefined}
-              className={`h-12 w-12 rounded object-cover border ${
-                refs.indexOf(rel) >= 3 ? "border-slate-700 opacity-40" : "border-emerald-600"
-              }`}
-            />
+            <div key={rel} className="group relative h-12 w-12">
+              <img
+                src={fileUrl(refAbsPath(rel))}
+                alt=""
+                title={refs.indexOf(rel) >= 3 ? t("reference_unused") : undefined}
+                className={`h-12 w-12 rounded object-cover border ${
+                  refs.indexOf(rel) >= 3 ? "border-slate-700 opacity-40" : "border-emerald-600"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => deleteRef(rel)}
+                disabled={busy}
+                title={t("delete_reference")}
+                className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full border border-red-400/60 bg-red-600 text-[11px] leading-none text-white opacity-0 shadow transition-opacity group-hover:opacity-100 focus:opacity-100 disabled:opacity-40"
+              >
+                ×
+              </button>
+            </div>
           ))}
         </div>
       )}

@@ -93,6 +93,8 @@ export const atelierApi = {
     form.append("file", file)
     return api.postForm<AtelierCharacter>(`${BASE}/projects/${pid}/characters/${charId}/upload`, form)
   },
+  deleteReference: (pid: string, charId: string, rel: string): Promise<AtelierCharacter> =>
+    api.post<AtelierCharacter>(`${BASE}/projects/${pid}/characters/${charId}/references/delete`, { rel }),
 
   // ---- Regie (Screenplay) ----
   getScreenplay: (pid: string): Promise<Screenplay> =>

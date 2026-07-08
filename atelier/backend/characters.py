@@ -151,6 +151,26 @@ def add_reference(project_id: str, char_id: str, rel_path: str) -> dict | None:
     return char
 
 
+def remove_reference(project_id: str, char_id: str, rel_path: str) -> dict | None:
+    """Entfernt ein Referenzbild aus einer Figur und löscht die Datei, falls sie
+    innerhalb des Atelier-Workspace-Baums liegt. Gibt None bei unbekannter Figur
+    oder wenn die Referenz nicht an der Figur hängt."""
+    char = get_character(project_id, char_id)
+    if char is None:
+        return None
+    refs = list(char.get("references") or [])
+    if rel_path not in refs:
+        return None
+    char["references"] = [r for r in refs if r != rel_path]
+    _write_json(
+        storage.characters_dir(project_id) / char_id / "character.json", char
+    )
+    ref = storage.safe_under(storage.atelier_root(project_id), rel_path)
+    if ref is not None and ref.is_file():
+        ref.unlink(missing_ok=True)
+    return char
+
+
 def delete_character(project_id: str, char_id: str) -> bool:
     if not storage.is_valid_id(char_id):
         return False
