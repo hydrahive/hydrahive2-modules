@@ -21,11 +21,20 @@ def file_to_data_url(path) -> str:
     return f"data:{mime or 'image/png'};base64,{b64}"
 
 
+def _gallery_dirs(project_id: str) -> list[tuple[str, object]]:
+    """Neue Bildablage zuerst, Legacy-output danach."""
+    return [("images", storage.images_dir(project_id)), ("output", storage.output_dir(project_id))]
+
+
+def _is_gallery_image_path(project_id: str, img) -> bool:
+    return any(img.parent == d for _, d in _gallery_dirs(project_id))
+
+
 def delete_gallery_image(project_id: str, rel: str) -> bool:
-    """Löscht ein generiertes Bild + sein Sidecar. True bei Erfolg."""
+    """Löscht ein generiertes Bild + Sidecar aus images/ oder Legacy-output/."""
     root = storage.atelier_root(project_id)
     img = storage.safe_under(root, rel)
-    if img is None or not img.is_file() or img.parent != storage.output_dir(project_id):
+    if img is None or not img.is_file() or not _is_gallery_image_path(project_id, img):
         return False
     img.unlink(missing_ok=True)
     img.with_suffix(img.suffix + ".json").unlink(missing_ok=True)
@@ -33,29 +42,32 @@ def delete_gallery_image(project_id: str, rel: str) -> bool:
 
 
 def scan_gallery(project_id: str) -> list[dict]:
-    """Generierte Bilder des Projekts (neueste zuerst) + Sidecar-Metadaten."""
-    out_dir = storage.output_dir(project_id)
+    """Generierte Bilder des Projekts (neueste zuerst) + Sidecar-Metadaten.
+
+    Liest neue Bilder aus images/ und alte Bestände weiterhin aus output/.
+    """
     items: list[dict] = []
-    for img in out_dir.iterdir():
-        if img.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
-            continue
-        meta_path = img.with_suffix(img.suffix + ".json")
-        meta = {}
-        if meta_path.is_file():
-            try:
-                meta = json.loads(meta_path.read_text("utf-8"))
-            except (json.JSONDecodeError, OSError):
-                meta = {}
-        items.append({
-            "name": img.name,
-            "path": str(img),
-            "rel": f"output/{img.name}",
-            "created_at": meta.get("created_at"),
-            "prompt": meta.get("prompt"),
-            "seed": meta.get("seed"),
-            "model": meta.get("model"),
-            "mtime": img.stat().st_mtime,
-        })
+    for rel_dir, out_dir in _gallery_dirs(project_id):
+        for img in out_dir.iterdir():
+            if img.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
+                continue
+            meta_path = img.with_suffix(img.suffix + ".json")
+            meta = {}
+            if meta_path.is_file():
+                try:
+                    meta = json.loads(meta_path.read_text("utf-8"))
+                except (json.JSONDecodeError, OSError):
+                    meta = {}
+            items.append({
+                "name": img.name,
+                "path": str(img),
+                "rel": f"{rel_dir}/{img.name}",
+                "created_at": meta.get("created_at"),
+                "prompt": meta.get("prompt"),
+                "seed": meta.get("seed"),
+                "model": meta.get("model"),
+                "mtime": img.stat().st_mtime,
+            })
     items.sort(key=lambda i: i["mtime"], reverse=True)
     return items
 
@@ -100,8 +112,9 @@ def generate_for_project(project_id: str, req: dict) -> dict:
     )
 
     ext = _sniff_ext(raw)
-    name = storage.save_image_bytes(project_id, raw, ext=ext)
     created = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    rel = storage.save_image_bytes(project_id, raw, ext=ext, prompt=req.get("scene") or prompt)
+    name = rel.rsplit("/", 1)[-1]
     meta = {
         "prompt": prompt,
         "scene": req.get("scene") or "",
@@ -114,13 +127,12 @@ def generate_for_project(project_id: str, req: dict) -> dict:
         "style": style_key,
         "created_at": created,
     }
-    _write_sidecar(project_id, name, meta)
+    _write_sidecar(project_id, rel, meta)
 
-    rel = f"output/{name}"
     return {
         "name": name,
         "rel": rel,
-        "path": str(storage.output_dir(project_id) / name),
+        "path": str(storage.atelier_root(project_id) / rel),
         "prompt": prompt,
         "seed": seed,
         "model": model,
@@ -165,15 +177,19 @@ def _collect_reference_urls(project_id: str, chosen: list[dict]) -> list[str]:
     return urls
 
 
-def _write_sidecar(project_id: str, name: str, meta: dict) -> None:
-    path = storage.output_dir(project_id) / f"{name}.json"
-    path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), "utf-8")
+def _write_sidecar(project_id: str, rel: str, meta: dict) -> None:
+    path = storage.safe_under(storage.atelier_root(project_id), rel)
+    if path is None:
+        raise ValueError("invalid_gallery_path")
+    path.with_suffix(path.suffix + ".json").write_text(
+        json.dumps(meta, ensure_ascii=False, indent=2), "utf-8"
+    )
 
 
-def write_image_sidecar(project_id: str, name: str, meta: dict) -> None:
+def write_image_sidecar(project_id: str, rel: str, meta: dict) -> None:
     """Öffentlicher Wrapper: Sidecar für ein Galerie-Bild (z.B. Fortsetzungs-Frame)."""
     meta.setdefault("created_at", datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
-    _write_sidecar(project_id, name, meta)
+    _write_sidecar(project_id, rel, meta)
 
 
 def _sniff_ext(raw: bytes) -> str:

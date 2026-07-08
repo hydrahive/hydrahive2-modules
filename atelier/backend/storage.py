@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from hydrahive.projects._config_io import list_for_user
@@ -64,7 +65,15 @@ def characters_dir(project_id: str) -> Path:
     return d
 
 
+def images_dir(project_id: str) -> Path:
+    """Neue Bildablage für generierte Bilder: ``atelier/images``."""
+    d = atelier_root(project_id) / "images"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def output_dir(project_id: str) -> Path:
+    """Legacy-Bildablage (vor Atelier v2). Nur noch lesen/Kompatibilität."""
     d = atelier_root(project_id) / "output"
     d.mkdir(parents=True, exist_ok=True)
     return d
@@ -134,11 +143,25 @@ def safe_under(root: Path, rel: str) -> Path | None:
     return candidate
 
 
-def save_image_bytes(project_id: str, raw: bytes, *, ext: str = "png") -> str:
-    """Schreibt Bytes nach output/ unter UUID-Namen. Gibt den Dateinamen zurück."""
-    name = f"{new_id()}.{ext.lstrip('.').lower()}"
-    (output_dir(project_id) / name).write_bytes(raw)
-    return name
+def _slugify(value: str, *, fallback: str = "image") -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", (value or "").lower()).strip("_")
+    slug = re.sub(r"_+", "_", slug)[:48].strip("_")
+    return slug or fallback
+
+
+def make_media_name(prompt: str = "", *, ext: str = "png", prefix: str = "image") -> str:
+    """Lesbarer Dateiname: YYYYMMDD_slug_shortid.ext."""
+    day = datetime.now(timezone.utc).strftime("%Y%m%d")
+    slug = _slugify(prompt, fallback=prefix)
+    short = new_id()[:8]
+    return f"{day}_{slug}_{short}.{ext.lstrip('.').lower()}"
+
+
+def save_image_bytes(project_id: str, raw: bytes, *, ext: str = "png", prompt: str = "") -> str:
+    """Schreibt Bytes nach images/ mit lesbarem Namen. Gibt rel-Pfad zurück."""
+    name = make_media_name(prompt, ext=ext, prefix="image")
+    (images_dir(project_id) / name).write_bytes(raw)
+    return f"images/{name}"
 
 
 def save_reference_bytes(project_id: str, char_id: str, raw: bytes, *, ext: str = "png") -> str:

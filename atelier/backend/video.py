@@ -216,16 +216,22 @@ async def _poll_until_done(remote_id: str, *, key: str, duration: int = 5) -> st
 async def extract_continuation_frame(project_id: str, video_rel: str) -> str | None:
     """Letzten Frame eines Videos als Galerie-Bild speichern (für Fortsetzungen).
 
-    Gibt den output/-rel des neuen Bildes zurück, oder None wenn das Video fehlt.
+    Gibt den images/-rel des neuen Bildes zurück, oder None wenn das Video fehlt.
     """
     from .service import write_image_sidecar
     src = storage.safe_under(storage.atelier_root(project_id), video_rel)
     if src is None or not src.is_file():
         return None
-    tmp = storage.output_dir(project_id) / f"{storage.new_id()}.jpg"
+    rel = storage.save_image_bytes(
+        project_id,
+        b"",
+        ext="jpg",
+        prompt="Fortsetzung letzter Frame",
+    )
+    tmp = storage.atelier_root(project_id) / rel
     await _ffmpeg.extract_last_frame(src, tmp)
-    write_image_sidecar(project_id, tmp.name, {"prompt": "(Fortsetzung – letzter Frame)", "scene": ""})
-    return f"output/{tmp.name}"
+    write_image_sidecar(project_id, rel, {"prompt": "(Fortsetzung – letzter Frame)", "scene": ""})
+    return rel
 
 
 def _source_to_data_url(project_id: str, source_rel: str) -> str | None:
