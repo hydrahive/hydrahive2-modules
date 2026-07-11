@@ -15,7 +15,8 @@ import { AtelierCutPanel } from "./AtelierCutPanel"
 import type { AtelierCharacter, AtelierCI, AudioLibraryItem, GalleryItem, PresetCatalog, RepeatInput } from "./types"
 
 const DEFAULT_CI: AtelierCI = { palette: [], style_anchor: "", default_model: "", aspect_ratio: "1:1" }
-type AtelierTab = "characters" | "generate" | "gallery" | "clips" | "audio" | "films" | "cut" | "regie"
+export type AtelierStep = "characters" | "generate" | "gallery" | "clips" | "film"
+type AtelierTab = AtelierStep | "audio" | "films" | "cut" | "regie"
 
 interface TabInfo {
   key: AtelierTab
@@ -36,10 +37,11 @@ const TABS: TabInfo[] = [
 ]
 
 /** Atelier — Projekt-gebundene Media-Generierung mit Charakter-Konsistenz. */
-export function AtelierPage() {
+export function AtelierPage({ projectId: controlledProjectId, step, onStepChange, hideHeader = false }: { projectId?: string; step?: AtelierStep; onStepChange?: (step: AtelierStep) => void; hideHeader?: boolean } = {}) {
   const { t } = useTranslation("atelier")
   const [projects, setProjects] = useState<Project[]>([])
-  const [projectId, setProjectId] = useState<string>("")
+  const [localProjectId, setProjectId] = useState<string>("")
+  const projectId = controlledProjectId ?? localProjectId
   const [ci, setCI] = useState<AtelierCI>(DEFAULT_CI)
   const [characters, setCharacters] = useState<AtelierCharacter[]>([])
   const [gallery, setGallery] = useState<GalleryItem[]>([])
@@ -48,7 +50,12 @@ export function AtelierPage() {
   const [presets, setPresets] = useState<PresetCatalog>({})
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [videoTick, setVideoTick] = useState(0)
-  const [tab, setTab] = useState<AtelierTab>("generate")
+  const [localTab, setTab] = useState<AtelierTab>("generate")
+  const tab: AtelierTab = step ?? localTab
+  const changeTab = useCallback((next: AtelierTab) => {
+    setTab(next)
+    if (next === "characters" || next === "generate" || next === "gallery" || next === "clips" || next === "film") onStepChange?.(next)
+  }, [onStepChange])
   const [repeat, setRepeat] = useState<RepeatInput | null>(null)
 
   /** "Wiederholen" aus der Galerie: Charaktere + Parameter des Bildes
@@ -64,16 +71,16 @@ export function AtelierPage() {
       camera: item.camera ?? {},
       style: item.style ?? "",
     })
-    setTab("generate")
-  }, [])
+    changeTab("generate")
+  }, [changeTab])
 
   useEffect(() => {
     projectsApi.list().then((ps) => {
       setProjects(ps)
-      if (ps.length > 0) setProjectId((cur) => cur || ps[0].id)
+      if (ps.length > 0 && !controlledProjectId) setProjectId((cur) => cur || ps[0].id)
     })
     atelierApi.presets().then(setPresets).catch(() => setPresets({}))
-  }, [])
+  }, [controlledProjectId])
 
   const reload = useCallback(async (pid: string) => {
     if (!pid) return
@@ -112,7 +119,7 @@ export function AtelierPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-slate-950/40">
-      <header className="flex items-center gap-3 border-b border-slate-700 bg-slate-900/60 px-4 py-3">
+      {!hideHeader && <header className="flex items-center gap-3 border-b border-slate-700 bg-slate-900/60 px-4 py-3">
         <h1 className="text-lg font-semibold text-slate-100">🎨 {t("title")}</h1>
         <HelpButton topic="atelier" />
         <div className="ml-auto flex items-center gap-2">
@@ -130,14 +137,14 @@ export function AtelierPage() {
             ))}
           </select>
         </div>
-      </header>
+      </header>}
 
       <main className="flex min-h-0 flex-1 flex-col gap-3 p-4">
-        <nav className="flex flex-wrap gap-1 rounded-xl border border-slate-800 bg-slate-900/70 p-1">
+        {!step && <nav className="flex flex-wrap gap-1 rounded-xl border border-slate-800 bg-slate-900/70 p-1">
           {TABS.map((item) => (
             <button
               key={item.key}
-              onClick={() => setTab(item.key)}
+              onClick={() => changeTab(item.key)}
               className={`min-w-[7.5rem] flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
                 tab === item.key
                   ? "bg-emerald-600 text-white shadow shadow-emerald-950/40"
@@ -148,9 +155,9 @@ export function AtelierPage() {
               {t(item.labelKey)}
             </button>
           ))}
-        </nav>
+        </nav>}
 
-        <TabHelp title={`${activeTab.icon} ${t(activeTab.labelKey)}`} text={t(activeTab.helpKey)} />
+        {!step && <TabHelp title={`${activeTab.icon} ${t(activeTab.labelKey)}`} text={t(activeTab.helpKey)} />}
 
         <section className="min-h-0 flex-1 overflow-auto rounded-xl border border-slate-800 bg-slate-950/40 p-4">
           {tab === "characters" && (
@@ -171,7 +178,7 @@ export function AtelierPage() {
               selectedIds={selectedIds}
               presets={presets}
               repeat={repeat}
-              onGenerated={() => { reload(projectId); setTab("gallery") }}
+              onGenerated={() => { reload(projectId); changeTab("gallery") }}
             />
           )}
           {tab === "gallery" && (
@@ -180,7 +187,7 @@ export function AtelierPage() {
               items={gallery}
               characters={characters}
               onPromoted={() => reload(projectId)}
-              onVideoStarted={() => { setVideoTick((n) => n + 1); setTab("clips") }}
+              onVideoStarted={() => { setVideoTick((n) => n + 1); changeTab("clips") }}
               onRepeat={handleRepeat}
             />
           )}
@@ -190,7 +197,7 @@ export function AtelierPage() {
           {tab === "audio" && (
             <AudioPanel projectId={projectId} refAbsPath={refAbsPath} />
           )}
-          {tab === "films" && (
+          {(tab === "films" || tab === "film") && (
             <FilmComposerPanel
               key={`film-${projectId}-${videoTick}`}
               projectId={projectId}
