@@ -189,6 +189,16 @@ export function VideoGenerationDialog({ projectId, source, onClose, onStarted, i
               >
                 {t("video_end_image_none")}
               </button>
+              <button
+                type="button"
+                onClick={() => setEndRel(effectiveSourceRel)}
+                className={`aspect-square rounded grid place-items-center text-[9px] leading-tight text-center px-0.5 border ${
+                  endRel === effectiveSourceRel ? "border-emerald-500 bg-emerald-500/15 text-emerald-200" : "border-slate-600 bg-slate-900/60 text-slate-300 hover:border-slate-500"
+                }`}
+                title={t("video_end_image_loop")}
+              >
+                <span><span className="block text-base">🔁</span>{t("video_end_image_loop")}</span>
+              </button>
               {gallery.map((it) => (
                 <button
                   type="button"
