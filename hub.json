@@ -74,6 +74,11 @@
       "id": "videoeditor",
       "name": "Video-Editor",
       "path": "videoeditor"
+    },
+    {
+      "id": "mediacenter",
+      "name": "Mediacenter",
+      "path": "mediacenter"
     }
   ]
 }
