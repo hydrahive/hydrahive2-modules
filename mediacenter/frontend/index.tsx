@@ -11,6 +11,8 @@ export const nav = [
     labelKey: "mediacenter",
     group: "working",
     roles: [] as ("admin" | "user")[],
+    // Cockpit-Modul: eigener Reiter im Cockpit-Top-Menü, Seite im bare Cockpit-Chrome.
+    cockpit: true,
   },
 ]
 
