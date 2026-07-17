@@ -234,3 +234,106 @@ export interface AuditEvent {
   after: unknown
   created_at: string
 }
+
+export type ImportFormat = "auto" | "camt" | "mt940" | "csv"
+export type StoredImportFormat = Exclude<ImportFormat, "auto">
+export type ImportBatchStatus = "draft" | "imported" | "reversed"
+export type ImportRowStatus = "pending" | "accepted" | "rejected" | "duplicate" | "error" | "imported" | "reversed"
+export type CsvEncoding = "utf-8" | "utf-8-sig" | "cp1252" | "iso-8859-1"
+export type CsvDelimiter = ";" | "," | "\t"
+
+export interface CsvColumnMapping {
+  booking_date: string
+  amount?: string | null
+  debit_amount?: string | null
+  credit_amount?: string | null
+  value_date?: string | null
+  currency?: string | null
+  counterparty?: string | null
+  purpose?: string | null
+  bank_reference?: string | null
+  counterparty_identifier?: string | null
+  category_hint?: string | null
+}
+
+export interface CsvImportMapping extends CsvColumnMapping {
+  delimiter: CsvDelimiter
+  encoding: CsvEncoding
+  decimal_separator: "." | ","
+  date_format: string
+}
+
+export interface ImportProfile {
+  id: number
+  name: string
+  delimiter: CsvDelimiter
+  encoding: CsvEncoding
+  decimal_separator: "." | ","
+  date_format: string
+  mapping: CsvColumnMapping
+  revision: Revision
+  created_at: string
+  updated_at: string
+}
+export type ImportProfileCreate = Omit<ImportProfile, "id" | "revision" | "created_at" | "updated_at">
+export type ImportProfileUpdate = ImportProfileCreate & { revision: Revision }
+
+export interface ImportRow {
+  id: number
+  batch_id: number
+  source_line: number
+  booking_date: IsoDate | null
+  value_date: IsoDate | null
+  amount_minor: number | null
+  currency: Currency | null
+  counterparty: string | null
+  purpose: string | null
+  counterparty_identifier: string | null
+  bank_reference: string | null
+  category_hint: string | null
+  warnings: string[]
+  errors: string[]
+  fingerprint_strength: "strong" | "weak"
+  status: ImportRowStatus
+  category_id: number | null
+  transaction_id: number | null
+  revision: Revision
+  created_at: string
+  updated_at: string
+}
+
+export interface ImportBatch {
+  id: number
+  account_id: number
+  profile_id: number | null
+  display_filename: string
+  source_format: StoredImportFormat
+  status: ImportBatchStatus
+  revision: Revision
+  created_by: string
+  created_at: string
+  updated_at: string
+  completed_at: string | null
+  reversed_at: string | null
+  rows?: ImportRow[]
+}
+
+export interface ImportRowUpdate {
+  revision: Revision
+  status?: "pending" | "accepted" | "rejected"
+  category_id?: number | null
+  booking_date?: IsoDate
+  value_date?: IsoDate | null
+  amount_minor?: number | null
+  currency?: Currency | null
+  counterparty?: string | null
+  purpose?: string | null
+}
+
+export interface ImportUpload {
+  file: File
+  account_id: number
+  format: ImportFormat
+  csv_mapping?: CsvImportMapping
+  profile_id?: number
+}

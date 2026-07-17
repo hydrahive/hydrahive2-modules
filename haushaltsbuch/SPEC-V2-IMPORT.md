@@ -27,7 +27,7 @@ Bankexporte unterscheiden sich in Zeichensatz, Spaltennamen, XML-Version und Inf
 - Geld wird als Integer in Minor Units verarbeitet; Decimal-Strings werden exakt konvertiert.
 - Eine Importzeile erzeugt grundsätzlich einen Ledger-Vorgang mit Konto- und Kategorieposting.
 - Zeilen ohne gewählte Kategorie dürfen nicht abgeschlossen werden.
-- Währung muss der Zielkontowährung entsprechen. Automatische FX-Konvertierung ist nicht Teil von Etappe 2.
+- Währung muss der Zielkontowährung entsprechen. Etappe 2 unterstützt als Ziel nur Konten in der Haushaltsbasiswährung; Fremdwährungskonten folgen erst mit einem expliziten FX-Importvertrag.
 - Positive Beträge werden als Einnahme, negative als Ausgabe interpretiert.
 - Originaldatei-Hash erkennt identische Uploads. Ein normalisierter Buchungsfingerprint erkennt wiederholte Umsätze auch über verschiedene Exportformate.
 - Eindeutige Bankreferenzen (`AcctSvcrRef`, End-to-End-ID o. ä.) ergeben starke Fingerprints. Ohne stabile Referenz entsteht ein schwacher Fingerprint aus Konto, Datum, Betrag, Währung, Gegenpartei und Zweck.
@@ -150,7 +150,7 @@ Die Haushaltsbuch-Navigation erhält zwischen „Buchungen“ und „Konten & Ka
 - Zusammenfassung aus Anzahl, Summe, Zeitraum, Fehlern und Duplikaten
 - Filter nach offen, akzeptiert, verworfen, Duplikat und Fehler
 - Zeile zeigt Datum, Betrag, Gegenpartei, Zweck, Kategorie und Status
-- Kategorie wählen sowie Datum, Gegenpartei und Zweck korrigieren
+- Kategorie wählen sowie Datum, Betrag, Währung, Gegenpartei und Zweck korrigieren
 - einzelne oder alle gültigen Zeilen annehmen/verwerfen
 - Abschlussdialog zeigt verbindlich die Zahl und Summe der zu buchenden Zeilen
 

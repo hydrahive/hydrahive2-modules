@@ -1,8 +1,8 @@
 {
   "id": "haushaltsbuch",
   "name": "Haushaltsbuch",
-  "version": "1.0.0",
-  "description": "Gemeinsames lokales Haushaltsbuch mit Konten, Buchungen, Budgets, Serien, Prognose, Mitgliedern und Audit.",
+  "version": "1.1.0",
+  "description": "Gemeinsames lokales Haushaltsbuch mit sicherer CAMT-, MT940- und CSV-Import-Inbox.",
   "icon": "WalletCards",
   "nav_group": "working",
   "permissions": [],
