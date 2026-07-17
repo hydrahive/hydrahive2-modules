@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ComponentType } from "react"
-import { CalendarClock, Gauge, Home, Landmark, ReceiptText, Users } from "lucide-react"
+import { CalendarClock, FileInput, Gauge, Home, Landmark, ReceiptText, Users } from "lucide-react"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { AccountsView } from "./AccountsView"
@@ -8,15 +8,17 @@ import { BudgetsView } from "./BudgetsView"
 import { DashboardView } from "./DashboardView"
 import { HouseholdSetup } from "./HouseholdSetup"
 import { HouseholdView } from "./HouseholdView"
+import { ImportsView } from "./ImportsView"
 import { RecurringView } from "./RecurringView"
 import { TransactionsView } from "./TransactionsView"
 import type { Household } from "./types"
 import { Button, ErrorState, LoadingState } from "./ui"
 
-type View = "dashboard" | "transactions" | "accounts" | "budgets" | "recurring" | "household"
+type View = "dashboard" | "transactions" | "imports" | "accounts" | "budgets" | "recurring" | "household"
 const TABS: { id: View; label: string; icon: ComponentType<{ size?: number }> }[] = [
   { id: "dashboard", label: "Übersicht", icon: Home },
   { id: "transactions", label: "Buchungen", icon: ReceiptText },
+  { id: "imports", label: "Importe", icon: FileInput },
   { id: "accounts", label: "Konten & Kategorien", icon: Landmark },
   { id: "budgets", label: "Budgets", icon: Gauge },
   { id: "recurring", label: "Wiederkehrend", icon: CalendarClock },
@@ -54,6 +56,7 @@ export function HaushaltsbuchPage() {
     <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-[#263247] pb-px" aria-label="Haushaltsbuch-Bereiche">{TABS.map((tab) => { const Icon = tab.icon; return <button key={tab.id} type="button" onClick={() => setView(tab.id)} className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold transition ${view === tab.id ? "border-cyan-300 text-cyan-200" : "border-transparent text-[#8d9ab0] hover:text-[#d4deeb]"}`}><Icon size={14} />{tab.label}</button> })}</nav>
     {view === "dashboard" && <DashboardView household={household} refreshKey={refreshKey} />}
     {view === "transactions" && <TransactionsView household={household} onChanged={changed} />}
+    {view === "imports" && <ImportsView baseCurrency={household.base_currency} onChanged={changed} />}
     {view === "accounts" && <AccountsView household={household} onChanged={changed} />}
     {view === "budgets" && <BudgetsView household={household} onChanged={changed} />}
     {view === "recurring" && <RecurringView household={household} onChanged={changed} />}

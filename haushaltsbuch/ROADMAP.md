@@ -24,7 +24,7 @@ Vor Etappe 1 liefert ein separater Core-PR:
 
 Haushaltsmitgliedschaften referenzieren ausschließlich `user_id`, nie den veränderbaren Benutzernamen.
 
-## Etappe 1 — Gemeinsamer Buchungskern
+## Etappe 1 — Gemeinsamer Buchungskern ✅
 
 Siehe `SPEC-V1.md` und `PLAN-V1.md`.
 
@@ -41,7 +41,9 @@ Siehe `SPEC-V1.md` und `PLAN-V1.md`.
 - manuelle wiederkehrende Zahlungen
 - Prognosen und Dashboard
 
-## Etappe 2 — Bankimport-Inbox
+## Etappe 2 — Bankimport-Inbox ✅
+
+Implementiert in Modulversion 1.1.0. Verbindliche Details stehen in `SPEC-V2-IMPORT.md` und `PLAN-V2-IMPORT.md`.
 
 ### Gemeinsamer Importvertrag
 

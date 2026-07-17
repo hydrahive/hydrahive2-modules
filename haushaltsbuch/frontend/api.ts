@@ -2,8 +2,9 @@ import { api } from "@/shared/api-client"
 import type {
   Account, AccountCreate, AccountUpdate, AuditEvent, Budget, BudgetCreate, BudgetUpdate,
   Category, CategoryCreate, CategoryUpdate, Dashboard, Forecast, Household, HouseholdCreate,
-  Invite, Member, RecurringCreate, RecurringRule, RecurringUpdate, Transaction,
-  TransactionCreate, TransactionFilters,
+  ImportBatch, ImportProfile, ImportProfileCreate, ImportProfileUpdate, ImportRow,
+  ImportRowUpdate, ImportUpload, Invite, Member, RecurringCreate, RecurringRule,
+  RecurringUpdate, Transaction, TransactionCreate, TransactionFilters,
 } from "./types"
 
 const BASE = "/modules/haushaltsbuch"
@@ -39,6 +40,25 @@ export const haushaltsbuchApi = {
   transaction: (id: number) => api.get<Transaction>(`${BASE}/transactions/${id}`),
   createTransaction: (body: TransactionCreate) => api.post<Transaction>(`${BASE}/transactions`, body),
   reverseTransaction: (id: number, revision: number) => api.post<Transaction>(`${BASE}/transactions/${id}/reverse`, { revision }),
+
+  importProfiles: () => api.get<ImportProfile[]>(`${BASE}/import-profiles`),
+  createImportProfile: (body: ImportProfileCreate) => api.post<ImportProfile>(`${BASE}/import-profiles`, body),
+  updateImportProfile: (id: number, body: ImportProfileUpdate) => api.put<ImportProfile>(`${BASE}/import-profiles/${id}`, body),
+  deleteImportProfile: (id: number, revision: number) => api.delete<void>(`${BASE}/import-profiles/${id}?revision=${revision}`),
+  imports: () => api.get<ImportBatch[]>(`${BASE}/imports`),
+  importBatch: (id: number) => api.get<ImportBatch>(`${BASE}/imports/${id}`),
+  createImport: ({ file, account_id, format, csv_mapping, profile_id }: ImportUpload) => {
+    const form = new FormData()
+    form.append("file", file, file.name)
+    form.append("account_id", String(account_id))
+    form.append("format", format)
+    if (csv_mapping) form.append("mapping", JSON.stringify(csv_mapping))
+    if (profile_id) form.append("profile_id", String(profile_id))
+    return api.postForm<ImportBatch>(`${BASE}/imports`, form)
+  },
+  updateImportRow: (batchId: number, rowId: number, body: ImportRowUpdate) => api.patch<ImportRow>(`${BASE}/imports/${batchId}/rows/${rowId}`, body),
+  completeImport: (id: number, revision: number) => api.post<ImportBatch>(`${BASE}/imports/${id}/complete`, { revision }),
+  reverseImport: (id: number, revision: number) => api.post<ImportBatch>(`${BASE}/imports/${id}/reverse`, { revision }),
 
   budgets: (active_only = true) => api.get<Budget[]>(`${BASE}/budgets${query({ active_only })}`),
   createBudget: (body: BudgetCreate) => api.post<Budget>(`${BASE}/budgets`, body),

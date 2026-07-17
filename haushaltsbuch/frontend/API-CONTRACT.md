@@ -1,4 +1,4 @@
-# Haushaltsbuch V1 – Frontend/Backend-Vertrag
+# Haushaltsbuch V1/V2 – Frontend/Backend-Vertrag
 
 Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felder sind `snake_case`. Geldwerte sind ausnahmslos Integer-Minor-Units; Kurse sind Dezimalstrings. Änderbare Ressourcen liefern und verlangen `revision`. Veraltete Revisionen antworten mit HTTP 409. Unbekannte oder haushaltsfremde IDs antworten mit 404.
 
@@ -27,5 +27,15 @@ Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felde
 - `GET /forecast?days=30|90|365`.
 - `GET /dashboard` → `total_balance`, Monats-Einnahmen/-Ausgaben, Budgetsummen, nächste Fälligkeiten, 30-/90-Tage-Prognose und letzte Buchungen.
 - `GET /audit?limit=n&offset=n` → Audit-Ereignisse.
+
+## Bankimport-Inbox
+
+- `GET|POST /import-profiles`, `PUT|DELETE /import-profiles/{id}` verwalten haushaltsgebundene CSV-Mappings.
+- `POST /imports` ist Multipart mit `file`, `account_id`, `format=auto|camt|mt940|csv`, optional `mapping` als JSON und optional `profile_id`.
+- `GET /imports` liefert Paketzusammenfassungen; `GET /imports/{id}` zusätzlich normalisierte Zeilen.
+- `PATCH /imports/{id}/rows/{row_id}` ändert Entscheidung, Kategorie und korrigierbare Metadaten mit `revision`.
+- `POST /imports/{id}/complete` mit `{revision}` bucht alle akzeptierten Zeilen atomar.
+- `POST /imports/{id}/reverse` mit `{revision}` storniert das gesamte Paket über Gegenbuchungen.
+- Uploads erzeugen ausschließlich Entwürfe. Fehlerzeilen bleiben sichtbar, starke Duplikate sind standardmäßig ausgeschlossen.
 
 Create/Update-Payloads und Responses sind in `types.ts` vollständig typisiert. Der Client steht in `api.ts`.

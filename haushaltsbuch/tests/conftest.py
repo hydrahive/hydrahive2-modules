@@ -60,10 +60,10 @@ PREFIX = "/api/modules/haushaltsbuch"
 
 @pytest.fixture(scope="session")
 def app() -> FastAPI:
-    from backend import household_router, ledger_router, planning_router, router
+    from backend import import_router, household_router, ledger_router, planning_router, router
 
     instance = FastAPI()
-    for module_router in (router, household_router, ledger_router, planning_router):
+    for module_router in (router, household_router, import_router, ledger_router, planning_router):
         instance.include_router(module_router, prefix=PREFIX)
     return instance
 
@@ -92,6 +92,9 @@ def client(app: FastAPI) -> TestClient:
                 "budget_adjustments",
                 "recurring_rules",
                 "audit_events",
+                "import_profiles",
+                "import_batches",
+                "import_rows",
             )
         ):
             conn.execute(f"DELETE FROM module_haushaltsbuch_{table}")

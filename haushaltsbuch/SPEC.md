@@ -1,4 +1,6 @@
-# Haushaltsbuch — Dummy-Modul V0.1
+# Haushaltsbuch — historische Dummy-Spezifikation V0.1
+
+> Diese Datei dokumentiert den ursprünglichen Platzhalter. Der aktuelle Produktvertrag steht in `SPEC-V1.md`; die Bankimport-Inbox ist in `SPEC-V2-IMPORT.md` spezifiziert.
 
 ## Was
 
