@@ -79,6 +79,11 @@
       "id": "mediacenter",
       "name": "Mediacenter",
       "path": "mediacenter"
+    },
+    {
+      "id": "haushaltsbuch",
+      "name": "Haushaltsbuch",
+      "path": "haushaltsbuch"
     }
   ]
 }
