@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
+  <BkToCstmrStmt><Stmt><Ntry>
+    <Amt Ccy="EUR">31.00</Amt><CdtDbtInd>DBIT</CdtDbtInd>
+    <BookgDt><Dt>2026-07-17</Dt></BookgDt>
+    <NtryDtls>
+      <TxDtls><AmtDtls><TxAmt><Amt Ccy="EUR">10.00</Amt></TxAmt></AmtDtls><RltdPties><Cdtr><Pty><Nm>Händler A</Nm></Pty></Cdtr></RltdPties></TxDtls>
+      <TxDtls><AmtDtls><TxAmt><Amt Ccy="EUR">20.00</Amt></TxAmt></AmtDtls><RltdPties><Cdtr><Pty><Nm>Händler B</Nm></Pty></Cdtr></RltdPties></TxDtls>
+    </NtryDtls>
+  </Ntry></Stmt></BkToCstmrStmt>
+</Document>
