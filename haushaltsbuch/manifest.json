@@ -1,0 +1,11 @@
+{
+  "id": "haushaltsbuch",
+  "name": "Haushaltsbuch",
+  "version": "0.1.0",
+  "description": "Haushaltsbuch für Buchungen, Budgets und Bankimporte mit geplanten Lidl-Plus- und PAYBACK-Anbindungen. Aktuell ein Platzhalter-Modul (Dummy).",
+  "icon": "WalletCards",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "min_core_version": "2.0.0"
+}
