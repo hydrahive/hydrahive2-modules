@@ -24,15 +24,15 @@ def test_status_requires_authentication() -> None:
     assert response.status_code == 401
 
 
-def test_status_reports_dummy_contract() -> None:
+def test_status_reports_v1_contract() -> None:
     response = _client(authenticated=True).get(f"{PREFIX}/status")
 
     assert response.status_code == 200
     assert response.json() == {
         "module": "haushaltsbuch",
-        "state": "dummy",
+        "state": "active",
         "features": {
-            "bookings_budgets": "planned",
+            "bookings_budgets": "available",
             "bank_import": "planned",
             "lidl_plus": "planned",
             "payback": "planned",
