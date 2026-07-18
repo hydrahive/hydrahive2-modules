@@ -179,6 +179,11 @@ def test_exchange_uses_fixed_native_client_and_verified_userinfo(monkeypatch):
     assert len(calls) == 2
 
 
+def test_callback_accepts_browser_canonical_trailing_slash():
+    callback = "com.lidlplus.app://callback/?code=authorization-code&state=expected"
+    assert lidl_auth.parse_callback(callback, "expected") == "authorization-code"
+
+
 def test_callback_rejects_duplicate_values_and_state_mismatch(client, owner_headers):
     _create_household(client, owner_headers)
     started = _start(client, owner_headers).json()

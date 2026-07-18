@@ -41,7 +41,8 @@ def parse_callback(callback_url: str, expected_state: str) -> str:
         raise AuthFlowError("lidl_callback_invalid") from exc
     if (
         parsed.scheme != "com.lidlplus.app" or parsed.netloc != "callback"
-        or parsed.hostname != "callback" or parsed.path or parsed.params or parsed.fragment
+        or parsed.hostname != "callback" or parsed.path not in ("", "/")
+        or parsed.params or parsed.fragment
         or parsed.username or parsed.password or port is not None
     ):
         raise AuthFlowError("lidl_callback_invalid")
