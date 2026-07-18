@@ -28,6 +28,7 @@ os.environ.update(
         "HH_WA_ENABLED": "0",
         "HH_AGENTLINK_URL": "",
         "HH_PG_MIRROR_DSN": "",
+        "HH_HAUSHALTSBUCH_LIDL_ENABLED": "1",
     }
 )
 (_ROOT / "data" / "agents").mkdir(parents=True)
@@ -88,7 +89,11 @@ def client(app: FastAPI) -> TestClient:
             (
                 "households",
                 "members",
+                "loyalty_auth_flows",
                 "loyalty_connections",
+                "loyalty_receipts",
+                "loyalty_receipt_items",
+                "loyalty_receipt_adjustments",
                 "loyalty_partners",
                 "loyalty_sync_runs",
                 "loyalty_balances",

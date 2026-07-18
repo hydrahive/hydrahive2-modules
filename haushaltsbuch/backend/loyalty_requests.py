@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from .loyalty_models import ConnectionVisibility, LoyaltyProvider
@@ -13,6 +15,19 @@ class LoyaltyConnectionCreate(BaseModel):
     alias: str | None = Field(default=None, min_length=1, max_length=120)
     country_code: str = Field(default="DE", pattern=r"^[A-Z]{2}$")
     language_code: str = Field(default="de", pattern=r"^[a-z]{2}(?:-[A-Z]{2})?$")
+    visibility: ConnectionVisibility = "owner"
+
+
+class LidlAuthStart(BaseModel):
+    accepted_experimental_risk: Literal[True]
+    country_code: Literal["DE"]
+    language_code: Literal["de"]
+
+
+class LidlAuthComplete(BaseModel):
+    flow_token: str = Field(min_length=20, max_length=8000)
+    callback_url: str = Field(min_length=20, max_length=8000)
+    alias: str | None = Field(default=None, min_length=1, max_length=120)
     visibility: ConnectionVisibility = "owner"
 
 

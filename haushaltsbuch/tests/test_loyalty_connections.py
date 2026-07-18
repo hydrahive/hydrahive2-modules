@@ -61,7 +61,7 @@ def test_create_hashes_account_id_and_never_exposes_secret(
     assert response.status_code == 201, response.text
     connection = response.json()
     serialized = response.text
-    assert connection["credential_ref"] == "payback-main"
+    assert "credential_ref" not in connection
     assert connection["masked_account"] == "****3456"
     assert "provider_account_id" not in connection
     assert _CREATE["provider_account_id"] not in serialized

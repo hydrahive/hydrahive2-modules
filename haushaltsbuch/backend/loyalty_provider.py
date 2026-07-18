@@ -6,6 +6,7 @@ from datetime import date, datetime
 from typing import Generic, Literal, Protocol, TypeVar
 
 from .loyalty_models import LoyaltyProvider, ProviderCapabilities
+from .loyalty_receipt_models import ProviderReceipt
 
 T = TypeVar("T")
 ActivityKind = Literal["earn", "redeem", "expire", "reversal", "adjustment"]
@@ -143,4 +144,10 @@ class LoyaltyProviderAdapter(Protocol):
         self, connection: ProviderConnection, cursor: str | None, page_size: int
     ) -> ProviderPage[ProviderCoupon]: ...
     async def list_partners(self, connection: ProviderConnection) -> list[ProviderPartner]: ...
+    async def list_receipts(
+        self, connection: ProviderConnection, cursor: str | None, page_size: int
+    ) -> ProviderPage[str]: ...
+    async def get_receipt(
+        self, connection: ProviderConnection, provider_receipt_id: str
+    ) -> ProviderReceipt: ...
     async def disconnect(self, connection: ProviderConnection) -> None: ...

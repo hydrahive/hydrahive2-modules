@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from ..loyalty_models import LoyaltyProvider, ProviderCapabilities
+from ..loyalty_receipt_models import ProviderReceipt
 from ..loyalty_provider import (
     CapabilityUnavailable,
     LoyaltyProviderAdapter,
@@ -30,6 +31,7 @@ class FakeLoyaltyProvider(LoyaltyProviderAdapter):
         activities: Sequence[ProviderActivity] = (),
         coupons: Sequence[ProviderCoupon] = (),
         partners: Sequence[ProviderPartner] = (),
+        receipts: Sequence[ProviderReceipt] = (),
     ):
         self.provider_id = provider_id
         self.capabilities = capabilities or ProviderCapabilities()
@@ -38,6 +40,7 @@ class FakeLoyaltyProvider(LoyaltyProviderAdapter):
         self.activities = list(activities)
         self.coupons = list(coupons)
         self.partners = list(partners)
+        self.receipts = list(receipts)
         self._failures: dict[str, ProviderError] = {}
 
     def fail_next(self, operation: str, error: ProviderError) -> None:
@@ -102,6 +105,21 @@ class FakeLoyaltyProvider(LoyaltyProviderAdapter):
     ) -> list[ProviderPartner]:
         self._before("list_partners", "partners")
         return list(self.partners)
+
+    async def list_receipts(
+        self, connection: ProviderConnection, cursor: str | None, page_size: int
+    ) -> ProviderPage[str]:
+        self._before("list_receipts", "receipts")
+        return self._page([item.provider_id for item in self.receipts], cursor, page_size)
+
+    async def get_receipt(
+        self, connection: ProviderConnection, provider_receipt_id: str
+    ) -> ProviderReceipt:
+        self._before("get_receipt", "receipts")
+        for receipt in self.receipts:
+            if receipt.provider_id == provider_receipt_id:
+                return receipt
+        raise ValueError("fake receipt data missing")
 
     async def disconnect(self, connection: ProviderConnection) -> None:
         self._before("disconnect")

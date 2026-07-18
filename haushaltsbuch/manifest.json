@@ -1,8 +1,8 @@
 {
   "id": "haushaltsbuch",
   "name": "Haushaltsbuch",
-  "version": "1.3.0",
-  "description": "Lokales Haushaltsbuch mit Bankimport, Auto-Kategorisierung und sicherem Kundenkarten-Fundament.",
+  "version": "1.4.0",
+  "description": "Lokales Haushaltsbuch mit Bankimport, Auto-Kategorisierung und experimentellem read-only Lidl-Plus-Belegsync.",
   "icon": "WalletCards",
   "nav_group": "working",
   "permissions": [],

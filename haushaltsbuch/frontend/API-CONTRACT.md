@@ -44,9 +44,18 @@ Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felde
 - `GET /loyalty/connections` listet für Mitglieder sichtbare Verbindungen. Private Verbindungen sind nur für den Besitzer und den Haushaltseigentümer sichtbar.
 - `POST /loyalty/connections` legt nach erfolgreichem Provider-Callback eine Verbindung an. Der Body referenziert ein vorhandenes verschlüsseltes Credential; Provider-Konto-IDs werden nur gehasht gespeichert und nie zurückgegeben.
 - `PUT /loyalty/connections/{id}` ändert Alias/Sichtbarkeit mit `revision`.
-- `DELETE /loyalty/connections/{id}?revision=n` trennt die Verbindung und löscht synchronisierte Loyalty-Daten, aber nicht automatisch das Credential im Vault.
+- `DELETE /loyalty/connections/{id}?revision=n` trennt die Verbindung und löscht synchronisierte Loyalty-Daten. Ein vom Lidl-Assistenten erzeugtes Connector-Credential wird ebenfalls gelöscht; manuell referenzierte Vault-Credentials bleiben bestehen.
 - `POST /loyalty/connections/{id}/sync` startet genau einen manuellen read-only Sync. Deaktivierte/nicht registrierte Provider, laufende Syncs und Cooldowns werden serverseitig abgewiesen.
 - `GET /loyalty/connections/{id}/sync-runs` liefert maximal 100 redigierte Läufe ohne Secrets oder Provider-Payloads.
-- Die V4.0-UI zeigt das Fundament und Providerstatus. Lidl-/PAYBACK-Login bleibt deaktiviert, bis das jeweilige technische/rechtliche Gate bestanden ist.
+
+## Experimenteller Lidl-Testconnector (V4.1)
+
+- `GET /loyalty/provider-status` meldet, ob der fail-closed Installationsschalter aktiv ist. Standard ist aus; zum persönlichen Test muss `HH_HAUSHALTSBUCH_LIDL_ENABLED=1` gesetzt und HydraHive neu gestartet werden.
+- `POST /loyalty/lidl/auth/start` verlangt `{accepted_experimental_risk:true,country_code:"DE",language_code:"de"}` und liefert eine feste Lidl-Authorize-URL, einen verschlüsselten Flow-Token und die Ablaufzeit.
+- Passwort und MFA-Code werden ausschließlich direkt bei Lidl eingegeben. `POST /loyalty/lidl/auth/complete` erhält nur `{flow_token,callback_url,alias?,visibility}`. Die Callback-URL muss exakt dem gestarteten, höchstens zehn Minuten alten `com.lidlplus.app://callback`-Flow entsprechen.
+- Das Refresh-Token liegt ausschließlich AES-GCM-verschlüsselt im zentralen Credential-Store. Access-Tokens bleiben nur für die Dauer eines Syncs im Arbeitsspeicher.
+- `GET /loyalty/receipts` listet maximal 500 sichtbare, normalisierte Belege; `GET /loyalty/receipts/{id}` ergänzt Artikel und Adjustments. Rohpayloads und HTML-Belege werden nicht persistiert.
+- Lidl-Sync ist manuell, read-only und auf DE/de sowie maximal 200 Belege pro Lauf begrenzt. PAYBACK bleibt weiterhin deaktiviert.
+- Die Schnittstelle ist inoffiziell und experimentell. Es gibt keine Stabilitäts- oder Zulässigkeitszusage; CAPTCHA, WAF, Device Attestation und Rechtstextdialoge werden nicht automatisiert oder umgangen.
 
 Create/Update-Payloads und Responses sind in `types.ts` beziehungsweise `loyaltyTypes.ts` vollständig typisiert. Die Clients stehen in `api.ts` und `loyaltyApi.ts`.

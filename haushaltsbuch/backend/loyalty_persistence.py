@@ -5,6 +5,7 @@ import hashlib
 import sqlite3
 from dataclasses import dataclass, field
 
+from .loyalty_receipt_models import ProviderReceipt
 from .loyalty_provider import (
     ProviderActivity,
     ProviderBalance,
@@ -21,6 +22,7 @@ class SyncPayload:
     partners: list[ProviderPartner] = field(default_factory=list)
     activities: list[ProviderActivity] = field(default_factory=list)
     coupons: list[ProviderCoupon] = field(default_factory=list)
+    receipts: list[ProviderReceipt] = field(default_factory=list)
 
 
 @dataclass(slots=True)
