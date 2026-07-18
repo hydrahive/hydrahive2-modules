@@ -4,7 +4,9 @@ from fastapi import APIRouter, Query, status
 
 from hydrahive.api.middleware.errors import coded
 
-from . import lidl_auth, loyalty_connections, loyalty_receipts, loyalty_sync
+from . import (
+    lidl_auth, loyalty_connections, loyalty_receipts, loyalty_sync, loyalty_sync_history,
+)
 from .access import Principal
 from .lidl_config import enabled as lidl_enabled
 from .loyalty_requests import (
@@ -66,7 +68,7 @@ async def sync_connection(connection_id: int, principal: Principal) -> dict:
 
 @router.get("/connections/{connection_id}/sync-runs")
 def list_sync_runs(connection_id: int, principal: Principal) -> list[dict]:
-    return loyalty_sync.list_sync_runs(connection_id, principal)
+    return loyalty_sync_history.list_sync_runs(connection_id, principal)
 
 
 @router.put("/connections/{connection_id}")

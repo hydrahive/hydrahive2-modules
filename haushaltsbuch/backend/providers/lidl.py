@@ -9,10 +9,9 @@ import httpx
 from hydrahive.credentials.models import Credential
 from hydrahive.credentials.store import get_credential, save_credential
 
-from ..lidl_config import (
-    APP_VERSION, TICKETS_V2_URL, TICKETS_V3_URL, TOKEN_URL, enabled, token_headers,
-)
+from ..lidl_config import TICKETS_V2_URL, TICKETS_V3_URL, TOKEN_URL, enabled, token_headers
 from ..lidl_http import request_json
+from ..lidl_ticket_client import request_ticket_json, ticket_headers
 from ..lidl_normalize import normalize_receipt
 from ..loyalty_models import ProviderCapabilities
 from ..loyalty_provider import (
@@ -67,11 +66,14 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
     async def refresh_auth(self, connection: ProviderConnection) -> TokenMetadata:
         self._check_connection(connection)
         credential = self._credential(connection)
-        payload = await request_json(
-            "POST", TOKEN_URL, headers=token_headers(),
-            data={"grant_type": "refresh_token", "refresh_token": credential.value},
-            transport=self._transport,
-        )
+        try:
+            payload = await request_json(
+                "POST", TOKEN_URL, headers=token_headers(),
+                data={"grant_type": "refresh_token", "refresh_token": credential.value},
+                transport=self._transport,
+            )
+        except AuthRequired as exc:
+            raise AuthRequired("lidl_refresh_rejected") from exc
         if not isinstance(payload, dict) or not isinstance(
             payload.get("access_token"), str
         ):
@@ -112,15 +114,8 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
     def _headers(self, connection: ProviderConnection) -> dict[str, str]:
         token = self._access_token(connection.connection_id)
         if token is None:
-            raise AuthRequired()
-        return {
-            "Authorization": f"Bearer {token}",
-            "App": "com.lidl.eci.lidl.plus",
-            "App-Version": APP_VERSION,
-            "Operating-System": "iOs",
-            "Country": "DE",
-            "Accept-Language": "de-DE",
-        }
+            raise AuthRequired("lidl_access_token_missing")
+        return ticket_headers(token, connection)
 
     async def list_receipts(
         self, connection: ProviderConnection, cursor: str | None, page_size: int
@@ -138,8 +133,9 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
             f"{TICKETS_V2_URL}/DE/tickets?"
             f"pageNumber={page_number}&onlyFavorite=false"
         )
-        payload = await request_json(
-            "GET", url, headers=self._headers(connection), transport=self._transport
+        payload = await request_ticket_json(
+            url, connection, self._headers, self.refresh_auth, self._transport,
+            "lidl_ticket_list_unauthorized",
         )
         if not isinstance(payload, dict) or not isinstance(payload.get("tickets"), list):
             raise SchemaChanged("lidl_ticket_list_shape_changed")
@@ -164,9 +160,10 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
         if not _RECEIPT_ID.fullmatch(provider_receipt_id):
             raise InvalidProviderData("receipt_id_invalid")
         self._check_connection(connection)
-        payload = await request_json(
-            "GET", f"{TICKETS_V3_URL}/DE/tickets/{provider_receipt_id}",
-            headers=self._headers(connection), transport=self._transport,
+        payload = await request_ticket_json(
+            f"{TICKETS_V3_URL}/DE/tickets/{provider_receipt_id}",
+            connection, self._headers, self.refresh_auth, self._transport,
+            "lidl_ticket_detail_unauthorized",
         )
         if not isinstance(payload, dict):
             raise SchemaChanged("lidl_ticket_shape_changed")

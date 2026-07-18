@@ -98,6 +98,12 @@ def test_configured_provider_error_is_propagated_once():
     assert len(asyncio.run(provider.list_activities(_connection(), None, 10)).items) == 3
 
 
+def test_provider_error_persists_a_safe_stage_code():
+    error = AuthRequired("lidl_refresh_rejected")
+    assert error.code == "lidl_refresh_rejected"
+    assert str(error) == "lidl_refresh_rejected"
+
+
 def test_auth_failure_never_contains_credentials():
     provider = _provider()
     provider.fail_next("probe", AuthRequired())

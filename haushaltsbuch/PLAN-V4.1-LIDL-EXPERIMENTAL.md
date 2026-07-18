@@ -71,6 +71,17 @@ verbinden, digitale Belege read-only synchronisieren und deren Artikel ansehen.
 - [x] Test für abgelaufenes Token: sicherer Refreshpfad bleibt aktiv
 - [x] Security-/HH-Review, Gesamttests, Version und Source-PR
 
+### Task 9: Aktuellen Android-Ticketvertrag und Fehlerstufen übernehmen
+
+- [x] Juni-2026-Referenz gegen bisherigen iOS-Headersatz vergleichen
+- [x] Exakten Android-Headersatz als RED-Regressionstest abbilden
+- [x] Stabile, nicht personenbezogene 16-Hex-Device-ID pro Connection ableiten
+- [x] Ticket-401 einmal refreshen und denselben Request einmal wiederholen
+- [x] Tokenendpoint-Ablehnung und Ticket-Ablehnung mit statischen Stage-Codes trennen
+- [x] Detailcode in `ProviderError.code` statt nur im Exception-Text persistieren
+- [x] Alten generischen `reauth_required/auth_required`-Zustand einmalig recovern
+- [x] Security-/HH-Review, Gesamttests, Version und Source-PR
+
 ## Akzeptanzkriterien
 
 Siehe `SPEC-V4.1-LIDL-EXPERIMENTAL.md`.

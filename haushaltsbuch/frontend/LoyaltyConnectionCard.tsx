@@ -20,7 +20,8 @@ export function LoyaltyConnectionCard({ connection, busy, onSync, onHistory, onD
   onHistory: () => void
   onDelete: () => void
 }) {
-  const canSync = connection.feature_enabled && connection.status === "active" && !busy
+  const canRecoverLegacyAuth = connection.provider === "lidl_plus" && connection.status === "reauth_required" && connection.last_error_code === "auth_required"
+  const canSync = connection.feature_enabled && (connection.status === "active" || canRecoverLegacyAuth) && !busy
   const warning = connection.status === "reauth_required" || connection.status === "blocked" || connection.status === "error"
   return <article className={`${panel} p-4`}>
     <div className="flex flex-wrap items-start gap-3">
@@ -37,7 +38,7 @@ export function LoyaltyConnectionCard({ connection, busy, onSync, onHistory, onD
     {!connection.feature_enabled && <p className="mt-3 rounded border border-cyan-400/20 bg-cyan-400/5 p-2 text-xs text-cyan-100">Der direkte Provider-Adapter ist noch nicht freigegeben. Die Verbindung bleibt sicher gespeichert, aber Synchronisierung ist deaktiviert.</p>}
     {connection.last_error_code && <p className="mt-2 text-xs text-rose-200">Letzter Fehler: {connection.last_error_code.replaceAll("_", " ")}</p>}
     <div className="mt-4 flex flex-wrap gap-2 border-t border-[#263247] pt-3">
-      <Button tone="primary" disabled={!canSync} onClick={onSync}><RefreshCw size={13} className="mr-1 inline" />Jetzt synchronisieren</Button>
+      <Button tone="primary" disabled={!canSync} onClick={onSync}><RefreshCw size={13} className="mr-1 inline" />{canRecoverLegacyAuth ? "Anmeldung erneut prüfen" : "Jetzt synchronisieren"}</Button>
       <Button disabled={busy} onClick={onHistory}><Clock3 size={13} className="mr-1 inline" />Sync-Verlauf</Button>
       <Button tone="danger" disabled={busy} onClick={onDelete}><Trash2 size={13} className="mr-1 inline" />Trennen</Button>
     </div>

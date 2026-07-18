@@ -44,7 +44,12 @@ der manuelle Browserflow daran, stoppt der Test mit einer redigierten Meldung.
 - standardmäßig aktiver Testconnector mit optionalem Betreiber-Not-Aus `HH_HAUSHALTSBUCH_LIDL_ENABLED=0`;
 - TLS-Verifikation, feste Timeouts, begrenzte Antwortgröße und sequentielle Abrufe;
 - Tokenrefresh bei Bedarf, Rotation atomar im Credential-Store;
-- 401 → `reauth_required`, 403 → `blocked`, 429 → Cooldown, 5xx → unavailable;
+- Ticketrequests verwenden den aktuellen Android-Clientvertrag (`16.43.4`, Android-
+  Paketname, okhttp-/Geräteheader und stabile verbindungsgebundene Device-ID);
+- Ticket-401 → genau ein Refresh mit Retry; erst eine 400/401-Ablehnung am
+  Tokenendpoint → `reauth_required`; 403 → `blocked`, 429 → Cooldown, 5xx → unavailable;
+- alte Lidl-Zustände `reauth_required/auth_required` erhalten genau einen manuellen
+  Recovery-Versuch; neue präzise Reauth-Codes öffnen keine Retry-Schleife;
 - keine Couponaktivierung, Profiländerung, Punkteeinlösung oder andere Writes.
 
 ### Belegvertrag
