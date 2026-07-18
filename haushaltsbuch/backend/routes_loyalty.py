@@ -2,11 +2,41 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query, status
 
-from . import loyalty_connections, loyalty_sync
+from hydrahive.api.middleware.errors import coded
+
+from . import lidl_auth, loyalty_connections, loyalty_sync
 from .access import Principal
-from .loyalty_requests import LoyaltyConnectionCreate, LoyaltyConnectionUpdate
+from .lidl_config import enabled as lidl_enabled
+from .loyalty_requests import (
+    LidlAuthComplete, LidlAuthStart, LoyaltyConnectionCreate, LoyaltyConnectionUpdate,
+)
 
 router = APIRouter(prefix="/loyalty")
+
+
+@router.get("/provider-status")
+def provider_status(principal: Principal) -> dict:
+    del principal
+    return {
+        "lidl_plus": {"enabled": lidl_enabled(), "experimental": True},
+        "payback": {"enabled": False, "experimental": True},
+    }
+
+
+@router.post("/lidl/auth/start")
+def start_lidl_auth(body: LidlAuthStart, principal: Principal) -> dict:
+    try:
+        return lidl_auth.start_auth(body, principal)
+    except lidl_auth.AuthFlowError as exc:
+        raise coded(exc.status_code, exc.code) from exc
+
+
+@router.post("/lidl/auth/complete")
+async def complete_lidl_auth(body: LidlAuthComplete, principal: Principal) -> dict:
+    try:
+        return await lidl_auth.complete_auth(body, principal)
+    except lidl_auth.AuthFlowError as exc:
+        raise coded(exc.status_code, exc.code) from exc
 
 
 @router.get("/connections")

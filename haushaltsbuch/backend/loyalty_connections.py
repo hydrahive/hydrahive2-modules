@@ -7,7 +7,7 @@ import json
 import sqlite3
 
 from hydrahive.api.middleware.auth import AuthPrincipal
-from hydrahive.credentials.store import get_credential
+from hydrahive.credentials.store import delete_credential, get_credential
 from hydrahive.db.connection import db
 from hydrahive.settings import settings
 
@@ -25,6 +25,7 @@ def _fingerprint(household_id: int, provider: str, account_id: str) -> str:
 def _connection_dict(row: sqlite3.Row) -> dict:
     result = dict(row)
     result.pop("account_fingerprint", None)
+    result.pop("credential_ref", None)
     result["capabilities"] = json.loads(result.pop("capabilities_json"))
     result["feature_enabled"] = bool(result["feature_enabled"])
     result["sync_enabled"] = bool(result["sync_enabled"])
@@ -104,6 +105,23 @@ def create_connection(body: LoyaltyConnectionCreate, principal: AuthPrincipal) -
     return _connection_dict(row)
 
 
+def enable_experimental(connection_id: int, principal: AuthPrincipal) -> dict:
+    """Aktiviert genau die soeben vom Mitglied erstellte Opt-in-Verbindung."""
+    with db(immediate=True) as conn:
+        member = membership(conn, principal)
+        row = _manageable(conn, connection_id, member)
+        conn.execute(
+            f"UPDATE module_haushaltsbuch_loyalty_connections SET feature_enabled=1,"
+            f"status='active',revision=revision+1,updated_at={NOW} WHERE id=?",
+            (connection_id,),
+        )
+        row = conn.execute(
+            "SELECT * FROM module_haushaltsbuch_loyalty_connections WHERE id=?",
+            (row["id"],),
+        ).fetchone()
+    return _connection_dict(row)
+
+
 def update_connection(
     connection_id: int, body: LoyaltyConnectionUpdate, principal: AuthPrincipal
 ) -> dict:
@@ -147,8 +165,19 @@ def delete_connection(
             "loyalty_connection", connection_id, "delete",
             before={"provider": row["provider"], "masked_account": row["masked_account"]},
         )
+        owner = conn.execute(
+            "SELECT username FROM module_haushaltsbuch_members WHERE id=?",
+            (row["owner_member_id"],),
+        ).fetchone()
+        managed_ref = (
+            row["provider"] == "lidl_plus"
+            and row["credential_ref"].startswith(f"lidl-{row['owner_member_id']}-")
+        )
+        credential_ref = row["credential_ref"]
         conn.execute(
             "DELETE FROM module_haushaltsbuch_loyalty_connections "
             "WHERE id=? AND household_id=?",
             (connection_id, member["household_id"]),
         )
+    if managed_ref and owner is not None:
+        delete_credential(owner["username"], credential_ref)
