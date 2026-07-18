@@ -64,6 +64,45 @@ def _connection(client, headers) -> dict:
     return connection
 
 
+def test_legacy_generic_reauth_state_can_recover_once(client, owner_headers):
+    _create_household(client, owner_headers)
+    connection = _connection(client, owner_headers)
+    with db() as conn:
+        conn.execute(
+            "UPDATE module_haushaltsbuch_loyalty_connections "
+            "SET status='reauth_required',last_error_code='auth_required' WHERE id=?",
+            (connection["id"],),
+        )
+    provider = FakeLoyaltyProvider(
+        provider_id="lidl_plus",
+        capabilities=ProviderCapabilities(receipts=True),
+        receipts=[],
+    )
+    register(provider)
+    try:
+        recovered = client.post(
+            f"{PREFIX}/loyalty/connections/{connection['id']}/sync",
+            headers=owner_headers,
+        )
+        with db() as conn:
+            conn.execute(
+                "UPDATE module_haushaltsbuch_loyalty_connections SET "
+                "status='reauth_required',last_error_code='lidl_refresh_rejected' "
+                "WHERE id=?", (connection["id"],),
+            )
+        precise_reauth = client.post(
+            f"{PREFIX}/loyalty/connections/{connection['id']}/sync",
+            headers=owner_headers,
+        )
+    finally:
+        unregister("lidl_plus")
+    assert recovered.status_code == 200, recovered.text
+    assert recovered.json()["connection"]["status"] == "active"
+    assert recovered.json()["connection"]["last_error_code"] is None
+    assert precise_reauth.status_code == 409
+    assert precise_reauth.json()["detail"]["code"] == "loyalty_reauth_required"
+
+
 def test_receipt_sync_is_idempotent_and_exposes_scoped_details(
     client, owner_headers, outsider_headers
 ):

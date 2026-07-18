@@ -191,7 +191,7 @@ def test_auth_and_rate_limit_failures_are_redacted_and_persisted(
     connection = _enabled_connection(client, owner_headers, monkeypatch)
 
     provider = _fake()
-    provider.fail_next("probe", AuthRequired())
+    provider.fail_next("probe", AuthRequired("safe_auth_stage"))
     register(provider)
     try:
         auth = client.post(
@@ -231,6 +231,6 @@ def test_auth_and_rate_limit_failures_are_redacted_and_persisted(
             "module_haushaltsbuch_loyalty_sync_runs ORDER BY id"
         ).fetchall()
         dump = json.dumps([dict(row) for row in runs])
-    assert [row["error_code"] for row in runs] == ["auth_required", "rate_limited"]
+    assert [row["error_code"] for row in runs] == ["safe_auth_stage", "rate_limited"]
     assert runs[-1]["next_allowed_attempt_at"] is not None
     assert "super-secret" not in dump

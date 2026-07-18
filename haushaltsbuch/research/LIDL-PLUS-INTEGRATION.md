@@ -63,6 +63,8 @@ Rechtstexte sind dynamisch und müssen zum Entscheidungszeitpunkt erneut gelesen
 - Fehler am Belegdetail-Endpunkt: https://github.com/Andre0512/lidl-plus/issues/20
 - API-v3-/HTML-Fallback-Diskussion: https://github.com/Andre0512/lidl-plus/pull/22
 - Aktiver inoffizieller Fork: https://github.com/yagueto/lidl-plus
+- Juni-2026-Referenz zu Tokenrotation und aktuellem Android-Ticketvertrag:
+  https://github.com/callummacintyre-ctrl/lidl-plus-api-reference
 
 ## 3. Authentifizierung und Token
 
@@ -92,7 +94,7 @@ Diese Werte sind reverse-engineerte Implementierungsdetails, **kein stabiler Ver
 - Access-Token nur kurzlebig im Speicher; keine Tokens in URLs, Exceptions, Auditdetails, Telemetrie oder Test-Snapshots.
 - Bei Refresh-Token-Rotation atomar zuerst neues Secret speichern, dann alte Version verwerfen.
 - „Trennen“ widerruft das Token, falls ein unterstützter Revocation-Endpunkt verifiziert ist; andernfalls lokales Secret sicher löschen und den Benutzer auf Passwort-/Kontosicherheitsoptionen bei Lidl hinweisen.
-- Nach `invalid_grant`, wiederholtem 401 oder 403 Verbindung auf `reauth_required`/`blocked` setzen; keine Login-Schleife.
+- Nur eine Ablehnung am Tokenendpoint (`invalid_grant`/400/401) setzt `reauth_required`. Ein Ticket-401 wird genau einmal nach Refresh wiederholt und bei erneuter Ablehnung als statischer Stage-Fehler gespeichert; 403 setzt `blocked`. Keine Login-Schleife.
 
 ### Offene Auth-Fragen für den Spike
 

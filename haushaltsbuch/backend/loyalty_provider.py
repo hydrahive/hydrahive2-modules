@@ -17,7 +17,8 @@ class ProviderError(RuntimeError):
     code = "provider_error"
 
     def __init__(self, code: str | None = None):
-        super().__init__(code or self.code)
+        self.code = code or type(self).code
+        super().__init__(self.code)
 
 
 class AuthRequired(ProviderError):

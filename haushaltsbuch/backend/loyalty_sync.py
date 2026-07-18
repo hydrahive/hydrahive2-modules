@@ -91,7 +91,15 @@ def _start(connection_id: int, principal: AuthPrincipal):
                 f"finished_at={NOW},error_code='stale_sync_recovered' "
                 "WHERE connection_id=? AND status='running'", (connection_id,),
             )
-        if connection["status"] in ("reauth_required", "blocked", "disabled"):
+        legacy_lidl_recovery = (
+            connection["provider"] == "lidl_plus"
+            and connection["status"] == "reauth_required"
+            and connection["last_error_code"] == "auth_required"
+        )
+        if (
+            connection["status"] in ("reauth_required", "blocked", "disabled")
+            and not legacy_lidl_recovery
+        ):
             raise coded(status.HTTP_409_CONFLICT, f"loyalty_{connection['status']}")
         cooldown = conn.execute(
             "SELECT 1 FROM module_haushaltsbuch_loyalty_sync_runs "
@@ -187,14 +195,3 @@ async def sync_connection(connection_id: int, principal: AuthPrincipal) -> dict:
             logger.warning(
                 "Loyalty-Provider-Bereinigung fehlgeschlagen (connection=%s)", connection_id
             )
-
-def list_sync_runs(connection_id: int, principal: AuthPrincipal) -> list[dict]:
-    with db() as conn:
-        member = membership(conn, principal)
-        _manageable(conn, connection_id, member)
-        rows = conn.execute(
-            "SELECT * FROM module_haushaltsbuch_loyalty_sync_runs "
-            "WHERE connection_id=? AND household_id=? ORDER BY id DESC LIMIT 100",
-            (connection_id, member["household_id"]),
-        ).fetchall()
-    return [dict(row) for row in rows]
