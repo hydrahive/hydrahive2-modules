@@ -121,5 +121,8 @@ class FakeLoyaltyProvider(LoyaltyProviderAdapter):
                 return receipt
         raise ValueError("fake receipt data missing")
 
+    def forget_auth(self, connection_id: int) -> None:
+        del connection_id
+
     async def disconnect(self, connection: ProviderConnection) -> None:
         self._before("disconnect")

@@ -94,6 +94,21 @@ Der vorhandene manuelle Sync-Lock wird erweitert:
 - Der Benutzer kann verbundene Lidl-Belege und Artikel lesen.
 - Alle bestehenden Tests, Typecheck und Produktionsbuild bleiben grün.
 
+### Ergänzung: initialer Access-Token-Handoff
+
+Der Authorization-Code-Austausch liefert Access- und Refresh-Token. Das frisch
+ausgestellte Access-Token wird bis zu seinem Ablauf ausschließlich im Arbeitsspeicher
+an genau die neu erstellte Verbindung des registrierten Lidl-Adapters übergeben.
+`probe()` verwendet ein noch nicht abgelaufenes Access-Token direkt und ruft den
+Refresh-Endpunkt erst auf, wenn kein nutzbares In-Memory-Token vorhanden ist.
+
+- Access-Tokens werden weder in Modul-DB noch Credential-Store persistiert.
+- Tokenwert und Ablaufzeit werden vor dem Handoff strikt validiert.
+- Wiederholte Syncs innerhalb der Tokenlaufzeit verwenden dasselbe Access-Token.
+- Beim Trennen der Verbindung wird das In-Memory-Token sofort entfernt.
+- Der erste Sync nach dem Login darf vor dem Ticketabruf keinen Refresh auslösen.
+- Fehlt der In-Memory-Handoff, bleibt der bestehende sichere Refreshpfad erhalten.
+
 ## Nicht enthalten
 
 - automatisierter/headless Login oder Selenium;

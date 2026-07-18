@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.credentials.models import Credential
 from hydrahive.credentials.store import delete_credential, save_credential
+from . import loyalty_registry
 from .lidl_config import (
     AUTH_URL, CLIENT_ID, REDIRECT_URI, SCOPE, TOKEN_URL, USERINFO_URL, enabled,
     token_headers,
@@ -23,6 +24,7 @@ from .loyalty_provider import (
     AuthRequired, ForbiddenOrBlocked, ProviderError, RateLimited,
 )
 from .loyalty_requests import LidlAuthComplete, LidlAuthStart, LoyaltyConnectionCreate
+from .providers.lidl import LidlPlusProvider
 
 FLOW_TTL = timedelta(minutes=10)
 
@@ -32,6 +34,8 @@ class ExchangeResult:
     refresh_token: str
     account_id: str
     masked_account: str
+    access_token: str
+    access_expires_at: datetime
 
 def parse_callback(callback_url: str, expected_state: str) -> str:
     parsed = urlparse(callback_url)
@@ -122,7 +126,11 @@ async def _exchange_code(code: str, verifier: str, nonce: str) -> ExchangeResult
     account_id = profile.get("sub") if isinstance(profile, dict) else None
     if not isinstance(account_id, str) or not account_id or len(account_id) > 256:
         raise AuthFlowError("lidl_token_invalid")
-    return ExchangeResult(refresh, account_id, "Lidl Plus")
+    expires = payload.get("expires_in")
+    if type(expires) is not int or not 0 < expires <= 86_400:
+        raise AuthFlowError("lidl_token_invalid")
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires)
+    return ExchangeResult(refresh, account_id, "Lidl Plus", access, expires_at)
 
 
 async def complete_auth(body: LidlAuthComplete, principal: AuthPrincipal) -> dict:
@@ -151,7 +159,13 @@ async def complete_auth(body: LidlAuthComplete, principal: AuthPrincipal) -> dic
             alias=body.alias, country_code="DE", language_code="de",
             visibility=body.visibility,
         ), principal)
-        return enable_experimental(connection["id"], principal)
+        connection = enable_experimental(connection["id"], principal)
+        adapter = loyalty_registry.get("lidl_plus")
+        if isinstance(adapter, LidlPlusProvider):
+            adapter.prime_auth(
+                connection["id"], result.access_token, result.access_expires_at
+            )
+        return connection
     except Exception:
         delete_credential(principal.username, credential_ref)
         raise

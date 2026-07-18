@@ -61,6 +61,16 @@ verbinden, digitale Belege read-only synchronisieren und deren Artikel ansehen.
 - [ ] API-Contract/Status aktualisieren und Manifest-Version erhöhen
 - [ ] PR mit persönlicher Testanleitung erstellen
 
+### Task 8: Initiales Access-Token bis zum ersten Sync nutzen
+
+- [x] Integrationstest: Auth-Complete übergibt Access-Token an den registrierten Adapter (RED)
+- [x] Integrationstest: erster Sync ruft Tickets direkt und nicht den Refresh-Endpunkt auf (RED)
+- [x] `ExchangeResult` um validierte Access-Token-Metadaten ergänzen
+- [x] In-Memory-Handoff an die konkrete neue Connection implementieren (GREEN)
+- [x] `probe()` nutzt gültige In-Memory-Tokens bis zum Ablauf; Trennen entfernt sie sofort
+- [x] Test für abgelaufenes Token: sicherer Refreshpfad bleibt aktiv
+- [x] Security-/HH-Review, Gesamttests, Version und Source-PR
+
 ## Akzeptanzkriterien
 
 Siehe `SPEC-V4.1-LIDL-EXPERIMENTAL.md`.

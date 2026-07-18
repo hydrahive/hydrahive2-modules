@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs
 
 import httpx
@@ -82,6 +83,37 @@ def test_lidl_provider_refreshes_rotates_and_reads_receipt_without_writes():
     assert [method for method, _ in requests] == ["POST", "GET", "GET"]
 
 
+def test_lidl_provider_refreshes_an_expired_primed_access_token():
+    assert save_credential(
+        "owner", Credential("lidl-provider-test", "bearer", "refresh")
+    )[0]
+    requests = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        assert request.url.host == "accounts.lidl.com"
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            json={
+                "access_token": "renewed-access",
+                "refresh_token": "renewed-refresh",
+                "expires_in": 300,
+            },
+        )
+
+    provider = LidlPlusProvider(transport=httpx.MockTransport(handler))
+    provider.prime_auth(
+        _connection().connection_id,
+        "expired-access",
+        datetime.now(timezone.utc) - timedelta(seconds=1),
+    )
+    capabilities = asyncio.run(provider.probe(_connection()))
+    assert capabilities.token_refresh is True
+    assert provider._headers(_connection())["Authorization"] == "Bearer renewed-access"
+    assert len(requests) == 1
+
+
 @pytest.mark.parametrize(
     ("status", "error"),
     [(401, AuthRequired), (403, ForbiddenOrBlocked), (429, RateLimited)],
@@ -92,7 +124,11 @@ def test_lidl_provider_maps_remote_auth_and_rate_errors(status, error):
             return httpx.Response(
                 200,
                 headers={"content-type": "application/json"},
-                json={"access_token": "access", "refresh_token": "refresh"},
+                json={
+                    "access_token": "access",
+                    "refresh_token": "refresh",
+                    "expires_in": 300,
+                },
             )
         return httpx.Response(
             status,
