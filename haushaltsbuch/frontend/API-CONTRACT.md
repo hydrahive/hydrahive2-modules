@@ -56,6 +56,7 @@ Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felde
 - Das Refresh-Token liegt ausschließlich AES-GCM-verschlüsselt im zentralen Credential-Store. Access-Tokens bleiben nur für die Dauer eines Syncs im Arbeitsspeicher.
 - `GET /loyalty/receipts` listet maximal 500 sichtbare, normalisierte Belege; `GET /loyalty/receipts/{id}` ergänzt Artikel und Adjustments. Rohpayloads und HTML-Belege werden nicht persistiert.
 - Lidl-Sync ist manuell, read-only und auf DE/de sowie maximal 200 Belege pro Lauf begrenzt. PAYBACK bleibt weiterhin deaktiviert.
+- Der read-only Abruf sendet eine von Lidl akzeptierte reale Clientversion; die frühere offensichtliche Fakeversion `999.99.9` führte am Lidl-WAF zu absichtlichen Read-Timeouts.
 - Die Schnittstelle ist inoffiziell und experimentell. Es gibt keine Stabilitäts- oder Zulässigkeitszusage; CAPTCHA, WAF, Device Attestation und Rechtstextdialoge werden nicht automatisiert oder umgangen.
 
 Create/Update-Payloads und Responses sind in `types.ts` beziehungsweise `loyaltyTypes.ts` vollständig typisiert. Die Clients stehen in `api.ts` und `loyaltyApi.ts`.
