@@ -102,8 +102,8 @@ async def _exchange_code(code: str, verifier: str, nonce: str) -> ExchangeResult
     del nonce  # Nonce wird nur für ein optionales ID-Token gesendet; Identität kommt von Userinfo.
     try:
         payload = await request_json("POST", TOKEN_URL, headers=token_headers(), data={
-            "grant_type": "authorization_code", "client_id": CLIENT_ID,
-            "redirect_uri": REDIRECT_URI, "code": code, "code_verifier": verifier,
+            "grant_type": "authorization_code", "redirect_uri": REDIRECT_URI,
+            "code": code, "code_verifier": verifier,
         })
         if not isinstance(payload, dict):
             raise AuthFlowError("lidl_token_invalid")
