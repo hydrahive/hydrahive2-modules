@@ -9,6 +9,10 @@ import { Button, EmptyState, ErrorState, LoadingState, panel } from "./ui"
 
 const kindLabel = { discount: "Rabatt", coupon: "Coupon", deposit: "Pfand", rounding: "Rundung" }
 const unitLabel = { piece: "Stk.", kg: "kg" }
+const informationalWarnings = new Set([
+  "coupon_metadata_without_amount", "currency_inferred_de",
+  "timezone_inferred_de", "total_discount_derived",
+])
 
 function amount(value: number | null, currency: string | null) {
   return value === null || !currency ? "—" : formatMinorUnits(value, currency, "de-DE")
@@ -21,6 +25,7 @@ function purchased(value: string | null) {
 function ReceiptDetailDialog({ receipt, onClose }: { receipt: LoyaltyReceiptDetail; onClose: () => void }) {
   const adjustmentItem = (entry: LoyaltyReceiptAdjustment) =>
     entry.item_id === null ? undefined : receipt.items.find((item) => item.id === entry.item_id)?.original_name
+  const reviewWarnings = receipt.warnings.filter((warning) => !informationalWarnings.has(warning))
   return <AdminDialog title={`${receipt.merchant_name} · ${amount(receipt.total_minor, receipt.currency)}`} eyebrow="Kundenkarten · Read-only-Beleg" icon={<ReceiptText size={16} />} maxWidthClass="max-w-4xl" onClose={onClose} footer={<Button onClick={onClose}>Schließen</Button>}>
     <div className="grid gap-4 text-sm text-[#d4deeb]">
       <section className="grid gap-2 rounded border border-[#2a364b] bg-[#0b111c] p-3 sm:grid-cols-2">
@@ -29,7 +34,7 @@ function ReceiptDetailDialog({ receipt, onClose }: { receipt: LoyaltyReceiptDeta
         <div><span className="text-xs text-[#718097]">Gesamt</span><p className="font-bold text-[#e8eef8]">{amount(receipt.total_minor, receipt.currency)}</p></div>
         <div><span className="text-xs text-[#718097]">Rabatte gesamt</span><p>{amount(receipt.total_discount_minor, receipt.currency)}</p></div>
       </section>
-      {receipt.validation_status === "needs_review" && <div className="rounded border border-amber-400/35 bg-amber-400/10 p-3 text-xs text-amber-100"><strong>Bitte prüfen:</strong> Der Provider-Beleg enthält unvollständige oder widersprüchliche Daten.{receipt.warnings.length > 0 && <ul className="mt-1 list-disc pl-5">{receipt.warnings.map((warning) => <li key={warning}>{warning.replaceAll("_", " ")}</li>)}</ul>}</div>}
+      {receipt.validation_status === "needs_review" && <div className="rounded border border-amber-400/35 bg-amber-400/10 p-3 text-xs text-amber-100"><strong>Bitte prüfen:</strong> Der Provider-Beleg enthält unvollständige oder widersprüchliche Daten.{reviewWarnings.length > 0 && <ul className="mt-1 list-disc pl-5">{reviewWarnings.map((warning) => <li key={warning}>{warning.replaceAll("_", " ")}</li>)}</ul>}</div>}
       <section><h3 className="mb-2 font-bold text-[#e8eef8]">Artikel ({receipt.items.length})</h3>{receipt.items.length === 0 ? <p className="text-xs text-[#8d9ab0]">Keine Artikel übermittelt.</p> : <div className="overflow-x-auto rounded border border-[#2a364b]"><table className="w-full min-w-[640px] text-left text-xs"><thead className="bg-[#172133] text-[#9eacc0]"><tr><th className="p-2">Artikel</th><th className="p-2">Menge</th><th className="p-2 text-right">Einzelpreis</th><th className="p-2 text-right">Summe</th></tr></thead><tbody>{receipt.items.map((item) => <tr key={item.id} className="border-t border-[#263247]"><td className="p-2"><strong className="text-[#dce5f2]">{item.original_name}</strong>{item.gtin && <span className="mt-0.5 block text-[11px] text-[#718097]">GTIN {item.gtin}</span>}{item.is_return && <span className="text-amber-200">Retoure</span>}</td><td className="p-2">{item.quantity ?? "—"} {item.unit ? unitLabel[item.unit] : ""}</td><td className="p-2 text-right">{amount(item.unit_price_minor, receipt.currency)}</td><td className="p-2 text-right font-bold">{amount(item.total_minor, receipt.currency)}</td></tr>)}</tbody></table></div>}</section>
       <section><h3 className="mb-2 flex items-center gap-2 font-bold text-[#e8eef8]"><Tag size={15} />Rabatte, Coupons, Pfand & Rundung</h3>{receipt.adjustments.length === 0 ? <p className="text-xs text-[#8d9ab0]">Keine Anpassungen übermittelt.</p> : <div className="grid gap-2">{receipt.adjustments.map((entry) => <div key={entry.id} className="flex items-start justify-between gap-3 rounded border border-[#2a364b] p-2 text-xs"><div><strong>{kindLabel[entry.kind]}</strong>{entry.description && <span className="ml-2 text-[#9eacc0]">{entry.description}</span>}{adjustmentItem(entry) && <p className="text-[11px] text-[#718097]">Artikel: {adjustmentItem(entry)}</p>}</div><strong>{amount(entry.amount_minor, receipt.currency)}</strong></div>)}</div>}</section>
       <p className="text-xs text-[#718097]">Inoffizielle, experimentelle Lidl-Daten. Diese Ansicht ist ausschließlich read-only und verändert keine Buchungen.</p>

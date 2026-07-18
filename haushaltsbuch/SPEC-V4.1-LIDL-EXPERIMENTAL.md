@@ -136,7 +136,9 @@ Artikel und artikelgebundene Rabatte ab.
   verschiedene Zeilen-IDs bleiben auch bei gleicher Artikel-ID eigenständige Positionen.
 - Bei fehlendem Brutto-Zeilenbetrag wird `Menge × Einzelpreis` mit `Decimal` berechnet.
 - Verschachtelte Geldobjekte sowie der reale `couponsUsed.discount`-Betrag werden
-  defensiv unterstützt.
+  defensiv unterstützt. Liefert `couponsUsed` nur Metadaten ohne eigenen Geldbetrag,
+  während eine korrespondierende HTML-Rabattzeile vorhanden ist, gilt dies als
+  nachvollziehbarer Infohinweis statt als unvollständiger Beleg.
 - Für den ausschließlich auf DE begrenzten Connector dürfen fehlende Währung und
   naive lokale Kaufzeit als `EUR` beziehungsweise `Europe/Berlin` markiert abgeleitet
   werden. Solche nachvollziehbaren Ableitungen bleiben in den Warnungsmetadaten, lösen

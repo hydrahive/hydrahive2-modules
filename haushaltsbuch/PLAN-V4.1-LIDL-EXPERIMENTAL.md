@@ -100,6 +100,13 @@ verbinden, digitale Belege read-only synchronisieren und deren Artikel ansehen.
 - [x] `couponsUsed.discount` normalisieren und Info-Warnungen klassifizieren
 - [x] Security-/HH-Review, Gesamttests, Version 1.4.9 und Source-PR
 
+### Task 12: Coupon-Metadaten von echten Fehlbeträgen unterscheiden
+
+- [x] Regressionstest: betragloser Coupon plus vorhandener HTML-Rabatt ist Info
+- [x] Echte betraglose Coupons ohne HTML-Rabatt bleiben `needs_review`
+- [x] Infohinweise lösen keinen gelben Fehlerzustand aus
+- [x] Gesamttests, Version 1.4.10 und Source-PR
+
 ## Akzeptanzkriterien
 
 Siehe `SPEC-V4.1-LIDL-EXPERIMENTAL.md`.

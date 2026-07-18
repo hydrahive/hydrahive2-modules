@@ -59,7 +59,10 @@ def test_normalizes_current_html_receipt_with_nested_money_and_de_timezone():
             <span class="discount">-0,25</span>
         """,
         "couponsUsed": [
-            {"title": "App Coupon", "couponTitle": "0,10 €"}
+            {
+                "title": "App Coupon", "discount": "Aktionscoupon",
+                "couponTitle": "0,10 €",
+            }
         ],
     }
     receipt = normalize_receipt(payload)
@@ -287,6 +290,49 @@ def test_repeated_equal_coupons_preserve_multiplicity():
     })
     assert len(receipt.adjustments) == 2
     assert receipt.total_discount_minor == 100
+
+
+def test_coupon_metadata_without_amount_is_info_when_html_discount_exists():
+    covered = normalize_receipt({
+        "id": "coupon-metadata-covered", "date": "2026-07-18T10:00:00",
+        "totalAmount": "0,50",
+        "itemsLine": [{
+            "name": "Artikel",
+            "discounts": [{"description": "App Coupon", "amount": "0,50"}],
+        }],
+        "couponsUsed": [{
+            "title": "Andere Anzeige", "couponDescription": "App Coupon",
+            "discount": "Aktionscoupon",
+        }],
+    })
+    uncovered = normalize_receipt({
+        "id": "coupon-metadata-uncovered", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "1,00", "currency": "EUR", "itemsLine": [],
+        "couponsUsed": [{"title": "App Coupon", "discount": "Aktionscoupon"}],
+    })
+    ambiguous = normalize_receipt({
+        "id": "coupon-metadata-ambiguous", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "1,00", "currency": "EUR",
+        "itemsLine": [{
+            "name": "Artikel", "discounts": [
+                {"description": "App Coupon", "amount": "0,25"},
+                {"description": "App Coupon", "amount": "0,25"},
+            ],
+        }],
+        "couponsUsed": [{"title": "App Coupon", "discount": "Aktionscoupon"}],
+    })
+    unnamed = normalize_receipt({
+        "id": "coupon-metadata-unnamed", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "1,00", "currency": "EUR",
+        "itemsLine": [{"name": "Artikel", "discounts": [{"amount": "0,25"}]}],
+        "couponsUsed": [{"title": " ", "discount": "Aktionscoupon"}],
+    })
+    assert covered.validation_status == "valid"
+    assert "coupon_metadata_without_amount" in covered.warnings
+    assert "coupon_amount_unknown" not in covered.warnings
+    for receipt in (uncovered, ambiguous, unnamed):
+        assert receipt.validation_status == "needs_review"
+        assert "coupon_amount_unknown" in receipt.warnings
 
 
 def test_different_product_codes_with_same_name_are_not_collapsed():
