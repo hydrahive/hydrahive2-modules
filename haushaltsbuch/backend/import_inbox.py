@@ -11,7 +11,7 @@ from hydrahive.api.middleware.errors import coded
 from hydrahive.db.connection import db
 
 from . import audit
-from .access import membership, require_row
+from .access import conflict, membership, require_row
 from .import_parsers import (
     CsvMapping,
     ImportParseError,
@@ -120,6 +120,49 @@ def create_batch(
         audit.record(conn, member["household_id"], principal.user_id, "import_batch", batch_id, "create", after={"filename": batch["display_filename"], "format": selected, "record_count": len(records)})
         result = _batch_dict(conn, batch, True)
     return result
+
+
+def delete_batch(
+    batch_id: int, revision: int, rows_revision: int, principal: AuthPrincipal
+) -> None:
+    with db(immediate=True) as conn:
+        member = membership(conn, principal)
+        batch = require_row(
+            conn.execute(
+                "SELECT * FROM module_haushaltsbuch_import_batches "
+                "WHERE id=? AND household_id=?",
+                (batch_id, member["household_id"]),
+            ).fetchone(),
+            "import_batch_not_found",
+        )
+        if batch["status"] != "draft" or batch["revision"] != revision:
+            conflict("import_batch_already_changed")
+        row_state = conn.execute(
+            "SELECT COUNT(*),COALESCE(SUM(revision),0) "
+            "FROM module_haushaltsbuch_import_rows WHERE batch_id=?",
+            (batch_id,),
+        ).fetchone()
+        if row_state[1] != rows_revision:
+            conflict("import_batch_already_changed")
+        row_count = row_state[0]
+        audit.record(
+            conn,
+            member["household_id"],
+            principal.user_id,
+            "import_batch",
+            batch_id,
+            "delete_draft",
+            before={
+                "filename": batch["display_filename"],
+                "format": batch["source_format"],
+                "record_count": row_count,
+            },
+        )
+        conn.execute(
+            "DELETE FROM module_haushaltsbuch_import_batches "
+            "WHERE id=? AND household_id=?",
+            (batch_id, member["household_id"]),
+        )
 
 
 def list_batches(principal: AuthPrincipal) -> list[dict]:

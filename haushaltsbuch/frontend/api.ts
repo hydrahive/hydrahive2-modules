@@ -47,6 +47,7 @@ export const haushaltsbuchApi = {
   deleteImportProfile: (id: number, revision: number) => api.delete<void>(`${BASE}/import-profiles/${id}?revision=${revision}`),
   imports: () => api.get<ImportBatch[]>(`${BASE}/imports`),
   importBatch: (id: number) => api.get<ImportBatch>(`${BASE}/imports/${id}`),
+  deleteImport: (id: number, revision: number, rowsRevision: number) => api.delete<void>(`${BASE}/imports/${id}?revision=${revision}&rows_revision=${rowsRevision}`),
   createImport: ({ file, account_id, format, csv_mapping, profile_id }: ImportUpload) => {
     const form = new FormData()
     form.append("file", file, file.name)

@@ -76,6 +76,11 @@ def _row_dict(row: sqlite3.Row) -> dict:
 def _batch_dict(conn: sqlite3.Connection, row: sqlite3.Row, include_rows: bool = False) -> dict:
     result = as_dict(row)
     result.pop("file_hash", None)
+    result["rows_revision"] = conn.execute(
+        "SELECT COALESCE(SUM(revision),0) "
+        "FROM module_haushaltsbuch_import_rows WHERE batch_id=?",
+        (row["id"],),
+    ).fetchone()[0]
     if include_rows:
         rows = conn.execute(
             "SELECT * FROM module_haushaltsbuch_import_rows WHERE batch_id=? ORDER BY source_line",

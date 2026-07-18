@@ -47,11 +47,16 @@ export function ImportsView({ baseCurrency, onChanged }: { baseCurrency: string;
   function created(batch: ImportBatch) {
     setBatches((current) => [batch, ...(current ?? [])]); setUpload(false); setSelected(batch); onChanged()
   }
+  function deleted(batchId: number) {
+    setBatches((current) => current?.filter((batch) => batch.id !== batchId) ?? [])
+    setSelected(undefined)
+    onChanged()
+  }
 
   if (error && (!accounts || !categories || !profiles || !batches)) return <ErrorState error={errorMessage(error)} onRetry={load} />
   if (!accounts || !categories || !profiles || !batches) return <LoadingState label="Import-Inbox wird geladen …" />
   const hasImportableAccount = accounts.some((account) => !account.archived && account.currency === baseCurrency)
-  if (selected) return <><ImportBatchView initialBatch={selected} accounts={accounts} categories={categories} onBack={() => setSelected(undefined)} onChanged={batchChanged} />{upload && <ImportUploadDialog accounts={accounts} baseCurrency={baseCurrency} profiles={profiles} onProfilesChanged={loadProfiles} onClose={() => setUpload(false)} onCreated={created} />}</>
+  if (selected) return <><ImportBatchView initialBatch={selected} accounts={accounts} categories={categories} onBack={() => setSelected(undefined)} onChanged={batchChanged} onDeleted={deleted} />{upload && <ImportUploadDialog accounts={accounts} baseCurrency={baseCurrency} profiles={profiles} onProfilesChanged={loadProfiles} onClose={() => setUpload(false)} onCreated={created} />}</>
 
   const drafts = batches.filter((batch) => batch.status === "draft")
   const historical = batches.filter((batch) => batch.status !== "draft")

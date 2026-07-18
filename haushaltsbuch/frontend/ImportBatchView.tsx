@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { ArrowLeft, Check, CheckCheck, Pencil, Save, X } from "lucide-react"
+import { ArrowLeft, Check, CheckCheck, Pencil, Save, Trash2, X } from "lucide-react"
 import { AdminConfirmDialog } from "@/features/cockpit/admin/ui/AdminConfirmDialog"
 import { errorMessage, haushaltsbuchApi, isConflict } from "./api"
 import { formatMinorUnits, minorToInput, parseMinorUnits } from "./money"
@@ -77,18 +77,20 @@ function RowEditor({ batchId, row, accountCurrency, categories, readOnly, onUpda
   </article>
 }
 
-export function ImportBatchView({ initialBatch, accounts, categories, onBack, onChanged }: {
+export function ImportBatchView({ initialBatch, accounts, categories, onBack, onChanged, onDeleted }: {
   initialBatch: ImportBatch
   accounts: Account[]
   categories: Category[]
   onBack: () => void
   onChanged: (batch: ImportBatch) => void
+  onDeleted: (batchId: number) => void
 }) {
   const [batch, setBatch] = useState(initialBatch)
   const [filter, setFilter] = useState<"all" | ImportRowStatus>("all")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
   const [confirmComplete, setConfirmComplete] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const rows = batch.rows ?? []
   const account = accounts.find((item) => item.id === batch.account_id)
   const accepted = rows.filter((row) => row.status === "accepted")
@@ -99,7 +101,12 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   const counts = useMemo(() => rows.reduce<Partial<Record<ImportRowStatus, number>>>((result, row) => ({ ...result, [row.status]: (result[row.status] ?? 0) + 1 }), {}), [rows])
 
   function updateRow(next: ImportRow) {
-    const nextBatch = { ...batch, rows: rows.map((row) => row.id === next.id ? next : row) }
+    const previous = rows.find((row) => row.id === next.id)
+    const nextBatch = {
+      ...batch,
+      rows_revision: batch.rows_revision + next.revision - (previous?.revision ?? next.revision),
+      rows: rows.map((row) => row.id === next.id ? next : row),
+    }
     setBatch(nextBatch); onChanged(nextBatch)
   }
   async function bulk(status: "accepted" | "rejected") {
@@ -109,7 +116,8 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
     try {
       const changed = new Map<number, ImportRow>()
       for (const row of candidates) changed.set(row.id, await haushaltsbuchApi.updateImportRow(batch.id, row.id, { revision: row.revision, status }))
-      const next = { ...batch, rows: rows.map((row) => changed.get(row.id) ?? row) }
+      const rowsRevisionDelta = candidates.reduce((sum, row) => sum + (changed.get(row.id)?.revision ?? row.revision) - row.revision, 0)
+      const next = { ...batch, rows_revision: batch.rows_revision + rowsRevisionDelta, rows: rows.map((row) => changed.get(row.id) ?? row) }
       setBatch(next); onChanged(next)
     } catch (cause) { setError(cause) } finally { setBusy(false) }
   }
@@ -118,9 +126,14 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
     try { const next = await haushaltsbuchApi.completeImport(batch.id, batch.revision); setBatch(next); setConfirmComplete(false); onChanged(next) }
     catch (cause) { setError(cause); setConfirmComplete(false) } finally { setBusy(false) }
   }
+  async function deleteDraft() {
+    setBusy(true); setError(undefined)
+    try { await haushaltsbuchApi.deleteImport(batch.id, batch.revision, batch.rows_revision); onDeleted(batch.id) }
+    catch (cause) { setError(cause); setConfirmDelete(false) } finally { setBusy(false) }
+  }
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-center gap-3"><Button onClick={onBack}><ArrowLeft size={13} className="mr-1 inline" />Zur Übersicht</Button><div className="min-w-0 flex-1"><h2 className="truncate font-bold text-[#e8eef8]">{batch.display_filename}</h2><p className="text-xs text-[#8d9ab0]">{batch.source_format.toUpperCase()} · {account?.name ?? `Konto #${batch.account_id}`} · Paket #{batch.id}</p></div>{batch.status === "draft" && <Button tone="primary" disabled={!accepted.length || missingCategory > 0 || busy} onClick={() => setConfirmComplete(true)}><CheckCheck size={13} className="mr-1 inline" />Import abschließen</Button>}</div>
+    <div className="flex flex-wrap items-center gap-3"><Button onClick={onBack}><ArrowLeft size={13} className="mr-1 inline" />Zur Übersicht</Button><div className="min-w-0 flex-1"><h2 className="truncate font-bold text-[#e8eef8]">{batch.display_filename}</h2><p className="text-xs text-[#8d9ab0]">{batch.source_format.toUpperCase()} · {account?.name ?? `Konto #${batch.account_id}`} · Paket #{batch.id}</p></div>{batch.status === "draft" && <><Button tone="danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={13} className="mr-1 inline" />Entwurf löschen</Button><Button tone="primary" disabled={!accepted.length || missingCategory > 0 || busy} onClick={() => setConfirmComplete(true)}><CheckCheck size={13} className="mr-1 inline" />Import abschließen</Button></>}</div>
     {batch.status === "imported" && <div className="rounded border border-emerald-500/35 bg-emerald-500/10 p-4 text-sm text-emerald-100" role="status"><strong>Import abgeschlossen.</strong> {rows.filter((row) => row.status === "imported").length} Zeilen wurden verbindlich gebucht.</div>}
     {batch.status === "reversed" && <div className="rounded border border-amber-500/35 bg-amber-500/10 p-4 text-sm text-amber-100" role="status"><strong>Import storniert.</strong> Die zugehörigen Buchungen wurden durch Gegenbuchungen aufgehoben.</div>}
     {error !== undefined && <ErrorState error={errorMessage(error)} conflict={isConflict(error)} />}
@@ -135,5 +148,6 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
     {batch.status === "draft" && missingCategory > 0 && <p className="text-xs font-semibold text-amber-200">{missingCategory} angenommene Zeile(n) benötigen vor dem Abschluss eine passende Kategorie.</p>}
     <div className="space-y-3">{visibleRows.map((row) => <RowEditor key={row.id} batchId={batch.id} row={row} accountCurrency={account?.currency ?? "EUR"} categories={categories} readOnly={batch.status !== "draft"} onUpdated={updateRow} />)}{!visibleRows.length && <EmptyState title="Keine Zeilen" text="Für diesen Filter sind keine Importzeilen vorhanden." />}</div>
     {confirmComplete && <AdminConfirmDialog title="Import verbindlich abschließen?" confirmLabel={busy ? "Wird gebucht …" : "Verbindlich buchen"} cancelLabel="Weiter prüfen" confirmTone="primary" busy={busy} onClose={() => setConfirmComplete(false)} onConfirm={complete}>{accepted.length} Zeile(n) mit einer Summe von {formatMinorUnits(acceptedSum, account?.currency ?? accepted[0]?.currency ?? "EUR")} werden atomar gebucht. Dieser Schritt verändert das Ledger.</AdminConfirmDialog>}
+    {confirmDelete && <AdminConfirmDialog title="Importentwurf löschen?" confirmLabel={busy ? "Wird gelöscht …" : "Entwurf endgültig löschen"} cancelLabel="Abbrechen" confirmTone="danger" busy={busy} onClose={() => setConfirmDelete(false)} onConfirm={deleteDraft}>„{batch.display_filename}“ und alle {rows.length} eingelesenen Zeilen werden gelöscht. Es wurden noch keine Buchungen erzeugt. Anschließend kannst du dieselbe Datei mit einer korrigierten CSV-Zuordnung erneut importieren.</AdminConfirmDialog>}
   </div>
 }
