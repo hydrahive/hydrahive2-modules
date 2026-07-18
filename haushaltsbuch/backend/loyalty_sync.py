@@ -15,6 +15,7 @@ from .access import membership
 from .common import NOW
 from .loyalty_connections import _connection_dict, _manageable
 from .loyalty_persistence import SyncPayload, persist_sync
+from .loyalty_receipt_persistence import persist_receipts
 from .loyalty_provider import (
     InvalidProviderData,
     LoyaltyProviderAdapter,
@@ -27,13 +28,16 @@ from .loyalty_sync_errors import finish_failure
 logger = logging.getLogger(__name__)
 _MAX_PAGES = 100
 _PAGE_SIZE = 100
+_MAX_RECEIPTS = 200
 
 
-async def _pages(method, context: ProviderConnection) -> list:
+async def _pages(method, context: ProviderConnection, max_items: int | None = None) -> list:
     result, cursor, seen = [], None, set()
     for _ in range(_MAX_PAGES):
         page = await method(context, cursor, _PAGE_SIZE)
         result.extend(page.items)
+        if max_items is not None and len(result) >= max_items:
+            return result[:max_items]
         if page.next_cursor is None:
             return result
         if page.next_cursor in seen:
@@ -41,7 +45,6 @@ async def _pages(method, context: ProviderConnection) -> list:
         seen.add(page.next_cursor)
         cursor = page.next_cursor
     raise InvalidProviderData("pagination_limit")
-
 
 async def _collect(
     adapter: LoyaltyProviderAdapter, context: ProviderConnection
@@ -58,6 +61,14 @@ async def _collect(
         payload.activities = await _pages(adapter.list_activities, context)
     if capabilities.coupons:
         payload.coupons = await _pages(adapter.list_coupons, context)
+    if capabilities.receipts:
+        receipt_ids = await _pages(
+            adapter.list_receipts, context, max_items=_MAX_RECEIPTS
+        )
+        for provider_receipt_id in receipt_ids:
+            payload.receipts.append(
+                await adapter.get_receipt(context, provider_receipt_id)
+            )
     return payload, capabilities.model_dump()
 
 def _start(connection_id: int, principal: AuthPrincipal):
@@ -128,6 +139,11 @@ def _finish_success(
             (context.connection_id,),
         ).fetchone()
         counts = persist_sync(conn, connection, payload)
+        receipt_counts = persist_receipts(conn, connection, payload.receipts)
+        counts.fetched += receipt_counts.fetched
+        counts.created += receipt_counts.created
+        counts.updated += receipt_counts.updated
+        counts.skipped += receipt_counts.skipped
         conn.execute(
             f"UPDATE module_haushaltsbuch_loyalty_sync_runs SET status='succeeded',"
             f"finished_at={NOW},fetched_count=?,created_count=?,updated_count=?,"
@@ -158,14 +174,19 @@ async def sync_connection(connection_id: int, principal: AuthPrincipal) -> dict:
     run_id, context, adapter = _start(connection_id, principal)
     try:
         payload, capabilities = await _collect(adapter, context)
-        return _finish_success(
-            run_id, context, payload, capabilities, principal.user_id
-        )
+        return _finish_success(run_id, context, payload, capabilities, principal.user_id)
     except ProviderError as error:
         finish_failure(run_id, context, error)
     except Exception:
         logger.exception("Unerwarteter Loyalty-Providerfehler (connection=%s)", connection_id)
         finish_failure(run_id, context, ProviderUnavailable())
+    finally:
+        try:
+            await adapter.disconnect(context)
+        except Exception:
+            logger.warning(
+                "Loyalty-Provider-Bereinigung fehlgeschlagen (connection=%s)", connection_id
+            )
 
 def list_sync_runs(connection_id: int, principal: AuthPrincipal) -> list[dict]:
     with db() as conn:

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, status
 
 from hydrahive.api.middleware.errors import coded
 
-from . import lidl_auth, loyalty_connections, loyalty_sync
+from . import lidl_auth, loyalty_connections, loyalty_receipts, loyalty_sync
 from .access import Principal
 from .lidl_config import enabled as lidl_enabled
 from .loyalty_requests import (
@@ -37,6 +37,16 @@ async def complete_lidl_auth(body: LidlAuthComplete, principal: Principal) -> di
         return await lidl_auth.complete_auth(body, principal)
     except lidl_auth.AuthFlowError as exc:
         raise coded(exc.status_code, exc.code) from exc
+
+
+@router.get("/receipts")
+def list_receipts(principal: Principal) -> list[dict]:
+    return loyalty_receipts.list_receipts(principal)
+
+
+@router.get("/receipts/{receipt_id}")
+def receipt_detail(receipt_id: int, principal: Principal) -> dict:
+    return loyalty_receipts.receipt_detail(receipt_id, principal)
 
 
 @router.get("/connections")

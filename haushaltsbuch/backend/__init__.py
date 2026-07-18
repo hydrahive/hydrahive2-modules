@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends
 
 from hydrahive.api.middleware.auth import require_auth
 
+from .lidl_config import enabled as lidl_enabled
 from .routes_household import router as household_router
 from .routes_imports import router as import_router
 from .routes_ledger import router as ledger_router
@@ -26,13 +27,18 @@ def status(auth: Annotated[tuple[str, str], Depends(require_auth)]) -> dict:
             "bookings_budgets": "available",
             "bank_import": "available",
             "loyalty_foundation": "available",
-            "lidl_plus": "planned",
+            "lidl_plus": "experimental" if lidl_enabled() else "disabled",
             "payback": "planned",
         },
     }
 
 
 def register(ctx) -> None:
+    from .loyalty_registry import register as register_loyalty_provider
+    from .providers.lidl import LidlPlusProvider
+
+    if lidl_enabled():
+        register_loyalty_provider(LidlPlusProvider())
     ctx.register_router(router)
     ctx.register_router(household_router)
     ctx.register_router(import_router)
