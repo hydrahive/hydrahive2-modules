@@ -84,6 +84,44 @@ def test_mt940_reversal_signs_and_entry_dates_are_normalized():
     )
 
 
+def test_sparkasse_csv_camt_accepts_mixed_two_and_four_digit_years():
+    payload = (
+        '"Auftragskonto";"Buchungstag";"Valutadatum";"Buchungstext";'
+        '"Verwendungszweck";"Glaeubiger ID";"Mandatsreferenz";'
+        '"Kundenreferenz (End-to-End)";"Sammlerreferenz";'
+        '"Lastschrift Ursprungsbetrag";"Auslagenersatz Ruecklastschrift";'
+        '"Beguenstigter/Zahlungspflichtiger";"Kontonummer/IBAN";'
+        '"BIC (SWIFT-Code)";"Betrag";"Waehrung";"Info"\n'
+        '"00000000";"24.03.14";"01.04.2014";"ERSTLASTSCHRIFT";'
+        '"Rundfunkbeitrag";"DE3000100000001272";"3831166501301";'
+        '"END-TO-END-1";"";"";"";"Rundfunk ARD, ZDF, DRadio";'
+        '"DE28700500000002024100";"BYLADEMMXXX";"-53,94";"EUR";'
+        '"Umsatz vorgemerkt"'
+    ).encode("cp1252")
+    mapping = CsvMapping(
+        booking_date="Buchungstag",
+        value_date="Valutadatum",
+        amount="Betrag",
+        currency="Waehrung",
+        counterparty="Beguenstigter/Zahlungspflichtiger",
+        purpose="Verwendungszweck",
+        bank_reference="Kundenreferenz (End-to-End)",
+        counterparty_identifier="Kontonummer/IBAN",
+        date_format="%d.%m.%Y",
+        delimiter=";",
+        encoding="cp1252",
+        decimal_separator=",",
+    )
+
+    row = parse_import(payload, "csv", mapping)[0]
+
+    assert row.errors == ()
+    assert row.booking_date.isoformat() == "2014-03-24"
+    assert row.value_date.isoformat() == "2014-04-01"
+    assert row.amount_minor == -5394
+    assert row.counterparty == "Rundfunk ARD, ZDF, DRadio"
+
+
 def test_csv_keeps_invalid_rows_as_reviewable_errors():
     payload = b"Datum;Betrag\n01.01.2026;1,00\nkaputt;abc\n03.01.2026;3,00"
     mapping = CsvMapping(booking_date="Datum", amount="Betrag", date_format="%d.%m.%Y", delimiter=";")

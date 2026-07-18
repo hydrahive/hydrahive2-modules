@@ -31,7 +31,7 @@ Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felde
 ## Bankimport-Inbox
 
 - `GET|POST /import-profiles`, `PUT|DELETE /import-profiles/{id}` verwalten haushaltsgebundene CSV-Mappings.
-- `POST /imports` ist Multipart mit `file`, `account_id`, `format=auto|camt|mt940|csv`, optional `mapping` als JSON und optional `profile_id`.
+- `POST /imports` ist Multipart mit `file`, `account_id`, `format=auto|camt|mt940|csv`, optional `mapping` als JSON und optional `profile_id`. CSV-Datumswerte im deutschen Punktformat akzeptieren pro Zelle sowohl zwei- als auch vierstellige Jahreszahlen.
 - `GET /imports` liefert Paketzusammenfassungen; `GET /imports/{id}` zusätzlich normalisierte Zeilen.
 - `DELETE /imports/{id}?revision=n&rows_revision=n` löscht ausschließlich unveränderte, noch nicht gebuchte Entwürfe samt Zeilen; gebuchte Historie bleibt unveränderlich.
 - `PATCH /imports/{id}/rows/{row_id}` ändert Entscheidung, Kategorie und korrigierbare Metadaten mit `revision`.

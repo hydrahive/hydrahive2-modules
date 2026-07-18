@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
 from .import_parsers import (
@@ -22,6 +22,16 @@ def _value(row: dict[str, str | None], column: str | None) -> str | None:
         raise ImportParseError("csv_column_missing")
     value = (row[column] or "").strip()
     return value or None
+
+
+def _parse_date(value: str, configured_format: str) -> date:
+    formats = dict.fromkeys((configured_format, "%d.%m.%Y", "%d.%m.%y"))
+    for date_format in formats:
+        try:
+            return datetime.strptime(value, date_format).date()
+        except ValueError:
+            continue
+    raise ImportParseError("invalid_date")
 
 
 def _amount_minor(value: str, decimal_separator: str) -> int:
@@ -44,16 +54,9 @@ def _parse_row(
     row: dict[str, str | None], source_line: int, mapping: CsvMapping
 ) -> NormalizedRecord:
     raw_date = _value(row, mapping.booking_date)
-    try:
-        booking_date = datetime.strptime(raw_date or "", mapping.date_format).date()
-        raw_value_date = _value(row, mapping.value_date)
-        value_date = (
-            datetime.strptime(raw_value_date, mapping.date_format).date()
-            if raw_value_date
-            else None
-        )
-    except (ValueError, TypeError) as exc:
-        raise ImportParseError("invalid_date") from exc
+    booking_date = _parse_date(raw_date or "", mapping.date_format)
+    raw_value_date = _value(row, mapping.value_date)
+    value_date = _parse_date(raw_value_date, mapping.date_format) if raw_value_date else None
     if mapping.amount:
         amount = _amount_minor(_value(row, mapping.amount) or "", mapping.decimal_separator)
     else:
