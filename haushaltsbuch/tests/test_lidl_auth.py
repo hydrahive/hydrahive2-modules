@@ -184,6 +184,15 @@ def test_callback_accepts_browser_canonical_trailing_slash():
     assert lidl_auth.parse_callback(callback, "expected") == "authorization-code"
 
 
+def test_callback_accepts_exact_returned_lidl_scope():
+    scope = "openid%20profile%20offline_access%20lpprofile%20lpapis"
+    callback = (
+        "com.lidlplus.app://callback?code=authorization-code&"
+        f"scope={scope}&state=expected&session_state=session"
+    )
+    assert lidl_auth.parse_callback(callback, "expected") == "authorization-code"
+
+
 def test_callback_rejects_duplicate_values_and_state_mismatch(client, owner_headers):
     _create_household(client, owner_headers)
     started = _start(client, owner_headers).json()
@@ -193,6 +202,7 @@ def test_callback_rejects_duplicate_values_and_state_mismatch(client, owner_head
         f"com.lidlplus.app://callback?code=x&code=y&state={state}",
         "com.lidlplus.app://callback?code=x&state=wrong",
         f"com.lidlplus.app://callback?code=x&state={state}&broken",
+        f"com.lidlplus.app://callback?code=x&state={state}&scope=openid%20admin",
     ):
         with pytest.raises(lidl_auth.AuthFlowError):
             lidl_auth.parse_callback(callback, state)
