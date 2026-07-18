@@ -41,7 +41,7 @@ der manuelle Browserflow daran, stoppt der Test mit einer redigierten Meldung.
 - feste Hosts: `accounts.lidl.com`, `tickets.lidlplus.com`, optional
   `profile.lidlplus.com`; keine usergesteuerten URLs;
 - ausschließlich `DE/de`;
-- fail-closed Installationsschalter `HH_HAUSHALTSBUCH_LIDL_ENABLED=1`;
+- standardmäßig aktiver Testconnector mit optionalem Betreiber-Not-Aus `HH_HAUSHALTSBUCH_LIDL_ENABLED=0`;
 - TLS-Verifikation, feste Timeouts, begrenzte Antwortgröße und sequentielle Abrufe;
 - Tokenrefresh bei Bedarf, Rotation atomar im Credential-Store;
 - 401 → `reauth_required`, 403 → `blocked`, 429 → Cooldown, 5xx → unavailable;
