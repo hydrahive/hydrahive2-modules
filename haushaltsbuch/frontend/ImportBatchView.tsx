@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react"
-import { ArrowLeft, Check, CheckCheck, Pencil, Save, Trash2, X } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { ArrowLeft, Check, CheckCheck, Pencil, Save, Sparkles, Trash2, Wand2, X } from "lucide-react"
 import { AdminConfirmDialog } from "@/features/cockpit/admin/ui/AdminConfirmDialog"
 import { errorMessage, haushaltsbuchApi, isConflict } from "./api"
 import { formatMinorUnits, minorToInput, parseMinorUnits } from "./money"
@@ -37,6 +37,8 @@ function RowEditor({ batchId, row, accountCurrency, categories, readOnly, onUpda
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
   const matchingCategories = categories.filter((category) => !category.archived && category.kind === ((row.amount_minor ?? 0) > 0 ? "income" : "expense"))
+  const suggestion = row.suggested_category_id !== null ? categories.find((category) => category.id === row.suggested_category_id) : undefined
+  const showSuggestion = !readOnly && row.category_id === null && suggestion !== undefined
 
   async function patch(update: Omit<ImportRowUpdate, "revision">): Promise<boolean> {
     setBusy(true); setError(undefined)
@@ -68,6 +70,11 @@ function RowEditor({ batchId, row, accountCurrency, categories, readOnly, onUpda
     </div>
     {(row.warnings.length > 0 || row.errors.length > 0) && <ul className="mt-3 space-y-1 text-xs">{row.warnings.map((warning) => <li key={`w-${warning}`} className="text-amber-200">Warnung: {messageLabel(warning)}</li>)}{row.errors.map((item) => <li key={`e-${item}`} className="text-rose-200">Fehler: {messageLabel(item)}</li>)}</ul>}
     {error !== undefined && <div className="mt-3"><ErrorState error={errorMessage(error)} conflict={isConflict(error)} /></div>}
+    {showSuggestion && <div className="mt-3 flex flex-wrap items-center gap-2 rounded border border-cyan-400/30 bg-cyan-400/10 p-2 text-xs">
+      <Sparkles size={13} className="text-cyan-200" />
+      <span className="text-cyan-100">Vorschlag: <strong>{suggestion!.name}</strong>{row.suggestion_source === "history" ? " · aus deiner Historie" : " · per KI"}{row.suggestion_confidence !== null ? ` · ${Math.round(row.suggestion_confidence * 100)}%` : ""}</span>
+      <Button disabled={busy} tone="primary" onClick={() => patch({ category_id: suggestion!.id, status: "accepted" })}><Check size={12} className="mr-1 inline" />Übernehmen</Button>
+    </div>}
     {!readOnly && <div className="mt-4 grid gap-3 border-t border-[#263247] pt-3 lg:grid-cols-[minmax(12rem,1fr)_auto_auto]">
       <Select aria-label="Kategorie" value={row.category_id ?? ""} disabled={busy} onChange={(event) => patch({ category_id: event.target.value ? Number(event.target.value) : null })}><option value="">Kategorie wählen …</option>{matchingCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select>
       <div className="flex gap-2"><Button disabled={busy || row.errors.length > 0} tone={row.status === "accepted" ? "primary" : "default"} onClick={() => patch({ status: "accepted" })}><Check size={13} className="mr-1 inline" />Annehmen</Button><Button disabled={busy} tone={row.status === "rejected" ? "danger" : "default"} onClick={() => patch({ status: "rejected" })}><X size={13} className="mr-1 inline" />Verwerfen</Button></div>
@@ -91,11 +98,26 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   const [error, setError] = useState<unknown>()
   const [confirmComplete, setConfirmComplete] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [models, setModels] = useState<{ id: string; label: string }[]>([])
+  const [model, setModel] = useState("")
   const rows = batch.rows ?? []
   const account = accounts.find((item) => item.id === batch.account_id)
   const accepted = rows.filter((row) => row.status === "accepted")
   const acceptedSum = accepted.reduce((sum, row) => sum + (row.amount_minor ?? 0), 0)
   const missingCategory = accepted.filter((row) => row.category_id === null).length
+  const uncategorized = rows.filter((row) => row.category_id === null && (row.status === "pending" || row.status === "duplicate"))
+  const openSuggestions = uncategorized.filter((row) => row.suggested_category_id !== null).length
+
+  useEffect(() => {
+    if (batch.status !== "draft") return
+    let active = true
+    haushaltsbuchApi.llmModels().then((data) => {
+      if (!active) return
+      setModels(data.models.map((item) => ({ id: item.id, label: item.label })))
+      setModel(data.default || data.models[0]?.id || "")
+    }).catch(() => { /* Picker bleibt leer → Default-Modell des Servers wird genutzt */ })
+    return () => { active = false }
+  }, [batch.status])
   const visibleRows = filter === "all" ? rows : rows.filter((row) => row.status === filter)
   const dates = rows.flatMap((row) => row.booking_date ? [row.booking_date] : []).sort()
   const counts = useMemo(() => rows.reduce<Partial<Record<ImportRowStatus, number>>>((result, row) => ({ ...result, [row.status]: (result[row.status] ?? 0) + 1 }), {}), [rows])
@@ -121,6 +143,16 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
       setBatch(next); onChanged(next)
     } catch (cause) { setError(cause) } finally { setBusy(false) }
   }
+  async function suggest() {
+    setBusy(true); setError(undefined)
+    try { const next = await haushaltsbuchApi.suggestImportCategories(batch.id, model || undefined); setBatch(next); onChanged(next) }
+    catch (cause) { setError(cause) } finally { setBusy(false) }
+  }
+  async function acceptSuggestions() {
+    setBusy(true); setError(undefined)
+    try { const next = await haushaltsbuchApi.acceptImportSuggestions(batch.id, batch.revision); setBatch(next); onChanged(next) }
+    catch (cause) { setError(cause) } finally { setBusy(false) }
+  }
   async function complete() {
     setBusy(true); setError(undefined)
     try { const next = await haushaltsbuchApi.completeImport(batch.id, batch.revision); setBatch(next); setConfirmComplete(false); onChanged(next) }
@@ -144,6 +176,16 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
       <div className={`${panel} p-3`}><span className="text-xs text-[#718097]">Duplikate</span><strong className="mt-1 block text-lg text-amber-200">{counts.duplicate ?? 0}</strong></div>
       <div className={`${panel} p-3`}><span className="text-xs text-[#718097]">Fehler</span><strong className="mt-1 block text-lg text-rose-200">{counts.error ?? 0}</strong></div>
     </section>
+    {batch.status === "draft" && <div className={`${panel} flex flex-wrap items-center gap-2 p-3`}>
+      <Wand2 size={15} className="text-cyan-200" />
+      <div className="mr-auto min-w-0">
+        <strong className="block text-sm text-[#e8eef8]">Kategorien automatisch vorschlagen</strong>
+        <span className="text-xs text-[#8d9ab0]">Erst aus deiner Historie, unbekannte Händler per KI. {uncategorized.length} Zeile(n) ohne Kategorie{openSuggestions > 0 ? ` · ${openSuggestions} offene(r) Vorschlag/Vorschläge` : ""}.</span>
+      </div>
+      {models.length > 0 && <Select aria-label="KI-Modell" value={model} disabled={busy} onChange={(event) => setModel(event.target.value)} className="max-w-[16rem]">{models.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</Select>}
+      <Button tone="primary" disabled={busy || uncategorized.length === 0} onClick={suggest}><Sparkles size={13} className="mr-1 inline" />Vorschlagen</Button>
+      <Button disabled={busy || openSuggestions === 0} onClick={acceptSuggestions}><CheckCheck size={13} className="mr-1 inline" />Alle Vorschläge übernehmen</Button>
+    </div>}
     {batch.status === "draft" && <div className="flex flex-wrap items-center gap-2"><div className="mr-auto flex flex-wrap gap-1">{FILTERS.map((item) => <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded border px-2 py-1 text-xs font-bold ${filter === item.value ? "border-cyan-400/40 bg-cyan-400/15 text-cyan-200" : "border-[#33425a] text-[#8d9ab0]"}`}>{item.label}{item.value !== "all" ? ` (${counts[item.value] ?? 0})` : ` (${rows.length})`}</button>)}</div><Button disabled={busy} onClick={() => bulk("accepted")}>Alle gültigen annehmen</Button><Button disabled={busy} onClick={() => bulk("rejected")}>Alle gültigen verwerfen</Button></div>}
     {batch.status === "draft" && missingCategory > 0 && <p className="text-xs font-semibold text-amber-200">{missingCategory} angenommene Zeile(n) benötigen vor dem Abschluss eine passende Kategorie.</p>}
     <div className="space-y-3">{visibleRows.map((row) => <RowEditor key={row.id} batchId={batch.id} row={row} accountCurrency={account?.currency ?? "EUR"} categories={categories} readOnly={batch.status !== "draft"} onUpdated={updateRow} />)}{!visibleRows.length && <EmptyState title="Keine Zeilen" text="Für diesen Filter sind keine Importzeilen vorhanden." />}</div>

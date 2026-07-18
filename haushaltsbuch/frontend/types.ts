@@ -296,6 +296,9 @@ export interface ImportRow {
   fingerprint_strength: "strong" | "weak"
   status: ImportRowStatus
   category_id: number | null
+  suggested_category_id: number | null
+  suggestion_source: "history" | "llm" | null
+  suggestion_confidence: number | null
   transaction_id: number | null
   revision: Revision
   created_at: string

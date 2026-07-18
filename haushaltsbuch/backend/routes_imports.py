@@ -8,7 +8,15 @@ from hydrahive.api.middleware.errors import coded
 
 from . import import_service
 from .access import Principal
-from .import_models import ImportComplete, ImportProfileCreate, ImportProfileUpdate, ImportReverse, ImportRowUpdate
+from .import_models import (
+    ImportAcceptSuggestions,
+    ImportComplete,
+    ImportProfileCreate,
+    ImportProfileUpdate,
+    ImportReverse,
+    ImportRowUpdate,
+    ImportSuggest,
+)
 from .import_parsers import MAX_FILE_SIZE
 
 router = APIRouter()
@@ -99,6 +107,16 @@ def delete_import(
 @router.patch("/imports/{batch_id}/rows/{row_id}")
 def update_import_row(batch_id: int, row_id: int, body: ImportRowUpdate, principal: Principal) -> dict:
     return import_service.update_row(batch_id, row_id, body, principal)
+
+
+@router.post("/imports/{batch_id}/suggest-categories")
+async def suggest_categories(batch_id: int, body: ImportSuggest, principal: Principal) -> dict:
+    return await import_service.suggest_categories(batch_id, principal, model=body.model)
+
+
+@router.post("/imports/{batch_id}/accept-suggestions")
+def accept_suggestions(batch_id: int, body: ImportAcceptSuggestions, principal: Principal) -> dict:
+    return import_service.accept_suggestions(batch_id, body.revision, body.row_ids, principal)
 
 
 @router.post("/imports/{batch_id}/complete")

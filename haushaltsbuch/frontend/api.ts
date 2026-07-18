@@ -58,6 +58,9 @@ export const haushaltsbuchApi = {
     return api.postForm<ImportBatch>(`${BASE}/imports`, form)
   },
   updateImportRow: (batchId: number, rowId: number, body: ImportRowUpdate) => api.patch<ImportRow>(`${BASE}/imports/${batchId}/rows/${rowId}`, body),
+  llmModels: () => api.get<{ default: string; models: { id: string; label: string; is_free?: boolean }[] }>("/llm/models"),
+  suggestImportCategories: (id: number, model?: string) => api.post<ImportBatch>(`${BASE}/imports/${id}/suggest-categories`, model ? { model } : {}),
+  acceptImportSuggestions: (id: number, revision: number, rowIds?: number[]) => api.post<ImportBatch>(`${BASE}/imports/${id}/accept-suggestions`, rowIds ? { revision, row_ids: rowIds } : { revision }),
   completeImport: (id: number, revision: number) => api.post<ImportBatch>(`${BASE}/imports/${id}/complete`, { revision }),
   reverseImport: (id: number, revision: number) => api.post<ImportBatch>(`${BASE}/imports/${id}/reverse`, { revision }),
 
