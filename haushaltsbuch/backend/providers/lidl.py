@@ -29,7 +29,26 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
 
     def __init__(self, transport: httpx.AsyncBaseTransport | None = None):
         self._transport = transport
-        self._access_tokens: dict[int, str] = {}
+        self._access_tokens: dict[int, tuple[str, datetime]] = {}
+
+    def prime_auth(
+        self, connection_id: int, access_token: str, expires_at: datetime,
+    ) -> None:
+        if connection_id < 1 or not access_token or len(access_token) > 16_384:
+            raise InvalidProviderData("lidl_access_token_invalid")
+        if not isinstance(expires_at, datetime) or expires_at.utcoffset() is None:
+            raise InvalidProviderData("lidl_access_expiry_invalid")
+        self._access_tokens[connection_id] = (access_token, expires_at)
+
+    def _access_token(self, connection_id: int) -> str | None:
+        entry = self._access_tokens.get(connection_id)
+        if entry is None:
+            return None
+        token, expires_at = entry
+        if expires_at <= datetime.now(timezone.utc):
+            self._access_tokens.pop(connection_id, None)
+            return None
+        return token
 
     @staticmethod
     def _check_connection(connection: ProviderConnection) -> None:
@@ -40,9 +59,7 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
 
     @staticmethod
     def _credential(connection: ProviderConnection) -> Credential:
-        credential = get_credential(
-            connection.credential_owner, connection.credential_ref
-        )
+        credential = get_credential(connection.credential_owner, connection.credential_ref)
         if credential is None or credential.type != "bearer" or not credential.value:
             raise AuthRequired()
         return credential
@@ -52,10 +69,7 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
         credential = self._credential(connection)
         payload = await request_json(
             "POST", TOKEN_URL, headers=token_headers(),
-            data={
-                "grant_type": "refresh_token",
-                "refresh_token": credential.value,
-            },
+            data={"grant_type": "refresh_token", "refresh_token": credential.value},
             transport=self._transport,
         )
         if not isinstance(payload, dict) or not isinstance(
@@ -68,6 +82,10 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
         new_refresh = payload.get("refresh_token", credential.value)
         if not isinstance(new_refresh, str) or not new_refresh or len(new_refresh) > 16_384:
             raise SchemaChanged("lidl_token_shape_changed")
+        expires = payload.get("expires_in")
+        if type(expires) is not int or not 0 < expires <= 86_400:
+            raise SchemaChanged("lidl_token_shape_changed")
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires)
         rotated = new_refresh != credential.value
         if rotated:
             saved, _ = save_credential(
@@ -80,23 +98,20 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
             )
             if not saved:
                 raise ProviderUnavailable("lidl_credential_rotation_failed")
-        self._access_tokens[connection.connection_id] = access_token
-        expires = payload.get("expires_in")
-        expires_at = None
-        if isinstance(expires, int) and 0 < expires <= 86_400:
-            expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires)
+        self._access_tokens[connection.connection_id] = (access_token, expires_at)
         return TokenMetadata(expires_at=expires_at, rotated=rotated)
 
     async def probe(self, connection: ProviderConnection) -> ProviderCapabilities:
-        await self.refresh_auth(connection)
+        if self._access_token(connection.connection_id) is None:
+            await self.refresh_auth(connection)
         return ProviderCapabilities(
             receipts=True, receipt_items=True, discounts=True, deposits=True,
             token_refresh=True,
         )
 
     def _headers(self, connection: ProviderConnection) -> dict[str, str]:
-        token = self._access_tokens.get(connection.connection_id)
-        if not token:
+        token = self._access_token(connection.connection_id)
+        if token is None:
             raise AuthRequired()
         return {
             "Authorization": f"Bearer {token}",
@@ -175,5 +190,9 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
     async def list_partners(self, connection):
         raise CapabilityUnavailable("partners")
 
+    def forget_auth(self, connection_id: int) -> None:
+        self._access_tokens.pop(connection_id, None)
+
     async def disconnect(self, connection: ProviderConnection) -> None:
-        self._access_tokens.pop(connection.connection_id, None)
+        # Ein laufender Sync besitzt keine offenen Handles; gültige Tokens bleiben bis Ablauf.
+        self._access_token(connection.connection_id)

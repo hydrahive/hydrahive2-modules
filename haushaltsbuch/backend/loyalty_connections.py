@@ -11,7 +11,7 @@ from hydrahive.credentials.store import delete_credential, get_credential
 from hydrahive.db.connection import db
 from hydrahive.settings import settings
 
-from . import audit
+from . import audit, loyalty_registry
 from .access import conflict, membership, require_row
 from .common import NOW
 from .loyalty_requests import LoyaltyConnectionCreate, LoyaltyConnectionUpdate
@@ -179,5 +179,8 @@ def delete_connection(
             "WHERE id=? AND household_id=?",
             (connection_id, member["household_id"]),
         )
+    adapter = loyalty_registry.get(row["provider"])
+    if adapter is not None:
+        adapter.forget_auth(connection_id)
     if managed_ref and owner is not None:
         delete_credential(owner["username"], credential_ref)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -56,7 +57,10 @@ def test_complete_validates_exact_callback_state_and_prevents_replay(
     async def exchange(code, verifier, nonce):
         assert code == "authorization-code"
         assert len(verifier) >= 43
-        return ExchangeResult("refresh-secret", "account-123", "Lidl ****0123")
+        return ExchangeResult(
+            "refresh-secret", "account-123", "Lidl ****0123", "access-secret",
+            datetime.now(timezone.utc) + timedelta(minutes=15),
+        )
 
     monkeypatch.setattr(lidl_auth, "_exchange_code", exchange)
     invalid = client.post(
@@ -103,6 +107,83 @@ def test_complete_validates_exact_callback_state_and_prevents_replay(
     assert get_credential("owner", managed_refs.pop()) is None
 
 
+def test_complete_hands_initial_access_token_to_first_sync(
+    client, owner_headers, monkeypatch
+):
+    import httpx
+
+    from backend.loyalty_registry import register, unregister
+    from backend.providers.lidl import LidlPlusProvider
+
+    _create_household(client, owner_headers)
+    started = _start(client, owner_headers).json()
+    state = parse_qs(urlparse(started["authorization_url"]).query)["state"][0]
+
+    async def exchange(code, verifier, nonce):
+        del code, verifier, nonce
+        return ExchangeResult(
+            refresh_token="initial-refresh",
+            account_id="initial-account",
+            masked_account="Lidl Plus",
+            access_token="initial-access",
+            access_expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
+        )
+
+    requests: list[tuple[str, str]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append((request.method, request.url.host or ""))
+        assert request.url.host == "tickets.lidlplus.com"
+        assert request.headers["authorization"] == "Bearer initial-access"
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            json={"tickets": [], "totalCount": 0, "size": 20},
+        )
+
+    monkeypatch.setattr(lidl_auth, "_exchange_code", exchange)
+    provider = LidlPlusProvider(transport=httpx.MockTransport(handler))
+    register(provider)
+    try:
+        complete = client.post(
+            f"{PREFIX}/loyalty/lidl/auth/complete",
+            headers=owner_headers,
+            json={
+                "flow_token": started["flow_token"],
+                "callback_url": (
+                    "com.lidlplus.app://callback?code=initial-code&"
+                    f"state={state}"
+                ),
+            },
+        )
+        assert complete.status_code == 200, complete.text
+        sync = client.post(
+            f"{PREFIX}/loyalty/connections/{complete.json()['id']}/sync",
+            headers=owner_headers,
+        )
+        second_sync = client.post(
+            f"{PREFIX}/loyalty/connections/{complete.json()['id']}/sync",
+            headers=owner_headers,
+        )
+        assert complete.json()["id"] in provider._access_tokens
+        removed = client.delete(
+            f"{PREFIX}/loyalty/connections/{complete.json()['id']}?"
+            f"revision={second_sync.json()['connection']['revision']}",
+            headers=owner_headers,
+        )
+        assert removed.status_code == 204, removed.text
+        assert complete.json()["id"] not in provider._access_tokens
+    finally:
+        unregister("lidl_plus")
+
+    assert sync.status_code == 200, sync.text
+    assert second_sync.status_code == 200, second_sync.text
+    assert requests == [
+        ("GET", "tickets.lidlplus.com"),
+        ("GET", "tickets.lidlplus.com"),
+    ]
+
+
 def test_lidl_is_enabled_without_installation_environment(client, owner_headers, monkeypatch):
     _create_household(client, owner_headers)
     monkeypatch.delenv("HH_HAUSHALTSBUCH_LIDL_ENABLED", raising=False)
@@ -141,7 +222,10 @@ def test_failed_exchange_releases_flow_for_one_retry(client, owner_headers, monk
         calls += 1
         if calls == 1:
             raise lidl_auth.AuthFlowError("lidl_auth_unavailable", 502)
-        return ExchangeResult("retry-refresh", "retry-account", "Lidl Plus")
+        return ExchangeResult(
+            "retry-refresh", "retry-account", "Lidl Plus", "retry-access",
+            datetime.now(timezone.utc) + timedelta(minutes=15),
+        )
 
     monkeypatch.setattr(lidl_auth, "_exchange_code", exchange)
     body = {
@@ -170,6 +254,7 @@ def test_exchange_uses_fixed_native_client_and_verified_userinfo(monkeypatch):
             return {
                 "access_token": "short-access",
                 "refresh_token": "refresh-secret",
+                "expires_in": 1200,
             }
         assert url.endswith("/connect/userinfo")
         assert kwargs["headers"]["Authorization"] == "Bearer short-access"
@@ -181,6 +266,9 @@ def test_exchange_uses_fixed_native_client_and_verified_userinfo(monkeypatch):
     )
     assert result.account_id == "account-123"
     assert result.refresh_token == "refresh-secret"
+    assert result.access_token == "short-access"
+    assert result.access_expires_at is not None
+    assert result.access_expires_at.utcoffset() is not None
     assert len(calls) == 2
 
 
