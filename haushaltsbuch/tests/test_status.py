@@ -34,6 +34,7 @@ def test_status_reports_bank_import_available() -> None:
         "features": {
             "bookings_budgets": "available",
             "bank_import": "available",
+            "loyalty_foundation": "available",
             "lidl_plus": "planned",
             "payback": "planned",
         },

@@ -11,6 +11,7 @@ from hydrahive.api.middleware.auth import require_auth
 from .routes_household import router as household_router
 from .routes_imports import router as import_router
 from .routes_ledger import router as ledger_router
+from .routes_loyalty import router as loyalty_router
 from .routes_planning import router as planning_router
 
 router = APIRouter()
@@ -24,6 +25,7 @@ def status(auth: Annotated[tuple[str, str], Depends(require_auth)]) -> dict:
         "features": {
             "bookings_budgets": "available",
             "bank_import": "available",
+            "loyalty_foundation": "available",
             "lidl_plus": "planned",
             "payback": "planned",
         },
@@ -35,5 +37,6 @@ def register(ctx) -> None:
     ctx.register_router(household_router)
     ctx.register_router(import_router)
     ctx.register_router(ledger_router)
+    ctx.register_router(loyalty_router)
     ctx.register_router(planning_router)
     ctx.register_migrations("migrations")
