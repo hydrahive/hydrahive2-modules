@@ -6,6 +6,7 @@ Implementation is split by responsibility to keep each module focused.
 from .import_completion import complete_batch as complete_batch
 from .import_completion import reverse_batch as reverse_batch
 from .import_inbox import create_batch as create_batch
+from .import_inbox import delete_batch as delete_batch
 from .import_inbox import get_batch as get_batch
 from .import_inbox import list_batches as list_batches
 from .import_rows import update_row as update_row
@@ -19,6 +20,7 @@ __all__ = [
     "complete_batch",
     "create_batch",
     "create_profile",
+    "delete_batch",
     "delete_profile",
     "get_batch",
     "list_batches",

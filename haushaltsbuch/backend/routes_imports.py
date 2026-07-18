@@ -86,6 +86,16 @@ def get_import(batch_id: int, principal: Principal) -> dict:
     return import_service.get_batch(batch_id, principal)
 
 
+@router.delete("/imports/{batch_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_import(
+    batch_id: int,
+    principal: Principal,
+    revision: int = Query(ge=1),
+    rows_revision: int = Query(ge=0),
+) -> None:
+    import_service.delete_batch(batch_id, revision, rows_revision, principal)
+
+
 @router.patch("/imports/{batch_id}/rows/{row_id}")
 def update_import_row(batch_id: int, row_id: int, body: ImportRowUpdate, principal: Principal) -> dict:
     return import_service.update_row(batch_id, row_id, body, principal)

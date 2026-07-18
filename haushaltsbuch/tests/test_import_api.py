@@ -39,6 +39,91 @@ def test_upload_creates_draft_without_ledger_mutation_and_masks_bank_data(client
     assert "DE89370400440532013000" not in dump
 
 
+def test_draft_can_be_deleted_and_same_file_reuploaded(
+    client, owner_headers, outsider_headers
+):
+    _create_household(client, owner_headers)
+    account = _create_account(client, owner_headers, opening_balance=0)
+    batch = _upload(client, owner_headers, account["id"]).json()
+
+    query = f"revision={batch['revision']}&rows_revision={batch['rows_revision']}"
+    hidden = client.delete(
+        f"{PREFIX}/imports/{batch['id']}?{query}", headers=outsider_headers
+    )
+    assert hidden.status_code == 404
+
+    row = batch["rows"][0]
+    changed = client.patch(
+        f"{PREFIX}/imports/{batch['id']}/rows/{row['id']}",
+        headers=owner_headers,
+        json={"revision": row["revision"], "status": "rejected"},
+    )
+    assert changed.status_code == 200
+    stale = client.delete(
+        f"{PREFIX}/imports/{batch['id']}?{query}", headers=owner_headers
+    )
+    assert stale.status_code == 409
+
+    refreshed = client.get(
+        f"{PREFIX}/imports/{batch['id']}", headers=owner_headers
+    ).json()
+    deleted = client.delete(
+        f"{PREFIX}/imports/{batch['id']}?revision={refreshed['revision']}"
+        f"&rows_revision={refreshed['rows_revision']}",
+        headers=owner_headers,
+    )
+    assert deleted.status_code == 204, deleted.text
+    assert client.get(
+        f"{PREFIX}/imports/{batch['id']}", headers=owner_headers
+    ).status_code == 404
+    assert client.get(f"{PREFIX}/transactions", headers=owner_headers).json() == []
+    audit = client.get(f"{PREFIX}/audit", headers=owner_headers).json()
+    assert any(event["action"] == "delete_draft" for event in audit)
+
+    from hydrahive.db.connection import db
+
+    with db() as conn:
+        assert conn.execute(
+            "SELECT 1 FROM module_haushaltsbuch_import_rows WHERE id=?", (row["id"],)
+        ).fetchone() is None
+
+    retried = _upload(client, owner_headers, account["id"])
+    assert retried.status_code == 201, retried.text
+
+
+def test_imported_batch_cannot_be_deleted(client, owner_headers):
+    _create_household(client, owner_headers)
+    account = _create_account(client, owner_headers, opening_balance=0)
+    category = _expense_category(client, owner_headers)
+    batch = _upload(client, owner_headers, account["id"]).json()
+    row = batch["rows"][0]
+    client.patch(
+        f"{PREFIX}/imports/{batch['id']}/rows/{row['id']}",
+        headers=owner_headers,
+        json={
+            "revision": row["revision"],
+            "status": "accepted",
+            "category_id": category["id"],
+        },
+    )
+    completed = client.post(
+        f"{PREFIX}/imports/{batch['id']}/complete",
+        headers=owner_headers,
+        json={"revision": batch["revision"]},
+    ).json()
+
+    response = client.delete(
+        f"{PREFIX}/imports/{batch['id']}?revision={completed['revision']}"
+        f"&rows_revision={completed['rows_revision']}",
+        headers=owner_headers,
+    )
+
+    assert response.status_code == 409
+    assert client.get(
+        f"{PREFIX}/imports/{batch['id']}", headers=owner_headers
+    ).status_code == 200
+
+
 def test_profiles_duplicates_and_household_isolation(client, owner_headers, outsider_headers):
     _create_household(client, owner_headers)
     account = _create_account(client, owner_headers, opening_balance=0)

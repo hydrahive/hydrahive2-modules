@@ -310,6 +310,7 @@ export interface ImportBatch {
   source_format: StoredImportFormat
   status: ImportBatchStatus
   revision: Revision
+  rows_revision: Revision | 0
   created_by: string
   created_at: string
   updated_at: string
