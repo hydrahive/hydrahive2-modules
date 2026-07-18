@@ -91,6 +91,15 @@ verbinden, digitale Belege read-only synchronisieren und deren Artikel ansehen.
 - [x] Roh-HTML-/Payload-Nichtpersistenz und Parserlimits testen
 - [x] Security-/HH-Review, Gesamttests, Version und Source-PR
 
+### Task 11: Reale DE-HTML-Zeilenfragmente zusammenführen
+
+- [x] Kontrollierten Live-Abruf ohne Rohdatenpersistenz strukturell analysieren
+- [x] Synthetischen 6-/13-Fragment-Regressionsfixture schreiben (RED)
+- [x] Artikel- und Rabattfragmente anhand identischer HTML-`id` gruppieren (GREEN)
+- [x] Wiederholte echte Artikelzeilen mit verschiedener `id` erhalten
+- [x] `couponsUsed.discount` normalisieren und Info-Warnungen klassifizieren
+- [x] Security-/HH-Review, Gesamttests, Version 1.4.9 und Source-PR
+
 ## Akzeptanzkriterien
 
 Siehe `SPEC-V4.1-LIDL-EXPERIMENTAL.md`.

@@ -1,6 +1,7 @@
 """Normalisierung und begrenzte Deduplizierung von Lidl-Beleganpassungen."""
 from __future__ import annotations
 
+import unicodedata
 from collections import Counter
 
 from . import lidl_normalize_values as values
@@ -9,13 +10,21 @@ from .loyalty_receipt_models import ProviderReceiptAdjustment
 _MAX_COUPON_INPUTS = 4000
 
 
+def _description_key(value: str | None) -> str:
+    normalized = unicodedata.normalize("NFKC", value or "").casefold()
+    return " ".join(normalized.split())
+
+
 def normalize_adjustment(
     raw, kind: str, sequence: int,
 ) -> ProviderReceiptAdjustment | None:
     if raw is None:
         return None
     data = raw if isinstance(raw, dict) else {"amount": raw}
-    amount = values.minor_value(data)
+    amount_source = (
+        data["discount"] if kind == "coupon" and data.get("discount") is not None else data
+    )
+    amount = values.minor_value(amount_source)
     if amount is None:
         return None
     if kind in ("discount", "coupon"):
@@ -34,13 +43,13 @@ def append_coupons(
         warnings.append("invalid_coupons")
         return
     html_adjustments = Counter(
-        (entry.amount_minor, (entry.description or "").strip().casefold())
+        (entry.amount_minor, _description_key(entry.description))
         for entry in adjustments if entry.kind == "discount"
     )
     for raw in coupons[:_MAX_COUPON_INPUTS]:
         adjustment = normalize_adjustment(raw, "coupon", -1)
         key = None if adjustment is None else (
-            adjustment.amount_minor, (adjustment.description or "").strip().casefold()
+            adjustment.amount_minor, _description_key(adjustment.description)
         )
         if key is not None and html_adjustments[key] > 0:
             html_adjustments[key] -= 1

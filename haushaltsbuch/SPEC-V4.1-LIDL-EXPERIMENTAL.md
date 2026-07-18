@@ -130,11 +130,17 @@ Artikel und artikelgebundene Rabatte ab.
   Artikel-ID) wird zu genau einer Position zusammengeführt.
 - HTML über 2 Mio. Zeichen sowie übermäßige Artikel-, Rabatt-, Tag- und Textmengen
   werden begrenzt.
+- Im realen deutschen Layout teilen mehrere gleich klassifizierte Spans mit derselben
+  HTML-`id` eine logische Artikel- oder Rabattzeile in CSS-Fragmente. Diese Fragmente
+  werden vor der fachlichen Normalisierung in Einfügereihenfolge zusammengeführt;
+  verschiedene Zeilen-IDs bleiben auch bei gleicher Artikel-ID eigenständige Positionen.
 - Bei fehlendem Brutto-Zeilenbetrag wird `Menge × Einzelpreis` mit `Decimal` berechnet.
-- Verschachtelte Geldobjekte werden defensiv unterstützt.
+- Verschachtelte Geldobjekte sowie der reale `couponsUsed.discount`-Betrag werden
+  defensiv unterstützt.
 - Für den ausschließlich auf DE begrenzten Connector dürfen fehlende Währung und
   naive lokale Kaufzeit als `EUR` beziehungsweise `Europe/Berlin` markiert abgeleitet
-  werden; die Ableitung bleibt als Review-Warnung sichtbar.
+  werden. Solche nachvollziehbaren Ableitungen bleiben in den Warnungsmetadaten, lösen
+  allein aber keinen irreführenden „Bitte prüfen“-Fehlerzustand aus.
 - Der Beleg-Gesamtbetrag bleibt maßgeblich und wird nicht still aus Artikeln erfunden.
 
 ## Nicht enthalten
