@@ -50,7 +50,7 @@ Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felde
 
 ## Experimenteller Lidl-Testconnector (V4.1)
 
-- `GET /loyalty/provider-status` meldet, ob der fail-closed Installationsschalter aktiv ist. Standard ist aus; zum persönlichen Test muss `HH_HAUSHALTSBUCH_LIDL_ENABLED=1` gesetzt und HydraHive neu gestartet werden.
+- `GET /loyalty/provider-status` meldet den Connectorstatus. Lidl ist ohne zusätzliche Installationskonfiguration standardmäßig aktiv; Betreiber können ihn bei Bedarf ausdrücklich mit `HH_HAUSHALTSBUCH_LIDL_ENABLED=0` als Not-Aus deaktivieren.
 - `POST /loyalty/lidl/auth/start` verlangt `{accepted_experimental_risk:true,country_code:"DE",language_code:"de"}` und liefert eine feste Lidl-Authorize-URL, einen verschlüsselten Flow-Token und die Ablaufzeit.
 - Passwort und MFA-Code werden ausschließlich direkt bei Lidl eingegeben. `POST /loyalty/lidl/auth/complete` erhält nur `{flow_token,callback_url,alias?,visibility}`. Die Callback-URL muss exakt dem gestarteten, höchstens zehn Minuten alten `com.lidlplus.app://callback`-Flow entsprechen.
 - Das Refresh-Token liegt ausschließlich AES-GCM-verschlüsselt im zentralen Credential-Store. Access-Tokens bleiben nur für die Dauer eines Syncs im Arbeitsspeicher.

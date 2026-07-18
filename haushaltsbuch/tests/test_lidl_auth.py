@@ -103,6 +103,15 @@ def test_complete_validates_exact_callback_state_and_prevents_replay(
     assert get_credential("owner", managed_refs.pop()) is None
 
 
+def test_lidl_is_enabled_without_installation_environment(client, owner_headers, monkeypatch):
+    _create_household(client, owner_headers)
+    monkeypatch.delenv("HH_HAUSHALTSBUCH_LIDL_ENABLED", raising=False)
+    status = client.get(f"{PREFIX}/loyalty/provider-status", headers=owner_headers)
+    assert status.status_code == 200
+    assert status.json()["lidl_plus"]["enabled"] is True
+    assert _start(client, owner_headers).status_code == 200
+
+
 def test_kill_switch_blocks_new_auth_flows(client, owner_headers, monkeypatch):
     _create_household(client, owner_headers)
     for value in ("0", "unexpected-typo"):

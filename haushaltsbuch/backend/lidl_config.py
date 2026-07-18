@@ -27,6 +27,7 @@ def token_headers() -> dict[str, str]:
 
 
 def enabled() -> bool:
-    return os.getenv("HH_HAUSHALTSBUCH_LIDL_ENABLED", "0").strip().lower() in {
-        "1", "true", "yes", "on",
-    }
+    value = os.getenv("HH_HAUSHALTSBUCH_LIDL_ENABLED")
+    if value is None:
+        return True
+    return value.strip().lower() in {"1", "true", "yes", "on"}
