@@ -10,8 +10,7 @@ from hydrahive.credentials.models import Credential
 from hydrahive.credentials.store import get_credential, save_credential
 
 from ..lidl_config import (
-    APP_VERSION, CLIENT_ID, TICKETS_V2_URL, TICKETS_V3_URL, TOKEN_URL, enabled,
-    token_headers,
+    APP_VERSION, TICKETS_V2_URL, TICKETS_V3_URL, TOKEN_URL, enabled, token_headers,
 )
 from ..lidl_http import request_json
 from ..lidl_normalize import normalize_receipt
@@ -56,7 +55,6 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
             data={
                 "grant_type": "refresh_token",
                 "refresh_token": credential.value,
-                "client_id": CLIENT_ID,
             },
             transport=self._transport,
         )

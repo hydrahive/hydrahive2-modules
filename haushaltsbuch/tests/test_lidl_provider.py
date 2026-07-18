@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from urllib.parse import parse_qs
 
 import httpx
 import pytest
@@ -35,7 +36,10 @@ def test_lidl_provider_refreshes_rotates_and_reads_receipt_without_writes():
         if request.url.host == "accounts.lidl.com":
             assert request.method == "POST"
             assert request.headers["authorization"].startswith("Basic ")
-            assert b"old-refresh" in request.content
+            assert parse_qs(request.content.decode()) == {
+                "grant_type": ["refresh_token"],
+                "refresh_token": ["old-refresh"],
+            }
             return httpx.Response(
                 200,
                 headers={"content-type": "application/json"},

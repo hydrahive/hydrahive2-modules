@@ -161,7 +161,12 @@ def test_exchange_uses_fixed_native_client_and_verified_userinfo(monkeypatch):
         calls.append((method, url, kwargs))
         if url.endswith("/connect/token"):
             assert kwargs["headers"]["Authorization"].startswith("Basic ")
-            assert kwargs["data"]["code_verifier"] == "verifier"
+            assert kwargs["data"] == {
+                "grant_type": "authorization_code",
+                "redirect_uri": "com.lidlplus.app://callback",
+                "code": "code",
+                "code_verifier": "verifier",
+            }
             return {
                 "access_token": "short-access",
                 "refresh_token": "refresh-secret",
