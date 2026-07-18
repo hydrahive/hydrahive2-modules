@@ -153,50 +153,52 @@ OCR-Daten verwenden denselben Belegvertrag wie spätere digitale Lidl-Plus-Beleg
 
 ## Etappe 6 — Kunden- und Punktekarten-Fundament
 
-- mehrere Karten desselben Anbieters
-- Karte gehört einem Mitglied oder dem Haushalt
-- manuell geführte und verbundene Karten
+Vollständige Planung: `SPEC-V4-LOYALTY.md` und `PLAN-V4-LOYALTY.md`.
+
+- mehrere Verbindungen desselben Anbieters für verschiedene Mitglieder
+- Mitgliedsprivate Daten, optional explizit haushaltsweit freigegeben
 - Credential-Referenz statt Secret im Modul
-- Punktestand, Verlauf, Coupons und Sync-Status
-- haushaltsweite Aggregation
-- generischer Provider-Adapter
+- Punktestand, Verlauf, Verfall, Coupons, Belege und Sync-Status
+- generischer, fähigkeitenbasierter Provider-Adapter
+- idempotente Sync-Engine, Sync-Historie, Reauth und Kill-Switch
+- nachvollziehbare, reversible Matches zu Buchungen/Belegen
+
+Diese Etappen verwenden ausschließlich direkte Provider-Synchronisierung. Mail-,
+PDF- und Dateiimporte gehören nicht zum Lidl-/PAYBACK-Scope.
 
 ## Etappe 7 — Lidl Plus
 
-Technische und rechtliche Prüfung vor Implementierung:
+Technische Vorprüfung: `research/LIDL-PLUS-INTEGRATION.md`.
 
-- Bibliothek: https://pypi.org/project/lidl-plus/
-- Lizenz, Nutzungsbedingungen und Wartungszustand
-- Login, MFA/CAPTCHA und Token-Erneuerung
-- Rate Limits und Account-Sperrrisiko
+- interaktiver, benutzergeführter Login; kein Passwort speichern
+- digitale Kassenbons samt Artikelpositionen direkt synchronisieren
+- Rabatte, Coupons, Pfand, Wiegeware und Retouren normalisieren
+- Belege mit Bankbuchungen abgleichen und Match bestätigen lassen
+- Artikel auf Haushaltsbuchkategorien aufteilen und Regeln lernen
+- manueller Sync zuerst; geplanter Sync erst nach stabilem Pilot
+- read-only, Feature-Flag und Kill-Switch
 
-Geplante Funktionen:
-
-- digitale Kassenbons synchronisieren
-- Belegkopf und Artikel in gemeinsamen Belegvertrag überführen
-- Rabatte, Coupons und Pfand
-- Beleg einer Bankbuchung zuordnen
-- Synchronisationshistorie und manueller Sync
-
-Kein automatischer Login oder Sync ohne explizite Aktivierung.
+Live-Implementierung nur nach rechtlichem und technischem Gate. Kein CAPTCHA-,
+MFA-, Attestation- oder Bot-Schutz-Bypass.
 
 ## Etappe 8 — PAYBACK
 
-Technische und rechtliche Prüfung vor Implementierung:
+Technische Vorprüfung: `research/PAYBACK-INTEGRATION.md`.
 
-- Referenz: https://dduarte.github.io/Payback/api.html
-- Status und Zulässigkeit der inoffiziellen API
-- Authentifizierung, MFA und Token-Lebensdauer
-- Rate Limits und Stabilität
+Die frühere Referenz `dduarte.github.io/Payback/api.html` war fachlich falsch und
+bezog sich nicht auf PAYBACK Deutschland. Der Live-Adapter benötigt einen neu
+verifizierten, zulässigen Zugriffspfad.
 
-Geplante Funktionen:
-
-- Punktestand und Punktehistorie
+- Punktestand und Punktehistorie direkt synchronisieren
 - bald ablaufende Punkte
-- Coupons und Partner
+- Coupons und Partner read-only
 - Punkteaktivität mit Buchung/Beleg verknüpfen
-- Punktegegenwert und tatsächliche Ersparnis
-- Synchronisationshistorie
+- Punktegegenwert und tatsächliche Ersparnis getrennt auswerten
+- Synchronisationshistorie, Reauth, Feature-Flag und Kill-Switch
+- keine Couponaktivierung oder Punkteeinlösung in V1
+
+Live-Implementierung nur bei erneuerbarer Sitzung ohne Passwortpersistenz,
+Schutzumgehung oder dauerhafte App-Credential-Extraktion.
 
 ## Etappe 9 — Auswertungen und Exporte
 
