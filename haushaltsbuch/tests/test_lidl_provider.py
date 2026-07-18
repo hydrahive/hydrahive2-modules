@@ -46,6 +46,8 @@ def test_lidl_provider_refreshes_rotates_and_reads_receipt_without_writes():
                 },
             )
         assert request.headers["authorization"] == "Bearer short-lived-access"
+        assert request.headers["app-version"] == "16.7.0"
+        assert request.headers["app"] == "com.lidl.eci.lidl.plus"
         if request.url.path.endswith("/tickets"):
             return httpx.Response(
                 200,

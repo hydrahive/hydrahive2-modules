@@ -10,6 +10,9 @@ USERINFO_URL = "https://accounts.lidl.com/connect/userinfo"
 TICKETS_V2_URL = "https://tickets.lidlplus.com/api/v2"
 TICKETS_V3_URL = "https://tickets.lidlplus.com/api/v3"
 CLIENT_ID = "LidlPlusNativeClient"
+# Von Lidl akzeptierte reale Clientversion. Offensichtliche Fakeversionen werden vom WAF
+# durch absichtliche Timeouts statt eines 4xx-Status blockiert.
+APP_VERSION = "16.7.0"
 # Öffentlicher Wert des nativen Clients; kein installations- oder nutzerspezifisches Secret.
 _NATIVE_PUBLIC_PASSWORD = "secret"
 REDIRECT_URI = "com.lidlplus.app://callback"

@@ -10,7 +10,8 @@ from hydrahive.credentials.models import Credential
 from hydrahive.credentials.store import get_credential, save_credential
 
 from ..lidl_config import (
-    CLIENT_ID, TICKETS_V2_URL, TICKETS_V3_URL, TOKEN_URL, enabled, token_headers,
+    APP_VERSION, CLIENT_ID, TICKETS_V2_URL, TICKETS_V3_URL, TOKEN_URL, enabled,
+    token_headers,
 )
 from ..lidl_http import request_json
 from ..lidl_normalize import normalize_receipt
@@ -102,7 +103,7 @@ class LidlPlusProvider(LoyaltyProviderAdapter):
         return {
             "Authorization": f"Bearer {token}",
             "App": "com.lidl.eci.lidl.plus",
-            "App-Version": "999.99.9",
+            "App-Version": APP_VERSION,
             "Operating-System": "iOs",
             "Country": "DE",
             "Accept-Language": "de-DE",
