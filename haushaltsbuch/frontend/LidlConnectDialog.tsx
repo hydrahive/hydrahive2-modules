@@ -17,6 +17,22 @@ function safeAuthorizationUrl(value: string): string | undefined {
   }
 }
 
+function validCallbackUrl(value: string): boolean {
+  try {
+    const url = new URL(value.trim())
+    if (url.protocol !== "com.lidlplus.app:" || url.hostname !== "callback") return false
+    if (!["", "/"].includes(url.pathname) || url.username || url.password || url.port || url.hash) return false
+    const keys = [...url.searchParams.keys()]
+    if (keys.some((key) => !["code", "state", "session_state", "iss"].includes(key))) return false
+    if (url.searchParams.getAll("code").length !== 1 || !url.searchParams.get("code")) return false
+    if (url.searchParams.getAll("state").length !== 1 || !url.searchParams.get("state")) return false
+    const issuer = url.searchParams.getAll("iss")
+    return issuer.length === 0 || (issuer.length === 1 && issuer[0] === "https://accounts.lidl.com")
+  } catch {
+    return false
+  }
+}
+
 export function LidlConnectDialog({ onClose, onConnected }: {
   onClose: () => void
   onConnected: (connection: LoyaltyConnection) => void
@@ -28,7 +44,7 @@ export function LidlConnectDialog({ onClose, onConnected }: {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
   const authorizationUrl = flow && safeAuthorizationUrl(flow.authorization_url)
-  const callbackComplete = callbackUrl.trim().startsWith("com.lidlplus.app://callback?")
+  const callbackComplete = validCallbackUrl(callbackUrl)
 
   async function start() {
     if (!accepted) return
@@ -85,7 +101,8 @@ export function LidlConnectDialog({ onClose, onConnected }: {
           <li><strong>2. Vollständige Callback-URL kopieren.</strong><p className="mt-1 text-xs text-[#8d9ab0]">Nach dem Redirect kann der Browser die Seite eventuell nicht öffnen. Kopiere dann aus seiner Adresszeile die komplette Adresse ab <code>com.lidlplus.app://callback?...</code> — einschließlich aller Parameter.</p></li>
           <li><strong>3. Verbindung abschließen.</strong><p className="mt-1 text-xs text-[#8d9ab0]">Der Flow läuft um {new Date(flow.expires_at).toLocaleTimeString("de-DE")} Uhr ab und ist nur einmal nutzbar.</p></li>
         </ol>
-        <Field label="Komplette Callback-URL" hint="Nur die Adresse aus der Browser-Adresszeile; keine Zugangsdaten."><Textarea required rows={4} spellCheck={false} autoComplete="off" value={callbackUrl} onChange={(event) => setCallbackUrl(event.target.value)} placeholder="com.lidlplus.app://callback?code=…&state=…" /></Field>
+        <Field label="Komplette Callback-URL" hint="Nur die Adresse aus der Browser-Adresszeile; keine Zugangsdaten."><Textarea required rows={4} spellCheck={false} autoComplete="off" value={callbackUrl} onChange={(event) => setCallbackUrl(event.target.value)} placeholder="com.lidlplus.app://callback/?code=…&state=…" /></Field>
+        {callbackUrl.trim() && !callbackComplete && <p className="text-xs text-amber-200">Die Callback-Adresse ist noch nicht vollständig oder hat nicht das erwartete Lidl-Format. Sie muss mit <code>com.lidlplus.app://callback</code> beginnen und <code>code</code> sowie <code>state</code> enthalten.</p>}
         <Field label="Alias (optional)"><Input maxLength={120} value={alias} onChange={(event) => setAlias(event.target.value)} placeholder="z. B. Mein Lidl Plus" /></Field>
         <p className="text-xs text-[#718097]">Die neue Verbindung ist nur für dich sichtbar. Synchronisiert werden ausschließlich digitale Belege und deren read-only Details.</p>
       </>}
