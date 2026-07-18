@@ -14,6 +14,9 @@ from .loyalty_receipt_models import ProviderReceipt, ProviderReceiptItem
 _MAX_ITEMS = 1000
 _MAX_ADJUSTMENTS = 2000
 _MAX_SIGNED = 2**63 - 1
+_INFO_WARNINGS = frozenset({
+    "currency_inferred_de", "timezone_inferred_de", "total_discount_derived",
+})
 
 
 def _item(raw: dict, sequence: int, warnings: list[str], adjustment_limit: int):
@@ -135,7 +138,10 @@ def normalize_receipt(payload: dict) -> ProviderReceipt:
         payload.get("couponsUsed"), adjustments, warnings, _MAX_ADJUSTMENTS,
     )
     store = payload.get("store") if isinstance(payload.get("store"), dict) else {}
-    total_discount = values.minor_value(payload.get("totalDiscount"))
+    total_discount_data = payload.get("totalDiscount")
+    total_discount = values.minor_value(total_discount_data)
+    if total_discount_data is not None and total_discount is None:
+        warnings.append("invalid_total_discount")
     total_discount = abs(total_discount) if total_discount is not None else None
     if total_discount is None:
         derived_discount = sum(
@@ -165,6 +171,8 @@ def normalize_receipt(payload: dict) -> ProviderReceipt:
         store_id=store_id, store_name=store_name, store_address=store_address,
         total_minor=total, currency=currency,
         total_discount_minor=total_discount,
-        validation_status="needs_review" if warnings else "valid",
+        validation_status=(
+            "needs_review" if set(warnings) - _INFO_WARNINGS else "valid"
+        ),
         warnings=sorted(set(warnings)), items=items, adjustments=adjustments,
     )

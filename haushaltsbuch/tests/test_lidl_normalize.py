@@ -87,6 +87,92 @@ def test_normalizes_current_html_receipt_with_nested_money_and_de_timezone():
     assert "htmlPrintedReceipt" not in repr(receipt)
 
 
+def test_real_de_css_fragments_group_by_html_line_id_without_losing_repeats():
+    def spans(line_id: str, attrs: str, parts: list[str], count: int) -> str:
+        values = parts + [""] * (count - len(parts))
+        return "".join(
+            f'<span id="{line_id}" class="article" {attrs}>{value}</span>'
+            for value in values
+        )
+
+    basic = 'data-art-id="111" data-art-description="Brot" data-unit-price="1,00" data-tax-type="A"'
+    quantity = (
+        'data-art-id="222" data-art-description="Milch" data-art-quantity="2" '
+        'data-unit-price="1,50" data-tax-type="A"'
+    )
+    discount_parts = ["App ", "Coupon", "", "", "-0,50"]
+    discounts = "".join(
+        f'<span id="discount_1" class="discount">{part}</span>'
+        for part in discount_parts
+    )
+    receipt = normalize_receipt({
+        "id": "de-fragments", "date": "2026-07-18T10:00:00",
+        "totalAmount": "4,50",
+        "htmlPrintedReceipt": (
+            spans("purchase_list_line_1", basic, ["Brot"], 6)
+            + spans("purchase_list_line_2", quantity, ["Milch", "2", " x ", "1,50"], 13)
+            + discounts
+            + spans("purchase_list_line_3", basic, ["Brot"], 6)
+        ),
+        "couponsUsed": [{"title": "App Coupon", "discount": "0,50 €"}],
+    })
+    assert [(item.original_name, item.quantity, item.total_minor) for item in receipt.items] == [
+        ("Brot", "1", 100), ("Milch", "2", 300), ("Brot", "1", 100),
+    ]
+    assert [(item.description, item.amount_minor) for item in receipt.adjustments] == [
+        ("App Coupon", -50),
+    ]
+    assert receipt.total_discount_minor == 50
+    assert receipt.validation_status == "valid"
+    assert not {"coupon_amount_unknown", "missing_total"} & set(receipt.warnings)
+
+
+def test_conflicting_fragments_with_same_html_id_are_split_and_flagged():
+    first = (
+        '<span id="same" class="article" data-art-id="111" '
+        'data-art-description="Brot" data-unit-price="1,00">Brot</span>'
+    )
+    second = (
+        '<span id="same" class="article" data-art-id="222" '
+        'data-art-description="Milch" data-unit-price="2,00">Milch</span>'
+    )
+    receipt = normalize_receipt({
+        "id": "id-conflict", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "3,00", "currency": "EUR",
+        "htmlPrintedReceipt": first + second,
+    })
+    assert [item.original_name for item in receipt.items] == ["Brot", "Milch"]
+    assert "html_line_id_conflict" in receipt.warnings
+    assert receipt.validation_status == "needs_review"
+
+
+def test_html_ids_prevent_adjacent_equal_products_from_being_merged():
+    receipt = normalize_receipt({
+        "id": "adjacent-equal", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "3,00", "currency": "EUR",
+        "htmlPrintedReceipt": (
+            '<span id="row_1" class="article" data-art-id="111" '
+            'data-art-description="Brot" data-unit-price="1,00">Brot</span>'
+            '<span id="row_2" class="article" data-art-id="111" '
+            'data-art-description="Brot" data-unit-price="1,00">2 * 1,00 2,00</span>'
+        ),
+    })
+    assert len(receipt.items) == 2
+
+
+def test_pack_size_in_named_html_line_is_not_interpreted_as_quantity():
+    receipt = normalize_receipt({
+        "id": "pack-size", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "3,99", "currency": "EUR",
+        "htmlPrintedReceipt": (
+            '<span id="row_1" class="article" data-art-id="333" '
+            'data-art-description="Batterien 2x4" data-unit-price="3,99">'
+            "Batterien 2x4</span>"
+        ),
+    })
+    assert (receipt.items[0].quantity, receipt.items[0].total_minor) == ("1", 399)
+
+
 def test_current_two_span_article_rows_collapse_to_one_exact_line_item():
     attrs = (
         'class="article" data-art-id="5530547" '
@@ -105,6 +191,57 @@ def test_current_two_span_article_rows_collapse_to_one_exact_line_item():
     assert (item.original_name, item.quantity, item.unit_price_minor, item.total_minor) == (
         "Bio Butter", "3", 499, 1497,
     )
+
+
+def test_legacy_pair_requires_exact_id_schema_and_matching_identity():
+    conflicting = normalize_receipt({
+        "id": "legacy-conflict", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "3,00", "currency": "EUR",
+        "htmlPrintedReceipt": (
+            '<span id="line_1a" class="article" data-art-id="111" '
+            'data-art-description="Brot" data-unit-price="1,00">Brot</span>'
+            '<span id="line_1b" class="article" data-art-id="222" '
+            'data-art-description="Milch" data-unit-price="1,00">2 * 1,00 2,00</span>'
+        ),
+    })
+    sparse_body = normalize_receipt({
+        "id": "sparse-body", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "2,00", "currency": "EUR",
+        "htmlPrintedReceipt": (
+            '<span id="line_2a" class="article" data-art-id="111" '
+            'data-art-description="Brot" data-unit-price="1,00">Brot</span>'
+            '<span id="line_2b" class="article">2 * 1,00 2,00</span>'
+        ),
+    })
+    suffixed_body = normalize_receipt({
+        "id": "suffixed-body", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "3,00", "currency": "EUR",
+        "htmlPrintedReceipt": (
+            '<span id="line_3a" class="article" data-art-id="111" '
+            'data-art-description="Brot" data-unit-price="1,00">Brot</span>'
+            '<span id="line_3b" class="article" data-art-id="111" '
+            'data-art-description="Brot" data-unit-price="1,00">'
+            "2 * 1,00 2,00 Zusatz</span>"
+        ),
+    })
+    unrelated = normalize_receipt({
+        "id": "unrelated-ab", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "3,00", "currency": "EUR",
+        "htmlPrintedReceipt": (
+            '<span id="fooa" class="article" data-art-id="111" '
+            'data-art-description="Brot" data-unit-price="1,00">Brot</span>'
+            '<span id="foob" class="article" data-art-id="111" '
+            'data-art-description="Brot" data-unit-price="1,00">2 * 1,00 2,00</span>'
+        ),
+    })
+    assert len(conflicting.items) == 2
+    assert "html_legacy_pair_conflict" in conflicting.warnings
+    assert conflicting.validation_status == "needs_review"
+    assert [(item.original_name, item.quantity, item.total_minor) for item in sparse_body.items] == [
+        ("Brot", "2", 200),
+    ]
+    assert len(suffixed_body.items) == 2
+    assert len(unrelated.items) == 2
 
 
 def test_numeric_coupon_name_is_not_misread_as_a_discount_amount():
@@ -321,6 +458,36 @@ def test_scalar_total_is_never_interpreted_as_currency_and_null_alias_falls_back
     assert invalid_total.total_minor is None and invalid_total.currency == "EUR"
     assert non_eur_total.total_minor is None and "missing_total" in non_eur_total.warnings
     assert fallback_total.total_minor == 200
+
+
+def test_discount_field_is_coupon_specific_and_invalid_total_discount_needs_review():
+    wrong_total = normalize_receipt({
+        "id": "wrong-total-shape", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": {"amount": None, "discount": "0,50"},
+        "currency": "EUR", "itemsLine": [],
+    })
+    invalid_discount = normalize_receipt({
+        "id": "invalid-discount", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "1,00", "currency": "EUR", "totalDiscount": "defekt",
+        "itemsLine": [{
+            "name": "Artikel", "discounts": [{"description": "Rabatt", "amount": "0,20"}],
+        }],
+    })
+    assert wrong_total.total_minor is None and "missing_total" in wrong_total.warnings
+    assert "invalid_total_discount" in invalid_discount.warnings
+    assert invalid_discount.validation_status == "needs_review"
+
+
+def test_punctuation_distinct_coupons_are_not_deduplicated():
+    receipt = normalize_receipt({
+        "id": "coupon-punctuation", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "1,00", "currency": "EUR",
+        "itemsLine": [{
+            "name": "Artikel", "discounts": [{"description": "A+B", "amount": "0,50"}],
+        }],
+        "couponsUsed": [{"title": "AB", "discount": "0,50 €"}],
+    })
+    assert [item.description for item in receipt.adjustments] == ["A+B", "AB"]
 
 
 def test_dst_gap_and_overlap_remain_explicitly_unresolved():
