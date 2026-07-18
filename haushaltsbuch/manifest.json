@@ -1,8 +1,8 @@
 {
   "id": "haushaltsbuch",
   "name": "Haushaltsbuch",
-  "version": "1.2.0",
-  "description": "Gemeinsames lokales Haushaltsbuch mit sicherer CAMT-, MT940- und CSV-Import-Inbox.",
+  "version": "1.3.0",
+  "description": "Lokales Haushaltsbuch mit Bankimport, Auto-Kategorisierung und sicherem Kundenkarten-Fundament.",
   "icon": "WalletCards",
   "nav_group": "working",
   "permissions": [],

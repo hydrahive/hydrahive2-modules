@@ -1,4 +1,4 @@
-# Haushaltsbuch V1/V2 – Frontend/Backend-Vertrag
+# Haushaltsbuch V1–V4 – Frontend/Backend-Vertrag
 
 Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felder sind `snake_case`. Geldwerte sind ausnahmslos Integer-Minor-Units; Kurse sind Dezimalstrings. Änderbare Ressourcen liefern und verlangen `revision`. Veraltete Revisionen antworten mit HTTP 409. Unbekannte oder haushaltsfremde IDs antworten mit 404.
 
@@ -39,4 +39,14 @@ Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felde
 - `POST /imports/{id}/reverse` mit `{revision}` storniert das gesamte Paket über Gegenbuchungen.
 - Uploads erzeugen ausschließlich Entwürfe. Fehlerzeilen bleiben sichtbar, starke Duplikate sind standardmäßig ausgeschlossen.
 
-Create/Update-Payloads und Responses sind in `types.ts` vollständig typisiert. Der Client steht in `api.ts`.
+## Kundenkarten-Fundament (V4.0)
+
+- `GET /loyalty/connections` listet für Mitglieder sichtbare Verbindungen. Private Verbindungen sind nur für den Besitzer und den Haushaltseigentümer sichtbar.
+- `POST /loyalty/connections` legt nach erfolgreichem Provider-Callback eine Verbindung an. Der Body referenziert ein vorhandenes verschlüsseltes Credential; Provider-Konto-IDs werden nur gehasht gespeichert und nie zurückgegeben.
+- `PUT /loyalty/connections/{id}` ändert Alias/Sichtbarkeit mit `revision`.
+- `DELETE /loyalty/connections/{id}?revision=n` trennt die Verbindung und löscht synchronisierte Loyalty-Daten, aber nicht automatisch das Credential im Vault.
+- `POST /loyalty/connections/{id}/sync` startet genau einen manuellen read-only Sync. Deaktivierte/nicht registrierte Provider, laufende Syncs und Cooldowns werden serverseitig abgewiesen.
+- `GET /loyalty/connections/{id}/sync-runs` liefert maximal 100 redigierte Läufe ohne Secrets oder Provider-Payloads.
+- Die V4.0-UI zeigt das Fundament und Providerstatus. Lidl-/PAYBACK-Login bleibt deaktiviert, bis das jeweilige technische/rechtliche Gate bestanden ist.
+
+Create/Update-Payloads und Responses sind in `types.ts` beziehungsweise `loyaltyTypes.ts` vollständig typisiert. Die Clients stehen in `api.ts` und `loyaltyApi.ts`.

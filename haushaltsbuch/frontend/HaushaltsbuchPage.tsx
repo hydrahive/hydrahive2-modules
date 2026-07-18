@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ComponentType } from "react"
-import { CalendarClock, FileInput, Gauge, Home, Landmark, ReceiptText, Users } from "lucide-react"
+import { CalendarClock, CreditCard, FileInput, Gauge, Home, Landmark, ReceiptText, Users } from "lucide-react"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { AccountsView } from "./AccountsView"
@@ -9,16 +9,18 @@ import { DashboardView } from "./DashboardView"
 import { HouseholdSetup } from "./HouseholdSetup"
 import { HouseholdView } from "./HouseholdView"
 import { ImportsView } from "./ImportsView"
+import { LoyaltyView } from "./LoyaltyView"
 import { RecurringView } from "./RecurringView"
 import { TransactionsView } from "./TransactionsView"
 import type { Household } from "./types"
 import { Button, ErrorState, LoadingState } from "./ui"
 
-type View = "dashboard" | "transactions" | "imports" | "accounts" | "budgets" | "recurring" | "household"
+type View = "dashboard" | "transactions" | "imports" | "loyalty" | "accounts" | "budgets" | "recurring" | "household"
 const TABS: { id: View; label: string; icon: ComponentType<{ size?: number }> }[] = [
   { id: "dashboard", label: "Übersicht", icon: Home },
   { id: "transactions", label: "Buchungen", icon: ReceiptText },
   { id: "imports", label: "Importe", icon: FileInput },
+  { id: "loyalty", label: "Kundenkarten", icon: CreditCard },
   { id: "accounts", label: "Konten & Kategorien", icon: Landmark },
   { id: "budgets", label: "Budgets", icon: Gauge },
   { id: "recurring", label: "Wiederkehrend", icon: CalendarClock },
@@ -57,6 +59,7 @@ export function HaushaltsbuchPage() {
     {view === "dashboard" && <DashboardView household={household} refreshKey={refreshKey} />}
     {view === "transactions" && <TransactionsView household={household} onChanged={changed} />}
     {view === "imports" && <ImportsView baseCurrency={household.base_currency} onChanged={changed} />}
+    {view === "loyalty" && <LoyaltyView onChanged={changed} />}
     {view === "accounts" && <AccountsView household={household} onChanged={changed} />}
     {view === "budgets" && <BudgetsView household={household} onChanged={changed} />}
     {view === "recurring" && <RecurringView household={household} onChanged={changed} />}
