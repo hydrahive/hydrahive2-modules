@@ -50,9 +50,11 @@ def parse_callback(callback_url: str, expected_state: str) -> str:
         query = parse_qs(parsed.query, keep_blank_values=True, strict_parsing=True)
     except ValueError as exc:
         raise AuthFlowError("lidl_callback_invalid") from exc
-    if set(query) - {"code", "state", "session_state", "iss"}:
+    if set(query) - {"code", "state", "scope", "session_state", "iss"}:
         raise AuthFlowError("lidl_callback_invalid")
     if "iss" in query and query["iss"] != ["https://accounts.lidl.com"]:
+        raise AuthFlowError("lidl_callback_invalid")
+    if "scope" in query and query["scope"] != [SCOPE]:
         raise AuthFlowError("lidl_callback_invalid")
     if len(query.get("code", [])) != 1 or len(query.get("state", [])) != 1:
         raise AuthFlowError("lidl_callback_invalid")

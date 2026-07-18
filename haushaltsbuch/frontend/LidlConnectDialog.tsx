@@ -6,6 +6,8 @@ import { loyaltyApi } from "./loyaltyApi"
 import type { LidlAuthStartResult, LoyaltyConnection } from "./loyaltyTypes"
 import { Button, ErrorState, Field, Input, Textarea } from "./ui"
 
+const LIDL_SCOPE = "openid profile offline_access lpprofile lpapis"
+
 function safeAuthorizationUrl(value: string): string | undefined {
   try {
     const url = new URL(value)
@@ -23,9 +25,11 @@ function validCallbackUrl(value: string): boolean {
     if (url.protocol !== "com.lidlplus.app:" || url.hostname !== "callback") return false
     if (!["", "/"].includes(url.pathname) || url.username || url.password || url.port || url.hash) return false
     const keys = [...url.searchParams.keys()]
-    if (keys.some((key) => !["code", "state", "session_state", "iss"].includes(key))) return false
+    if (keys.some((key) => !["code", "state", "scope", "session_state", "iss"].includes(key))) return false
     if (url.searchParams.getAll("code").length !== 1 || !url.searchParams.get("code")) return false
     if (url.searchParams.getAll("state").length !== 1 || !url.searchParams.get("state")) return false
+    const scope = url.searchParams.getAll("scope")
+    if (scope.length > 1 || (scope.length === 1 && scope[0] !== LIDL_SCOPE)) return false
     const issuer = url.searchParams.getAll("iss")
     return issuer.length === 0 || (issuer.length === 1 && issuer[0] === "https://accounts.lidl.com")
   } catch {
