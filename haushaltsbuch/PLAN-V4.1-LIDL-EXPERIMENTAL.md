@@ -82,6 +82,15 @@ verbinden, digitale Belege read-only synchronisieren und deren Artikel ansehen.
 - [x] Alten generischen `reauth_required/auth_required`-Zustand einmalig recovern
 - [x] Security-/HH-Review, Gesamttests, Version und Source-PR
 
+### Task 10: Aktuelles HTML-Belegformat normalisieren
+
+- [x] Synthetischen `htmlPrintedReceipt`-Fixturetest mit Artikeln und Rabatt schreiben (RED)
+- [x] Begrenzten HTML-Parser ohne Drittanbieterabhängigkeit implementieren (GREEN)
+- [x] Verschachtelte Geld-/Währungswerte und sichere DE-Zeitzonenableitung ergänzen
+- [x] Artikelbetrag per `Decimal` aus Menge × Einzelpreis ergänzen, wenn nötig
+- [x] Roh-HTML-/Payload-Nichtpersistenz und Parserlimits testen
+- [x] Security-/HH-Review, Gesamttests, Version und Source-PR
+
 ## Akzeptanzkriterien
 
 Siehe `SPEC-V4.1-LIDL-EXPERIMENTAL.md`.

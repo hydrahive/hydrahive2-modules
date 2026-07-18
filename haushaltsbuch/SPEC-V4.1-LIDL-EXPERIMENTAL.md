@@ -114,6 +114,29 @@ Refresh-Endpunkt erst auf, wenn kein nutzbares In-Memory-Token vorhanden ist.
 - Der erste Sync nach dem Login darf vor dem Ticketabruf keinen Refresh auslösen.
 - Fehlt der In-Memory-Handoff, bleibt der bestehende sichere Refreshpfad erhalten.
 
+### Ergänzung: aktuelles HTML-Belegformat
+
+Der Detailendpunkt kann Artikel entweder als ältere `itemsLine`-Liste oder im
+aktuellen `htmlPrintedReceipt` liefern. Der Parser erkennt beide Formen und bildet
+HTML ausschließlich mit dem begrenzten Standardbibliothek-Parser auf kanonische
+Artikel und artikelgebundene Rabatte ab.
+
+- `data-art-description`, `data-art-quantity`, `data-unit-price` und `data-tax-type`
+  werden ohne Roh-HTML-Persistenz normalisiert. `data-art-id` wird nur bei gültiger
+  Prüfziffer als GTIN übernommen; providerinterne Artikelcodes werden nicht als GTIN
+  fehlklassifiziert.
+- HTML-Entities werden dekodiert; fehlende Menge bedeutet `1`. Das aktuelle
+  Zwei-Span-Layout (Beschreibungszeile plus `Menge * Einzelpreis Gesamt` mit gleicher
+  Artikel-ID) wird zu genau einer Position zusammengeführt.
+- HTML über 2 Mio. Zeichen sowie übermäßige Artikel-, Rabatt-, Tag- und Textmengen
+  werden begrenzt.
+- Bei fehlendem Brutto-Zeilenbetrag wird `Menge × Einzelpreis` mit `Decimal` berechnet.
+- Verschachtelte Geldobjekte werden defensiv unterstützt.
+- Für den ausschließlich auf DE begrenzten Connector dürfen fehlende Währung und
+  naive lokale Kaufzeit als `EUR` beziehungsweise `Europe/Berlin` markiert abgeleitet
+  werden; die Ableitung bleibt als Review-Warnung sichtbar.
+- Der Beleg-Gesamtbetrag bleibt maßgeblich und wird nicht still aus Artikeln erfunden.
+
 ## Nicht enthalten
 
 - automatisierter/headless Login oder Selenium;

@@ -77,11 +77,15 @@ def test_lidl_provider_refreshes_rotates_and_reads_receipt_without_writes():
             headers={"content-type": "application/json"},
             json={
                 "id": "ticket-1",
-                "date": "2026-07-18T12:30:00+02:00",
-                "totalAmount": "4,99",
-                "currency": {"code": "EUR"},
+                "date": "2026-07-18T12:30:00",
+                "totalAmount": {"amount": "4,99"},
                 "store": {"id": "DE-1", "name": "Lidl Berlin"},
-                "itemsLine": [],
+                "htmlPrintedReceipt": (
+                    '<span class="article" data-art-description="Bio Milch" '
+                    'data-art-quantity="1" data-unit-price="5,49" data-tax-type="A">'
+                    "Bio Milch 5,49</span>"
+                ),
+                "couponsUsed": [{"title": "Milch Coupon", "couponTitle": "0,50 €"}],
             },
         )
 
@@ -91,7 +95,16 @@ def test_lidl_provider_refreshes_rotates_and_reads_receipt_without_writes():
     receipt = asyncio.run(provider.get_receipt(_connection(), page.items[0]))
     assert capabilities.receipts is True
     assert page.items == ["ticket-1"]
-    assert receipt.total_minor == 499
+    assert (receipt.total_minor, receipt.currency, receipt.total_discount_minor) == (
+        499, "EUR", 50,
+    )
+    assert [(item.original_name, item.total_minor) for item in receipt.items] == [
+        ("Bio Milch", 549),
+    ]
+    assert [(item.description, item.amount_minor) for item in receipt.adjustments] == [
+        ("Milch Coupon", -50),
+    ]
+    assert receipt.purchased_at is not None and receipt.purchased_at.utcoffset() is not None
     assert get_credential("owner", "lidl-provider-test").value == "rotated-refresh"
     assert [method for method, _ in requests] == ["POST", "GET", "GET"]
     assert len(set(device_ids)) == 1

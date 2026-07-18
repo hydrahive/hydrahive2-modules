@@ -3,114 +3,72 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime
-from decimal import Decimal, DecimalException, InvalidOperation, ROUND_HALF_UP
 
+from . import lidl_normalize_values as values
+from .lidl_adjustments import append_coupons, normalize_adjustment
+from .lidl_html_receipt import parse_html_items
 from .loyalty_provider import InvalidProviderData
-from .loyalty_receipt_models import ProviderReceipt, ProviderReceiptAdjustment, ProviderReceiptItem
+from .loyalty_receipt_models import ProviderReceipt, ProviderReceiptItem
 
 
-def _decimal(value) -> Decimal | None:
-    if value is None or isinstance(value, bool):
-        return None
-    text = str(value).strip().replace("\u00a0", "").replace(" ", "")
-    if not text:
-        return None
-    if "," in text:
-        text = text.replace(".", "").replace(",", ".")
-    try:
-        parsed = Decimal(text)
-    except InvalidOperation:
-        return None
-    return parsed if parsed.is_finite() else None
+_MAX_ITEMS = 1000
+_MAX_ADJUSTMENTS = 2000
+_MAX_SIGNED = 2**63 - 1
 
 
-def _minor(value) -> int | None:
-    parsed = _decimal(value)
-    if parsed is None:
-        return None
-    try:
-        minor = int((parsed * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-    except (DecimalException, ValueError, OverflowError):
-        return None
-    return minor if -(2**63) <= minor <= 2**63 - 1 else None
-
-
-def _gtin(value) -> str | None:
-    digits = str(value or "").strip()
-    if not digits.isdigit() or len(digits) not in (8, 12, 13, 14):
-        return None
-    expected = sum(int(digit) * (3 if index % 2 == 0 else 1) for index, digit in enumerate(reversed(digits[:-1])))
-    return digits if (10 - expected % 10) % 10 == int(digits[-1]) else None
-
-
-def _text(value, limit: int, warnings: list[str], warning: str) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    if not text:
-        return None
-    if len(text) > limit:
-        warnings.append(warning)
-        return text[:limit]
-    return text
-
-
-def _date(value) -> datetime | None:
-    if not isinstance(value, str) or not value.strip():
-        return None
-    try:
-        return datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
-    except ValueError:
-        return None
-
-
-def _adjustment(raw, kind: str, sequence: int) -> ProviderReceiptAdjustment | None:
-    if raw is None:
-        return None
-    data = raw if isinstance(raw, dict) else {"amount": raw}
-    amount = _minor(data.get("amount", data.get("value", data.get("totalAmount"))))
-    if amount is None:
-        return None
-    if kind in ("discount", "coupon"):
-        amount = -abs(amount)
-    description = data.get("description") or data.get("name")
-    description = str(description).strip()[:1000] if description else None
-    return ProviderReceiptAdjustment(kind, amount, description, sequence)
-
-
-def _item(raw: dict, sequence: int, warnings: list[str]):
-    name = _text(raw.get("name"), 1000, warnings, "item_name_truncated")
+def _item(raw: dict, sequence: int, warnings: list[str], adjustment_limit: int):
+    name = values.bounded_text(raw.get("name"), 1000, warnings, "item_name_truncated")
     if name is None:
         name = "Unbekannter Artikel"
         warnings.append("missing_item_name")
-    code, gtin = raw.get("codeInput"), _gtin(raw.get("codeInput"))
-    if code and gtin is None:
+    code, gtin = raw.get("codeInput"), values.valid_gtin(raw.get("codeInput"))
+    if code and gtin is None and raw.get("_html_source") is not True:
         warnings.append("invalid_gtin")
-    quantity = _decimal(raw.get("quantity"))
-    unit_price = _minor(raw.get("currentUnitPrice"))
-    total = _minor(raw.get("originalAmount"))
+    quantity_input = raw.get("quantity")
+    quantity = values.decimal_value("1" if quantity_input is None else quantity_input)
+    if quantity_input is not None and quantity is None:
+        warnings.append("invalid_quantity")
+    unit_price_value = values.decimal_value(raw.get("currentUnitPrice"))
+    if raw.get("currentUnitPrice") is not None and unit_price_value is None:
+        warnings.append("invalid_unit_price")
+    unit_price = values.minor_value(unit_price_value)
+    total = values.minor_value(raw.get("originalAmount"))
+    if total is None and quantity is not None and unit_price_value is not None:
+        total = values.minor_value(quantity * unit_price_value)
+    is_weight = raw.get("isWeight") is True or bool(
+        raw.get("_html_source") is True and quantity is not None
+        and quantity != quantity.to_integral_value()
+    )
     is_return = bool((quantity is not None and quantity < 0) or (total is not None and total < 0))
     item = ProviderReceiptItem(
         sequence=sequence, original_name=name, gtin=gtin,
         quantity=format(quantity, "f") if quantity is not None else None,
-        unit="kg" if raw.get("isWeight") is True else "piece",
+        unit="kg" if is_weight else "piece",
         unit_price_minor=unit_price, total_minor=total,
-        tax_group=_text(
+        tax_group=values.bounded_text(
             raw.get("taxGroupName") or raw.get("taxGroup"), 120, warnings,
             "tax_group_truncated",
         ), is_return=is_return,
     )
     adjustments = []
-    for discount in raw.get("discounts") or []:
-        adjustment = _adjustment(discount, "discount", sequence)
+    discounts = raw.get("discounts") or []
+    if not isinstance(discounts, list):
+        discounts = []
+        warnings.append("invalid_discounts")
+    if len(discounts) > adjustment_limit:
+        warnings.append("adjustment_limit")
+    for discount in discounts[:adjustment_limit]:
+        adjustment = normalize_adjustment(discount, "discount", sequence)
         if adjustment:
             adjustments.append(adjustment)
         else:
             warnings.append("invalid_discount")
-    deposit = _adjustment(raw.get("deposit"), "deposit", sequence)
+    deposit = normalize_adjustment(raw.get("deposit"), "deposit", sequence)
     if deposit:
-        adjustments.append(deposit)
+        if len(adjustments) < adjustment_limit:
+            adjustments.append(deposit)
+        else:
+            warnings.append("adjustment_limit")
     return item, adjustments
 
 
@@ -121,42 +79,77 @@ def normalize_receipt(payload: dict) -> ProviderReceipt:
     if not provider_id or len(provider_id) > 256:
         raise InvalidProviderData("receipt_id_missing")
     warnings: list[str] = []
-    total = _minor(payload.get("totalAmount"))
-    currency_data = payload.get("currency")
-    currency = currency_data.get("code") if isinstance(currency_data, dict) else currency_data
-    currency = (
-        currency.upper() if isinstance(currency, str)
-        and len(currency) == 3 and currency.isalpha() else None
+    total_data = next(
+        (payload.get(key) for key in ("totalAmount", "total", "ticketTotal", "amount")
+         if payload.get(key) is not None),
+        None,
     )
-    purchased_at = _date(payload.get("date"))
+    total = values.minor_value(total_data)
+    raw_currency = payload.get("currency")
+    direct_currency = values.currency_code(raw_currency)
+    nested_currency = values.currency_code(total_data) if isinstance(total_data, dict) else None
+    raw_currency_present = raw_currency not in (None, "", {})
+    nested_currency_present = isinstance(total_data, dict) and any(
+        key in total_data for key in ("code", "currency", "currencyCode", "isoCode")
+    )
+    invalid_currency = (raw_currency_present and direct_currency is None) or (
+        nested_currency_present and nested_currency is None
+    )
+    if invalid_currency:
+        warnings.append("invalid_currency")
+    if direct_currency and nested_currency and direct_currency != nested_currency:
+        currency = None
+        warnings.append("currency_conflict")
+    else:
+        currency = direct_currency or nested_currency
+    if invalid_currency and raw_currency_present and nested_currency_present:
+        currency = None
+    if currency is None and not (raw_currency_present or nested_currency_present):
+        currency = "EUR"
+        warnings.append("currency_inferred_de")
+    purchased_at = values.iso_datetime(payload.get("date"))
+    if purchased_at is not None:
+        purchased_at, timezone_warning = values.localize_german_time(purchased_at)
+        if timezone_warning:
+            warnings.append(timezone_warning)
     if total is None:
         warnings.append("missing_total")
-    if currency is None:
-        warnings.append("missing_currency")
     if purchased_at is None:
         warnings.append("missing_date")
-    elif purchased_at.tzinfo is None:
-        warnings.append("timezone_unknown")
+    raw_items = payload.get("itemsLine")
+    if not isinstance(raw_items, list) or not raw_items:
+        raw_items = parse_html_items(payload.get("htmlPrintedReceipt"), warnings)
+    if len(raw_items) > _MAX_ITEMS:
+        warnings.append("item_limit")
+        raw_items = raw_items[:_MAX_ITEMS]
     items, adjustments = [], []
-    for sequence, raw in enumerate(payload.get("itemsLine") or []):
+    for sequence, raw in enumerate(raw_items):
         if not isinstance(raw, dict):
             warnings.append("invalid_item")
             continue
-        item, item_adjustments = _item(raw, sequence, warnings)
+        remaining = max(0, _MAX_ADJUSTMENTS - len(adjustments))
+        item, item_adjustments = _item(raw, sequence, warnings, remaining)
         items.append(item)
         adjustments.extend(item_adjustments)
-    for raw in payload.get("couponsUsed") or []:
-        adjustment = _adjustment(raw, "coupon", -1)
-        if adjustment:
-            adjustments.append(adjustment)
-        else:
-            warnings.append("coupon_amount_unknown")
+    append_coupons(
+        payload.get("couponsUsed"), adjustments, warnings, _MAX_ADJUSTMENTS,
+    )
     store = payload.get("store") if isinstance(payload.get("store"), dict) else {}
-    total_discount = _minor(payload.get("totalDiscount"))
+    total_discount = values.minor_value(payload.get("totalDiscount"))
     total_discount = abs(total_discount) if total_discount is not None else None
-    store_id = _text(store.get("id"), 256, warnings, "store_id_truncated")
-    store_name = _text(store.get("name"), 240, warnings, "store_name_truncated")
-    store_address = _text(store.get("address"), 1000, warnings, "store_address_truncated")
+    if total_discount is None:
+        derived_discount = sum(
+            -entry.amount_minor for entry in adjustments
+            if entry.kind in ("discount", "coupon") and entry.amount_minor < 0
+        )
+        if 0 < derived_discount <= _MAX_SIGNED:
+            total_discount = derived_discount
+            warnings.append("total_discount_derived")
+        elif derived_discount > _MAX_SIGNED:
+            warnings.append("total_discount_out_of_range")
+    store_id = values.bounded_text(store.get("id"), 256, warnings, "store_id_truncated")
+    store_name = values.bounded_text(store.get("name"), 240, warnings, "store_name_truncated")
+    store_address = values.bounded_text(store.get("address"), 1000, warnings, "store_address_truncated")
     normalized = {
         "id": provider_id, "date": purchased_at.isoformat() if purchased_at else None,
         "total": total, "currency": currency, "discount": total_discount,
