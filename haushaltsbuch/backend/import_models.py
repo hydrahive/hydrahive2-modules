@@ -51,6 +51,15 @@ class ImportRowUpdate(BaseModel):
     purpose: str | None = Field(default=None, max_length=500)
 
 
+class ImportSuggest(BaseModel):
+    model: str | None = Field(default=None, min_length=1, max_length=200)
+
+
+class ImportAcceptSuggestions(BaseModel):
+    revision: int = Field(ge=1)
+    row_ids: list[int] | None = Field(default=None, max_length=10_000)
+
+
 class ImportComplete(BaseModel):
     revision: int = Field(ge=1)
 
