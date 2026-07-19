@@ -114,6 +114,13 @@ verbinden, digitale Belege read-only synchronisieren und deren Artikel ansehen.
 - [x] Bestehende `coupon_amount_unknown`-Datensätze bei der nächsten Synchronisierung neu klassifizieren
 - [x] Gesamttests, Version 1.4.11 und Source-PR
 
+### Task 14: Lidl-interne Artikelcodes nicht als GTIN-Fehler behandeln
+
+- [x] Regressionstest: ungültige optionale GTIN allein lässt den Beleg gültig
+- [x] Alte `invalid_gtin`-Bestandsbelege beim Update sicher neu klassifizieren
+- [x] Infohinweis in der Belegansicht aus der Fehlerliste filtern
+- [x] Gesamttests, Version 1.4.12 und Source-PR
+
 ## Akzeptanzkriterien
 
 Siehe `SPEC-V4.1-LIDL-EXPERIMENTAL.md`.

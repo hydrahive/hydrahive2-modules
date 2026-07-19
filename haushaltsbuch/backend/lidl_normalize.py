@@ -16,7 +16,7 @@ _MAX_ADJUSTMENTS = 2000
 _MAX_SIGNED = 2**63 - 1
 _INFO_WARNINGS = frozenset({
     "currency_inferred_de", "timezone_inferred_de", "total_discount_derived",
-    "coupon_metadata_without_amount",
+    "coupon_metadata_without_amount", "invalid_gtin",
 })
 
 
