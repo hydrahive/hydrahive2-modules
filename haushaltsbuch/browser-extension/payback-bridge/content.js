@@ -2,7 +2,7 @@
   "use strict";
 
   const {
-    LIMITS, cleanText, visibleText, rootsIncludingOpenShadowDom, selectVisible,
+    SELECTOR_VERSION, LIMITS, cleanText, visibleText, rootsIncludingOpenShadowDom, selectVisible,
     parseDate, allDates, parseInteger, parsePoints, parseMoney, dataId, childText,
     partnerName, partnerRecord, dedupe,
   } = globalThis.PaybackBridgeContent;

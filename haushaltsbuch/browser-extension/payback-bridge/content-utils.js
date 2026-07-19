@@ -172,7 +172,8 @@
   }
 
   globalThis.PaybackBridgeContent = {
-    LIMITS, cleanText, visible, visibleText, rootsIncludingOpenShadowDom, selectVisible,
+    SELECTOR_VERSION, LIMITS, cleanText, visible, visibleText,
+    rootsIncludingOpenShadowDom, selectVisible,
     parseDate, allDates, parseInteger, parsePoints, parseMoney, dataId, childText,
     partnerName, partnerRecord, dedupe,
   };

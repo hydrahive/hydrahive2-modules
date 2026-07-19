@@ -109,7 +109,10 @@
     try {
       const tab = await activePaybackTab();
       const response = await chrome.tabs.sendMessage(tab.id, { type: "PAYBACK_CAPTURE_VISIBLE" });
-      if (!response?.ok || !response.capture) throw new Error("Die Seite konnte nicht gelesen werden. Bitte PAYBACK neu laden und erneut versuchen.");
+      if (!response?.ok || !response.capture) {
+        const detail = response?.error ? ` (${response.error})` : "";
+        throw new Error(`Die PAYBACK-Seite konnte nicht gelesen werden${detail}.`);
+      }
       state = mergeCapture(state, response.capture);
       await persist();
       render();
