@@ -1,4 +1,4 @@
-import { Clock3, Database, Download, RefreshCw, ShieldAlert, Trash2 } from "lucide-react"
+import { Clock3, RefreshCw, ShieldAlert, Trash2 } from "lucide-react"
 import type { LoyaltyConnection } from "./loyaltyTypes"
 import { Button, panel } from "./ui"
 
@@ -13,13 +13,11 @@ const STATUS = {
   error: "Fehler",
 }
 
-export function LoyaltyConnectionCard({ connection, busy, onSync, onHistory, onImport, onData, onDelete }: {
+export function LoyaltyConnectionCard({ connection, busy, onSync, onHistory, onDelete }: {
   connection: LoyaltyConnection
   busy: boolean
   onSync: () => void
   onHistory: () => void
-  onImport: () => void
-  onData: () => void
   onDelete: () => void
 }) {
   const canRecoverLegacyAuth = connection.provider === "lidl_plus" && connection.status === "reauth_required" && connection.last_error_code === "auth_required"
@@ -40,13 +38,8 @@ export function LoyaltyConnectionCard({ connection, busy, onSync, onHistory, onI
     {!connection.feature_enabled && <p className="mt-3 rounded border border-cyan-400/20 bg-cyan-400/5 p-2 text-xs text-cyan-100">Der direkte Provider-Adapter ist noch nicht freigegeben. Die Verbindung bleibt sicher gespeichert, aber Synchronisierung ist deaktiviert.</p>}
     {connection.last_error_code && <p className="mt-2 text-xs text-rose-200">Letzter Fehler: {connection.last_error_code.replaceAll("_", " ")}</p>}
     <div className="mt-4 flex flex-wrap gap-2 border-t border-[#263247] pt-3">
-      {connection.provider === "payback" ? <>
-        <Button tone="primary" disabled={busy} onClick={onImport}><Download size={13} className="mr-1 inline" />Browser-Import</Button>
-        <Button disabled={busy} onClick={onData}><Database size={13} className="mr-1 inline" />Daten anzeigen</Button>
-      </> : <>
-        <Button tone="primary" disabled={!canSync} onClick={onSync}><RefreshCw size={13} className="mr-1 inline" />{canRecoverLegacyAuth ? "Anmeldung erneut prüfen" : "Jetzt synchronisieren"}</Button>
-        <Button disabled={busy} onClick={onHistory}><Clock3 size={13} className="mr-1 inline" />Sync-Verlauf</Button>
-      </>}
+      <Button tone="primary" disabled={!canSync} onClick={onSync}><RefreshCw size={13} className="mr-1 inline" />{canRecoverLegacyAuth ? "Anmeldung erneut prüfen" : "Jetzt synchronisieren"}</Button>
+      <Button disabled={busy} onClick={onHistory}><Clock3 size={13} className="mr-1 inline" />Sync-Verlauf</Button>
       <Button tone="danger" disabled={busy} onClick={onDelete}><Trash2 size={13} className="mr-1 inline" />Trennen</Button>
     </div>
   </article>

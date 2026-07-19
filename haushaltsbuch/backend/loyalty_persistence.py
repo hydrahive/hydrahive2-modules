@@ -140,15 +140,13 @@ def _upsert_activities(conn, connection, items, partner_ids, counts) -> None:
         ).fetchone()
         values = (
             item.provider_id, item.fingerprint, item.kind, _iso(item.occurred_on),
-            item.points_delta, partner_id, item.description, item.purchase_amount_minor,
-            item.purchase_currency, _iso(item.provider_updated_at),
+            item.points_delta, partner_id, item.description, _iso(item.provider_updated_at),
         )
         if existing:
             conn.execute(
                 "UPDATE module_haushaltsbuch_loyalty_activities SET "
                 "provider_activity_id=?,fingerprint=?,activity_type=?,activity_date=?,"
-                "points_delta=?,partner_id=?,original_description=?,purchase_amount_minor=?,"
-                "purchase_currency=?,provider_updated_at=?,"
+                "points_delta=?,partner_id=?,original_description=?,provider_updated_at=?,"
                 "last_seen_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?",
                 (*values, existing["id"]),
             )
@@ -157,9 +155,8 @@ def _upsert_activities(conn, connection, items, partner_ids, counts) -> None:
             conn.execute(
                 "INSERT INTO module_haushaltsbuch_loyalty_activities"
                 "(household_id,connection_id,provider_activity_id,fingerprint,activity_type,"
-                "activity_date,points_delta,partner_id,original_description,"
-                "purchase_amount_minor,purchase_currency,provider_updated_at) "
-                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                "activity_date,points_delta,partner_id,original_description,provider_updated_at) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?)",
                 (connection["household_id"], connection["id"], *values),
             )
             counts.created += 1

@@ -90,7 +90,6 @@ def client(app: FastAPI) -> TestClient:
                 "households",
                 "members",
                 "loyalty_auth_flows",
-                "payback_bridge_flows",
                 "loyalty_connections",
                 "loyalty_receipts",
                 "loyalty_receipt_items",

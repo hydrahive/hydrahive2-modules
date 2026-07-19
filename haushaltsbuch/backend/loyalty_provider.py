@@ -106,8 +106,6 @@ class ProviderActivity:
     points_delta: int
     partner_provider_id: str | None = None
     description: str | None = None
-    purchase_amount_minor: int | None = None
-    purchase_currency: str | None = None
     provider_updated_at: datetime | None = None
 
 
