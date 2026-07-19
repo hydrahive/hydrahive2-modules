@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HydraHive PAYBACK Bridge",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Erfasst manuell sichtbare PAYBACK-Daten und sendet sie mit einem Einmalcode an HydraHive.",
   "permissions": ["storage"],
   "host_permissions": ["https://www.payback.de/*"],

@@ -171,10 +171,16 @@
     return [...byKey.values()];
   }
 
+  function leafCandidates(candidates) {
+    return candidates.filter(candidate => !candidates.some(other => (
+      other !== candidate && candidate.contains(other)
+    )));
+  }
+
   globalThis.PaybackBridgeContent = {
     SELECTOR_VERSION, LIMITS, cleanText, visible, visibleText,
     rootsIncludingOpenShadowDom, selectVisible,
     parseDate, allDates, parseInteger, parsePoints, parseMoney, dataId, childText,
-    partnerName, partnerRecord, dedupe,
+    partnerName, partnerRecord, dedupe, leafCandidates,
   };
 })();
