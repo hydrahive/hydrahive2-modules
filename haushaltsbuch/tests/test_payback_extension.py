@@ -147,6 +147,43 @@ def test_extension_parses_common_euro_purchase_formats():
     ]
 
 
+def test_content_scripts_share_selector_version_and_capture_empty_page():
+    utilities = EXTENSION_DIR / "content-utils.js"
+    content = EXTENSION_DIR / "content.js"
+    script = f"""
+      globalThis.Element = class Element {{}};
+      globalThis.ShadowRoot = class ShadowRoot {{}};
+      globalThis.getComputedStyle = () => ({{
+        display: "block", visibility: "visible", opacity: "1"
+      }});
+      const body = new Element();
+      body.innerText = ""; body.textContent = ""; body.parentElement = null;
+      body.getRootNode = () => ({{}});
+      body.getBoundingClientRect = () => ({{ width: 20, height: 20 }});
+      globalThis.document = {{
+        body, title: "PAYBACK", querySelectorAll: () => []
+      }};
+      globalThis.location = {{ origin: "https://www.payback.de", pathname: "/" }};
+      let listener;
+      globalThis.chrome = {{ runtime: {{ onMessage: {{
+        addListener: callback => {{ listener = callback; }}
+      }} }} }};
+      require({json.dumps(str(utilities))});
+      require({json.dumps(str(content))});
+      let response;
+      listener({{ type: "PAYBACK_CAPTURE_VISIBLE" }}, null, value => {{ response = value; }});
+      console.log(JSON.stringify(response));
+    """
+    result = subprocess.run(
+        ["node", "-e", script], check=True, capture_output=True, text=True
+    )
+    response = json.loads(result.stdout)
+
+    assert response["ok"] is True
+    assert response["capture"]["selector_version"] == "payback-visible-v1"
+    assert response["capture"]["warnings"] == ["unknown_dom_version"]
+
+
 def test_extension_visibility_check_honors_transparent_ancestors():
     utilities = EXTENSION_DIR / "content-utils.js"
     script = f"""
