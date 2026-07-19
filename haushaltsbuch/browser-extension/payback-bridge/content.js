@@ -4,7 +4,7 @@
   const {
     SELECTOR_VERSION, LIMITS, cleanText, visibleText, rootsIncludingOpenShadowDom, selectVisible,
     parseDate, allDates, parseInteger, parsePoints, parseMoney, dataId, childText,
-    partnerName, partnerRecord, dedupe,
+    partnerName, partnerRecord, dedupe, leafCandidates,
   } = globalThis.PaybackBridgeContent;
   function extractBalance(roots, observedAt) {
     const candidates = selectVisible(roots, [
@@ -91,25 +91,46 @@
     return "available";
   }
 
+  function couponCardsFromMarkers(roots) {
+    const cards = new Set();
+    const markers = selectVisible(roots, ["button", "[role='button']"]);
+    for (const marker of markers) {
+      if (!/(jetzt aktivieren|aktiviert|coupon-details)/i.test(visibleText(marker, 200) || "")) continue;
+      let current = marker.parentElement;
+      for (let depth = 0; current && depth < 8; depth += 1) {
+        const text = visibleText(current, 8000);
+        if (text && parseDate(text) && /(fach|°P|Punkte?n?)/i.test(text)) {
+          cards.add(current);
+          break;
+        }
+        current = current.parentElement;
+      }
+    }
+    return [...cards];
+  }
+
   function extractCoupons(roots, observedAt) {
     const coupons = [];
     const partners = [];
-    const candidates = selectVisible(roots, [
+    const selectorCandidates = selectVisible(roots, [
       "[data-testid*='coupon' i]", "[data-test*='coupon' i]", "[data-coupon-id]",
       "article[class*='coupon' i]", "li[class*='coupon' i]", "[class*='coupon-card' i]",
       "[class*='coupon-tile' i]",
     ]);
-    for (const element of candidates) {
-      if ([...candidates].some(other => other !== element && other.contains(element))) continue;
+    const qualified = [...new Set([...selectorCandidates, ...couponCardsFromMarkers(roots)])]
+      .filter(element => {
+        const text = visibleText(element, 8000);
+        return Boolean(text && parseDate(text) && /(fach|°P|Punkte?n?)/i.test(text));
+      });
+    for (const element of leafCandidates(qualified)) {
       const text = visibleText(element, 8000);
-      if (!text || !/(coupon|punkte|fach|°P|gültig)/i.test(text)) continue;
       const title = childText(element, ["[data-testid*='title' i]", "h1", "h2", "h3", "h4", "[class*='title' i]"], 500) || cleanText(text, 500);
       if (!title) continue;
       const partner = partnerRecord(partnerName(element, text));
       if (partner) partners.push(partner);
       const dates = allDates(text);
       const multiplierMatch = text.match(/(?:^|\s)(\d+(?:[,.]\d+)?)\s*(?:fach|x)\b/i);
-      const bonusMatch = text.match(/(?:^|\s)(\d[\d.\s]*)\s*(?:Extra-|Bonus)?Punkte?n?\b/i);
+      const bonusMatch = text.match(/(?:^|\s)(\d[\d.\s]*)\s*(?:Extra-?|Bonus)?\s*(?:°P|Punkte?n?)\b/i);
       const condition = childText(element, ["[data-testid*='condition' i]", "[class*='condition' i]", "[class*='terms' i]", "small"], 4000);
       const record = {
         provider_coupon_id: dataId(element, ["data-coupon-id", "data-id", "id"], "coupon", `${partner?.name || ""}|${title}|${dates.join("|")}`),

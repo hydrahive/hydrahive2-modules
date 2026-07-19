@@ -147,6 +147,28 @@ def test_extension_parses_common_euro_purchase_formats():
     ]
 
 
+def test_coupon_candidate_filter_prefers_individual_cards_over_list_container():
+    utilities = EXTENSION_DIR / "content-utils.js"
+    script = f"""
+      require({json.dumps(str(utilities))});
+      const first = {{ name: "first", contains: () => false }};
+      const second = {{ name: "second", contains: () => false }};
+      const wrapper = {{
+        name: "wrapper",
+        contains: candidate => candidate === first || candidate === second
+      }};
+      const result = globalThis.PaybackBridgeContent.leafCandidates(
+        [wrapper, first, second]
+      );
+      console.log(JSON.stringify(result.map(item => item.name)));
+    """
+    result = subprocess.run(
+        ["node", "-e", script], check=True, capture_output=True, text=True
+    )
+
+    assert json.loads(result.stdout) == ["first", "second"]
+
+
 def test_content_scripts_share_selector_version_and_capture_empty_page():
     utilities = EXTENSION_DIR / "content-utils.js"
     content = EXTENSION_DIR / "content.js"
