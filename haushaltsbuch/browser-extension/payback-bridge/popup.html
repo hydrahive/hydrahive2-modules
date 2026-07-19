@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HydraHive PAYBACK Bridge</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">HydraHive</p>
+      <h1>PAYBACK Bridge</h1>
+      <p class="intro">Nur Daten, die auf der aktuell geöffneten PAYBACK-Seite sichtbar sind, werden lokal erfasst.</p>
+    </header>
+
+    <form id="settings-form">
+      <label for="origin">HydraHive-Origin</label>
+      <input id="origin" name="origin" type="url" inputmode="url" placeholder="https://hydrahive.example" required spellcheck="false" autocomplete="url">
+
+      <label for="pairing-code">Einmalcode</label>
+      <input id="pairing-code" name="pairing-code" type="password" minlength="43" maxlength="128" pattern="[A-Za-z0-9_-]+" required spellcheck="false" autocomplete="off">
+    </form>
+
+    <section aria-labelledby="preview-title" class="panel">
+      <div class="panel-heading">
+        <h2 id="preview-title">Lokale Vorschau</h2>
+        <button id="clear" type="button" class="link-button">Löschen</button>
+      </div>
+      <dl class="counts">
+        <div><dt>Punktestand</dt><dd id="balance-count">0</dd></div>
+        <div><dt>Verfall</dt><dd id="expiration-count">0</dd></div>
+        <div><dt>Aktivitäten</dt><dd id="activity-count">0</dd></div>
+        <div><dt>Coupons</dt><dd id="coupon-count">0</dd></div>
+        <div><dt>Partner</dt><dd id="partner-count">0</dd></div>
+        <div><dt>Seiten</dt><dd id="page-count">0</dd></div>
+      </dl>
+      <p id="last-page" class="muted">Noch keine PAYBACK-Seite erfasst.</p>
+    </section>
+
+    <div id="warning" class="notice warning" role="alert" hidden></div>
+    <div id="status" class="notice" role="status" aria-live="polite"></div>
+
+    <div class="actions">
+      <button id="capture" type="button">Aktuelle PAYBACK-Seite erfassen</button>
+      <button id="send" type="button" class="primary">Import an HydraHive senden</button>
+    </div>
+    <p class="privacy">Keine Cookies, Zugangsdaten oder HTML-Inhalte werden gespeichert oder gesendet. Nach erfolgreichem Import werden die lokalen Importdaten gelöscht.</p>
+  </main>
+  <script src="popup-state.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

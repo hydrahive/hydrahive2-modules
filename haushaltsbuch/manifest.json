@@ -1,8 +1,8 @@
 {
   "id": "haushaltsbuch",
   "name": "Haushaltsbuch",
-  "version": "1.4.12",
-  "description": "Lokales Haushaltsbuch mit Bankimport, Auto-Kategorisierung und experimentellem read-only Lidl-Plus-Belegsync.",
+  "version": "1.5.0",
+  "description": "Lokales Haushaltsbuch mit Bankimport, Auto-Kategorisierung sowie experimentellen read-only Lidl-Plus- und PAYBACK-Importen.",
   "icon": "WalletCards",
   "nav_group": "working",
   "permissions": [],

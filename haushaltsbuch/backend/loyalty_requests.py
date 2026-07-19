@@ -5,6 +5,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from .loyalty_models import ConnectionVisibility, LoyaltyProvider
+from .payback_bridge_models import PaybackBridgeImport, PaybackBridgeStart
+
+__all__ = ["PaybackBridgeImport", "PaybackBridgeStart"]
 
 
 class LoyaltyConnectionCreate(BaseModel):
