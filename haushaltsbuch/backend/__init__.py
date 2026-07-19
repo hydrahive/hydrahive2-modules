@@ -28,7 +28,7 @@ def status(auth: Annotated[tuple[str, str], Depends(require_auth)]) -> dict:
             "bank_import": "available",
             "loyalty_foundation": "available",
             "lidl_plus": "experimental" if lidl_enabled() else "disabled",
-            "payback": "experimental",
+            "payback": "planned",
         },
     }
 

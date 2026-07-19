@@ -36,6 +36,6 @@ def test_status_reports_bank_import_available() -> None:
             "bank_import": "available",
             "loyalty_foundation": "available",
             "lidl_plus": "experimental",
-            "payback": "experimental",
+            "payback": "planned",
         },
     }
