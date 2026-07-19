@@ -107,6 +107,13 @@ verbinden, digitale Belege read-only synchronisieren und deren Artikel ansehen.
 - [x] Infohinweise lösen keinen gelben Fehlerzustand aus
 - [x] Gesamttests, Version 1.4.10 und Source-PR
 
+### Task 13: Betraglose `couponsUsed` als Provider-Metadaten behandeln
+
+- [x] Regressionstest: betraglose, abweichend benannte Coupons bleiben Info
+- [x] Numerische Coupons werden weiterhin als Anpassung übernommen/dedupliziert
+- [x] Bestehende `coupon_amount_unknown`-Datensätze bei der nächsten Synchronisierung neu klassifizieren
+- [x] Gesamttests, Version 1.4.11 und Source-PR
+
 ## Akzeptanzkriterien
 
 Siehe `SPEC-V4.1-LIDL-EXPERIMENTAL.md`.

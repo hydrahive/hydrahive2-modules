@@ -8,6 +8,15 @@ from . import lidl_normalize_values as values
 from .loyalty_receipt_models import ProviderReceiptAdjustment
 
 _MAX_COUPON_INPUTS = 4000
+_EXPLICIT_AMOUNT_FIELDS = ("amount", "value", "totalAmount", "discountAmount", "savings")
+
+
+def _has_invalid_explicit_amount(data: dict) -> bool:
+    return any(
+        field in data and data[field] not in (None, "", {})
+        and values.minor_value(data[field]) is None
+        for field in _EXPLICIT_AMOUNT_FIELDS
+    )
 
 
 def _description_key(value: str | None) -> str:
@@ -49,6 +58,9 @@ def append_coupons(
         for entry in adjustments if entry.kind == "discount"
     )
     for raw in coupons[:_MAX_COUPON_INPUTS]:
+        if not isinstance(raw, dict):
+            warnings.append("invalid_coupon")
+            continue
         adjustment = normalize_adjustment(raw, "coupon", -1)
         key = None if adjustment is None else (
             adjustment.amount_minor, _description_key(adjustment.description)
@@ -56,26 +68,10 @@ def append_coupons(
         if key is not None and html_adjustments[key] > 0:
             html_adjustments[key] -= 1
         elif adjustment is None:
-            data = raw if isinstance(raw, dict) else {}
-            description_keys = {
-                key for key in (
-                    _description_key(str(data[field]))
-                    for field in (
-                        "description", "name", "title", "couponDescription", "couponTitle",
-                        "block2Description",
-                    )
-                    if data.get(field)
-                ) if key
-            }
-            matches = [
-                candidate for candidate, count in html_adjustments.items()
-                if count > 0 and candidate[1] in description_keys
-            ]
-            if sum(html_adjustments[candidate] for candidate in matches) == 1:
-                html_adjustments[matches[0]] -= 1
-                warnings.append("coupon_metadata_without_amount")
-            else:
-                warnings.append("coupon_amount_unknown")
+            warnings.append(
+                "invalid_coupon_amount" if _has_invalid_explicit_amount(raw)
+                else "coupon_metadata_without_amount"
+            )
         elif len(adjustments) < max_adjustments:
             adjustments.append(adjustment)
         else:
