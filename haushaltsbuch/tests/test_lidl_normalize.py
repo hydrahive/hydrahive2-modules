@@ -292,7 +292,7 @@ def test_repeated_equal_coupons_preserve_multiplicity():
     assert receipt.total_discount_minor == 100
 
 
-def test_coupon_metadata_without_amount_is_info_when_html_discount_exists():
+def test_coupon_metadata_without_amount_is_always_informational():
     covered = normalize_receipt({
         "id": "coupon-metadata-covered", "date": "2026-07-18T10:00:00",
         "totalAmount": "0,50",
@@ -327,12 +327,33 @@ def test_coupon_metadata_without_amount_is_info_when_html_discount_exists():
         "itemsLine": [{"name": "Artikel", "discounts": [{"amount": "0,25"}]}],
         "couponsUsed": [{"title": " ", "discount": "Aktionscoupon"}],
     })
-    assert covered.validation_status == "valid"
-    assert "coupon_metadata_without_amount" in covered.warnings
-    assert "coupon_amount_unknown" not in covered.warnings
-    for receipt in (uncovered, ambiguous, unnamed):
+    for receipt in (covered, uncovered, ambiguous, unnamed):
+        assert receipt.validation_status == "valid"
+        assert "coupon_metadata_without_amount" in receipt.warnings
+        assert "coupon_amount_unknown" not in receipt.warnings
+
+
+def test_non_object_coupon_stays_a_reviewable_provider_error():
+    receipt = normalize_receipt({
+        "id": "invalid-coupon", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "1,00", "currency": "EUR", "itemsLine": [],
+        "couponsUsed": [None, "0,50", 5],
+    })
+    assert receipt.validation_status == "needs_review"
+    assert "invalid_coupon" in receipt.warnings
+    assert receipt.adjustments == []
+
+
+def test_invalid_explicit_coupon_amount_stays_reviewable():
+    for value in ("defekt", True):
+        receipt = normalize_receipt({
+            "id": f"invalid-coupon-amount-{value}",
+            "date": "2026-07-18T10:00:00+02:00", "totalAmount": "1,00",
+            "currency": "EUR", "itemsLine": [],
+            "couponsUsed": [{"title": "Coupon", "amount": value}],
+        })
         assert receipt.validation_status == "needs_review"
-        assert "coupon_amount_unknown" in receipt.warnings
+        assert "invalid_coupon_amount" in receipt.warnings
 
 
 def test_different_product_codes_with_same_name_are_not_collapsed():
