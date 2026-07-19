@@ -68,7 +68,7 @@ Ein manueller read-only PAYBACK-Import über eine lokale Chromium-Erweiterung mi
 - [x] HH-Review und Dateigrößenprüfung.
 - [x] Gesamttests und Frontend-Build.
 - [x] Manifest-Version auf 1.5.0 erhöhen.
-- [ ] Source-PR erstellen und erst nach grüner Verifikation mergen.
+- [x] Source-PR #58 erstellt und nach grüner Verifikation zur Zusammenführung vorbereitet.
 
 ## Akzeptanzkriterien
 
