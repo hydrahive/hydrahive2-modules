@@ -135,7 +135,15 @@ class LoyaltyActivity(BaseModel):
     points_delta: int = Field(strict=True)
     partner_id: int | None = Field(default=None, gt=0)
     original_description: str | None = Field(default=None, max_length=2000)
+    purchase_amount_minor: int | None = Field(default=None, ge=0, strict=True)
+    purchase_currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
     provider_updated_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def complete_purchase_amount(self):
+        if (self.purchase_amount_minor is None) != (self.purchase_currency is None):
+            raise ValueError("purchase amount and currency must be supplied together")
+        return self
     first_seen_at: datetime | None = None
     last_seen_at: datetime | None = None
     remote_status: RemoteStatus = "active"

@@ -124,3 +124,115 @@ export interface LoyaltyReceiptDetail extends LoyaltyReceipt {
   items: LoyaltyReceiptItem[]
   adjustments: LoyaltyReceiptAdjustment[]
 }
+
+export interface PaybackBridgeStartResult {
+  flow_id: string
+  pairing_code: string
+  expires_at: string
+  import_path: string
+}
+
+export interface PaybackBridgeStatus {
+  flow_id: string
+  status: "pending" | "consumed" | "expired"
+  expires_at: string
+  connection?: LoyaltyConnection
+}
+
+export interface PaybackExtensionPackage {
+  filename: string
+  sha256: string
+  base64: string
+}
+
+export interface PaybackBalance {
+  id: number
+  observed_at: string
+  available_points: number
+  money_value_minor: number | null
+  money_value_currency: string | null
+  valuation_version: string | null
+  created_at: string
+}
+
+export interface PaybackExpiration {
+  id: number
+  expiration_date: string
+  points: number
+  status: "scheduled" | "expired" | "cancelled"
+  provider_updated_at: string | null
+  first_seen_at: string
+  last_seen_at: string
+}
+
+export interface PaybackActivity {
+  id: number
+  provider_activity_id: string | null
+  activity_type: "earn" | "redeem" | "expire" | "reversal" | "adjustment"
+  activity_date: string
+  points_delta: number
+  partner_id: number | null
+  partner_name: string | null
+  original_description: string | null
+  purchase_amount_minor: number | null
+  purchase_currency: string | null
+  provider_updated_at: string | null
+  first_seen_at: string
+  last_seen_at: string
+  remote_status: string
+}
+
+export interface PaybackCoupon {
+  id: number
+  provider_coupon_id: string | null
+  partner_id: number | null
+  partner_name: string | null
+  title: string
+  description: string | null
+  valid_from: string | null
+  valid_until: string | null
+  activation_status: "available" | "activated" | "redeemed" | "expired" | "unavailable"
+  multiplier: string | null
+  bonus_points: number | null
+  condition_text: string | null
+  first_seen_at: string
+  last_seen_at: string
+  provider_updated_at: string | null
+  remote_status: string
+}
+
+export interface PaybackPartner {
+  id: number
+  provider_partner_id: string
+  name: string
+  active: 0 | 1
+  first_seen_at: string
+  last_seen_at: string
+}
+
+export interface PaybackMetrics {
+  activity_count: number
+  points_collected: number
+  points_redeemed: number
+  partner_frequency: { partner_id: number; name: string; activity_count: number }[]
+  purchase_totals: { currency: string; amount_minor: number; activity_count: number }[]
+  coupon_status: Record<string, number>
+}
+
+export interface PaybackDataResult {
+  connection: LoyaltyConnection
+  latest_balance: PaybackBalance | null
+  balance_history: PaybackBalance[]
+  expirations: PaybackExpiration[]
+  activities: PaybackActivity[]
+  coupons: PaybackCoupon[]
+  partners: PaybackPartner[]
+  metrics: PaybackMetrics
+  limits: {
+    balance_history: number
+    expirations: number
+    activities: number
+    coupons: number
+    partners: number
+  }
+}
