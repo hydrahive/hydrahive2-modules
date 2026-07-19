@@ -11,7 +11,7 @@ const kindLabel = { discount: "Rabatt", coupon: "Coupon", deposit: "Pfand", roun
 const unitLabel = { piece: "Stk.", kg: "kg" }
 const informationalWarnings = new Set([
   "coupon_metadata_without_amount", "currency_inferred_de",
-  "timezone_inferred_de", "total_discount_derived",
+  "timezone_inferred_de", "total_discount_derived", "invalid_gtin",
 ])
 
 function amount(value: number | null, currency: string | null) {

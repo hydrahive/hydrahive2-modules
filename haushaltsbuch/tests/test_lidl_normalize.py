@@ -446,6 +446,17 @@ def test_dropped_deposit_at_adjustment_cap_is_marked_for_review():
     assert "adjustment_limit" in receipt.warnings
 
 
+def test_internal_lidl_product_code_is_not_a_reviewable_gtin_error():
+    receipt = normalize_receipt({
+        "id": "internal-product-code", "date": "2026-07-18T10:00:00+02:00",
+        "totalAmount": "1,00", "currency": "EUR",
+        "itemsLine": [{"name": "Artikel", "codeInput": "1234567"}],
+    })
+    assert receipt.items[0].gtin is None
+    assert "invalid_gtin" in receipt.warnings
+    assert receipt.validation_status == "valid"
+
+
 def test_missing_and_inconsistent_fields_need_review_with_marked_de_currency():
     receipt = normalize_receipt({"id": "x", "itemsLine": [{"name": "Lose Ware", "codeInput": "invalid"}]})
     assert receipt.validation_status == "needs_review"

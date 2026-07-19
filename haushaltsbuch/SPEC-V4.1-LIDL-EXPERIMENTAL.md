@@ -122,9 +122,9 @@ HTML ausschließlich mit dem begrenzten Standardbibliothek-Parser auf kanonische
 Artikel und artikelgebundene Rabatte ab.
 
 - `data-art-description`, `data-art-quantity`, `data-unit-price` und `data-tax-type`
-  werden ohne Roh-HTML-Persistenz normalisiert. `data-art-id` wird nur bei gültiger
-  Prüfziffer als GTIN übernommen; providerinterne Artikelcodes werden nicht als GTIN
-  fehlklassifiziert.
+  werden ohne Roh-HTML-Persistenz normalisiert. `data-art-id` und `codeInput` werden
+  nur bei gültiger Prüfziffer als GTIN übernommen; providerinterne Artikelcodes werden
+  nicht als GTIN fehlklassifiziert und gelten nicht als prüfpflichtiger Belegfehler.
 - HTML-Entities werden dekodiert; fehlende Menge bedeutet `1`. Das aktuelle
   Zwei-Span-Layout (Beschreibungszeile plus `Menge * Einzelpreis Gesamt` mit gleicher
   Artikel-ID) wird zu genau einer Position zusammengeführt.
