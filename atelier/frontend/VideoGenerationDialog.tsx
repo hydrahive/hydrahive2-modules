@@ -28,6 +28,27 @@ const durationsOf = (m?: MediaModel) =>
 const aspectsOf = (m?: MediaModel) =>
   (m?.aspect_ratios && m.aspect_ratios.length ? m.aspect_ratios : FALLBACK_ASPECTS)
 
+/**
+ * Gruppiert die Modelle fürs Dropdown: Cloud (OpenRouter) zuerst, danach je
+ * lokalem Backend (provider-Name) eine eigene Gruppe. So sieht der User auf
+ * einen Blick, welche Modelle Cloud und welche lokal (Muskeln1/2 …) sind.
+ */
+function groupModels(models: MediaModel[]): { label: string; models: MediaModel[] }[] {
+  const cloud = models.filter((m) => !m.local)
+  const localByProvider = new Map<string, MediaModel[]>()
+  for (const m of models) {
+    if (!m.local) continue
+    const key = m.provider || "Lokal"
+    const arr = localByProvider.get(key) ?? []
+    arr.push(m)
+    localByProvider.set(key, arr)
+  }
+  const groups: { label: string; models: MediaModel[] }[] = []
+  if (cloud.length) groups.push({ label: "OpenRouter", models: cloud })
+  for (const [label, ms] of localByProvider) groups.push({ label, models: ms })
+  return groups
+}
+
 /** Dialog: aus einem Galerie-Bild ein Video machen (Image-to-Video). */
 export function VideoGenerationDialog({ projectId, source, onClose, onStarted, initial }: Props) {
   const { t } = useTranslation("atelier")
@@ -142,8 +163,12 @@ export function VideoGenerationDialog({ projectId, source, onClose, onStarted, i
               className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
             >
               {models.length === 0 && <option value="">…</option>}
-              {models.map((m) => (
-                <option key={m.id} value={m.id}>{m.name || m.id.split("/")[1] || m.id}</option>
+              {groupModels(models).map((grp) => (
+                <optgroup key={grp.label} label={grp.label}>
+                  {grp.models.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name || m.id.split("/")[1] || m.id}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>
