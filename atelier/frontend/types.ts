@@ -189,6 +189,10 @@ export interface MediaModel {
   // Unterstützte Frame-Typen (z.B. "first_frame", "last_frame") — steuert, ob
   // das Endbild-Feld angeboten wird.
   frame_images?: string[]
+  // Lokale Backends (ComfyUI/Switch-Wrapper): provider = Backend-Name für die
+  // Gruppierung im Dropdown; local = true kennzeichnet ein lokales Modell.
+  provider?: string
+  local?: boolean
 }
 
 export interface MediaModelList {
