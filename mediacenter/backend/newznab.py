@@ -194,7 +194,5 @@ async def search(
         inner_transport=inner_transport,
         pinned_ip=pinned_ip,
     )
-    if api_key.encode("utf-8") in data:
-        return []
     releases = parse_search(data, max_items=request.limit)
     return [release for release in releases if not release_contains_secret(release, api_key)]

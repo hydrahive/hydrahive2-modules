@@ -140,11 +140,28 @@ def test_parse_search_skips_item_with_missing_identity():
     assert parse_search(xml) == []
 
 
-def test_parse_search_marks_external_download_url_unusable():
-    xml = _RSS.replace(b"https://treasure-maps.com/getnzb/abc-123", b"http://127.0.0.1/private")
+@pytest.mark.parametrize(
+    "external",
+    [
+        b"http://127.0.0.1/private",
+        b"https://file.treasure-maps.com.evil.invalid/getnzb/abc-123",
+        b"https://evil-treasure-maps.com/getnzb/abc-123",
+    ],
+)
+def test_parse_search_marks_external_download_url_unusable(external):
+    xml = _RSS.replace(b"https://treasure-maps.com/getnzb/abc-123", external)
     release = parse_search(xml)[0]
 
     assert release.download_url is None
+
+
+def test_parse_search_accepts_exact_treasure_maps_file_origin():
+    source = b"https://treasure-maps.com/getnzb/abc-123"
+    file_origin = b"https://file.treasure-maps.com/getnzb/abc-123?r=opaque"
+
+    release = parse_search(_RSS.replace(source, file_origin))[0]
+
+    assert release.download_url == "https://file.treasure-maps.com/getnzb/abc-123"
 
 
 @pytest.mark.parametrize(
@@ -173,7 +190,7 @@ def test_parse_search_strips_api_key_from_internal_download_url():
     xml = _RSS.replace(b"https://treasure-maps.com/getnzb/abc-123", with_secret)
     release = parse_search(xml)[0]
 
-    assert release.download_url == "https://treasure-maps.com/getnzb/abc-123?id=abc"
+    assert release.download_url == "https://treasure-maps.com/getnzb/abc-123"
     assert "SECRET" not in release.download_url
 
 
@@ -250,6 +267,31 @@ async def test_search_drops_release_that_echoes_api_key(encoding):
     )
 
     assert releases == []
+
+
+async def test_search_accepts_api_key_only_in_upstream_download_url():
+    secret = "normal-newznab-key"
+    with_secret = (
+        b"https://treasure-maps.com/getnzb/abc-123?id=abc&amp;apikey="
+        + secret.encode()
+    )
+    xml = _RSS.replace(b"https://treasure-maps.com/getnzb/abc-123", with_secret)
+    transport = httpx.MockTransport(
+        lambda _: httpx.Response(
+            200, headers={"content-type": "application/rss+xml"}, content=xml
+        )
+    )
+
+    releases = await newznab.search(
+        secret,
+        SearchRequest(query="Film", media_type="movie"),
+        inner_transport=transport,
+        pinned_ip="93.184.216.34",
+    )
+
+    assert len(releases) == 1
+    assert releases[0].download_url == "https://treasure-maps.com/getnzb/abc-123"
+    assert secret not in str(releases[0])
 
 
 async def test_search_calls_newznab_and_parses_releases():
