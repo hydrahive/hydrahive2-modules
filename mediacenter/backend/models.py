@@ -59,3 +59,23 @@ class RawRelease:
     language: str | None
     published_at: datetime | None
     download_url: str | None
+
+
+Decision = Literal["eligible", "rejected"]
+SelectionStatus = Literal[
+    "ready", "quality_preference_required", "format_preference_required"
+]
+
+
+@dataclass(frozen=True)
+class ProfileDecision:
+    release: RawRelease
+    media_type: MediaType
+    decision: Decision
+    reasons: tuple[str, ...]
+    language: str | None
+    resolution: str | None
+    format: str | None
+    bitrate_kbps: int | None
+    score: int
+    selection_status: SelectionStatus = "ready"
