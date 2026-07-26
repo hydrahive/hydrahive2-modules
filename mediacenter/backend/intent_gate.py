@@ -4,7 +4,7 @@ import re
 
 from . import action_grants
 from .errors import IndexerResponseError
-from .result_store import RESULTS
+from .result_registry import RESULTS
 
 _DIRECT_ACTION = re.compile(
     r"^\s*(?:(?:bitte|please)\s+)?(?:download(?:e)?|enqueue|herunterladen)\b|"
@@ -48,13 +48,19 @@ def has_download_intent(trusted_turn: str | None) -> bool:
     return _DIRECT_ACTION.search(trusted_turn) is not None
 
 
-def _references_title(turn: str, title: str) -> bool:
-    turn_tokens = {
-        token for token in re.findall(r"\w+", turn.casefold(), re.UNICODE)
-        if len(token) >= 3 and not token.isdigit() and token not in _STOP
+def _identity_tokens(value: str) -> set[str]:
+    return {
+        token for token in re.findall(r"\w+", value.casefold(), re.UNICODE)
+        if (len(token) >= 3 or re.fullmatch(r"(?:19|20)\d{2}", token))
+        and token not in _STOP
     }
-    title_tokens = set(re.findall(r"\w+", title.casefold(), re.UNICODE))
-    return bool(turn_tokens) and turn_tokens <= title_tokens
+
+
+def _references_title(turn: str, title: str) -> bool:
+    turn_tokens = _identity_tokens(turn)
+    title_tokens = _identity_tokens(title)
+    # Eine einzelne Franchise-/Titelreferenz (z. B. "Dune") ist nicht eindeutig.
+    return len(turn_tokens) >= 2 and turn_tokens <= title_tokens
 
 
 def _preference(turn: str, selection_status: str, expected: str | None) -> str | None:

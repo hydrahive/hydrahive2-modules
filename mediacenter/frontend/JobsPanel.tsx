@@ -1,5 +1,5 @@
 import { Clock3, RefreshCw } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { errorMessage, mediacenterApi } from "./api"
 import { formatDate, formatSpeed } from "./format"
@@ -15,20 +15,26 @@ export function JobsPanel({ mode, refreshKey = 0 }: Props) {
   const [jobs, setJobs] = useState<Job[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const latestRequest = useRef(0)
 
   const load = useCallback(async () => {
+    const request = ++latestRequest.current
     setLoading(true)
     setError(null)
     try {
-      setJobs(mode === "queue" ? await mediacenterApi.queue() : await mediacenterApi.history())
+      const nextJobs = mode === "queue" ? await mediacenterApi.queue() : await mediacenterApi.history()
+      if (request === latestRequest.current) setJobs(nextJobs)
     } catch (cause) {
-      setError(errorMessage(cause))
+      if (request === latestRequest.current) setError(errorMessage(cause))
     } finally {
-      setLoading(false)
+      if (request === latestRequest.current) setLoading(false)
     }
   }, [mode])
 
-  useEffect(() => { void load() }, [load, refreshKey])
+  useEffect(() => {
+    void load()
+    return () => { latestRequest.current += 1 }
+  }, [load, refreshKey])
   useEffect(() => {
     if (mode !== "queue") return
     const timer = window.setInterval(() => { void load() }, 10_000)

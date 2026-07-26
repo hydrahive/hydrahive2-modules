@@ -4,7 +4,7 @@ import json
 from datetime import UTC, datetime, timedelta
 
 from . import job_store, newznab
-from .config import SAB_CATEGORIES
+from .config import SAB_CATEGORIES, SAB_TIMEOUT_SECONDS
 from .credentials import resolve_indexer_api_key
 from .errors import (
     IndexerResponseError,
@@ -14,7 +14,7 @@ from .errors import (
 )
 from .job_store import JobRecord
 from .reconciliation import reconcile_job
-from .result_store import RESULTS
+from .result_registry import RESULTS
 from .sab_credentials import resolve_sab_connection
 from .sab_upload import upload_nzb
 
@@ -22,6 +22,14 @@ from .sab_upload import upload_nzb
 def _timestamp(now: datetime | None = None) -> tuple[datetime, str]:
     value = now or datetime.now(UTC)
     return value, value.isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _submit_is_active(job: JobRecord, now: datetime | None) -> bool:
+    if job.state != "submitting":
+        return False
+    moment = now or datetime.now(UTC)
+    changed = datetime.fromisoformat(job.state_changed_at.replace("Z", "+00:00"))
+    return changed + timedelta(seconds=SAB_TIMEOUT_SECONDS + 5) > moment
 
 
 async def enqueue_result(
@@ -41,6 +49,8 @@ async def enqueue_result(
         raise IndexerResponseError("confirmation_required")
     existing = job_store.get(owner, result_id)
     if existing and existing.state != "available":
+        if _submit_is_active(existing, now):
+            return existing
         try:
             existing = await reconcile_job(username, existing, now=now)
         except (MediacenterConfigError, SabResponseError, SabUnavailable):

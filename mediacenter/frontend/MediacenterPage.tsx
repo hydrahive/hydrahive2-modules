@@ -1,5 +1,5 @@
 import { History, ListTodo, Search } from "lucide-react"
-import { useEffect, useState, type ComponentType } from "react"
+import { useCallback, useEffect, useRef, useState, type ComponentType } from "react"
 import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
@@ -20,6 +20,7 @@ export function MediacenterPage() {
   const { t } = useTranslation("mediacenter")
   const [view, setView] = useState<View>("search")
   const [status, setStatus] = useState<ModuleStatus | null>(null)
+  const [statusLoading, setStatusLoading] = useState(true)
   const [statusError, setStatusError] = useState<string | null>(null)
   const [connection, setConnection] = useState<ConnectionTest | null>(null)
   const [testing, setTesting] = useState(false)
@@ -29,10 +30,28 @@ export function MediacenterPage() {
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [queueRefresh, setQueueRefresh] = useState(0)
+  const statusRequest = useRef(0)
 
-  useEffect(() => {
-    mediacenterApi.status().then(setStatus).catch((cause) => setStatusError(errorMessage(cause)))
+  const loadStatus = useCallback(async () => {
+    const request = ++statusRequest.current
+    setStatusLoading(true)
+    setStatusError(null)
+    try {
+      const nextStatus = await mediacenterApi.status()
+      if (request === statusRequest.current) setStatus(nextStatus)
+    } catch (cause) {
+      if (request === statusRequest.current) {
+        setStatus(null)
+        setStatusError(errorMessage(cause))
+      }
+    } finally {
+      if (request === statusRequest.current) setStatusLoading(false)
+    }
   }, [])
+  useEffect(() => {
+    void loadStatus()
+    return () => { statusRequest.current += 1 }
+  }, [loadStatus])
 
   const testConnections = async () => {
     setTesting(true)
@@ -50,6 +69,7 @@ export function MediacenterPage() {
   const search = async (filters: SearchFilters) => {
     setSearching(true)
     setSearched(true)
+    setSearchResponse(null)
     setSearchError(null)
     try {
       setSearchResponse(await mediacenterApi.search(filters))
@@ -69,8 +89,8 @@ export function MediacenterPage() {
           <div><h1 className="text-xl font-black tracking-tight text-[#e8eef8]">{t("title")}</h1><p className="mt-1 text-sm text-[#8d9ab0]">{t("subtitle")}</p></div>
           <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">V1</span>
         </header>
-        {statusError && <p className="rounded-[4px] border border-rose-500/25 bg-rose-500/[8%] p-3 text-xs text-rose-200" role="alert">{statusError}</p>}
-        <ConnectionStatus status={status} details={connection} loading={testing} error={connectionError} onTest={() => void testConnections()} />
+        {statusError && <div className="flex items-center justify-between gap-3 rounded-[4px] border border-rose-500/25 bg-rose-500/[8%] p-3 text-xs text-rose-200" role="alert"><span>{statusError}</span><button type="button" onClick={() => void loadStatus()} className="shrink-0 font-bold underline">{t("connection.retry")}</button></div>}
+        <ConnectionStatus status={status} details={connection} loading={testing} statusLoading={statusLoading} error={connectionError} onTest={() => void testConnections()} />
         <nav className="flex gap-1 overflow-x-auto border-b border-[#263247] pb-px" aria-label={t("views.label")}>
           {VIEWS.map((item) => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => setView(item.id)}
             className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold transition ${view === item.id ? "border-cyan-300 text-cyan-200" : "border-transparent text-[#8d9ab0] hover:text-[#d4deeb]"}`}>

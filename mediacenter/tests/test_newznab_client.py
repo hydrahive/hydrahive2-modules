@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import gzip
 import logging
 import traceback
 
@@ -49,6 +50,7 @@ async def test_caps_injects_key_only_on_wire_request_and_not_logs(caplog):
     assert caps.supported_params["music"] == {"q", "artist"}
     assert caps.supported_params["tv"] == {"q", "season", "ep"}
     assert len(captured) == 1
+    assert captured[0].headers["accept-encoding"] == "identity"
     assert captured[0].url.params["apikey"] == "top-secret-key"
     assert captured[0].headers["host"] == "treasure-maps.com"
     assert "top-secret-key" not in caplog.text
@@ -78,6 +80,23 @@ async def test_decompressed_response_size_is_limited():
         )
 
     assert exc_info.value.code == "indexer_response_too_large"
+
+
+async def test_compressed_response_is_rejected_before_decompression():
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            200,
+            headers={"content-type": "text/xml", "content-encoding": "gzip"},
+            content=gzip.compress(_CAPS_XML),
+        )
+    )
+
+    with pytest.raises(IndexerResponseError) as exc_info:
+        await newznab.fetch_caps(
+            "secret", inner_transport=transport, pinned_ip="93.184.216.34"
+        )
+
+    assert exc_info.value.code == "indexer_content_encoding_invalid"
 
 
 async def test_network_exception_is_mapped_without_secret():

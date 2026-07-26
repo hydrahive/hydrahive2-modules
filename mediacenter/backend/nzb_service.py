@@ -3,7 +3,7 @@ from __future__ import annotations
 from . import newznab
 from .credentials import resolve_indexer_api_key
 from .errors import IndexerResponseError
-from .result_store import RESULTS
+from .result_registry import RESULTS
 
 
 async def download_result_nzb(

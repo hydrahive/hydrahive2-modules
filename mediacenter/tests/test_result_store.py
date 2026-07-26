@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 
 from backend.models import ProfileDecision, RawRelease
 from backend.result_store import ResultStore
+from backend.result_store_sqlite import SQLiteResultStore
+from hydrahive.db.connection import db
 
 
 def _decision() -> ProfileDecision:
@@ -158,3 +160,70 @@ def test_store_capacity_evicts_expired_entries_before_rejecting():
 
     assert store.get("alice", old, now=102.0) is None
     assert store.get("alice", fresh, now=102.0) is not None
+
+
+def test_sqlite_result_is_shared_between_store_instances():
+    instance_a = SQLiteResultStore(ttl_seconds=60)
+    instance_b = SQLiteResultStore(ttl_seconds=60)
+
+    result_id = instance_a.put("alice", _decision(), now=100)
+    persisted = instance_b.get("alice", result_id, now=101)
+    claimed = instance_b.claim("alice", result_id, now=102)
+
+    assert persisted is not None
+    assert persisted.decision == _decision()
+    assert claimed is not None and claimed.claim_id is not None
+    assert instance_a.get("alice", result_id, now=103).claim_id == claimed.claim_id
+
+
+def test_sqlite_capacity_is_owner_bound_and_cleans_expired_entries():
+    store = SQLiteResultStore(ttl_seconds=10, max_entries=2)
+    alice_first = store.put("alice", _decision(), now=100)
+    alice_second = store.put("alice", _decision(), now=101)
+    store.put("bob", _decision(), now=101)
+    store.put("bob", _decision(), now=102)
+    store.put("bob", _decision(), now=103)
+
+    assert store.get("alice", alice_first, now=101.5) is not None
+    assert store.get("alice", alice_second, now=101.5) is not None
+
+    fresh = store.put("alice", _decision(), now=112)
+    assert store.get("alice", alice_first, now=112) is None
+    assert store.get("alice", fresh, now=112) is not None
+
+
+def test_sqlite_corrupt_payload_is_rejected_and_deleted():
+    store = SQLiteResultStore(ttl_seconds=60)
+    result_id = store.put("alice", _decision(), now=100)
+    with db() as conn:
+        conn.execute(
+            "UPDATE module_mediacenter_results SET payload_json = ? WHERE result_id = ?",
+            ('{"release":{"download_url":"http://127.0.0.1/private"}}', result_id),
+        )
+        conn.commit()
+
+    assert store.get("alice", result_id, now=101) is None
+    with db() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM module_mediacenter_results WHERE result_id = ?",
+            (result_id,),
+        ).fetchone()
+    assert row is None
+
+
+def test_sqlite_parallel_claim_allows_exactly_one_winner():
+    instance_a = SQLiteResultStore(ttl_seconds=60)
+    instance_b = SQLiteResultStore(ttl_seconds=60)
+    result_id = instance_a.put("alice", _decision(), now=100)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        claims = list(
+            executor.map(
+                lambda index: (instance_a if index % 2 else instance_b).claim(
+                    "alice", result_id, now=101
+                ),
+                range(16),
+            )
+        )
+
+    assert sum(claim is not None for claim in claims) == 1

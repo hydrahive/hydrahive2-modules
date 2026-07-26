@@ -6,7 +6,7 @@ import httpx
 import pytest
 from pydantic import ValidationError
 
-from backend import newznab
+from backend import newznab, xml_limits
 from backend.errors import IndexerResponseError
 from backend.models import SearchRequest
 from backend.newznab_xml import parse_search
@@ -126,6 +126,25 @@ def test_parse_search_extracts_only_bounded_internal_fields():
     assert release.language == "de"
     assert release.published_at == datetime(2026, 7, 26, 10, 0, tzinfo=timezone.utc)
     assert release.download_url == "https://treasure-maps.com/getnzb/abc-123"
+
+
+def test_parse_search_rejects_excessive_xml_depth(monkeypatch):
+    monkeypatch.setattr(xml_limits, "MAX_XML_DEPTH", 4)
+    xml = b"<rss><channel><a><b><c /></b></a></channel></rss>"
+
+    with pytest.raises(IndexerResponseError) as exc_info:
+        parse_search(xml)
+
+    assert exc_info.value.code == "indexer_xml_too_complex"
+
+
+def test_parse_search_rejects_excessive_element_count(monkeypatch):
+    monkeypatch.setattr(xml_limits, "MAX_XML_ELEMENTS", 3)
+
+    with pytest.raises(IndexerResponseError) as exc_info:
+        parse_search(b"<rss><channel><a /><b /></channel></rss>")
+
+    assert exc_info.value.code == "indexer_xml_too_complex"
 
 
 def test_parse_search_rejects_non_rss_shape():

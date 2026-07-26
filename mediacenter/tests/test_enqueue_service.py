@@ -133,6 +133,32 @@ async def test_postwrite_error_uses_safe_state(monkeypatch, error, expected):
         assert store.get("alice", result_id).claim_id is None
 
 
+async def test_parallel_enqueue_does_not_reconcile_active_submit(monkeypatch):
+    _, result_id = _setup(monkeypatch)
+    started = asyncio.Event()
+    finish = asyncio.Event()
+    monkeypatch.setattr(
+        enqueue_service.newznab, "fetch_nzb", lambda *_: _async_value(_NZB)
+    )
+
+    async def delayed_upload(*args, **kwargs):
+        started.set()
+        await finish.wait()
+        return "SABnzbd_nzo_parallel"
+
+    monkeypatch.setattr(enqueue_service, "upload_nzb", delayed_upload)
+    first = asyncio.create_task(enqueue_service.enqueue_result("alice", result_id, now=_NOW))
+    await started.wait()
+
+    duplicate = await enqueue_service.enqueue_result("alice", result_id, now=_NOW)
+
+    assert duplicate.state == "submitting"
+    assert job_store.get("alice", result_id).state == "submitting"
+    finish.set()
+    completed = await first
+    assert completed.state == "consumed"
+
+
 async def test_cancellation_after_submit_becomes_uncertain(monkeypatch):
     _, result_id = _setup(monkeypatch)
     monkeypatch.setattr(

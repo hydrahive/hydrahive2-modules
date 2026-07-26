@@ -6,13 +6,13 @@ from hydrahive.tools.base import ToolContext
 
 from backend import enqueue_service, tools_actions
 from backend.models import ProfileDecision, RawRelease
-from backend.result_store import RESULTS
+from backend.result_registry import RESULTS
 from backend.sab_credentials import SabConnection
 
 _NZB = b"<nzb><file /></nzb>"
 
 
-def _decision(title="Matrix", selection="ready"):
+def _decision(title="Matrix 1999", selection="ready"):
     return ProfileDecision(
         release=RawRelease(title, "guid", 2140, 1, "de", None, None),
         media_type="movie", decision="eligible", reasons=(), language="de",
@@ -21,7 +21,7 @@ def _decision(title="Matrix", selection="ready"):
     )
 
 
-def _ctx(tmp_path, turn="Lade Matrix herunter", turn_id="turn-1"):
+def _ctx(tmp_path, turn="Lade Matrix 1999 herunter", turn_id="turn-1"):
     user = get_by_username("alice")
     return ToolContext(
         session_id="session-1", agent_id="agent-1", user_id=user["user_id"],
@@ -93,8 +93,8 @@ async def test_enqueue_tool_consumes_grant_and_audits_agent_session(tmp_path, mo
 
 async def test_same_turn_cannot_enqueue_two_different_results(tmp_path, monkeypatch):
     ctx = _ctx(tmp_path)
-    first = RESULTS.put(ctx.user_id, _decision("Matrix"))
-    second = RESULTS.put(ctx.user_id, _decision("Matrix"))
+    first = RESULTS.put(ctx.user_id, _decision("Matrix 1999"))
+    second = RESULTS.put(ctx.user_id, _decision("Matrix 1999"))
     calls = []
     _mock_handoff(monkeypatch, calls)
     result_one = await tools_actions.ENQUEUE_TOOL.execute({"result_id": first}, ctx)

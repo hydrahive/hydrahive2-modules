@@ -6,6 +6,7 @@ interface Props {
   status: ModuleStatus | null
   details: ConnectionTest | null
   loading: boolean
+  statusLoading: boolean
   error: string | null
   onTest: () => void
 }
@@ -19,7 +20,7 @@ function ServiceState({ label, configured, state }: { label: string; configured:
   </div>
 }
 
-export function ConnectionStatus({ status, details, loading, error, onTest }: Props) {
+export function ConnectionStatus({ status, details, loading, statusLoading, error, onTest }: Props) {
   const { t } = useTranslation("mediacenter")
   return <section className="rounded-[6px] border border-[#28354a] bg-[#101724] p-4" aria-label={t("connection.title")}>
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -28,10 +29,10 @@ export function ConnectionStatus({ status, details, loading, error, onTest }: Pr
           <PlugZap size={16} className="text-cyan-300" />
           <h2 className="text-sm font-bold text-[#e8eef8]">{t("connection.title")}</h2>
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+        {statusLoading && !status ? <p className="mt-3 text-xs text-[#8d9ab0]">{t("connection.loading")}</p> : <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
           <ServiceState label="Treasure Maps" configured={status?.indexer_configured ?? false} state={t(status?.indexer_configured ? "connection.configured" : "connection.missing")} />
           <ServiceState label="SABnzbd" configured={status?.sab_configured ?? false} state={t(status?.sab_configured ? "connection.configured" : "connection.missing")} />
-        </div>
+        </div>}
       </div>
       <button type="button" onClick={onTest} disabled={loading || status?.state !== "ready"}
         className="flex items-center gap-2 rounded-[4px] border border-[#34445d] bg-[#151e2d] px-3 py-2 text-xs font-bold text-[#d4deeb] transition hover:border-cyan-400/60 disabled:cursor-not-allowed disabled:opacity-40">

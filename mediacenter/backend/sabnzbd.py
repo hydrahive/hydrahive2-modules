@@ -73,6 +73,7 @@ async def _client(
     async with httpx.AsyncClient(
         timeout=SAB_TIMEOUT_SECONDS,
         follow_redirects=False,
+        headers={"Accept-Encoding": "identity"},
         transport=transport,
     ) as client:
         yield client
@@ -104,6 +105,9 @@ async def _request_json(
                     media_type = response.headers.get("content-type", "").split(";", 1)[0]
                     if media_type.strip().lower() != "application/json":
                         raise SabResponseError("sab_content_type_invalid")
+                    encoding = response.headers.get("content-encoding", "").lower()
+                    if encoding not in {"", "identity"}:
+                        raise SabResponseError("sab_content_encoding_invalid")
                     chunks: list[bytes] = []
                     size = 0
                     async for chunk in response.aiter_bytes():

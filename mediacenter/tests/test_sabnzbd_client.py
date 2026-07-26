@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import logging
 import traceback
 
@@ -38,6 +39,7 @@ async def test_version_and_categories_use_pinned_secret_transport(caplog):
     assert version == "4.5.3"
     assert categories == {"movies", "tv", "audio", "audiobook", "ebook"}
     assert len(captured) == 2
+    assert all(request.headers["accept-encoding"] == "identity" for request in captured)
     assert all(request.url.params["apikey"] == "top-secret-sab-key" for request in captured)
     assert all(request.headers["host"] == "sab.example:8080" for request in captured)
     assert all(request.url.host == "93.184.216.34" for request in captured)
@@ -58,6 +60,23 @@ async def test_sab_redirects_are_rejected(status):
 
     assert exc_info.value.code == "sab_redirect_rejected"
     assert "127.0.0.1" not in str(exc_info.value)
+
+
+async def test_sab_compressed_response_is_rejected_before_decompression():
+    transport = httpx.MockTransport(
+        lambda _: httpx.Response(
+            200,
+            headers={"content-type": "application/json", "content-encoding": "gzip"},
+            content=gzip.compress(b'{"version":"4.5.3"}'),
+        )
+    )
+
+    with pytest.raises(SabResponseError) as exc_info:
+        await sabnzbd.fetch_version(
+            _CONNECTION, inner_transport=transport, pinned_ip="93.184.216.34"
+        )
+
+    assert exc_info.value.code == "sab_content_encoding_invalid"
 
 
 async def test_sab_network_exception_has_no_secret_in_exception_graph():

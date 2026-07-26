@@ -57,6 +57,9 @@ async def upload_nzb(
                     media_type = response.headers.get("content-type", "").split(";", 1)[0]
                     if media_type.strip().lower() != "application/json":
                         raise SabResponseError("sab_content_type_invalid")
+                    encoding = response.headers.get("content-encoding", "").lower()
+                    if encoding not in {"", "identity"}:
+                        raise SabResponseError("sab_content_encoding_invalid")
                     chunks: list[bytes] = []
                     size = 0
                     async for chunk in response.aiter_bytes():
