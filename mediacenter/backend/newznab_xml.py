@@ -8,6 +8,7 @@ from .config import MAX_TITLE_LENGTH
 from .download_urls import safe_download_url
 from .errors import IndexerAuthError, IndexerResponseError
 from .models import IndexerCapabilities, RawRelease
+from .xml_limits import validate_xml_structure
 
 _SEARCH_NAMES = {
     "search": "search",
@@ -30,6 +31,7 @@ def parse_xml(data: bytes) -> ET.Element:
     lowered = text.lower()
     if "\x00" in text or "<!doctype" in lowered or "<!entity" in lowered:
         raise IndexerResponseError("indexer_xml_unsafe")
+    validate_xml_structure(text)
     try:
         root = ET.fromstring(text)
     except (ET.ParseError, ValueError, OverflowError) as exc:

@@ -100,7 +100,7 @@ def clean_in_memory_state():
     from hydrahive.db import init_db
     from hydrahive.modules.migrations import apply_module_migrations
     from backend.job_store import clear_all
-    from backend.result_store import RESULTS
+    from backend.result_registry import RESULTS
 
     init_db()
     apply_module_migrations("mediacenter", MODULE_DIR / "migrations")

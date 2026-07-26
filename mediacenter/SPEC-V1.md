@@ -331,13 +331,13 @@ Queue und Historie werden anhand gespeicherter SABnzbd-Job-IDs auf die Mediacent
 - Agenten und normale API-Aufrufe können keine Origin ändern.
 - Redirects sind deaktiviert.
 - URL-Logging wird vermieden oder Queryparameter werden vollständig redigiert.
-- Netzwerk-, XML- und JSON-Antworten besitzen harte Größen- und Zeitlimits.
+- Netzwerk-, XML- und JSON-Antworten besitzen harte Größen- und Zeitlimits; komprimierte Upstream-Antworten werden nicht akzeptiert.
 
 ## XML- und Metadatensicherheit
 
 - Newznab- und NZB-XML wird mit einer XXE-/Entity-Expansion-sicheren Bibliothek geparst.
 - DTD und externe Entities sind verboten.
-- Maximale Antwort- und Feldgrößen werden vor weiterer Verarbeitung geprüft.
+- Maximale Antwort-, Feld-, Struktur-, Element-, Attribut- und Verschachtelungstiefen werden vor dem vollständigen XML-Baumaufbau geprüft.
 - HTML wird nicht ungefiltert gerendert.
 - Release-Metadaten werden als Daten serialisiert, niemals in System-/Skill-Anweisungen interpoliert.
 - Tool-Ausgaben sind strukturiert und mengenbegrenzt.
@@ -382,21 +382,32 @@ Mindestens:
 
 ## Akzeptanzkriterien
 
-- [ ] Treasure-Maps-Caps und authentifizierte Suche funktionieren über das serverseitig geladene Credential.
-- [ ] SABnzbd-Version und erforderliche Kategorien werden erfolgreich geprüft.
-- [ ] Jeder Medientyp verwendet ausschließlich seine festgelegten Newznab- und SABnzbd-Kategorien.
-- [ ] Alle verbindlichen Profile sind durch Unit-Tests mit positiven und negativen Release-Titeln abgedeckt.
-- [ ] CAM-/Screener-Varianten und unbestätigte Sprach-/Formatfälle werden zuverlässig abgelehnt.
-- [ ] Agenten können suchen, übergeben, Queue und Historie lesen.
-- [ ] Eine reine Suchanfrage löst keinen Download aus; ohne Grant aus dem vertrauenswürdigen aktuellen Benutzerturn wird Agenten-Enqueue serverseitig abgelehnt.
-- [ ] Manipulierte Titel, Beschreibungen oder strukturierte Metadaten können keinen Aktionsgrant erzeugen und ohne passenden Grant kein Agenten-Enqueue auslösen.
-- [ ] Ein Aktionsgrant ist kurzlebig, einmalig und an Benutzer, Session, Medientyp und konkrete `result_id` gebunden.
-- [ ] Vorgeschriebene 1080/2160- und FLAC/MP3-Rückfragen werden über den Auswahlstatus technisch erzwungen; Modellargumente ohne passende Benutzeräußerung schalten keinen Treffer frei.
-- [ ] Fremde, abgelaufene, manipulierte und wiederverwendete `result_id`s werden abgelehnt.
-- [ ] Parallelaufrufe sowie Timeouts vor und nach möglichem SAB-Upload folgen der definierten Zustandsmaschine einschließlich Grant-Verbrauch, Reconciliation, `enqueue_status_uncertain` und `manual_review_required` und erzeugen keinen unkontrollierten zweiten Job.
-- [ ] Weder Tool noch REST-API akzeptieren URL, Host, Port, Pfad oder Credential-Namen für Enqueue.
-- [ ] Der NZB-Abruf ist auf die feste Treasure-Maps-Origin beschränkt und folgt keinen Redirects.
-- [ ] XML-Parser, Antwortgrößen und Timeouts verhindern XXE und Ressourcenerschöpfung.
-- [ ] Kein Secret und keine Download-URL erscheint in Logs, Audit, Fehlern, API- oder Tool-Ausgaben.
-- [ ] Queue und Historie zeigen normalen Benutzern ausschließlich ihre über Mediacenter gestarteten Jobs.
-- [ ] Frontend-Build, Backend-Tests, Tool-Tests, Security-Audit und Ende-zu-Ende-Livetest sind grün.
+- [x] Treasure-Maps-Caps und authentifizierte Suche funktionieren über das serverseitig geladene Credential.
+- [x] SABnzbd-Version und erforderliche Kategorien werden erfolgreich geprüft.
+- [x] Jeder Medientyp verwendet ausschließlich seine festgelegten Newznab- und SABnzbd-Kategorien.
+- [x] Alle verbindlichen Profile sind durch Unit-Tests mit positiven und negativen Release-Titeln abgedeckt.
+- [x] CAM-/Screener-Varianten und unbestätigte Sprach-/Formatfälle werden zuverlässig abgelehnt.
+- [x] Agenten können suchen, übergeben, Queue und Historie lesen.
+- [x] Eine reine Suchanfrage löst keinen Download aus; ohne Grant aus dem vertrauenswürdigen aktuellen Benutzerturn wird Agenten-Enqueue serverseitig abgelehnt.
+- [x] Manipulierte Titel, Beschreibungen oder strukturierte Metadaten können keinen Aktionsgrant erzeugen und ohne passenden Grant kein Agenten-Enqueue auslösen.
+- [x] Ein Aktionsgrant ist kurzlebig, einmalig und an Benutzer, Session, Medientyp und konkrete `result_id` gebunden.
+- [x] Vorgeschriebene 1080/2160- und FLAC/MP3-Rückfragen werden über den Auswahlstatus technisch erzwungen; Modellargumente ohne passende Benutzeräußerung schalten keinen Treffer frei.
+- [x] Fremde, abgelaufene, manipulierte und wiederverwendete `result_id`s werden abgelehnt.
+- [x] Parallelaufrufe sowie Timeouts vor und nach möglichem SAB-Upload folgen der definierten Zustandsmaschine einschließlich Grant-Verbrauch, Reconciliation, `enqueue_status_uncertain` und `manual_review_required` und erzeugen keinen unkontrollierten zweiten Job.
+- [x] Weder Tool noch REST-API akzeptieren URL, Host, Port, Pfad oder Credential-Namen für Enqueue.
+- [x] Der NZB-Abruf ist auf die feste Treasure-Maps-Origin beschränkt und folgt keinen Redirects.
+- [x] XML-Parser, Antwortgrößen und Timeouts verhindern XXE und Ressourcenerschöpfung.
+- [x] Kein Secret und keine Download-URL erscheint in Logs, Audit, Fehlern, API- oder Tool-Ausgaben.
+- [x] Queue und Historie zeigen normalen Benutzern ausschließlich ihre über Mediacenter gestarteten Jobs.
+- [x] Frontend-Build, Backend-Tests, Tool-Tests, Security-Audit und Ende-zu-Ende-Livetest sind grün.
+
+## Abschlussverifikation E5
+
+Stand 2026-07-26:
+
+- vollständige Modulsuite: `285 passed`
+- Ruff: Backend, Tests und reproduzierbares Live-E2E-Skript ohne Befund
+- Produktions-Frontend: Vite-Build erfolgreich; kanonische Modulquelle und installierte Core-Kopie identisch
+- Browser-Smoke-Test: Statusfehler mit Retry, Verbindungstest, Suche, Enqueue, Queue und Historie; zusätzlich mobiles Overflow-Gate
+- realer Live-Smoke-Test: Treasure Maps und SABnzbd verbunden, bewusst gewählter legaler Testtreffer gesucht, mit niedriger Priorität übergeben und in Queue sowie History verfolgt
+- erneute Live-Ausführung ist ausschließlich opt-in über `python -m scripts.live_e2e` möglich und verlangt Query, exakten bereinigten Release-Titel sowie exakte Byte-Größe; bei nicht genau einem Treffer bricht das Skript ab und gibt keine Credentials oder Download-URLs aus

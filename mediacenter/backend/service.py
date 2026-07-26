@@ -17,7 +17,7 @@ from .models import (
     SearchResultOut,
 )
 from .profiles import classify_release, set_selection_status
-from .result_store import RESULTS
+from .result_registry import RESULTS
 from .sab_credentials import resolve_sab_connection
 
 

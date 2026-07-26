@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import gzip
+
 import httpx
 import pytest
 
@@ -41,6 +43,42 @@ async def test_upload_nzb_uses_fixed_origin_and_safe_multipart(priority, expecte
     assert b'filename="hh-safe.nzb"' in body
     assert b"../../bad" not in body
     assert _NZB in body
+
+
+async def test_upload_nzb_rejects_compressed_response():
+    transport = httpx.MockTransport(
+        lambda _: httpx.Response(
+            200,
+            headers={"content-type": "application/json", "content-encoding": "gzip"},
+            content=gzip.compress(b'{"status":true,"nzo_ids":["SABnzbd_nzo_a"]}'),
+        )
+    )
+
+    with pytest.raises(SabResponseError) as exc_info:
+        await upload_nzb(
+            _CONNECTION, _NZB, handoff_id="hh-safe", title="Title", category="film",
+            inner_transport=transport, pinned_ip="93.184.216.34",
+        )
+
+    assert exc_info.value.code == "sab_content_encoding_invalid"
+
+
+async def test_upload_nzb_accepts_modern_uuid_job_id():
+    job_id = "ec015d35-2d24-4001-a759-2e3cd1f52c4c"
+    transport = httpx.MockTransport(
+        lambda _: httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            json={"status": True, "nzo_ids": [job_id]},
+        )
+    )
+
+    result = await upload_nzb(
+        _CONNECTION, _NZB, handoff_id="hh-safe", title="Title", category="film",
+        inner_transport=transport, pinned_ip="93.184.216.34",
+    )
+
+    assert result == job_id
 
 
 @pytest.mark.parametrize(

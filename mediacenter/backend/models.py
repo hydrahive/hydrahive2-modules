@@ -143,6 +143,7 @@ class JobOut(BaseModel):
     status: str
     progress: float | None
     eta: str | None
+    speed_kbps: float | None
     error_code: str | None
     updated_at: str
 

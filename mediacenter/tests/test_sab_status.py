@@ -13,6 +13,7 @@ async def test_fetch_status_only_projects_allowed_ids_and_sanitizes(monkeypatch)
     async def response(connection, mode):
         return {
             mode: {
+                "kbpersec": "1234.50",
                 "slots": [
                     {
                         "nzo_id": "SABnzbd_nzo_owned",
@@ -36,6 +37,7 @@ async def test_fetch_status_only_projects_allowed_ids_and_sanitizes(monkeypatch)
             "status": "downloading",
             "progress": 100.0,
             "eta": "00:12:34",
+            "speed_kbps": 1234.5,
             "error_code": None,
         }
     }
@@ -48,13 +50,13 @@ async def test_handoff_reconciliation_batches_and_requires_exact_prefix(monkeypa
     async def response(connection, mode):
         calls.append(mode)
         return {mode: {"slots": [
-            {"nzo_id": "SABnzbd_nzo_good", "filename": "hh-one Film"},
+            {"nzo_id": "ec015d35-2d24-4001-a759-2e3cd1f52c4c", "filename": "hh-one Film"},
             {"nzo_id": "SABnzbd_nzo_bad", "filename": "prefix hh-two Film"},
         ]}}
 
     monkeypatch.setattr(sab_status, "_request_json", response)
     result = await sab_status.find_handoffs(_CONNECTION, {"hh-one", "hh-two"})
-    assert result == {"hh-one": "SABnzbd_nzo_good"}
+    assert result == {"hh-one": "ec015d35-2d24-4001-a759-2e3cd1f52c4c"}
     assert calls == ["queue", "history"]
 
 

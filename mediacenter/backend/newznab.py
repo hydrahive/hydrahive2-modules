@@ -74,6 +74,7 @@ async def _client(
     async with httpx.AsyncClient(
         timeout=INDEXER_TIMEOUT_SECONDS,
         follow_redirects=False,
+        headers={"Accept-Encoding": "identity"},
         transport=transport,
     ) as client:
         yield client
@@ -102,6 +103,9 @@ async def _request_xml(
                     content_type = response.headers.get("content-type", "").lower()
                     if not any(kind in content_type for kind in _XML_TYPES):
                         raise IndexerResponseError("indexer_content_type_invalid")
+                    encoding = response.headers.get("content-encoding", "").lower()
+                    if encoding not in {"", "identity"}:
+                        raise IndexerResponseError("indexer_content_encoding_invalid")
                     chunks: list[bytes] = []
                     size = 0
                     async for chunk in response.aiter_bytes():
@@ -194,7 +198,5 @@ async def search(
         inner_transport=inner_transport,
         pinned_ip=pinned_ip,
     )
-    if api_key.encode("utf-8") in data:
-        return []
     releases = parse_search(data, max_items=request.limit)
     return [release for release in releases if not release_contains_secret(release, api_key)]

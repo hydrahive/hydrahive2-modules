@@ -4,6 +4,7 @@ import re
 
 from .errors import SabResponseError
 from .sab_credentials import SabConnection
+from .sab_ids import is_valid_job_id
 from .sabnzbd import _request_json
 
 
@@ -34,11 +35,7 @@ async def find_handoffs(
             if not matched:
                 continue
             job_id = item.get("nzo_id")
-            if (
-                not isinstance(job_id, str)
-                or connection.api_key in job_id
-                or not re.fullmatch(r"SABnzbd_nzo_[A-Za-z0-9_-]{1,128}", job_id)
-            ):
+            if not is_valid_job_id(job_id, connection.api_key):
                 raise SabResponseError("sab_response_invalid")
             for marker in matched:
                 matches[marker].add(job_id)
@@ -61,12 +58,26 @@ def _progress(value: object) -> float | None:
     return max(0.0, min(number, 100.0))
 
 
+def _speed_kbps(payload: dict, mode: str) -> float | None:
+    if mode != "queue":
+        return None
+    container = payload.get(mode)
+    if not isinstance(container, dict):
+        return None
+    try:
+        speed = float(container.get("kbpersec"))
+    except (TypeError, ValueError):
+        return None
+    return speed if 0 <= speed <= 100_000_000 else None
+
+
 async def fetch_owned_status(
     connection: SabConnection, mode: str, allowed_ids: set[str]
 ) -> dict[str, dict]:
     if mode not in {"queue", "history"}:
         raise ValueError("invalid_mode")
     payload = await _request_json(connection, mode)
+    speed_kbps = _speed_kbps(payload, mode)
     result: dict[str, dict] = {}
     for item in _slots(payload, mode):
         job_id = item.get("nzo_id")
@@ -84,6 +95,7 @@ async def fetch_owned_status(
             "status": status,
             "progress": _progress(item.get("percentage")),
             "eta": eta,
+            "speed_kbps": speed_kbps,
             "error_code": "sab_job_failed" if status == "failed" else None,
         }
     return result
