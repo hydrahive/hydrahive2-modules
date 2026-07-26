@@ -7,10 +7,16 @@ import httpx
 
 from hydrahive.net.ssrf import pin_request, resolve_validated_ip
 
-from .config import INDEXER_API_URL, INDEXER_TIMEOUT_SECONDS, MAX_XML_BYTES
+from .config import (
+    INDEXER_API_URL,
+    INDEXER_TIMEOUT_SECONDS,
+    MAX_XML_BYTES,
+    NEWZNAB_CATEGORIES,
+    NEWZNAB_SEARCH_TYPES,
+)
 from .errors import IndexerAuthError, IndexerResponseError, IndexerUnavailable
-from .models import IndexerCapabilities
-from .newznab_xml import parse_caps
+from .models import IndexerCapabilities, RawRelease, SearchRequest
+from .newznab_xml import parse_caps, parse_search
 
 _XML_TYPES = ("text/xml", "application/xml", "application/rss+xml")
 
@@ -120,3 +126,42 @@ async def fetch_caps(
         max_bytes=max_bytes,
     )
     return parse_caps(data)
+
+
+def build_search_params(request: SearchRequest) -> dict[str, str]:
+    params = {
+        "t": NEWZNAB_SEARCH_TYPES[request.media_type],
+        "q": request.query,
+        "cat": ",".join(str(value) for value in NEWZNAB_CATEGORIES[request.media_type]),
+        "limit": str(request.limit),
+    }
+    if request.year is not None:
+        params["year"] = str(request.year)
+    if request.media_type == "tv":
+        if request.season is not None:
+            params["season"] = str(request.season)
+        if request.episode is not None:
+            params["ep"] = request.episode
+    if request.media_type == "book" and request.author is not None:
+        params["author"] = request.author
+    if request.media_type == "music" and request.artist is not None:
+        params["artist"] = request.artist
+    if request.max_age_days is not None:
+        params["maxage"] = str(request.max_age_days)
+    return params
+
+
+async def search(
+    api_key: str,
+    request: SearchRequest,
+    *,
+    inner_transport: httpx.AsyncBaseTransport | None = None,
+    pinned_ip: str | None = None,
+) -> list[RawRelease]:
+    data = await _request_xml(
+        api_key,
+        build_search_params(request),
+        inner_transport=inner_transport,
+        pinned_ip=pinned_ip,
+    )
+    return parse_search(data, max_items=request.limit)

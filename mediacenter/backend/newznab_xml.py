@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+from datetime import timezone
+from email.utils import parsedate_to_datetime
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from .config import MAX_TITLE_LENGTH
 from .errors import IndexerAuthError, IndexerResponseError
-from .models import IndexerCapabilities
+from .models import IndexerCapabilities, RawRelease
 
 _SEARCH_NAMES = {
     "search": "search",
@@ -80,3 +84,116 @@ def parse_caps(data: bytes) -> IndexerCapabilities:
     if "search" not in search_types or not categories:
         raise IndexerResponseError("indexer_caps_invalid")
     return IndexerCapabilities(max_limit, default_limit, search_types, categories)
+
+
+def _text(item: ET.Element, name: str) -> str:
+    for child in item:
+        if _local_name(child.tag) == name:
+            return (child.text or "").strip()
+    return ""
+
+
+def _attributes(item: ET.Element) -> dict[str, str] | None:
+    result: dict[str, str] = {}
+    for child in item:
+        if _local_name(child.tag) != "attr":
+            continue
+        name = (child.attrib.get("name") or "").strip().lower()
+        value = (child.attrib.get("value") or "").strip()
+        if not name or name in result or len(name) > 64 or len(value) > 512:
+            return None
+        result[name] = value
+    return result
+
+
+def _positive_int(value: str | None) -> int | None:
+    try:
+        parsed = int(value or "")
+    except (TypeError, ValueError):
+        return None
+    return parsed if 0 <= parsed <= 10**15 else None
+
+
+def _published(value: str):
+    if not value or len(value) > 128:
+        return None
+    try:
+        parsed = parsedate_to_datetime(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _safe_download_url(raw: str) -> str | None:
+    if not raw or len(raw) > 2048:
+        return None
+    parsed = urlsplit(raw)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname != "treasure-maps.com"
+        or parsed.port not in {None, 443}
+        or parsed.username is not None
+        or parsed.password is not None
+        or not parsed.path.startswith("/")
+        or parsed.fragment
+    ):
+        return None
+    safe_query = [
+        (key, value)
+        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+        if key.lower() not in {"apikey", "api_key", "token"}
+    ]
+    return urlunsplit(("https", "treasure-maps.com", parsed.path, urlencode(safe_query), ""))
+
+
+def _release(item: ET.Element) -> RawRelease | None:
+    attrs = _attributes(item)
+    if attrs is None:
+        return None
+    title = _text(item, "title")
+    guid = attrs.get("guid") or _text(item, "guid")
+    if not title or len(title) > MAX_TITLE_LENGTH or not guid or len(guid) > 512:
+        return None
+
+    enclosure = next(
+        (child for child in item if _local_name(child.tag) == "enclosure"), None
+    )
+    raw_url = enclosure.attrib.get("url", "") if enclosure is not None else ""
+    if not raw_url:
+        raw_url = _text(item, "link")
+    size = _positive_int(attrs.get("size"))
+    if size is None and enclosure is not None:
+        size = _positive_int(enclosure.attrib.get("length"))
+    category = _positive_int(attrs.get("category")) or 0
+
+    return RawRelease(
+        title=title,
+        guid=guid,
+        category_id=category,
+        size_bytes=size,
+        language=(attrs.get("language") or "").lower() or None,
+        published_at=_published(_text(item, "pubDate")),
+        download_url=_safe_download_url(raw_url),
+    )
+
+
+def parse_search(data: bytes, *, max_items: int = 100) -> list[RawRelease]:
+    root = parse_xml(data)
+    if _local_name(root.tag) != "rss":
+        raise IndexerResponseError("indexer_search_invalid")
+    channel = next((node for node in root if _local_name(node.tag) == "channel"), None)
+    if channel is None:
+        raise IndexerResponseError("indexer_search_invalid")
+
+    releases: list[RawRelease] = []
+    for item in channel:
+        if _local_name(item.tag) != "item":
+            continue
+        release = _release(item)
+        if release is not None:
+            releases.append(release)
+        if len(releases) >= max(0, min(max_items, 100)):
+            break
+    return releases
