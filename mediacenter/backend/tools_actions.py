@@ -6,7 +6,7 @@ from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
 from . import enqueue_service, intent_gate
 from .models import EnqueueRequest
-from .tool_support import failure, username_for
+from .tool_support import failure, principal_for
 
 _SCHEMA = {
     "type": "object",
@@ -26,23 +26,23 @@ _SCHEMA = {
 
 
 async def _enqueue(args: dict, ctx: ToolContext) -> ToolResult:
-    username = username_for(ctx)
-    if username is None:
+    principal = principal_for(ctx)
+    if principal is None:
         return ToolResult.fail("invalid_principal")
     try:
         request = EnqueueRequest.model_validate(args)
         grant_id = intent_gate.authorize_enqueue(
-            owner=ctx.user_id,
+            owner=principal["user_id"],
             session_id=ctx.session_id,
             result_id=request.result_id,
             trusted_turn=ctx.current_user_input,
             trusted_turn_id=ctx.current_user_turn_id,
         )
         job = await enqueue_service.enqueue_result(
-            username,
+            principal["username"],
             request.result_id,
             priority=request.priority,
-            owner_id=ctx.user_id,
+            owner_id=principal["user_id"],
             agent_id=ctx.agent_id,
             session_id=ctx.session_id,
             grant_id=grant_id,

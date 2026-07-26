@@ -6,7 +6,7 @@ from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
 from . import job_service, service
 from .models import SearchRequest
-from .tool_support import failure, username_for
+from .tool_support import failure, principal_for
 
 _MEDIA = ["movie", "tv", "book", "audiobook", "audioplay", "music"]
 _SEARCH_SCHEMA = {
@@ -32,15 +32,15 @@ _EMPTY_SCHEMA = {"type": "object", "additionalProperties": False, "properties": 
 
 
 async def _search(args: dict, ctx: ToolContext) -> ToolResult:
-    username = username_for(ctx)
-    if username is None:
+    principal = principal_for(ctx)
+    if principal is None:
         return ToolResult.fail("invalid_principal")
     try:
         request = SearchRequest.model_validate(args)
         if request.limit > 50:
             return ToolResult.fail("mediacenter_request_invalid")
         response = await service.search_indexer(
-            username, request, owner_id=ctx.user_id
+            principal["username"], request, owner_id=principal["user_id"]
         )
         return ToolResult.ok(response.model_dump(mode="json"))
     except ValidationError:
@@ -52,12 +52,12 @@ async def _search(args: dict, ctx: ToolContext) -> ToolResult:
 async def _list(args: dict, ctx: ToolContext, mode: str) -> ToolResult:
     if args:
         return ToolResult.fail("mediacenter_request_invalid")
-    username = username_for(ctx)
-    if username is None:
+    principal = principal_for(ctx)
+    if principal is None:
         return ToolResult.fail("invalid_principal")
     try:
         rows = await job_service.list_jobs(
-            username, mode, limit=50, owner_id=ctx.user_id
+            principal["username"], mode, limit=50, owner_id=principal["user_id"]
         )
         return ToolResult.ok({"count": len(rows), "jobs": rows})
     except Exception as exc:
