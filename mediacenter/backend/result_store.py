@@ -111,6 +111,31 @@ class ResultStore:
             self._items[result_id] = claimed
             return claimed
 
+    def unlock_selection(
+        self, owner: str, result_id: str, preference: str,
+        *, now: float | None = None,
+    ) -> StoredResult | None:
+        timestamp = time.monotonic() if now is None else now
+        with self._lock:
+            item = self._owned(owner, result_id, timestamp)
+            if item is None or item.claim_id is not None:
+                return None
+            decision = item.decision
+            expected = (
+                decision.resolution
+                if decision.selection_status == "quality_preference_required"
+                else decision.format
+                if decision.selection_status == "format_preference_required"
+                else None
+            )
+            if expected is None or expected.lower() != preference.lower():
+                return None
+            updated = replace(
+                item, decision=replace(decision, selection_status="ready")
+            )
+            self._items[result_id] = updated
+            return updated
+
     def renew(
         self, owner: str, result_id: str, claim_id: str, *, now: float | None = None
     ) -> bool:
