@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
@@ -15,6 +15,7 @@ class IndexerCapabilities:
     default_limit: int
     search_types: set[str]
     categories: set[int]
+    supported_params: dict[str, set[str]] = field(default_factory=dict)
 
 
 class SearchRequest(BaseModel):
@@ -49,6 +50,16 @@ class SearchRequest(BaseModel):
             and self.min_size_mb > self.max_size_mb
         ):
             raise ValueError("size_range_invalid")
+        media_filters = {
+            "season": {"tv"},
+            "episode": {"tv"},
+            "author": {"book"},
+            "artist": {"music"},
+            "album": {"music"},
+        }
+        for name, media_types in media_filters.items():
+            if getattr(self, name) is not None and self.media_type not in media_types:
+                raise ValueError("filter_not_allowed_for_media_type")
         return self
 
 

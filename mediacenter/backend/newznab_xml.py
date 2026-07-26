@@ -3,9 +3,9 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from datetime import timezone
 from email.utils import parsedate_to_datetime
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from .config import MAX_TITLE_LENGTH
+from .download_urls import safe_download_url
 from .errors import IndexerAuthError, IndexerResponseError
 from .models import IndexerCapabilities, RawRelease
 
@@ -16,7 +16,6 @@ _SEARCH_NAMES = {
     "music-search": "music",
     "book-search": "book",
 }
-
 
 def _local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
@@ -67,12 +66,18 @@ def parse_caps(data: bytes) -> IndexerCapabilities:
     )
 
     search_types: set[str] = set()
+    supported_params: dict[str, set[str]] = {}
     categories: set[int] = set()
     for node in root.iter():
         name = _local_name(node.tag)
         mapped = _SEARCH_NAMES.get(name)
         if mapped and (node.attrib.get("available") or "").lower() == "yes":
             search_types.add(mapped)
+            supported_params[mapped] = {
+                value.strip().lower()
+                for value in node.attrib.get("supportedParams", "").split(",")
+                if value.strip()
+            }
         if name in {"category", "subcat"}:
             try:
                 category = int(node.attrib.get("id", ""))
@@ -83,7 +88,9 @@ def parse_caps(data: bytes) -> IndexerCapabilities:
 
     if "search" not in search_types or not categories:
         raise IndexerResponseError("indexer_caps_invalid")
-    return IndexerCapabilities(max_limit, default_limit, search_types, categories)
+    return IndexerCapabilities(
+        max_limit, default_limit, search_types, categories, supported_params
+    )
 
 
 def _text(item: ET.Element, name: str) -> str:
@@ -126,28 +133,6 @@ def _published(value: str):
     return parsed.astimezone(timezone.utc)
 
 
-def _safe_download_url(raw: str) -> str | None:
-    if not raw or len(raw) > 2048:
-        return None
-    parsed = urlsplit(raw)
-    if (
-        parsed.scheme != "https"
-        or parsed.hostname != "treasure-maps.com"
-        or parsed.port not in {None, 443}
-        or parsed.username is not None
-        or parsed.password is not None
-        or not parsed.path.startswith("/")
-        or parsed.fragment
-    ):
-        return None
-    safe_query = [
-        (key, value)
-        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
-        if key.lower() not in {"apikey", "api_key", "token"}
-    ]
-    return urlunsplit(("https", "treasure-maps.com", parsed.path, urlencode(safe_query), ""))
-
-
 def _release(item: ET.Element) -> RawRelease | None:
     attrs = _attributes(item)
     if attrs is None:
@@ -175,7 +160,7 @@ def _release(item: ET.Element) -> RawRelease | None:
         size_bytes=size,
         language=(attrs.get("language") or "").lower() or None,
         published_at=_published(_text(item, "pubDate")),
-        download_url=_safe_download_url(raw_url),
+        download_url=safe_download_url(raw_url),
     )
 
 

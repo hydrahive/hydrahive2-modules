@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import re
 from dataclasses import replace
 from datetime import datetime, timezone
 
 from . import newznab
-from .config import NEWZNAB_CATEGORIES, NEWZNAB_SEARCH_TYPES
+from .config import NEWZNAB_CATEGORIES
 from .credentials import resolve_indexer_api_key
 from .errors import IndexerResponseError, MediacenterConfigError
 from .models import (
@@ -29,7 +30,7 @@ def connection_status(username: str) -> ModuleStatus:
 
 async def test_indexer_connection(username: str) -> ConnectionTestResponse:
     capabilities = await newznab.fetch_caps(resolve_indexer_api_key(username))
-    required_search = set(NEWZNAB_SEARCH_TYPES.values())
+    required_search = {"search", "movie", "tv", "music", "book"}
     required_categories = {
         category for categories in NEWZNAB_CATEGORIES.values() for category in categories
     }
@@ -82,6 +83,41 @@ def _apply_filters(
     return replace(decision, reasons=tuple(dict.fromkeys(reasons)))
 
 
+def _title_contains(title_tokens: set[str], value: str | None) -> bool:
+    if not value:
+        return False
+    expected = set(re.findall(r"[A-Z0-9]+", value.upper()))
+    return bool(expected) and expected <= title_tokens
+
+
+def _rank_request_match(
+    decision: ProfileDecision, request: SearchRequest
+) -> ProfileDecision:
+    if decision.decision != "eligible" or request.media_type != "music":
+        return decision
+    title_tokens = set(re.findall(r"[A-Z0-9]+", decision.release.title.upper()))
+    reasons = list(decision.reasons)
+    bonus = 0
+    if _title_contains(title_tokens, request.artist):
+        reasons.append("requested_artist_match")
+        bonus += 15
+    if _title_contains(title_tokens, request.album):
+        incomplete = {"SINGLE", "CDS", "INCOMPLETE", "PARTIAL", "TRACK", "PREVIEW"}
+        track_number = re.search(
+            r"(?:^|[._ -])(?:TRACK[._ -]?)?0?[1-9](?:[._ -]|$)",
+            decision.release.title.upper(),
+        )
+        if title_tokens.isdisjoint(incomplete) and track_number is None:
+            reasons.append("requested_album_complete")
+            bonus += 30
+        else:
+            reasons.append("requested_album_incomplete")
+    if request.year is not None and str(request.year) in title_tokens:
+        reasons.append("requested_year_match")
+        bonus += 5
+    return replace(decision, reasons=tuple(reasons), score=decision.score + bonus)
+
+
 def _result_out(
     username: str, decision: ProfileDecision, now: datetime
 ) -> SearchResultOut:
@@ -109,10 +145,20 @@ async def search_indexer(
 ) -> SearchResponse:
     timestamp = now or datetime.now(timezone.utc)
     releases = await newznab.search(resolve_indexer_api_key(username), request)
-    decisions = [
-        _apply_filters(classify_release(release, request.media_type), request, timestamp)
-        for release in releases
-    ]
+    decisions = []
+    allowed_categories = set(NEWZNAB_CATEGORIES[request.media_type])
+    for release in releases:
+        decision = _rank_request_match(
+            classify_release(release, request.media_type), request
+        )
+        if release.category_id not in allowed_categories:
+            decision = replace(
+                decision,
+                decision="rejected",
+                reasons=("category_mismatch",),
+                score=0,
+            )
+        decisions.append(_apply_filters(decision, request, timestamp))
     decisions = set_selection_status(decisions, request.media_type)
     decisions.sort(key=lambda item: (item.decision != "eligible", -item.score, item.release.title.lower()))
     results = [_result_out(username, decision, timestamp) for decision in decisions]

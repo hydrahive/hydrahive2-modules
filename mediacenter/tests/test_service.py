@@ -70,6 +70,33 @@ async def test_search_enforces_size_and_age_filters(monkeypatch):
     assert response.eligible == 1
 
 
+async def test_music_search_ranks_complete_requested_album_above_single(monkeypatch):
+    releases = [
+        _release("Artist.Album.2024.German.FLAC.SINGLE.Track-GRP", "single", category=3010),
+        _release("Artist.Album.2024.German.FLAC.PARTIAL-GRP", "partial", category=3010),
+        _release("Artist.Album.01.TrackName.2024.German.FLAC-GRP", "track", category=3010),
+        _release("Artist.Album.2024.German.FLAC.COMPLETE-GRP", "album", category=3010),
+    ]
+    monkeypatch.setattr(service, "resolve_indexer_api_key", lambda username: "secret")
+    monkeypatch.setattr(service.newznab, "search", lambda *_: _async_result(releases))
+
+    response = await service.search_indexer(
+        "alice",
+        SearchRequest(
+            query="Album", media_type="music", artist="Artist", album="Album", year=2024
+        ),
+    )
+
+    assert response.results[0].title.endswith("COMPLETE-GRP")
+    assert "requested_album_complete" in response.results[0].reasons
+    assert response.results[0].score > response.results[1].score
+    partial = next(result for result in response.results if "PARTIAL" in result.title)
+    assert "requested_album_incomplete" in partial.reasons
+    assert "requested_album_complete" not in partial.reasons
+    track = next(result for result in response.results if ".01." in result.title)
+    assert "requested_album_incomplete" in track.reasons
+
+
 async def test_search_marks_quality_preference_across_eligible_results(monkeypatch):
     releases = [
         _release("Film.German.1080p.WEB-DL-GRP", "low"),
@@ -81,6 +108,37 @@ async def test_search_marks_quality_preference_across_eligible_results(monkeypat
     response = await service.search_indexer("alice", SearchRequest(query="Film", media_type="movie"))
 
     assert {item.selection_status for item in response.results} == {"quality_preference_required"}
+
+
+async def test_search_rejects_upstream_category_mismatch(monkeypatch):
+    releases = [_release("Film.German.1080p.WEB-DL-GRP", "wrong-category", category=7120)]
+    monkeypatch.setattr(service, "resolve_indexer_api_key", lambda username: "secret")
+    monkeypatch.setattr(service.newznab, "search", lambda *_: _async_result(releases))
+
+    response = await service.search_indexer(
+        "alice", SearchRequest(query="Film", media_type="movie")
+    )
+
+    assert response.eligible == 0
+    assert response.results[0].decision == "rejected"
+    assert response.results[0].reasons == ["category_mismatch"]
+    assert response.results[0].result_id is None
+
+
+async def test_connection_test_accepts_canonical_tv_capability(monkeypatch):
+    monkeypatch.setattr(service, "resolve_indexer_api_key", lambda username: "secret")
+    complete = IndexerCapabilities(
+        max_limit=500,
+        default_limit=250,
+        search_types={"search", "movie", "tv", "book", "music"},
+        categories={2140, 2145, 2150, 3010, 3040, 3130, 5140, 5145, 7120},
+    )
+    monkeypatch.setattr(service.newznab, "fetch_caps", lambda *_: _async_result(complete))
+
+    response = await service.test_indexer_connection("alice")
+
+    assert response.ok is True
+    assert "tv" in response.search_types
 
 
 async def test_connection_test_requires_all_v1_capabilities(monkeypatch):

@@ -3,7 +3,9 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import Annotated, TypeVar
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.routing import APIRoute
 
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
@@ -18,7 +20,23 @@ from .errors import (
 )
 from .models import ConnectionTestResponse, ModuleStatus, SearchRequest, SearchResponse
 
-router = APIRouter()
+class _SanitizedValidationRoute(APIRoute):
+    def get_route_handler(self):
+        original = super().get_route_handler()
+
+        async def sanitized(request: Request):
+            try:
+                return await original(request)
+            except RequestValidationError:
+                raise coded(
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    "mediacenter_request_invalid",
+                ) from None
+
+        return sanitized
+
+
+router = APIRouter(route_class=_SanitizedValidationRoute)
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
 T = TypeVar("T")
 

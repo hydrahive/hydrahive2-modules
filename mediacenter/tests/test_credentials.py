@@ -19,6 +19,16 @@ def _credential(**overrides) -> Credential:
     return Credential(**values)
 
 
+def test_resolve_indexer_key_accepts_exact_configured_origin(monkeypatch):
+    monkeypatch.setattr(
+        credentials,
+        "get_credential",
+        lambda *_: _credential(url_pattern="https://treasure-maps.com"),
+    )
+
+    assert credentials.resolve_indexer_api_key("alice") == "secret-indexer-key"
+
+
 def test_resolve_indexer_key_is_scoped_to_current_user(monkeypatch):
     seen: list[tuple[str, str]] = []
 

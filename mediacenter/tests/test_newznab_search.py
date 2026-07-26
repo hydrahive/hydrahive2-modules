@@ -53,6 +53,29 @@ def test_search_params_are_server_controlled(media_type, expected_t, expected_ca
     assert "url" not in params
 
 
+def test_music_search_forwards_artist_and_album():
+    request = SearchRequest(
+        query="Album", media_type="music", artist="Artist", album="Record"
+    )
+
+    params = newznab.build_search_params(request)
+
+    assert params["artist"] == "Artist"
+    assert params["album"] == "Record"
+
+
+def test_search_params_drop_structured_filters_not_advertised_by_caps():
+    request = SearchRequest(
+        query="Album", media_type="music", artist="Artist", album="Record", year=2024
+    )
+
+    params = newznab.build_search_params(request, supported_params={"q", "artist"})
+
+    assert params["artist"] == "Artist"
+    assert "album" not in params
+    assert "year" not in params
+
+
 def test_search_params_forward_only_supported_structured_filters():
     request = SearchRequest(
         query="Serie", media_type="tv", year=2024, season=2, episode="03", max_age_days=30
@@ -70,6 +93,20 @@ def test_search_params_forward_only_supported_structured_filters():
 def test_search_query_length_is_validated(query):
     with pytest.raises(ValidationError):
         SearchRequest(query=query, media_type="movie")
+
+
+@pytest.mark.parametrize(
+    "media_type,field,value",
+    [
+        ("movie", "album", "Record"),
+        ("music", "season", 2),
+        ("tv", "artist", "Artist"),
+        ("audioplay", "author", "Writer"),
+    ],
+)
+def test_media_specific_filters_are_validated(media_type, field, value):
+    with pytest.raises(ValidationError):
+        SearchRequest(query="Beispiel", media_type=media_type, **{field: value})
 
 
 def test_size_range_is_validated():
@@ -110,6 +147,27 @@ def test_parse_search_marks_external_download_url_unusable():
     assert release.download_url is None
 
 
+@pytest.mark.parametrize(
+    "bad_url",
+    [
+        b"https://treasure-maps.com:bad/getnzb/abc-123",
+        b"https://treasure-maps.com:99999/getnzb/abc-123",
+        b"https://[broken/getnzb/abc-123",
+    ],
+)
+def test_parse_search_marks_malformed_download_url_unusable(bad_url):
+    xml = _RSS.replace(b"https://treasure-maps.com/getnzb/abc-123", bad_url)
+
+    assert parse_search(xml)[0].download_url is None
+
+
+def test_parse_search_rejects_download_url_with_raw_whitespace():
+    bad_url = b"https://treasure-maps.com/\ngetnzb/abc-123"
+    xml = _RSS.replace(b"https://treasure-maps.com/getnzb/abc-123", bad_url)
+
+    assert parse_search(xml)[0].download_url is None
+
+
 def test_parse_search_strips_api_key_from_internal_download_url():
     with_secret = b"https://treasure-maps.com/getnzb/abc-123?id=abc&amp;apikey=SECRET"
     xml = _RSS.replace(b"https://treasure-maps.com/getnzb/abc-123", with_secret)
@@ -134,6 +192,64 @@ def test_parse_search_skips_duplicate_newznab_attributes():
     xml = _RSS.replace(b"</item>", duplicate + b"</item>")
 
     assert parse_search(xml) == []
+
+
+async def test_search_uses_caps_to_gate_structured_parameters():
+    caps_xml = b"""<caps><limits max="500" default="250"/><searching>
+      <search available="yes" supportedParams="q"/>
+      <music-search available="yes" supportedParams="q,artist"/>
+    </searching><categories><category id="3010"/></categories></caps>"""
+    captured: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        content = caps_xml if request.url.params["t"] == "caps" else _RSS
+        return httpx.Response(200, headers={"content-type": "text/xml"}, content=content)
+
+    await newznab.search(
+        "secret",
+        SearchRequest(
+            query="Album", media_type="music", artist="Artist", album="Record"
+        ),
+        inner_transport=httpx.MockTransport(handler),
+        pinned_ip="93.184.216.34",
+    )
+
+    assert len(captured) == 2
+    search_request = captured[1]
+    assert search_request.url.params["artist"] == "Artist"
+    assert "album" not in search_request.url.params
+
+
+@pytest.mark.parametrize(
+    "encoding", ["plain", "xml_entities", "url_encoded", "triple_url_encoded"]
+)
+async def test_search_drops_release_that_echoes_api_key(encoding):
+    secret = "never-return-this-key"
+    payload = secret
+    if encoding == "xml_entities":
+        payload = "".join(f"&#{ord(character)};" for character in secret)
+    elif encoding == "url_encoded":
+        payload = secret.replace("-", "%2D")
+    elif encoding == "triple_url_encoded":
+        payload = secret.replace("-", "%25252D")
+    xml = _RSS.replace(
+        b"Der.Pate.1972.German.1080p.BluRay.x264-GRP", payload.encode()
+    )
+    transport = httpx.MockTransport(
+        lambda _: httpx.Response(
+            200, headers={"content-type": "application/rss+xml"}, content=xml
+        )
+    )
+
+    releases = await newznab.search(
+        secret,
+        SearchRequest(query="Film", media_type="movie"),
+        inner_transport=transport,
+        pinned_ip="93.184.216.34",
+    )
+
+    assert releases == []
 
 
 async def test_search_calls_newznab_and_parses_releases():

@@ -21,6 +21,15 @@ NEWZNAB_CATEGORIES: dict[str, tuple[int, ...]] = {
     "music": (3010, 3040),
 }
 
+NEWZNAB_CAPABILITY_TYPES: dict[str, str] = {
+    "movie": "movie",
+    "tv": "tv",
+    "book": "book",
+    "audiobook": "search",
+    "audioplay": "search",
+    "music": "music",
+}
+
 NEWZNAB_SEARCH_TYPES: dict[str, str] = {
     "movie": "movie",
     "tv": "tvsearch",

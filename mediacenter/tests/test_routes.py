@@ -114,6 +114,9 @@ def test_search_rejects_network_and_credential_fields(client, alice):
     )
 
     assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "mediacenter_request_invalid"
+    assert "other-secret" not in response.text
+    assert "127.0.0.1" not in response.text
 
 
 def test_search_rate_limit_is_per_user(client, alice, monkeypatch):

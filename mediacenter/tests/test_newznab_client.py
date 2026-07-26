@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import logging
+import traceback
 
 import httpx
 import pytest
@@ -44,6 +46,8 @@ async def test_caps_injects_key_only_on_wire_request_and_not_logs(caplog):
     assert caps.default_limit == 250
     assert caps.search_types == {"search", "movie", "tv", "music", "book"}
     assert caps.categories == {2100, 2140, 3000, 3130}
+    assert caps.supported_params["music"] == {"q", "artist"}
+    assert caps.supported_params["tv"] == {"q", "season", "ep"}
     assert len(captured) == 1
     assert captured[0].url.params["apikey"] == "top-secret-key"
     assert captured[0].headers["host"] == "treasure-maps.com"
@@ -90,6 +94,42 @@ async def test_network_exception_is_mapped_without_secret():
     assert exc_info.value.code == "indexer_unavailable"
     assert secret not in str(exc_info.value)
     assert secret not in repr(exc_info.value)
+    rendered = "".join(traceback.format_exception(exc_info.value))
+    assert secret not in rendered
+    assert exc_info.value.__cause__ is None
+    assert exc_info.value.__context__ is None
+
+
+async def test_dns_ssrf_failure_is_mapped_to_stable_error(monkeypatch):
+    from hydrahive.net.ssrf import SsrfBlocked
+
+    def blocked(_hostname):
+        raise SsrfBlocked("dns_failed")
+
+    monkeypatch.setattr(newznab, "resolve_validated_ip", blocked)
+
+    with pytest.raises(IndexerUnavailable) as exc_info:
+        await newznab.fetch_caps("secret")
+
+    assert exc_info.value.code == "indexer_unavailable"
+    assert exc_info.value.__context__ is None
+
+
+async def test_absolute_request_deadline_stops_slow_drip(monkeypatch):
+    async def slow_handler(_request: httpx.Request) -> httpx.Response:
+        await asyncio.sleep(0.1)
+        return httpx.Response(200, headers={"content-type": "text/xml"}, content=_CAPS_XML)
+
+    monkeypatch.setattr(newznab, "INDEXER_TIMEOUT_SECONDS", 0.01)
+
+    with pytest.raises(IndexerUnavailable) as exc_info:
+        await newznab.fetch_caps(
+            "secret",
+            inner_transport=httpx.MockTransport(slow_handler),
+            pinned_ip="93.184.216.34",
+        )
+
+    assert exc_info.value.code == "indexer_unavailable"
 
 
 async def test_unexpected_content_type_is_rejected():

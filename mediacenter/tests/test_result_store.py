@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from backend.models import ProfileDecision, RawRelease
@@ -56,6 +57,96 @@ def test_unknown_and_manipulated_ids_return_none():
 
     assert store.get("alice", "unknown", now=101.0) is None
     assert store.get("alice", f"{result_id}x", now=101.0) is None
+
+
+def test_per_user_capacity_cannot_evict_another_users_results():
+    store = ResultStore(ttl_seconds=60, max_entries=2)
+    alice_first = store.put("alice", _decision(), now=100)
+    alice_second = store.put("alice", _decision(), now=101)
+
+    store.put("bob", _decision(), now=102)
+    store.put("bob", _decision(), now=103)
+    store.put("bob", _decision(), now=104)
+
+    assert store.get("alice", alice_first, now=105) is not None
+    assert store.get("alice", alice_second, now=105) is not None
+
+
+def test_claim_is_atomic_and_can_be_released_only_with_claim_token():
+    store = ResultStore(ttl_seconds=60)
+    result_id = store.put("alice", _decision(), now=100)
+
+    claimed = store.claim("alice", result_id, now=101)
+
+    assert claimed is not None
+    assert claimed.claim_id
+    assert store.claim("alice", result_id, now=102) is None
+    assert store.release("alice", result_id, "wrong-token", now=103) is False
+    assert store.release("alice", result_id, claimed.claim_id, now=104) is True
+    assert store.claim("alice", result_id, now=105) is not None
+
+
+def test_claim_extends_lease_and_is_not_evicted_by_new_results():
+    store = ResultStore(ttl_seconds=10, max_entries=2)
+    claimed_id = store.put("alice", _decision(), now=100)
+    other_id = store.put("alice", _decision(), now=101)
+    claimed = store.claim("alice", claimed_id, now=109)
+    assert claimed is not None
+
+    store.put("alice", _decision(), now=110)
+
+    assert store.get("alice", claimed_id, now=115) is not None
+    assert store.get("alice", other_id, now=115) is None
+
+
+def test_custom_claim_lease_can_be_renewed_and_expires_independently():
+    store = ResultStore(ttl_seconds=100, claim_ttl_seconds=5)
+    result_id = store.put("alice", _decision(), now=100)
+    claimed = store.claim("alice", result_id, now=101)
+    assert claimed is not None and claimed.claim_id is not None
+
+    assert store.renew("alice", result_id, claimed.claim_id, now=104) is True
+    assert store.get("alice", result_id, now=108).claim_id == claimed.claim_id
+    available = store.get("alice", result_id, now=109)
+    assert available is not None and available.claim_id is None
+    assert available.expires_at == 200
+
+
+def test_release_after_original_result_ttl_does_not_revive_result():
+    store = ResultStore(ttl_seconds=10)
+    result_id = store.put("alice", _decision(), now=100)
+    claimed = store.claim("alice", result_id, now=109)
+    assert claimed is not None and claimed.claim_id is not None
+
+    assert store.release("alice", result_id, claimed.claim_id, now=115) is True
+    assert store.get("alice", result_id, now=115) is None
+
+
+def test_parallel_claim_allows_exactly_one_winner():
+    store = ResultStore(ttl_seconds=60)
+    result_id = store.put("alice", _decision(), now=100)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        claims = list(
+            executor.map(
+                lambda _: store.claim("alice", result_id, now=101),
+                range(16),
+            )
+        )
+
+    assert sum(claim is not None for claim in claims) == 1
+
+
+def test_consume_is_owner_and_claim_token_bound_and_removes_result():
+    store = ResultStore(ttl_seconds=60)
+    result_id = store.put("alice", _decision(), now=100)
+    claimed = store.claim("alice", result_id, now=101)
+    assert claimed is not None and claimed.claim_id is not None
+
+    assert store.consume("bob", result_id, claimed.claim_id, now=102) is None
+    assert store.consume("alice", result_id, "wrong", now=102) is None
+    assert store.consume("alice", result_id, claimed.claim_id, now=102) is not None
+    assert store.get("alice", result_id, now=103) is None
 
 
 def test_store_capacity_evicts_expired_entries_before_rejecting():
