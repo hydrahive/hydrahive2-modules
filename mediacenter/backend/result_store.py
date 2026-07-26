@@ -7,6 +7,7 @@ from threading import Lock
 
 from .config import RESULT_TTL_SECONDS
 from .models import ProfileDecision
+from .result_selection import mark_challenge, unlock
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,7 @@ class StoredResult:
     expires_at: float
     claim_id: str | None = None
     claim_expires_at: float | None = None
+    selection_session_id: str | None = None
 
 
 class ResultStoreFull(RuntimeError):
@@ -111,30 +113,17 @@ class ResultStore:
             self._items[result_id] = claimed
             return claimed
 
-    def unlock_selection(
-        self, owner: str, result_id: str, preference: str,
+    def mark_selection_challenge(
+        self, owner: str, result_id: str, session_id: str,
         *, now: float | None = None,
     ) -> StoredResult | None:
-        timestamp = time.monotonic() if now is None else now
-        with self._lock:
-            item = self._owned(owner, result_id, timestamp)
-            if item is None or item.claim_id is not None:
-                return None
-            decision = item.decision
-            expected = (
-                decision.resolution
-                if decision.selection_status == "quality_preference_required"
-                else decision.format
-                if decision.selection_status == "format_preference_required"
-                else None
-            )
-            if expected is None or expected.lower() != preference.lower():
-                return None
-            updated = replace(
-                item, decision=replace(decision, selection_status="ready")
-            )
-            self._items[result_id] = updated
-            return updated
+        return mark_challenge(self, owner, result_id, session_id, now)
+
+    def unlock_selection(
+        self, owner: str, result_id: str, preference: str,
+        *, session_id: str | None = None, now: float | None = None,
+    ) -> StoredResult | None:
+        return unlock(self, owner, result_id, preference, session_id, now)
 
     def renew(
         self, owner: str, result_id: str, claim_id: str, *, now: float | None = None
