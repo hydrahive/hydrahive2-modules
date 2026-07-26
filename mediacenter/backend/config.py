@@ -19,6 +19,7 @@ SAB_ALLOWED_ORIGIN = os.environ.get(
 ).rstrip("/")
 SAB_TIMEOUT_SECONDS = 15.0
 SAB_MAX_JSON_BYTES = 1024 * 1024
+MAX_NZB_BYTES = 16 * 1024 * 1024
 
 SAB_CATEGORIES: dict[str, str] = {
     "movie": "movies",

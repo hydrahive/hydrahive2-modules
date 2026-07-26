@@ -18,10 +18,11 @@ from .config import (
 )
 from .errors import IndexerAuthError, IndexerResponseError, IndexerUnavailable
 from .models import IndexerCapabilities, RawRelease, SearchRequest
+from .newznab_nzb import fetch_nzb as fetch_nzb
 from .newznab_xml import parse_caps, parse_search
 from .redaction import release_contains_secret
 
-_XML_TYPES = ("text/xml", "application/xml", "application/rss+xml")
+_XML_TYPES = ("text/xml", "application/xml", "application/rss+xml", "application/x-nzb")
 
 
 class _SecretQueryTransport(httpx.AsyncBaseTransport):
