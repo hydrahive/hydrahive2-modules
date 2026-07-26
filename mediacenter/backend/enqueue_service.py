@@ -33,8 +33,12 @@ async def enqueue_result(
     agent_id: str | None = None,
     session_id: str | None = None,
     owner_id: str | None = None,
+    grant_id: str | None = None,
+    require_grant: bool = False,
 ) -> JobRecord:
     owner = owner_id or username
+    if require_grant and (not grant_id or not session_id):
+        raise IndexerResponseError("confirmation_required")
     existing = job_store.get(owner, result_id)
     if existing and existing.state != "available":
         try:
@@ -56,9 +60,14 @@ async def enqueue_result(
     local_claim = claimed.claim_id
     release = claimed.decision.release
     moment, stamp = _timestamp(now)
+    job: JobRecord | None = None
     try:
         if existing:
-            job = job_store.reclaim_available(owner, result_id, now=stamp)
+            job = job_store.reclaim_available(
+                owner, result_id, now=stamp,
+                grant_id=grant_id if require_grant else None,
+                session_id=session_id,
+            )
             if job is None:
                 current = job_store.get(owner, result_id)
                 if current is not None:
@@ -86,17 +95,23 @@ async def enqueue_result(
                     },
                     separators=(",", ":"),
                 ),
+                grant_id=grant_id if require_grant else None,
             )
         indexer_key = resolve_indexer_api_key(username)
         connection = resolve_sab_connection(username)
         nzb = await newznab.fetch_nzb(indexer_key, release.guid)
+    except LookupError as exc:
+        RESULTS.release(owner, result_id, local_claim)
+        raise IndexerResponseError("confirmation_required") from exc
     except BaseException:
-        job_store.transition(
-            owner, result_id, job.claim_token, expected="claimed_prewrite",
-            target="available", now=stamp, error_code="prewrite_failed",
-        )
+        if job is not None:
+            job_store.transition(
+                owner, result_id, job.claim_token, expected="claimed_prewrite",
+                target="available", now=stamp, error_code="prewrite_failed",
+            )
         RESULTS.release(owner, result_id, local_claim)
         raise
+    assert job is not None
     submitting = job_store.transition(
         owner, result_id, job.claim_token, expected="claimed_prewrite",
         target="submitting", now=stamp,

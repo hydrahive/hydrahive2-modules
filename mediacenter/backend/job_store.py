@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 from hydrahive.db.connection import db
 
+from .action_grants import consume_in_transaction
+
 
 @dataclass(frozen=True)
 class JobRecord:
@@ -61,7 +63,7 @@ def claim_new(
     *, result_id: str, owner: str, media_type: str, title: str,
     category: str, now: str, action_expires_at: str,
     agent_id: str | None = None, session_id: str | None = None,
-    profile_summary: str = "{}",
+    profile_summary: str = "{}", grant_id: str | None = None,
 ) -> tuple[JobRecord, bool]:
     token = secrets.token_urlsafe(24)
     marker = handoff_id(result_id)
@@ -73,6 +75,11 @@ def claim_new(
             if row["owner"] != owner:
                 raise LookupError("result_unavailable")
             return _record(row), False
+        if grant_id and not consume_in_transaction(
+            conn, grant_id=grant_id, owner=owner, session_id=session_id or "",
+            result_id=result_id, media_type=media_type, now=now,
+        ):
+            raise LookupError("confirmation_required")
         conn.execute(
             """INSERT INTO module_mediacenter_jobs
                (result_id,owner,media_type,title,category,state,claim_token,handoff_id,
@@ -89,9 +96,24 @@ def claim_new(
     return _record(row), True
 
 
-def reclaim_available(owner: str, result_id: str, *, now: str) -> JobRecord | None:
+def reclaim_available(
+    owner: str, result_id: str, *, now: str,
+    grant_id: str | None = None, session_id: str | None = None,
+) -> JobRecord | None:
     token = secrets.token_urlsafe(24)
     with db(immediate=True) as conn:
+        current = conn.execute(
+            """SELECT * FROM module_mediacenter_jobs
+               WHERE result_id=? AND owner=? AND state='available'""",
+            (result_id, owner),
+        ).fetchone()
+        if current is None:
+            return None
+        if grant_id and not consume_in_transaction(
+            conn, grant_id=grant_id, owner=owner, session_id=session_id or "",
+            result_id=result_id, media_type=current["media_type"], now=now,
+        ):
+            raise LookupError("confirmation_required")
         changed = conn.execute(
             """UPDATE module_mediacenter_jobs
                SET state='claimed_prewrite', claim_token=?, attempt_count=attempt_count+1,
@@ -147,5 +169,6 @@ def list_owned(owner: str, *, limit: int = 100) -> list[JobRecord]:
 
 def clear_all() -> None:
     with db() as conn:
+        conn.execute("DELETE FROM module_mediacenter_action_grants")
         conn.execute("DELETE FROM module_mediacenter_audit")
         conn.execute("DELETE FROM module_mediacenter_jobs")

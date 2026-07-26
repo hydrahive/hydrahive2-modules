@@ -16,4 +16,8 @@ def test_module_migrations_are_idempotent_and_prefixed():
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'module_mediacenter_%'"
             ).fetchall()
         }
-    assert names == {"module_mediacenter_jobs", "module_mediacenter_audit"}
+    assert names == {
+        "module_mediacenter_jobs",
+        "module_mediacenter_audit",
+        "module_mediacenter_action_grants",
+    }

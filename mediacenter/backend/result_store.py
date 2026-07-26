@@ -7,6 +7,7 @@ from threading import Lock
 
 from .config import RESULT_TTL_SECONDS
 from .models import ProfileDecision
+from .result_selection import mark_challenge, unlock
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,7 @@ class StoredResult:
     expires_at: float
     claim_id: str | None = None
     claim_expires_at: float | None = None
+    selection_session_id: str | None = None
 
 
 class ResultStoreFull(RuntimeError):
@@ -110,6 +112,18 @@ class ResultStore:
             )
             self._items[result_id] = claimed
             return claimed
+
+    def mark_selection_challenge(
+        self, owner: str, result_id: str, session_id: str,
+        *, now: float | None = None,
+    ) -> StoredResult | None:
+        return mark_challenge(self, owner, result_id, session_id, now)
+
+    def unlock_selection(
+        self, owner: str, result_id: str, preference: str,
+        *, session_id: str | None = None, now: float | None = None,
+    ) -> StoredResult | None:
+        return unlock(self, owner, result_id, preference, session_id, now)
 
     def renew(
         self, owner: str, result_id: str, claim_id: str, *, now: float | None = None

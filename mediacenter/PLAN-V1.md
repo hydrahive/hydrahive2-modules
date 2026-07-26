@@ -233,56 +233,56 @@ Produktionsdateien sollen möglichst unter 250 Zeilen bleiben; wachsende Verantw
 
 ### Core-Voraussetzung: Vertrauenswürdiger aktueller Benutzerturn im ToolContext
 
-- [ ] RED: ein lokales Test-Tool erhält exakt den unveränderten Text des aktuellen authentifizierten Benutzerturns
-- [ ] RED: Tool-Argumente, Assistant-Text und vorherige Tool-Ausgaben können dieses Feld nicht setzen oder verändern
-- [ ] RED: Listen-/Multimodal-Input wird über dieselbe bestehende Runner-Normalisierung deterministisch zu Text; nicht-textuelle Blöcke erzeugen keine Aktionsabsicht
-- [ ] optionales rückwärtskompatibles `current_user_input`-Feld in `ToolContext` ergänzen
-- [ ] Runner setzt es ausschließlich beim Erzeugen des Kontexts aus `run(..., user_input)`
-- [ ] bestehende ToolContext-Konstruktoren und Tests rückwärtskompatibel halten
-- [ ] Core-Security-/Runner-Tests grün
-- [ ] HydraHive-Strukturreview und separater Core-PR
-- [ ] Commit: `feat(tools): aktuellen Benutzerturn vertrauenswürdig bereitstellen`
+- [x] RED: ein lokales Test-Tool erhält exakt den unveränderten Text des aktuellen authentifizierten Benutzerturns
+- [x] RED: Tool-Argumente, Assistant-Text und vorherige Tool-Ausgaben können dieses Feld nicht setzen oder verändern
+- [x] RED: Listen-/Multimodal-Input wird über dieselbe bestehende Runner-Normalisierung deterministisch zu Text; nicht-textuelle Blöcke erzeugen keine Aktionsabsicht
+- [x] optionales rückwärtskompatibles `current_user_input`-Feld in `ToolContext` ergänzen
+- [x] Runner setzt es ausschließlich beim Erzeugen des Kontexts aus `run(..., user_input)`
+- [x] bestehende ToolContext-Konstruktoren und Tests rückwärtskompatibel halten
+- [x] Core-Security-/Runner-Tests grün
+- [x] HydraHive-Strukturreview und separater Core-PR
+- [x] Commit: `feat(tools): aktuellen Benutzerturn vertrauenswürdig bereitstellen`
 
 ### E4 Task 1: Intent- und Auswahlgate
 
-- [ ] RED: expliziter Downloadturn erzeugt einen kurzlebigen, einmaligen Grant; reine Suche/Verfügbarkeit und uneindeutige Texte nicht
-- [ ] RED: Grant ist an Benutzer, Session, Medientyp und konkrete `result_id` gebunden
-- [ ] RED: Indexer-Titel, Tool-Ausgaben und Modellargumente können keinen Grant erzeugen oder erweitern
-- [ ] RED: offene 1080/2160- oder FLAC/MP3-Auswahl blockiert Enqueue trotz Downloadgrant
-- [ ] RED: ein späterer vertrauenswürdiger Präferenzturn schaltet ausschließlich die passende Ergebnisgruppe frei
-- [ ] konservative Intent-/Präferenzregeln mit sicherem False-negative-Verhalten implementieren
-- [ ] keinen rohen Benutzerturn persistieren; nur nicht rückrechenbaren Fingerprint/Grantdaten
-- [ ] GREEN: Intent-/Prompt-Injection-/Auswahltests bestehen
-- [ ] Commit: `feat(mediacenter): Agentenaktionen an Benutzerintention binden`
+- [x] RED: expliziter Downloadturn erzeugt einen kurzlebigen, einmaligen Grant; reine Suche/Verfügbarkeit und uneindeutige Texte nicht
+- [x] RED: Grant ist an Benutzer, Session, Medientyp und konkrete `result_id` gebunden
+- [x] RED: Indexer-Titel, Tool-Ausgaben und Modellargumente können keinen Grant erzeugen oder erweitern
+- [x] RED: offene 1080/2160- oder FLAC/MP3-Auswahl blockiert Enqueue trotz Downloadgrant
+- [x] RED: ein späterer vertrauenswürdiger Präferenzturn schaltet ausschließlich die passende Ergebnisgruppe frei
+- [x] konservative Intent-/Präferenzregeln mit sicherem False-negative-Verhalten implementieren
+- [x] keinen rohen Benutzerturn persistieren; nur nicht rückrechenbaren Fingerprint/Grantdaten
+- [x] GREEN: Intent-/Prompt-Injection-/Auswahltests bestehen
+- [x] Commit: `feat(mediacenter): Agentenaktionen an Benutzerintention binden`
 
 ### E4 Task 2: Lese-Tools
 
-- [ ] RED: `mediacenter_search` verlangt Query und Media-Type mit engen Schemas
-- [ ] RED: `mediacenter_queue` und `mediacenter_history` verwenden `ToolContext.user_id`
-- [ ] RED: Tool-Ausgaben bleiben strukturiert, begrenzt und secret-/URL-frei
-- [ ] dünne Wrapper um dieselbe Service-Schicht implementieren
-- [ ] GREEN: Lese-Tool-Tests bestehen
-- [ ] Commit: `feat(mediacenter): Such- und Status-Tools registrieren`
+- [x] RED: `mediacenter_search` verlangt Query und Media-Type mit engen Schemas
+- [x] RED: `mediacenter_queue` und `mediacenter_history` verwenden `ToolContext.user_id`
+- [x] RED: Tool-Ausgaben bleiben strukturiert, begrenzt und secret-/URL-frei
+- [x] dünne Wrapper um dieselbe Service-Schicht implementieren
+- [x] GREEN: Lese-Tool-Tests bestehen
+- [x] Commit: `feat(mediacenter): Such- und Status-Tools registrieren`
 
 ### E4 Task 3: Enqueue-Tool
 
-- [ ] RED: Tool akzeptiert nur `result_id` und enge optionale Priorität
-- [ ] RED: Profilablehnung, fehlender/fremder Grant, offener Auswahlstatus, falscher Benutzer, Ablauf und Replay scheitern
-- [ ] RED: reine Suche plus manipulierter Release-Titel kann keinen Enqueue-Aufruf erfolgreich machen
-- [ ] RED: Audit enthält Agent- und Session-ID, aber keine Secrets/URLs oder rohen Benutzerturn
-- [ ] dünnen Wrapper um den idempotenten Enqueue-Service implementieren
-- [ ] GREEN: Action-Tool-Tests bestehen
-- [ ] Commit: `feat(mediacenter): Agenten an SABnzbd übergeben lassen`
+- [x] RED: Tool akzeptiert nur `result_id` und enge optionale Priorität
+- [x] RED: Profilablehnung, fehlender/fremder Grant, offener Auswahlstatus, falscher Benutzer, Ablauf und Replay scheitern
+- [x] RED: reine Suche plus manipulierter Release-Titel kann keinen Enqueue-Aufruf erfolgreich machen
+- [x] RED: Audit enthält Agent- und Session-ID, aber keine Secrets/URLs oder rohen Benutzerturn
+- [x] dünnen Wrapper um den idempotenten Enqueue-Service implementieren
+- [x] GREEN: Action-Tool-Tests bestehen
+- [x] Commit: `feat(mediacenter): Agenten an SABnzbd übergeben lassen`
 
 ### E4 Task 4: Manifest und Skill
 
-- [ ] `default_agent_tools: true` und aktuelle V1-Beschreibung im Manifest setzen
-- [ ] kanonischen Skill `mediacenter-workflow` mit eindeutiger Downloadabsicht, Medienart- und Format-/Qualitätsrückfragen schreiben
-- [ ] Prompt-Injection-Regel und Verbot, Profilablehnungen zu umgehen, explizit aufnehmen
-- [ ] Skill anhand repräsentativer Dialogfälle reviewen
-- [ ] Security-Audit E4, vollständige Tool-/Modultests
-- [ ] Commit: `feat(mediacenter): Agenten-Workflow dokumentieren`
-- [ ] Push und E4-PR; CI grün
+- [x] `default_agent_tools: true` und aktuelle V1-Beschreibung im Manifest setzen
+- [x] kanonischen Skill `mediacenter-workflow` mit eindeutiger Downloadabsicht, Medienart- und Format-/Qualitätsrückfragen schreiben
+- [x] Prompt-Injection-Regel und Verbot, Profilablehnungen zu umgehen, explizit aufnehmen
+- [x] Skill anhand repräsentativer Dialogfälle reviewen
+- [x] Security-Audit E4, vollständige Tool-/Modultests
+- [x] Commit: `feat(mediacenter): Agenten-Workflow dokumentieren`
+- [x] Push und E4-PR; CI grün
 
 ### E5 Task 1: Kanonisches Cockpit-Modul
 
