@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import gzip
+
 import httpx
 import pytest
 
@@ -11,7 +13,15 @@ from backend.result_store import ResultStore
 _NZB = b'''<?xml version="1.0"?><nzb xmlns="http://www.newzbin.com/DTD/2003/nzb"><file poster="x" date="1" subject="safe"><groups><group>a</group></groups><segments><segment bytes="1" number="1">id</segment></segments></file></nzb>'''
 
 
-async def test_fetch_nzb_reconstructs_fixed_newznab_request_from_identifier():
+@pytest.mark.parametrize(
+    "guid,expected_path",
+    [
+        ("safe-guid-123", b"/getnzb/safe-guid-123"),
+        ("guid/with?reserved", b"/getnzb/guid%2Fwith%3Freserved"),
+        ("bücher-guid", b"/getnzb/b%C3%BCcher-guid"),
+    ],
+)
+async def test_fetch_nzb_reconstructs_fixed_file_request_from_identifier(guid, expected_path):
     captured = []
 
     async def handler(request: httpx.Request):
@@ -19,13 +29,14 @@ async def test_fetch_nzb_reconstructs_fixed_newznab_request_from_identifier():
         return httpx.Response(200, headers={"content-type": "application/x-nzb"}, content=_NZB)
 
     data = await newznab.fetch_nzb(
-        "secret", "safe-guid-123", inner_transport=httpx.MockTransport(handler),
+        "secret", guid, inner_transport=httpx.MockTransport(handler),
         pinned_ip="93.184.216.34",
     )
 
     assert data == _NZB
-    assert captured[0].url.params["t"] == "get"
-    assert captured[0].url.params["id"] == "safe-guid-123"
+    assert captured[0].headers["accept-encoding"] == "identity"
+    assert captured[0].url.params["r"] == "secret"
+    assert captured[0].url.raw_path.split(b"?", 1)[0] == expected_path
     assert captured[0].url.host == "93.184.216.34"
 
 
@@ -80,6 +91,27 @@ async def test_fetch_nzb_rejects_utf16_dtd():
             "secret", "safe", inner_transport=transport, pinned_ip="93.184.216.34"
         )
     assert exc_info.value.code == "indexer_xml_unsafe"
+
+
+async def test_fetch_nzb_rejects_compressed_response_before_decompression():
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            200,
+            headers={
+                "content-type": "application/x-nzb",
+                "content-encoding": "gzip",
+            },
+            content=gzip.compress(_NZB),
+        )
+    )
+
+    with pytest.raises(IndexerResponseError) as exc_info:
+        await newznab.fetch_nzb(
+            "secret", "safe", inner_transport=transport,
+            pinned_ip="93.184.216.34",
+        )
+
+    assert exc_info.value.code == "indexer_content_encoding_invalid"
 
 
 async def test_fetch_nzb_limits_size_and_identifier():
