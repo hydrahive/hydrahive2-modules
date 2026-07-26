@@ -23,11 +23,15 @@ def _local_name(tag: str) -> str:
 
 def parse_xml(data: bytes) -> ET.Element:
     """Parst kleines, UTF-8-basiertes Newznab-XML ohne DTD/Entities."""
-    lowered = data.lower()
-    if b"\x00" in data or b"<!doctype" in lowered or b"<!entity" in lowered:
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise IndexerResponseError("indexer_xml_unsafe") from None
+    lowered = text.lower()
+    if "\x00" in text or "<!doctype" in lowered or "<!entity" in lowered:
         raise IndexerResponseError("indexer_xml_unsafe")
     try:
-        root = ET.fromstring(data)
+        root = ET.fromstring(text)
     except (ET.ParseError, ValueError, OverflowError) as exc:
         raise IndexerResponseError("indexer_xml_invalid") from exc
     if _local_name(root.tag) == "error":

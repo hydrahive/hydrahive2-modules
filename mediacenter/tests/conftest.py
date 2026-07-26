@@ -43,9 +43,11 @@ def setup_test_env():
     )
 
     from hydrahive.api import main
-    from backend.routes_search import router
+    from backend.routes_jobs import router as jobs_router
+    from backend.routes_search import router as search_router
 
-    main.app.include_router(router, prefix="/api/modules/mediacenter")
+    main.app.include_router(search_router, prefix="/api/modules/mediacenter")
+    main.app.include_router(jobs_router, prefix="/api/modules/mediacenter")
     yield _TEST_ROOT
     shutil.rmtree(_TEST_ROOT, ignore_errors=True)
 
@@ -95,8 +97,14 @@ def bob(client):
 @pytest.fixture(autouse=True)
 def clean_in_memory_state():
     from hydrahive.api.middleware.inbound_ratelimit import reset
+    from hydrahive.db import init_db
+    from hydrahive.modules.migrations import apply_module_migrations
+    from backend.job_store import clear_all
     from backend.result_store import RESULTS
 
+    init_db()
+    apply_module_migrations("mediacenter", MODULE_DIR / "migrations")
+    clear_all()
     RESULTS.clear()
     reset()
     yield

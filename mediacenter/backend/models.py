@@ -123,9 +123,41 @@ class ConnectionTestResponse(BaseModel):
     default_limit: int
     search_types: list[str]
     categories: list[int]
+    sab_version: str | None = None
+    sab_categories: list[str] = Field(default_factory=list)
+
+
+class EnqueueRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    result_id: str = Field(min_length=20, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
+    priority: Literal["default", "high", "low"] = "default"
+
+
+class JobOut(BaseModel):
+    result_id: str
+    title: str
+    media_type: MediaType
+    state: str
+    sab_job_id: str | None
+    status: str
+    progress: float | None
+    eta: str | None
+    error_code: str | None
+    updated_at: str
+
+
+class EnqueueResponse(BaseModel):
+    result_id: str
+    title: str
+    media_type: MediaType
+    state: str
+    sab_job_id: str | None
+    error_code: str | None
 
 
 class ModuleStatus(BaseModel):
     module: str = "mediacenter"
     state: Literal["ready", "not_configured"]
     indexer_configured: bool
+    sab_configured: bool = False

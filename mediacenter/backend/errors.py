@@ -23,3 +23,15 @@ class IndexerAuthError(MediacenterError):
 
 class IndexerResponseError(MediacenterError):
     pass
+
+
+class SabUnavailable(MediacenterError):
+    pass
+
+
+class SabAuthError(MediacenterError):
+    pass
+
+
+class SabResponseError(MediacenterError):
+    pass

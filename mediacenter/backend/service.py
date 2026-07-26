@@ -4,10 +4,10 @@ import re
 from dataclasses import replace
 from datetime import datetime, timezone
 
-from . import newznab
-from .config import NEWZNAB_CATEGORIES
+from . import newznab, sabnzbd
+from .config import NEWZNAB_CATEGORIES, SAB_CATEGORIES
 from .credentials import resolve_indexer_api_key
-from .errors import IndexerResponseError, MediacenterConfigError
+from .errors import IndexerResponseError, MediacenterConfigError, SabResponseError
 from .models import (
     ConnectionTestResponse,
     ModuleStatus,
@@ -18,14 +18,26 @@ from .models import (
 )
 from .profiles import classify_release, set_selection_status
 from .result_store import RESULTS
+from .sab_credentials import resolve_sab_connection
 
 
 def connection_status(username: str) -> ModuleStatus:
     try:
         resolve_indexer_api_key(username)
+        indexer_configured = True
     except MediacenterConfigError:
-        return ModuleStatus(state="not_configured", indexer_configured=False)
-    return ModuleStatus(state="ready", indexer_configured=True)
+        indexer_configured = False
+    try:
+        resolve_sab_connection(username)
+        sab_configured = True
+    except MediacenterConfigError:
+        sab_configured = False
+    state = "ready" if indexer_configured and sab_configured else "not_configured"
+    return ModuleStatus(
+        state=state,
+        indexer_configured=indexer_configured,
+        sab_configured=sab_configured,
+    )
 
 
 async def test_indexer_connection(username: str) -> ConnectionTestResponse:
@@ -41,6 +53,23 @@ async def test_indexer_connection(username: str) -> ConnectionTestResponse:
         default_limit=capabilities.default_limit,
         search_types=sorted(capabilities.search_types),
         categories=sorted(required_categories),
+    )
+
+
+async def test_connections(username: str) -> ConnectionTestResponse:
+    indexer = await test_indexer_connection(username)
+    connection = resolve_sab_connection(username)
+    pinned_ip = await sabnzbd.resolve_pinned_ip(connection)
+    version = await sabnzbd.fetch_version(connection, pinned_ip=pinned_ip)
+    categories = await sabnzbd.fetch_categories(connection, pinned_ip=pinned_ip)
+    required = set(SAB_CATEGORIES.values())
+    if not required <= categories:
+        raise SabResponseError("sab_categories_missing")
+    return indexer.model_copy(
+        update={
+            "sab_version": version,
+            "sab_categories": sorted(required),
+        }
     )
 
 
@@ -141,7 +170,8 @@ def _result_out(
 
 
 async def search_indexer(
-    username: str, request: SearchRequest, *, now: datetime | None = None
+    username: str, request: SearchRequest, *, now: datetime | None = None,
+    owner_id: str | None = None,
 ) -> SearchResponse:
     timestamp = now or datetime.now(timezone.utc)
     releases = await newznab.search(resolve_indexer_api_key(username), request)
@@ -161,7 +191,7 @@ async def search_indexer(
         decisions.append(_apply_filters(decision, request, timestamp))
     decisions = set_selection_status(decisions, request.media_type)
     decisions.sort(key=lambda item: (item.decision != "eligible", -item.score, item.release.title.lower()))
-    results = [_result_out(username, decision, timestamp) for decision in decisions]
+    results = [_result_out(owner_id or username, decision, timestamp) for decision in decisions]
     return SearchResponse(
         total=len(results),
         eligible=sum(result.decision == "eligible" for result in results),
