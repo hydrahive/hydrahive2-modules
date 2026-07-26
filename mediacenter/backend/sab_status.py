@@ -4,6 +4,7 @@ import re
 
 from .errors import SabResponseError
 from .sab_credentials import SabConnection
+from .sab_ids import is_valid_job_id
 from .sabnzbd import _request_json
 
 
@@ -34,11 +35,7 @@ async def find_handoffs(
             if not matched:
                 continue
             job_id = item.get("nzo_id")
-            if (
-                not isinstance(job_id, str)
-                or connection.api_key in job_id
-                or not re.fullmatch(r"SABnzbd_nzo_[A-Za-z0-9_-]{1,128}", job_id)
-            ):
+            if not is_valid_job_id(job_id, connection.api_key):
                 raise SabResponseError("sab_response_invalid")
             for marker in matched:
                 matches[marker].add(job_id)

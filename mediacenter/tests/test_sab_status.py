@@ -50,13 +50,13 @@ async def test_handoff_reconciliation_batches_and_requires_exact_prefix(monkeypa
     async def response(connection, mode):
         calls.append(mode)
         return {mode: {"slots": [
-            {"nzo_id": "SABnzbd_nzo_good", "filename": "hh-one Film"},
+            {"nzo_id": "ec015d35-2d24-4001-a759-2e3cd1f52c4c", "filename": "hh-one Film"},
             {"nzo_id": "SABnzbd_nzo_bad", "filename": "prefix hh-two Film"},
         ]}}
 
     monkeypatch.setattr(sab_status, "_request_json", response)
     result = await sab_status.find_handoffs(_CONNECTION, {"hh-one", "hh-two"})
-    assert result == {"hh-one": "SABnzbd_nzo_good"}
+    assert result == {"hh-one": "ec015d35-2d24-4001-a759-2e3cd1f52c4c"}
     assert calls == ["queue", "history"]
 
 

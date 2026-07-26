@@ -10,10 +10,10 @@ import httpx
 from .config import SAB_MAX_JSON_BYTES, SAB_TIMEOUT_SECONDS
 from .errors import SabResponseError, SabUnavailable
 from .sab_credentials import SabConnection
+from .sab_ids import is_valid_job_id
 from .sabnzbd import _client
 
 _PRIORITY = {"default": "0", "high": "1", "low": "-1"}
-_JOB_ID = re.compile(r"SABnzbd_nzo_[A-Za-z0-9_-]{1,128}\Z")
 
 
 def _safe_name(handoff_id: str, title: str) -> str:
@@ -80,6 +80,6 @@ async def upload_nzb(
     ids = payload.get("nzo_ids")
     if not isinstance(ids, list) or len(ids) != 1 or not isinstance(ids[0], str):
         raise SabResponseError("sab_response_invalid")
-    if not _JOB_ID.fullmatch(ids[0]) or connection.api_key in ids[0]:
+    if not is_valid_job_id(ids[0], connection.api_key):
         raise SabResponseError("sab_response_invalid")
     return ids[0]

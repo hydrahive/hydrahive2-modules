@@ -43,6 +43,24 @@ async def test_upload_nzb_uses_fixed_origin_and_safe_multipart(priority, expecte
     assert _NZB in body
 
 
+async def test_upload_nzb_accepts_modern_uuid_job_id():
+    job_id = "ec015d35-2d24-4001-a759-2e3cd1f52c4c"
+    transport = httpx.MockTransport(
+        lambda _: httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            json={"status": True, "nzo_ids": [job_id]},
+        )
+    )
+
+    result = await upload_nzb(
+        _CONNECTION, _NZB, handoff_id="hh-safe", title="Title", category="film",
+        inner_transport=transport, pinned_ip="93.184.216.34",
+    )
+
+    assert result == job_id
+
+
 @pytest.mark.parametrize(
     "payload",
     [
