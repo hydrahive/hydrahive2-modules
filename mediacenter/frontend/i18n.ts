@@ -1,0 +1,91 @@
+export const i18n = {
+  de: {
+    mediacenter: {
+      mediacenter: "Mediacenter",
+      title: "Mediacenter",
+      subtitle: "Treasure Maps durchsuchen und ausgewählte Treffer sicher an SABnzbd übergeben",
+      connection: {
+        title: "Verbindungen", test: "Verbindungen testen", testing: "Prüfung läuft …",
+        success: "Treasure Maps und SABnzbd {{version}} sind erreichbar.",
+        configure: "Hinterlege zuerst die persönlichen Treasure-Maps- und SABnzbd-Zugangsdaten im Credential-Store.",
+        configured: "konfiguriert", missing: "nicht konfiguriert",
+      },
+      views: { label: "Mediacenter-Bereiche", search: "Suche", queue: "Warteschlange", history: "Verlauf" },
+      media: { movie: "Filme", tv: "Serien", book: "Bücher", audiobook: "Hörbücher", audioplay: "Hörspiele", music: "Musik" },
+      search: {
+        mediaTypes: "Medientyp", query: "Suchbegriff", submit: "Suchen", searching: "Suche läuft …", filters: "Optionale Filter",
+        year: "Jahr", season: "Staffel", episode: "Folge", author: "Autor", artist: "Künstler", album: "Album",
+        maxAge: "Maximales Alter in Tagen", minSize: "Mindestgröße in MB", maxSize: "Maximalgröße in MB",
+        placeholders: { movie: "Filmtitel", tv: "Serientitel", book: "Buchtitel", audiobook: "Hörbuchtitel", audioplay: "Hörspieltitel", music: "Künstler, Album oder Titel" },
+      },
+      results: {
+        title: "Suchergebnisse", initial: "Wähle einen Medientyp und starte eine Suche.", empty: "Keine Treffer gefunden.",
+        summary: "{{eligible}} von {{total}} Treffern erfüllen das Profil", expiry: "Treffer sind 15 Minuten gültig",
+        days_one: "{{count}} Tag alt", days_other: "{{count}} Tage alt", directChoice: "Der Klick ist deine bewusste Auswahl.",
+        enqueue: "An SABnzbd übergeben", enqueueing: "Übergabe …", queued: "Übergeben",
+      },
+      selection: {
+        quality_preference_required: "1080p oder 2160p direkt auswählen",
+        format_preference_required: "FLAC oder MP3 direkt auswählen",
+      },
+      jobs: {
+        queue: "Warteschlange", history: "Verlauf", queueHint: "Nur über dieses Mediacenter gestartete aktive Aufträge.",
+        historyHint: "Nur eigene abgeschlossene, fehlgeschlagene oder manuell zu prüfende Aufträge.", refresh: "Aktualisieren",
+        loading: "Aufträge werden geladen …", queueEmpty: "Keine aktiven Mediacenter-Aufträge.", historyEmpty: "Noch keine Einträge im Verlauf.", eta: "Restzeit",
+      },
+      status: { queued: "Wartend", downloading: "Download", paused: "Pausiert", extracting: "Entpacken", completed: "Fertig", failed: "Fehlgeschlagen", unknown: "Unbekannt", consumed: "Übergeben", uncertain: "Unklar", manual_review_required: "Manuell prüfen" },
+      reasons: {
+        eligible: "Profil erfüllt", german_confirmed: "Deutsch bestätigt", resolution_allowed: "Zulässige Auflösung", format_allowed: "Zulässiges Format",
+        requested_artist_match: "Künstler passt", requested_album_complete: "Vollständiges Album", requested_album_incomplete: "Unvollständiges Album", requested_year_match: "Jahr passt",
+        category_mismatch: "Falsche Indexer-Kategorie", language_unconfirmed: "Deutsche Sprache nicht bestätigt", resolution_missing: "Auflösung fehlt",
+        resolution_rejected: "Auflösung nicht zulässig", forbidden_source: "Nicht zulässige Aufnahmequelle", format_rejected: "Format nicht zulässig",
+        format_missing: "Format nicht erkannt", sample_or_incomplete: "Sample oder unvollständig", size_unknown: "Größe unbekannt",
+        size_below_minimum: "Unter Mindestgröße", size_above_maximum: "Über Maximalgröße", age_unknown: "Alter unbekannt", age_above_maximum: "Älter als erlaubt",
+      },
+      errors: { sab_job_failed: "SABnzbd meldet einen fehlgeschlagenen Auftrag.", sab_handoff_uncertain: "Übergabestatus unklar — bitte in SABnzbd prüfen.", prewrite_failed: "Übergabe konnte nicht vorbereitet werden." },
+    },
+  },
+  en: {
+    mediacenter: {
+      mediacenter: "Media Center",
+      title: "Media Center",
+      subtitle: "Search Treasure Maps and hand selected releases safely to SABnzbd",
+      connection: {
+        title: "Connections", test: "Test connections", testing: "Testing …",
+        success: "Treasure Maps and SABnzbd {{version}} are reachable.",
+        configure: "Add your personal Treasure Maps and SABnzbd credentials to the credential store first.",
+        configured: "configured", missing: "not configured",
+      },
+      views: { label: "Media Center sections", search: "Search", queue: "Queue", history: "History" },
+      media: { movie: "Movies", tv: "TV", book: "Books", audiobook: "Audiobooks", audioplay: "Audio plays", music: "Music" },
+      search: {
+        mediaTypes: "Media type", query: "Search query", submit: "Search", searching: "Searching …", filters: "Optional filters",
+        year: "Year", season: "Season", episode: "Episode", author: "Author", artist: "Artist", album: "Album",
+        maxAge: "Maximum age in days", minSize: "Minimum size in MB", maxSize: "Maximum size in MB",
+        placeholders: { movie: "Movie title", tv: "TV show", book: "Book title", audiobook: "Audiobook title", audioplay: "Audio play title", music: "Artist, album or title" },
+      },
+      results: {
+        title: "Search results", initial: "Choose a media type and start a search.", empty: "No releases found.",
+        summary: "{{eligible}} of {{total}} releases match the profile", expiry: "Results expire after 15 minutes",
+        days_one: "{{count}} day old", days_other: "{{count}} days old", directChoice: "Clicking is your explicit choice.",
+        enqueue: "Send to SABnzbd", enqueueing: "Sending …", queued: "Sent",
+      },
+      selection: { quality_preference_required: "Choose 1080p or 2160p directly", format_preference_required: "Choose FLAC or MP3 directly" },
+      jobs: {
+        queue: "Queue", history: "History", queueHint: "Active jobs started through this Media Center only.",
+        historyHint: "Your completed, failed or manually reviewed jobs only.", refresh: "Refresh", loading: "Loading jobs …",
+        queueEmpty: "No active Media Center jobs.", historyEmpty: "No history entries yet.", eta: "ETA",
+      },
+      status: { queued: "Queued", downloading: "Downloading", paused: "Paused", extracting: "Extracting", completed: "Completed", failed: "Failed", unknown: "Unknown", consumed: "Submitted", uncertain: "Uncertain", manual_review_required: "Review required" },
+      reasons: {
+        eligible: "Profile matched", german_confirmed: "German confirmed", resolution_allowed: "Allowed resolution", format_allowed: "Allowed format",
+        requested_artist_match: "Artist matched", requested_album_complete: "Complete album", requested_album_incomplete: "Incomplete album", requested_year_match: "Year matched",
+        category_mismatch: "Wrong indexer category", language_unconfirmed: "German language not confirmed", resolution_missing: "Resolution missing",
+        resolution_rejected: "Resolution not allowed", forbidden_source: "Source not allowed", format_rejected: "Format not allowed", format_missing: "Format unknown",
+        sample_or_incomplete: "Sample or incomplete", size_unknown: "Size unknown", size_below_minimum: "Below minimum size", size_above_maximum: "Above maximum size",
+        age_unknown: "Age unknown", age_above_maximum: "Older than allowed",
+      },
+      errors: { sab_job_failed: "SABnzbd reports a failed job.", sab_handoff_uncertain: "Submission status uncertain — check SABnzbd.", prewrite_failed: "Submission could not be prepared." },
+    },
+  },
+}
