@@ -123,9 +123,12 @@ class ConnectionTestResponse(BaseModel):
     default_limit: int
     search_types: list[str]
     categories: list[int]
+    sab_version: str | None = None
+    sab_categories: list[str] = Field(default_factory=list)
 
 
 class ModuleStatus(BaseModel):
     module: str = "mediacenter"
     state: Literal["ready", "not_configured"]
     indexer_configured: bool
+    sab_configured: bool = False

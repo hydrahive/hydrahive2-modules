@@ -48,7 +48,9 @@ def test_status_is_user_scoped(client, alice, monkeypatch):
 
     def fake_status(username: str):
         seen.append(username)
-        return ModuleStatus(state="ready", indexer_configured=True)
+        return ModuleStatus(
+            state="ready", indexer_configured=True, sab_configured=True
+        )
 
     monkeypatch.setattr(routes_search.service, "connection_status", fake_status)
     response = client.get(f"{BASE}/status", headers=alice)
@@ -58,6 +60,7 @@ def test_status_is_user_scoped(client, alice, monkeypatch):
         "module": "mediacenter",
         "state": "ready",
         "indexer_configured": True,
+        "sab_configured": True,
     }
     assert seen == ["alice"]
 
@@ -70,15 +73,19 @@ def test_connection_test_returns_sanitized_capabilities(client, alice, monkeypat
             default_limit=250,
             search_types=["book", "movie", "music", "search", "tv"],
             categories=[2140, 2145, 2150, 3010, 3040, 3130, 5140, 5145, 7120],
+            sab_version="4.5.3",
+            sab_categories=["audio", "audiobook", "ebook", "movies", "tv"],
         )
 
-    monkeypatch.setattr(routes_search.service, "test_indexer_connection", fake_test)
+    monkeypatch.setattr(routes_search.service, "test_connections", fake_test)
     response = client.post(f"{BASE}/connections/test", headers=alice)
 
     assert response.status_code == 200
     serialized = response.text
     assert "apikey" not in serialized.lower()
     assert "tresuere_token" not in serialized
+    assert "sabnzb_token" not in serialized
+    assert "top-secret" not in serialized
 
 
 def test_search_passes_authenticated_user_and_validated_body(client, alice, monkeypatch):

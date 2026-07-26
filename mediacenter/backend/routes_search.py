@@ -17,6 +17,9 @@ from .errors import (
     IndexerResponseError,
     IndexerUnavailable,
     MediacenterConfigError,
+    SabAuthError,
+    SabResponseError,
+    SabUnavailable,
 )
 from .models import ConnectionTestResponse, ModuleStatus, SearchRequest, SearchResponse
 
@@ -46,7 +49,14 @@ async def _guard(call: Callable[[], Awaitable[T]]) -> T:
         return await call()
     except MediacenterConfigError as exc:
         raise coded(status.HTTP_503_SERVICE_UNAVAILABLE, exc.code)
-    except (IndexerAuthError, IndexerResponseError, IndexerUnavailable) as exc:
+    except (
+        IndexerAuthError,
+        IndexerResponseError,
+        IndexerUnavailable,
+        SabAuthError,
+        SabResponseError,
+        SabUnavailable,
+    ) as exc:
         raise coded(status.HTTP_502_BAD_GATEWAY, exc.code)
 
 
@@ -72,7 +82,7 @@ def module_status(auth: Auth) -> ModuleStatus:
 async def connection_test(auth: Auth) -> ConnectionTestResponse:
     username, _ = auth
     _rate(username, "connection_test", 10)
-    return await _guard(lambda: service.test_indexer_connection(username))
+    return await _guard(lambda: service.test_connections(username))
 
 
 @router.post("/search", response_model=SearchResponse)
