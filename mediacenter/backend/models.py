@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 MediaType = Literal["movie", "tv", "book", "audiobook", "audioplay", "music"]
 
@@ -18,6 +18,8 @@ class IndexerCapabilities:
 
 
 class SearchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     query: str = Field(min_length=2, max_length=200)
     media_type: MediaType
     limit: int = Field(default=50, ge=1, le=100)
@@ -79,3 +81,40 @@ class ProfileDecision:
     bitrate_kbps: int | None
     score: int
     selection_status: SelectionStatus = "ready"
+
+
+class SearchResultOut(BaseModel):
+    result_id: str | None
+    title: str
+    media_type: MediaType
+    category_id: int
+    size_bytes: int | None
+    age_days: int | None
+    decision: Decision
+    reasons: list[str]
+    language: str | None
+    resolution: str | None
+    format: str | None
+    bitrate_kbps: int | None
+    score: int
+    selection_status: SelectionStatus
+
+
+class SearchResponse(BaseModel):
+    total: int
+    eligible: int
+    results: list[SearchResultOut]
+
+
+class ConnectionTestResponse(BaseModel):
+    ok: bool = True
+    max_limit: int
+    default_limit: int
+    search_types: list[str]
+    categories: list[int]
+
+
+class ModuleStatus(BaseModel):
+    module: str = "mediacenter"
+    state: Literal["ready", "not_configured"]
+    indexer_configured: bool

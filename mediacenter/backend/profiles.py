@@ -5,23 +5,18 @@ from dataclasses import replace
 
 from .config import GERMAN_CATEGORIES
 from .models import MediaType, ProfileDecision, RawRelease
-
-_FORBIDDEN_SINGLE = {
-    "CAM", "CAMRIP", "HDCAM", "TS", "HDTS", "TELESYNC", "TC", "TELECINE",
-    "SCR", "SCREENER", "SCREENERS", "DVDSCR", "WEBSCREENER", "WORKPRINT", "R5",
-}
-_FORBIDDEN_PAIRS = {
-    ("CAM", "RIP"), ("HD", "CAM"), ("HD", "TS"), ("TELE", "SYNC"),
-    ("TELE", "CINE"), ("DVD", "SCR"), ("WEB", "SCREENER"), ("WORK", "PRINT"),
-}
-_GERMAN_TOKENS = {"GERMAN", "DEUTSCH", "DE", "GER"}
-_SAMPLE_TOKENS = {"SAMPLE", "SAMPLES", "HOERPROBE", "AUSZUG", "EXCERPT", "PREVIEW"}
-_INCOMPLETE_TOKENS = {"INCOMPLETE", "UNVOLLSTAENDIG", "PARTIAL"}
-_AUDIOPLAY_TOKENS = {"HOERSPIEL", "RADIOPLAY", "AUDIODRAMA"}
-_BOOK_ALLOWED = {"EPUB": "epub", "PDF": "pdf"}
-_AUDIO_ALLOWED = {"MP3": "mp3", "M4B": "m4b"}
-_MUSIC_ALLOWED = {"FLAC": "flac", "MP3": "mp3"}
-_KNOWN_DISALLOWED_FORMATS = {"MOBI", "AZW3", "TXT", "AAC", "OGG", "WAV", "ALAC"}
+from .profile_rules import (
+    AUDIO_ALLOWED,
+    AUDIOPLAY_TOKENS,
+    BOOK_ALLOWED,
+    FORBIDDEN_PAIRS,
+    FORBIDDEN_SINGLE,
+    GERMAN_TOKENS,
+    INCOMPLETE_TOKENS,
+    KNOWN_DISALLOWED_FORMATS,
+    MUSIC_ALLOWED,
+    SAMPLE_TOKENS,
+)
 
 
 def _ascii_title(title: str) -> str:
@@ -45,7 +40,7 @@ def _german(release: RawRelease, token_set: set[str]) -> tuple[bool, str | None]
     if (
         release.category_id in GERMAN_CATEGORIES
         or language in {"de", "de-de", "ger", "german", "deutsch"}
-        or bool(token_set & _GERMAN_TOKENS)
+        or bool(token_set & GERMAN_TOKENS)
     ):
         return True, "de"
     if language and language not in {"multi", "mul", "unknown"}:
@@ -93,7 +88,7 @@ def _video(release: RawRelease, tokens: list[str], token_set: set[str]) -> Profi
     else:
         reasons.append("resolution_unknown")
 
-    if token_set & _FORBIDDEN_SINGLE or _has_pair(tokens, _FORBIDDEN_PAIRS):
+    if token_set & FORBIDDEN_SINGLE or _has_pair(tokens, FORBIDDEN_PAIRS):
         reasons.append("forbidden_source")
     if release.download_url is None:
         reasons.append("download_reference_invalid")
@@ -111,11 +106,11 @@ def _video(release: RawRelease, tokens: list[str], token_set: set[str]) -> Profi
 
 def _book(release: RawRelease, token_set: set[str]) -> ProfileDecision:
     language_ok, language = _german(release, token_set)
-    fmt = _format(token_set, _BOOK_ALLOWED)
+    fmt = _format(token_set, BOOK_ALLOWED)
     reasons = ["language_confirmed" if language_ok else "language_not_german"]
     if fmt:
         reasons.append("format_allowed")
-    elif token_set & _KNOWN_DISALLOWED_FORMATS:
+    elif token_set & KNOWN_DISALLOWED_FORMATS:
         reasons.append("format_not_allowed")
     else:
         reasons.append("format_unknown")
@@ -130,19 +125,19 @@ def _spoken_audio(
     release: RawRelease, media_type: MediaType, token_set: set[str]
 ) -> ProfileDecision:
     language_ok, language = _german(release, token_set)
-    fmt = _format(token_set, _AUDIO_ALLOWED)
+    fmt = _format(token_set, AUDIO_ALLOWED)
     reasons = ["language_confirmed" if language_ok else "language_not_german"]
     if fmt:
         reasons.append("format_allowed")
-    elif token_set & _KNOWN_DISALLOWED_FORMATS:
+    elif token_set & KNOWN_DISALLOWED_FORMATS:
         reasons.append("format_not_allowed")
     else:
         reasons.append("format_unknown")
-    if token_set & _SAMPLE_TOKENS:
+    if token_set & SAMPLE_TOKENS:
         reasons.append("sample_release")
-    if token_set & _INCOMPLETE_TOKENS:
+    if token_set & INCOMPLETE_TOKENS:
         reasons.append("incomplete_release")
-    is_play = bool(token_set & _AUDIOPLAY_TOKENS) or {"AUDIO", "DRAMA"} <= token_set
+    is_play = bool(token_set & AUDIOPLAY_TOKENS) or {"AUDIO", "DRAMA"} <= token_set
     if (media_type == "audioplay" and not is_play) or (media_type == "audiobook" and is_play):
         reasons.append("media_type_mismatch")
     if release.download_url is None:
@@ -157,10 +152,10 @@ def _spoken_audio(
 
 
 def _music(release: RawRelease, token_set: set[str]) -> ProfileDecision:
-    fmt = _format(token_set, _MUSIC_ALLOWED)
+    fmt = _format(token_set, MUSIC_ALLOWED)
     if fmt:
         reasons = ["format_allowed"]
-    elif token_set & _KNOWN_DISALLOWED_FORMATS:
+    elif token_set & KNOWN_DISALLOWED_FORMATS:
         reasons = ["format_not_allowed"]
     else:
         reasons = ["format_unknown"]
