@@ -1,11 +1,12 @@
 {
   "id": "mediacenter",
   "name": "Mediacenter",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Sichere Treasure-Maps-Suche mit Medienprofilen, idempotenter SABnzbd-Übergabe sowie benutzergebundener Queue und Historie.",
   "icon": "MonitorPlay",
   "nav_group": "working",
   "permissions": [],
   "has_service": false,
+  "default_agent_tools": true,
   "min_core_version": "2.0.0"
 }
