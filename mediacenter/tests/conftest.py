@@ -95,8 +95,14 @@ def bob(client):
 @pytest.fixture(autouse=True)
 def clean_in_memory_state():
     from hydrahive.api.middleware.inbound_ratelimit import reset
+    from hydrahive.db import init_db
+    from hydrahive.modules.migrations import apply_module_migrations
+    from backend.job_store import clear_all
     from backend.result_store import RESULTS
 
+    init_db()
+    apply_module_migrations("mediacenter", MODULE_DIR / "migrations")
+    clear_all()
     RESULTS.clear()
     reset()
     yield
