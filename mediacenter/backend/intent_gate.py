@@ -54,7 +54,7 @@ def _references_title(turn: str, title: str) -> bool:
         if len(token) >= 3 and not token.isdigit() and token not in _STOP
     }
     title_tokens = set(re.findall(r"\w+", title.casefold(), re.UNICODE))
-    return bool(turn_tokens & title_tokens)
+    return bool(turn_tokens) and turn_tokens <= title_tokens
 
 
 def _preference(turn: str, selection_status: str, expected: str | None) -> str | None:

@@ -89,6 +89,17 @@ def test_legitimate_download_turn_cannot_be_redirected_to_other_result(monkeypat
             trusted_turn="Download Matrix", trusted_turn_id="turn-other",
         )
     assert exc_info.value.code == "confirmation_required"
+    for wrong_title, turn in (
+        ("Dune Part One", "Download Dune Part Two"),
+        ("Star Wars", "Download Star Trek"),
+        ("Harry und Sally", "Lade Harry Potter herunter"),
+    ):
+        wrong = store.put("user-id", _decision(title=wrong_title))
+        with pytest.raises(IndexerResponseError):
+            intent_gate.authorize_enqueue(
+                owner="user-id", session_id="session-1", result_id=wrong,
+                trusted_turn=turn, trusted_turn_id=f"turn-{wrong_title}",
+            )
     generic = store.put(
         "user-id", _decision(title="ATTACKER RELEASE 2024 German 1080p WEB-DL")
     )
