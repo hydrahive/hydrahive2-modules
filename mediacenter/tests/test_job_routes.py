@@ -13,6 +13,7 @@ def _job(state="consumed"):
         result_id=_RESULT_ID, title="Film", media_type="movie", state=state,
         sab_job_id="SABnzbd_nzo_abc" if state == "consumed" else None,
         error_code=None,
+        speed_kbps=None,
     )
 
 

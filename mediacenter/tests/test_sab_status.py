@@ -13,6 +13,7 @@ async def test_fetch_status_only_projects_allowed_ids_and_sanitizes(monkeypatch)
     async def response(connection, mode):
         return {
             mode: {
+                "kbpersec": "1234.50",
                 "slots": [
                     {
                         "nzo_id": "SABnzbd_nzo_owned",
@@ -36,6 +37,7 @@ async def test_fetch_status_only_projects_allowed_ids_and_sanitizes(monkeypatch)
             "status": "downloading",
             "progress": 100.0,
             "eta": "00:12:34",
+            "speed_kbps": 1234.5,
             "error_code": None,
         }
     }

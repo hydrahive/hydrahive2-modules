@@ -54,7 +54,7 @@ async def enqueue_result(
     if (
         claimed is None
         or claimed.decision.decision != "eligible"
-        or claimed.decision.selection_status != "ready"
+        or (require_grant and claimed.decision.selection_status != "ready")
     ):
         raise IndexerResponseError("result_unavailable")
     local_claim = claimed.claim_id

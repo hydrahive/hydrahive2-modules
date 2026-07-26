@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 import pytest
 
 from backend import enqueue_service, job_store
-from backend.errors import SabResponseError, SabUnavailable
+from backend.errors import IndexerResponseError, SabResponseError, SabUnavailable
 from backend.models import ProfileDecision, RawRelease
 from backend.result_store import ResultStore
 from backend.sab_credentials import SabConnection
@@ -15,17 +15,18 @@ _NZB = b"<nzb><file /></nzb>"
 _NOW = datetime(2026, 7, 26, 10, 0, tzinfo=UTC)
 
 
-def _decision():
+def _decision(selection_status="ready"):
     return ProfileDecision(
         release=RawRelease("Film", "guid", 100, 1, "de", None, "https://evil/nzb"),
         media_type="movie", decision="eligible", reasons=(), language="de",
         resolution="1080p", format=None, bitrate_kbps=None, score=100,
+        selection_status=selection_status,
     )
 
 
-def _setup(monkeypatch):
+def _setup(monkeypatch, *, selection_status="ready"):
     store = ResultStore(ttl_seconds=60)
-    result_id = store.put("alice", _decision())
+    result_id = store.put("alice", _decision(selection_status))
     monkeypatch.setattr(enqueue_service, "RESULTS", store)
     monkeypatch.setattr(enqueue_service, "resolve_indexer_api_key", lambda _: "idx-key")
     monkeypatch.setattr(
@@ -57,6 +58,33 @@ async def test_enqueue_is_idempotent_and_consumes_result(monkeypatch):
     assert len(calls) == 1
     assert calls[0]["handoff_id"].startswith("hh-")
     assert store.get("alice", result_id) is None
+
+
+async def test_direct_ui_selection_satisfies_open_quality_choice(monkeypatch):
+    _, result_id = _setup(monkeypatch, selection_status="quality_preference_required")
+    monkeypatch.setattr(
+        enqueue_service.newznab, "fetch_nzb", lambda *_: _async_value(_NZB)
+    )
+    monkeypatch.setattr(
+        enqueue_service, "upload_nzb", lambda *_args, **_kwargs: _async_value("SABnzbd_nzo_ui")
+    )
+
+    job = await enqueue_service.enqueue_result("alice", result_id, now=_NOW)
+
+    assert job.state == "consumed"
+    assert job.sab_job_id == "SABnzbd_nzo_ui"
+
+
+async def test_agent_cannot_bypass_open_quality_choice(monkeypatch):
+    _, result_id = _setup(monkeypatch, selection_status="quality_preference_required")
+
+    with pytest.raises(IndexerResponseError) as exc_info:
+        await enqueue_service.enqueue_result(
+            "alice", result_id, now=_NOW, require_grant=True,
+            grant_id="grant", session_id="session",
+        )
+
+    assert exc_info.value.code == "result_unavailable"
 
 
 async def test_prewrite_failure_releases_for_retry(monkeypatch):

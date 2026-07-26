@@ -38,6 +38,7 @@ async def list_jobs(
                 "status": upstream["status"] if upstream else job.state,
                 "progress": upstream["progress"] if upstream else None,
                 "eta": upstream["eta"] if upstream else None,
+                "speed_kbps": upstream.get("speed_kbps") if upstream else None,
                 "error_code": (
                     upstream["error_code"] if upstream else job.error_code
                 ),
