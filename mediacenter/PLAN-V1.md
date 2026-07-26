@@ -183,53 +183,53 @@ Produktionsdateien sollen möglichst unter 250 Zeilen bleiben; wachsende Verantw
 
 ### E3 Task 1: SABnzbd-Verbindung und Kategorieprüfung
 
-- [ ] RED: `sabnzb_token` wird nur für den aufrufenden Benutzer geladen
-- [ ] RED: SAB-Origin wird einmal kanonisiert, exakt gepinnt und kann nicht über Input geändert werden
-- [ ] RED: Redirects, Secret-Leaks und unerwartete JSON-Strukturen werden abgelehnt
-- [ ] RED: alle sechs Medientypen prüfen ihr festes Zielmapping gegen `get_cats`
-- [ ] Version-/Kategorie-Client und Verbindungstest implementieren
-- [ ] GREEN: SAB-Verbindungstests bestehen
-- [ ] Commit: `feat(mediacenter): SABnzbd-Verbindung prüfen`
+- [x] RED: `sabnzb_token` wird nur für den aufrufenden Benutzer geladen
+- [x] RED: SAB-Origin wird einmal kanonisiert, exakt gepinnt und kann nicht über Input geändert werden
+- [x] RED: Redirects, Secret-Leaks und unerwartete JSON-Strukturen werden abgelehnt
+- [x] RED: alle sechs Medientypen prüfen ihr festes Zielmapping gegen `get_cats`
+- [x] Version-/Kategorie-Client und Verbindungstest implementieren
+- [x] GREEN: SAB-Verbindungstests bestehen
+- [x] Commit: `feat(mediacenter): SABnzbd-Verbindung prüfen`
 
 ### E3 Task 2: Sicherer NZB-Abruf
 
-- [ ] RED: nur gespeicherte, valide, `eligible` und nicht verbrauchte `result_id` ist zulässig
-- [ ] RED: NZB-Download darf ausschließlich von der festen Treasure-Maps-Origin kommen
-- [ ] RED: Redirect, falscher Content-Type, DTD/XXE, ungültiges XML und Größenlimit werden abgelehnt
-- [ ] Newznab-Identifier serverseitig auflösen und NZB mit harten Limits laden
-- [ ] keine Upstream-URL außerhalb des lokalen Call-Scopes speichern oder ausgeben
-- [ ] GREEN: SSRF-/XML-/Limit-Tests bestehen
-- [ ] Commit: `feat(mediacenter): NZB-Dateien sicher abrufen`
+- [x] RED: nur gespeicherte, valide, `eligible` und nicht verbrauchte `result_id` ist zulässig
+- [x] RED: NZB-Download darf ausschließlich von der festen Treasure-Maps-Origin kommen
+- [x] RED: Redirect, falscher Content-Type, DTD/XXE, ungültiges XML und Größenlimit werden abgelehnt
+- [x] Newznab-Identifier serverseitig auflösen und NZB mit harten Limits laden
+- [x] keine Upstream-URL außerhalb des lokalen Call-Scopes speichern oder ausgeben
+- [x] GREEN: SSRF-/XML-/Limit-Tests bestehen
+- [x] Commit: `feat(mediacenter): NZB-Dateien sicher abrufen`
 
 ### E3 Task 3: Idempotenter SABnzbd-Upload
 
-- [ ] RED: Enqueue-Schema akzeptiert keine URL, Kategorie, Host oder Credential-Ref
-- [ ] RED: Kategorie stammt ausschließlich aus `media_type`
-- [ ] RED: parallele/repetierte Enqueue-Aufrufe erzeugen maximal einen SAB-Job
-- [ ] RED: Grant wird atomar bei `available → claimed` und vor dem Netzwerkzugriff verbraucht
-- [ ] RED: definitiver Fehler vor Request-Write setzt kontrolliert auf `available` zurück und erhöht den Versuchszähler, reaktiviert den Grant aber nicht
-- [ ] RED: Timeout/Abbruch nach möglichem Request-Write setzt `uncertain` und löst keinen Auto-Retry aus
-- [ ] RED: Queue-/History-Aufruf und erneutes Enqueue triggern Reconciliation über den deterministischen Übergabe-Identifier
-- [ ] RED: Fund in Queue/History setzt `uncertain → consumed`; Nichtfund oder Reconciliation-Fehler lässt `uncertain` unverändert und Enqueue liefert `enqueue_status_uncertain` ohne Upload
-- [ ] RED: nach 24 Stunden ohne Fund setzt Reconciliation `manual_review_required`; V1 erlaubt auch dann keinen erneuten Upload
-- [ ] RED: erst eine bestätigte oder reconciliierte SAB-Job-ID setzt `consumed`
-- [ ] atomare Zustandsmaschine und multipart NZB-Upload implementieren
-- [ ] SAB-Job-ID bereinigt zurückgeben
-- [ ] GREEN: Upload-/Replay-/Parallelitätstests bestehen
-- [ ] Commit: `feat(mediacenter): Treffer idempotent an SABnzbd übergeben`
+- [x] RED: Enqueue-Schema akzeptiert keine URL, Kategorie, Host oder Credential-Ref
+- [x] RED: Kategorie stammt ausschließlich aus `media_type`
+- [x] RED: parallele/repetierte Enqueue-Aufrufe erzeugen maximal einen SAB-Job
+- [x] RED: Grant wird atomar bei `available → claimed` und vor dem Netzwerkzugriff verbraucht
+- [x] RED: definitiver Fehler vor Request-Write setzt kontrolliert auf `available` zurück und erhöht den Versuchszähler, reaktiviert den Grant aber nicht
+- [x] RED: Timeout/Abbruch nach möglichem Request-Write setzt `uncertain` und löst keinen Auto-Retry aus
+- [x] RED: Queue-/History-Aufruf und erneutes Enqueue triggern Reconciliation über den deterministischen Übergabe-Identifier
+- [x] RED: Fund in Queue/History setzt `uncertain → consumed`; Nichtfund oder Reconciliation-Fehler lässt `uncertain` unverändert und Enqueue liefert `enqueue_status_uncertain` ohne Upload
+- [x] RED: nach 24 Stunden ohne Fund setzt Reconciliation `manual_review_required`; V1 erlaubt auch dann keinen erneuten Upload
+- [x] RED: erst eine bestätigte oder reconciliierte SAB-Job-ID setzt `consumed`
+- [x] atomare Zustandsmaschine und multipart NZB-Upload implementieren
+- [x] SAB-Job-ID bereinigt zurückgeben
+- [x] GREEN: Upload-/Replay-/Parallelitätstests bestehen
+- [x] Commit: `feat(mediacenter): Treffer idempotent an SABnzbd übergeben`
 
 ### E3 Task 4: Job-Persistenz, Audit, Queue und Historie
 
-- [ ] RED: Migration ist idempotent und Tabellen sind modulpräfixiert
-- [ ] RED: Job gehört stabil zu Benutzer, Agent/Session und Medientyp
-- [ ] RED: Queue/History zeigen ausschließlich getrackte Job-IDs des aufrufenden Benutzers
-- [ ] RED: fremde SAB-Jobs, Secrets, Pfade und rohe Upstream-Fehler werden ausgefiltert
-- [ ] Job-/Audit-Store, Queue-/History-Abbildung und Routen mit strengem per-User-Enqueue-Limit implementieren
-- [ ] RED/GREEN: Enqueue-Rate-Limit, Queue-/History-Limits und getrennte Benutzer-Buckets funktionieren
-- [ ] GREEN: Migrations-/Isolations-/Audit-/Routentests bestehen
-- [ ] Security-Audit E3 und Live-Verbindungstest ohne echten Download
-- [ ] Commit: `feat(mediacenter): Queue und Historie benutzergebunden anzeigen`
-- [ ] Push und E3-PR; CI grün
+- [x] RED: Migration ist idempotent und Tabellen sind modulpräfixiert
+- [x] RED: Job gehört stabil zu Benutzer, Agent/Session und Medientyp
+- [x] RED: Queue/History zeigen ausschließlich getrackte Job-IDs des aufrufenden Benutzers
+- [x] RED: fremde SAB-Jobs, Secrets, Pfade und rohe Upstream-Fehler werden ausgefiltert
+- [x] Job-/Audit-Store, Queue-/History-Abbildung und Routen mit strengem per-User-Enqueue-Limit implementieren
+- [x] RED/GREEN: Enqueue-Rate-Limit, Queue-/History-Limits und getrennte Benutzer-Buckets funktionieren
+- [x] GREEN: Migrations-/Isolations-/Audit-/Routentests bestehen
+- [x] Security-Audit E3 und Live-Verbindungstest ohne echten Download
+- [x] Commit: `feat(mediacenter): Queue und Historie benutzergebunden anzeigen`
+- [x] Push und E3-PR; CI grün
 
 ### Core-Voraussetzung: Vertrauenswürdiger aktueller Benutzerturn im ToolContext
 

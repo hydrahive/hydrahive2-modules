@@ -91,8 +91,8 @@ def test_connection_test_returns_sanitized_capabilities(client, alice, monkeypat
 def test_search_passes_authenticated_user_and_validated_body(client, alice, monkeypatch):
     seen = []
 
-    async def fake_search(username, request):
-        seen.append((username, request))
+    async def fake_search(username, request, **kwargs):
+        seen.append((username, request, kwargs.get("owner_id")))
         return _search_response()
 
     monkeypatch.setattr(routes_search.service, "search_indexer", fake_search)
@@ -106,6 +106,7 @@ def test_search_passes_authenticated_user_and_validated_body(client, alice, monk
     assert response.json()["results"][0]["result_id"] == "opaque-result-id"
     assert seen[0][0] == "alice"
     assert seen[0][1].query == "Film Titel"
+    assert seen[0][2] and seen[0][2] != "alice"
 
 
 def test_search_rejects_network_and_credential_fields(client, alice):
@@ -143,7 +144,7 @@ def test_search_rate_limit_is_per_user(client, alice, monkeypatch):
 
 
 def test_config_and_upstream_errors_are_stable(client, alice, monkeypatch):
-    async def config_error(*_):
+    async def config_error(*_, **__):
         raise MediacenterConfigError("indexer_not_configured")
 
     monkeypatch.setattr(routes_search.service, "search_indexer", config_error)
@@ -153,7 +154,7 @@ def test_config_and_upstream_errors_are_stable(client, alice, monkeypatch):
     assert config_response.status_code == 503
     assert config_response.json()["detail"]["code"] == "indexer_not_configured"
 
-    async def upstream_error(*_):
+    async def upstream_error(*_, **__):
         raise IndexerUnavailable("indexer_unavailable")
 
     monkeypatch.setattr(routes_search.service, "search_indexer", upstream_error)

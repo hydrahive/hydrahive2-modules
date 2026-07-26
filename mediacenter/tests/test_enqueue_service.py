@@ -95,10 +95,10 @@ async def test_postwrite_error_uses_safe_state(monkeypatch, error, expected):
     assert job.state == expected
     if expected == "uncertain":
         assert store.get("alice", result_id).claim_id is not None
-        async def unchanged(username, current, *, now=None):
-            return current
+        async def reconciliation_down(username, current, *, now=None):
+            raise SabUnavailable("sab_unavailable")
 
-        monkeypatch.setattr(enqueue_service, "reconcile_job", unchanged)
+        monkeypatch.setattr(enqueue_service, "reconcile_job", reconciliation_down)
         again = await enqueue_service.enqueue_result("alice", result_id, now=_NOW)
         assert again.state == "uncertain"
     else:

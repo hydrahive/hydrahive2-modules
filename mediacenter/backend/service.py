@@ -170,7 +170,8 @@ def _result_out(
 
 
 async def search_indexer(
-    username: str, request: SearchRequest, *, now: datetime | None = None
+    username: str, request: SearchRequest, *, now: datetime | None = None,
+    owner_id: str | None = None,
 ) -> SearchResponse:
     timestamp = now or datetime.now(timezone.utc)
     releases = await newznab.search(resolve_indexer_api_key(username), request)
@@ -190,7 +191,7 @@ async def search_indexer(
         decisions.append(_apply_filters(decision, request, timestamp))
     decisions = set_selection_status(decisions, request.media_type)
     decisions.sort(key=lambda item: (item.decision != "eligible", -item.score, item.release.title.lower()))
-    results = [_result_out(username, decision, timestamp) for decision in decisions]
+    results = [_result_out(owner_id or username, decision, timestamp) for decision in decisions]
     return SearchResponse(
         total=len(results),
         eligible=sum(result.decision == "eligible" for result in results),

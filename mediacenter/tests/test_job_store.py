@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from hydrahive.db.connection import db
+
 from backend import job_store
 
 
@@ -65,3 +67,26 @@ def test_consumed_requires_sab_id_and_clears_claim():
     assert consumed.state == "consumed"
     assert consumed.sab_job_id == "SABnzbd_nzo_abc"
     assert consumed.claim_token is None
+
+
+def test_audit_is_bound_to_caller_and_does_not_store_raw_result_id():
+    job, _ = job_store.claim_new(
+        **_ARGS, agent_id="agent-1", session_id="session-1",
+        profile_summary='{"resolution":"1080p"}',
+    )
+    job_store.transition(
+        "alice", job.result_id, job.claim_token, expected="claimed_prewrite",
+        target="available", now="2026-07-26T10:00:01Z", error_code="retryable",
+    )
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM module_mediacenter_audit ORDER BY id"
+        ).fetchall()
+    assert [row["action"] for row in rows] == [
+        "claim", "transition:claimed_prewrite:available"
+    ]
+    assert all(row["owner"] == "alice" for row in rows)
+    assert all(row["agent_id"] == "agent-1" for row in rows)
+    assert all(row["session_id"] == "session-1" for row in rows)
+    assert all(row["result_hash"] != "result-1" for row in rows)
+    assert all("key" not in str(dict(row)).lower() for row in rows)

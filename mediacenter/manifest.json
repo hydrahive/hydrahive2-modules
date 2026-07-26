@@ -1,8 +1,8 @@
 {
   "id": "mediacenter",
   "name": "Mediacenter",
-  "version": "0.1.0",
-  "description": "Zentrale Verwaltung für Radarr, Sonarr und SABnzbd sowie eine Usenet-Indexer-Suche. Aktuell ein Platzhalter-Modul (Dummy) — die Anbindung der Dienste folgt.",
+  "version": "0.3.0",
+  "description": "Sichere Treasure-Maps-Suche mit Medienprofilen, idempotenter SABnzbd-Übergabe sowie benutzergebundener Queue und Historie.",
   "icon": "MonitorPlay",
   "nav_group": "working",
   "permissions": [],

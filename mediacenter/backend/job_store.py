@@ -35,6 +35,19 @@ def handoff_id(result_id: str) -> str:
     return f"hh-{digest}"
 
 
+def _audit(conn, row, action: str, now: str) -> None:
+    result_hash = hashlib.sha256(row["result_id"].encode()).hexdigest()
+    conn.execute(
+        """INSERT INTO module_mediacenter_audit
+           (owner,agent_id,session_id,action,media_type,result_hash,title,
+            sab_job_id,state,error_code,created_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+        (row["owner"], row["agent_id"], row["session_id"], action,
+         row["media_type"], result_hash, row["title"], row["sab_job_id"],
+         row["state"], row["error_code"], now),
+    )
+
+
 def get(owner: str, result_id: str) -> JobRecord | None:
     with db() as conn:
         row = conn.execute(
@@ -47,6 +60,8 @@ def get(owner: str, result_id: str) -> JobRecord | None:
 def claim_new(
     *, result_id: str, owner: str, media_type: str, title: str,
     category: str, now: str, action_expires_at: str,
+    agent_id: str | None = None, session_id: str | None = None,
+    profile_summary: str = "{}",
 ) -> tuple[JobRecord, bool]:
     token = secrets.token_urlsafe(24)
     marker = handoff_id(result_id)
@@ -61,14 +76,16 @@ def claim_new(
         conn.execute(
             """INSERT INTO module_mediacenter_jobs
                (result_id,owner,media_type,title,category,state,claim_token,handoff_id,
-                attempt_count,action_expires_at,state_changed_at,created_at,updated_at)
-               VALUES (?,?,?,?,?,'claimed_prewrite',?,?,1,?,?,?,?)""",
+                attempt_count,action_expires_at,state_changed_at,created_at,updated_at,
+                agent_id,session_id,profile_summary)
+               VALUES (?,?,?,?,?,'claimed_prewrite',?,?,1,?,?,?,?,?,?,?)""",
             (result_id, owner, media_type, title, category, token, marker,
-             action_expires_at, now, now, now),
+             action_expires_at, now, now, now, agent_id, session_id, profile_summary),
         )
         row = conn.execute(
             "SELECT * FROM module_mediacenter_jobs WHERE result_id=?", (result_id,)
         ).fetchone()
+        _audit(conn, row, "claim", now)
     return _record(row), True
 
 
@@ -87,6 +104,7 @@ def reclaim_available(owner: str, result_id: str, *, now: str) -> JobRecord | No
         row = conn.execute(
             "SELECT * FROM module_mediacenter_jobs WHERE result_id=?", (result_id,)
         ).fetchone()
+        _audit(conn, row, "reclaim", now)
     return _record(row)
 
 
@@ -112,9 +130,22 @@ def transition(
         row = conn.execute(
             "SELECT * FROM module_mediacenter_jobs WHERE result_id=?", (result_id,)
         ).fetchone()
+        _audit(conn, row, f"transition:{expected}:{target}", now)
     return _record(row)
+
+
+def list_owned(owner: str, *, limit: int = 100) -> list[JobRecord]:
+    safe_limit = max(1, min(limit, 100))
+    with db() as conn:
+        rows = conn.execute(
+            """SELECT * FROM module_mediacenter_jobs WHERE owner=?
+               ORDER BY updated_at DESC LIMIT ?""",
+            (owner, safe_limit),
+        ).fetchall()
+    return [_record(row) for row in rows]
 
 
 def clear_all() -> None:
     with db() as conn:
+        conn.execute("DELETE FROM module_mediacenter_audit")
         conn.execute("DELETE FROM module_mediacenter_jobs")

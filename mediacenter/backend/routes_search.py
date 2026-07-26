@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 
-from hydrahive.api.middleware.auth import require_auth
+from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 from hydrahive.api.middleware.errors import coded
 from hydrahive.api.middleware.inbound_ratelimit import check_rate
 
@@ -40,7 +40,7 @@ class _SanitizedValidationRoute(APIRoute):
 
 
 router = APIRouter(route_class=_SanitizedValidationRoute)
-Auth = Annotated[tuple[str, str], Depends(require_auth)]
+Auth = Annotated[AuthPrincipal, Depends(require_principal)]
 T = TypeVar("T")
 
 
@@ -49,9 +49,15 @@ async def _guard(call: Callable[[], Awaitable[T]]) -> T:
         return await call()
     except MediacenterConfigError as exc:
         raise coded(status.HTTP_503_SERVICE_UNAVAILABLE, exc.code)
+    except IndexerResponseError as exc:
+        response_status = (
+            status.HTTP_404_NOT_FOUND
+            if exc.code == "result_unavailable"
+            else status.HTTP_502_BAD_GATEWAY
+        )
+        raise coded(response_status, exc.code)
     except (
         IndexerAuthError,
-        IndexerResponseError,
         IndexerUnavailable,
         SabAuthError,
         SabResponseError,
@@ -74,19 +80,21 @@ def _rate(username: str, action: str, limit: int) -> None:
 
 @router.get("/status", response_model=ModuleStatus)
 def module_status(auth: Auth) -> ModuleStatus:
-    username, _ = auth
+    username = auth.username
     return service.connection_status(username)
 
 
 @router.post("/connections/test", response_model=ConnectionTestResponse)
 async def connection_test(auth: Auth) -> ConnectionTestResponse:
-    username, _ = auth
+    username = auth.username
     _rate(username, "connection_test", 10)
     return await _guard(lambda: service.test_connections(username))
 
 
 @router.post("/search", response_model=SearchResponse)
 async def search(auth: Auth, body: SearchRequest) -> SearchResponse:
-    username, _ = auth
+    username = auth.username
     _rate(username, "search", 30)
-    return await _guard(lambda: service.search_indexer(username, body))
+    return await _guard(
+        lambda: service.search_indexer(username, body, owner_id=auth.user_id)
+    )

@@ -43,9 +43,11 @@ def setup_test_env():
     )
 
     from hydrahive.api import main
-    from backend.routes_search import router
+    from backend.routes_jobs import router as jobs_router
+    from backend.routes_search import router as search_router
 
-    main.app.include_router(router, prefix="/api/modules/mediacenter")
+    main.app.include_router(search_router, prefix="/api/modules/mediacenter")
+    main.app.include_router(jobs_router, prefix="/api/modules/mediacenter")
     yield _TEST_ROOT
     shutil.rmtree(_TEST_ROOT, ignore_errors=True)
 
