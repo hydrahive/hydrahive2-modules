@@ -3,12 +3,14 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { errorMessage, mediacenterApi } from "./api"
 import { formatBytes, reasonLabel } from "./format"
-import type { ResultGroup, SearchResult } from "./types"
+import { ArrHandoffButton } from "./ArrHandoffButton"
+import type { ModuleStatus, ResultGroup, SearchResult } from "./types"
 
 interface Props {
   group: ResultGroup
   onBack: () => void
   onQueued: () => void
+  status: ModuleStatus | null
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * mit `result_id` lässt sich herunterladen; abgelehnte Fassungen bleiben
  * sichtbar (mit Begründung), aber ohne Knopf.
  */
-export function GroupDetail({ group, onBack, onQueued }: Props) {
+export function GroupDetail({ group, onBack, onQueued, status }: Props) {
   const { t } = useTranslation("mediacenter")
   const [pending, setPending] = useState<string | null>(null)
   const [queued, setQueued] = useState<Set<string>>(new Set())
@@ -109,12 +111,17 @@ export function GroupDetail({ group, onBack, onQueued }: Props) {
               </div>
               {preference && allowed && <p className="mt-2 text-[11px] text-amber-200">{preference}. {t("results.directChoice")}</p>}
             </div>
-            {allowed && <button type="button" onClick={() => enqueue(release)}
-              disabled={pending === release.result_id || isQueued}
-              className="flex shrink-0 items-center justify-center gap-2 rounded-[4px] bg-cyan-400/20 px-3 py-2 text-xs font-bold text-cyan-100 ring-1 ring-cyan-400/50 transition hover:bg-cyan-400/30 disabled:cursor-not-allowed disabled:opacity-50">
-              {isQueued ? <Check size={14} /> : <Download size={14} />}
-              {isQueued ? t("results.queued") : pending === release.result_id ? t("results.enqueueing") : t("results.enqueue")}
-            </button>}
+            {allowed && <div className="flex shrink-0 flex-col items-stretch gap-2">
+              {/* Zwei Wege: verwaltet über Radarr/Sonarr (bevorzugt, kennt die
+                  Bibliothek) oder direkt an SABnzbd. */}
+              <ArrHandoffButton release={release} status={status} />
+              <button type="button" onClick={() => enqueue(release)}
+                disabled={pending === release.result_id || isQueued}
+                className="flex items-center justify-center gap-2 rounded-[4px] bg-cyan-400/20 px-3 py-2 text-xs font-bold text-cyan-100 ring-1 ring-cyan-400/50 transition hover:bg-cyan-400/30 disabled:cursor-not-allowed disabled:opacity-50">
+                {isQueued ? <Check size={14} /> : <Download size={14} />}
+                {isQueued ? t("results.queued") : pending === release.result_id ? t("results.enqueueing") : t("results.enqueue")}
+              </button>
+            </div>}
           </div>
         </article>
       })}

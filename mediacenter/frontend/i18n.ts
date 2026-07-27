@@ -46,6 +46,15 @@ export const i18n = {
         versionsHeading_one: "{{count}} Fassung", versionsHeading_other: "{{count}} Fassungen",
         back: "Zurück zur Übersicht", viewMode: "Ansicht", gridView: "Kachelansicht", listView: "Listenansicht",
       },
+      arr: {
+        handoff: "An {{service}} übergeben",
+        sent: "Übergeben",
+        addedAndSent: "Angelegt und übergeben",
+        newTitleHint: "Noch nicht in der Bibliothek — Qualitätsprofil und Ordner wählen.",
+        qualityProfile: "Qualitätsprofil",
+        rootFolder: "Zielordner",
+        addAndSend: "Anlegen und übergeben",
+      },
       selection: {
         quality_preference_required: "1080p oder 2160p direkt auswählen",
         format_preference_required: "FLAC oder MP3 direkt auswählen",
@@ -113,6 +122,15 @@ export const i18n = {
         versions_one: "{{count}} version", versions_other: "{{count}} versions",
         versionsHeading_one: "{{count}} version", versionsHeading_other: "{{count}} versions",
         back: "Back to results", viewMode: "View", gridView: "Grid view", listView: "List view",
+      },
+      arr: {
+        handoff: "Send to {{service}}",
+        sent: "Sent",
+        addedAndSent: "Added and sent",
+        newTitleHint: "Not in the library yet — pick a quality profile and folder.",
+        qualityProfile: "Quality profile",
+        rootFolder: "Root folder",
+        addAndSend: "Add and send",
       },
       selection: { quality_preference_required: "Choose 1080p or 2160p directly", format_preference_required: "Choose FLAC or MP3 directly" },
       jobs: {
