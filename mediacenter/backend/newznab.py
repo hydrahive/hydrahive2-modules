@@ -10,6 +10,7 @@ from hydrahive.net.ssrf import SsrfBlocked, pin_request, resolve_validated_ip
 
 from .config import (
     INDEXER_API_URL,
+    INDEXER_HOST,
     INDEXER_TIMEOUT_SECONDS,
     MAX_XML_BYTES,
     NEWZNAB_CAPABILITY_TYPES,
@@ -41,7 +42,7 @@ class _SecretQueryTransport(httpx.AsyncBaseTransport):
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         if (
             request.url.scheme != "https"
-            or request.url.host != "treasure-maps.com"
+            or request.url.host != INDEXER_HOST
             or request.url.port not in {None, 443}
             or request.url.path != "/api"
         ):
@@ -53,7 +54,7 @@ class _SecretQueryTransport(httpx.AsyncBaseTransport):
             stream=request.stream,
             extensions=dict(request.extensions),
         )
-        pin_request(wire, {"treasure-maps.com": self._pinned_ip})
+        pin_request(wire, {INDEXER_HOST: self._pinned_ip})
         return await self._inner.handle_async_request(wire)
 
     async def aclose(self) -> None:
@@ -69,7 +70,7 @@ async def _client(
 ) -> AsyncIterator[httpx.AsyncClient]:
     ip = pinned_ip
     if ip is None:
-        ip = await asyncio.to_thread(resolve_validated_ip, "treasure-maps.com")
+        ip = await asyncio.to_thread(resolve_validated_ip, INDEXER_HOST)
     transport = _SecretQueryTransport(api_key, ip, inner_transport)
     async with httpx.AsyncClient(
         timeout=INDEXER_TIMEOUT_SECONDS,

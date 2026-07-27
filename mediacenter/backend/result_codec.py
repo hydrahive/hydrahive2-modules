@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .config import INDEXER_FILE_HOST, INDEXER_HOST
 from .models import (
     Decision,
     MediaType,
@@ -13,7 +14,7 @@ from .models import (
     SelectionStatus,
 )
 
-_ALLOWED_REFERENCE_HOSTS = {"treasure-maps.com", "file.treasure-maps.com"}
+_ALLOWED_REFERENCE_HOSTS = {INDEXER_HOST, INDEXER_FILE_HOST}
 
 
 class _StoredRawRelease(BaseModel):

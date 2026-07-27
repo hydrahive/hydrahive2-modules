@@ -8,7 +8,7 @@ import httpx
 
 from hydrahive.net.ssrf import SsrfBlocked, pin_request, resolve_validated_ip
 
-from .config import INDEXER_TIMEOUT_SECONDS, MAX_NZB_BYTES
+from .config import INDEXER_FILE_HOST, INDEXER_TIMEOUT_SECONDS, MAX_NZB_BYTES
 from .errors import (
     IndexerAuthError,
     IndexerResponseError,
@@ -16,7 +16,7 @@ from .errors import (
 )
 from .nzb_xml import validate_nzb
 
-_FILE_HOST = "file.treasure-maps.com"
+
 _NZB_TYPES = ("application/x-nzb", "application/xml", "text/xml")
 
 
@@ -35,7 +35,7 @@ class _FileTransport(httpx.AsyncBaseTransport):
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         if (
             request.url.scheme != "https"
-            or request.url.host != _FILE_HOST
+            or request.url.host != INDEXER_FILE_HOST
             or request.url.port not in {None, 443}
             or request.url.raw_path != self._expected_path.encode("ascii")
             or request.url.query
@@ -48,7 +48,7 @@ class _FileTransport(httpx.AsyncBaseTransport):
             stream=request.stream,
             extensions=dict(request.extensions),
         )
-        pin_request(wire, {_FILE_HOST: self._pinned_ip})
+        pin_request(wire, {INDEXER_FILE_HOST: self._pinned_ip})
         return await self._inner.handle_async_request(wire)
 
     async def aclose(self) -> None:
@@ -72,7 +72,7 @@ async def fetch_nzb(
     path = f"/getnzb/{quote(guid, safe='')}"
     try:
         async with asyncio.timeout(INDEXER_TIMEOUT_SECONDS):
-            ip = pinned_ip or await asyncio.to_thread(resolve_validated_ip, _FILE_HOST)
+            ip = pinned_ip or await asyncio.to_thread(resolve_validated_ip, INDEXER_FILE_HOST)
             transport = _FileTransport(api_key, ip, path, inner_transport)
             async with httpx.AsyncClient(
                 timeout=INDEXER_TIMEOUT_SECONDS,
@@ -80,7 +80,7 @@ async def fetch_nzb(
                 headers={"Accept-Encoding": "identity"},
                 transport=transport,
             ) as client:
-                async with client.stream("GET", f"https://{_FILE_HOST}{path}") as response:
+                async with client.stream("GET", f"https://{INDEXER_FILE_HOST}{path}") as response:
                     if 300 <= response.status_code < 400:
                         raise IndexerResponseError("indexer_redirect_rejected")
                     if response.status_code in {401, 403}:
