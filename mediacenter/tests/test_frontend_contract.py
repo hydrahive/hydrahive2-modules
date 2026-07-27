@@ -136,3 +136,39 @@ def test_settings_hat_keine_eigenen_adressfelder() -> None:
 def test_zusatzdienste_sind_als_optional_gekennzeichnet() -> None:
     """Radarr/Sonarr duerfen nicht wie ein Fehler aussehen, wenn sie fehlen."""
     assert "optional" in _read("SettingsPanel.tsx")
+
+
+# --- V3: Uebergabe an Radarr/Sonarr ----------------------------------------
+
+def test_uebergabe_knopf_existiert_und_ist_typgebunden() -> None:
+    source = _read("ArrHandoffButton.tsx")
+    assert "movie: \"radarr\"" in source
+    assert "tv: \"sonarr\"" in source
+
+
+def test_uebergabe_nur_bei_konfiguriertem_dienst_und_freigegebener_fassung() -> None:
+    """Kein toter Knopf, und die V1-Profilpruefung gilt weiter."""
+    source = _read("ArrHandoffButton.tsx")
+    assert "!configured" in source
+    assert 'release.decision !== "eligible"' in source
+
+
+def test_uebergabe_erkennt_fehlercode_nicht_uebersetzten_text() -> None:
+    """Der Nachfrage-Dialog haengt am Rohcode — uebersetzter Text aendert sich."""
+    source = _read("ArrHandoffButton.tsx")
+    assert 'errorCode(cause) === "arr_target_required"' in source
+
+
+def test_direktweg_an_sabnzbd_bleibt_erhalten() -> None:
+    """Buecher/Hoerbuecher/Musik kennen Radarr/Sonarr nicht."""
+    source = _read("GroupDetail.tsx")
+    assert "mediacenterApi.enqueue" in source
+    assert "ArrHandoffButton" in source
+
+
+def test_frontend_nutzt_nur_bekannte_arr_routen() -> None:
+    source = _read("api.ts")
+    assert "/arr/${service}/targets" in source
+    assert "/arr/handoff" in source
+    assert "http://" not in source
+    assert "https://" not in source

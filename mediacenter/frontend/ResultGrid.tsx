@@ -4,13 +4,14 @@ import { useTranslation } from "react-i18next"
 import { GroupDetail } from "./GroupDetail"
 import { PosterCard } from "./PosterCard"
 import { ResultList } from "./ResultList"
-import type { ResultGroup, SearchResponse } from "./types"
+import type { ModuleStatus, ResultGroup, SearchResponse } from "./types"
 
 interface Props {
   response: SearchResponse | null
   searched: boolean
   error: string | null
   onQueued: () => void
+  status: ModuleStatus | null
 }
 
 /**
@@ -19,7 +20,7 @@ interface Props {
  * - Liste: die flache V1-Darstellung — schneller zu scannen und die einzige
  *   sinnvolle Ansicht für Bücher, die der Indexer ohne Cover liefert.
  */
-export function ResultGrid({ response, searched, error, onQueued }: Props) {
+export function ResultGrid({ response, searched, error, onQueued, status }: Props) {
   const { t } = useTranslation("mediacenter")
   const [mode, setMode] = useState<"grid" | "list">("grid")
   const [openGroup, setOpenGroup] = useState<ResultGroup | null>(null)
@@ -31,7 +32,7 @@ export function ResultGrid({ response, searched, error, onQueued }: Props) {
   // Die geöffnete Gruppe aus der aktuellen Antwort neu auflösen, damit eine
   // frische Suche keine veraltete Detailansicht stehen lässt.
   const active = openGroup ? response.groups.find((group) => group.key === openGroup.key) ?? null : null
-  if (active) return <GroupDetail group={active} onBack={() => setOpenGroup(null)} onQueued={onQueued} />
+  if (active) return <GroupDetail group={active} onBack={() => setOpenGroup(null)} onQueued={onQueued} status={status} />
 
   return <section className="space-y-3" aria-label={t("results.title")}>
     <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#8d9ab0]">

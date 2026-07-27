@@ -129,6 +129,19 @@ export interface EnqueueResponse {
   error_code: string | null
 }
 
+export interface ArrHandoffResponse {
+  service: string
+  title: string
+  added: boolean
+  pushed: boolean
+}
+
+export interface ArrTargets {
+  service: string
+  quality_profiles: { id: number; name: string }[]
+  root_folders: { id: number | null; path: string; free_space: number | null }[]
+}
+
 export interface Job {
   result_id: string
   title: string

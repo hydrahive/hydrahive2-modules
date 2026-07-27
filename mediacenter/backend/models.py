@@ -244,6 +244,31 @@ class ConnectionTestResponse(BaseModel):
     arr_services: list[ArrServiceOut] = Field(default_factory=list)
 
 
+class ArrHandoffRequest(BaseModel):
+    """Uebergabe eines Suchtreffers an Radarr/Sonarr."""
+    model_config = ConfigDict(extra="forbid")
+
+    result_id: str = Field(min_length=1, max_length=128)
+    service: Literal["radarr", "sonarr"]
+    # Nur beim erstmaligen Anlegen noetig; bei vorhandenem Titel ignoriert.
+    quality_profile_id: int | None = Field(default=None, ge=1, le=10_000)
+    root_folder_path: str | None = Field(default=None, min_length=1, max_length=256)
+
+
+class ArrHandoffResponse(BaseModel):
+    service: str
+    title: str
+    added: bool
+    pushed: bool
+
+
+class ArrTargetsResponse(BaseModel):
+    """Auswahlmoeglichkeiten des Zieldienstes fuer den Anlege-Dialog."""
+    service: str
+    quality_profiles: list[dict] = Field(default_factory=list)
+    root_folders: list[dict] = Field(default_factory=list)
+
+
 class EnqueueRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

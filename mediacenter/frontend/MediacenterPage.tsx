@@ -105,7 +105,8 @@ export function MediacenterPage() {
         {view === "search" && <div className="space-y-4">
           <SearchPanel loading={searching} disabled={status?.state !== "ready"}
             onSearch={(filters) => void search(filters)} interpreted={searchResponse?.interpreted ?? null} />
-          <ResultGrid response={searchResponse} searched={searched} error={searchError} onQueued={() => setQueueRefresh((value) => value + 1)} />
+          <ResultGrid response={searchResponse} searched={searched} error={searchError}
+            onQueued={() => setQueueRefresh((value) => value + 1)} status={status} />
         </div>}
         {view === "queue" && <JobsPanel mode="queue" refreshKey={queueRefresh} />}
         {view === "history" && <JobsPanel mode="history" />}
