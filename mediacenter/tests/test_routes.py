@@ -61,6 +61,8 @@ def test_status_is_user_scoped(client, alice, monkeypatch):
         "state": "ready",
         "indexer_configured": True,
         "sab_configured": True,
+        "radarr_configured": False,
+        "sonarr_configured": False,
     }
     assert seen == ["alice"]
 

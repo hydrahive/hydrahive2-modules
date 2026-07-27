@@ -222,6 +222,17 @@ class SearchResponse(BaseModel):
     interpreted: InterpretedQuery | None = None
 
 
+class ArrServiceOut(BaseModel):
+    """Zustand eines Zusatzdienstes fuer die Einstellungsseite."""
+    service: str
+    configured: bool
+    reachable: bool
+    origin: str | None = None
+    version: str | None = None
+    app_name: str | None = None
+    error: str | None = None
+
+
 class ConnectionTestResponse(BaseModel):
     ok: bool = True
     max_limit: int
@@ -230,6 +241,7 @@ class ConnectionTestResponse(BaseModel):
     categories: list[int]
     sab_version: str | None = None
     sab_categories: list[str] = Field(default_factory=list)
+    arr_services: list[ArrServiceOut] = Field(default_factory=list)
 
 
 class EnqueueRequest(BaseModel):
@@ -267,3 +279,6 @@ class ModuleStatus(BaseModel):
     state: Literal["ready", "not_configured"]
     indexer_configured: bool
     sab_configured: bool = False
+    # Zusatzdienste: nicht konfiguriert heisst "Funktion aus", nie "Modul kaputt".
+    radarr_configured: bool = False
+    sonarr_configured: bool = False

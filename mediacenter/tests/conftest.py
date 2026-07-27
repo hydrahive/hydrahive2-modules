@@ -23,6 +23,18 @@ os.environ["HH_SECRET_KEY"] = "mediacenter-test-secret-key-at-least-32-bytes"
 os.environ["HH_DISCORD_ENABLED"] = "0"
 os.environ["HH_WA_ENABLED"] = "0"
 os.environ["HH_AGENTLINK_URL"] = ""
+# Mediacenter-Adressen bewusst leeren: sonst erben die Tests die Konfiguration
+# des Servers (systemd-Drop-in) und schlagen je nach Maschine unterschiedlich
+# fehl. Wer eine Adresse braucht, setzt sie im Test selbst.
+for _key in (
+    "HH_MEDIACENTER_SAB_ORIGIN",
+    "HH_MEDIACENTER_RADARR_ORIGIN",
+    "HH_MEDIACENTER_SONARR_ORIGIN",
+    "HH_MEDIACENTER_INDEXER_ORIGIN",
+    "HH_MEDIACENTER_INDEXER_FILE_HOST",
+    "HH_MEDIACENTER_COVER_HOSTS",
+):
+    os.environ.pop(_key, None)
 os.environ["HH_PG_MIRROR_DSN"] = ""
 
 

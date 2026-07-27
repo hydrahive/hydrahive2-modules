@@ -5,7 +5,22 @@ Adresse und keine IP** — ein Umzug ist eine Konfigurationsänderung, kein
 Code-Eingriff. Zwei Tests wachen darüber
 (`tests/test_configurable_endpoints.py`).
 
-## Umgebungsvariablen
+## Wo wird was eingestellt?
+
+**Eine Regel:** Adresse *und* Schlüssel jedes Dienstes stehen zusammen in
+**einem Credential**. Die Adresse gehört ins Feld URL/Muster. Das Mediacenter
+liest beides von dort — es gibt keinen zweiten Ort.
+
+Der Bereich **Einstellungen** im Mediacenter zeigt für jeden Dienst, ob er
+eingerichtet und erreichbar ist, mit welcher Version er antwortet und welches
+Credential dahintersteckt. Dort wird nichts eingegeben, nur angezeigt und zum
+Credential-Store verlinkt.
+
+Die Umgebungsvariablen unten sind **optional**. Sie schränken nur ein: ist eine
+gesetzt, muss das Credential dazu passen. So kann ein Betreiber eine Instanz
+serverseitig festnageln. Für den normalen Betrieb braucht man sie nicht.
+
+## Umgebungsvariablen (optional)
 
 | Variable | Zweck | Default |
 |---|---|---|
@@ -13,14 +28,17 @@ Code-Eingriff. Zwei Tests wachen darüber
 | `HH_MEDIACENTER_INDEXER_FILE_HOST` | Dateihost für NZB-Downloads | `file.<indexer-host>` |
 | `HH_MEDIACENTER_COVER_HOSTS` | Bildhosts für Cover (kommagetrennt) | `picbit.io,cdn.<indexer>,<indexer>` |
 | `HH_MEDIACENTER_SAB_ORIGIN` | SABnzbd — erlaubte Adresse | *(leer → Adresse aus dem Credential)* |
-| `HH_MEDIACENTER_RADARR_ORIGIN` | Radarr | *(leer → deaktiviert)* |
-| `HH_MEDIACENTER_SONARR_ORIGIN` | Sonarr | *(leer → deaktiviert)* |
+| `HH_MEDIACENTER_RADARR_ORIGIN` | Radarr — erlaubte Adresse | *(leer → aus dem Credential)* |
+| `HH_MEDIACENTER_SONARR_ORIGIN` | Sonarr — erlaubte Adresse | *(leer → aus dem Credential)* |
 
-### Warum manche Defaults leer sind
+### Warum die Defaults leer sind
 
-Bei Radarr/Sonarr bedeutet leer **bewusst „nicht konfiguriert"**. Ein Default
-auf eine fremde Adresse würde bedeuten, dass eine frische Installation
-ungefragt versucht, irgendwo im Netz Dienste anzusprechen.
+Ein Default auf eine fremde Adresse würde bedeuten, dass eine frische
+Installation ungefragt versucht, irgendwo im Netz Dienste anzusprechen.
+
+Bei Radarr/Sonarr gilt dasselbe Muster wie bei SABnzbd: ohne Variable stammt
+die Adresse aus dem Credential. Ist kein Credential hinterlegt, bleibt die
+Funktion einfach aus — Suche und Downloads laufen davon unberührt weiter.
 
 Bei `HH_MEDIACENTER_SAB_ORIGIN` gilt: ohne Angabe stammt die Adresse aus dem
 `url_pattern` des Credentials `sabnzb_token` — der Nutzer pflegt sie dort
