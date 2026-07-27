@@ -6,7 +6,7 @@ import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { errorMessage, mediacenterApi } from "./api"
 import { ConnectionStatus } from "./ConnectionStatus"
 import { JobsPanel } from "./JobsPanel"
-import { ResultList } from "./ResultList"
+import { ResultGrid } from "./ResultGrid"
 import { SearchPanel } from "./SearchPanel"
 import type { ConnectionTest, ModuleStatus, SearchFilters, SearchResponse, View } from "./types"
 
@@ -87,7 +87,7 @@ export function MediacenterPage() {
       <div className="mx-auto max-w-7xl space-y-4">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div><h1 className="text-xl font-black tracking-tight text-[#e8eef8]">{t("title")}</h1><p className="mt-1 text-sm text-[#8d9ab0]">{t("subtitle")}</p></div>
-          <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">V1</span>
+          <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">V2</span>
         </header>
         {statusError && <div className="flex items-center justify-between gap-3 rounded-[4px] border border-rose-500/25 bg-rose-500/[8%] p-3 text-xs text-rose-200" role="alert"><span>{statusError}</span><button type="button" onClick={() => void loadStatus()} className="shrink-0 font-bold underline">{t("connection.retry")}</button></div>}
         <ConnectionStatus status={status} details={connection} loading={testing} statusLoading={statusLoading} error={connectionError} onTest={() => void testConnections()} />
@@ -98,8 +98,9 @@ export function MediacenterPage() {
           </button> })}
         </nav>
         {view === "search" && <div className="space-y-4">
-          <SearchPanel loading={searching} disabled={status?.state !== "ready"} onSearch={(filters) => void search(filters)} />
-          <ResultList response={searchResponse} searched={searched} error={searchError} onQueued={() => setQueueRefresh((value) => value + 1)} />
+          <SearchPanel loading={searching} disabled={status?.state !== "ready"}
+            onSearch={(filters) => void search(filters)} interpreted={searchResponse?.interpreted ?? null} />
+          <ResultGrid response={searchResponse} searched={searched} error={searchError} onQueued={() => setQueueRefresh((value) => value + 1)} />
         </div>}
         {view === "queue" && <JobsPanel mode="queue" refreshKey={queueRefresh} />}
         {view === "history" && <JobsPanel mode="history" />}

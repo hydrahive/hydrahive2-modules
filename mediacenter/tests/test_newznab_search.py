@@ -48,7 +48,12 @@ def test_search_params_are_server_controlled(media_type, expected_t, expected_ca
 
     params = newznab.build_search_params(request)
 
-    assert params == {"t": expected_t, "q": "Beispiel", "cat": expected_cat, "limit": "25"}
+    # extended=1 fordert die Anzeige-Metadaten an (coverurl/imdb/genre/plot);
+    # ohne den Parameter liefert der Indexer nur die Basisattribute.
+    assert params == {
+        "t": expected_t, "q": "Beispiel", "cat": expected_cat,
+        "limit": "25", "extended": "1",
+    }
     assert "apikey" not in params
     assert "url" not in params
 

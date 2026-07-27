@@ -8,6 +8,7 @@ from .config import MAX_TITLE_LENGTH
 from .download_urls import safe_download_url
 from .errors import IndexerAuthError, IndexerResponseError
 from .models import IndexerCapabilities, RawRelease
+from .release_meta import build_meta
 from .xml_limits import validate_xml_structure
 
 _SEARCH_NAMES = {
@@ -106,6 +107,16 @@ def _text(item: ET.Element, name: str) -> str:
     return ""
 
 
+# Attributwerte sind normalerweise kurz (IDs, Zahlen, Titel). Ein zu langer Wert
+# gilt als kaputt/boesartig und verwirft das ganze Release.
+MAX_ATTR_VALUE_LENGTH = 512
+# Ausnahme: Fliesstext-Attribute duerfen laenger sein und werden GEKUERZT statt
+# das Release zu verwerfen. Ohne diese Ausnahme wuerde ein Film mit langer
+# Handlungsbeschreibung komplett aus den Suchergebnissen verschwinden.
+LONG_TEXT_ATTRS = frozenset({"imdbplot"})
+MAX_LONG_ATTR_VALUE_LENGTH = 4096
+
+
 def _attributes(item: ET.Element) -> dict[str, str] | None:
     result: dict[str, str] = {}
     for child in item:
@@ -113,7 +124,13 @@ def _attributes(item: ET.Element) -> dict[str, str] | None:
             continue
         name = (child.attrib.get("name") or "").strip().lower()
         value = (child.attrib.get("value") or "").strip()
-        if not name or name in result or len(name) > 64 or len(value) > 512:
+        if not name or name in result or len(name) > 64:
+            return None
+        if name in LONG_TEXT_ATTRS:
+            if len(value) > MAX_LONG_ATTR_VALUE_LENGTH:
+                return None
+            value = value[:MAX_ATTR_VALUE_LENGTH]
+        elif len(value) > MAX_ATTR_VALUE_LENGTH:
             return None
         result[name] = value
     return result
@@ -167,6 +184,7 @@ def _release(item: ET.Element) -> RawRelease | None:
         language=(attrs.get("language") or "").lower() or None,
         published_at=_published(_text(item, "pubDate")),
         download_url=safe_download_url(raw_url),
+        meta=build_meta(attrs),
     )
 
 

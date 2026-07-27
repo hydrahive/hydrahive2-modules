@@ -10,9 +10,11 @@ interface Props {
   searched: boolean
   error: string | null
   onQueued: () => void
+  /** Kopfzeile ausblenden, wenn ResultGrid sie bereits zeigt. */
+  hideSummary?: boolean
 }
 
-export function ResultList({ response, searched, error, onQueued }: Props) {
+export function ResultList({ response, searched, error, onQueued, hideSummary = false }: Props) {
   const { t } = useTranslation("mediacenter")
   const [pending, setPending] = useState<string | null>(null)
   const [queued, setQueued] = useState<Set<string>>(new Set())
@@ -38,10 +40,10 @@ export function ResultList({ response, searched, error, onQueued }: Props) {
   if (!response?.results.length) return <Empty text={t("results.empty")} />
 
   return <section className="space-y-3" aria-label={t("results.title")}>
-    <div className="flex items-center justify-between gap-3 text-xs text-[#8d9ab0]">
+    {!hideSummary && <div className="flex items-center justify-between gap-3 text-xs text-[#8d9ab0]">
       <span>{t("results.summary", { total: response.total, eligible: response.eligible })}</span>
       <span>{t("results.expiry")}</span>
-    </div>
+    </div>}
     {actionError && <p className="rounded-[4px] border border-rose-500/25 bg-rose-500/[8%] p-3 text-xs text-rose-200" role="alert">{actionError}</p>}
     {response.results.map((result, index) => {
       const allowed = result.decision === "eligible" && Boolean(result.result_id)

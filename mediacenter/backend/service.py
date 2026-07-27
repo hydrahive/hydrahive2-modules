@@ -11,12 +11,16 @@ from .errors import IndexerResponseError, MediacenterConfigError, SabResponseErr
 from .models import (
     ConnectionTestResponse,
     ModuleStatus,
+    InterpretedQuery,
     ProfileDecision,
+    ReleaseMetaOut,
     SearchRequest,
     SearchResponse,
     SearchResultOut,
 )
+from .natural_search import apply_natural_language
 from .profiles import classify_release, set_selection_status
+from .search_grouping import group_results
 from .result_registry import RESULTS
 from .sab_credentials import resolve_sab_connection
 
@@ -166,6 +170,7 @@ def _result_out(
         bitrate_kbps=decision.bitrate_kbps,
         score=decision.score,
         selection_status=decision.selection_status,
+        meta=ReleaseMetaOut.from_meta(decision.release.meta),
     )
 
 
@@ -174,6 +179,9 @@ async def search_indexer(
     owner_id: str | None = None,
 ) -> SearchResponse:
     timestamp = now or datetime.now(timezone.utc)
+    # Natuerlichsprachige Zusaetze ("von 1999", "Staffel 2") aus dem Suchbegriff
+    # herausloesen, bevor er an den Indexer geht.
+    request, parsed = apply_natural_language(request)
     releases = await newznab.search(resolve_indexer_api_key(username), request)
     decisions = []
     allowed_categories = set(NEWZNAB_CATEGORIES[request.media_type])
@@ -196,4 +204,11 @@ async def search_indexer(
         total=len(results),
         eligible=sum(result.decision == "eligible" for result in results),
         results=results,
+        groups=group_results(results),
+        interpreted=InterpretedQuery(
+            query=request.query, recognized=list(parsed.recognized),
+            year=parsed.year, season=parsed.season, episode=parsed.episode,
+            language=parsed.language, resolution=parsed.resolution,
+            audio_format=parsed.audio_format,
+        ) if parsed.recognized else None,
     )

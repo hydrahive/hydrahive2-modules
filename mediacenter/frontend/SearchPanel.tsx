@@ -1,22 +1,26 @@
-import { Search, SlidersHorizontal } from "lucide-react"
+import { Mic, Search, SlidersHorizontal, X } from "lucide-react"
 import { useState, type FormEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { MEDIA_TYPES } from "./format"
-import type { MediaType, SearchFilters } from "./types"
+import type { InterpretedQuery, MediaType, SearchFilters } from "./types"
+import { useSpeechInput } from "./useSpeechInput"
 
 interface Props {
   loading: boolean
   disabled: boolean
   onSearch: (filters: SearchFilters) => void
+  /** Was der Server aus der freien Eingabe gelesen hat (Chips). */
+  interpreted?: InterpretedQuery | null
 }
 
 const inputClass = "w-full rounded-[4px] border border-[#30405a] bg-[#0c121d] px-3 py-2 text-sm text-[#e8eef8] outline-none placeholder:text-[#5f6d82] focus:border-cyan-400/70"
 const optionalNumber = (value: string) => value ? Number(value) : undefined
 
-export function SearchPanel({ loading, disabled, onSearch }: Props) {
+export function SearchPanel({ loading, disabled, onSearch, interpreted }: Props) {
   const { t } = useTranslation("mediacenter")
   const [mediaType, setMediaType] = useState<MediaType>("movie")
   const [query, setQuery] = useState("")
+  const [rawQuery, setRawQuery] = useState("")
   const [advanced, setAdvanced] = useState(false)
   const [year, setYear] = useState("")
   const [season, setSeason] = useState("")
@@ -28,10 +32,12 @@ export function SearchPanel({ loading, disabled, onSearch }: Props) {
   const [minSize, setMinSize] = useState("")
   const [maxSize, setMaxSize] = useState("")
   const locked = disabled || loading
+  const speech = useSpeechInput((text) => setQuery(text))
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (query.trim().length < 2) return
+    setRawQuery(query.trim())
     const filters: SearchFilters = {
       query: query.trim(), media_type: mediaType, limit: 50,
       year: optionalNumber(year), max_age_days: optionalNumber(maxAge),
@@ -54,13 +60,31 @@ export function SearchPanel({ loading, disabled, onSearch }: Props) {
     <form onSubmit={submit} className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row">
         <label className="sr-only" htmlFor="mediacenter-query">{t("search.query")}</label>
-        <input id="mediacenter-query" className={inputClass} value={query} maxLength={200}
-          onChange={(event) => setQuery(event.target.value)} placeholder={t(`search.placeholders.${mediaType}`)} disabled={locked} />
+        <div className="relative flex-1">
+          <input id="mediacenter-query" className={`${inputClass} ${speech.supported ? "pr-10" : ""}`} value={query} maxLength={200}
+            onChange={(event) => setQuery(event.target.value)} placeholder={t(`search.placeholders.${mediaType}`)} disabled={locked} />
+          {speech.supported && <button type="button" onClick={speech.toggle} disabled={locked}
+            title={t("search.voice")} aria-label={t("search.voice")} aria-pressed={speech.listening}
+            className={`absolute right-1.5 top-1/2 -translate-y-1/2 rounded-[4px] p-1.5 transition disabled:opacity-40 ${speech.listening ? "bg-rose-500/25 text-rose-200" : "text-[#5f6d82] hover:text-cyan-200"}`}>
+            <Mic size={15} />
+          </button>}
+        </div>
         <button type="submit" disabled={locked || query.trim().length < 2}
           className="flex shrink-0 items-center justify-center gap-2 rounded-[4px] bg-cyan-400/20 px-4 py-2 text-sm font-bold text-cyan-100 ring-1 ring-cyan-400/50 transition hover:bg-cyan-400/30 disabled:cursor-not-allowed disabled:opacity-40">
           <Search size={15} />{loading ? t("search.searching") : t("search.submit")}
         </button>
       </div>
+      {interpreted && interpreted.recognized.length > 0 && <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] text-[#8d9ab0]">{t("search.understood")}</span>
+        {interpreted.recognized.map((key) => <span key={key}
+          className="flex items-center gap-1 rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-200">
+          {t(`search.chips.${key}`, { defaultValue: key })}: {chipValue(interpreted, key)}
+        </span>)}
+        <button type="button" onClick={() => setQuery(rawQuery)} title={t("search.undoParse")}
+          className="flex items-center gap-1 text-[10px] font-semibold text-[#8d9ab0] hover:text-rose-200">
+          <X size={11} />{t("search.undoParse")}
+        </button>
+      </div>}
       <button type="button" disabled={locked} onClick={() => setAdvanced((value) => !value)}
         className="flex items-center gap-2 text-xs font-semibold text-[#8d9ab0] hover:text-[#d4deeb] disabled:cursor-not-allowed disabled:opacity-50">
         <SlidersHorizontal size={13} />{t("search.filters")}
@@ -76,6 +100,19 @@ export function SearchPanel({ loading, disabled, onSearch }: Props) {
       </fieldset>}
     </form>
   </section>
+}
+
+/** Anzeigewert eines Chips — der Schlüssel allein sagt dem Nutzer zu wenig. */
+function chipValue(interpreted: InterpretedQuery, key: string): string {
+  switch (key) {
+    case "year": return String(interpreted.year ?? "")
+    case "season": return String(interpreted.season ?? "")
+    case "episode": return interpreted.episode ?? ""
+    case "language": return (interpreted.language ?? "").toUpperCase()
+    case "resolution": return interpreted.resolution ? `${interpreted.resolution}p` : ""
+    case "audio_format": return (interpreted.audio_format ?? "").toUpperCase()
+    default: return ""
+  }
 }
 
 function Field({ label, value, onChange, type = "text", min, max }: { label: string; value: string; onChange: (value: string) => void; type?: string; min?: string; max?: string }) {
