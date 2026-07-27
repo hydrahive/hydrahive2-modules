@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from urllib.parse import urlsplit, urlunsplit
 
+from .config import INDEXER_FILE_HOST, INDEXER_HOST
+
 
 def safe_download_url(raw: str) -> str | None:
     if not raw or len(raw) > 2048 or any(character.isspace() for character in raw):
@@ -10,7 +12,7 @@ def safe_download_url(raw: str) -> str | None:
         parsed = urlsplit(raw)
         valid_origin = (
             parsed.scheme == "https"
-            and parsed.hostname in {"treasure-maps.com", "file.treasure-maps.com"}
+            and (parsed.hostname or "").lower() in {INDEXER_HOST, INDEXER_FILE_HOST}
             and parsed.port in {None, 443}
             and parsed.username is None
             and parsed.password is None

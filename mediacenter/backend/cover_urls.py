@@ -12,12 +12,7 @@ from __future__ import annotations
 
 from urllib.parse import urlsplit, urlunsplit
 
-# Bildhost des Indexers (live verifiziert) + die Indexer-Hosts selbst.
-COVER_HOSTS = frozenset({
-    "picbit.io",
-    "cdn.treasure-maps.com",
-    "treasure-maps.com",
-})
+from .config import COVER_HOSTS
 
 MAX_COVER_URL_LENGTH = 2048
 
@@ -36,7 +31,7 @@ def safe_cover_url(raw: str | None) -> str | None:
         parsed = urlsplit(raw)
         valid = (
             parsed.scheme == "https"
-            and parsed.hostname in COVER_HOSTS
+            and (parsed.hostname or '').lower() in COVER_HOSTS
             and parsed.port in {None, 443}
             and parsed.username is None
             and parsed.password is None
