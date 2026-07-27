@@ -11,10 +11,47 @@ from .models import (
     MediaType,
     ProfileDecision,
     RawRelease,
+    ReleaseMeta,
     SelectionStatus,
 )
 
 _ALLOWED_REFERENCE_HOSTS = {INDEXER_HOST, INDEXER_FILE_HOST}
+
+
+class _StoredReleaseMeta(BaseModel):
+    """Anzeige-Metadaten in der Ablage.
+
+    Ohne dieses Modell fielen Cover, IMDb-/TVDB-Kennung und Handlung beim
+    Speichern still weg (extra="forbid") — die Uebergabe an Radarr/Sonarr
+    konnte den Titel danach nicht mehr zuordnen.
+    """
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    cover_url: str | None = Field(default=None, max_length=2048)
+    backdrop_url: str | None = Field(default=None, max_length=2048)
+    title_clean: str | None = Field(default=None, max_length=200)
+    year: int | None = Field(default=None, ge=1800, le=2100)
+    score: float | None = Field(default=None, ge=0, le=10)
+    genres: tuple[str, ...] = Field(default=(), max_length=5)
+    plot: str | None = Field(default=None, max_length=500)
+    imdb_id: str | None = Field(default=None, max_length=32)
+    tmdb_id: str | None = Field(default=None, max_length=32)
+    tvdb_id: str | None = Field(default=None, max_length=32)
+    season: int | None = Field(default=None, ge=0, le=999)
+    episode: int | None = Field(default=None, ge=0, le=9999)
+    artist: str | None = Field(default=None, max_length=200)
+    album: str | None = Field(default=None, max_length=200)
+    label: str | None = Field(default=None, max_length=200)
+
+    @field_validator("cover_url", "backdrop_url")
+    @classmethod
+    def validate_image_url(cls, value: str | None) -> str | None:
+        """Die Ablage ist eine Vertrauensgrenze: eine manipulierte Datei darf
+        keine beliebige Bild-URL ins Frontend schmuggeln."""
+        if value is None:
+            return None
+        from .cover_urls import safe_cover_url
+        return safe_cover_url(value)
 
 
 class _StoredRawRelease(BaseModel):
@@ -27,6 +64,7 @@ class _StoredRawRelease(BaseModel):
     language: str | None = Field(default=None, max_length=64)
     published_at: datetime | None
     download_url: str | None = Field(default=None, max_length=2048)
+    meta: _StoredReleaseMeta | None = None
 
     @field_validator("download_url")
     @classmethod
@@ -76,7 +114,12 @@ def serialize_profile_decision(decision: ProfileDecision) -> str:
 
 def deserialize_profile_decision(payload: str) -> ProfileDecision:
     stored = _StoredProfileDecision.model_validate_json(payload)
-    release = RawRelease(**stored.release.model_dump())
+    stored_release = stored.release.model_dump()
+    stored_meta = stored_release.pop("meta", None)
+    release = RawRelease(
+        **stored_release,
+        meta=ReleaseMeta(**stored_meta) if stored_meta else None,
+    )
     return ProfileDecision(
         release=release,
         media_type=stored.media_type,

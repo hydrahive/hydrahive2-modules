@@ -8,7 +8,7 @@ import httpx
 
 from hydrahive.net.ssrf import SsrfBlocked, pin_request, resolve_validated_ip
 
-from .config import INDEXER_FILE_HOST, INDEXER_TIMEOUT_SECONDS, MAX_NZB_BYTES
+from .config import INDEXER_FILE_HOST, MAX_NZB_BYTES, NZB_TIMEOUT_SECONDS
 from .errors import (
     IndexerAuthError,
     IndexerResponseError,
@@ -71,11 +71,11 @@ async def fetch_nzb(
         raise IndexerResponseError("indexer_identifier_invalid")
     path = f"/getnzb/{quote(guid, safe='')}"
     try:
-        async with asyncio.timeout(INDEXER_TIMEOUT_SECONDS):
+        async with asyncio.timeout(NZB_TIMEOUT_SECONDS):
             ip = pinned_ip or await asyncio.to_thread(resolve_validated_ip, INDEXER_FILE_HOST)
             transport = _FileTransport(api_key, ip, path, inner_transport)
             async with httpx.AsyncClient(
-                timeout=INDEXER_TIMEOUT_SECONDS,
+                timeout=NZB_TIMEOUT_SECONDS,
                 follow_redirects=False,
                 headers={"Accept-Encoding": "identity"},
                 transport=transport,

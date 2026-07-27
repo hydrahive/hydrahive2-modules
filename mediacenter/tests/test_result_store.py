@@ -227,3 +227,91 @@ def test_sqlite_parallel_claim_allows_exactly_one_winner():
         )
 
     assert sum(claim is not None for claim in claims) == 1
+
+
+# --- Regression: Metadaten muessen den Result-Store ueberleben -------------
+
+def test_metadaten_ueberleben_das_speichern():
+    """BUG (till, 27.07.): "An Radarr uebergeben" meldete
+    "Dem Treffer fehlt eine IMDb-/TVDB-Kennung".
+
+    Ursache: _StoredRawRelease kannte kein `meta`-Feld. Beim Serialisieren
+    fielen Cover, IMDb-/TVDB-Kennung und Handlung still weg — die Uebergabe
+    konnte den Titel danach nicht mehr zuordnen.
+    """
+    from datetime import datetime, timezone
+
+    from backend.models import ProfileDecision, RawRelease, ReleaseMeta
+    from backend.result_codec import deserialize_profile_decision, serialize_profile_decision
+
+    meta = ReleaseMeta(
+        imdb_id="0133093", tmdb_id="603", tvdb_id="121361",
+        cover_url="https://picbit.io/x-cover.webp",
+        backdrop_url="https://picbit.io/x-backdrop.webp",
+        title_clean="The Matrix", year=1999, score=8.7,
+        genres=("Action", "Science Fiction"), plot="Ein Hacker …",
+        season=2, episode=5, artist="A", album="B", label="C",
+    )
+    release = RawRelease(
+        title="Matrix.1999.German.1080p", guid="g1", category_id=2140,
+        size_bytes=1000, language="de",
+        published_at=datetime(2026, 7, 1, tzinfo=timezone.utc),
+        download_url="https://treasure-maps.com/getnzb/g1", meta=meta,
+    )
+    decision = ProfileDecision(
+        release, "movie", "eligible", ("language_confirmed",),
+        "de", "1080", None, None, 10,
+    )
+
+    restored = deserialize_profile_decision(serialize_profile_decision(decision))
+
+    assert restored.release.meta is not None, "meta darf nicht verloren gehen"
+    assert restored.release.meta.imdb_id == "0133093"
+    assert restored.release.meta.tvdb_id == "121361"
+    assert restored.release.meta.cover_url == "https://picbit.io/x-cover.webp"
+    assert restored.release.meta.title_clean == "The Matrix"
+    assert restored.release.meta.year == 1999
+    assert restored.release.meta.score == 8.7
+    assert list(restored.release.meta.genres) == ["Action", "Science Fiction"]
+    assert restored.release.meta.season == 2
+
+
+def test_treffer_ohne_metadaten_bleibt_speicherbar():
+    """Rueckwaertskompatibel: aeltere Treffer haben kein meta."""
+    from datetime import datetime, timezone
+
+    from backend.models import ProfileDecision, RawRelease
+    from backend.result_codec import deserialize_profile_decision, serialize_profile_decision
+
+    release = RawRelease(
+        title="Alt.Release", guid="g2", category_id=2140, size_bytes=1,
+        language="de", published_at=datetime(2026, 7, 1, tzinfo=timezone.utc),
+        download_url=None, meta=None,
+    )
+    decision = ProfileDecision(release, "movie", "eligible", (), "de", None, None, None, 1)
+
+    assert deserialize_profile_decision(serialize_profile_decision(decision)).release.meta is None
+
+
+def test_fremde_cover_url_wird_beim_laden_verworfen():
+    """Der Store ist eine Vertrauensgrenze: eine manipulierte Ablage darf
+    keine beliebige Bild-URL ins Frontend schmuggeln."""
+    import json
+
+    from backend.result_codec import deserialize_profile_decision
+
+    payload = json.loads(_MINIMAL_PAYLOAD)
+    payload["release"]["meta"] = {"cover_url": "https://evil.example/x.webp",
+                                  "imdb_id": "0133093"}
+    restored = deserialize_profile_decision(json.dumps(payload))
+    assert restored.release.meta.cover_url is None
+    assert restored.release.meta.imdb_id == "0133093"
+
+
+_MINIMAL_PAYLOAD = """{
+  "release": {"title": "T", "guid": "g", "category_id": 2140, "size_bytes": 1,
+              "language": "de", "published_at": null, "download_url": null},
+  "media_type": "movie", "decision": "eligible", "reasons": [],
+  "language": "de", "resolution": null, "format": null, "bitrate_kbps": null,
+  "score": 1, "selection_status": "ready"
+}"""

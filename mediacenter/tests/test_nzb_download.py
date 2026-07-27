@@ -156,3 +156,19 @@ async def test_service_download_uses_owned_eligible_result_and_ignores_stored_ur
     assert seen == [("key", "server-guid")]
     with pytest.raises(IndexerResponseError):
         await nzb_service.download_result_nzb("bob", result_id, now=101)
+
+
+# --- Regression: Timeout und Fehlercode fuer den NZB-Abruf -----------------
+
+def test_nzb_abruf_hat_eigenes_grosszuegigeres_timeout():
+    """BUG (till, 27.07.): "An SABnzbd uebergeben" schlug einmal mit 502 fehl,
+    beim naechsten Versuch klappte es.
+
+    Der NZB-Abruf nutzte denselben 15-Sekunden-Timeout wie eine Suchanfrage —
+    bei bis zu 16 MB Nutzdaten zu knapp. Ein Download braucht mehr Luft als
+    eine Metadaten-Abfrage.
+    """
+    from backend.config import INDEXER_TIMEOUT_SECONDS, NZB_TIMEOUT_SECONDS
+
+    assert NZB_TIMEOUT_SECONDS > INDEXER_TIMEOUT_SECONDS
+    assert NZB_TIMEOUT_SECONDS >= 60
