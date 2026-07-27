@@ -1,5 +1,5 @@
 export type MediaType = "movie" | "tv" | "book" | "audiobook" | "audioplay" | "music"
-export type View = "search" | "queue" | "history"
+export type View = "search" | "queue" | "history" | "settings"
 export type SelectionStatus = "ready" | "quality_preference_required" | "format_preference_required"
 
 export interface ModuleStatus {
@@ -7,6 +7,20 @@ export interface ModuleStatus {
   state: "ready" | "not_configured"
   indexer_configured: boolean
   sab_configured: boolean
+  /** Zusatzdienste: nicht konfiguriert = Funktion aus, nie Modul kaputt. */
+  radarr_configured: boolean
+  sonarr_configured: boolean
+}
+
+/** Zustand eines Zusatzdienstes (Radarr/Sonarr) aus dem Verbindungstest. */
+export interface ArrService {
+  service: string
+  configured: boolean
+  reachable: boolean
+  origin: string | null
+  version: string | null
+  app_name: string | null
+  error: string | null
 }
 
 export interface ConnectionTest {
@@ -17,6 +31,7 @@ export interface ConnectionTest {
   categories: number[]
   sab_version: string | null
   sab_categories: string[]
+  arr_services: ArrService[]
 }
 
 export interface SearchFilters {

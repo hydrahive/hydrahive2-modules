@@ -9,6 +9,7 @@ from .config import NEWZNAB_CATEGORIES, SAB_CATEGORIES
 from .credentials import resolve_indexer_api_key
 from .errors import IndexerResponseError, MediacenterConfigError, SabResponseError
 from .models import (
+    ArrServiceOut,
     ConnectionTestResponse,
     ModuleStatus,
     InterpretedQuery,
@@ -25,6 +26,13 @@ from .result_registry import RESULTS
 from .sab_credentials import resolve_sab_connection
 
 
+def _arr_configured(username: str, service: str) -> bool:
+    """Ob Radarr/Sonarr nutzbar ist. Eigene Funktion, damit Tests sie ersetzen
+    koennen ohne den Credential-Store zu beruehren."""
+    from .arr_credentials import is_configured
+    return is_configured(username, service)
+
+
 def connection_status(username: str) -> ModuleStatus:
     try:
         resolve_indexer_api_key(username)
@@ -36,9 +44,14 @@ def connection_status(username: str) -> ModuleStatus:
         sab_configured = True
     except MediacenterConfigError:
         sab_configured = False
+    # Radarr/Sonarr sind Zusatz: ihr Fehlen darf das Modul nicht blockieren.
+    radarr_configured = _arr_configured(username, "radarr")
+    sonarr_configured = _arr_configured(username, "sonarr")
     state = "ready" if indexer_configured and sab_configured else "not_configured"
     return ModuleStatus(
         state=state,
+        radarr_configured=radarr_configured,
+        sonarr_configured=sonarr_configured,
         indexer_configured=indexer_configured,
         sab_configured=sab_configured,
     )
@@ -73,8 +86,31 @@ async def test_connections(username: str) -> ConnectionTestResponse:
         update={
             "sab_version": version,
             "sab_categories": sorted(required),
+            "arr_services": await _arr_service_states(username),
         }
     )
+
+
+async def _arr_service_states(username: str) -> list[ArrServiceOut]:
+    """Zustand aller Zusatzdienste. Ein defekter Dienst darf den Gesamttest
+    nicht scheitern lassen — deshalb wandert der Fehler ins Ergebnis."""
+    from .arr_client import status_for
+    from .arr_credentials import ARR_SERVICES, resolve_arr_connection
+
+    states: list[ArrServiceOut] = []
+    for service_name in ARR_SERVICES:
+        try:
+            origin = resolve_arr_connection(username, service_name).origin
+            configured = True
+        except MediacenterConfigError:
+            origin, configured = None, False
+        status = await status_for(username, service_name)
+        states.append(ArrServiceOut(
+            service=service_name, configured=configured, reachable=status.reachable,
+            origin=origin, version=status.version, app_name=status.app_name,
+            error=status.error,
+        ))
+    return states
 
 
 def _age_days(decision: ProfileDecision, now: datetime) -> int | None:
