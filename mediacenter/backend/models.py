@@ -248,7 +248,9 @@ class ArrHandoffRequest(BaseModel):
     """Uebergabe eines Suchtreffers an Radarr/Sonarr."""
     model_config = ConfigDict(extra="forbid")
 
-    result_id: str = Field(min_length=1, max_length=128)
+    # Gleiche Strenge wie EnqueueRequest: eine result_id ist ein vom Server
+    # erzeugter Token, kein freier Text.
+    result_id: str = Field(min_length=20, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
     service: Literal["radarr", "sonarr"]
     # Nur beim erstmaligen Anlegen noetig; bei vorhandenem Titel ignoriert.
     quality_profile_id: int | None = Field(default=None, ge=1, le=10_000)

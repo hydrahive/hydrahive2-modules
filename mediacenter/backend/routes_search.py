@@ -50,8 +50,11 @@ async def _guard(call: Callable[[], Awaitable[T]]) -> T:
     except MediacenterConfigError as exc:
         raise coded(status.HTTP_503_SERVICE_UNAVAILABLE, exc.code)
     except IndexerResponseError as exc:
+        # Ein abgelaufener/verbrauchter Treffer ist kein Serverfehler: 502
+        # ("Bad Gateway") las sich wie ein Ausfall des Indexers. 409 sagt dem
+        # Nutzer klar, dass er neu suchen muss.
         response_status = (
-            status.HTTP_404_NOT_FOUND
+            status.HTTP_409_CONFLICT
             if exc.code == "result_unavailable"
             else status.HTTP_502_BAD_GATEWAY
         )

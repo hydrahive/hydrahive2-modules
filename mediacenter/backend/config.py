@@ -68,6 +68,10 @@ SAB_ALLOWED_ORIGIN = _origin("HH_MEDIACENTER_SAB_ORIGIN")
 SAB_TIMEOUT_SECONDS = 15.0
 SAB_MAX_JSON_BYTES = 1024 * 1024
 MAX_NZB_BYTES = 16 * 1024 * 1024
+# Der NZB-Download laedt bis zu MAX_NZB_BYTES Nutzdaten — er braucht mehr Luft
+# als eine Metadaten-Abfrage. Mit dem Such-Timeout (15 s) schlug die Uebergabe
+# gelegentlich mit einem transienten 502 fehl.
+NZB_TIMEOUT_SECONDS = 60.0
 
 SAB_CATEGORIES: dict[str, str] = {
     "movie": "movies",

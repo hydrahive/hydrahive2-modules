@@ -57,7 +57,10 @@ def test_enqueue_hides_missing_and_reports_uncertain(client, alice, monkeypatch)
         "/api/modules/mediacenter/enqueue", headers=alice,
         json={"result_id": _RESULT_ID},
     )
-    assert response.status_code == 404
+    # 409 statt 404/502: ein abgelaufener Treffer ist ein Zustandskonflikt,
+    # kein fehlender Endpunkt und kein Serverausfall (till sah zuvor
+    # "Bad Gateway" und hielt es fuer einen Ausfall).
+    assert response.status_code == 409
     assert response.json()["detail"]["code"] == "result_unavailable"
 
     async def uncertain(*args, **kwargs):
