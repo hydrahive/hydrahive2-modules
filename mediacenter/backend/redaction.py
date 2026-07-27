@@ -17,10 +17,18 @@ def text_contains_secret(value: str, secret: str) -> bool:
 
 
 def release_contains_secret(release: RawRelease, secret: str) -> bool:
+    """True, wenn irgendein Feld des Releases den API-Schluessel enthaelt.
+
+    Der Indexer spiegelt den Schluessel in link/enclosure zurueck — betroffene
+    Releases werden deshalb komplett aussortiert. Die Metadaten aus V2 werden
+    ueber `ReleaseMeta.text_values()` mitgeprueft; neue Textfelder muessen dort
+    ergaenzt werden, sonst entsteht ein Leak-Pfad.
+    """
     values = (
         release.title,
         release.guid,
         release.language or "",
         release.download_url or "",
+        *(release.meta.text_values() if release.meta else ()),
     )
     return any(text_contains_secret(value, secret) for value in values)

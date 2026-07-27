@@ -49,12 +49,60 @@ export interface SearchResult {
   bitrate_kbps: number | null
   score: number
   selection_status: SelectionStatus
+  meta: ReleaseMeta | null
+}
+
+/** Anzeige-Metadaten aus den Newznab-Attributen. Alle Felder optional. */
+export interface ReleaseMeta {
+  cover_url: string | null
+  backdrop_url: string | null
+  title_clean: string | null
+  year: number | null
+  score: number | null
+  genres: string[]
+  plot: string | null
+  imdb_id: string | null
+  tmdb_id: string | null
+  tvdb_id: string | null
+  season: number | null
+  episode: number | null
+  artist: string | null
+  album: string | null
+  label: string | null
+}
+
+/** Ein Titel mit allen gefundenen Fassungen — die Karte im Poster-Raster. */
+export interface ResultGroup {
+  key: string
+  title: string
+  year: number | null
+  cover_url: string | null
+  backdrop_url: string | null
+  rating: number | null
+  genres: string[]
+  plot: string | null
+  media_type: MediaType
+  releases: SearchResult[]
+}
+
+/** Was der Server aus der freien Eingabe gelesen hat — Basis der Chips. */
+export interface InterpretedQuery {
+  query: string
+  recognized: string[]
+  year: number | null
+  season: number | null
+  episode: string | null
+  language: string | null
+  resolution: number | null
+  audio_format: string | null
 }
 
 export interface SearchResponse {
   total: number
   eligible: number
   results: SearchResult[]
+  groups: ResultGroup[]
+  interpreted: InterpretedQuery | null
 }
 
 export interface EnqueueResponse {

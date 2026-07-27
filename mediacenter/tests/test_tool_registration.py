@@ -32,5 +32,11 @@ def test_manifest_enables_default_agent_tools():
     manifest = json.loads(
         (Path(__file__).resolve().parents[1] / "manifest.json").read_text()
     )
-    assert manifest["version"] == "0.4.0"
+    # Version bewusst NICHT auf einen festen Wert nageln: dieser Test brach
+    # sonst bei jedem Bump und erzeugte Reibung genau dort, wo das Anheben
+    # wichtig ist (ein vergessener Bump verhindert die Auslieferung komplett —
+    # siehe Atelier E5). Geprueft wird nur, dass eine gueltige Version dasteht.
+    version = manifest["version"]
+    parts = version.split(".")
+    assert len(parts) == 3 and all(part.isdigit() for part in parts), version
     assert manifest["default_agent_tools"] is True

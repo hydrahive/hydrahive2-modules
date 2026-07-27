@@ -146,6 +146,9 @@ def build_search_params(
         "q": request.query,
         "cat": ",".join(str(value) for value in NEWZNAB_CATEGORIES[request.media_type]),
         "limit": str(request.limit),
+        # Ohne extended=1 liefert der Indexer nur die Basisattribute — kein
+        # coverurl, kein imdb/genre/plot. Verifiziert am Live-Indexer.
+        "extended": "1",
     }
     def allowed(name: str) -> bool:
         return supported_params is None or name in supported_params

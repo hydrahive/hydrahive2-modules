@@ -98,7 +98,7 @@ async def test_search_tool_uses_immutable_owner_and_returns_sanitized_data(
         {"query": "Film", "media_type": "movie", "limit": 10}, ctx
     )
     assert result.success is True
-    assert result.output == {"total": 0, "eligible": 0, "results": []}
+    assert result.output == {"total": 0, "eligible": 0, "results": [], "groups": [], "interpreted": None}
     assert seen[0][0] == "alice"
     assert seen[0][2]["owner_id"] == _owner_id()
     assert "url" not in str(result.output).lower()
