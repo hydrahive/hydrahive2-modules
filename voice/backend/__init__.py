@@ -208,3 +208,6 @@ async def say(request: Request, _user: dict = Depends(require_auth)):
 
 def register(ctx) -> None:
     ctx.register_router(router)
+    # E5: LLM-Auswahl (eigener Router im selben Prefix).
+    from .llm import router as llm_router
+    ctx.register_router(llm_router)

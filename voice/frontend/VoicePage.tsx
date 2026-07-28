@@ -1,11 +1,12 @@
-import { Activity, Mic, Send, Settings2, Volume2 } from "lucide-react"
+import { Activity, Cpu, Mic, Send, Settings2, Volume2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { voiceApi } from "./api"
 import type {
-  SettingsResponse, TranscriptTurn, VoiceSettings, VoiceStatus, WakeSensitivity,
+  LlmModel, LlmState, SettingsResponse, TranscriptTurn, VoiceSettings,
+  VoiceStatus, WakeSensitivity,
 } from "./types"
 import { WAKE_SENSITIVITIES } from "./types"
 
@@ -57,6 +58,47 @@ export function VoicePage() {
       clearInterval(iv)
     }
   }, [loadStatus, loadSettings])
+
+  // ── LLM-Auswahl (E5) ─────────────────────────────────────────────────────
+  const [llm, setLlm] = useState<LlmState | null>(null)
+  const [llmModels, setLlmModels] = useState<LlmModel[]>([])
+  const [llmSaving, setLlmSaving] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    const load = async () => {
+      try {
+        const [state, models] = await Promise.all([
+          voiceApi.getLlm(),
+          voiceApi.llmModels(),
+        ])
+        if (!alive) return
+        setLlm(state)
+        setLlmModels(models.models)
+      } catch {
+        if (alive) setLlm(null)
+      }
+    }
+    load()
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const setLlmModel = useCallback(async (model: string | null) => {
+    setLlmSaving(true)
+    try {
+      const next = await voiceApi.putLlm(model)
+      setLlm(next)
+    } catch {
+      // Zustand neu laden bei Fehler
+      try {
+        setLlm(await voiceApi.getLlm())
+      } catch { /* ignore */ }
+    } finally {
+      setLlmSaving(false)
+    }
+  }, [])
 
   // ── Voice-Verlauf (E3): inkrementelles Polling per Cursor ────────────────
   const [turns, setTurns] = useState<TranscriptTurn[]>([])
@@ -165,6 +207,18 @@ export function VoicePage() {
               />
             )}
           </Panel>
+
+          <div className="mt-[10px]">
+            <Panel icon={<Cpu size={14} />} title={t("llm_title")}>
+              <LlmPicker
+                llm={llm}
+                models={llmModels}
+                saving={llmSaving}
+                onChange={setLlmModel}
+                t={t}
+              />
+            </Panel>
+          </div>
         </aside>
 
         {/* Mitte: Voice-Agent-Chat (E4) */}
@@ -356,6 +410,50 @@ function StatusRow({
           {ok ? onText : offText}
         </span>
       </span>
+    </div>
+  )
+}
+
+function LlmPicker({
+  llm,
+  models,
+  saving,
+  onChange,
+  t,
+}: {
+  llm: LlmState | null
+  models: LlmModel[]
+  saving: boolean
+  onChange: (model: string | null) => void
+  t: (k: string) => string
+}) {
+  if (!llm) {
+    return <p className="text-xs text-[#8d9ab0]">{t("loading")}</p>
+  }
+  const defaultLabel =
+    models.find((m) => m.id === llm.agent_default)?.label || llm.agent_default || "—"
+  return (
+    <div className="space-y-2">
+      <select
+        value={llm.override || ""}
+        disabled={saving || !llm.has_session}
+        onChange={(e) => onChange(e.target.value || null)}
+        className="w-full rounded-[4px] border border-[#1c2636] bg-[#0b1119] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5] disabled:opacity-50"
+      >
+        <option value="">{t("llm_agent_default")} ({defaultLabel})</option>
+        {models.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.label}
+          </option>
+        ))}
+      </select>
+      {!llm.has_session ? (
+        <p className="text-[11px] leading-4 text-[#8d9ab0]">{t("llm_no_session")}</p>
+      ) : llm.override ? (
+        <p className="text-[11px] leading-4 text-[#69d7ff]">{t("llm_override_active")}</p>
+      ) : (
+        <p className="text-[11px] leading-4 text-[#8d9ab0]">{t("llm_using_default")}</p>
+      )}
     </div>
   )
 }
