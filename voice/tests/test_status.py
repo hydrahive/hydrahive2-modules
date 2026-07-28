@@ -13,7 +13,7 @@ def test_status_ok_fuer_user(client, user_headers):
     assert r.status_code == 200
     body = r.json()
     assert body["module"] == "voice"
-    assert body["stage"] == "e1"
+    assert body["stage"] == "e2"
 
 
 def test_status_ok_fuer_admin(client, admin_headers):
