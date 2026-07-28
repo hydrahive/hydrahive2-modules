@@ -174,5 +174,37 @@ async def get_transcript(
     }
 
 
+@router.post("/say")
+async def say(request: Request, _user: dict = Depends(require_auth)):
+    """Getippter Text aus dem Cockpit (E4). Wird an die Bridge weitergereicht,
+    die daraus einen Text-Turn macht (Intent/Agent). Die Antwort erscheint über
+    den Verlauf (GET /transcript) — das Gerät bleibt still (kein TTS)."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid_json"}, status_code=400)
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "invalid_body"}, status_code=400)
+    text = body.get("text")
+    if not isinstance(text, str) or not text.strip():
+        return JSONResponse({"error": "text_required"}, status_code=422)
+    if len(text) > 2000:
+        return JSONResponse({"error": "text_too_long"}, status_code=422)
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
+            r = await c.post(f"{BRIDGE_URL}/say", json={"text": text.strip()})
+    except Exception:
+        return JSONResponse({"error": "bridge_unreachable"}, status_code=503)
+
+    if r.status_code >= 400:
+        try:
+            detail = r.json()
+        except Exception:
+            detail = {"error": "bridge_error"}
+        return JSONResponse(detail, status_code=r.status_code)
+    return {"accepted": True}
+
+
 def register(ctx) -> None:
     ctx.register_router(router)
