@@ -84,6 +84,11 @@
       "id": "haushaltsbuch",
       "name": "Haushaltsbuch",
       "path": "haushaltsbuch"
+    },
+    {
+      "id": "voice",
+      "name": "Voice",
+      "path": "voice"
     }
   ]
 }
