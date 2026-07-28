@@ -30,3 +30,17 @@ export const WAKE_SENSITIVITIES: WakeSensitivity[] = [
   "Moderately sensitive",
   "Very sensitive",
 ]
+
+export type TranscriptTurn = {
+  id: number
+  ts: number
+  role: "user" | "assistant"
+  kind: "speech" | "media" | "error"
+  text: string
+}
+
+export type TranscriptResponse = {
+  bridge: "up" | "down"
+  turns: TranscriptTurn[]
+  cursor: number
+}

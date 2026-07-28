@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
@@ -144,6 +144,33 @@ async def put_settings(request: Request, _user: dict = Depends(require_auth)):
         "bridge": "up",
         "device": "connected" if state.get("connected") else "disconnected",
         "settings": {k: state.get(k) for k in _SETTING_FIELDS},
+    }
+
+
+@router.get("/transcript")
+async def get_transcript(
+    since: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    _user: dict = Depends(require_auth),
+):
+    """Voice-Verlauf (letzte Turns) — proxied von der Bridge. E3.
+
+    Liefert nur Turns mit id > `since` (inkrementelles Polling). Bridge nicht
+    erreichbar → leere, saubere Antwort (kein 500)."""
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as c:
+            r = await c.get(
+                f"{BRIDGE_URL}/transcript",
+                params={"since": since, "limit": limit},
+            )
+            r.raise_for_status()
+            data = r.json()
+    except Exception:
+        return {"bridge": "down", "turns": [], "cursor": since}
+    return {
+        "bridge": "up",
+        "turns": data.get("turns", []),
+        "cursor": data.get("cursor", since),
     }
 
 

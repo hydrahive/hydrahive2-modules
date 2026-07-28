@@ -33,7 +33,8 @@ class _FakeAsyncClient:
     async def __aexit__(self, *a):
         return False
 
-    async def get(self, url):
+    async def get(self, url, params=None):
+        _FakeAsyncClient.last_get_params = params
         return _FakeAsyncClient.routes["GET " + url.split("8898")[-1]]
 
     async def post(self, url, json=None):
@@ -160,3 +161,44 @@ def test_put_settings_bridge_unreachable_503(client, user_headers, mock_bridge):
     # keine POST-Route → KeyError → except → 503 bridge_unreachable
     r = client.put(f"{PREFIX}/settings", headers=user_headers, json={"volume": 0.3})
     assert r.status_code == 503
+
+
+# ── GET /transcript ────────────────────────────────────────────────────────
+def test_transcript_needs_auth(client):
+    assert client.get(f"{PREFIX}/transcript").status_code == 401
+
+
+def test_transcript_ok(client, user_headers, mock_bridge):
+    turns = [
+        {"id": 1, "ts": 1.0, "role": "user", "kind": "speech", "text": "hallo"},
+        {"id": 2, "ts": 2.0, "role": "assistant", "kind": "speech", "text": "hi"},
+    ]
+    mock_bridge.routes["GET /transcript"] = _FakeResp(200, {"turns": turns, "cursor": 2})
+    r = client.get(f"{PREFIX}/transcript", headers=user_headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["bridge"] == "up"
+    assert body["cursor"] == 2
+    assert len(body["turns"]) == 2
+
+
+def test_transcript_since_forwarded(client, user_headers, mock_bridge):
+    mock_bridge.routes["GET /transcript"] = _FakeResp(200, {"turns": [], "cursor": 5})
+    r = client.get(f"{PREFIX}/transcript?since=5&limit=10", headers=user_headers)
+    assert r.status_code == 200
+    assert mock_bridge.last_get_params == {"since": 5, "limit": 10}
+
+
+def test_transcript_bridge_down(client, user_headers, mock_bridge):
+    # keine Route → KeyError → except → bridge down, cursor bleibt since
+    r = client.get(f"{PREFIX}/transcript?since=7", headers=user_headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["bridge"] == "down"
+    assert body["turns"] == []
+    assert body["cursor"] == 7
+
+
+def test_transcript_invalid_since_422(client, user_headers, mock_bridge):
+    r = client.get(f"{PREFIX}/transcript?since=-1", headers=user_headers)
+    assert r.status_code == 422

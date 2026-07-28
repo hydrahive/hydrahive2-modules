@@ -1,5 +1,7 @@
 import { api } from "@/shared/api-client"
-import type { SettingsResponse, VoiceSettings, VoiceStatus } from "./types"
+import type {
+  SettingsResponse, TranscriptResponse, VoiceSettings, VoiceStatus,
+} from "./types"
 
 const BASE = "/modules/voice"
 
@@ -8,4 +10,6 @@ export const voiceApi = {
   getSettings: () => api.get<SettingsResponse>(`${BASE}/settings`),
   putSettings: (patch: Partial<VoiceSettings>) =>
     api.put<SettingsResponse>(`${BASE}/settings`, patch),
+  transcript: (since = 0, limit = 50) =>
+    api.get<TranscriptResponse>(`${BASE}/transcript?since=${since}&limit=${limit}`),
 }
