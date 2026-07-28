@@ -1,6 +1,7 @@
 import { api } from "@/shared/api-client"
 import type {
-  SettingsResponse, TranscriptResponse, VoiceSettings, VoiceStatus,
+  LlmModelsResponse, LlmState, SettingsResponse, TranscriptResponse,
+  VoiceSettings, VoiceStatus,
 } from "./types"
 
 const BASE = "/modules/voice"
@@ -13,4 +14,7 @@ export const voiceApi = {
   transcript: (since = 0, limit = 50) =>
     api.get<TranscriptResponse>(`${BASE}/transcript?since=${since}&limit=${limit}`),
   say: (text: string) => api.post<{ accepted: boolean }>(`${BASE}/say`, { text }),
+  getLlm: () => api.get<LlmState>(`${BASE}/llm`),
+  putLlm: (model: string | null) => api.put<LlmState>(`${BASE}/llm`, { model }),
+  llmModels: () => api.get<LlmModelsResponse>(`${BASE}/llm/models`),
 }

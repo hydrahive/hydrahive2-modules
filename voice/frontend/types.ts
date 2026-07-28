@@ -44,3 +44,16 @@ export type TranscriptResponse = {
   turns: TranscriptTurn[]
   cursor: number
 }
+
+export type LlmState = {
+  override: string | null
+  agent_default: string
+  has_session: boolean
+}
+
+export type LlmModel = { id: string; label: string; provider: string }
+
+export type LlmModelsResponse = {
+  agent_default: string
+  models: LlmModel[]
+}
