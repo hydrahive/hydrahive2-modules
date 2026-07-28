@@ -1,10 +1,12 @@
 import { Activity, Mic, Settings2, Volume2 } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { voiceApi } from "./api"
-import type { SettingsResponse, VoiceSettings, VoiceStatus, WakeSensitivity } from "./types"
+import type {
+  SettingsResponse, TranscriptTurn, VoiceSettings, VoiceStatus, WakeSensitivity,
+} from "./types"
 import { WAKE_SENSITIVITIES } from "./types"
 
 /**
@@ -55,6 +57,32 @@ export function VoicePage() {
       clearInterval(iv)
     }
   }, [loadStatus, loadSettings])
+
+  // ── Voice-Verlauf (E3): inkrementelles Polling per Cursor ────────────────
+  const [turns, setTurns] = useState<TranscriptTurn[]>([])
+  const cursorRef = useRef(0)
+
+  useEffect(() => {
+    let alive = true
+    const poll = async () => {
+      try {
+        const res = await voiceApi.transcript(cursorRef.current, 50)
+        if (!alive) return
+        if (res.turns.length > 0) {
+          cursorRef.current = res.cursor
+          setTurns((prev) => [...prev, ...res.turns].slice(-200))
+        }
+      } catch {
+        /* still, Status-Panel zeigt bridge down */
+      }
+    }
+    poll()
+    const iv = setInterval(poll, 3000)
+    return () => {
+      alive = false
+      clearInterval(iv)
+    }
+  }, [])
 
   const patch = useCallback(async (p: Partial<VoiceSettings>) => {
     setSaving(true)
@@ -111,12 +139,7 @@ export function VoicePage() {
               <div className="text-xs text-[#8d9ab0]">{t("subtitle")}</div>
             </div>
           </header>
-          <div className="grid flex-1 place-items-center p-6 text-center">
-            <div className="max-w-sm">
-              <Mic size={40} className="mx-auto text-[#2a364b]" />
-              <p className="mt-3 text-sm text-[#8d9ab0]">{t("chat_placeholder")}</p>
-            </div>
-          </div>
+          <TranscriptView turns={turns} t={t} />
         </main>
 
         {/* Rechts: Status */}
@@ -127,6 +150,68 @@ export function VoicePage() {
         </aside>
       </div>
     </CockpitShell>
+  )
+}
+
+function TranscriptView({
+  turns,
+  t,
+}: {
+  turns: TranscriptTurn[]
+  t: (k: string) => string
+}) {
+  const endRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [turns.length])
+
+  if (turns.length === 0) {
+    return (
+      <div className="grid flex-1 place-items-center p-6 text-center">
+        <div className="max-w-sm">
+          <Mic size={40} className="mx-auto text-[#2a364b]" />
+          <p className="mt-3 text-sm text-[#8d9ab0]">{t("empty_hint")}</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex-1 space-y-2 overflow-y-auto p-4">
+      {turns.map((turn) => (
+        <Bubble key={turn.id} turn={turn} t={t} />
+      ))}
+      <div ref={endRef} />
+    </div>
+  )
+}
+
+function Bubble({ turn, t }: { turn: TranscriptTurn; t: (k: string) => string }) {
+  const isUser = turn.role === "user"
+  const isError = turn.kind === "error"
+  const time = new Date(turn.ts * 1000).toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[80%] rounded-[8px] px-3 py-2 text-sm ${
+          isUser
+            ? "bg-[#173247] text-[#e8eef8]"
+            : isError
+              ? "border border-[#5a2a2a] bg-[#1f1113] text-[#e0a0a0]"
+              : "border border-[#1c2636] bg-[#0e1420] text-[#d6e0ee]"
+        }`}
+      >
+        <div className="mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-wide text-[#6b7a92]">
+          <span>{isUser ? t("you") : t("assistant")}</span>
+          {turn.kind === "media" && <span className="text-[#69d7ff]">♪ {t("kind_media")}</span>}
+          <span className="ml-auto tabular-nums">{time}</span>
+        </div>
+        <div className="whitespace-pre-wrap leading-snug">{turn.text}</div>
+      </div>
+    </div>
   )
 }
 
