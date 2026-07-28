@@ -1,7 +1,7 @@
 import { api } from "@/shared/api-client"
 import type {
   LlmModelsResponse, LlmState, SettingsResponse, SttInfo, TranscriptResponse,
-  VoiceSettings, VoiceStatus,
+  TtsConfig, TtsModelsResponse, TtsState, VoiceSettings, VoiceStatus,
 } from "./types"
 
 const BASE = "/modules/voice"
@@ -18,4 +18,7 @@ export const voiceApi = {
   putLlm: (model: string | null) => api.put<LlmState>(`${BASE}/llm`, { model }),
   llmModels: () => api.get<LlmModelsResponse>(`${BASE}/llm/models`),
   stt: () => api.get<SttInfo>(`${BASE}/stt`),
+  getTts: () => api.get<TtsState>(`${BASE}/tts`),
+  putTts: (patch: Partial<TtsConfig>) => api.put<TtsState>(`${BASE}/tts`, patch),
+  ttsModels: () => api.get<TtsModelsResponse>(`${BASE}/tts/models`),
 }
