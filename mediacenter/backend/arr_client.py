@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 import httpx
 
@@ -142,10 +143,33 @@ async def add_title(connection: ArrConnection, payload: dict) -> dict:
     return data if isinstance(data, dict) else {}
 
 
-async def push_release(connection: ArrConnection, guid: str, indexer_id: int) -> bool:
-    """Uebergibt ein Release zum Download an den Zieldienst."""
-    await _request(connection, "POST", "/api/v3/release",
-                   json_body={"guid": guid, "indexerId": indexer_id})
+async def push_release(connection: ArrConnection, release, indexer_id: int) -> bool:
+    """Uebergibt ein extern gefundenes Release zum Download an den Zieldienst.
+
+    Nutzt `/api/v3/release/push` (zustandslos) statt `/api/v3/release`
+    (cache-basiert). Der cache-basierte Endpunkt akzeptiert NUR Guids, die
+    Radarr/Sonarr selbst kurz zuvor gesucht hat — ein Guid aus der HydraHive-
+    Suche steht dort nicht im Cache und wird mit 404 "not in cache" abgelehnt
+    ("Uebergabe abgelehnt"). Der Push-Endpunkt bekommt das vollstaendige
+    Release-Objekt im Body und braucht keinen Cache-Eintrag.
+    """
+    # publishDate ist bei Radarr/Sonarr ein Pflichtfeld des ReleaseResource.
+    published = getattr(release, "published_at", None)
+    publish_iso = (
+        published.strftime("%Y-%m-%dT%H:%M:%SZ")
+        if published is not None
+        else datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
+    resource = {
+        "guid": release.guid,
+        "title": release.title,
+        "downloadUrl": release.download_url or "",
+        "protocol": "usenet",  # Newznab/SABnzbd-Kette ist immer Usenet
+        "indexerId": indexer_id,
+        "publishDate": publish_iso,
+        "size": int(release.size_bytes or 0),
+    }
+    await _request(connection, "POST", "/api/v3/release/push", json_body=resource)
     return True
 
 
