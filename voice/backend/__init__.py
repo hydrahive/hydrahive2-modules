@@ -214,3 +214,6 @@ def register(ctx) -> None:
     # E6: STT-Modell-Anzeige.
     from .stt import router as stt_router
     ctx.register_router(stt_router)
+    # E7: TTS-Stimmenauswahl.
+    from .tts import router as tts_router
+    ctx.register_router(tts_router)

@@ -64,3 +64,21 @@ export type SttInfo = {
   model: string | null
   languages: string[]
 }
+
+export type TtsConfig = {
+  backend: "local" | "cloud"
+  model: string
+  voice: string
+}
+
+export type TtsState = {
+  bridge: "up" | "down"
+  config: TtsConfig | null
+}
+
+export type TtsModel = { id: string; voices: string[] }
+
+export type TtsModelsResponse = {
+  default: string
+  models: TtsModel[]
+}

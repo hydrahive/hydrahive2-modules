@@ -5,8 +5,8 @@ import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { voiceApi } from "./api"
 import type {
-  LlmModel, LlmState, SettingsResponse, SttInfo, TranscriptTurn, VoiceSettings,
-  VoiceStatus, WakeSensitivity,
+  LlmModel, LlmState, SettingsResponse, SttInfo, TranscriptTurn, TtsConfig,
+  TtsModel, TtsState, VoiceSettings, VoiceStatus, WakeSensitivity,
 } from "./types"
 import { WAKE_SENSITIVITIES } from "./types"
 
@@ -64,6 +64,9 @@ export function VoicePage() {
   const [llmModels, setLlmModels] = useState<LlmModel[]>([])
   const [llmSaving, setLlmSaving] = useState(false)
   const [stt, setStt] = useState<SttInfo | null>(null)
+  const [tts, setTts] = useState<TtsState | null>(null)
+  const [ttsModels, setTtsModels] = useState<TtsModel[]>([])
+  const [ttsSaving, setTtsSaving] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -86,10 +89,36 @@ export function VoicePage() {
       } catch {
         if (alive) setStt({ available: false, program: null, model: null, languages: [] })
       }
+      // TTS-Config + Katalog.
+      try {
+        const [state, models] = await Promise.all([
+          voiceApi.getTts(),
+          voiceApi.ttsModels(),
+        ])
+        if (!alive) return
+        setTts(state)
+        setTtsModels(models.models)
+      } catch {
+        if (alive) setTts({ bridge: "down", config: null })
+      }
     }
     load()
     return () => {
       alive = false
+    }
+  }, [])
+
+  const patchTts = useCallback(async (patch: Partial<TtsConfig>) => {
+    setTtsSaving(true)
+    try {
+      const next = await voiceApi.putTts(patch)
+      setTts(next)
+    } catch {
+      try {
+        setTts(await voiceApi.getTts())
+      } catch { /* ignore */ }
+    } finally {
+      setTtsSaving(false)
     }
   }, [])
 
@@ -228,6 +257,18 @@ export function VoicePage() {
               <div className="mt-3 border-t border-[#1c2636] pt-3">
                 <SttInfoBlock stt={stt} t={t} />
               </div>
+            </Panel>
+          </div>
+
+          <div className="mt-[10px]">
+            <Panel icon={<Volume2 size={14} />} title={t("tts_title")}>
+              <TtsPicker
+                tts={tts}
+                models={ttsModels}
+                saving={ttsSaving}
+                onChange={patchTts}
+                t={t}
+              />
             </Panel>
           </div>
         </aside>
@@ -421,6 +462,91 @@ function StatusRow({
           {ok ? onText : offText}
         </span>
       </span>
+    </div>
+  )
+}
+
+function TtsPicker({
+  tts,
+  models,
+  saving,
+  onChange,
+  t,
+}: {
+  tts: TtsState | null
+  models: TtsModel[]
+  saving: boolean
+  onChange: (patch: Partial<TtsConfig>) => void
+  t: (k: string) => string
+}) {
+  if (!tts) return <p className="text-xs text-[#8d9ab0]">{t("loading")}</p>
+  if (tts.bridge === "down" || !tts.config) {
+    return <p className="text-xs text-[#e0a04a]">{t("bridge_down")}</p>
+  }
+  const cfg = tts.config
+  const isCloud = cfg.backend === "cloud"
+  const currentModel = models.find((m) => m.id === cfg.model)
+  const voices = currentModel?.voices || []
+
+  return (
+    <div className="space-y-2.5">
+      {/* local / cloud Umschalter */}
+      <div className="flex gap-1.5">
+        {(["local", "cloud"] as const).map((b) => (
+          <button
+            key={b}
+            type="button"
+            disabled={saving}
+            onClick={() => onChange({ backend: b })}
+            className={`flex-1 rounded-[4px] border px-2 py-1.5 text-xs font-semibold transition-colors ${
+              cfg.backend === b
+                ? "border-[#3a8ec5] bg-[#173247] text-[#e8eef8]"
+                : "border-[#1c2636] bg-[#0b1119] text-[#8d9ab0] hover:text-[#cfe0f0]"
+            } ${saving ? "opacity-50" : ""}`}
+          >
+            {t(b === "local" ? "tts_local" : "tts_cloud")}
+          </button>
+        ))}
+      </div>
+
+      {isCloud ? (
+        <>
+          {/* Modell */}
+          <div>
+            <label className="mb-1 block text-[11px] text-[#8d9ab0]">{t("tts_model")}</label>
+            <select
+              value={cfg.model}
+              disabled={saving}
+              onChange={(e) => onChange({ model: e.target.value, voice: "" })}
+              className="w-full rounded-[4px] border border-[#1c2636] bg-[#0b1119] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5] disabled:opacity-50"
+            >
+              <option value="">{t("tts_model_default")}</option>
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>{m.id}</option>
+              ))}
+            </select>
+          </div>
+          {/* Stimme (nur wenn Modell Stimmen hat) */}
+          {voices.length > 0 && (
+            <div>
+              <label className="mb-1 block text-[11px] text-[#8d9ab0]">{t("tts_voice")}</label>
+              <select
+                value={cfg.voice}
+                disabled={saving}
+                onChange={(e) => onChange({ voice: e.target.value })}
+                className="w-full rounded-[4px] border border-[#1c2636] bg-[#0b1119] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5] disabled:opacity-50"
+              >
+                <option value="">{t("tts_voice_default")}</option>
+                {voices.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="text-[11px] leading-4 text-[#8d9ab0]">{t("tts_local_hint")}</p>
+      )}
     </div>
   )
 }
