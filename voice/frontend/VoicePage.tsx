@@ -5,7 +5,7 @@ import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { voiceApi } from "./api"
 import type {
-  LlmModel, LlmState, SettingsResponse, TranscriptTurn, VoiceSettings,
+  LlmModel, LlmState, SettingsResponse, SttInfo, TranscriptTurn, VoiceSettings,
   VoiceStatus, WakeSensitivity,
 } from "./types"
 import { WAKE_SENSITIVITIES } from "./types"
@@ -63,6 +63,7 @@ export function VoicePage() {
   const [llm, setLlm] = useState<LlmState | null>(null)
   const [llmModels, setLlmModels] = useState<LlmModel[]>([])
   const [llmSaving, setLlmSaving] = useState(false)
+  const [stt, setStt] = useState<SttInfo | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -77,6 +78,13 @@ export function VoicePage() {
         setLlmModels(models.models)
       } catch {
         if (alive) setLlm(null)
+      }
+      // STT-Info separat (Fehler hier soll LLM nicht kippen).
+      try {
+        const info = await voiceApi.stt()
+        if (alive) setStt(info)
+      } catch {
+        if (alive) setStt({ available: false, program: null, model: null, languages: [] })
       }
     }
     load()
@@ -217,6 +225,9 @@ export function VoicePage() {
                 onChange={setLlmModel}
                 t={t}
               />
+              <div className="mt-3 border-t border-[#1c2636] pt-3">
+                <SttInfoBlock stt={stt} t={t} />
+              </div>
             </Panel>
           </div>
         </aside>
@@ -410,6 +421,35 @@ function StatusRow({
           {ok ? onText : offText}
         </span>
       </span>
+    </div>
+  )
+}
+
+function SttInfoBlock({
+  stt,
+  t,
+}: {
+  stt: SttInfo | null
+  t: (k: string) => string
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#8d9ab0]">
+        {t("stt_title")}
+      </div>
+      {stt === null ? (
+        <p className="text-xs text-[#8d9ab0]">{t("loading")}</p>
+      ) : stt.available ? (
+        <>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-[#8d9ab0]">{stt.program}</span>
+            <span className="font-semibold text-[#cfe0f0]">{stt.model}</span>
+          </div>
+          <p className="text-[11px] leading-4 text-[#6b7a92]">{t("stt_change_hint")}</p>
+        </>
+      ) : (
+        <p className="text-xs text-[#e0a04a]">{t("stt_unavailable")}</p>
+      )}
     </div>
   )
 }

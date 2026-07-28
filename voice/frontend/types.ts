@@ -57,3 +57,10 @@ export type LlmModelsResponse = {
   agent_default: string
   models: LlmModel[]
 }
+
+export type SttInfo = {
+  available: boolean
+  program: string | null
+  model: string | null
+  languages: string[]
+}
