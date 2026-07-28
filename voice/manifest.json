@@ -1,0 +1,11 @@
+{
+  "id": "voice",
+  "name": "Voice",
+  "version": "0.1.0",
+  "description": "Voicebox für den HydraHive-Sprachassistenten (HA Voice PE): Voice-Agent-Chat mit Einstellungen für Stimme, Lautstärke und Wake-Word.",
+  "icon": "Mic",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "min_core_version": "2.0.0"
+}
