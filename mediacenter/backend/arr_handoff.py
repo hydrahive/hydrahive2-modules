@@ -118,7 +118,7 @@ async def handoff(
     indexer_id = await client.default_indexer_id(connection)
     if not indexer_id:
         raise MediacenterConfigError("arr_indexer_missing")
-    pushed = await client.push_release(connection, decision.release.guid, indexer_id)
+    pushed = await client.push_release(connection, decision.release, indexer_id)
 
     return HandoffResult(
         service=service, title=str(found.get("title") or decision.release.title),

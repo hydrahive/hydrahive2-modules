@@ -54,8 +54,8 @@ class _FakeArr:
         self.calls.append(("add", payload))
         return {"id": 99, **payload}
 
-    async def push_release(self, connection, guid, indexer_id):
-        self.calls.append(("push", {"guid": guid, "indexerId": indexer_id}))
+    async def push_release(self, connection, release, indexer_id):
+        self.calls.append(("push", {"guid": release.guid, "indexerId": indexer_id}))
         return True
 
     async def default_indexer_id(self, connection):
