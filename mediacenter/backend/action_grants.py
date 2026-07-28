@@ -13,19 +13,26 @@ def _stamp(value: datetime) -> str:
     return value.isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
-def _fingerprint(turn_id: str, turn: str) -> str:
+def _fingerprint(turn_id: str, turn: str, salt: str = "") -> str:
     key = settings.secret_key.encode()
-    payload = f"{turn_id}\0{turn}".encode()
+    # Ohne Salt bleibt die Nutzlast byte-identisch zum Einzel-Download-Pfad,
+    # damit sich dessen Grant-Bindung nicht aendert. Mit Salt (der result_id)
+    # erhaelt jeder Treffer eines Sammel-Downloads einen eigenen Fingerprint —
+    # sonst kollidiert der UNIQUE(owner,session_id,operation,turn_fingerprint)
+    # und nur der erste Treffer bekaeme einen gueltigen Grant.
+    parts = (turn_id, turn) if not salt else (turn_id, turn, salt)
+    payload = "\0".join(parts).encode()
     return hmac.new(key, payload, hashlib.sha256).hexdigest()
 
 
 def issue(
     *, owner: str, session_id: str, result_id: str, media_type: str,
     trusted_turn: str, trusted_turn_id: str, now: datetime | None = None,
+    fingerprint_salt: str = "",
 ) -> str:
     moment = now or datetime.now(UTC)
     grant_id = secrets.token_urlsafe(24)
-    fingerprint = _fingerprint(trusted_turn_id, trusted_turn)
+    fingerprint = _fingerprint(trusted_turn_id, trusted_turn, fingerprint_salt)
     with db(immediate=True) as conn:
         conn.execute(
             """INSERT OR IGNORE INTO module_mediacenter_action_grants

@@ -6,7 +6,7 @@ from pathlib import Path
 from backend import register
 
 
-def test_module_registers_all_four_tools():
+def test_module_registers_all_tools():
     class Context:
         def __init__(self):
             self.tools = []
@@ -24,7 +24,7 @@ def test_module_registers_all_four_tools():
     register(context)
     assert [tool.name for tool in context.tools] == [
         "mediacenter_search", "mediacenter_enqueue",
-        "mediacenter_queue", "mediacenter_history",
+        "mediacenter_enqueue_batch", "mediacenter_queue", "mediacenter_history",
     ]
 
 
