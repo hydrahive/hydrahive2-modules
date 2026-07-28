@@ -211,3 +211,6 @@ def register(ctx) -> None:
     # E5: LLM-Auswahl (eigener Router im selben Prefix).
     from .llm import router as llm_router
     ctx.register_router(llm_router)
+    # E6: STT-Modell-Anzeige.
+    from .stt import router as stt_router
+    ctx.register_router(stt_router)
