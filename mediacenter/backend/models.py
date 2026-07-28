@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
@@ -276,6 +277,23 @@ class EnqueueRequest(BaseModel):
 
     result_id: str = Field(min_length=20, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
     priority: Literal["default", "high", "low"] = "default"
+
+
+class BatchEnqueueRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    collection: str = Field(min_length=2, max_length=200)
+    result_ids: list[str] = Field(min_length=1, max_length=100)
+    priority: Literal["default", "high", "low"] = "default"
+
+    @field_validator("result_ids")
+    @classmethod
+    def validate_result_ids(cls, value: list[str]) -> list[str]:
+        pattern = re.compile(r"^[A-Za-z0-9_-]+$")
+        for result_id in value:
+            if not (20 <= len(result_id) <= 128) or not pattern.match(result_id):
+                raise ValueError("invalid_result_id")
+        return value
 
 
 class JobOut(BaseModel):

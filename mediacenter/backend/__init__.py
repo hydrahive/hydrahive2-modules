@@ -12,5 +12,6 @@ def register(ctx) -> None:
     ctx.register_router(jobs_router)
     ctx.register_tool(tools_read.SEARCH_TOOL)
     ctx.register_tool(tools_actions.ENQUEUE_TOOL)
+    ctx.register_tool(tools_actions.ENQUEUE_BATCH_TOOL)
     ctx.register_tool(tools_read.QUEUE_TOOL)
     ctx.register_tool(tools_read.HISTORY_TOOL)
