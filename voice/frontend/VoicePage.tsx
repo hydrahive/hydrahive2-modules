@@ -1,4 +1,4 @@
-import { Activity, Mic, Settings2, Volume2 } from "lucide-react"
+import { Activity, Mic, Send, Settings2, Volume2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
@@ -61,6 +61,9 @@ export function VoicePage() {
   // ── Voice-Verlauf (E3): inkrementelles Polling per Cursor ────────────────
   const [turns, setTurns] = useState<TranscriptTurn[]>([])
   const cursorRef = useRef(0)
+  const optimisticIdRef = useRef(-1)
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -70,7 +73,17 @@ export function VoicePage() {
         if (!alive) return
         if (res.turns.length > 0) {
           cursorRef.current = res.cursor
-          setTurns((prev) => [...prev, ...res.turns].slice(-200))
+          setTurns((prev) => {
+            // Optimistische Bubbles (negative id) entfernen, deren Text jetzt
+            // als echter user-Turn ankommt — verhindert Doppelanzeige.
+            const incomingUserTexts = new Set(
+              res.turns.filter((x) => x.role === "user").map((x) => x.text),
+            )
+            const cleaned = prev.filter(
+              (x) => !(x.id < 0 && incomingUserTexts.has(x.text)),
+            )
+            return [...cleaned, ...res.turns].slice(-200)
+          })
         }
       } catch {
         /* still, Status-Panel zeigt bridge down */
@@ -83,6 +96,32 @@ export function VoicePage() {
       clearInterval(iv)
     }
   }, [])
+
+  const sendText = useCallback(async (text: string) => {
+    const trimmed = text.trim()
+    if (!trimmed || sending) return
+    setSending(true)
+    setSendError(null)
+    // Optimistischer User-Bubble mit negativer id (kollidiert nicht mit echten).
+    const optimistic: TranscriptTurn = {
+      id: optimisticIdRef.current--,
+      ts: Date.now() / 1000,
+      role: "user",
+      kind: "speech",
+      text: trimmed,
+    }
+    setTurns((prev) => [...prev, optimistic].slice(-200))
+    try {
+      await voiceApi.say(trimmed)
+      // Der echte Turn (inkl. Antwort) kommt über das nächste Poll.
+    } catch {
+      setSendError(t("send_error"))
+      // optimistischen Bubble wieder entfernen
+      setTurns((prev) => prev.filter((x) => x.id !== optimistic.id))
+    } finally {
+      setSending(false)
+    }
+  }, [sending, t])
 
   const patch = useCallback(async (p: Partial<VoiceSettings>) => {
     setSaving(true)
@@ -140,6 +179,13 @@ export function VoicePage() {
             </div>
           </header>
           <TranscriptView turns={turns} t={t} />
+          <Composer
+            disabled={bridgeDown}
+            sending={sending}
+            error={sendError}
+            onSend={sendText}
+            t={t}
+          />
         </main>
 
         {/* Rechts: Status */}
@@ -182,6 +228,57 @@ function TranscriptView({
         <Bubble key={turn.id} turn={turn} t={t} />
       ))}
       <div ref={endRef} />
+    </div>
+  )
+}
+
+function Composer({
+  disabled,
+  sending,
+  error,
+  onSend,
+  t,
+}: {
+  disabled: boolean
+  sending: boolean
+  error: string | null
+  onSend: (text: string) => void
+  t: (k: string) => string
+}) {
+  const [text, setText] = useState("")
+  const submit = () => {
+    if (!text.trim() || sending || disabled) return
+    onSend(text)
+    setText("")
+  }
+  return (
+    <div className="border-t border-[#1c2636] p-3">
+      {error && <p className="mb-1.5 text-xs text-[#e0a0a0]">{error}</p>}
+      <div className="flex items-end gap-2">
+        <textarea
+          value={text}
+          disabled={disabled}
+          rows={1}
+          placeholder={t("input_placeholder")}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault()
+              submit()
+            }
+          }}
+          className="max-h-32 min-h-[38px] flex-1 resize-none rounded-[6px] border border-[#1c2636] bg-[#0b1119] px-3 py-2 text-sm text-[#e8eef8] outline-none placeholder:text-[#5a6880] focus:border-[#3a6ea5] disabled:opacity-50"
+        />
+        <button
+          type="button"
+          onClick={submit}
+          disabled={disabled || sending || !text.trim()}
+          className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[6px] bg-[#1f5f8b] text-white transition-colors hover:bg-[#2670a3] disabled:opacity-40"
+          aria-label={t("send")}
+        >
+          <Send size={16} />
+        </button>
+      </div>
     </div>
   )
 }

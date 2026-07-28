@@ -12,4 +12,5 @@ export const voiceApi = {
     api.put<SettingsResponse>(`${BASE}/settings`, patch),
   transcript: (since = 0, limit = 50) =>
     api.get<TranscriptResponse>(`${BASE}/transcript?since=${since}&limit=${limit}`),
+  say: (text: string) => api.post<{ accepted: boolean }>(`${BASE}/say`, { text }),
 }

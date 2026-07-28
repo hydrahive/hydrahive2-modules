@@ -202,3 +202,40 @@ def test_transcript_bridge_down(client, user_headers, mock_bridge):
 def test_transcript_invalid_since_422(client, user_headers, mock_bridge):
     r = client.get(f"{PREFIX}/transcript?since=-1", headers=user_headers)
     assert r.status_code == 422
+
+
+# ── POST /say ──────────────────────────────────────────────────────────────
+def test_say_needs_auth(client):
+    assert client.post(f"{PREFIX}/say", json={"text": "hi"}).status_code == 401
+
+
+def test_say_ok(client, user_headers, mock_bridge):
+    mock_bridge.routes["POST /say"] = _FakeResp(200, {"accepted": True})
+    r = client.post(f"{PREFIX}/say", headers=user_headers, json={"text": "  hallo  "})
+    assert r.status_code == 200
+    assert r.json() == {"accepted": True}
+    _url, payload = mock_bridge.last_post
+    assert payload == {"text": "hallo"}  # getrimmt weitergereicht
+
+
+def test_say_empty_422_no_bridge_call(client, user_headers, mock_bridge):
+    r = client.post(f"{PREFIX}/say", headers=user_headers, json={"text": "   "})
+    assert r.status_code == 422
+    assert mock_bridge.last_post is None
+
+
+def test_say_missing_text_422(client, user_headers, mock_bridge):
+    r = client.post(f"{PREFIX}/say", headers=user_headers, json={})
+    assert r.status_code == 422
+
+
+def test_say_too_long_422(client, user_headers, mock_bridge):
+    r = client.post(f"{PREFIX}/say", headers=user_headers, json={"text": "x" * 2001})
+    assert r.status_code == 422
+    assert mock_bridge.last_post is None
+
+
+def test_say_bridge_unreachable_503(client, user_headers, mock_bridge):
+    # keine POST-Route → KeyError → except → 503
+    r = client.post(f"{PREFIX}/say", headers=user_headers, json={"text": "hi"})
+    assert r.status_code == 503
