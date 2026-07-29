@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { voiceApi } from "./api"
+import { VoiceSetupRequired } from "./VoiceSetupRequired"
 import type {
   LlmModel, LlmState, SettingsResponse, SttInfo, TranscriptTurn, TtsConfig,
   TtsModel, TtsState, VoiceSettings, VoiceStatus, WakeSensitivity,
@@ -23,6 +24,7 @@ export function VoicePage() {
   const [settings, setSettings] = useState<VoiceSettings | null>(null)
   const [bridgeDown, setBridgeDown] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [checking, setChecking] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -219,6 +221,15 @@ export function VoicePage() {
     }
   }, [t, loadSettings])
 
+  const retryConnection = useCallback(async () => {
+    setChecking(true)
+    try {
+      await Promise.all([loadStatus(), loadSettings()])
+    } finally {
+      setChecking(false)
+    }
+  }, [loadStatus, loadSettings])
+
   return (
     <CockpitShell
       title="Voice"
@@ -226,6 +237,9 @@ export function VoicePage() {
       hideHeader
     >
       <CockpitTopbar active="/voice" context={t("subtitle")} />
+      {!loading && bridgeDown ? (
+        <VoiceSetupRequired checking={checking} onRetry={retryConnection} t={t} />
+      ) : (
       <div className="grid min-h-0 flex-1 gap-[10px] overflow-hidden p-[10px] xl:grid-cols-[300px_minmax(520px,1fr)_330px]">
         {/* Links: Einstellungen */}
         <aside className="hidden min-h-0 overflow-y-auto xl:block">
@@ -301,6 +315,7 @@ export function VoicePage() {
           </Panel>
         </aside>
       </div>
+      )}
     </CockpitShell>
   )
 }
