@@ -1,5 +1,7 @@
 import { AtelierPage } from "./AtelierPage"
 
+export { mediaSources } from "./mediaSource"
+
 export const routes = [{ path: "/atelier", element: <AtelierPage /> }]
 export const nav = [
   { path: "/atelier", icon: "Palette", labelKey: "atelier", group: "working", roles: [] },
@@ -15,6 +17,23 @@ export const slotBlocks = [
     render: (_attrs: Record<string, string>) => (
       <div className="min-h-[200px]"><AtelierPage /></div>
     ),
+  },
+]
+
+// Produktions-Workflow im Media-Cockpit. Der Core rendert die Schritte in der
+// linken Navigation und bettet die Seite ein; ohne dieses Modul zeigt das
+// Cockpit nur den Videoschnitt.
+export const mediaWorkflows = [
+  {
+    id: "atelier",
+    steps: [
+      { id: "characters", title: "Charaktere", text: "Figuren auswählen und verwalten", icon: "characters" },
+      { id: "generate", title: "Bild erzeugen", text: "Keyframes und Motive erstellen", icon: "generate" },
+      { id: "gallery", title: "Galerie", text: "Bilder ansehen und weiterverwenden", icon: "gallery" },
+      { id: "clips", title: "Videoclips", text: "Clips erzeugen und abspielen", icon: "clips" },
+      { id: "film", title: "Film erstellen", text: "Clips ordnen und Film rendern", icon: "film" },
+    ],
+    component: AtelierPage,
   },
 ]
 
