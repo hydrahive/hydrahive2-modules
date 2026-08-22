@@ -1,0 +1,23 @@
+name: Version-Bump
+
+# Der Modul-Installer entscheidet per Semver, ob ein Update ausgeliefert wird.
+# Ändert ein PR den Inhalt eines Moduls, ohne die Version im manifest.json
+# anzuheben, meldet der Hub kein Update — die Änderung erreicht niemanden.
+# Zweimal real passiert (2660dcb, 5beecfb), deshalb dieser Guard.
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Manifest-Version angehoben
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Volle Historie: der Guard vergleicht gegen den Merge-Base.
+          fetch-depth: 0
+
+      - name: Version-Bump prüfen
+        run: python3 scripts/check_version_bump.py "origin/${{ github.base_ref }}"
