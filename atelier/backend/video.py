@@ -153,6 +153,7 @@ async def render_clip(
 ) -> str:
     """Rendert EINEN Clip synchron (await-bar): submit → poll → download.
 
+    Lokale ``local:``-Modelle nutzen den Core-Runner; Cloud bleibt unverändert.
     Gibt den ``videos/<name>``-rel zurück. Wirft bei Fehler (Aufrufer behandelt).
     Ohne eigene Job-Datei — für Orchestrierung (E5 Batch-Render) wiederverwendbar.
     Teilt sich das Semaphor mit den normalen Video-Jobs (Rate-Limit-Schutz).
@@ -160,6 +161,27 @@ async def render_clip(
     ``end_source_rel`` (optional) hängt ein Endbild als last_frame an.
     """
     async with _SEM:
+        model = model.strip() or _DEFAULT_MODEL
+        if model.startswith("local:"):
+            from hydrahive.llm._config import load_config
+            from hydrahive.llm.video_backends import VideoParams, resolve_backend, run_local_media
+
+            try:
+                backend, provider = resolve_backend(model, load_config())
+                image_url = _source_to_data_url(project_id, source_rel) if source_rel else None
+                path = await run_local_media(
+                    backend, provider, model,
+                    VideoParams(
+                        prompt=prompt, duration=duration, aspect_ratio=aspect_ratio,
+                        image_url=image_url,
+                    ),
+                    storage.videos_dir(project_id),
+                    timeout=_poll_timeout_for(duration),
+                )
+            except (RuntimeError, TimeoutError, OSError, ValueError) as e:
+                raise RuntimeError(str(e)) from e
+            return f"videos/{path.name}"
+
         key = openrouter_key()
         if not key:
             raise RuntimeError("Kein OpenRouter-API-Key konfiguriert.")

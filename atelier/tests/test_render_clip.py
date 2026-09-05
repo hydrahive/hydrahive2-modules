@@ -27,6 +27,25 @@ async def test_render_clip_gibt_rel_zurueck():
 
 
 @pytest.mark.asyncio
+async def test_render_clip_local_nutzt_core_runner():
+    output = Path(video.storage.videos_dir(PROJECT_ID)) / "local.mp4"
+    output.write_bytes(b"video")
+    fake_backend = object()
+    with (
+        patch("hydrahive.llm._config.load_config", return_value={"media_backends": []}),
+        patch("hydrahive.llm.video_backends.resolve_backend", return_value=(fake_backend, {})),
+        patch("hydrahive.llm.video_backends.run_local_media", new=AsyncMock(return_value=output), create=True) as runner,
+        patch("backend.video.openrouter_key", side_effect=AssertionError),
+    ):
+        rel = await video.render_clip(
+            PROJECT_ID, source_rel="", prompt="a shot",
+            model="local:node/workflow", duration=5,
+        )
+    runner.assert_awaited_once()
+    assert rel == "videos/local.mp4"
+
+
+@pytest.mark.asyncio
 async def test_render_clip_ohne_key_wirft():
     with patch("backend.video.openrouter_key", return_value=""):
         with pytest.raises(RuntimeError):

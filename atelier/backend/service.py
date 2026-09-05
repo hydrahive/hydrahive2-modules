@@ -109,13 +109,23 @@ def generate_for_project(project_id: str, req: dict) -> dict:
     )
     references = _collect_reference_urls(project_id, chosen)
 
-    raw = generate.generate_image(
-        model=model,
-        prompt=prompt,
-        references=references,
-        seed=seed,
-        aspect_ratio=aspect,
-    )
+    if model.startswith("local:"):
+        raw = generate.generate_local_image(
+            model=model,
+            prompt=prompt,
+            references=references,
+            seed=seed,
+            aspect_ratio=aspect,
+            dest_dir=storage.images_dir(project_id),
+        )
+    else:
+        raw = generate.generate_image(
+            model=model,
+            prompt=prompt,
+            references=references,
+            seed=seed,
+            aspect_ratio=aspect,
+        )
 
     ext = _sniff_ext(raw)
     created = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
