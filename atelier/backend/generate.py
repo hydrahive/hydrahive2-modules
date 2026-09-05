@@ -13,8 +13,10 @@ wenige (flux.2, seedream-4.5) — wird nur mitgeschickt, wenn gesetzt.
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import binascii
+from pathlib import Path
 
 import httpx
 
@@ -26,6 +28,30 @@ _TIMEOUT = 180.0
 
 class GenerateError(RuntimeError):
     """Generierung fehlgeschlagen (Key fehlt, API-Fehler, leere Antwort)."""
+
+
+def generate_local_image(
+    *, model: str, prompt: str, references: list[str] | None = None,
+    seed: int | None = None, aspect_ratio: str = "1:1", dest_dir: Path,
+) -> bytes:
+    """Generiert über die Core-Registry, ohne OpenRouter-Fallback."""
+    from hydrahive.llm._config import load_config
+    from hydrahive.llm.video_backends import VideoParams, resolve_backend, run_local_media
+
+    try:
+        backend, provider = resolve_backend(model, load_config())
+        image_url = (references or [None])[0]
+        params = VideoParams(
+            prompt=prompt, aspect_ratio=aspect_ratio, seed=seed, image_url=image_url,
+        )
+        path = asyncio.run(run_local_media(
+            backend, provider, model, params, dest_dir,
+        ))
+        raw = path.read_bytes()
+        path.unlink(missing_ok=True)
+        return raw
+    except (RuntimeError, TimeoutError, OSError, ValueError) as e:
+        raise GenerateError(str(e)) from e
 
 
 def build_prompt(
