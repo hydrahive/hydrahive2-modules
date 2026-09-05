@@ -33,7 +33,7 @@ async def test_render_clip_local_nutzt_core_runner():
     fake_backend = object()
     with (
         patch("hydrahive.llm._config.load_config", return_value={"media_backends": []}),
-        patch("hydrahive.llm.video_backends.resolve_backend", return_value=(fake_backend, {})),
+        patch("hydrahive.llm.video_backends.resolve_local_workflow", return_value=(fake_backend, {})),
         patch("hydrahive.llm.video_backends.run_local_media", new=AsyncMock(return_value=output), create=True) as runner,
         patch("backend.video.openrouter_key", side_effect=AssertionError),
     ):

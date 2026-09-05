@@ -164,10 +164,10 @@ async def render_clip(
         model = model.strip() or _DEFAULT_MODEL
         if model.startswith("local:"):
             from hydrahive.llm._config import load_config
-            from hydrahive.llm.video_backends import VideoParams, resolve_backend, run_local_media
+            from hydrahive.llm.video_backends import VideoParams, resolve_local_workflow, run_local_media
 
             try:
-                backend, provider = resolve_backend(model, load_config())
+                backend, provider = resolve_local_workflow(model, load_config(), "video")
                 image_url = _source_to_data_url(project_id, source_rel) if source_rel else None
                 path = await run_local_media(
                     backend, provider, model,

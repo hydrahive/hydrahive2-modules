@@ -38,14 +38,14 @@ function groupModels(models: MediaModel[]): { label: string; models: MediaModel[
   const localByProvider = new Map<string, MediaModel[]>()
   for (const m of models) {
     if (!m.local) continue
-    const key = m.provider || "Lokal"
+    const key = m.provider || "Lokale GPU (ComfyUI)"
     const arr = localByProvider.get(key) ?? []
     arr.push(m)
     localByProvider.set(key, arr)
   }
   const groups: { label: string; models: MediaModel[] }[] = []
-  if (cloud.length) groups.push({ label: "OpenRouter", models: cloud })
-  for (const [label, ms] of localByProvider) groups.push({ label, models: ms })
+  if (cloud.length) groups.push({ label: "Cloud · OpenRouter", models: cloud })
+  for (const [label, ms] of localByProvider) groups.push({ label: `Diese WKS · ${label}`, models: ms })
   return groups
 }
 

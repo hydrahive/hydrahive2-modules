@@ -36,10 +36,10 @@ def generate_local_image(
 ) -> bytes:
     """Generiert über die Core-Registry, ohne OpenRouter-Fallback."""
     from hydrahive.llm._config import load_config
-    from hydrahive.llm.video_backends import VideoParams, resolve_backend, run_local_media
+    from hydrahive.llm.video_backends import VideoParams, resolve_local_workflow, run_local_media
 
     try:
-        backend, provider = resolve_backend(model, load_config())
+        backend, provider = resolve_local_workflow(model, load_config(), "image")
         image_url = (references or [None])[0]
         params = VideoParams(
             prompt=prompt, aspect_ratio=aspect_ratio, seed=seed, image_url=image_url,

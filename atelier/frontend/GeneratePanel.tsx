@@ -18,6 +18,24 @@ interface Props {
 
 const RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4"]
 
+/** Cloud und lokale Workflows nie als ununterscheidbare Modellsuppe zeigen. */
+function groupModels(models: MediaModel[]): { label: string; models: MediaModel[] }[] {
+  const cloud = models.filter((model) => !model.local)
+  const localByProvider = new Map<string, MediaModel[]>()
+  for (const model of models) {
+    if (!model.local) continue
+    const provider = model.provider || "Lokale GPU (ComfyUI)"
+    localByProvider.set(provider, [...(localByProvider.get(provider) ?? []), model])
+  }
+  return [
+    ...(cloud.length ? [{ label: "Cloud · OpenRouter", models: cloud }] : []),
+    ...[...localByProvider.entries()].map(([provider, local]) => ({
+      label: `Diese WKS · ${provider}`,
+      models: local,
+    })),
+  ]
+}
+
 /** Mittlere Spalte: Szene beschreiben + Parameter, dann generieren. */
 export function GeneratePanel({ projectId, ci, characters, selectedIds, presets, onGenerated, repeat }: Props) {
   const { t } = useTranslation("atelier")
@@ -119,8 +137,12 @@ export function GeneratePanel({ projectId, ci, characters, selectedIds, presets,
             className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-100"
           >
             <option value="">{ci.default_model || t("default")} ({t("default")})</option>
-            {models.map((m) => (
-              <option key={m.id} value={m.id}>{m.name || m.id}</option>
+            {groupModels(models).map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.models.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name || m.id}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>
