@@ -33,7 +33,7 @@ async def test_render_clip_local_nutzt_core_runner():
     fake_backend = object()
     with (
         patch("hydrahive.llm._config.load_config", return_value={"media_backends": []}),
-        patch("hydrahive.llm.video_backends.resolve_local_workflow", return_value=(fake_backend, {})),
+        patch("hydrahive.llm.video_backends.resolve_local_workflow", return_value=(fake_backend, {}), create=True),
         patch("hydrahive.llm.video_backends.run_local_media", new=AsyncMock(return_value=output), create=True) as runner,
         patch("backend.video.openrouter_key", side_effect=AssertionError),
     ):
@@ -43,6 +43,26 @@ async def test_render_clip_local_nutzt_core_runner():
         )
     runner.assert_awaited_once()
     assert rel == "videos/local.mp4"
+
+
+@pytest.mark.asyncio
+async def test_render_clip_local_reicht_endbild_an_core_runner():
+    output = Path(video.storage.videos_dir(PROJECT_ID)) / "local-end.mp4"
+    output.write_bytes(b"video")
+    fake_backend = object()
+    with (
+        patch("hydrahive.llm._config.load_config", return_value={"media_backends": []}),
+        patch("hydrahive.llm.video_backends.resolve_local_workflow", return_value=(fake_backend, {}), create=True),
+        patch("hydrahive.llm.video_backends.run_local_media", new=AsyncMock(return_value=output), create=True) as runner,
+        patch("backend.video._source_to_data_url", side_effect=["data:image/png;base64,start", "data:image/png;base64,end"]),
+    ):
+        await video.render_clip(
+            PROJECT_ID, source_rel="images/start.png", end_source_rel="images/end.png",
+            prompt="transition", model="local:node/flf2v", duration=5,
+        )
+    params = runner.await_args.args[3]
+    assert params.image_url.endswith("start")
+    assert params.end_image_url.endswith("end")
 
 
 @pytest.mark.asyncio
