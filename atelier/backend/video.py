@@ -169,11 +169,12 @@ async def render_clip(
             try:
                 backend, provider = resolve_local_workflow(model, load_config(), "video")
                 image_url = _source_to_data_url(project_id, source_rel) if source_rel else None
+                end_image_url = _source_to_data_url(project_id, end_source_rel) if end_source_rel else None
                 path = await run_local_media(
                     backend, provider, model,
                     VideoParams(
                         prompt=prompt, duration=duration, aspect_ratio=aspect_ratio,
-                        image_url=image_url,
+                        image_url=image_url, end_image_url=end_image_url,
                     ),
                     storage.videos_dir(project_id),
                     timeout=_poll_timeout_for(duration),
