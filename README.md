@@ -1,5 +1,7 @@
 # HydraHive2 module hub
 
+> 🇩🇪 [Deutsche Version](README.de.md)
+
 First-party module hub for [HydraHive2](https://github.com/hydrahive/hydrahive2.0).
 
 Each top-level directory is an installable module. `hub.json` is the hub
@@ -91,6 +93,10 @@ A module's backend code executes inside the HydraHive process. A
 module's frontend is compiled into the main application. HydraHive does
 not sandbox module Python code. Administrators should only install
 modules they have reviewed or originate from a trusted source.
+
+## Documentation language convention
+
+See [I18N.md](I18N.md) for the English/German mirror convention.
 
 ## License and contribution
 
