@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { api } from "@/shared/api-client"
+import { useAuthStore } from "@/features/auth/useAuthStore"
 
 type Status = { enabled: boolean; worker_ready: boolean; tor_reachable: boolean }
 type Policy = { enabled: boolean; max_chars: number; retention_days: number; allowed_modes: string[] }
@@ -8,6 +9,7 @@ type SearchOutput = { data?: { results?: Array<{ title: string; url: string; eng
 
 export function OpenTorPage() {
   const { t } = useTranslation("opentor")
+  const isAdmin = useAuthStore((state) => state.role) === "admin"
   const [status, setStatus] = useState<Status | null>(null)
   const [policy, setPolicy] = useState<Policy | null>(null)
   const [query, setQuery] = useState("")
@@ -65,7 +67,7 @@ export function OpenTorPage() {
         <div className="rounded-lg border border-white/10 bg-zinc-900/60 p-4 text-sm text-zinc-300">Worker: {status?.worker_ready ? "OK" : t("unavailable")}</div>
       </div>
 
-      {policy && <button onClick={toggle} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5">{policy.enabled ? t("adminDisable") : t("adminEnable")}</button>}
+      {isAdmin && policy && <button onClick={toggle} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5">{policy.enabled ? t("adminDisable") : t("adminEnable")}</button>}
 
       <div className="space-y-2 rounded-xl border border-white/10 bg-zinc-900/40 p-4">
         <label className="block text-sm text-zinc-400">{t("query")}</label>
