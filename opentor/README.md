@@ -6,15 +6,18 @@ standardmäßig deaktiviert und führt keine freien Shell-Kommandos aus.
 
 ## Upstream konfigurieren
 
-Der technische Adapter lädt eine geprüfte OpenTor-Arbeitskopie nur aus dem
+Der technische Adapter startet einen geprüften OpenTor-Worker nur aus dem
 serverseitig gesetzten `HYDRAHIVE_OPENTOR_ROOT` (Verzeichnis mit `scripts/`).
+Für die dedizierte Arbeitsumgebung kann zusätzlich
+`HYDRAHIVE_OPENTOR_PYTHON` auf den Python-Interpreter der OpenTor-Venv zeigen.
 Die Arbeitskopie muss auf einen geprüften Commit von
 https://github.com/vichhka-git/OpenTor gepinnt sein. Ohne diese Konfiguration
 bleiben Tools sicher deaktiviert und liefern `opentor_unavailable`.
 
 Installation, `sudo`, Tor-Start und Paketinstallation sind absichtlich nicht Teil
 des HydraHive-Moduls. Tor und die Python-Abhängigkeiten werden vom Administrator
-in einer dedizierten Umgebung bereitgestellt.
+in einer dedizierten Umgebung bereitgestellt; User-Input wird als JSON über stdin
+an den Worker übergeben, nie als Shell-Befehl.
 
 ## Sicherheit
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from backend.adapter import AdapterUnavailable, OpenTorAdapter
@@ -38,3 +40,26 @@ def test_redacts_personal_contact_data():
 def test_adapter_fails_closed_without_server_configured_root(tmp_path):
     with pytest.raises(AdapterUnavailable, match="opentor_unavailable"):
         OpenTorAdapter(str(tmp_path)).status()
+
+
+def test_adapter_passes_request_as_json_to_worker(tmp_path, monkeypatch):
+    (tmp_path / "scripts").mkdir()
+    calls = {}
+
+    class Completed:
+        returncode = 0
+        stdout = json.dumps({"worker_ready": True})
+
+    def fake_run(argv, **kwargs):
+        calls["argv"] = argv
+        calls["input"] = json.loads(kwargs["input"])
+        return Completed()
+
+    monkeypatch.setattr("backend.adapter.subprocess.run", fake_run)
+    result = OpenTorAdapter(str(tmp_path), python="/dedicated/python").search(
+        "breach", ["Ahmia"], 3, "threat_intel"
+    )
+    assert result == {"worker_ready": True}
+    assert calls["argv"][0] == "/dedicated/python"
+    assert calls["argv"][2] == "search"
+    assert calls["input"]["query"] == "breach"
