@@ -53,6 +53,7 @@ loads each module's `frontend/index.tsx`.
 | **Aufgaben** | 1.0.1 | — | router, migration, 4 tools, `buddyWidgets`, `workspaceTabs` | Persistent task management that survives chat sessions. The agent can create, update and complete tasks. |
 | **Video-Editor** | 0.1.2 | — | router, frontend routes, nav, i18n | Web video editor with timeline, filmstrip preview and hybrid export. |
 | **Voice** | 0.8.0 | — | router, frontend routes, nav | Voicebox for the HydraHive voice assistant (HA Voice PE) with voice, volume and wake-word settings. |
+| **OpenTor OSINT** | 0.1.0 | — | router, migration, 4 read-only tools, frontend routes, nav | Controlled Tor-based OSINT and threat-intelligence research, disabled by default. |
 | **Beispiel-Modul** | 1.0.1 | — | router, migration | Minimal example module used as a template for new modules. |
 
 Versions, summaries and the "Verified contributions" column are taken

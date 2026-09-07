@@ -89,6 +89,11 @@
       "id": "voice",
       "name": "Voice",
       "path": "voice"
+    },
+    {
+      "id": "opentor",
+      "name": "OpenTor OSINT",
+      "path": "opentor"
     }
   ]
 }
