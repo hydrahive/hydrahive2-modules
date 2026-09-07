@@ -34,5 +34,5 @@ def test_registers_read_only_tools():
 def test_manifest_is_disabled_by_default():
     manifest = json.loads((Path(__file__).parents[1] / "manifest.json").read_text())
     assert manifest["default_agent_tools"] is False
-    assert manifest["has_service"] is False
+    assert manifest["has_service"] is True
     assert "opentor.read" in manifest["permissions"]

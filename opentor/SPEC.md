@@ -4,6 +4,8 @@
 
 OpenTor wird als kontrolliertes, read-only Tor-OSINT-Modul in HydraHive integriert. HydraHive bleibt der Orchestrator und entscheidet über Recherche, Interpretation und Darstellung; OpenTor liefert ausschließlich Tor-Transport, gezielte Suche, Quellenabruf und mechanische IOC-Extraktion.
 
+Die Modulinstallation ist self-contained: Sie holt den gepinnten Upstream, richtet eine dedizierte Python-Venv ein und stellt, falls kein System-Tor vorhanden ist, einen rootlosen Tor-Binary-Runtime aus dem Distribution-Paket im Modul-Datenverzeichnis bereit. Die Admin-Aktion „Modul installieren“ gilt als bewusste Aktivierung; danach ist das Modul betriebsbereit oder zeigt einen klaren Setup-Fehler.
+
 Die erste Version ist **kein allgemeiner Dark-Web-Browser**, führt keine freien Shell-Kommandos aus und lädt keine Dateien oder Zugangsdaten herunter.
 
 ## Herkunft und Lizenz
@@ -88,7 +90,7 @@ opentor/
 └── tests/
 ```
 
-Das Manifest deklariert `has_service: true`, sobald der Worker-Lifecycle als eigener Prozess umgesetzt ist. Bis dahin darf ein reiner Adapter `has_service: false` verwenden, muss aber den Read-only-Modus erzwingen.
+Das Manifest deklariert `has_service: true`, weil die Modulinstallation die Runtime provisioniert und der Adapter den geprüften Upstream ausschließlich über einen eigenen Worker-Prozess ausführt.
 
 Empfohlene Manifest-Werte:
 
@@ -262,7 +264,8 @@ Aufbewahrung und Löschung müssen über die Modul-Policy konfigurierbar sein. D
 ## Akzeptanzkriterien
 
 - [ ] Modul wird vom Hub mit gültigem Manifest erkannt.
-- [ ] Modul ist standardmäßig deaktiviert und nicht als Default-Agent-Tool freigeschaltet.
+- [ ] Modulinstallation provisioniert Upstream, Python-Venv und Tor-Runtime; bei Installationsfehler wird nicht aktiviert.
+- [ ] Modul ist nach erfolgreicher Admin-Installation aktiviert und nicht als Default-Agent-Tool freigeschaltet.
 - [ ] Kein Tool akzeptiert freie Shell-Befehle oder beliebige Engine-URLs.
 - [ ] URL-Validierung blockiert gefährliche Schemes, lokale Netze, Credentials und Onion-Clearnet-Redirects.
 - [ ] Search/Fetch erzwingen Auth, Permission, Rate-Limit und Größenlimits.

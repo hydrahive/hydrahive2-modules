@@ -6,6 +6,8 @@ import os
 import sys
 from pathlib import Path
 
+from tor_runtime import ensure_tor
+
 
 def _load_modules():
     root_value = os.environ.get("HYDRAHIVE_OPENTOR_ROOT")
@@ -24,6 +26,12 @@ def _load_modules():
 def main() -> None:
     command = sys.argv[1] if len(sys.argv) == 2 else ""
     payload = json.loads(sys.stdin.read() or "{}")
+    host, socks_port, control_port = ensure_tor()
+    os.environ["TOR_SOCKS_HOST"] = host
+    os.environ["TOR_SOCKS_PORT"] = str(socks_port)
+    os.environ["TOR_CONTROL_HOST"] = host
+    os.environ["TOR_CONTROL_PORT"] = str(control_port)
+    os.environ["TOR_DATA_DIR"] = str(Path(os.environ["HYDRAHIVE_OPENTOR_RUNTIME"]) / "tor-data")
     osint, torcore = _load_modules()
     if command == "status":
         result = torcore.check_tor()
@@ -43,7 +51,7 @@ def main() -> None:
         output = torcore.fetch(payload["url"])
     else:
         raise RuntimeError("worker_command_invalid")
-    print(json.dumps(output, ensure_ascii=False))
+    sys.stdout.write(json.dumps(output, ensure_ascii=False) + "\n")
 
 
 if __name__ == "__main__":

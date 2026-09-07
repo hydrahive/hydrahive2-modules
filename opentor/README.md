@@ -1,23 +1,23 @@
 # OpenTor OSINT
 
 Kontrolliertes read-only Tor-OSINT-Modul für HydraHive. Die V1 bietet Status,
-gezielte Suche, den Abruf expliziter URLs und IOC-Extraktion. Das Modul ist
-standardmäßig deaktiviert und führt keine freien Shell-Kommandos aus.
+gezielte Suche, den Abruf expliziter URLs und IOC-Extraktion. Die Admin-Aktion
+„Modul installieren“ provisioniert und aktiviert die Runtime; die Agent-Tools
+bleiben trotzdem nicht als Default-Tools freigeschaltet und führen keine freien
+Shell-Kommandos aus.
 
 ## Upstream konfigurieren
 
-Der technische Adapter startet einen geprüften OpenTor-Worker nur aus dem
-serverseitig gesetzten `HYDRAHIVE_OPENTOR_ROOT` (Verzeichnis mit `scripts/`).
-Für die dedizierte Arbeitsumgebung kann zusätzlich
-`HYDRAHIVE_OPENTOR_PYTHON` auf den Python-Interpreter der OpenTor-Venv zeigen.
-Die Arbeitskopie muss auf einen geprüften Commit von
-https://github.com/vichhka-git/OpenTor gepinnt sein. Ohne diese Konfiguration
-bleiben Tools sicher deaktiviert und liefern `opentor_unavailable`.
+Die Modulinstallation richtet automatisch ein eigenes Laufzeitverzeichnis mit
+gepinntem OpenTor-Checkout, Python-Venv und Tor-Runtime ein. Ein vorhandenes
+System-Tor wird verwendet; fehlt es, lädt das Installationsskript das Ubuntu-
+Distribution-Paket mit `apt-get download` und entpackt es rootlos in die Modul-
+Runtime. Systemweite Pakete und `sudo` sind nicht erforderlich.
 
-Installation, `sudo`, Tor-Start und Paketinstallation sind absichtlich nicht Teil
-des HydraHive-Moduls. Tor und die Python-Abhängigkeiten werden vom Administrator
-in einer dedizierten Umgebung bereitgestellt; User-Input wird als JSON über stdin
-an den Worker übergeben, nie als Shell-Befehl.
+Der Adapter startet den geprüften OpenTor-Worker ausschließlich aus dieser
+Runtime. User-Input wird als JSON über stdin übergeben, nie als Shell-Befehl.
+Bei nicht unterstützter Distribution oder Architektur bricht die Installation
+mit einem klaren Fehler ab, statt ein halb funktionierendes Modul zu hinterlassen.
 
 ## Sicherheit
 

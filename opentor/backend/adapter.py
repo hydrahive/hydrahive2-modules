@@ -21,16 +21,33 @@ class OpenTorAdapter:
     """
 
     def __init__(self, root: str | None = None, python: str | None = None) -> None:
+        runtime = self._runtime_dir()
         configured = root or os.getenv("HYDRAHIVE_OPENTOR_ROOT")
-        self.root = Path(configured).resolve() if configured else None
-        self.python = python or os.getenv("HYDRAHIVE_OPENTOR_PYTHON") or sys.executable
+        self.root = Path(configured).resolve() if configured else runtime / "upstream"
+        default_python = runtime / "venv" / "bin" / "python"
+        self.python = python or os.getenv("HYDRAHIVE_OPENTOR_PYTHON") or (
+            str(default_python) if default_python.is_file() else sys.executable
+        )
+        self.runtime = runtime
         self.worker = Path(__file__).with_name("worker.py")
+
+    @staticmethod
+    def _runtime_dir() -> Path:
+        configured = os.getenv("HYDRAHIVE_OPENTOR_RUNTIME")
+        if configured:
+            return Path(configured).resolve()
+        try:
+            from hydrahive.settings import settings
+            return settings.data_dir / "opentor-runtime"
+        except (ImportError, AttributeError):
+            return Path.home() / ".local" / "share" / "hydrahive2" / "opentor-runtime"
 
     def _run(self, command: str, payload: dict[str, Any]) -> dict:
         if self.root is None or not (self.root / "scripts").is_dir() or not self.worker.is_file():
             raise AdapterUnavailable("opentor_unavailable")
         env = os.environ.copy()
         env["HYDRAHIVE_OPENTOR_ROOT"] = str(self.root)
+        env["HYDRAHIVE_OPENTOR_RUNTIME"] = str(self.runtime)
         try:
             completed = subprocess.run(
                 [self.python, str(self.worker), command],
