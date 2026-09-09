@@ -94,6 +94,11 @@
       "id": "opentor",
       "name": "OpenTor OSINT",
       "path": "opentor"
+    },
+    {
+      "id": "ai-security",
+      "name": "AI-Sicherheit",
+      "path": "ai-security"
     }
   ]
 }

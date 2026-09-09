@@ -6,7 +6,7 @@ First-party module hub for [HydraHive2](https://github.com/hydrahive/hydrahive2.
 
 Each top-level directory is an installable module. `hub.json` is the hub
 index that the HydraHive backend uses to list, pull and install these
-modules. The catalog currently contains **18 entries: 17 end-user
+modules. The catalog currently contains **20 entries: 19 end-user
 modules plus one developer example template**.
 
 ## Installation
@@ -54,6 +54,7 @@ loads each module's `frontend/index.tsx`.
 | **Video-Editor** | 0.1.2 | — | router, frontend routes, nav, i18n | Web video editor with timeline, filmstrip preview and hybrid export. |
 | **Voice** | 0.8.0 | — | router, frontend routes, nav | Voicebox for the HydraHive voice assistant (HA Voice PE) with voice, volume and wake-word settings. |
 | **OpenTor OSINT** | 0.1.0 | — | router, migration, 4 read-only tools, frontend routes, nav | Controlled Tor-based OSINT and threat-intelligence research, disabled by default. |
+| **AI-Sicherheit** | 0.1.0 | — | router, migration, polling job | Authenticated adapter for local AI-Infra-Guard infrastructure scans; no privileged scanner service is installed automatically. |
 | **Beispiel-Modul** | 1.0.1 | — | router, migration | Minimal example module used as a template for new modules. |
 
 Versions, summaries and the "Verified contributions" column are taken
