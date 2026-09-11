@@ -1,10 +1,13 @@
+import type { BuddyMediaWidget } from "@/modules/types"
 import { MusicPlayerBuddyBox } from "./MusicPlayerBuddyBox"
 
-// Kein eigener Tab — der Player lebt nur in der Buddy-Box.
+// Kein eigener Tab — der Player lebt in Phase B im dedizierten Buddy-Media-Slot.
 export const routes = []
 export const nav = []
 
-export const buddyWidgets = [MusicPlayerBuddyBox]
+export const buddyMediaWidgets = [
+  { id: "musicplayer", order: 10, component: MusicPlayerBuddyBox },
+] satisfies BuddyMediaWidget[]
 
 export const i18n = {
   de: {

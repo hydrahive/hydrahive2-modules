@@ -1,7 +1,7 @@
 {
   "id": "musicplayer",
   "name": "Musicplayer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Audio-Player für generierte und hochgeladene Musik mit Playlist und Equalizer. Höre deine im Atelier erzeugten Stücke direkt in der App.",
   "icon": "Music",
   "nav_group": "working",
