@@ -46,7 +46,7 @@ einem Build, der das `frontend/index.tsx` jedes Moduls lädt.
 | **Home Assistant** | 1.0.2 | — | router, migration, 4 Tools | Verbindet Home Assistant: Entities listen/lesen, Templates rendern und Services aufrufen. |
 | **Mediacenter** | 0.8.1 | — | router, migration, 5 Tools, Queue/History | Treasure-Maps-Suche mit Medien-Profilen, idempotenter SABnzbd-Übergabe und Per-User-Queue/History. |
 | **Minigames** | 1.0.2 | — | router, migration, `buddyWidgets` | Eine Sammlung kleiner Browser-Spiele für kurze Pausen. |
-| **Musicplayer** | 1.1.0 | — | router, migration, `buddyMediaWidgets` | Projektgebundene, rollenbasierte Audio-Bibliothek im Buddy-Media-Slot; speichert updatefest unter `media/audio`, unterstützt Upload, Import, Streaming und Download. |
+| **Musicplayer** | 1.1.1 | — | router, migration, `buddyMediaWidgets` | Projektgebundene, rollenbasierte Audio-Bibliothek im Buddy-Media-Slot; speichert updatefest unter `media/audio`, unterstützt Upload, Import, Streaming und Download. |
 | **Notizbuch** | 1.0.2 | — | router, migration | Einfaches Notizbuch für Texte und Ideen, verfügbar über Projekte hinweg. |
 | **Meine Akte** | 1.0.2 | — | router, migration, 2 Read-Tools, `buddyWidgets` | Persönliche Patientenakte für Befunde, Medikamente und Diagnosen, mit strukturierten Importen. |
 | **Scratchpad** | 1.0.2 | — | router, 2 Tools, nav, i18n, routes | Geteiltes Notizbuch zwischen User und Agent mit getrennten, nicht geteilten Zonen. |
