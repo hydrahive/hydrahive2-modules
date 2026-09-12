@@ -1,4 +1,4 @@
-// Admin-Bereich: generierte Musik aus den Workspaces auflisten + importieren.
+// Admin-Bereich: generierte Musik aus den Workspaces auflisten und importieren.
 import { Check, ChevronDown, ChevronRight, Download, Sparkles } from "lucide-react"
 import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -32,37 +32,51 @@ export function GeneratedImport({ onImported }: { onImported: () => void }) {
       await musicApi.importGenerated(path)
       onImported()
       load()
-    } catch { /* 409/Fehler ignorieren — Liste wird neu geladen */ }
-    finally { setBusy(null) }
+    } catch {
+      // Die frisch geladene Liste ist auch nach 409/Fehler die verlässliche Quelle.
+    } finally {
+      setBusy(null)
+    }
   }
 
   return (
-    <div className="pt-1">
-      <button onClick={toggle}
-        className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-fuchsia-200/80 hover:bg-fuchsia-400/[5%] text-xs transition-colors">
-        {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-        <Sparkles size={12} />
-        {t("mp_generated")}
+    <div>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-2 text-xs font-bold text-[#c4cedd] transition-colors hover:border-[#46617f] hover:bg-[#172133] hover:text-[#e8eef8] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#69d7ff]"
+      >
+        {open ? <ChevronDown size={13} className="text-[#69d7ff]" /> : <ChevronRight size={13} className="text-[#8d9ab0]" />}
+        <Sparkles size={12} className="text-[#69d7ff]" />
+        <span className="min-w-0 flex-1 truncate text-left">{t("mp_generated")}</span>
       </button>
 
       {open && (
-        <div className="mt-1 space-y-0.5 max-h-40 overflow-y-auto pl-1">
-          {loading && <p className="text-[10px] text-zinc-500 px-1 py-1">{t("mp_loading")}</p>}
+        <div className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-[4px] border border-[#2a364b] bg-[#0d1420] p-1">
+          {loading && <p className="px-2 py-1.5 text-[10px] text-[#8d9ab0]">{t("mp_loading")}</p>}
           {!loading && items.length === 0 && (
-            <p className="text-[10px] text-zinc-500 px-1 py-1">{t("mp_generated_empty")}</p>
+            <p className="px-2 py-1.5 text-[10px] text-[#8d9ab0]">{t("mp_generated_empty")}</p>
           )}
-          {items.map((g) => (
-            <div key={g.path}
-              className="flex items-center gap-1.5 px-1.5 py-1 rounded-md hover:bg-white/[3%]">
-              <span className="text-[10px] text-zinc-400 truncate flex-1" title={g.path}>
-                {g.workspace} · {g.mtime.slice(0, 10)}
+          {items.map((item) => (
+            <div
+              key={item.path}
+              className="flex items-center gap-2 rounded-[4px] border border-transparent bg-[#111827] px-2 py-1.5 hover:border-[#2a364b] hover:bg-[#172133]"
+            >
+              <span className="min-w-0 flex-1 truncate text-[10px] text-[#aab6c8]" title={item.path}>
+                {item.workspace} · {item.mtime.slice(0, 10)}
               </span>
-              {g.already_imported ? (
-                <Check size={13} className="text-emerald-400 shrink-0" />
+              {item.already_imported ? (
+                <Check size={13} className="shrink-0 text-emerald-400" />
               ) : (
-                <button onClick={() => doImport(g.path)} disabled={busy === g.path}
-                  className="shrink-0 text-zinc-400 hover:text-fuchsia-200 disabled:opacity-40"
-                  title={t("mp_import")}>
+                <button
+                  type="button"
+                  onClick={() => doImport(item.path)}
+                  disabled={busy === item.path}
+                  className="grid h-6 w-6 shrink-0 place-items-center rounded-[4px] text-[#8d9ab0] transition-colors hover:bg-fuchsia-500/10 hover:text-fuchsia-200 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#69d7ff]"
+                  title={t("mp_import")}
+                  aria-label={t("mp_import")}
+                >
                   <Download size={13} />
                 </button>
               )}

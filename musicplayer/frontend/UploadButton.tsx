@@ -27,11 +27,12 @@ export function UploadButton({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className="pt-1">
+    <div>
       <button
+        type="button"
         onClick={() => inputRef.current?.click()}
         disabled={busy}
-        className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border border-dashed border-fuchsia-400/30 text-fuchsia-200/90 hover:bg-fuchsia-400/[6%] text-xs disabled:opacity-50 transition-colors"
+        className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-dashed border-[#2a364b] bg-[#111827] px-2 py-2 text-xs font-bold text-[#c8f2ff] transition-colors hover:border-[#69d7ff]/70 hover:bg-[#172133] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#69d7ff]"
       >
         <Upload size={13} />
         {busy ? t("mp_uploading") : t("mp_upload")}
@@ -43,7 +44,7 @@ export function UploadButton({ onDone }: { onDone: () => void }) {
         className="hidden"
         onChange={onPick}
       />
-      {err && <p className="mt-1 text-[10px] text-red-400">{err}</p>}
+      {err && <p className="mt-1 text-[10px] text-rose-300">{err}</p>}
     </div>
   )
 }
