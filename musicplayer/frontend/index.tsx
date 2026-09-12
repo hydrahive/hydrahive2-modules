@@ -34,6 +34,8 @@ export const i18n = {
       mp_generated_empty: "Nichts gefunden.",
       mp_loading: "Lädt…",
       mp_import: "In den Player holen",
+      mp_download: "{{title}} herunterladen",
+      mp_select_project: "Wähle ein Projekt für die gemeinsame Audiobibliothek.",
     },
   },
   en: {
@@ -60,6 +62,8 @@ export const i18n = {
       mp_generated_empty: "Nothing found.",
       mp_loading: "Loading…",
       mp_import: "Add to player",
+      mp_download: "Download {{title}}",
+      mp_select_project: "Select a project for the shared audio library.",
     },
   },
 }

@@ -1,14 +1,14 @@
-"""Musicplayer-Modul — Backend.
+"""Musicplayer-Modul — projektgebundene Audio-Bibliothek.
 
 register(ctx) →
-  - Router (/api/modules/musicplayer/tracks[...]) — Liste, Streaming (Range),
-    Admin-Upload, Admin-Delete
-  - Import-Router (/api/modules/musicplayer/generated[...]) — Admin: generierte
-    Musik aus den Workspaces auflisten und in den Pool kopieren (R2b)
-  - Migrationen (tracks-Tabelle, additiv)
+  - Projekt-Router (`/api/modules/musicplayer/projects/{project_id}/...`) für
+    Bibliothek, Upload, Stream/Download und Löschen nach Projekt-RBAC.
+  - Import-Router für generierte Musik aus demselben Projektworkspace.
+  - Additive Migrationen für Track-Metadaten und Projektzuordnung.
 
-Audio liegt als Datei unter data_dir/modules/musicplayer/ (UUID-Namen),
-Metadaten in der DB. Das Frontend ist nur ein Player in der Buddy-Box.
+Audio liegt updatefest im jeweiligen Projektworkspace unter `media/audio/`.
+Legacy-Dateien aus dem früheren globalen Modulpool werden nach verifizierter Kopie
+lazy in den passenden Projektworkspace übernommen.
 """
 from __future__ import annotations
 
