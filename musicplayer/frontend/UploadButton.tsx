@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { musicApi } from "./api"
 
-export function UploadButton({ onDone }: { onDone: () => void }) {
+export function UploadButton({ projectId, onDone }: { projectId: string; onDone: () => void }) {
   const { t } = useTranslation("musicplayer")
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [busy, setBusy] = useState(false)
@@ -17,7 +17,7 @@ export function UploadButton({ onDone }: { onDone: () => void }) {
     setErr(null)
     setBusy(true)
     try {
-      await musicApi.upload(file, "")
+      await musicApi.upload(projectId, file, "")
       onDone()
     } catch (ex) {
       setErr(ex instanceof Error ? ex.message : t("mp_upload_error"))

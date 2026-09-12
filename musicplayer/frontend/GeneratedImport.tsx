@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { musicApi } from "./api"
 import type { GeneratedTrack } from "./types"
 
-export function GeneratedImport({ onImported }: { onImported: () => void }) {
+export function GeneratedImport({ projectId, onImported }: { projectId: string; onImported: () => void }) {
   const { t } = useTranslation("musicplayer")
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<GeneratedTrack[]>([])
@@ -14,11 +14,11 @@ export function GeneratedImport({ onImported }: { onImported: () => void }) {
 
   const load = useCallback(() => {
     setLoading(true)
-    musicApi.listGenerated()
+    musicApi.listGenerated(projectId)
       .then(setItems)
       .catch(() => setItems([]))
       .finally(() => setLoading(false))
-  }, [])
+  }, [projectId])
 
   const toggle = () => {
     const nextOpen = !open
@@ -29,7 +29,7 @@ export function GeneratedImport({ onImported }: { onImported: () => void }) {
   const doImport = async (path: string) => {
     setBusy(path)
     try {
-      await musicApi.importGenerated(path)
+      await musicApi.importGenerated(projectId, path)
       onImported()
       load()
     } catch {

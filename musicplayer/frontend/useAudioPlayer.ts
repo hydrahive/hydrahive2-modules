@@ -27,7 +27,7 @@ export interface PlayerUI {
 
 const REPEAT_ORDER: RepeatMode[] = ["off", "all", "one"]
 
-export function useAudioPlayer(tracks: Track[]): PlayerUI {
+export function useAudioPlayer(projectId: string, tracks: Track[]): PlayerUI {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [index, setIndex] = useState(-1)
   const [playing, setPlaying] = useState(false)
@@ -43,11 +43,12 @@ export function useAudioPlayer(tracks: Track[]): PlayerUI {
   useEffect(() => {
     const a = audioRef.current
     if (!a || !current) return
-    a.src = musicApi.streamUrl(current.id)
+    a.src = musicApi.streamUrl(projectId, current.id)
     a.load()
     if (playing) void a.play().catch(() => setPlaying(false))
+    // `playing` wird absichtlich nicht als Abhängigkeit verwendet: dieser Effekt reagiert auf Quellenwechsel.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id])
+  }, [projectId, current?.id])
 
   const select = useCallback((i: number) => {
     setIndex(i)
@@ -139,6 +140,15 @@ export function useAudioPlayer(tracks: Track[]): PlayerUI {
       a.removeEventListener("pause", onPause)
     }
   }, [handleEnded])
+
+  // Beim Projektwechsel wird die keyed Project-View ausgehängt: Wiedergabe sicher stoppen.
+  useEffect(() => () => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.pause()
+    audio.removeAttribute("src")
+    audio.load()
+  }, [])
 
   return {
     audioRef, current, index, playing, currentTime, duration, volume, shuffle, repeat,

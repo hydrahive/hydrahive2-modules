@@ -1,80 +1,77 @@
-"""Track-Metadaten-Store — eine Zeile je hochgeladenem MP3.
-
-Die DB ist die Wahrheit für die Track-Liste; storage.py hält das Audio-Backing.
-Upload/Delete in routes.py halten beide konsistent.
-"""
+"""DB-Zugriff für projektgebundene Musicplayer-Tracks."""
 from __future__ import annotations
 
 from hydrahive.db.connection import db
 
-_NOW = "strftime('%Y-%m-%dT%H:%M:%SZ','now')"
+_COLUMNS = "id, project_id, title, filename, size_bytes, uploaded_by, created_at, source"
 
 
-def add(title: str, filename: str, size_bytes: int, uploaded_by: str, source: str = "") -> int:
-    with db() as c:
-        cur = c.execute(
+def list_all(project_id: str) -> list[dict]:
+    with db() as connection:
+        rows = connection.execute(
+            f"SELECT {_COLUMNS} FROM module_musicplayer_tracks "
+            "WHERE project_id = ? ORDER BY created_at DESC, id DESC",
+            (project_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def get(project_id: str, track_id: int) -> dict | None:
+    with db() as connection:
+        row = connection.execute(
+            f"SELECT {_COLUMNS} FROM module_musicplayer_tracks "
+            "WHERE project_id = ? AND id = ?",
+            (project_id, track_id),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def add(
+    project_id: str,
+    *,
+    title: str,
+    filename: str,
+    size_bytes: int,
+    uploaded_by: str,
+    source: str = "",
+) -> dict:
+    with db() as connection:
+        cursor = connection.execute(
             "INSERT INTO module_musicplayer_tracks "
-            "(title, filename, size_bytes, uploaded_by, source, created_at) "
-            f"VALUES (?, ?, ?, ?, ?, {_NOW})",
-            (title, filename, size_bytes, uploaded_by, source),
+            "(project_id, title, filename, size_bytes, uploaded_by, source) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (project_id, title, filename, size_bytes, uploaded_by, source),
         )
-        return int(cur.lastrowid)
-
-
-def imported_sources() -> set[str]:
-    """Alle bereits importierten Quell-Pfade (für Dedup beim Import)."""
-    with db() as c:
-        rows = c.execute(
-            "SELECT source FROM module_musicplayer_tracks WHERE source <> ''"
-        ).fetchall()
-    return {r["source"] for r in rows}
-
-
-def list_all() -> list[dict]:
-    with db() as c:
-        rows = c.execute(
-            "SELECT id, title, size_bytes, uploaded_by, created_at "
-            "FROM module_musicplayer_tracks ORDER BY created_at DESC, id DESC"
-        ).fetchall()
-    return [
-        {
-            "id": int(r["id"]),
-            "title": r["title"],
-            "size_bytes": int(r["size_bytes"]),
-            "uploaded_by": r["uploaded_by"],
-            "created_at": r["created_at"],
-        }
-        for r in rows
-    ]
-
-
-def get(track_id: int) -> dict | None:
-    with db() as c:
-        r = c.execute(
-            "SELECT id, title, filename, size_bytes, uploaded_by, created_at "
-            "FROM module_musicplayer_tracks WHERE id = ?",
-            (track_id,),
+        row = connection.execute(
+            f"SELECT {_COLUMNS} FROM module_musicplayer_tracks WHERE id = ?",
+            (cursor.lastrowid,),
         ).fetchone()
-    if r is None:
-        return None
-    return {
-        "id": int(r["id"]),
-        "title": r["title"],
-        "filename": r["filename"],
-        "size_bytes": int(r["size_bytes"]),
-        "uploaded_by": r["uploaded_by"],
-        "created_at": r["created_at"],
-    }
+        return dict(row)
 
 
-def delete(track_id: int) -> str | None:
-    """Löscht die Zeile, gibt den Dateinamen zurück (für storage.delete_file)."""
-    with db() as c:
-        r = c.execute(
-            "SELECT filename FROM module_musicplayer_tracks WHERE id = ?",
-            (track_id,),
+def delete(project_id: str, track_id: int) -> bool:
+    with db() as connection:
+        cursor = connection.execute(
+            "DELETE FROM module_musicplayer_tracks WHERE project_id = ? AND id = ?",
+            (project_id, track_id),
+        )
+        return cursor.rowcount > 0
+
+
+def imported_sources(project_id: str) -> set[str]:
+    with db() as connection:
+        rows = connection.execute(
+            "SELECT source FROM module_musicplayer_tracks "
+            "WHERE project_id = ? AND source IS NOT NULL AND source != ''",
+            (project_id,),
+        ).fetchall()
+        return {str(row["source"]) for row in rows}
+
+
+def source_exists(project_id: str, source: str) -> bool:
+    with db() as connection:
+        row = connection.execute(
+            "SELECT 1 FROM module_musicplayer_tracks WHERE project_id = ? AND source = ? LIMIT 1",
+            (project_id, source),
         ).fetchone()
-        if r is None:
-            return None
-        c.execute("DELETE FROM module_musicplayer_tracks WHERE id = ?", (track_id,))
-        return r["filename"]
+        return row is not None
