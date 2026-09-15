@@ -8,7 +8,6 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 
 router = APIRouter()
