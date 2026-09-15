@@ -53,7 +53,7 @@ einem Build, der das `frontend/index.tsx` jedes Moduls lädt.
 | **Aufgaben** | 1.0.1 | — | router, migration, 4 Tools, `buddyWidgets`, `workspaceTabs` | Persistentes Task-Management, das Chat-Sessions überdauert. Der Agent kann Tasks erstellen, aktualisieren und abschließen. |
 | **Video-Editor** | 0.1.2 | — | router, frontend routes, nav, i18n | Web-Video-Editor mit Timeline, Filmstrip-Preview und Hybrid-Export. |
 | **Voice** | 0.8.0 | — | router, frontend routes, nav | Voicebox für den HydraHive-Voice-Assistenten (HA Voice PE) mit Voice-, Volume- und Wake-Word-Settings. |
-| **VoIP** | 0.1.0 | — | authentifizierter Statusrouter, frontend routes, nav, i18n | Installierbare Grundlage für projektgebundene VoIP-Zugänge, Telefonaufträge und Gesprächsarchive; Telefoniefunktionen sind noch nicht aktiv. |
+| **VoIP** | 0.2.0 | — | authentifizierter Statusrouter, typisierter Gatewayvertrag + Fake, frontend routes, nav, i18n | Installierbare Grundlage für projektgebundene VoIP-Zugänge, Telefonaufträge und Gesprächsarchive; Telefoniefunktionen sind noch nicht aktiv. |
 | **OpenTor OSINT** | 0.1.0 | — | router, migration, 4 read-only Tools, frontend routes, nav | Kontrollierte Tor-basierte OSINT- und Threat-Intelligence-Recherche, standardmäßig deaktiviert. |
 | **AI-Sicherheit** | 0.1.0 | — | router, migration, Polling-Job | Authentifizierter Adapter für lokale AI-Infra-Guard-Infrastruktur-Scans; kein privilegierter Scanner-Dienst wird automatisch installiert. |
 | **Beispiel-Modul** | 1.0.1 | — | router, migration | Minimales Beispiel-Modul, das als Template für neue Module dient. |
