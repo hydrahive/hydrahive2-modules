@@ -115,7 +115,7 @@ möglichst unter 200 Zeilen und werden bei wachsender Verantwortung weiter aufge
 - `telephony/frontend/index.tsx` — Route, Navigation und Modulregistrierung
 - `telephony/frontend/api.ts` — typisierte Modul-API
 - `telephony/frontend/types.ts` — Connection-, Job-, Call-, Profile- und Archivverträge
-- `telephony/frontend/TelephonyPage.tsx` — Projekt-Cockpit-Shell
+- `telephony/frontend/VoIPPage.tsx` — Projekt-Cockpit-Shell
 - `telephony/frontend/SetupWizard.tsx` — FRITZ!Box/PBX-Verbindung und Test
 - `telephony/frontend/OverviewView.tsx` — Status und offene Entscheidungen
 - `telephony/frontend/JobEditor.tsx` — Mandat, Sofort/Window, Retry, Kanäle, Retention

@@ -1,0 +1,12 @@
+{
+  "id": "telephony",
+  "name": "VoIP",
+  "version": "0.1.0",
+  "description": "Projektgebundener Telefonassistent für VoIP-Zugänge, Telefonaufträge und Gesprächsarchive.",
+  "icon": "PhoneCall",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "default_agent_tools": false,
+  "min_core_version": "2.0.0"
+}
