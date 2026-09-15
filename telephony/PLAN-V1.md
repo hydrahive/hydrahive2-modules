@@ -143,13 +143,13 @@ Der Vertrag verlangt mindestens:
 
 ### Task 0: Lizenz- und Transport-Gate
 
-- [ ] Tel-Agent-Version/Commit pinnen und AGPL-Verpflichtungen dokumentieren
-- [ ] RED: Gateway-Contract-Test gegen einen noch nicht existierenden Adapter
-- [ ] Minimalen Fake-Gateway implementieren und Contract-Test grün machen
-- [ ] echten FRITZ!Box-SIP-Weg auswählen: direkter SIP-Client als Ziel; lokaler
-  Asterisk/FreeSWITCH-/LiveKit-Adapter nur als kompatibler Fallback
-- [ ] dedizierte, ausgehend beschränkte Testnebenstelle dokumentieren
-- [ ] Commit: `test(telephony): Gatewayvertrag festlegen`
+- [x] Tel-Agent-Version/Commit pinnen und AGPL-Verpflichtungen dokumentieren
+- [x] RED: Gateway-Contract-Test gegen einen noch nicht existierenden Adapter
+- [x] Minimalen Fake-Gateway implementieren und Contract-Test grün machen
+- [ ] echten FRITZ!Box-SIP-Weg per Hardware-Spike auswählen: direkter lokaler SIP-Client
+  als Ziel; Asterisk/FreeSWITCH als kompatibler lokaler Fallback
+- [x] dedizierte, ausgehend beschränkte Testnebenstelle dokumentieren
+- [x] Commit: `feat(telephony): Gatewayvertrag und Fake festlegen`
 
 ### Task 1: Core-Projekt-Policies
 
