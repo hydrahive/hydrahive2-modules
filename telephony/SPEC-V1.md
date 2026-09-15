@@ -1,8 +1,8 @@
 # Telefonie-Modul V1 — VoIP-Projekte und telefonischer HydraHive-Agent
 
-**Status:** Design, noch nicht implementiert
+**Status:** V1-Design; installierbare Grundlage implementiert, Telefoniefunktionen noch nicht aktiv
 
-**Modul-ID:** `telephony` · **UI-Name:** Telefonie
+**Modul-ID:** `telephony` · **UI-Name:** VoIP
 
 **Ausgangspunkt:** FRITZ!Box als lokaler SIP-Registrar; Transport austauschbar
 **Referenzprojekt:** [Dpro-at/Tel-Agent](https://github.com/Dpro-at/Tel-Agent), AGPL-3.0

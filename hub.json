@@ -91,6 +91,11 @@
       "path": "voice"
     },
     {
+      "id": "telephony",
+      "name": "VoIP",
+      "path": "telephony"
+    },
+    {
       "id": "opentor",
       "name": "OpenTor OSINT",
       "path": "opentor"
