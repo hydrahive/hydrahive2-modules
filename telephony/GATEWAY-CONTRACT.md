@@ -1,6 +1,6 @@
 # HydraHive-Telefonie-Gatewayvertrag
 
-**Stand:** Vertrag 1 · **Modul:** `telephony` 0.2.0
+**Stand:** Vertrag 1 · **Modul:** `telephony` 0.2.1
 
 ## Zweck und Grenze
 
@@ -9,7 +9,7 @@ HydraHive entscheidet über Benutzer, Projekte, Freigaben, Aufträge und Aufbewa
 Gateway führt nur ausdrücklich adressierte Telefonieoperationen aus und liefert
 beobachtete Ereignisse zurück.
 
-Version 0.2.0 definiert ausschließlich einen Python-Port, strikte Modelle und einen
+Seit Version 0.2.0 definiert das Modul ausschließlich einen Python-Port, strikte Modelle und einen
 In-Process-Fake. Sie definiert noch kein HTTP-/WebSocket-Wireformat, öffnet keinen Port und
 stellt keine Telefoniefunktion bereit.
 
