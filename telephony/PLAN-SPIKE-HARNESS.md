@@ -44,7 +44,8 @@ Das Ubuntu-Paket 1.1.0 wird nicht verwendet: es liegt weit hinter dem geprüften
 5. [x] CLI mit `getpass`, ohne Passwortargument/-environment implementieren
 6. [x] gepinnten Incus-Runtime-Build und Operatoranleitung ergänzen
 7. [x] Tests, Ruff, Shell-Syntax und Versionsguard grün
-8. [ ] Commit/PR; erst danach echten Registrierungsprobe interaktiv ausführen
+8. [x] Commit und Review-PR erstellen
+9. [ ] Echten Registrierungsprobe interaktiv mit Betreiber-Credentials ausführen
 
 ## Akzeptanzkriterien
 
