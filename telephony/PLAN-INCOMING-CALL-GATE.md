@@ -71,7 +71,7 @@ oder Prozesse.
 - [x] vollständige Telephony-Suite, Ruff, Shellsyntax und Frontend-Build
 - [x] Security-Audit und HH-Review
 - [x] Modulversion auf `0.4.0` erhöhen und Dokumentation aktualisieren
-- [ ] Commit, Push, PR und CI
+- [x] Commit, Push, PR und CI
 
 ## Akzeptanzkriterien
 
