@@ -38,14 +38,14 @@ def test_incoming_probe_registers_answers_sendonly_plays_tone_and_hangs_up() -> 
             _event("REGISTER_OK", param="200 OK", accountaor="secret account"),
             _event(
                 "CALL_INCOMING",
-                id="safe-call-id_123",
+                id="fritz-call-123@fritz.box",
                 direction="incoming",
                 peeruri="sip:private-caller@example.invalid",
             ),
             {"response": True, "ok": True, "token": "answer", "data": ""},
             _event(
                 "CALL_ESTABLISHED",
-                id="safe-call-id_123",
+                id="fritz-call-123@fritz.box",
                 direction="incoming",
             ),
         ]
@@ -64,10 +64,10 @@ def test_incoming_probe_registers_answers_sendonly_plays_tone_and_hangs_up() -> 
         ("uareg", "300 0", "register"),
         (
             "acceptdir",
-            "audio=sendonly video=inactive callid=safe-call-id_123",
+            "audio=sendonly video=inactive callid=fritz-call-123@fritz.box",
             "answer",
         ),
-        ("hangup", "safe-call-id_123", "hangup"),
+        ("hangup", "fritz-call-123@fritz.box", "hangup"),
     ]
     assert slept == [3]
 
