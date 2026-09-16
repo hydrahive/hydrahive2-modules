@@ -10,7 +10,12 @@ from enum import StrEnum
 
 from .ctrl_tcp import ControlChannel
 
-_CALL_ID_PATTERN = re.compile(r"[A-Za-z0-9._~-]{1,64}\Z")
+# RFC 3261 Call-ID word subset; excludes whitespace and '=' so the value cannot
+# escape the single ctrl_tcp callid parameter.
+_CALL_ID_WORD = r"[A-Za-z0-9.!%*_+`'~()-]+"
+_CALL_ID_PATTERN = re.compile(
+    rf"(?=.{{1,255}}\Z){_CALL_ID_WORD}(?:@{_CALL_ID_WORD})?\Z"
+)
 
 
 class IncomingOutcome(StrEnum):
