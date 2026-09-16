@@ -81,13 +81,17 @@ grep -q 'Usage: baresip' <<<\"\$help_output\"
 install -d -m 0755 '$RUNTIME_ROOT/spike'
 "
 
-for filename in __init__.py cli.py config.py probe.py stdin_probe.py run-probe.sh run-stdin-probe.sh; do
+for filename in \
+    __init__.py cli.py config.py ctrl_tcp.py incoming_probe.py probe.py \
+    stdin_payload.py stdin_probe.py stdin_incoming_probe.py \
+    run-probe.sh run-stdin-probe.sh run-stdin-incoming-probe.sh; do
     incus file push "$SCRIPT_DIR/$filename" \
         "$CONTAINER_NAME$RUNTIME_ROOT/spike/$filename"
 done
 incus exec "$CONTAINER_NAME" -- chmod 0755 \
     "$RUNTIME_ROOT/spike/run-probe.sh" \
-    "$RUNTIME_ROOT/spike/run-stdin-probe.sh"
+    "$RUNTIME_ROOT/spike/run-stdin-probe.sh" \
+    "$RUNTIME_ROOT/spike/run-stdin-incoming-probe.sh"
 
 trap - EXIT
 echo "ready: $CONTAINER_NAME"
