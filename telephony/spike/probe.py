@@ -122,6 +122,11 @@ def run_probe(
 def _kill_process_group(process: subprocess.Popen[str]) -> None:
     try:
         os.killpg(process.pid, signal.SIGKILL)
+    except PermissionError:
+        try:
+            process.kill()
+        except PermissionError:
+            return
     except ProcessLookupError:
         return
 

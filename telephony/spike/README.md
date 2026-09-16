@@ -33,7 +33,14 @@ Der Build ist auf diese Releases und Commits gepinnt:
 
 Das veraltete Ubuntu-Baresip-Paket wird nicht installiert.
 
-## 2. Registrierung interaktiv prüfen
+## 2. Registrierung über HydraHive prüfen
+
+Der normale Benutzerablauf liegt unter **VoIP → Einstellungen → FRITZ!Box-Verbindung
+testen**. Das authentifizierte Backend überträgt die vier begrenzten Eingabefelder nur
+über `stdin` in diesen Container und gibt ausschließlich einen stabilen Ergebniscode an
+die Oberfläche zurück. Die Zugangsdaten werden nicht gespeichert.
+
+Der folgende Terminalbefehl bleibt ausschließlich als Developer-Fallback bestehen:
 
 ```bash
 incus exec hh-telephony-spike -- \
@@ -41,7 +48,7 @@ incus exec hh-telephony-spike -- \
   --registrar 192.168.3.1
 ```
 
-Beide Eingaben bleiben unsichtbar. Erlaubt sind beim Benutzernamen 8–64 Zeichen
+Beide CLI-Eingaben bleiben unsichtbar. Erlaubt sind beim Benutzernamen 8–64 Zeichen
 (`A-Z`, `a-z`, `0-9`, Punkt, Unterstrich, Bindestrich). Das Passwort muss 12–128 Zeichen
 lang sein und darf keine Leerzeichen, Semikolons, Anführungszeichen oder Backslashes
 enthalten. Ein zufälliges alphanumerisches Passwort mit mindestens 20 Zeichen ist die

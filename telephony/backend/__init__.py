@@ -10,7 +10,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 
+from .probe_models import SPIKE_PORT, SPIKE_REGISTRAR
+from .probe_routes import router as probe_router
+
 router = APIRouter()
+router.include_router(probe_router)
 
 
 @router.get("/status")
@@ -24,8 +28,13 @@ def status(
         "status": "not_configured",
         "configured": False,
         "telephony_available": False,
+        "probe_target": {
+            "registrar": SPIKE_REGISTRAR,
+            "port": SPIKE_PORT,
+        },
         "features": {
             "setup": False,
+            "registration_probe": True,
             "inbound_calls": False,
             "outbound_calls": False,
             "archive": False,

@@ -5,6 +5,7 @@ import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { FoundationOverview } from "./_FoundationOverview"
 import { SectionPlaceholder } from "./_SectionPlaceholder"
+import { RegistrationProbeSettings } from "./RegistrationProbeSettings"
 import { telephonyApi } from "./api"
 import { sections } from "./sections"
 import type { TelephonyStatus, VoIPSection } from "./types"
@@ -85,7 +86,13 @@ export function VoIPPage() {
           </div>
         )}
         {!loading && !error && active === "overview" && <FoundationOverview loaded={status?.stage === "foundation"} />}
-        {!loading && !error && active !== "overview" && (
+        {!loading && !error && active === "settings" && status && (
+          <RegistrationProbeSettings
+            registrar={status.probe_target.registrar}
+            port={status.probe_target.port}
+          />
+        )}
+        {!loading && !error && active !== "overview" && active !== "settings" && (
           <SectionPlaceholder section={active} icon={activeDefinition.icon} />
         )}
       </main>

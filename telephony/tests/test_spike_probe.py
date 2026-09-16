@@ -71,6 +71,27 @@ def test_run_probe_never_places_credentials_in_process_arguments(
     assert captured["timeout"] == 22
 
 
+def test_probe_kill_falls_back_when_group_signal_is_denied(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    killed: list[bool] = []
+
+    class Process:
+        pid = 654
+
+        def kill(self) -> None:
+            killed.append(True)
+
+    def denied(*_args) -> None:
+        raise PermissionError
+
+    monkeypatch.setattr(probe_module.os, "killpg", denied)
+
+    probe_module._kill_process_group(Process())
+
+    assert killed == [True]
+
+
 def test_run_probe_kills_process_group_on_timeout_without_exposing_secrets(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

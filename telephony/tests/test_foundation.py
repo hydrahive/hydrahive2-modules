@@ -23,8 +23,10 @@ def test_status_is_honest_about_unavailable_telephony(client, auth_headers) -> N
         "status": "not_configured",
         "configured": False,
         "telephony_available": False,
+        "probe_target": {"registrar": "192.168.3.1", "port": 5060},
         "features": {
             "setup": False,
+            "registration_probe": True,
             "inbound_calls": False,
             "outbound_calls": False,
             "archive": False,
@@ -60,7 +62,7 @@ def test_manifest_declares_installable_foundation() -> None:
     assert manifest == {
         "id": "telephony",
         "name": "VoIP",
-        "version": "0.2.1",
+        "version": "0.3.0",
         "description": (
             "Projektgebundener Telefonassistent für VoIP-Zugänge, "
             "Telefonaufträge und Gesprächsarchive."
