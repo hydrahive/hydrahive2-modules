@@ -1,0 +1,287 @@
+diff --git a/include/re_sipreg.h b/include/re_sipreg.h
+index c9d8f66..2c9edd8 100644
+--- a/include/re_sipreg.h
++++ b/include/re_sipreg.h
+@@ -29,3 +29,5 @@ void sipreg_incfailc(struct sipreg *reg);
+ int sipreg_set_fbregint(struct sipreg *reg, uint32_t fbregint);
+ void sipreg_set_srcport(struct sipreg *reg, uint16_t srcport);
+ int sipreg_set_contact_params(struct sipreg *reg, const char *cparams);
++void sipreg_enable_rport_contact(struct sipreg *reg, bool enable);
++const struct sa *sipreg_contact_addr(const struct sipreg *reg);
+diff --git a/src/sipreg/reg.c b/src/sipreg/reg.c
+index ca87884..50ccc96 100644
+--- a/src/sipreg/reg.c
++++ b/src/sipreg/reg.c
+@@ -28,6 +28,7 @@ enum {
+ struct sipreg {
+ 	struct sip_loopstate ls;
+ 	struct sa laddr;
++	struct sa contact_addr;
+ 	struct tmr tmr;
+ 	struct sip *sip;
+ 	struct sip_keepalive *ka;
+@@ -48,6 +49,7 @@ struct sipreg {
+ 	enum sip_transp tp;
+ 	bool registered;
+ 	bool terminated;
++	bool use_rport_contact;
+ 	char *params;
+ 	int regid;
+ 	uint16_t srcport;
+@@ -153,6 +155,7 @@ static bool contact_handler(const struct sip_hdr *hdr,
+ 	struct pl transp = PL("transport");
+ 	struct pl pval;
+ 	struct sa host;
++	const struct sa *expected;
+ 	enum sip_transp tp;
+ 	int err;
+ 
+@@ -166,7 +169,9 @@ static bool contact_handler(const struct sip_hdr *hdr,
+ 	if (err)
+ 		return false;
+ 
+-	if (!sa_cmp(&host, &reg->laddr, SA_ADDR))
++	expected = sa_isset(&reg->contact_addr, SA_ALL)
++		 ? &reg->contact_addr : &reg->laddr;
++	if (!sa_cmp(&host, expected, SA_ADDR))
+ 		return false;
+ 
+ 	err = uri_param_get(&c.auri, &transp, &pval);
+@@ -189,6 +194,35 @@ static bool contact_handler(const struct sip_hdr *hdr,
+ }
+ 
+ 
++static void update_rport_contact(struct sipreg *reg,
++				 const struct sip_msg *msg)
++{
++	struct pl received;
++	struct pl rport;
++	struct sa addr;
++	uint32_t port;
++
++	if (!reg->use_rport_contact || msg->tp != SIP_TRANSP_UDP)
++		return;
++
++	if (msg_param_decode(&msg->via.params, "received", &received) ||
++	    msg_param_decode(&msg->via.params, "rport", &rport))
++		return;
++
++	if (!pl_isset(&rport) || rport.l > 5)
++		return;
++
++	port = pl_u32(&rport);
++	if (!port || port > UINT16_MAX)
++		return;
++
++	if (sa_set(&addr, &received, port) || !sa_isset(&addr, SA_ALL))
++		return;
++
++	reg->contact_addr = addr;
++}
++
++
+ static void response_handler(int err, const struct sip_msg *msg, void *arg)
+ {
+ 	const struct sip_hdr *minexp;
+@@ -201,10 +235,12 @@ static void response_handler(int err, const struct sip_msg *msg, void *arg)
+ 		goto out;
+ 	}
+ 
+-	if (msg->scode < 200) {
++	if (msg->scode < 200)
+ 		return;
+-	}
+-	else if (msg->scode < 300) {
++
++	update_rport_contact(reg, msg);
++
++	if (msg->scode < 300) {
+ 		reg->wait = reg->expires;
+ 		sip_msg_hdr_apply(msg, true, SIP_HDR_CONTACT, contact_handler,
+ 				  reg);
+@@ -298,6 +334,7 @@ static int send_handler(enum sip_transp tp, struct sa *src,
+ 			struct mbuf **contp, void *arg)
+ {
+ 	struct sipreg *reg = arg;
++	const struct sa *contact_addr;
+ 	int err;
+ 
+ 	(void)contp;
+@@ -308,8 +345,11 @@ static int send_handler(enum sip_transp tp, struct sa *src,
+ 		sa_set_port(src, reg->srcport);
+ 
+ 	reg->laddr = *src;
++	contact_addr = reg->use_rport_contact &&
++		       sa_isset(&reg->contact_addr, SA_ALL)
++		       ? &reg->contact_addr : &reg->laddr;
+ 	err = mbuf_printf(mb, "Contact: <sip:%s@%J%s%s%s>;expires=%u%s%s",
+-			  reg->cuser, &reg->laddr, sip_transp_param(reg->tp),
++			  reg->cuser, contact_addr, sip_transp_param(reg->tp),
+ 			  reg->cparams ? ";" : "",
+ 			  reg->cparams ? reg->cparams : "",
+ 			  reg->expires,
+@@ -590,3 +630,40 @@ int sipreg_set_contact_params(struct sipreg *reg, const char *cparams)
+ 
+ 	return str_dup(&reg->cparams, cparams);
+ }
++
++
++/**
++ * Enable use of the tuple returned in Via received/rport as UDP Contact.
++ *
++ * The tuple is learned only from a response matched to this registration.
++ * It is advertised as Contact and is never used as a request destination.
++ *
++ * @param reg     SIP registration client
++ * @param enable  True to enable the opt-in behavior
++ */
++void sipreg_enable_rport_contact(struct sipreg *reg, bool enable)
++{
++	if (!reg)
++		return;
++
++	reg->use_rport_contact = enable;
++	if (!enable)
++		sa_init(&reg->contact_addr, AF_UNSPEC);
++}
++
++
++/**
++ * Get the registrar-observed UDP Contact tuple, if one has been learned.
++ *
++ * @param reg SIP registration client
++ *
++ * @return Learned Contact address, or NULL
++ */
++const struct sa *sipreg_contact_addr(const struct sipreg *reg)
++{
++	if (!reg || !reg->use_rport_contact ||
++	    !sa_isset(&reg->contact_addr, SA_ALL))
++		return NULL;
++
++	return &reg->contact_addr;
++}
+diff --git a/test/sipreg.c b/test/sipreg.c
+index b0233d8..708e85f 100644
+--- a/test/sipreg.c
++++ b/test/sipreg.c
+@@ -162,6 +162,9 @@ static int reg_test(enum sip_transp tp, uint16_t srcport)
+ 	err = sipreg_set_contact_params(reg, CPARAMS);
+ 	TEST_ERR(err);
+ 
++	if (tp == SIP_TRANSP_TCP)
++		sipreg_enable_rport_contact(reg, true);
++
+ 	if (srcport)
+ 		sipreg_set_srcport(reg, srcport);
+ 
+@@ -188,6 +191,8 @@ static int reg_test(enum sip_transp tp, uint16_t srcport)
+ 
+ 	ASSERT_TRUE(sipreg_registered(reg));
+ 	ASSERT_TRUE(!sipreg_failed(reg));
++	if (tp == SIP_TRANSP_TCP)
++		ASSERT_TRUE(sipreg_contact_addr(reg) == NULL);
+ 
+  out:
+ 	tmr_cancel(&test.tmr);
+@@ -210,6 +215,76 @@ int test_sipreg_udp(void)
+ }
+ 
+ 
++int test_sipreg_rport_contact(void)
++{
++	struct test test;
++	struct sip_server *srv = NULL;
++	struct sipreg *reg = NULL;
++	struct sip *sip = NULL;
++	const struct sip_hdr *contact_hdr;
++	const struct sa *learned;
++	struct sip_addr contact;
++	struct sa advertised;
++	char reg_uri[256];
++	int err;
++
++	memset(&test, 0, sizeof(test));
++	test.tp = SIP_TRANSP_UDP;
++
++	err = sip_server_alloc(&srv);
++	TEST_ERR(err);
++	err = sipstack_fixture(&sip);
++	TEST_ERR(err);
++	err = sip_server_uri(srv, reg_uri, sizeof(reg_uri), SIP_TRANSP_UDP);
++	TEST_ERR(err);
++	err = sipreg_alloc(&reg, sip, reg_uri, "sip:x@test", NULL,
++			   "sip:x@test", 3600, "x", NULL, 0, 0, NULL, NULL,
++			   false, sip_resp_handler, &test, NULL, NULL);
++	TEST_ERR(err);
++
++	/* The behavior is strictly opt-in. */
++	err = sipreg_send(reg);
++	TEST_ERR(err);
++	err = re_main_timeout(1000);
++	TEST_ERR(err);
++	ASSERT_TRUE(sipreg_contact_addr(reg) == NULL);
++
++	sipreg_enable_rport_contact(reg, true);
++	err = sipreg_send(reg);
++	TEST_ERR(err);
++	err = re_main_timeout(1000);
++	TEST_ERR(err);
++
++	learned = sipreg_contact_addr(reg);
++	ASSERT_TRUE(learned != NULL);
++	ASSERT_TRUE(sa_isset(learned, SA_ALL));
++
++	/* A later REGISTER advertises the tuple learned from Via received/rport. */
++	err = sipreg_send(reg);
++	TEST_ERR(err);
++	err = re_main_timeout(1000);
++	TEST_ERR(err);
++
++	contact_hdr = sip_msg_hdr(srv->sip_msgs[srv->n_register_req - 1],
++				  SIP_HDR_CONTACT);
++	ASSERT_TRUE(contact_hdr != NULL);
++	err = sip_addr_decode(&contact, &contact_hdr->val);
++	TEST_ERR(err);
++	err = sa_set(&advertised, &contact.uri.host, contact.uri.port);
++	TEST_ERR(err);
++	TEST_SACMP(learned, &advertised, SA_ALL);
++
++ out:
++	tmr_cancel(&test.tmr);
++	sipreg_unregister(reg);
++	mem_deref(reg);
++	sip_close(sip, true);
++	mem_deref(sip);
++	mem_deref(srv);
++	return err;
++}
++
++
+ int test_sipreg_tcp(void)
+ {
+ 	return reg_test(SIP_TRANSP_TCP, 0);
+diff --git a/test/test.c b/test/test.c
+index 9e8a0fc..8ced1a5 100644
+--- a/test/test.c
++++ b/test/test.c
+@@ -215,6 +215,7 @@ static const struct test tests[] = {
+ 	TEST(test_sipreg_tls),
+ #endif
+ 	TEST(test_sipreg_udp),
++	TEST(test_sipreg_rport_contact),
+ 	TEST(test_sipsess),
+ 	TEST(test_sipsess_100rel_420),
+ 	TEST(test_sipsess_100rel_421),
+diff --git a/test/test.h b/test/test.h
+index f231035..c518ae1 100644
+--- a/test/test.h
++++ b/test/test.h
+@@ -323,6 +323,7 @@ int test_sip_transp_add_client_cert(void);
+ #endif
+ int test_sipevent(void);
+ int test_sipreg_udp(void);
++int test_sipreg_rport_contact(void);
+ int test_sipreg_tcp(void);
+ #ifdef USE_TLS
+ int test_sipreg_tls(void);

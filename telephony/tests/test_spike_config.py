@@ -79,7 +79,7 @@ def test_render_account_uses_udp_g711_and_no_sip_trace() -> None:
     assert "sip_trace" not in account
 
 
-def test_incoming_config_is_manual_sendonly_capable_and_loopback_controlled() -> None:
+def test_incoming_config_uses_stable_udp_nat_contact_and_loopback_control() -> None:
     target = ProbeTarget(registrar="192.168.3.1")
     credentials = SipCredentials(
         username="phone-user-01", password="TopSecretPhonePassword"
@@ -88,15 +88,17 @@ def test_incoming_config_is_manual_sendonly_capable_and_loopback_controlled() ->
     account = render_incoming_account(target, credentials)
     config = render_incoming_config(Path("/opt/baresip/lib/baresip/modules"))
 
-    assert "transport=tcp" in account
-    assert "sipnat=outbound" in account
-    assert 'outbound="sip:192.168.3.1:5060;transport=tcp"' in account
+    assert "transport=udp" in account
+    assert "sipnat=received" in account
+    assert "sipnat=outbound" not in account
+    assert "outbound=" not in account
     assert "regint=0" in account
     assert "answermode=manual" in account
     assert "check_origin=yes" in account
-    assert "sip_transports\t\ttcp" in config
-    assert "sip_trans_def\t\ttcp" in config
-    assert "module\t\t\tuuid.so" in config
+    assert "sip_transports\t\tudp" in config
+    assert "sip_trans_def\t\tudp" in config
+    assert "sip_listen\t\t0.0.0.0:5060" in config
+    assert "module\t\t\tuuid.so" not in config
     assert "call_accept\t\tyes" in config
     assert "ctrl_tcp_listen\t127.0.0.1:4444" in config
     assert "module_app\t\tctrl_tcp.so" in config

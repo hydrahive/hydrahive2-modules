@@ -6,6 +6,9 @@ readonly IMAGE="images:ubuntu/24.04"
 readonly BARESIP_SHA="3d30821f099925d24167f8a99e93ba4d1be98599"
 readonly LIBRE_SHA="ceefe9ff499aa1bcfb6255aff1737434dd385322"
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly PATCH_DIR="$SCRIPT_DIR/../patches"
+readonly LIBRE_PATCH="libre-rport-contact.patch"
+readonly BARESIP_PATCH="baresip-rport-contact.patch"
 readonly RUNTIME_ROOT="/opt/hh-telephony-spike"
 created=0
 
@@ -23,6 +26,12 @@ command -v incus >/dev/null || {
     echo "incus is required" >&2
     exit 69
 }
+for patch in "$LIBRE_PATCH" "$BARESIP_PATCH"; do
+    [[ -f "$PATCH_DIR/$patch" ]] || {
+        echo "missing pinned source patch: $patch" >&2
+        exit 66
+    }
+done
 
 if incus info "$CONTAINER_NAME" >/dev/null 2>&1; then
     echo "Refusing to overwrite existing container: $CONTAINER_NAME" >&2
@@ -38,6 +47,9 @@ created=1
 incus config device add "$CONTAINER_NAME" eth0 nic \
     nictype=bridged parent=br0 name=eth0
 incus start "$CONTAINER_NAME"
+for patch in "$LIBRE_PATCH" "$BARESIP_PATCH"; do
+    incus file push "$PATCH_DIR/$patch" "$CONTAINER_NAME/root/$patch"
+done
 
 incus exec "$CONTAINER_NAME" -- bash -lc "
 set -euo pipefail
@@ -52,19 +64,27 @@ cd /usr/local/src/hh-sip-build
 git clone --filter=blob:none https://github.com/baresip/re.git libre
 git -C libre checkout '$LIBRE_SHA'
 test \"\$(git -C libre rev-parse HEAD)\" = '$LIBRE_SHA'
+git -C libre apply --check "/root/$LIBRE_PATCH"
+git -C libre apply "/root/$LIBRE_PATCH"
 cmake -S libre -B libre/build \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX=/opt/baresip \
     -DCMAKE_INSTALL_LIBDIR=lib
 cmake --build libre/build --parallel 2
+cmake --build libre/build --target retest --parallel 2
+(cd libre && ./build/test/retest -r test_sipreg_rport_contact)
 cmake --install libre/build
+printf '%s\n' /opt/baresip/lib > /etc/ld.so.conf.d/baresip.conf
+ldconfig
 
 git clone --filter=blob:none https://github.com/baresip/baresip.git baresip
 git -C baresip checkout '$BARESIP_SHA'
 test \"\$(git -C baresip rev-parse HEAD)\" = '$BARESIP_SHA'
+git -C baresip apply --check "/root/$BARESIP_PATCH"
+git -C baresip apply "/root/$BARESIP_PATCH"
 export PKG_CONFIG_PATH=/opt/baresip/lib/pkgconfig
 cmake -S baresip -B baresip/build \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX=/opt/baresip \
     -DCMAKE_INSTALL_LIBDIR=lib \
     -DRE_INCLUDE_DIR=/opt/baresip/include/re \
@@ -72,10 +92,11 @@ cmake -S baresip -B baresip/build \
     -Dre_DIR=/opt/baresip/lib/cmake/re \
     -DMODULES='stdio;ctrl_tcp;g711;auconv;auresamp;aufile;ausine;uuid;account;menu;serreg;debug_cmd;netroam'
 cmake --build baresip/build --parallel 2
+(cd baresip/build && ./test/selftest \
+    test_account_sipnat_received test_ua_alloc test_ua_register)
 cmake --install baresip/build
-printf '%s\n' /opt/baresip/lib > /etc/ld.so.conf.d/baresip.conf
 ldconfig
-rm -rf /usr/local/src/hh-sip-build
+rm -rf /usr/local/src/hh-sip-build "/root/$LIBRE_PATCH" "/root/$BARESIP_PATCH"
 help_output=\"\$(/opt/baresip/bin/baresip -h 2>&1 || true)\"
 grep -q 'Usage: baresip' <<<\"\$help_output\"
 install -d -m 0755 '$RUNTIME_ROOT/spike'

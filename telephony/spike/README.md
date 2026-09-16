@@ -4,10 +4,11 @@ Dieser Ordner ist ein isoliertes Developer-Werkzeug für Gates 1 und 2 des
 Telefonie-Spikes. Er ist **kein** Teil der installierten Produktions-Runtime. Der Harness
 baut Baresip 4.11.0 und libre 4.11.0 in einem separaten, unprivilegierten
 Incus-Container. Er prüft eine SIP-Registrierung sowie genau einen kontrollierten
-eingehenden Testanruf per UDP/TCP und G.711. Die Registrierung bleibt beim
-Gate-1-Test UDP; Gate 2 nutzt TCP plus SIP Outbound (RFC 5626), damit eingehende
-SIP-Nachrichten über den registrierten Flow auch durch das geroutete/NAT-Netz
-zurückkommen. Dafür wird im isolierten Baresip-Build zusätzlich das UUID-Modul geladen.
+eingehenden Testanruf per UDP und G.711. Gate 1 verwendet unverändertes SIP/UDP.
+Gate 2 hält einen stabilen UDP-Socket auf Port 5060 offen, lernt aus der passenden
+FRITZ!Box-Antwort `Via received`/`rport` und kündigt dieses NAT-Tupel im Contact an.
+Der INVITE soll dadurch über den vorhandenen UniFi-Conntrack-Flow zurückkommen, ohne
+Portweiterleitung oder SIP ALG.
 
 ## Sicherheitsregeln
 
@@ -21,6 +22,11 @@ zurückkommen. Dafür wird im isolierten Baresip-Build zusätzlich das UUID-Modu
   Hostnamen werden abgewiesen.
 - Der Build überschreibt niemals einen Container namens `hh-telephony-spike`.
 - Die Baresip-Steuerung bindet nur auf `127.0.0.1` im Container.
+- Der Gate-2-SIP-Listener bindet UDP 5060 ausschließlich im privaten Sidecar-Netz; Incus
+  publiziert diesen Port nicht auf dem Host oder ins Internet.
+- Das Contact-Rewrite ist opt-in, akzeptiert nur gültiges `received` plus numerisches
+  `rport` aus einer passenden UDP-Registrierungsantwort und verwendet den Wert nicht als
+  Request-Ziel.
 - Gate 2 verwendet ausschließlich sendonly-Testaudio. Anruferaudio wird weder
   abgespielt noch aufgezeichnet oder gespeichert.
 
@@ -47,6 +53,13 @@ Der Build ist auf diese Releases und Commits gepinnt:
 
 - Baresip 4.11.0: `3d30821f099925d24167f8a99e93ba4d1be98599`
 - libre 4.11.0: `ceefe9ff499aa1bcfb6255aff1737434dd385322`
+
+`prepare-runtime.sh` wendet danach ausschließlich die beiden mitversionierten Patches
+`patches/libre-rport-contact.patch` und `patches/baresip-rport-contact.patch` an. Beide
+Patches enthalten Upstream-Selftests; der Sidecar-Build bricht ab, wenn ein Patch nicht
+mehr sauber auf den gepinnten SHA passt oder ein NAT-Contact-Test fehlschlägt. Der
+Developer-Sidecar wird bewusst als Debug-Build erzeugt, damit diese Upstream-Selftests
+mit aktiven Assertions laufen; SIP-Trace und Laufzeitlogs bleiben trotzdem deaktiviert.
 
 Das veraltete Ubuntu-Baresip-Paket wird nicht installiert.
 
@@ -91,10 +104,12 @@ Unter **VoIP → Einstellungen** werden dieselben flüchtigen Zugangsdaten einge
 **Eingehenden Anruf testen** gestartet. Danach muss innerhalb von 45 Sekunden die der
 Nebenstelle zugewiesene Rufnummer angerufen werden. Der Harness:
 
-1. registriert die Nebenstelle nur für dieses Testfenster,
-2. nimmt genau einen eingehenden Anruf mit deaktiviertem Video und `audio=sendonly` an,
-3. sendet ungefähr drei Sekunden lang einen neutralen 440-Hz-Testton,
-4. legt automatisch auf und startet den dedizierten Sidecar neu.
+1. registriert die Nebenstelle nur für dieses Testfenster über UDP 5060,
+2. lernt das von der FRITZ!Box bestätigte `received`/`rport`-Tupel und aktualisiert den
+   REGISTER-Contact,
+3. nimmt genau einen eingehenden Anruf mit deaktiviertem Video und `audio=sendonly` an,
+4. sendet ungefähr drei Sekunden lang einen neutralen 440-Hz-Testton,
+5. legt automatisch auf und startet den dedizierten Sidecar neu.
 
 Stabile Gate-2-Ergebnisse sind `incoming_answered`, `no_incoming_call`,
 `caller_cancelled`, `answer_failed`, `auth_failed`, `registration_failed`, `timeout`,

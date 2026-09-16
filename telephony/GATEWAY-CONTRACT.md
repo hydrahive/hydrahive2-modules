@@ -1,6 +1,6 @@
 # HydraHive-Telefonie-Gatewayvertrag
 
-**Stand:** Vertrag 1 · **Modul:** `telephony` 0.4.2
+**Stand:** Vertrag 1 · **Modul:** `telephony` 0.4.3
 
 ## Zweck und Grenze
 
@@ -12,11 +12,13 @@ beobachtete Ereignisse zurück.
 Version 0.2.0 führte den Python-Port, strikte Modelle und einen In-Process-Fake ein.
 Version 0.3.0 ergänzte einen authentifizierten, flüchtigen Registrierungs-Spike.
 Version 0.4.0 ergänzt Gate 2: ein explizites Testfenster nimmt genau einen eingehenden
-Anruf mit sendonly-Testton an und beendet ihn automatisch. Version 0.4.1 nutzt für Gate 2
-SIP über TCP. Version 0.4.2 aktiviert zusätzlich SIP Outbound nach RFC 5626 inklusive
-stabiler UUID, damit die FRITZ!Box den INVITE über den registrierten TCP-Flow und nicht
-an die private Contact-Adresse zurücksendet. Gate 1 bleibt UDP. Beide Tests laufen über
-die isolierte Developer-Runtime, speichern keine Credentials und öffnen keinen
+Anruf mit sendonly-Testton an und beendet ihn automatisch. Die TCP-/RFC-5626-Versuche
+aus 0.4.1 und 0.4.2 zeigten, dass die FRITZ!Box den angebotenen Outbound-Flow nicht
+bestätigt. Version 0.4.3 verwendet deshalb einen stabilen UDP-Socket und kündigt nach
+einer passenden Registrar-Antwort das aus `Via received`/`rport` gelernte NAT-Tupel als
+Contact an. So kann der INVITE ohne allgemeine Portfreigabe über den bestehenden
+UniFi-Conntrack-Flow zurückkommen. Gate 1 bleibt unverändertes UDP. Beide Tests laufen
+über die isolierte Developer-Runtime, speichern keine Credentials und öffnen keinen
 dauerhaften Dienst. Produktive Anruffunktionen bleiben deaktiviert.
 
 ## Identitäten

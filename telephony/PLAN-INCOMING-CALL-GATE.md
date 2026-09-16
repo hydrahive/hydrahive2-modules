@@ -71,6 +71,8 @@ oder Prozesse.
 - [x] vollständige Telephony-Suite, Ruff, Shellsyntax und Frontend-Build
 - [x] Security-Audit und HH-Review
 - [x] Modulversion auf `0.4.2` erhöhen, SIP Outbound aktivieren und dokumentieren
+- [x] Nicht bestätigtes RFC-5626-Outbound in `0.4.3` durch opt-in UDP-
+  `received`/`rport`-Contact-Rewrite ersetzen
 - [x] Commit, Push, PR und CI
 
 ## Akzeptanzkriterien
