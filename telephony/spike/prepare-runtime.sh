@@ -82,7 +82,7 @@ install -d -m 0755 '$RUNTIME_ROOT/spike'
 "
 
 for filename in \
-    __init__.py cli.py config.py ctrl_tcp.py incoming_probe.py probe.py \
+    __init__.py cli.py config.py ctrl_tcp.py incoming_probe.py incoming_runtime.py probe.py \
     stdin_payload.py stdin_probe.py stdin_incoming_probe.py \
     run-probe.sh run-stdin-probe.sh run-stdin-incoming-probe.sh; do
     incus file push "$SCRIPT_DIR/$filename" \

@@ -35,6 +35,7 @@ def status(
         "features": {
             "setup": False,
             "registration_probe": True,
+            "incoming_call_probe": True,
             "inbound_calls": False,
             "outbound_calls": False,
             "archive": False,

@@ -11,6 +11,7 @@ oder Prozesse.
 
 - `telephony/spike/ctrl_tcp.py` — begrenzter Netstring-/JSON-Client für Baresip
 - `telephony/spike/incoming_probe.py` — Gate-2-State-Machine und stabile Ergebnisse
+- `telephony/spike/incoming_runtime.py` — Baresip-Prozess- und Cleanup-Lifecycle
 - `telephony/spike/stdin_payload.py` — gemeinsame strikt begrenzte stdin-Eingabe
 - `telephony/spike/stdin_incoming_probe.py` — machine-only Gate-2-Einstieg
 - `telephony/spike/run-stdin-incoming-probe.sh` — Container-Lock und Einstieg
@@ -30,58 +31,58 @@ oder Prozesse.
 
 ### Task 1: Control-Protokoll und State Machine
 
-- [ ] RED: fragmentierte/mehrfache Netstrings, Größenlimit und ungültiges JSON testen
-- [ ] RED: Registrierung, Incoming, Accept, Established, Hangup und Fehlerpfade testen
-- [ ] `ctrl_tcp.py` und `incoming_probe.py` minimal implementieren
-- [ ] GREEN: Sidecar-Unit-Tests
-- [ ] Commit: `feat(telephony): add incoming call sidecar probe`
+- [x] RED: fragmentierte/mehrfache Netstrings, Größenlimit und ungültiges JSON testen
+- [x] RED: Registrierung, Incoming, Accept, Established, Hangup und Fehlerpfade testen
+- [x] `ctrl_tcp.py` und `incoming_probe.py` minimal implementieren
+- [x] GREEN: Sidecar-Unit-Tests
+- [x] Commit: `feat(telephony): add incoming call sidecar probe`
 
 ### Task 2: Sichere stdin-/Runtime-Grenze
 
-- [ ] RED: exakte Keys, Größenlimit, keine Secret-Ausgabe und feste Runtimepfade testen
-- [ ] gemeinsame stdin-Validierung extrahieren
-- [ ] Gate-2-stdin-Adapter und Lock-Script implementieren
-- [ ] Runtime-Buildliste und Operatoranleitung aktualisieren
-- [ ] GREEN: stdin- und bestehende Spike-Tests
-- [ ] Commit zusammen mit Task 1, da beide dieselbe ausführbare Sidecar-Grenze bilden
+- [x] RED: exakte Keys, Größenlimit, keine Secret-Ausgabe und feste Runtimepfade testen
+- [x] gemeinsame stdin-Validierung extrahieren
+- [x] Gate-2-stdin-Adapter und Lock-Script implementieren
+- [x] Runtime-Buildliste und Operatoranleitung aktualisieren
+- [x] GREEN: stdin- und bestehende Spike-Tests
+- [x] Commit zusammen mit Task 1, da beide dieselbe ausführbare Sidecar-Grenze bilden
 
 ### Task 3: Backend und API
 
-- [ ] RED: 401, sanitisiertes 422, Rate-Limit und erlaubte Resultate testen
-- [ ] RED: feste Args, stdin-only Credentials, gemeinsamer Lock, Timeout und Always-Cleanup
+- [x] RED: 401, sanitisiertes 422, Rate-Limit und erlaubte Resultate testen
+- [x] RED: feste Args, stdin-only Credentials, gemeinsamer Lock, Timeout und Always-Cleanup
       testen
-- [ ] Endpoint `POST /spike/incoming-test` und Servicepfad implementieren
-- [ ] GREEN: API-/Service-Tests
-- [ ] Commit: `feat(telephony): expose bounded incoming call test`
+- [x] Endpoint `POST /spike/incoming-test` und Servicepfad implementieren
+- [x] GREEN: API-/Service-Tests
+- [x] Commit: `feat(telephony): expose bounded incoming call test`
 
 ### Task 4: Frontend
 
-- [ ] RED: separater Button, Jetzt-anrufen-Hinweis und keine Browserpersistenz testen
-- [ ] API-/Typvertrag und deutsche/englische Texte ergänzen
-- [ ] UI mit getrenntem Ladezustand und Passwort-Cleanup implementieren
-- [ ] GREEN: Frontend-Vertragstest und echter installierter Produktionsbuild
-- [ ] Commit: `feat(telephony): add incoming call settings flow`
+- [x] RED: separater Button, Jetzt-anrufen-Hinweis und keine Browserpersistenz testen
+- [x] API-/Typvertrag und deutsche/englische Texte ergänzen
+- [x] UI mit getrenntem Ladezustand und Passwort-Cleanup implementieren
+- [x] GREEN: Frontend-Vertragstest und echter installierter Produktionsbuild
+- [x] Commit: `feat(telephony): add incoming call settings flow`
 
 ### Task 5: Integration und Review
 
-- [ ] lokalen Fake-SIP-Registrar um INVITE/ACK/BYE für einen echten Baresip-E2E erweitern
-- [ ] Runtime-Dateien aktualisieren und Fake-SIP-E2E ausführen
-- [ ] Timeout-/Container-Restart und rückstandsfreies Cleanup prüfen
-- [ ] vollständige Telephony-Suite, Ruff, Shellsyntax und Frontend-Build
-- [ ] Security-Audit und HH-Review
-- [ ] Modulversion auf `0.4.0` erhöhen und Dokumentation aktualisieren
+- [x] lokalen Fake-SIP-Registrar um INVITE/ACK/BYE für einen echten Baresip-E2E erweitern
+- [x] Runtime-Dateien aktualisieren und Fake-SIP-E2E ausführen
+- [x] Timeout-/Container-Restart und rückstandsfreies Cleanup prüfen
+- [x] vollständige Telephony-Suite, Ruff, Shellsyntax und Frontend-Build
+- [x] Security-Audit und HH-Review
+- [x] Modulversion auf `0.4.0` erhöhen und Dokumentation aktualisieren
 - [ ] Commit, Push, PR und CI
 
 ## Akzeptanzkriterien
 
-- [ ] kontrollierte Annahme genau eines eingehenden Calls
-- [ ] sendonly-Testton, kein eingehendes Audio und keine Aufnahme
-- [ ] stabile, geheimnisfreie Ergebniswerte
-- [ ] nur Loopback-Control-Port und private allowlistete SIP-Ziele
-- [ ] gemeinsamer Lock verhindert parallele Registrierung/Calls
-- [ ] harte Laufzeitgrenze und Runtime-Neustart nach jedem Versuch
-- [ ] keine Prozess-, Tempdatei- oder Secret-Rückstände
-- [ ] Tests und Builds grün
+- [x] kontrollierte Annahme genau eines eingehenden Calls
+- [x] sendonly-Testton, kein eingehendes Audio und keine Aufnahme
+- [x] stabile, geheimnisfreie Ergebniswerte
+- [x] nur Loopback-Control-Port und private allowlistete SIP-Ziele
+- [x] gemeinsamer Lock verhindert parallele Registrierung/Calls
+- [x] harte Laufzeitgrenze und Runtime-Neustart nach jedem Versuch
+- [x] keine Prozess-, Tempdatei- oder Secret-Rückstände
+- [x] Tests und Builds grün
 
 ## Nicht in diesem Plan
 

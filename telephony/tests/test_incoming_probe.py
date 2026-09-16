@@ -6,8 +6,8 @@ import subprocess
 
 import pytest
 
+from spike import incoming_runtime
 from spike.config import ProbeTarget, SipCredentials
-from spike import incoming_probe
 from spike.incoming_probe import IncomingOutcome, drive_incoming_call
 
 
@@ -61,7 +61,7 @@ def test_incoming_probe_registers_answers_sendonly_plays_tone_and_hangs_up() -> 
 
     assert outcome is IncomingOutcome.INCOMING_ANSWERED
     assert channel.commands == [
-        ("uareg", "300", "register"),
+        ("uareg", "300 0", "register"),
         (
             "acceptdir",
             "audio=sendonly video=inactive callid=safe-call-id_123",
@@ -86,7 +86,7 @@ def test_incoming_probe_maps_registration_failure_without_returning_raw_details(
     channel = FakeChannel([_event("REGISTER_FAIL", param=parameter)])
 
     assert drive_incoming_call(channel) is expected
-    assert channel.commands == [("uareg", "300", "register")]
+    assert channel.commands == [("uareg", "300 0", "register")]
 
 
 def test_incoming_probe_times_out_when_no_call_arrives() -> None:
@@ -120,7 +120,7 @@ def test_incoming_probe_rejects_remote_call_id_command_injection() -> None:
     )
 
     assert drive_incoming_call(channel) is IncomingOutcome.ANSWER_FAILED
-    assert channel.commands == [("uareg", "300", "register")]
+    assert channel.commands == [("uareg", "300 0", "register")]
 
 
 def test_incoming_probe_ignores_non_incoming_call_events() -> None:
@@ -164,17 +164,17 @@ def test_run_incoming_probe_suppresses_logs_and_keeps_secrets_out_of_args(
 
     monkeypatch.setattr(subprocess, "Popen", fake_popen)
     monkeypatch.setattr(
-        incoming_probe.BaresipControlClient,
+        incoming_runtime.BaresipControlClient,
         "connect",
         lambda **_kwargs: channel,
     )
     monkeypatch.setattr(
-        incoming_probe,
+        incoming_runtime,
         "drive_incoming_call",
         lambda *_args, **_kwargs: IncomingOutcome.INCOMING_ANSWERED,
     )
 
-    report = incoming_probe.run_incoming_probe(
+    report = incoming_runtime.run_incoming_probe(
         target=ProbeTarget(registrar="192.168.3.1"),
         credentials=SipCredentials(
             username="phone-user-01", password="TopSecretPhonePassword"
@@ -195,7 +195,7 @@ def test_run_incoming_probe_suppresses_logs_and_keeps_secrets_out_of_args(
     assert kwargs["start_new_session"] is True
     assert channel.commands[-3:] == [
         ("hangupall", "all", "cleanup-calls"),
-        ("uareg", "0", "cleanup-register"),
+        ("uareg", "0 0", "cleanup-register"),
         ("quit", "", "cleanup-quit"),
     ]
     assert captured["closed"] is True

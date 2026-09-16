@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
-from .incoming_probe import run_incoming_probe
+from .incoming_runtime import run_incoming_probe
 from .stdin_payload import InvalidProbePayload, read_probe_payload
 
 _BINARY = Path("/opt/baresip/bin/baresip")

@@ -125,16 +125,16 @@ Die HTTP-Antwort enthält ausschließlich `{"outcome":"<code>"}`.
 
 ## 8. Akzeptanzkriterien
 
-- [ ] UI zeigt einen separaten Eingangstest und eine klare Jetzt-anrufen-Anweisung.
-- [ ] Ohne Authentifizierung liefert der Endpoint HTTP 401.
-- [ ] Ziel-Allowlist, Requestlimit und Secret-Redaction aus Gate 1 bleiben wirksam.
-- [ ] `ctrl_tcp` ist nur auf Container-Loopback erreichbar.
-- [ ] Ein eingehender Testanruf wird kontrolliert mit sendonly-Testton angenommen.
-- [ ] Der Call wird nach ungefähr drei Sekunden automatisch beendet.
-- [ ] Caller-ID und Providerrohdaten erscheinen nicht in API-Antworten oder Logs.
-- [ ] Kein Anruferaudio wird gespeichert.
-- [ ] Kein Baresip-Prozess und kein temporäres Config-Verzeichnis bleibt zurück.
-- [ ] Unit-, API-, Sidecar-, Frontend- und lokaler Fake-SIP-E2E-Test sind grün.
+- [x] UI zeigt einen separaten Eingangstest und eine klare Jetzt-anrufen-Anweisung.
+- [x] Ohne Authentifizierung liefert der Endpoint HTTP 401.
+- [x] Ziel-Allowlist, Requestlimit und Secret-Redaction aus Gate 1 bleiben wirksam.
+- [x] `ctrl_tcp` ist nur auf Container-Loopback erreichbar.
+- [x] Ein eingehender Testanruf wird kontrolliert mit sendonly-Testton angenommen.
+- [x] Der Call wird nach ungefähr drei Sekunden automatisch beendet.
+- [x] Caller-ID und Providerrohdaten erscheinen nicht in API-Antworten oder Logs.
+- [x] Kein Anruferaudio wird gespeichert.
+- [x] Kein Baresip-Prozess und kein temporäres Config-Verzeichnis bleibt zurück.
+- [x] Unit-, API-, Sidecar-, Frontend- und lokaler Fake-SIP-E2E-Test sind grün.
 
 ## 9. Nicht enthalten
 

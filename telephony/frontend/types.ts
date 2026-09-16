@@ -1,6 +1,7 @@
 export interface TelephonyFeatures {
   setup: boolean
   registration_probe: boolean
+  incoming_call_probe: boolean
   inbound_calls: boolean
   outbound_calls: boolean
   archive: boolean
