@@ -4,7 +4,9 @@ Dieser Ordner ist ein isoliertes Developer-Werkzeug für Gates 1 und 2 des
 Telefonie-Spikes. Er ist **kein** Teil der installierten Produktions-Runtime. Der Harness
 baut Baresip 4.11.0 und libre 4.11.0 in einem separaten, unprivilegierten
 Incus-Container. Er prüft eine SIP-Registrierung sowie genau einen kontrollierten
-eingehenden Testanruf per UDP/G.711.
+eingehenden Testanruf per UDP/TCP und G.711. Die Registrierung bleibt beim
+Gate-1-Test UDP; Gate 2 nutzt TCP, damit eingehende SIP-Nachrichten über die etablierte
+Verbindung auch durch das geroutete/NAT-Netz zurückkommen.
 
 ## Sicherheitsregeln
 

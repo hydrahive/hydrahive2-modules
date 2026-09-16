@@ -81,7 +81,7 @@ def render_config(module_dir: Path) -> str:
 def render_incoming_account(target: ProbeTarget, credentials: SipCredentials) -> str:
     """Render a dormant account that ctrl_tcp explicitly registers for Gate 2."""
     return (
-        f"<sip:{credentials.username}@{target.registrar}:{target.port};transport=udp>"
+        f"<sip:{credentials.username}@{target.registrar}:{target.port};transport=tcp>"
         f";auth_user={credentials.username};auth_pass={credentials.password}"
         ";audio_codecs=pcma,pcmu;regint=0;answermode=manual"
         ";inreq_allowed=yes;check_origin=yes\n"
@@ -92,7 +92,8 @@ def render_incoming_config(module_dir: Path) -> str:
     """Render a one-call, loopback-controlled, sendonly-capable configuration."""
     module_dir = _validate_module_dir(module_dir)
     return (
-        "sip_transports\t\tudp\n"
+        "sip_transports\t\ttcp\n"
+        "sip_trans_def\t\ttcp\n"
         "sip_listen\t\t0.0.0.0:0\n"
         "call_accept\t\tyes\n"
         "call_max_calls\t\t1\n"
