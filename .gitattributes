@@ -1,0 +1,2 @@
+# Patch payloads intentionally preserve upstream tabs and context whitespace.
+telephony/patches/*.patch -whitespace

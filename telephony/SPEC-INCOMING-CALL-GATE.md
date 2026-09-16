@@ -43,10 +43,11 @@ persistieren.
 4. Die UI fordert dazu auf, innerhalb des begrenzten Testfensters die der Nebenstelle
    zugewiesene Rufnummer anzurufen.
 5. Der Sidecar registriert sich flüchtig und wartet auf genau einen eingehenden Anruf.
-   Gate 2 verwendet SIP über TCP mit SIP Outbound nach RFC 5626; die ausgehende TCP-
-   Verbindung zur FRITZ!Box wird als Flow registriert, damit der INVITE nicht an die
-   private Contact-Adresse des Sidecars adressiert werden muss. Gate 1 verwendet
-   weiterhin UDP.
+   Gate 2 verwendet einen stabilen UDP-Socket auf Port 5060. Aus einer zur laufenden
+   Registrierung gehörenden FRITZ!Box-Antwort lernt libre `Via received`/`rport` und
+   verwendet dieses NAT-Tupel im folgenden REGISTER-Contact. Dadurch kann der INVITE
+   über den bereits bestehenden UniFi-Conntrack-Flow zurückkommen. Es wird keine
+   Portweiterleitung eingerichtet. Gate 1 verwendet weiterhin unverändertes UDP.
 6. Der Anruf wird mit `audio=sendonly` und deaktiviertem Video angenommen.
 7. Baresip sendet etwa drei Sekunden lang einen neutralen Sinuston.
 8. Der Sidecar legt auf und liefert ausschließlich einen stabilen Ergebniscode.
@@ -67,7 +68,8 @@ HydraHive Telephony Backend
 hh-telephony-spike
   ├── stdin-Adapter mit Größen-/Schema-Limit
   ├── temporäre 0600-Konfiguration in /dev/shm
-  ├── Baresip + ctrl_tcp nur auf 127.0.0.1
+  ├── Baresip SIP/UDP 5060 nur im privaten Sidecar-Netz
+  ├── ctrl_tcp ausschließlich auf 127.0.0.1
   ├── strukturierte Netstring-/JSON-Ereignisse
   └── ausine-Testton, keine Audioaufnahme
 ```
@@ -120,8 +122,13 @@ Die HTTP-Antwort enthält ausschließlich `{"outcome":"<code>"}`.
 - Credentials laufen nur über Requestbody → stdin → 0600-Datei in `/dev/shm`.
 - Keine Credentials in argv, Environment, URL, Response oder Logs.
 - `ctrl_tcp` bindet ausschließlich an `127.0.0.1` im dedizierten Container.
-- Gate 2 verwendet SIP/TCP mit RFC-5626-Outbound und UUID auf der allowlisteten
-  Registrar-Adresse; Gate 1 bleibt SIP/UDP.
+- Gate 2 bindet SIP/UDP 5060 nur innerhalb des privaten, nicht auf den Host publizierten
+  Sidecar-Netzes; die Ziel-Allowlist erlaubt weiterhin nur die konfigurierte RFC1918-
+  Registrar-Adresse.
+- `sipnat=received` ist opt-in. libre lernt ausschließlich aus einer zur Registrierung
+  passenden UDP-Antwort mit gültigem `Via received` und numerischem `rport`. Das Tupel
+  wird nur als Contact angekündigt und niemals als neues Request-Ziel verwendet.
+- Es werden weder SIP ALG noch Portweiterleitung oder allgemeine WAN-Regel aktiviert.
 - Genau eine lokale Control-Verbindung und ein eingehender Call werden verarbeitet.
 - Audio ist `sendonly`: kein Anruferaudio wird abgespielt, aufgezeichnet oder gespeichert.
 - Video ist deaktiviert.
@@ -135,8 +142,9 @@ Die HTTP-Antwort enthält ausschließlich `{"outcome":"<code>"}`.
 - [x] Ohne Authentifizierung liefert der Endpoint HTTP 401.
 - [x] Ziel-Allowlist, Requestlimit und Secret-Redaction aus Gate 1 bleiben wirksam.
 - [x] `ctrl_tcp` ist nur auf Container-Loopback erreichbar.
-- [x] Ein eingehender Testanruf wird kontrolliert mit sendonly-Testton angenommen.
-- [x] Der Call wird nach ungefähr drei Sekunden automatisch beendet.
+- [ ] Ein echter eingehender FRITZ!Box-Testanruf wird über den gelernten UDP-Contact
+  kontrolliert mit sendonly-Testton angenommen.
+- [ ] Der echte Call wird nach ungefähr drei Sekunden automatisch beendet.
 - [x] Caller-ID und Providerrohdaten erscheinen nicht in API-Antworten oder Logs.
 - [x] Kein Anruferaudio wird gespeichert.
 - [x] Kein Baresip-Prozess und kein temporäres Config-Verzeichnis bleibt zurück.

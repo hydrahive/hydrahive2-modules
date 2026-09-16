@@ -1,0 +1,267 @@
+diff --git a/src/account.c b/src/account.c
+index fecaeb5b..e764c7ce 100644
+--- a/src/account.c
++++ b/src/account.c
+@@ -771,7 +771,8 @@ int account_set_sipnat(struct account *acc, const char *sipnat)
+ 		return EINVAL;
+ 
+ 	if (sipnat)
+-		if (0 == str_casecmp(sipnat, "outbound")) {
++		if (0 == str_casecmp(sipnat, "outbound") ||
++		    0 == str_casecmp(sipnat, "received")) {
+ 			acc->sipnat = mem_deref(acc->sipnat);
+ 			return str_dup(&acc->sipnat, sipnat);
+ 		}
+diff --git a/src/core.h b/src/core.h
+index b0e25e00..747a7e03 100644
+--- a/src/core.h
++++ b/src/core.h
+@@ -366,6 +366,7 @@ struct ua;
+ int ua_printf(struct re_printf *pf, const struct ua *ua);
+ int ua_print_allowed(struct re_printf *pf, const struct ua *ua);
+ int ua_print_require(struct re_printf *pf, const struct ua *ua);
++int ua_nat_contact_set(struct ua *ua, const struct sa *addr);
+ struct call *ua_find_call_onhold(const struct ua *ua);
+ struct call *ua_find_active_call(struct ua *ua);
+ void ua_handle_options(struct ua *ua, const struct sip_msg *msg);
+diff --git a/src/reg.c b/src/reg.c
+index 2ce1d71e..f8fec3a1 100644
+--- a/src/reg.c
++++ b/src/reg.c
+@@ -149,6 +149,20 @@ static void register_handler(int err, const struct sip_msg *msg, void *arg)
+ 
+ 		reg->scode = msg->scode;
+ 
++		if (0 == str_casecmp(account_sipnat(acc), "received")) {
++			const struct sa *contact_addr =
++				sipreg_contact_addr(reg->sipreg);
++			int contact_err;
++
++			if (contact_addr) {
++				contact_err = ua_nat_contact_set(reg->ua,
++							 contact_addr);
++				if (contact_err)
++					warning("reg: could not set observed "
++						"Contact: %m\n", contact_err);
++			}
++		}
++
+ 		hdr = sip_msg_hdr_apply(msg, true, SIP_HDR_CONTACT,
+ 					contact_handler, reg);
+ 		if (hdr) {
+@@ -259,6 +273,9 @@ int reg_register(struct reg *reg, const char *reg_uri, const char *params,
+ 	if (err)
+ 		return err;
+ 
++	if (acc && 0 == str_casecmp(account_sipnat(acc), "received"))
++		sipreg_enable_rport_contact(reg->sipreg, true);
++
+ 	if (acc && acc->rwait)
+ 		err = sipreg_set_rwait(reg->sipreg, acc->rwait);
+ 
+diff --git a/src/ua.c b/src/ua.c
+index 501cc8ea..010b40fd 100644
+--- a/src/ua.c
++++ b/src/ua.c
+@@ -25,6 +25,7 @@ struct ua {
+ 	size_t    extensionc;        /**< Number of SIP extensions           */
+ 	char *cuser;                 /**< SIP Contact username               */
+ 	char *pub_gruu;              /**< SIP Public GRUU                    */
++	char *nat_contact;           /**< Registrar-observed Contact URI     */
+ 	enum presence_status pstat;  /**< Presence Status                    */
+ 	struct list hdr_filter;      /**< Filter for incoming headers        */
+ 	struct list custom_hdrs;     /**< List of outgoing headers           */
+@@ -58,6 +59,7 @@ static void ua_destructor(void *arg)
+ 	list_flush(&ua->regl);
+ 	mem_deref(ua->cuser);
+ 	mem_deref(ua->pub_gruu);
++	mem_deref(ua->nat_contact);
+ 	mem_deref(ua->ansval);
+ 	mem_deref(ua->acc);
+ 
+@@ -1942,6 +1944,9 @@ const char *ua_cuser(const struct ua *ua)
+ 	if (str_isset(ua->pub_gruu))
+ 		return ua->pub_gruu;
+ 
++	if (str_isset(ua->nat_contact))
++		return ua->nat_contact;
++
+ 	return ua->cuser;
+ }
+ 
+@@ -1988,6 +1993,32 @@ void ua_pub_gruu_set(struct ua *ua, const struct pl *pval)
+ }
+ 
+ 
++/**
++ * Set the registrar-observed UDP Contact URI for dialog responses.
++ *
++ * @param ua    User-Agent
++ * @param addr  Registrar-observed address and port
++ *
++ * @return 0 if success, otherwise errorcode
++ */
++int ua_nat_contact_set(struct ua *ua, const struct sa *addr)
++{
++	char *contact = NULL;
++	int err;
++
++	if (!ua || !addr || !sa_isset(addr, SA_ALL))
++		return EINVAL;
++
++	err = re_sdprintf(&contact, "sip:%s@%J", ua->cuser, addr);
++	if (err)
++		return err;
++
++	ua->nat_contact = mem_deref(ua->nat_contact);
++	ua->nat_contact = contact;
++	return 0;
++}
++
++
+ /**
+  * Print list of methods allowed by the UA
+  *
+diff --git a/test/account.c b/test/account.c
+index c5201fa3..be8030f9 100644
+--- a/test/account.c
++++ b/test/account.c
+@@ -237,6 +237,25 @@ int test_account(void)
+ }
+ 
+ 
++int test_account_sipnat_received(void)
++{
++	struct account *acc = NULL;
++	int err = 0;
++
++	err = account_alloc(&acc, "sip:user@domain.com");
++	TEST_ERR(err);
++
++	/* Registrar-observed rport Contact is an explicit SIP-NAT mode. */
++	err = account_set_sipnat(acc, "received");
++	TEST_ERR(err);
++	ASSERT_STREQ("received", account_sipnat(acc));
++
++ out:
++	mem_deref(acc);
++	return err;
++}
++
++
+ int test_account_uri_complete(void)
+ {
+ 	static const struct test {
+diff --git a/test/main.c b/test/main.c
+index ca6a9812..41ba1a8b 100644
+--- a/test/main.c
++++ b/test/main.c
+@@ -23,6 +23,7 @@ struct test {
+ 
+ static const struct test tests[] = {
+ 	TEST(test_account),
++	TEST(test_account_sipnat_received),
+ 	TEST(test_account_uri_complete),
+ 	TEST(test_ausrc),
+ 	TEST(test_call_answer),
+diff --git a/test/test.h b/test/test.h
+index b6b97ea5..8b2b7beb 100644
+--- a/test/test.h
++++ b/test/test.h
+@@ -196,6 +196,7 @@ int mock_vidisp_register(struct vidisp **vidispp,
+ /* test cases */
+ 
+ int test_account(void);
++int test_account_sipnat_received(void);
+ int test_account_uri_complete(void);
+ int test_ausrc(void);
+ int test_call_answer(void);
+diff --git a/test/ua.c b/test/ua.c
+index d3b67fa3..ca431e1b 100644
+--- a/test/ua.c
++++ b/test/ua.c
+@@ -7,6 +7,7 @@
+ #include <re.h>
+ #include <baresip.h>
+ #include "test.h"
++#include "../src/core.h"
+ #include "sip/sipsrv.h"
+ 
+ 
+@@ -77,6 +78,11 @@ static void event_handler(enum bevent_ev ev, struct bevent *event, void *arg)
+ 
+ 		/* verify register success */
+ 		ASSERT_TRUE(ua_isregistered(t->ua));
++		if (0 == str_casecmp(account_sipnat(ua_account(t->ua)),
++				     "received")) {
++			ASSERT_TRUE(strstr(ua_cuser(t->ua),
++					   "sip:x@127.0.0.1:") != NULL);
++		}
+ 
+ 		/* Terminate SIP Server, then De-REGISTER */
+ 		for (i=0; i<t->srvc; i++)
+@@ -109,10 +115,11 @@ static void sip_server_exit_handler(void *arg)
+ }
+ 
+ 
+-static int reg(enum sip_transp tp)
++static int reg(enum sip_transp tp, bool rport_contact)
+ {
+ 	struct test t;
+ 	char aor[256];
++	char account[288];
+ 	int err;
+ 
+ 	memset(&t, 0, sizeof(t));
+@@ -128,7 +135,13 @@ static int reg(enum sip_transp tp)
+ 	err = sip_server_uri(t.srvv[0], aor, sizeof(aor), tp);
+ 	TEST_ERR(err);
+ 
+-	err = ua_alloc(&t.ua, aor);
++	if (re_snprintf(account, sizeof(account), "%s%s", aor,
++			rport_contact ? ";sipnat=received" : "") < 0) {
++		err = ENOMEM;
++		goto out;
++	}
++
++	err = ua_alloc(&t.ua, account);
+ 	TEST_ERR(err);
+ 
+ 	err = ua_register(t.ua);
+@@ -172,10 +185,11 @@ int test_ua_register(void)
+ 	err = ua_init("test", true, true, true);
+ 	TEST_ERR(err);
+ 
+-	err |= reg(SIP_TRANSP_UDP);
+-	err |= reg(SIP_TRANSP_TCP);
++	err |= reg(SIP_TRANSP_UDP, false);
++	err |= reg(SIP_TRANSP_UDP, true);
++	err |= reg(SIP_TRANSP_TCP, false);
+ #ifdef USE_TLS
+-	err |= reg(SIP_TRANSP_TLS);
++	err |= reg(SIP_TRANSP_TLS, false);
+ #endif
+ 
+ 	ua_stop_all(true);
+@@ -190,6 +204,7 @@ int test_ua_alloc(void)
+ {
+ 	struct ua *ua;
+ 	struct mbuf *mb = mbuf_alloc(512);
++	struct sa observed;
+ 	uint32_t n_uas = list_count(uag_list());
+ 	int err = 0;
+ 
+@@ -214,6 +229,13 @@ int test_ua_alloc(void)
+ 	ASSERT_EQ(0, err);
+ 	TEST_STRCMP("sip:bob@test.invalid", 20, mb->buf, mb->end);
+ 
++	err = sa_set_str(&observed, "192.0.2.10", 62000);
++	TEST_ERR(err);
++	err = ua_nat_contact_set(ua, &observed);
++	TEST_ERR(err);
++	ASSERT_STREQ("sip:user@192.0.2.10:62000", ua_cuser(ua));
++	ASSERT_STREQ("user", ua_local_cuser(ua));
++
+ 	mem_deref(ua);
+ 
+ 	ASSERT_EQ((n_uas), list_count(uag_list()));
