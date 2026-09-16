@@ -26,6 +26,10 @@ export type RegistrationProbeOutcome =
   | "timeout"
   | "runtime_unavailable"
   | "busy"
+  | "incoming_answered"
+  | "no_incoming_call"
+  | "caller_cancelled"
+  | "answer_failed"
 
 export interface RegistrationProbeRequest {
   registrar: string

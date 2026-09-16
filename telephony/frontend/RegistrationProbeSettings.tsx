@@ -1,10 +1,18 @@
-import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck, Wifi } from "lucide-react"
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  PhoneIncoming,
+  ShieldCheck,
+  Wifi,
+} from "lucide-react"
 import { useState, type FormEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { telephonyApi } from "./api"
 import type { RegistrationProbeOutcome } from "./types"
 
 type VisibleOutcome = RegistrationProbeOutcome | "request_failed"
+type TestingMode = "registration" | "incoming"
 
 interface RegistrationProbeSettingsProps {
   registrar: string
@@ -15,33 +23,37 @@ export function RegistrationProbeSettings({ registrar, port }: RegistrationProbe
   const { t } = useTranslation("voip")
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [testing, setTesting] = useState(false)
+  const [testingMode, setTestingMode] = useState<TestingMode | null>(null)
   const [outcome, setOutcome] = useState<VisibleOutcome | null>(null)
 
   const canSubmit = username.length >= 8 && password.length >= 12
+  const testing = testingMode !== null
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const runProbe = async (mode: TestingMode) => {
     if (!canSubmit || testing) return
-    setTesting(true)
+    setTestingMode(mode)
     setOutcome(null)
     try {
-      const result = await telephonyApi.testRegistration({
-        registrar,
-        port: Number(port),
-        username,
-        password,
-      })
+      const body = { registrar, port: Number(port), username, password }
+      const result =
+        mode === "incoming"
+          ? await telephonyApi.testIncomingCall(body)
+          : await telephonyApi.testRegistration(body)
       setOutcome(result.outcome)
     } catch {
       setOutcome("request_failed")
     } finally {
       setPassword("")
-      setTesting(false)
+      setTestingMode(null)
     }
   }
 
-  const success = outcome === "registered"
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    void runProbe("registration")
+  }
+
+  const success = outcome === "registered" || outcome === "incoming_answered"
 
   return (
     <section className="space-y-5" aria-labelledby="registration-probe-title">
@@ -68,7 +80,7 @@ export function RegistrationProbeSettings({ registrar, port }: RegistrationProbe
 
       <form
         autoComplete="off"
-        onSubmit={(event) => void submit(event)}
+        onSubmit={submit}
         className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5"
       >
         <fieldset disabled={testing} className="grid gap-4 sm:grid-cols-2">
@@ -127,12 +139,40 @@ export function RegistrationProbeSettings({ registrar, port }: RegistrationProbe
             disabled={!canSubmit || testing}
             className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {testing ? <Loader2 size={16} className="animate-spin" /> : <Wifi size={16} />}
-            {testing ? t("probe.testing") : t("probe.test_action")}
+            {testingMode === "registration" ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Wifi size={16} />
+            )}
+            {testingMode === "registration" ? t("probe.testing") : t("probe.test_action")}
           </button>
-          <p className="text-xs text-zinc-500">{t("probe.requirements")}</p>
+          <button
+            type="button"
+            disabled={!canSubmit || testing}
+            onClick={() => void runProbe("incoming")}
+            className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {testingMode === "incoming" ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <PhoneIncoming size={16} />
+            )}
+            {testingMode === "incoming"
+              ? t("probe.incoming_testing")
+              : t("probe.incoming_test_action")}
+          </button>
+          <p className="basis-full text-xs text-zinc-500">{t("probe.requirements")}</p>
         </div>
       </form>
+
+      {testingMode === "incoming" && (
+        <div role="status" className="rounded-xl border border-sky-500/25 bg-sky-500/5 p-4">
+          <div className="flex items-start gap-3 text-sky-100">
+            <PhoneIncoming size={19} className="mt-0.5 shrink-0" />
+            <p className="text-sm leading-6">{t("probe.incoming_instruction")}</p>
+          </div>
+        </div>
+      )}
 
       {outcome && (
         <div
