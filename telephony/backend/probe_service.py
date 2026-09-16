@@ -10,40 +10,75 @@ from threading import Lock
 
 from .probe_models import ProbeOutcome, RegistrationProbeRequest
 
-_COMMAND = [
+_REGISTRATION_COMMAND = [
     "incus",
     "exec",
     "hh-telephony-spike",
     "--",
     "/opt/hh-telephony-spike/spike/run-stdin-probe.sh",
 ]
+_INCOMING_COMMAND = [
+    "incus",
+    "exec",
+    "hh-telephony-spike",
+    "--",
+    "/opt/hh-telephony-spike/spike/run-stdin-incoming-probe.sh",
+]
 _STOP_COMMAND = ["incus", "stop", "--force", "hh-telephony-spike"]
 _START_COMMAND = ["incus", "start", "hh-telephony-spike"]
 _PROBE_LOCK = Lock()
-_PROCESS_TIMEOUT_SECONDS = 12
-_ALLOWED_OUTPUTS = {
-    outcome.value: outcome
-    for outcome in (
-        ProbeOutcome.REGISTERED,
-        ProbeOutcome.AUTH_FAILED,
-        ProbeOutcome.REGISTRATION_FAILED,
-        ProbeOutcome.TIMEOUT,
-        ProbeOutcome.BUSY,
-    )
-}
+_REGISTRATION_PROCESS_TIMEOUT_SECONDS = 12
+_INCOMING_PROCESS_TIMEOUT_SECONDS = 76
+_ALLOWED_OUTPUTS = {outcome.value: outcome for outcome in ProbeOutcome}
 
 
 def run_registration_probe(request: RegistrationProbeRequest) -> ProbeOutcome:
-    """Execute one bounded probe; secret values travel only in the stdin payload."""
+    """Execute one bounded registration probe with an stdin-only secret payload."""
+    return _run_with_lock(
+        request,
+        command=_REGISTRATION_COMMAND,
+        timeout_seconds=_REGISTRATION_PROCESS_TIMEOUT_SECONDS,
+        cleanup_after=False,
+    )
+
+
+def run_incoming_call_probe(request: RegistrationProbeRequest) -> ProbeOutcome:
+    """Execute one Gate-2 call and remove its runtime process state afterwards."""
+    return _run_with_lock(
+        request,
+        command=_INCOMING_COMMAND,
+        timeout_seconds=_INCOMING_PROCESS_TIMEOUT_SECONDS,
+        cleanup_after=True,
+    )
+
+
+def _run_with_lock(
+    request: RegistrationProbeRequest,
+    *,
+    command: list[str],
+    timeout_seconds: int,
+    cleanup_after: bool,
+) -> ProbeOutcome:
     if not _PROBE_LOCK.acquire(blocking=False):
         return ProbeOutcome.BUSY
     try:
-        return _run_locked(request)
+        return _run_locked(
+            request,
+            command=command,
+            timeout_seconds=timeout_seconds,
+            cleanup_after=cleanup_after,
+        )
     finally:
         _PROBE_LOCK.release()
 
 
-def _run_locked(request: RegistrationProbeRequest) -> ProbeOutcome:
+def _run_locked(
+    request: RegistrationProbeRequest,
+    *,
+    command: list[str],
+    timeout_seconds: int,
+    cleanup_after: bool,
+) -> ProbeOutcome:
     payload = json.dumps(
         {
             "registrar": request.registrar,
@@ -55,7 +90,7 @@ def _run_locked(request: RegistrationProbeRequest) -> ProbeOutcome:
     )
     try:
         process = subprocess.Popen(
-            _COMMAND,
+            command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -68,10 +103,7 @@ def _run_locked(request: RegistrationProbeRequest) -> ProbeOutcome:
         return ProbeOutcome.RUNTIME_UNAVAILABLE
 
     try:
-        stdout, stderr = process.communicate(
-            input=payload,
-            timeout=_PROCESS_TIMEOUT_SECONDS,
-        )
+        stdout, stderr = process.communicate(input=payload, timeout=timeout_seconds)
     except subprocess.TimeoutExpired:
         _kill_process_group(process)
         try:
@@ -85,7 +117,9 @@ def _run_locked(request: RegistrationProbeRequest) -> ProbeOutcome:
 
     del stderr
     outcome = _ALLOWED_OUTPUTS.get(stdout.strip(), ProbeOutcome.RUNTIME_UNAVAILABLE)
-    if outcome is ProbeOutcome.TIMEOUT:
+    if outcome is not ProbeOutcome.BUSY and (
+        cleanup_after or outcome is ProbeOutcome.TIMEOUT
+    ):
         _cleanup_runtime()
     return outcome
 

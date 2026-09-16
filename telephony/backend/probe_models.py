@@ -36,6 +36,10 @@ class ProbeOutcome(StrEnum):
     TIMEOUT = "timeout"
     RUNTIME_UNAVAILABLE = "runtime_unavailable"
     BUSY = "busy"
+    INCOMING_ANSWERED = "incoming_answered"
+    NO_INCOMING_CALL = "no_incoming_call"
+    CALLER_CANCELLED = "caller_cancelled"
+    ANSWER_FAILED = "answer_failed"
 
 
 class RegistrationProbeRequest(BaseModel):

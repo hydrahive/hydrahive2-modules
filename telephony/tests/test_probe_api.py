@@ -115,3 +115,60 @@ def test_registration_probe_is_rate_limited_per_principal(
         }
     }
     assert "TopSecretPhonePassword" not in response.text
+
+
+def test_incoming_probe_requires_current_principal(client) -> None:
+    response = client.post(
+        "/api/modules/telephony/spike/incoming-test", json=_VALID_REQUEST
+    )
+
+    assert response.status_code == 401
+
+
+def test_incoming_probe_returns_only_stable_outcome(
+    client, auth_headers, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backend import probe_routes
+
+    observed: dict[str, object] = {}
+
+    def fake_probe(request):
+        observed["request"] = request
+        return ProbeOutcome.INCOMING_ANSWERED
+
+    monkeypatch.setattr(probe_routes, "run_incoming_call_probe", fake_probe)
+    response = client.post(
+        "/api/modules/telephony/spike/incoming-test",
+        headers=auth_headers,
+        json=_VALID_REQUEST,
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"outcome": "incoming_answered"}
+    assert "phone-user-01" not in repr(observed["request"])
+    assert "TopSecretPhonePassword" not in repr(observed["request"])
+
+
+def test_incoming_probe_is_rate_limited_per_principal(
+    client, auth_headers, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backend import probe_routes
+
+    monkeypatch.setattr(
+        probe_routes, "check_rate", lambda *_args, **_kwargs: (False, 37)
+    )
+
+    response = client.post(
+        "/api/modules/telephony/spike/incoming-test",
+        headers=auth_headers,
+        json=_VALID_REQUEST,
+    )
+
+    assert response.status_code == 429
+    assert response.json() == {
+        "detail": {
+            "code": "telephony_probe_rate_limited",
+            "params": {"retry_after": 37},
+        }
+    }
+    assert "TopSecretPhonePassword" not in response.text
