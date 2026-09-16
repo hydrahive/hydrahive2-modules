@@ -64,7 +64,7 @@ def test_manifest_declares_installable_foundation() -> None:
     assert manifest == {
         "id": "telephony",
         "name": "VoIP",
-        "version": "0.4.4",
+        "version": "0.5.0",
         "description": (
             "Projektgebundener Telefonassistent für VoIP-Zugänge, "
             "Telefonaufträge und Gesprächsarchive."

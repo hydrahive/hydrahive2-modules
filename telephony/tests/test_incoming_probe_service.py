@@ -64,6 +64,7 @@ def test_incoming_probe_uses_fixed_command_stdin_and_always_cleans_runtime(
         ("no_incoming_call\n", ProbeOutcome.NO_INCOMING_CALL),
         ("caller_cancelled\n", ProbeOutcome.CALLER_CANCELLED),
         ("answer_failed\n", ProbeOutcome.ANSWER_FAILED),
+        ("media_failed\n", ProbeOutcome.MEDIA_FAILED),
         ("garbage with caller id\n", ProbeOutcome.RUNTIME_UNAVAILABLE),
     ],
 )

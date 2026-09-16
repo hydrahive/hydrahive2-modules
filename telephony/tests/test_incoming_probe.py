@@ -48,6 +48,12 @@ def test_incoming_probe_registers_answers_sendonly_plays_tone_and_hangs_up() -> 
                 id="fritz-call-123@fritz.box",
                 direction="incoming",
             ),
+            {
+                "response": True,
+                "ok": True,
+                "token": "media-stat",
+                "data": "\n  TX: packets=198, octets=31680\n",
+            },
         ]
     )
     slept: list[float] = []
@@ -67,9 +73,51 @@ def test_incoming_probe_registers_answers_sendonly_plays_tone_and_hangs_up() -> 
             "audio=sendonly video=inactive callid=fritz-call-123@fritz.box",
             "answer",
         ),
+        ("audio_debug", "", "media-stat"),
         ("hangup", "fritz-call-123@fritz.box", "hangup"),
     ]
     assert slept == [3]
+
+
+@pytest.mark.parametrize(
+    "media_response",
+    [
+        {
+            "response": True,
+            "ok": True,
+            "token": "media-stat",
+            "data": "\n  TX: packets=0, octets=0\n",
+        },
+        {
+            "response": True,
+            "ok": True,
+            "token": "media-stat",
+            "data": "unexpected output",
+        },
+        {"response": True, "ok": False, "token": "media-stat", "data": ""},
+        None,
+    ],
+)
+def test_incoming_probe_rejects_established_call_without_audio_tx(
+    media_response: dict[str, object] | None,
+) -> None:
+    messages = [
+        _event("REGISTER_OK"),
+        _event("CALL_INCOMING", id="call123", direction="incoming"),
+        {"response": True, "ok": True, "token": "answer", "data": ""},
+        _event("CALL_ESTABLISHED", id="call123", direction="incoming"),
+    ]
+    if media_response is not None:
+        messages.append(media_response)
+    channel = FakeChannel(messages)
+
+    outcome = drive_incoming_call(channel, tone_seconds=4, sleep=lambda _: None)
+
+    assert outcome is IncomingOutcome.MEDIA_FAILED
+    assert channel.commands[-2:] == [
+        ("audio_debug", "", "media-stat"),
+        ("hangup", "call123", "hangup"),
+    ]
 
 
 @pytest.mark.parametrize(

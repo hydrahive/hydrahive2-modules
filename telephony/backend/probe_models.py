@@ -40,6 +40,7 @@ class ProbeOutcome(StrEnum):
     NO_INCOMING_CALL = "no_incoming_call"
     CALLER_CANCELLED = "caller_cancelled"
     ANSWER_FAILED = "answer_failed"
+    MEDIA_FAILED = "media_failed"
 
 
 class RegistrationProbeRequest(BaseModel):
