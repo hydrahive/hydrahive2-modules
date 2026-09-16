@@ -43,8 +43,10 @@ persistieren.
 4. Die UI fordert dazu auf, innerhalb des begrenzten Testfensters die der Nebenstelle
    zugewiesene Rufnummer anzurufen.
 5. Der Sidecar registriert sich flüchtig und wartet auf genau einen eingehenden Anruf.
-   Gate 2 verwendet SIP über TCP; die ausgehende TCP-Verbindung zur FRITZ!Box bleibt für
-   den Rückweg des INVITE bestehen. Gate 1 verwendet weiterhin UDP.
+   Gate 2 verwendet SIP über TCP mit SIP Outbound nach RFC 5626; die ausgehende TCP-
+   Verbindung zur FRITZ!Box wird als Flow registriert, damit der INVITE nicht an die
+   private Contact-Adresse des Sidecars adressiert werden muss. Gate 1 verwendet
+   weiterhin UDP.
 6. Der Anruf wird mit `audio=sendonly` und deaktiviertem Video angenommen.
 7. Baresip sendet etwa drei Sekunden lang einen neutralen Sinuston.
 8. Der Sidecar legt auf und liefert ausschließlich einen stabilen Ergebniscode.
@@ -118,7 +120,8 @@ Die HTTP-Antwort enthält ausschließlich `{"outcome":"<code>"}`.
 - Credentials laufen nur über Requestbody → stdin → 0600-Datei in `/dev/shm`.
 - Keine Credentials in argv, Environment, URL, Response oder Logs.
 - `ctrl_tcp` bindet ausschließlich an `127.0.0.1` im dedizierten Container.
-- Gate 2 verwendet SIP/TCP auf der allowlisteten Registrar-Adresse; Gate 1 bleibt SIP/UDP.
+- Gate 2 verwendet SIP/TCP mit RFC-5626-Outbound und UUID auf der allowlisteten
+  Registrar-Adresse; Gate 1 bleibt SIP/UDP.
 - Genau eine lokale Control-Verbindung und ein eingehender Call werden verarbeitet.
 - Audio ist `sendonly`: kein Anruferaudio wird abgespielt, aufgezeichnet oder gespeichert.
 - Video ist deaktiviert.

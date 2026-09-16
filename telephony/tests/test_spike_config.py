@@ -89,11 +89,14 @@ def test_incoming_config_is_manual_sendonly_capable_and_loopback_controlled() ->
     config = render_incoming_config(Path("/opt/baresip/lib/baresip/modules"))
 
     assert "transport=tcp" in account
+    assert "sipnat=outbound" in account
+    assert 'outbound="sip:192.168.3.1:5060;transport=tcp"' in account
     assert "regint=0" in account
     assert "answermode=manual" in account
     assert "check_origin=yes" in account
     assert "sip_transports\t\ttcp" in config
     assert "sip_trans_def\t\ttcp" in config
+    assert "module\t\t\tuuid.so" in config
     assert "call_accept\t\tyes" in config
     assert "ctrl_tcp_listen\t127.0.0.1:4444" in config
     assert "module_app\t\tctrl_tcp.so" in config

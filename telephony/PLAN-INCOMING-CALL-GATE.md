@@ -70,7 +70,7 @@ oder Prozesse.
 - [x] Timeout-/Container-Restart und rückstandsfreies Cleanup prüfen
 - [x] vollständige Telephony-Suite, Ruff, Shellsyntax und Frontend-Build
 - [x] Security-Audit und HH-Review
-- [x] Modulversion auf `0.4.1` erhöhen und Gate-2-TCP-Fix dokumentieren
+- [x] Modulversion auf `0.4.2` erhöhen, SIP Outbound aktivieren und dokumentieren
 - [x] Commit, Push, PR und CI
 
 ## Akzeptanzkriterien

@@ -5,8 +5,9 @@ Telefonie-Spikes. Er ist **kein** Teil der installierten Produktions-Runtime. De
 baut Baresip 4.11.0 und libre 4.11.0 in einem separaten, unprivilegierten
 Incus-Container. Er prüft eine SIP-Registrierung sowie genau einen kontrollierten
 eingehenden Testanruf per UDP/TCP und G.711. Die Registrierung bleibt beim
-Gate-1-Test UDP; Gate 2 nutzt TCP, damit eingehende SIP-Nachrichten über die etablierte
-Verbindung auch durch das geroutete/NAT-Netz zurückkommen.
+Gate-1-Test UDP; Gate 2 nutzt TCP plus SIP Outbound (RFC 5626), damit eingehende
+SIP-Nachrichten über den registrierten Flow auch durch das geroutete/NAT-Netz
+zurückkommen. Dafür wird im isolierten Baresip-Build zusätzlich das UUID-Modul geladen.
 
 ## Sicherheitsregeln
 
