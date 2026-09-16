@@ -26,7 +26,7 @@ def main(input_stream: TextIO = sys.stdin, output_stream: TextIO = sys.stdout) -
             binary=_BINARY,
             module_dir=_MODULE_DIR,
             incoming_timeout_seconds=45,
-            tone_seconds=3,
+            tone_seconds=4,
         )
     except Exception:
         return _write(output_stream, "runtime_unavailable", 69)

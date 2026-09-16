@@ -24,7 +24,7 @@ def run_incoming_probe(
     binary: Path,
     module_dir: Path,
     incoming_timeout_seconds: int = 45,
-    tone_seconds: int = 3,
+    tone_seconds: int = 4,
     temp_parent: Path | None = None,
 ) -> IncomingReport:
     """Run one Gate-2 attempt with no inherited logs or audio persistence."""

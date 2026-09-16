@@ -42,7 +42,7 @@ def test_stdin_incoming_probe_emits_only_stable_outcome(
     assert "TopSecretPhonePassword" not in output
     assert captured["binary"] == Path("/opt/baresip/bin/baresip")
     assert captured["incoming_timeout_seconds"] == 45
-    assert captured["tone_seconds"] == 3
+    assert captured["tone_seconds"] == 4
 
 
 @pytest.mark.parametrize(

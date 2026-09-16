@@ -16,6 +16,9 @@ _CALL_ID_WORD = r"[A-Za-z0-9.!%*_+`'~()-]+"
 _CALL_ID_PATTERN = re.compile(
     rf"(?=.{{1,255}}\Z){_CALL_ID_WORD}(?:@{_CALL_ID_WORD})?\Z"
 )
+_AUDIO_TX_PATTERN = re.compile(
+    r"(?:^|\s)TX: packets=([0-9]+), octets=([0-9]+)(?:\s|$)"
+)
 
 
 class IncomingOutcome(StrEnum):
@@ -23,6 +26,7 @@ class IncomingOutcome(StrEnum):
     NO_INCOMING_CALL = "no_incoming_call"
     CALLER_CANCELLED = "caller_cancelled"
     ANSWER_FAILED = "answer_failed"
+    MEDIA_FAILED = "media_failed"
     AUTH_FAILED = "auth_failed"
     REGISTRATION_FAILED = "registration_failed"
     TIMEOUT = "timeout"
@@ -39,7 +43,7 @@ def drive_incoming_call(
     channel: ControlChannel,
     *,
     incoming_timeout_seconds: float = 45,
-    tone_seconds: float = 3,
+    tone_seconds: float = 4,
     sleep: Callable[[float], None] = time.sleep,
 ) -> IncomingOutcome:
     """Drive one registration and call without exposing raw control payloads."""
@@ -94,8 +98,43 @@ def drive_incoming_call(
             break
 
     sleep(tone_seconds)
-    channel.send_command("hangup", call_id, "hangup")
-    return IncomingOutcome.INCOMING_ANSWERED
+    channel.send_command("audio_debug", "", "media-stat")
+    outcome = _wait_for_media_stat(channel, call_id, timeout_seconds=2)
+    if outcome is not IncomingOutcome.CALLER_CANCELLED:
+        channel.send_command("hangup", call_id, "hangup")
+    return outcome
+
+
+def _wait_for_media_stat(
+    channel: ControlChannel,
+    call_id: str,
+    *,
+    timeout_seconds: float,
+) -> IncomingOutcome:
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        message = _receive_before(channel, deadline)
+        if message is None:
+            return IncomingOutcome.MEDIA_FAILED
+        if message.get("id") == call_id and message.get("type") == "CALL_CLOSED":
+            return IncomingOutcome.CALLER_CANCELLED
+        if message.get("response") is not True:
+            continue
+        if message.get("token") != "media-stat":
+            continue
+        if message.get("ok") is not True:
+            return IncomingOutcome.MEDIA_FAILED
+        data = message.get("data")
+        if not isinstance(data, str):
+            return IncomingOutcome.MEDIA_FAILED
+        match = _AUDIO_TX_PATTERN.search(data)
+        if (
+            match is None
+            or int(match.group(1)) == 0
+            or int(match.group(2)) == 0
+        ):
+            return IncomingOutcome.MEDIA_FAILED
+        return IncomingOutcome.INCOMING_ANSWERED
 
 
 def _wait_for_type(
