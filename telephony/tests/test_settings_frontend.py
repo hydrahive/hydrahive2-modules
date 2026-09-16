@@ -52,6 +52,23 @@ def test_incoming_probe_frontend_declares_all_stable_outcomes_and_texts() -> Non
         "no_incoming_call",
         "caller_cancelled",
         "answer_failed",
+        "media_failed",
     ):
         assert f'| "{outcome}"' in types
         assert f"{outcome}:" in translations
+
+
+def test_incoming_probe_requires_explicit_tone_confirmation_for_gate_success() -> None:
+    settings = "\n".join(
+        (FRONTEND / filename).read_text()
+        for filename in ("RegistrationProbeSettings.tsx", "ProbeResult.tsx")
+    )
+    translations = (FRONTEND / "i18n.ts").read_text()
+
+    assert "toneConfirmation" in settings
+    assert 't("probe.tone_heard")' in settings
+    assert 't("probe.tone_not_heard")' in settings
+    assert 'toneConfirmation === true' in settings
+    assert "tone_heard:" in translations
+    assert "tone_not_heard:" in translations
+    assert "Gate 2 ist bestanden" not in translations.split("incoming_answered:", 1)[1].split("},", 1)[0]

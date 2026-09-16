@@ -31,6 +31,7 @@ export type RegistrationProbeOutcome =
   | "no_incoming_call"
   | "caller_cancelled"
   | "answer_failed"
+  | "media_failed"
 
 export interface RegistrationProbeRequest {
   registrar: string

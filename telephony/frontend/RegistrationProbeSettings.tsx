@@ -1,14 +1,8 @@
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Loader2,
-  PhoneIncoming,
-  ShieldCheck,
-  Wifi,
-} from "lucide-react"
+import { Loader2, PhoneIncoming, ShieldCheck, Wifi } from "lucide-react"
 import { useState, type FormEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { telephonyApi } from "./api"
+import { ProbeResult } from "./ProbeResult"
 import type { RegistrationProbeOutcome } from "./types"
 
 type VisibleOutcome = RegistrationProbeOutcome | "request_failed"
@@ -25,6 +19,7 @@ export function RegistrationProbeSettings({ registrar, port }: RegistrationProbe
   const [password, setPassword] = useState("")
   const [testingMode, setTestingMode] = useState<TestingMode | null>(null)
   const [outcome, setOutcome] = useState<VisibleOutcome | null>(null)
+  const [toneConfirmation, setToneConfirmation] = useState<boolean | null>(null)
 
   const canSubmit = username.length >= 8 && password.length >= 12
   const testing = testingMode !== null
@@ -33,6 +28,7 @@ export function RegistrationProbeSettings({ registrar, port }: RegistrationProbe
     if (!canSubmit || testing) return
     setTestingMode(mode)
     setOutcome(null)
+    setToneConfirmation(null)
     try {
       const body = { registrar, port: Number(port), username, password }
       const result =
@@ -52,8 +48,6 @@ export function RegistrationProbeSettings({ registrar, port }: RegistrationProbe
     event.preventDefault()
     void runProbe("registration")
   }
-
-  const success = outcome === "registered" || outcome === "incoming_answered"
 
   return (
     <section className="space-y-5" aria-labelledby="registration-probe-title">
@@ -175,16 +169,11 @@ export function RegistrationProbeSettings({ registrar, port }: RegistrationProbe
       )}
 
       {outcome && (
-        <div
-          role="status"
-          className={`flex items-start gap-3 rounded-xl border p-4 ${success ? "border-emerald-500/25 bg-emerald-500/5 text-emerald-100" : "border-amber-500/25 bg-amber-500/5 text-amber-100"}`}
-        >
-          {success ? <CheckCircle2 size={19} /> : <AlertTriangle size={19} />}
-          <div>
-            <p className="text-sm font-semibold">{t(`probe.results.${outcome}.title`)}</p>
-            <p className="mt-1 text-xs opacity-80">{t(`probe.results.${outcome}.description`)}</p>
-          </div>
-        </div>
+        <ProbeResult
+          outcome={outcome}
+          toneConfirmation={toneConfirmation}
+          onToneConfirmation={setToneConfirmation}
+        />
       )}
     </section>
   )
