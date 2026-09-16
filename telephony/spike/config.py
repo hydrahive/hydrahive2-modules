@@ -79,10 +79,11 @@ def render_config(module_dir: Path) -> str:
 
 
 def render_incoming_account(target: ProbeTarget, credentials: SipCredentials) -> str:
-    """Render a dormant account that ctrl_tcp explicitly registers for Gate 2."""
+    """Render a TCP account with RFC-5626 SIP-Outbound flow routing for Gate 2."""
     return (
         f"<sip:{credentials.username}@{target.registrar}:{target.port};transport=tcp>"
         f";auth_user={credentials.username};auth_pass={credentials.password}"
+        f';sipnat=outbound;outbound="sip:{target.registrar}:{target.port};transport=tcp"'
         ";audio_codecs=pcma,pcmu;regint=0;answermode=manual"
         ";inreq_allowed=yes;check_origin=yes\n"
     )
@@ -105,6 +106,7 @@ def render_incoming_config(module_dir: Path) -> str:
         f"module_path\t\t{module_dir}\n"
         "module\t\t\tg711.so\n"
         "module\t\t\tausine.so\n"
+        "module\t\t\tuuid.so\n"
         "module_app\t\taccount.so\n"
         "module_app\t\tmenu.so\n"
         "module_app\t\tctrl_tcp.so\n"

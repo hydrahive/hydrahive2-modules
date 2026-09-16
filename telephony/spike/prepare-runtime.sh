@@ -70,7 +70,7 @@ cmake -S baresip -B baresip/build \
     -DRE_INCLUDE_DIR=/opt/baresip/include/re \
     -DRE_LIBRARY=/opt/baresip/lib/libre.so \
     -Dre_DIR=/opt/baresip/lib/cmake/re \
-    -DMODULES='stdio;ctrl_tcp;g711;auconv;auresamp;aufile;ausine;account;menu;serreg;debug_cmd;netroam'
+    -DMODULES='stdio;ctrl_tcp;g711;auconv;auresamp;aufile;ausine;uuid;account;menu;serreg;debug_cmd;netroam'
 cmake --build baresip/build --parallel 2
 cmake --install baresip/build
 printf '%s\n' /opt/baresip/lib > /etc/ld.so.conf.d/baresip.conf
