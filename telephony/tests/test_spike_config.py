@@ -10,6 +10,8 @@ from spike.config import (
     SecureBaresipConfig,
     SipCredentials,
     render_account,
+    render_incoming_account,
+    render_incoming_config,
 )
 
 
@@ -75,6 +77,27 @@ def test_render_account_uses_udp_g711_and_no_sip_trace() -> None:
     assert "auth_user=phone-user-01" in account
     assert "auth_pass=TopSecretPhonePassword" in account
     assert "sip_trace" not in account
+
+
+def test_incoming_config_is_manual_sendonly_capable_and_loopback_controlled() -> None:
+    target = ProbeTarget(registrar="192.168.3.1")
+    credentials = SipCredentials(
+        username="phone-user-01", password="TopSecretPhonePassword"
+    )
+
+    account = render_incoming_account(target, credentials)
+    config = render_incoming_config(Path("/opt/baresip/lib/baresip/modules"))
+
+    assert "regint=0" in account
+    assert "answermode=manual" in account
+    assert "check_origin=yes" in account
+    assert "call_accept\t\tyes" in config
+    assert "ctrl_tcp_listen\t127.0.0.1:4444" in config
+    assert "module_app\t\tctrl_tcp.so" in config
+    assert "module\t\t\tausine.so" in config
+    assert "stdio.so" not in config
+    assert "sip_trace" not in config
+    assert "0.0.0.0:4444" not in config
 
 
 def test_secure_config_uses_0600_and_removes_secret_files(tmp_path: Path) -> None:

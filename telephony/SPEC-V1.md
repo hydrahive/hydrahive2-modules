@@ -1,6 +1,6 @@
 # Telefonie-Modul V1 — VoIP-Projekte und telefonischer HydraHive-Agent
 
-**Status:** V1-Design; Grundlage, Gatewayvertrag/Fake und flüchtiger Settings-Registrierungstest implementiert, Telefoniefunktionen noch nicht aktiv
+**Status:** V1-Design; Grundlage, Gatewayvertrag/Fake sowie flüchtige Settings-Tests für Registrierung und eingehende Testanrufe implementiert, produktive Telefoniefunktionen noch nicht aktiv
 
 **Modul-ID:** `telephony` · **UI-Name:** VoIP
 

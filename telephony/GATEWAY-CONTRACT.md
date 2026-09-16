@@ -1,6 +1,6 @@
 # HydraHive-Telefonie-Gatewayvertrag
 
-**Stand:** Vertrag 1 · **Modul:** `telephony` 0.3.0
+**Stand:** Vertrag 1 · **Modul:** `telephony` 0.4.0
 
 ## Zweck und Grenze
 
@@ -10,9 +10,11 @@ Gateway führt nur ausdrücklich adressierte Telefonieoperationen aus und liefer
 beobachtete Ereignisse zurück.
 
 Version 0.2.0 führte den Python-Port, strikte Modelle und einen In-Process-Fake ein.
-Version 0.3.0 ergänzt ausschließlich einen authentifizierten, flüchtigen
-Registrierungs-Spike über die isolierte Developer-Runtime. Er speichert keine Credentials,
-öffnet keinen dauerhaften Port und stellt noch keine Anruffunktion bereit.
+Version 0.3.0 ergänzte einen authentifizierten, flüchtigen Registrierungs-Spike.
+Version 0.4.0 ergänzt Gate 2: ein explizites Testfenster nimmt genau einen eingehenden
+Anruf mit sendonly-Testton an und beendet ihn automatisch. Beide Tests laufen über die
+isolierte Developer-Runtime, speichern keine Credentials und öffnen keinen dauerhaften
+Dienst. Produktive Anruffunktionen bleiben deaktiviert.
 
 ## Identitäten
 

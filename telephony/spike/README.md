@@ -1,9 +1,10 @@
 # FRITZ!Box SIP Spike Harness
 
-Dieser Ordner ist ein isoliertes Developer-Werkzeug für Gate 1 des Telefonie-Spikes. Er
-ist **kein** Teil der installierten Produktions-Runtime. Der Harness baut Baresip 4.11.0
-und libre 4.11.0 in einem separaten, unprivilegierten Incus-Container und prüft genau
-eine SIP-Registrierung per UDP/G.711.
+Dieser Ordner ist ein isoliertes Developer-Werkzeug für Gates 1 und 2 des
+Telefonie-Spikes. Er ist **kein** Teil der installierten Produktions-Runtime. Der Harness
+baut Baresip 4.11.0 und libre 4.11.0 in einem separaten, unprivilegierten
+Incus-Container. Er prüft eine SIP-Registrierung sowie genau einen kontrollierten
+eingehenden Testanruf per UDP/G.711.
 
 ## Sicherheitsregeln
 
@@ -16,6 +17,9 @@ eine SIP-Registrierung per UDP/G.711.
 - Der Registrar muss eine explizite RFC1918-IPv4-Adresse sein. Öffentliche Ziele und
   Hostnamen werden abgewiesen.
 - Der Build überschreibt niemals einen Container namens `hh-telephony-spike`.
+- Die Baresip-Steuerung bindet nur auf `127.0.0.1` im Container.
+- Gate 2 verwendet ausschließlich sendonly-Testaudio. Anruferaudio wird weder
+  abgespielt noch aufgezeichnet oder gespeichert.
 
 ## 1. Runtime einmalig vorbereiten
 
@@ -25,6 +29,16 @@ Im Repository `hydrahive2-modules`:
 chmod +x telephony/spike/prepare-runtime.sh telephony/spike/run-probe.sh
 ./telephony/spike/prepare-runtime.sh
 ```
+
+Nach einem Modulupdate wird eine bestehende dedizierte Runtime ohne Neubuild mit den
+aktuellen, credentialfreien Harness-Dateien synchronisiert:
+
+```bash
+./telephony/spike/sync-runtime.sh
+```
+
+Das Script prüft Containername und Baresip-Version, bevor es ausschließlich die
+Spike-Dateien ersetzt.
 
 Der Build ist auf diese Releases und Commits gepinnt:
 
@@ -68,7 +82,23 @@ Das CLI gibt ausschließlich einen stabilen Code aus:
 Ein `401 Unauthorized` während des SIP-Digest-Handshakes ist normal, wenn danach
 `registered` erreicht wird.
 
-## 3. Cleanup
+## 3. Eingehenden Testanruf prüfen
+
+Unter **VoIP → Einstellungen** werden dieselben flüchtigen Zugangsdaten eingegeben und
+**Eingehenden Anruf testen** gestartet. Danach muss innerhalb von 45 Sekunden die der
+Nebenstelle zugewiesene Rufnummer angerufen werden. Der Harness:
+
+1. registriert die Nebenstelle nur für dieses Testfenster,
+2. nimmt genau einen eingehenden Anruf mit deaktiviertem Video und `audio=sendonly` an,
+3. sendet ungefähr drei Sekunden lang einen neutralen 440-Hz-Testton,
+4. legt automatisch auf und startet den dedizierten Sidecar neu.
+
+Stabile Gate-2-Ergebnisse sind `incoming_answered`, `no_incoming_call`,
+`caller_cancelled`, `answer_failed`, `auth_failed`, `registration_failed`, `timeout`,
+`runtime_unavailable` und `busy`. Caller-ID, Peer-URI und Providerrohdaten verlassen den
+Container nicht.
+
+## 4. Cleanup
 
 Nach Abschluss des Spikes:
 
@@ -80,6 +110,6 @@ Es werden weder Autostart noch ein dauerhaft öffentlicher Port eingerichtet.
 
 ## Scope
 
-Aktuell wird nur Gate 1 (Registrierung) geprüft. Eingehende und ausgehende Calls,
-RTP-Audio, DTMF, Hydrahive-Routing sowie Produktinstallation folgen erst nach einem
-erfolgreichen Gate 1 und separater Freigabe.
+Gates 1 und 2 prüfen Registrierung sowie einen einzelnen eingehenden Anruf mit
+sendonly-Testton. Dauerhafte Verbindungen, ausgehende Calls, bidirektionales RTP-Audio,
+DTMF, HydraHive-Routing, STT/TTS und Produktinstallation folgen erst in getrennten Gates.

@@ -12,4 +12,6 @@ export const telephonyApi = {
       "/modules/telephony/spike/registration-test",
       body,
     ),
+  testIncomingCall: (body: RegistrationProbeRequest) =>
+    api.post<RegistrationProbeResponse>("/modules/telephony/spike/incoming-test", body),
 }

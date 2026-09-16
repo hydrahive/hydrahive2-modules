@@ -45,7 +45,7 @@ Das Ubuntu-Paket 1.1.0 wird nicht verwendet: es liegt weit hinter dem geprüften
 6. [x] gepinnten Incus-Runtime-Build und Operatoranleitung ergänzen
 7. [x] Tests, Ruff, Shell-Syntax und Versionsguard grün
 8. [x] Commit und Review-PR erstellen
-9. [ ] Echten Registrierungsprobe interaktiv mit Betreiber-Credentials ausführen
+9. [x] Echten Registrierungsprobe interaktiv mit Betreiber-Credentials ausführen
 
 ## Akzeptanzkriterien
 

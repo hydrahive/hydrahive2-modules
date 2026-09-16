@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
+from typing import Callable
 
 _RFC1918_NETWORKS = tuple(
     ipaddress.ip_network(network)
@@ -65,9 +66,7 @@ def render_account(target: ProbeTarget, credentials: SipCredentials) -> str:
 
 def render_config(module_dir: Path) -> str:
     """Render the registration-only Baresip configuration."""
-    module_dir = module_dir.resolve()
-    if any(character.isspace() for character in str(module_dir)):
-        raise ValueError("module directory must not contain whitespace")
+    module_dir = _validate_module_dir(module_dir)
     return (
         "sip_transports\t\tudp\n"
         "call_accept\t\tno\n"
@@ -77,6 +76,45 @@ def render_config(module_dir: Path) -> str:
         "module_app\t\taccount.so\n"
         "module_app\t\tserreg.so\n"
     )
+
+
+def render_incoming_account(target: ProbeTarget, credentials: SipCredentials) -> str:
+    """Render a dormant account that ctrl_tcp explicitly registers for Gate 2."""
+    return (
+        f"<sip:{credentials.username}@{target.registrar}:{target.port};transport=udp>"
+        f";auth_user={credentials.username};auth_pass={credentials.password}"
+        ";audio_codecs=pcma,pcmu;regint=0;answermode=manual"
+        ";inreq_allowed=yes;check_origin=yes\n"
+    )
+
+
+def render_incoming_config(module_dir: Path) -> str:
+    """Render a one-call, loopback-controlled, sendonly-capable configuration."""
+    module_dir = _validate_module_dir(module_dir)
+    return (
+        "sip_transports\t\tudp\n"
+        "sip_listen\t\t0.0.0.0:0\n"
+        "call_accept\t\tyes\n"
+        "call_max_calls\t\t1\n"
+        "call_local_timeout\t15\n"
+        "rtp_ports\t\t20000-20020\n"
+        "audio_level\t\tno\n"
+        "audio_source\t\tausine,440\n"
+        "ctrl_tcp_listen\t127.0.0.1:4444\n"
+        f"module_path\t\t{module_dir}\n"
+        "module\t\t\tg711.so\n"
+        "module\t\t\tausine.so\n"
+        "module_app\t\taccount.so\n"
+        "module_app\t\tmenu.so\n"
+        "module_app\t\tctrl_tcp.so\n"
+    )
+
+
+def _validate_module_dir(module_dir: Path) -> Path:
+    module_dir = module_dir.resolve()
+    if any(character.isspace() for character in str(module_dir)):
+        raise ValueError("module directory must not contain whitespace")
+    return module_dir
 
 
 class SecureBaresipConfig:
@@ -89,11 +127,15 @@ class SecureBaresipConfig:
         credentials: SipCredentials,
         module_dir: Path,
         temp_parent: Path | None = None,
+        config_renderer: Callable[[Path], str] = render_config,
+        account_renderer: Callable[[ProbeTarget, SipCredentials], str] = render_account,
     ) -> None:
         self._target = target
         self._credentials = credentials
         self._module_dir = module_dir
         self._temp_parent = temp_parent
+        self._config_renderer = config_renderer
+        self._account_renderer = account_renderer
         self._temporary: TemporaryDirectory[str] | None = None
 
     def __enter__(self) -> Path:
@@ -101,9 +143,12 @@ class SecureBaresipConfig:
         self._temporary = TemporaryDirectory(prefix="hh-sip-probe-", dir=parent)
         config_dir = Path(self._temporary.name)
         config_dir.chmod(0o700)
-        self._write_secret_file(config_dir / "config", render_config(self._module_dir))
         self._write_secret_file(
-            config_dir / "accounts", render_account(self._target, self._credentials)
+            config_dir / "config", self._config_renderer(self._module_dir)
+        )
+        self._write_secret_file(
+            config_dir / "accounts",
+            self._account_renderer(self._target, self._credentials),
         )
         self._write_secret_file(config_dir / "contacts", "")
         return config_dir
@@ -123,3 +168,24 @@ class SecureBaresipConfig:
         path.touch(mode=0o600, exist_ok=False)
         path.chmod(0o600)
         path.write_text(content, encoding="utf-8")
+
+
+class SecureIncomingBaresipConfig(SecureBaresipConfig):
+    """Use Gate-2 renderers while preserving the same tmpfs file boundary."""
+
+    def __init__(
+        self,
+        *,
+        target: ProbeTarget,
+        credentials: SipCredentials,
+        module_dir: Path,
+        temp_parent: Path | None = None,
+    ) -> None:
+        super().__init__(
+            target=target,
+            credentials=credentials,
+            module_dir=module_dir,
+            temp_parent=temp_parent,
+            config_renderer=render_incoming_config,
+            account_renderer=render_incoming_account,
+        )

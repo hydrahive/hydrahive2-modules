@@ -1,4 +1,4 @@
-"""Machine-only stdin adapter for the isolated registration probe."""
+"""Machine-only stdin adapter for the isolated incoming-call Gate-2 probe."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
-from .probe import ProbeOutcome, run_probe
+from .incoming_runtime import run_incoming_probe
 from .stdin_payload import InvalidProbePayload, read_probe_payload
 
 _BINARY = Path("/opt/baresip/bin/baresip")
@@ -20,20 +20,18 @@ def main(input_stream: TextIO = sys.stdin, output_stream: TextIO = sys.stdout) -
         return _write(output_stream, "invalid_input", 64)
 
     try:
-        report = run_probe(
+        report = run_incoming_probe(
             target=target,
             credentials=credentials,
             binary=_BINARY,
             module_dir=_MODULE_DIR,
-            timeout_seconds=8,
+            incoming_timeout_seconds=45,
+            tone_seconds=3,
         )
     except Exception:
         return _write(output_stream, "runtime_unavailable", 69)
 
-    outcome = report.outcome
-    if outcome is ProbeOutcome.NO_RESULT:
-        outcome = ProbeOutcome.REGISTRATION_FAILED
-    return _write(output_stream, outcome.value, 0)
+    return _write(output_stream, report.outcome.value, 0)
 
 
 def _write(output_stream: TextIO, outcome: str, exit_code: int) -> int:

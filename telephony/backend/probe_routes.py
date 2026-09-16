@@ -14,7 +14,7 @@ from hydrahive.api.middleware.errors import coded
 from hydrahive.api.middleware.inbound_ratelimit import check_rate
 
 from .probe_models import RegistrationProbeRequest, RegistrationProbeResponse
-from .probe_service import run_registration_probe
+from .probe_service import run_incoming_call_probe, run_registration_probe
 
 
 class _SanitizedValidationRoute(APIRoute):
@@ -57,8 +57,27 @@ async def registration_test(
     body: RegistrationProbeRequest,
     auth: Auth,
 ) -> RegistrationProbeResponse:
+    _enforce_rate_limit(auth)
+    outcome = await asyncio.to_thread(run_registration_probe, body)
+    return RegistrationProbeResponse(outcome=outcome)
+
+
+@router.post(
+    "/spike/incoming-test",
+    response_model=RegistrationProbeResponse,
+)
+async def incoming_test(
+    body: RegistrationProbeRequest,
+    auth: Auth,
+) -> RegistrationProbeResponse:
+    _enforce_rate_limit(auth)
+    outcome = await asyncio.to_thread(run_incoming_call_probe, body)
+    return RegistrationProbeResponse(outcome=outcome)
+
+
+def _enforce_rate_limit(auth: AuthPrincipal) -> None:
     allowed, retry_after = check_rate(
-        f"telephony:registration_probe:{auth.user_id}",
+        f"telephony:spike_probe:{auth.user_id}",
         limit=5,
         window=60,
     )
@@ -68,5 +87,3 @@ async def registration_test(
             "telephony_probe_rate_limited",
             retry_after=retry_after,
         )
-    outcome = await asyncio.to_thread(run_registration_probe, body)
-    return RegistrationProbeResponse(outcome=outcome)
