@@ -32,10 +32,14 @@ def test_register_exposes_router_and_migrations():
     class Context:
         def __init__(self):
             self.routers = []
+            self.tools = []
             self.migrations = []
 
         def register_router(self, router):
             self.routers.append(router)
+
+        def register_tool(self, tool):
+            self.tools.append(tool)
 
         def register_migrations(self, path):
             self.migrations.append(path)
@@ -44,6 +48,10 @@ def test_register_exposes_router_and_migrations():
     register(context)
 
     assert len(context.routers) == 1
+    assert [tool.name for tool in context.tools] == [
+        "ticket_list", "ticket_read", "ticket_create", "ticket_comment",
+        "ticket_update", "ticket_create_task",
+    ]
     assert context.migrations == ["migrations"]
 
 

@@ -8,13 +8,14 @@ from __future__ import annotations
 import json
 import sqlite3
 from datetime import datetime, timezone
-from typing import Any
 from uuid import uuid4
 
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.db.connection import db
 
+from .audit import list_events, record_event
 from .models import TicketCreate, TicketUpdate
+
 _ALLOWED_TRANSITIONS = {
     "open": {"triaged", "in_progress", "cancelled"},
     "triaged": {"in_progress", "waiting", "cancelled"},
@@ -46,24 +47,15 @@ def _ticket(row: sqlite3.Row | None) -> dict | None:
     return result
 
 
-def _event(
-    conn: sqlite3.Connection,
-    ticket_id: str,
-    actor_id: str,
-    actor_kind: str,
-    event_type: str,
-    payload: dict[str, Any] | None = None,
-) -> None:
-    conn.execute(
-        "INSERT INTO module_ticket_events "
-        "(id,ticket_id,actor_id,actor_kind,event_type,payload_json) VALUES (?,?,?,?,?,?)",
-        (str(uuid4()), ticket_id, actor_id, actor_kind, event_type,
-         json.dumps(payload or {}, ensure_ascii=False, sort_keys=True)),
-    )
-
-
-def create_ticket(body: TicketCreate, principal: AuthPrincipal, *, actor_kind: str = "user") -> dict:
+def create_ticket(
+    body: TicketCreate,
+    principal: AuthPrincipal,
+    *,
+    actor_kind: str = "user",
+    actor_id: str | None = None,
+) -> dict:
     ticket_id = str(uuid4())
+    event_actor = actor_id or principal.user_id
     values = (
         ticket_id, body.title, body.description, body.priority, body.category,
         json.dumps(body.tags, ensure_ascii=False), principal.user_id, body.assigned_to,
@@ -79,7 +71,7 @@ def create_ticket(body: TicketCreate, principal: AuthPrincipal, *, actor_kind: s
             )
         except sqlite3.IntegrityError as exc:
             raise TicketServiceError("invalid_ticket_reference") from exc
-        _event(conn, ticket_id, principal.user_id, actor_kind, "ticket_created", {
+        record_event(conn, ticket_id, event_actor, actor_kind, "ticket_created", {
             "priority": body.priority,
             "team_id": body.team_id,
             "assigned_to": body.assigned_to,
@@ -118,8 +110,16 @@ def list_tickets(
     return [_ticket(row) for row in rows]  # type: ignore[misc]
 
 
-def update_ticket(ticket_id: str, body: TicketUpdate, principal: AuthPrincipal, *, actor_kind: str = "user") -> dict:
+def update_ticket(
+    ticket_id: str,
+    body: TicketUpdate,
+    principal: AuthPrincipal,
+    *,
+    actor_kind: str = "user",
+    actor_id: str | None = None,
+) -> dict:
     changes = body.model_dump(exclude_unset=True)
+    event_actor = actor_id or principal.user_id
     with db(immediate=True) as conn:
         before = conn.execute("SELECT * FROM module_tickets WHERE id=?", (ticket_id,)).fetchone()
         if before is None:
@@ -156,22 +156,30 @@ def update_ticket(ticket_id: str, body: TicketUpdate, principal: AuthPrincipal, 
             conn.execute(f"UPDATE module_tickets SET {','.join(assignments)} WHERE id=?", args)
         except sqlite3.IntegrityError as exc:
             raise TicketServiceError("invalid_ticket_reference") from exc
-        _event(conn, ticket_id, principal.user_id, actor_kind, "ticket_updated", changes)
+        record_event(conn, ticket_id, event_actor, actor_kind, "ticket_updated", changes)
         after = conn.execute("SELECT * FROM module_tickets WHERE id=?", (ticket_id,)).fetchone()
     return _ticket(after)  # type: ignore[return-value]
 
 
-def add_comment(ticket_id: str, body: str, principal: AuthPrincipal, *, actor_kind: str = "user") -> dict:
+def add_comment(
+    ticket_id: str,
+    body: str,
+    principal: AuthPrincipal,
+    *,
+    actor_kind: str = "user",
+    actor_id: str | None = None,
+) -> dict:
     comment_id = str(uuid4())
+    event_actor = actor_id or principal.user_id
     with db(immediate=True) as conn:
         if conn.execute("SELECT 1 FROM module_tickets WHERE id=?", (ticket_id,)).fetchone() is None:
             raise TicketServiceError("ticket_not_found")
         conn.execute(
             "INSERT INTO module_ticket_comments(id,ticket_id,author_id,author_kind,body) VALUES(?,?,?,?,?)",
-            (comment_id, ticket_id, principal.user_id, actor_kind, body),
+            (comment_id, ticket_id, event_actor, actor_kind, body),
         )
         conn.execute("UPDATE module_tickets SET updated_at=? WHERE id=?", (_now(), ticket_id))
-        _event(conn, ticket_id, principal.user_id, actor_kind, "comment_added", {"comment_id": comment_id})
+        record_event(conn, ticket_id, event_actor, actor_kind, "comment_added", {"comment_id": comment_id})
         row = conn.execute("SELECT * FROM module_ticket_comments WHERE id=?", (comment_id,)).fetchone()
     return dict(row)
 
@@ -185,16 +193,3 @@ def list_comments(ticket_id: str, *, limit: int = 100, offset: int = 0) -> list[
         ).fetchall()
     return [dict(row) for row in rows]
 
-
-def list_events(ticket_id: str, *, limit: int = 100) -> list[dict]:
-    with db() as conn:
-        rows = conn.execute(
-            "SELECT * FROM module_ticket_events WHERE ticket_id=? ORDER BY rowid ASC LIMIT ?",
-            (ticket_id, limit),
-        ).fetchall()
-    result = []
-    for row in rows:
-        item = dict(row)
-        item["payload"] = json.loads(item.pop("payload_json"))
-        result.append(item)
-    return result

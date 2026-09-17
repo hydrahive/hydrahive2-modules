@@ -85,6 +85,7 @@ Die Tabellen liegen im Modulpräfix `module_tickets_` und werden additiv über
 - `status` — erlaubter Statuswert
 - `priority` — erlaubter Prioritätswert
 - `category` — optional, maximal 80 Zeichen
+- `tags_json` — interne Liste von maximal 20 Tags
 - `created_by` — HydraHive-User-ID
 - `assigned_to` — optionale User-ID
 - `team_id` — optionale Team-ID
@@ -172,6 +173,7 @@ V1-Routen:
 - `PATCH /tickets/{ticket_id}` — erlaubte Metadaten ändern
 - `GET /tickets/{ticket_id}/comments` — Verlauf mit Cursor/Pagination
 - `POST /tickets/{ticket_id}/comments` — internen Kommentar hinzufügen
+- `GET /tickets/{ticket_id}/attachments` — Anhangsmetadaten auflisten
 - `POST /tickets/{ticket_id}/attachments` — Anhang hochladen
 - `GET /tickets/{ticket_id}/attachments/{attachment_id}` — eigenen Anhang laden
 - `GET /teams` — Teams auflisten

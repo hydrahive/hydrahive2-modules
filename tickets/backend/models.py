@@ -3,7 +3,12 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
 
 TicketStatus = Literal[
     "open", "triaged", "in_progress", "waiting", "resolved", "closed", "cancelled"
@@ -12,7 +17,7 @@ TicketPriority = Literal["low", "normal", "high", "urgent"]
 ActorKind = Literal["user", "agent", "system"]
 
 
-class TicketCreate(BaseModel):
+class TicketCreate(StrictModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=20_000)
     priority: TicketPriority = "normal"
@@ -41,7 +46,7 @@ class TicketCreate(BaseModel):
         return value
 
 
-class TicketUpdate(BaseModel):
+class TicketUpdate(StrictModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=20_000)
     status: TicketStatus | None = None
@@ -69,7 +74,7 @@ class TicketUpdate(BaseModel):
         return value
 
 
-class TicketCommentCreate(BaseModel):
+class TicketCommentCreate(StrictModel):
     body: str = Field(min_length=1, max_length=20_000)
 
     @field_validator("body")
@@ -81,7 +86,7 @@ class TicketCommentCreate(BaseModel):
         return value
 
 
-class TicketListQuery(BaseModel):
+class TicketListQuery(StrictModel):
     status: TicketStatus | None = None
     priority: TicketPriority | None = None
     team_id: str | None = None
@@ -92,7 +97,7 @@ class TicketListQuery(BaseModel):
     offset: int = Field(default=0, ge=0)
 
 
-class TeamCreate(BaseModel):
+class TeamCreate(StrictModel):
     name: str = Field(min_length=1, max_length=100)
     description: str = Field(default="", max_length=2_000)
 
@@ -109,7 +114,7 @@ class TeamCreate(BaseModel):
         return value
 
 
-class TeamUpdate(BaseModel):
+class TeamUpdate(StrictModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
     description: str | None = Field(default=None, max_length=2_000)
 
@@ -119,6 +124,6 @@ class TeamUpdate(BaseModel):
         return value.strip() if isinstance(value, str) else value
 
 
-class TeamMemberUpsert(BaseModel):
+class TeamMemberUpsert(StrictModel):
     user_id: str = Field(min_length=1, max_length=128)
     role: Literal["member", "lead"] = "member"

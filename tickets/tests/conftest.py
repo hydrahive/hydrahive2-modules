@@ -70,6 +70,7 @@ def ticket_db(setup_test_env):
             "module_tickets",
         ):
             connection.execute(f"DELETE FROM {table}")
+        connection.execute("DELETE FROM sqlite_sequence WHERE name='module_tickets'")
     return setup_test_env
 
 
