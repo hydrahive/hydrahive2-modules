@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+
+EXPECTED_TABLES = {
+    "module_tickets",
+    "module_ticket_comments",
+    "module_ticket_teams",
+    "module_ticket_team_members",
+    "module_ticket_events",
+    "module_ticket_notifications",
+    "module_ticket_attachments",
+}
+
+
+def test_manifest_declares_internal_tickets_module():
+    manifest = json.loads(
+        (Path(__file__).parents[1] / "manifest.json").read_text(encoding="utf-8")
+    )
+
+    assert manifest["id"] == "tickets"
+    assert manifest["version"] == "0.1.0"
+    assert manifest["has_service"] is False
+    assert manifest["min_core_version"] == "2.0.0"
+
+
+def test_register_exposes_router_and_migrations():
+    from backend import register
+
+    class Context:
+        def __init__(self):
+            self.routers = []
+            self.migrations = []
+
+        def register_router(self, router):
+            self.routers.append(router)
+
+        def register_migrations(self, path):
+            self.migrations.append(path)
+
+    context = Context()
+    register(context)
+
+    assert len(context.routers) == 1
+    assert context.migrations == ["migrations"]
+
+
+def test_migration_creates_all_v1_tables(ticket_db):
+    from hydrahive.db.connection import db
+
+    with db() as connection:
+        rows = connection.execute(
+            "SELECT name FROM sqlite_master "
+            "WHERE type = 'table' AND name LIKE 'module_ticket%'"
+        ).fetchall()
+
+    assert {row["name"] for row in rows} == EXPECTED_TABLES
+
+
+def test_migration_is_idempotent(ticket_db):
+    from hydrahive.db import init_db
+    from hydrahive.modules.migrations import apply_module_migrations
+
+    init_db()
+    apply_module_migrations("tickets", Path(__file__).parents[1] / "migrations")
+
+    from hydrahive.db.connection import db
+
+    with db() as connection:
+        rows = connection.execute(
+            "SELECT name FROM sqlite_master "
+            "WHERE type = 'table' AND name LIKE 'module_ticket%'"
+        ).fetchall()
+
+    assert {row["name"] for row in rows} == EXPECTED_TABLES

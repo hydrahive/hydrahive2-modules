@@ -1,0 +1,12 @@
+{
+  "id": "tickets",
+  "name": "Tickets",
+  "version": "0.1.0",
+  "description": "Internes Team-Ticketsystem mit Zuständigkeiten, Verlauf, Projekten und Agenten-Unterstützung.",
+  "icon": "Ticket",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "default_agent_tools": true,
+  "min_core_version": "2.0.0"
+}
