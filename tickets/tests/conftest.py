@@ -8,6 +8,8 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 CORE_SRC = MODULE_DIR.parents[1] / "hydrahive2" / "core" / "src"
@@ -39,8 +41,9 @@ def setup_test_env():
         (root / "config" / "users.json").write_text(
             json.dumps(
                 {
-                    "admin": {"password_hash": password_hash, "role": "admin"},
-                    "member": {"password_hash": password_hash, "role": "user"},
+                    "admin": {"user_id": "user-admin", "password_hash": password_hash, "role": "admin"},
+                    "member": {"user_id": "user-member", "password_hash": password_hash, "role": "user"},
+                    "other": {"user_id": "user-other", "password_hash": password_hash, "role": "user"},
                 }
             ),
             encoding="utf-8",
@@ -68,3 +71,12 @@ def ticket_db(setup_test_env):
         ):
             connection.execute(f"DELETE FROM {table}")
     return setup_test_env
+
+
+@pytest.fixture
+def client(ticket_db):
+    from backend.routes import router
+
+    app = FastAPI()
+    app.include_router(router, prefix="/api/modules/tickets")
+    return TestClient(app)

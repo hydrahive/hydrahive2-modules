@@ -90,3 +90,35 @@ class TicketListQuery(BaseModel):
     query: str | None = Field(default=None, max_length=200)
     limit: int = Field(default=50, ge=1, le=100)
     offset: int = Field(default=0, ge=0)
+
+
+class TeamCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=2_000)
+
+    @field_validator("name", "description")
+    @classmethod
+    def strip_text(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("name")
+    @classmethod
+    def non_blank_name(cls, value: str) -> str:
+        if not value:
+            raise ValueError("name must not be blank")
+        return value
+
+
+class TeamUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=2_000)
+
+    @field_validator("name", "description")
+    @classmethod
+    def strip_update_text(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+
+class TeamMemberUpsert(BaseModel):
+    user_id: str = Field(min_length=1, max_length=128)
+    role: Literal["member", "lead"] = "member"
