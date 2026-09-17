@@ -17,6 +17,7 @@ from .models import (
     TicketStatus,
     TicketUpdate,
 )
+from . import attachments
 from .attachment_routes import router as attachment_router
 from .team_routes import router as team_router
 
@@ -83,6 +84,7 @@ def get_route(auth: Auth, ticket_id: str) -> dict:
         raise coded(status.HTTP_404_NOT_FOUND, "ticket_not_found")
     ticket["comments"] = service.list_comments(ticket_id)
     ticket["events"] = service.list_events(ticket_id)
+    ticket["attachments"] = attachments.list_attachments(ticket_id)
     return ticket
 
 
