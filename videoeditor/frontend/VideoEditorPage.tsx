@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { projectsApi } from "@/features/projects/api"
 import type { Project } from "@/features/projects/types"
@@ -7,6 +7,8 @@ import type { VideoMeta } from "./types"
 import { videoeditorApi } from "./api"
 import { EditorView } from "./EditorView"
 import { BrowseDialog } from "./BrowseDialog"
+import { CockpitShell } from "@/features/cockpit/CockpitShell"
+import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 
 export function VideoEditorPage() {
   const { t } = useTranslation("videoeditor")
@@ -55,20 +57,27 @@ export function VideoEditorPage() {
     }
   }
 
+  const shell = (children: ReactNode) => (
+    <CockpitShell
+      title={t("title")}
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]"
+      hideHeader
+    >
+      <CockpitTopbar active="/videoeditor" context={t("title")} />
+      <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+    </CockpitShell>
+  )
+
   if (projects.length === 0) {
-    return <div className="p-6 text-sm text-zinc-400">{t("no_projects")}</div>
+    return shell(<div className="text-sm text-[#8d9ab0]">{t("no_projects")}</div>)
   }
 
   if (openFile) {
-    return (
-      <div className="p-4">
-        <EditorView projectId={projectId} meta={openFile} onBack={() => { setOpenFile(null); reload(projectId) }} />
-      </div>
-    )
+    return shell(<EditorView projectId={projectId} meta={openFile} onBack={() => { setOpenFile(null); reload(projectId) }} />)
   }
 
-  return (
-    <div className="p-4 space-y-4">
+  return shell(
+    <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
         <HelpButton topic="videoeditor" />

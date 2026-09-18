@@ -2,7 +2,7 @@ import { VideoEditorPage } from "./VideoEditorPage"
 
 export const routes = [{ path: "/videoeditor", element: <VideoEditorPage /> }]
 export const nav = [
-  { path: "/videoeditor", icon: "Scissors", labelKey: "videoeditor", group: "working", roles: [] },
+  { path: "/videoeditor", icon: "Scissors", labelKey: "videoeditor", group: "working", roles: [], cockpit: true },
 ]
 
 export const i18n = {

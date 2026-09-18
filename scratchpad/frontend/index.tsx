@@ -2,7 +2,7 @@ import { ScratchpadPage } from "./ScratchpadPage"
 
 export const routes = [{ path: "/scratchpad", element: <ScratchpadPage /> }]
 export const nav = [
-  { path: "/scratchpad", icon: "StickyNote", labelKey: "scratchpad", group: "working", roles: [] },
+  { path: "/scratchpad", icon: "StickyNote", labelKey: "scratchpad", group: "working", roles: [], cockpit: true },
 ]
 export const i18n = {
   de: {

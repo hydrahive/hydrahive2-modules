@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Bell, Plus, Ticket as TicketIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { ticketsApi, type TicketFilters } from "./api"
 import { Notifications } from "./Notifications"
 import { TeamSettings } from "./TeamSettings"
@@ -60,7 +61,8 @@ export function TicketsPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#0a1019] text-[#e8eef8]">
+    <div className="flex h-full min-h-0 flex-col bg-[#080b11] text-[#e8eef8]">
+      <CockpitTopbar active="/tickets" context={t("subtitle")} />
       <header className="flex min-h-[68px] shrink-0 items-center justify-between border-b border-[#1f2a3b] bg-[#0d1420] px-4 lg:px-6">
         <div className="flex items-center gap-3">
           <div className="grid h-9 w-9 place-items-center rounded-[8px] border border-[#2b4058] bg-[#132235] text-[#69d7ff]"><TicketIcon size={18} /></div>
