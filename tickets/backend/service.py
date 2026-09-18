@@ -15,6 +15,7 @@ from hydrahive.db.connection import db
 
 from .audit import list_events, record_event
 from .models import TicketCreate, TicketUpdate
+from .notifications import notify_ticket
 
 _ALLOWED_TRANSITIONS = {
     "open": {"triaged", "in_progress", "cancelled"},
@@ -76,6 +77,7 @@ def create_ticket(
             "team_id": body.team_id,
             "assigned_to": body.assigned_to,
         })
+        notify_ticket(conn, ticket_id, principal.user_id, "ticket_created")
         row = conn.execute("SELECT * FROM module_tickets WHERE id=?", (ticket_id,)).fetchone()
     return _ticket(row)  # type: ignore[return-value]
 
@@ -157,6 +159,7 @@ def update_ticket(
         except sqlite3.IntegrityError as exc:
             raise TicketServiceError("invalid_ticket_reference") from exc
         record_event(conn, ticket_id, event_actor, actor_kind, "ticket_updated", changes)
+        notify_ticket(conn, ticket_id, principal.user_id, "ticket_updated")
         after = conn.execute("SELECT * FROM module_tickets WHERE id=?", (ticket_id,)).fetchone()
     return _ticket(after)  # type: ignore[return-value]
 
@@ -180,6 +183,7 @@ def add_comment(
         )
         conn.execute("UPDATE module_tickets SET updated_at=? WHERE id=?", (_now(), ticket_id))
         record_event(conn, ticket_id, event_actor, actor_kind, "comment_added", {"comment_id": comment_id})
+        notify_ticket(conn, ticket_id, principal.user_id, "comment_added")
         row = conn.execute("SELECT * FROM module_ticket_comments WHERE id=?", (comment_id,)).fetchone()
     return dict(row)
 

@@ -11,6 +11,7 @@ from hydrahive.db.connection import db
 
 from .audit import record_event
 from .models import StrictModel
+from .notifications import notify_ticket
 from .service import TicketServiceError
 
 
@@ -57,5 +58,6 @@ def create_linked_task(
             conn, request.ticket_id, actor_id, "agent", "task_created",
             {"task_id": task_id, "project_id": project_id, "session_id": session_id},
         )
+        notify_ticket(conn, request.ticket_id, principal.user_id, "task_created")
         row = conn.execute("SELECT * FROM module_tasks WHERE id=?", (task_id,)).fetchone()
     return dict(row)

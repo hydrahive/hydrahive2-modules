@@ -1,6 +1,6 @@
 import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { Team, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
+import type { Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
 
 const BASE = "/modules/tickets"
 
@@ -27,7 +27,7 @@ function queryString(filters: TicketFilters) {
 export const ticketsApi = {
   list: (filters: TicketFilters = {}) => api.get<Ticket[]>(`${BASE}/tickets${queryString(filters)}`),
   get: (id: string) => api.get<Ticket>(`${BASE}/tickets/${id}`),
-  create: (payload: Partial<Ticket> & { title: string }) => api.post<Ticket>(`${BASE}/tickets`, payload),
+  create: (payload: { title: string; description?: string; priority?: string; category?: string }) => api.post<Ticket>(`${BASE}/tickets`, payload),
   update: (id: string, payload: Partial<Ticket>) => api.patch<Ticket>(`${BASE}/tickets/${id}`, payload),
   comments: (id: string) => api.get<TicketComment[]>(`${BASE}/tickets/${id}/comments`),
   comment: (id: string, body: string) => api.post<TicketComment>(`${BASE}/tickets/${id}/comments`, { body }),
@@ -40,8 +40,8 @@ export const ticketsApi = {
   teams: () => api.get<Team[]>(`${BASE}/teams`),
   createTeam: (name: string, description: string) => api.post<Team>(`${BASE}/teams`, { name, description }),
   updateTeam: (id: string, payload: { name?: string; description?: string }) => api.patch<Team>(`${BASE}/teams/${id}`, payload),
-  addMember: (teamId: string, userId: string, role: "member" | "lead" = "member") => api.post(`${BASE}/teams/${teamId}/members`, { user_id: userId, role }),
-  removeMember: (teamId: string, userId: string) => api.delete(`${BASE}/teams/${teamId}/members/${userId}`),
+  addMember: (teamId: string, userId: string, role: "member" | "lead" = "member") => api.post<TeamMember>(`${BASE}/teams/${teamId}/members`, { user_id: userId, role }),
+  removeMember: (teamId: string, userId: string) => api.delete<{ removed: boolean }>(`${BASE}/teams/${teamId}/members/${userId}`),
   notifications: () => api.get<TicketNotification[]>(`${BASE}/notifications`),
   readNotification: (id: string) => api.post<{ read: boolean }>(`${BASE}/notifications/${id}/read`, {}),
 }
