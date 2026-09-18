@@ -104,6 +104,14 @@ Kunden- oder E-Mail-Funktion.
 - [x] Test ausführen: Modul-Pytest, TypeScript/Vite-Build, Manifest-/Spec-Guards und Sicherheitsprüfung
 - [ ] Commit: `feat: complete internal ticket workflow`
 
+### Task 9: Top-Menü-Integration
+
+- [ ] Test/Guard: Module mit `topnav: true` werden in die vorhandenen Top-Quicklinks aufgenommen
+- [ ] Implementierung: `hydrahive2/frontend/src/shared/nav-config.ts`, `hydrahive2/frontend/src/shared/Layout.tsx` und `tickets/frontend/index.tsx`
+- [ ] Implementierung: Das Menü wird erweitert; bestehende Quicklinks bleiben erhalten
+- [ ] Test ausführen: Frontend-Produktionsbuild grün
+- [ ] Commit: `feat: show tickets in top navigation`
+
 ## Akzeptanzkriterien
 
 - [ ] Ein authentifizierter Benutzer kann ein internes Ticket erstellen und kommentieren.

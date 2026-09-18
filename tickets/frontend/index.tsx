@@ -8,6 +8,7 @@ export const nav = [
     icon: "Ticket",
     labelKey: "tickets",
     group: "working",
+    topnav: true,
     roles: [] as ("admin" | "user")[],
   },
 ]
