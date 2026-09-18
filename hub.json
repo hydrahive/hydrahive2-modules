@@ -104,6 +104,11 @@
       "id": "ai-security",
       "name": "AI-Sicherheit",
       "path": "ai-security"
+    },
+    {
+      "id": "tickets",
+      "name": "Tickets",
+      "path": "tickets"
     }
   ]
 }
