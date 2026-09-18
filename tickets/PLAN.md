@@ -102,15 +102,15 @@ Kunden- oder E-Mail-Funktion.
 - [x] Test ausführen: rot
 - [x] Implementierung: `TeamSettings.tsx`, `Notifications.tsx`, interne Notification-Servicefunktionen und i18n
 - [x] Test ausführen: Modul-Pytest, TypeScript/Vite-Build, Manifest-/Spec-Guards und Sicherheitsprüfung
-- [ ] Commit: `feat: complete internal ticket workflow`
+- [x] Commit: `feat: complete internal ticket workflow`
 
 ### Task 9: Top-Menü-Integration
 
-- [ ] Test/Guard: Module mit `topnav: true` werden in die vorhandenen Top-Quicklinks aufgenommen
-- [ ] Implementierung: `hydrahive2/frontend/src/shared/nav-config.ts`, `hydrahive2/frontend/src/shared/Layout.tsx` und `tickets/frontend/index.tsx`
-- [ ] Implementierung: Das Menü wird erweitert; bestehende Quicklinks bleiben erhalten
-- [ ] Test ausführen: Frontend-Produktionsbuild grün
-- [ ] Commit: `feat: show tickets in top navigation`
+- [x] Test/Guard: Module mit `topnav: true` werden in die vorhandenen Top-Quicklinks aufgenommen
+- [x] Implementierung: `hydrahive2/frontend/src/shared/nav-config.ts`, `hydrahive2/frontend/src/shared/Layout.tsx` und `tickets/frontend/index.tsx`
+- [x] Implementierung: Das Menü wird erweitert; bestehende Quicklinks bleiben erhalten
+- [x] Test ausführen: Frontend-Produktionsbuild grün
+- [x] Commit: `feat: show tickets in top navigation`
 
 ## Akzeptanzkriterien
 
