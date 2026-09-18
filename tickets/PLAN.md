@@ -114,16 +114,18 @@ Kunden- oder E-Mail-Funktion.
 
 ## Akzeptanzkriterien
 
-- [ ] Ein authentifizierter Benutzer kann ein internes Ticket erstellen und kommentieren.
-- [ ] Tickets können Teams und einzelnen Benutzern zugewiesen werden.
-- [ ] Status, Priorität, Kategorie, Tags und Verknüpfungen zu Projekt/Task/Session sind bearbeitbar.
-- [ ] Jeder Änderungs- und Kommentarvorgang ist nachvollziehbar auditiert.
-- [ ] Anhänge sind begrenzt, nicht-destruktiv gespeichert und zugriffsgeschützt.
-- [ ] Agenten können Tickets lesen, erstellen, kommentieren, aktualisieren und Tasks verknüpfen.
-- [ ] Agenten erhalten keine Rechte über den Benutzerkontext hinaus.
-- [ ] Die UI ist unter `/tickets` erreichbar und verwendet HydraHive-Auth/i18n.
-- [ ] Es gibt keine E-Mail-Anbindung und keine externe öffentliche Ticketansicht.
-- [ ] Bestehende Core- und Modul-Tests bleiben grün.
+Die V1 wurde praktisch getestet und abgenommen.
+
+- [x] Ein authentifizierter Benutzer kann ein internes Ticket erstellen und kommentieren.
+- [x] Tickets können Teams und einzelnen Benutzern zugewiesen werden.
+- [x] Status, Priorität, Kategorie, Tags und Verknüpfungen zu Projekt/Task/Session sind bearbeitbar.
+- [x] Jeder Änderungs- und Kommentarvorgang ist nachvollziehbar auditiert.
+- [x] Anhänge sind begrenzt, nicht-destruktiv gespeichert und zugriffsgeschützt.
+- [x] Agenten können Tickets lesen, erstellen, kommentieren, aktualisieren und Tasks verknüpfen.
+- [x] Agenten erhalten keine Rechte über den Benutzerkontext hinaus.
+- [x] Die UI ist unter `/tickets` erreichbar und verwendet HydraHive-Auth/i18n.
+- [x] Es gibt keine E-Mail-Anbindung und keine externe öffentliche Ticketansicht.
+- [x] Bestehende Core- und Modul-Tests bleiben grün.
 
 ## Nicht in diesem Plan
 
