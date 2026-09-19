@@ -36,6 +36,18 @@ def test_create_assigns_number_and_normalizes_tags(ticket_db):
     assert first["tags"] == ["bug", "ui"]
 
 
+def test_create_calculates_sla_deadlines_and_manual_override(ticket_db):
+    ticket = create(TicketCreate(title="Dringend", priority="urgent"))
+    manual = create(TicketCreate(title="Manuell", due_at="2030-01-01T00:00:00Z"))
+
+    assert ticket["response_due_at"]
+    assert ticket["resolution_due_at"]
+    assert ticket["due_at"] == ticket["resolution_due_at"]
+    assert ticket["due_at_source"] == "sla"
+    assert manual["due_at"] == "2030-01-01T00:00:00Z"
+    assert manual["due_at_source"] == "manual"
+
+
 def test_get_and_list_support_filters(ticket_db):
     create(TicketCreate(title="Login", priority="urgent", project_id="project-a"))
     create(TicketCreate(title="UI", priority="low", project_id="project-b"))
@@ -46,6 +58,16 @@ def test_get_and_list_support_filters(ticket_db):
     assert ticket["title"] == "Login"
     assert len(matches) == 1
     assert matches[0]["priority"] == "urgent"
+
+
+def test_manual_due_date_can_be_reset_to_sla(ticket_db):
+    ticket = create(TicketCreate(title="Fälligkeit"))
+    overridden = update_ticket(ticket["id"], TicketUpdate(due_at="2030-01-01T00:00:00Z"), principal())
+    reset = update_ticket(ticket["id"], TicketUpdate(due_at=None), principal())
+
+    assert overridden["due_at_source"] == "manual"
+    assert reset["due_at_source"] == "sla"
+    assert reset["due_at"] == reset["resolution_due_at"]
 
 
 def test_status_workflow_rejects_invalid_transition(ticket_db):

@@ -12,6 +12,7 @@ EXPECTED_TABLES = {
     "module_ticket_events",
     "module_ticket_notifications",
     "module_ticket_attachments",
+    "module_ticket_sla_profiles",
 }
 
 
@@ -21,7 +22,7 @@ def test_manifest_declares_internal_tickets_module():
     )
 
     assert manifest["id"] == "tickets"
-    assert manifest["version"] == "0.1.0"
+    assert manifest["version"] == "0.2.0"
     assert manifest["has_service"] is False
     assert manifest["min_core_version"] == "2.0.0"
 

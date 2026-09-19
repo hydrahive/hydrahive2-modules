@@ -16,6 +16,7 @@ from hydrahive.db.connection import db
 from .audit import list_events, record_event
 from .models import TicketCreate, TicketUpdate
 from .notifications import notify_ticket
+from .sla import calculate_deadlines, effective_deadline, profile_from_row
 
 _ALLOWED_TRANSITIONS = {
     "open": {"triaged", "in_progress", "cancelled"},
@@ -57,17 +58,28 @@ def create_ticket(
 ) -> dict:
     ticket_id = str(uuid4())
     event_actor = actor_id or principal.user_id
-    values = (
-        ticket_id, body.title, body.description, body.priority, body.category,
-        json.dumps(body.tags, ensure_ascii=False), principal.user_id, body.assigned_to,
-        body.team_id, body.project_id, body.task_id, body.session_id,
-    )
+    created_at = _now()
     with db(immediate=True) as conn:
+        profile_row = conn.execute(
+            "SELECT * FROM module_ticket_sla_profiles WHERE id='default' AND active=1"
+        ).fetchone()
+        profile = profile_from_row(profile_row)
+        deadlines = calculate_deadlines(created_at, body.priority, profile)
+        due_at, due_source = effective_deadline(deadlines["resolution_due_at"], body.due_at)
+        values = (
+            ticket_id, body.title, body.description, body.priority, body.category,
+            json.dumps(body.tags, ensure_ascii=False), principal.user_id, body.assigned_to,
+            body.team_id, body.project_id, body.task_id, body.session_id,
+            deadlines["response_due_at"], deadlines["resolution_due_at"], due_at,
+            body.due_at, due_source, profile.id,
+        )
         try:
             conn.execute(
                 "INSERT INTO module_tickets "
                 "(id,title,description,priority,category,tags_json,created_by,assigned_to,"
-                "team_id,project_id,task_id,session_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                "team_id,project_id,task_id,session_id,response_due_at,resolution_due_at,"
+                "due_at,manual_due_at,due_at_source,sla_profile_id) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 values,
             )
         except sqlite3.IntegrityError as exc:
@@ -131,6 +143,8 @@ def update_ticket(
         if "status" in changes and changes["status"] != before["status"]:
             if changes["status"] not in _ALLOWED_TRANSITIONS[before["status"]]:
                 raise TicketServiceError("invalid_status_transition")
+        manual_due_changed = "due_at" in changes
+        manual_due_at = changes.get("due_at")
         assignments: list[str] = []
         args: list[Any] = []
         for field in ("title", "description", "status", "priority", "category", "assigned_to",
@@ -141,6 +155,19 @@ def update_ticket(
         if "tags" in changes:
             assignments.append("tags_json=?")
             args.append(json.dumps(changes["tags"], ensure_ascii=False))
+        profile_row = conn.execute(
+            "SELECT * FROM module_ticket_sla_profiles WHERE id=? AND active=1",
+            (before["sla_profile_id"] or "default",),
+        ).fetchone()
+        profile = profile_from_row(profile_row)
+        if "priority" in changes and before["manual_due_at"] is None and not manual_due_changed:
+            deadlines = calculate_deadlines(before["created_at"], changes["priority"], profile)
+            assignments.extend(("response_due_at=?", "resolution_due_at=?", "due_at=?"))
+            args.extend((deadlines["response_due_at"], deadlines["resolution_due_at"], deadlines["resolution_due_at"]))
+        if manual_due_changed:
+            effective, source = effective_deadline(before["resolution_due_at"], manual_due_at)
+            assignments.extend(("manual_due_at=?", "due_at=?", "due_at_source=?"))
+            args.extend((manual_due_at, effective, source))
         status_value = changes.get("status")
         if status_value == "resolved":
             assignments.append("resolved_at=COALESCE(resolved_at,?)")

@@ -30,6 +30,7 @@ class TicketCreate(StrictModel):
     project_id: str | None = Field(default=None, max_length=128)
     task_id: str | None = Field(default=None, max_length=128)
     session_id: str | None = Field(default=None, max_length=128)
+    due_at: str | None = Field(default=None, max_length=64)
 
     @field_validator("title", "category", mode="before")
     @classmethod
@@ -60,6 +61,7 @@ class TicketUpdate(StrictModel):
     project_id: str | None = Field(default=None, max_length=128)
     task_id: str | None = Field(default=None, max_length=128)
     session_id: str | None = Field(default=None, max_length=128)
+    due_at: str | None = Field(default=None, max_length=64)
 
     @field_validator("title", "description", "category", mode="before")
     @classmethod
