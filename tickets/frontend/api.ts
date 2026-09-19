@@ -2,6 +2,33 @@ import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import type { Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
 
+export interface TicketDashboard {
+  open: number
+  triaged: number
+  in_progress: number
+  waiting: number
+  resolved: number
+  closed: number
+  cancelled: number
+  overdue: number
+  due_soon: number
+  unassigned: number
+  mine: number
+  team: number
+  avg_first_response_seconds: number | null
+  avg_resolution_seconds: number | null
+}
+
+export interface SavedView {
+  id: string
+  owner_id: string
+  team_id: string | null
+  name: string
+  filters: TicketFilters
+  sort: string
+  direction: "asc" | "desc"
+}
+
 const BASE = "/modules/tickets"
 
 export interface TicketFilters {
@@ -11,6 +38,10 @@ export interface TicketFilters {
   assigned_to?: string
   project_id?: string
   query?: string
+  overdue?: boolean
+  due_before?: string
+  sort?: string
+  direction?: "asc" | "desc"
   limit?: number
   offset?: number
 }
@@ -44,6 +75,11 @@ export const ticketsApi = {
   removeMember: (teamId: string, userId: string) => api.delete<{ removed: boolean }>(`${BASE}/teams/${teamId}/members/${userId}`),
   notifications: () => api.get<TicketNotification[]>(`${BASE}/notifications`),
   readNotification: (id: string) => api.post<{ read: boolean }>(`${BASE}/notifications/${id}/read`, {}),
+  dashboard: () => api.get<TicketDashboard>(`${BASE}/dashboard`),
+  views: () => api.get<SavedView[]>(`${BASE}/saved-views`),
+  createView: (payload: Pick<SavedView, "name" | "filters" | "sort" | "direction">) => api.post<SavedView>(`${BASE}/saved-views`, payload),
+  deleteView: (id: string) => api.delete<void>(`${BASE}/saved-views/${id}`),
+  bulkUpdate: (ticketIds: string[], update: Partial<Ticket>) => api.post(`${BASE}/bulk-update`, { ticket_ids: ticketIds, update }),
 }
 
 export async function downloadAttachment(ticketId: string, attachment: TicketAttachment) {

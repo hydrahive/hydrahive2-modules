@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react"
 import { Bell, Plus, Ticket as TicketIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
-import { ticketsApi, type TicketFilters } from "./api"
+import { ticketsApi, type TicketDashboard, type TicketFilters } from "./api"
 import { Notifications } from "./Notifications"
+import { OperationsSummary } from "./OperationsSummary"
 import { TeamSettings } from "./TeamSettings"
 import { TicketDetail } from "./TicketDetail"
 import { TicketForm } from "./TicketForm"
@@ -14,6 +15,7 @@ export function TicketsPage() {
   const { t } = useTranslation("tickets")
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [teams, setTeams] = useState<Team[]>([])
+  const [dashboard, setDashboard] = useState<TicketDashboard | null>(null)
   const [active, setActive] = useState<Ticket | null>(null)
   const [filters, setFilters] = useState<TicketFilters>({})
   const [creating, setCreating] = useState(false)
@@ -23,7 +25,9 @@ export function TicketsPage() {
   const reload = useCallback(async () => {
     setLoading(true)
     try {
-      setTickets(await ticketsApi.list(filters))
+      const [nextTickets, nextDashboard] = await Promise.all([ticketsApi.list(filters), ticketsApi.dashboard()])
+      setTickets(nextTickets)
+      setDashboard(nextDashboard)
       setError(false)
     } catch {
       setError(true)
@@ -78,6 +82,7 @@ export function TicketsPage() {
       </header>
 
       {error && <div className="flex items-center gap-2 border-b border-orange-500/25 bg-orange-500/[7%] px-5 py-2 text-xs text-orange-200"><Bell size={13} />{t("loadError")}</div>}
+      <OperationsSummary summary={dashboard} />
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <div className="flex min-h-0 flex-col lg:w-[292px]">

@@ -1,4 +1,4 @@
-import { Inbox, Plus, Search, SlidersHorizontal } from "lucide-react"
+import { Clock3, Inbox, Plus, Search, SlidersHorizontal } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Input, Select } from "@/shared/ui"
 import type { Ticket, TicketPriority, TicketStatus } from "./types"
@@ -55,6 +55,11 @@ function relativeTime(value: string, locale: string) {
 function initials(value: string) {
   const parts = value.split(/[\s._-]+/).filter(Boolean)
   return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : value.slice(0, 2)).toUpperCase()
+}
+
+function dueTone(value: string | null) {
+  if (!value) return "text-[#607188]"
+  return new Date(value).getTime() < Date.now() ? "text-orange-300" : "text-[#718096]"
 }
 
 export function TicketList({ tickets, filters, loading, activeId, onFiltersChange, onSelect, onNew }: Props) {
@@ -117,7 +122,7 @@ export function TicketList({ tickets, filters, loading, activeId, onFiltersChang
                   <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-[#8290a4]"><span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[#1d2d42] text-[8px] font-semibold text-[#9aaac0]">{initials(ticket.created_by)}</span><span className="truncate">{ticket.created_by}</span></span>
                   <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-[#9aa6b8]"><span className={`h-1.5 w-1.5 rounded-full ${priorityDot[ticket.priority]}`} />{t(`priority.${ticket.priority}`)}</span>
                 </div>
-                <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[#607188]"><span className={`rounded-[4px] border px-1.5 py-0.5 ${statusBadge[ticket.status]}`}>{t(`status.${ticket.status}`)}</span>{ticket.category && <span className="truncate">· {ticket.category}</span>}</div>
+                <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[#607188]"><span className={`rounded-[4px] border px-1.5 py-0.5 ${statusBadge[ticket.status]}`}>{t(`status.${ticket.status}`)}</span>{ticket.category && <span className="truncate">· {ticket.category}</span>}{ticket.due_at && <span className={`ml-auto inline-flex items-center gap-1 ${dueTone(ticket.due_at)}`}><Clock3 size={10} />{new Date(ticket.due_at).toLocaleDateString(i18n.language)}</span>}</div>
               </button>
             ))}
           </div>

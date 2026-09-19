@@ -52,6 +52,12 @@ export interface Ticket {
   updated_at: string
   resolved_at: string | null
   closed_at: string | null
+  response_due_at: string | null
+  resolution_due_at: string | null
+  due_at: string | null
+  manual_due_at: string | null
+  due_at_source: "sla" | "manual" | "none"
+  first_response_at: string | null
   comments?: TicketComment[]
   events?: TicketEvent[]
   attachments?: TicketAttachment[]
