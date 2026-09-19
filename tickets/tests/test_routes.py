@@ -3,6 +3,7 @@ from __future__ import annotations
 from hydrahive.api.middleware.auth import create_token
 
 BASE = "/api/modules/tickets/tickets"
+OPERATIONS = "/api/modules/tickets"
 
 
 def headers(username: str = "member") -> dict[str, str]:
@@ -68,3 +69,18 @@ def test_unknown_ticket_is_not_leaked(client, ticket_db):
     response = client.get(f"{BASE}/does-not-exist", headers=headers())
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "ticket_not_found"
+
+
+def test_operations_dashboard_and_saved_views(client, ticket_db):
+    dashboard = client.get(f"{OPERATIONS}/dashboard", headers=headers())
+    created = client.post(
+        f"{OPERATIONS}/saved-views",
+        json={"name": "Urgent", "filters": {"priority": "urgent"}, "sort": "due_at"},
+        headers=headers(),
+    )
+    views = client.get(f"{OPERATIONS}/saved-views", headers=headers())
+
+    assert dashboard.status_code == 200
+    assert dashboard.json()["open"] == 0
+    assert created.status_code == 201
+    assert views.json()[0]["name"] == "Urgent"

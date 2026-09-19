@@ -20,12 +20,14 @@ from .models import (
 from . import attachments
 from .attachment_routes import router as attachment_router
 from .notification_routes import router as notification_router
+from .operations_routes import router as operations_router
 from .team_routes import router as team_router
 
 router = APIRouter()
 router.include_router(team_router)
 router.include_router(attachment_router)
 router.include_router(notification_router)
+router.include_router(operations_router)
 Auth = Annotated[AuthPrincipal, Depends(require_principal)]
 
 

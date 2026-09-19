@@ -13,6 +13,7 @@ EXPECTED_TABLES = {
     "module_ticket_notifications",
     "module_ticket_attachments",
     "module_ticket_sla_profiles",
+    "module_ticket_saved_views",
 }
 
 

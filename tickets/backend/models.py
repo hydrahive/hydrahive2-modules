@@ -99,6 +99,14 @@ class TicketListQuery(StrictModel):
     offset: int = Field(default=0, ge=0)
 
 
+class SavedViewCreate(StrictModel):
+    name: str = Field(min_length=1, max_length=100)
+    filters: dict[str, object] = Field(default_factory=dict)
+    sort: Literal["updated_at", "due_at", "created_at", "priority", "number"] = "updated_at"
+    direction: Literal["asc", "desc"] = "desc"
+    team_id: str | None = Field(default=None, max_length=64)
+
+
 class TeamCreate(StrictModel):
     name: str = Field(min_length=1, max_length=100)
     description: str = Field(default="", max_length=2_000)
