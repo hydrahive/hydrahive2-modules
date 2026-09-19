@@ -6,6 +6,14 @@ Nach diesem Plan besitzt das Ticketsystem automatische, editierbare SLA-Fälligk
 operative Kennzahlen, gespeicherte Ansichten, sichere Bulk-Aktionen und idempotente
 interne Eskalationsbenachrichtigungen.
 
+## Aktueller Stand
+
+Die SLA-Domain, automatische/manuelle Fälligkeiten, Due-Date-Filter, Dashboard-
+Kennzahlen, gespeicherte Ansichten, permission-geprüfte Bulk-Aktionen, idempotente
+SLA-Benachrichtigungen sowie die erste Dashboard-/Fälligkeitsansicht im Frontend
+sind implementiert. SLA-Profilverwaltung, vollständiger View-CRUD, Bulk-UI und die
+abschließende V2-Abnahme folgen.
+
 ## Dateien
 
 - `migrations/002_operations.sql` — SLA-, Fälligkeits- und gespeicherte-Ansichten-Schema
@@ -27,19 +35,19 @@ interne Eskalationsbenachrichtigungen.
 
 ### Task 1: SLA-Domain und Migration
 
-- [ ] Tests schreiben: Prioritätsprofil, automatische Fristen, manuelle Overrides und Reset
-- [ ] Test ausführen: RED wegen fehlender Tabellen/Servicefunktionen
-- [ ] Implementierung: `002_operations.sql`, `backend/sla.py`, Modelle und Migrationregistrierung
-- [ ] Test ausführen: GREEN für UTC-Zeitpunkte und alle Prioritäten
-- [ ] Commit: `feat(tickets): add editable sla deadlines`
+- [x] Tests schreiben: Prioritätsprofil, automatische Fristen, manuelle Overrides und Reset
+- [x] Test ausführen: RED wegen fehlender Tabellen/Servicefunktionen
+- [x] Implementierung: `002_operations.sql`, `backend/sla.py`, Modelle und Migrationregistrierung
+- [x] Test ausführen: GREEN für UTC-Zeitpunkte und alle Prioritäten
+- [x] Commit: `feat(tickets): add editable sla deadlines`
 
 ### Task 2: Ticket-Service und bestehende Filter erweitern
 
-- [ ] Tests schreiben: automatische Berechnung bei Erstellung, Update, Statuswechsel und Prioritätsänderung
-- [ ] Test ausführen: RED wegen fehlender Fristenfelder
-- [ ] Implementierung: Serviceintegration, `due_at`-Override, Reset zur SLA-Berechnung und Filter
-- [ ] Test ausführen: GREEN ohne V1-Regressionsfehler
-- [ ] Commit: `feat(tickets): integrate ticket deadlines`
+- [x] Tests schreiben: automatische Berechnung bei Erstellung, Update, Statuswechsel und Prioritätsänderung
+- [x] Test ausführen: RED wegen fehlender Fristenfelder
+- [x] Implementierung: Serviceintegration, `due_at`-Override, Reset zur SLA-Berechnung und Filter
+- [x] Test ausführen: GREEN ohne V1-Regressionsfehler
+- [x] Commit: `feat(tickets): integrate ticket deadlines`
 
 ### Task 3: Dashboard und gespeicherte Ansichten
 
@@ -51,19 +59,19 @@ interne Eskalationsbenachrichtigungen.
 
 ### Task 4: Sichere Bulk-Aktionen
 
-- [ ] Tests schreiben: Teil-Erfolg, Einzelrechteprüfung, Audit und Benachrichtigung je Änderung
-- [ ] Test ausführen: RED wegen fehlender Bulk-Route
-- [ ] Implementierung: limitierte Bulk-Payload, atomare Ticket-Einzelupdates und Ergebnisliste
-- [ ] Test ausführen: GREEN ohne Rechteausweitung
-- [ ] Commit: `feat(tickets): add permission-checked bulk updates`
+- [x] Tests schreiben: Teil-Erfolg, Einzelrechteprüfung, Audit und Benachrichtigung je Änderung
+- [x] Test ausführen: RED wegen fehlender Bulk-Route
+- [x] Implementierung: limitierte Bulk-Payload, atomare Ticket-Einzelupdates und Ergebnisliste
+- [x] Test ausführen: GREEN ohne Rechteausweitung
+- [x] Commit: `feat(tickets): add permission-checked bulk updates`
 
 ### Task 5: Idempotente Erinnerungen und Eskalationen
 
-- [ ] Tests schreiben: `due_soon`, `overdue`, SLA-Verletzung und Deduplizierung je Stufe
-- [ ] Test ausführen: RED wegen fehlender Eskalationslogik
-- [ ] Implementierung: idempotenter Notification-Service ohne externen Versand
-- [ ] Test ausführen: GREEN bei wiederholtem Polling
-- [ ] Commit: `feat(tickets): add idempotent sla notifications`
+- [x] Tests schreiben: `due_soon`, `overdue`, SLA-Verletzung und Deduplizierung je Stufe
+- [x] Test ausführen: RED wegen fehlender Eskalationslogik
+- [x] Implementierung: idempotenter Notification-Service ohne externen Versand
+- [x] Test ausführen: GREEN bei wiederholtem Polling
+- [x] Commit: `feat(tickets): add idempotent sla notifications`
 
 ### Task 6: Frontend-Operations-Ansicht
 
