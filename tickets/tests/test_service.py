@@ -60,6 +60,15 @@ def test_get_and_list_support_filters(ticket_db):
     assert matches[0]["priority"] == "urgent"
 
 
+def test_due_filters_and_sort_are_whitelisted(ticket_db):
+    overdue = create(TicketCreate(title="Overdue", due_at="2020-01-01T00:00:00Z"))
+    create(TicketCreate(title="Future", due_at="2030-01-01T00:00:00Z"))
+
+    assert [item["id"] for item in list_tickets(overdue=True)] == [overdue["id"]]
+    assert list_tickets(due_before="2021-01-01T00:00:00Z")[0]["id"] == overdue["id"]
+    assert list_tickets(sort="due_at", direction="asc")[0]["id"] == overdue["id"]
+
+
 def test_manual_due_date_can_be_reset_to_sla(ticket_db):
     ticket = create(TicketCreate(title="Fälligkeit"))
     overridden = update_ticket(ticket["id"], TicketUpdate(due_at="2030-01-01T00:00:00Z"), principal())

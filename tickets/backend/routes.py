@@ -60,13 +60,18 @@ def list_route(
     assigned_to: str | None = None,
     project_id: str | None = None,
     query: Annotated[str | None, Query(max_length=200)] = None,
+    overdue: bool | None = None,
+    due_before: str | None = None,
+    sort: str = "updated_at",
+    direction: str = "desc",
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[dict]:
     del auth
     return service.list_tickets(
         status=status_filter, priority=priority, team_id=team_id, assigned_to=assigned_to,
-        project_id=project_id, query=query, limit=limit, offset=offset,
+        project_id=project_id, query=query, overdue=overdue, due_before=due_before,
+        sort=sort, direction=direction, limit=limit, offset=offset,
     )
 
 

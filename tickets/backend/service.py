@@ -102,6 +102,8 @@ def get_ticket(ticket_id: str) -> dict | None:
 def list_tickets(
     *, status: str | None = None, priority: str | None = None, team_id: str | None = None,
     assigned_to: str | None = None, project_id: str | None = None, query: str | None = None,
+    overdue: bool | None = None, due_before: str | None = None,
+    sort: str = "updated_at", direction: str = "desc",
     limit: int = 50, offset: int = 0,
 ) -> list[dict]:
     clauses: list[str] = []
@@ -114,11 +116,21 @@ def list_tickets(
     if query:
         clauses.append("(title LIKE ? OR description LIKE ?)")
         args.extend((f"%{query}%", f"%{query}%"))
+    if overdue:
+        clauses.append("due_at IS NOT NULL AND due_at < ? AND status NOT IN ('resolved','closed','cancelled')")
+        args.append(_now())
+    if due_before:
+        clauses.append("due_at IS NOT NULL AND due_at <= ?")
+        args.append(due_before)
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    sort_columns = {"updated_at": "updated_at", "due_at": "due_at", "created_at": "created_at", "priority": "priority", "number": "number"}
+    order_column = sort_columns.get(sort, "updated_at")
+    order_direction = "ASC" if direction.lower() == "asc" else "DESC"
+    null_order = "due_at IS NULL, " if order_column == "due_at" else ""
     args.extend((limit, offset))
     with db() as conn:
         rows = conn.execute(
-            f"SELECT * FROM module_tickets {where} ORDER BY updated_at DESC, number DESC LIMIT ? OFFSET ?",
+            f"SELECT * FROM module_tickets {where} ORDER BY {null_order}{order_column} {order_direction}, number DESC LIMIT ? OFFSET ?",
             args,
         ).fetchall()
     return [_ticket(row) for row in rows]  # type: ignore[misc]
