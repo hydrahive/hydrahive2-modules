@@ -107,6 +107,11 @@ class SavedViewCreate(StrictModel):
     team_id: str | None = Field(default=None, max_length=64)
 
 
+class BulkUpdateRequest(StrictModel):
+    ticket_ids: list[str] = Field(min_length=1, max_length=100)
+    update: TicketUpdate
+
+
 class TeamCreate(StrictModel):
     name: str = Field(min_length=1, max_length=100)
     description: str = Field(default="", max_length=2_000)

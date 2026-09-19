@@ -84,3 +84,17 @@ def test_operations_dashboard_and_saved_views(client, ticket_db):
     assert dashboard.json()["open"] == 0
     assert created.status_code == 201
     assert views.json()[0]["name"] == "Urgent"
+
+
+def test_bulk_update_returns_per_ticket_results(client, ticket_db):
+    own = client.post(BASE, json={"title": "Own"}, headers=headers())
+    other = client.post(BASE, json={"title": "Other"}, headers=headers("other"))
+    response = client.post(
+        f"{OPERATIONS}/bulk-update",
+        json={"ticket_ids": [own.json()["id"], other.json()["id"]], "update": {"priority": "high"}},
+        headers=headers(),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["updated"] == 1
+    assert response.json()["skipped"] == 1

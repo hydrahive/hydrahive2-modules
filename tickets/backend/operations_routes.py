@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, status
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 from hydrahive.api.middleware.errors import coded
 
-from . import dashboard, views
-from .models import SavedViewCreate
+from . import bulk, dashboard, views
+from .models import BulkUpdateRequest, SavedViewCreate
 
 router = APIRouter()
 Auth = Annotated[AuthPrincipal, Depends(require_principal)]
@@ -23,6 +23,14 @@ def dashboard_route(auth: Auth) -> dict:
 @router.get("/saved-views")
 def list_saved_views(auth: Auth) -> list[dict]:
     return views.list_views(auth)
+
+
+@router.post("/bulk-update")
+def bulk_update(auth: Auth, body: BulkUpdateRequest) -> dict:
+    try:
+        return bulk.update_tickets(auth, body.ticket_ids, body.update)
+    except ValueError as exc:
+        raise coded(status.HTTP_400_BAD_REQUEST, str(exc))
 
 
 @router.post("/saved-views", status_code=status.HTTP_201_CREATED)

@@ -4,8 +4,9 @@ import pytest
 
 from hydrahive.api.middleware.auth import AuthPrincipal
 
+from backend.bulk import update_tickets
 from backend.dashboard import dashboard_summary
-from backend.models import TicketCreate
+from backend.models import TicketCreate, TicketUpdate
 from backend.service import create_ticket
 from backend.views import create_view, delete_view, list_views
 
@@ -45,3 +46,19 @@ def test_saved_views_are_user_scoped_and_filters_are_declarative(ticket_db):
 def test_saved_view_rejects_unknown_filter_keys(ticket_db):
     with pytest.raises(ValueError, match="invalid_view_filter"):
         create_view(principal(), name="Bad", filters={"sql": "DROP TABLE"})
+
+
+def test_bulk_update_checks_each_ticket_and_audits_success(ticket_db):
+    own = create_ticket(TicketCreate(title="Own"), principal())
+    other = create_ticket(TicketCreate(title="Other"), principal("user-other"))
+
+    result = update_tickets(
+        principal(),
+        [own["id"], other["id"], "missing"],
+        TicketUpdate(priority="high"),
+    )
+
+    assert result["updated"] == 1
+    assert result["skipped"] == 1
+    assert result["failed"] == 1
+    assert {item["status"] for item in result["results"]} == {"updated", "skipped", "error"}
