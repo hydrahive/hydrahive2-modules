@@ -29,6 +29,21 @@ export interface SavedView {
   direction: "asc" | "desc"
 }
 
+export interface SlaProfile {
+  id: string
+  name: string
+  description: string
+  active: number
+  urgent_response_hours: number
+  urgent_resolution_hours: number
+  high_response_hours: number
+  high_resolution_hours: number
+  normal_response_hours: number
+  normal_resolution_hours: number
+  low_response_hours: number
+  low_resolution_hours: number
+}
+
 const BASE = "/modules/tickets"
 
 export interface TicketFilters {
@@ -78,8 +93,11 @@ export const ticketsApi = {
   dashboard: () => api.get<TicketDashboard>(`${BASE}/dashboard`),
   views: () => api.get<SavedView[]>(`${BASE}/saved-views`),
   createView: (payload: Pick<SavedView, "name" | "filters" | "sort" | "direction">) => api.post<SavedView>(`${BASE}/saved-views`, payload),
+  updateView: (id: string, payload: Partial<Pick<SavedView, "name" | "filters" | "sort" | "direction">>) => api.patch<SavedView>(`${BASE}/saved-views/${id}`, payload),
   deleteView: (id: string) => api.delete<void>(`${BASE}/saved-views/${id}`),
-  bulkUpdate: (ticketIds: string[], update: Partial<Ticket>) => api.post(`${BASE}/bulk-update`, { ticket_ids: ticketIds, update }),
+  slaProfiles: () => api.get<SlaProfile[]>(`${BASE}/sla/profiles`),
+  updateSlaProfile: (id: string, payload: Partial<SlaProfile>) => api.patch<SlaProfile>(`${BASE}/sla/profiles/${id}`, payload),
+  bulkUpdate: (ticketIds: string[], update: Partial<Ticket>) => api.post<{ updated: number; skipped: number; failed: number }>(`${BASE}/bulk-update`, { ticket_ids: ticketIds, update }),
 }
 
 export async function downloadAttachment(ticketId: string, attachment: TicketAttachment) {

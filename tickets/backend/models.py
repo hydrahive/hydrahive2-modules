@@ -112,6 +112,52 @@ class BulkUpdateRequest(StrictModel):
     update: TicketUpdate
 
 
+class SlaProfileCreate(StrictModel):
+    name: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=2_000)
+    urgent_response_hours: int = Field(default=4, ge=1, le=8_760)
+    urgent_resolution_hours: int = Field(default=24, ge=1, le=8_760)
+    high_response_hours: int = Field(default=8, ge=1, le=8_760)
+    high_resolution_hours: int = Field(default=72, ge=1, le=8_760)
+    normal_response_hours: int = Field(default=24, ge=1, le=8_760)
+    normal_resolution_hours: int = Field(default=120, ge=1, le=8_760)
+    low_response_hours: int = Field(default=72, ge=1, le=8_760)
+    low_resolution_hours: int = Field(default=240, ge=1, le=8_760)
+
+    @field_validator("name", "description")
+    @classmethod
+    def strip_text(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("name")
+    @classmethod
+    def non_blank_name(cls, value: str) -> str:
+        if not value:
+            raise ValueError("name must not be blank")
+        return value
+
+
+class SlaProfileUpdate(StrictModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=2_000)
+    active: bool | None = None
+    urgent_response_hours: int | None = Field(default=None, ge=1, le=8_760)
+    urgent_resolution_hours: int | None = Field(default=None, ge=1, le=8_760)
+    high_response_hours: int | None = Field(default=None, ge=1, le=8_760)
+    high_resolution_hours: int | None = Field(default=None, ge=1, le=8_760)
+    normal_response_hours: int | None = Field(default=None, ge=1, le=8_760)
+    normal_resolution_hours: int | None = Field(default=None, ge=1, le=8_760)
+    low_response_hours: int | None = Field(default=None, ge=1, le=8_760)
+    low_resolution_hours: int | None = Field(default=None, ge=1, le=8_760)
+
+
+class SavedViewUpdate(StrictModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    filters: dict[str, object] | None = None
+    sort: Literal["updated_at", "due_at", "created_at", "priority", "number"] | None = None
+    direction: Literal["asc", "desc"] | None = None
+
+
 class TeamCreate(StrictModel):
     name: str = Field(min_length=1, max_length=100)
     description: str = Field(default="", max_length=2_000)

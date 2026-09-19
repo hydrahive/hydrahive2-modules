@@ -11,6 +11,8 @@ interface Props {
   activeId: string | null
   onFiltersChange: (filters: TicketFilters) => void
   onSelect: (id: string) => void
+  selectedIds: string[]
+  onToggleSelect: (id: string) => void
   onNew: () => void
 }
 
@@ -62,7 +64,7 @@ function dueTone(value: string | null) {
   return new Date(value).getTime() < Date.now() ? "text-orange-300" : "text-[#718096]"
 }
 
-export function TicketList({ tickets, filters, loading, activeId, onFiltersChange, onSelect, onNew }: Props) {
+export function TicketList({ tickets, filters, loading, activeId, onFiltersChange, onSelect, selectedIds, onToggleSelect, onNew }: Props) {
   const { t, i18n } = useTranslation("tickets")
   return (
     <aside className="flex min-h-0 w-full flex-1 flex-col border-r border-[#1f2a3b] bg-[#0c131e] lg:w-[292px] lg:flex-none">
@@ -112,18 +114,21 @@ export function TicketList({ tickets, filters, loading, activeId, onFiltersChang
         ) : (
           <div className="space-y-1">
             {tickets.map((ticket) => (
-              <button key={ticket.id} onClick={() => onSelect(ticket.id)} className={`group w-full border px-3 py-3 text-left transition-colors ${activeId === ticket.id ? "border-[#32718e] bg-[#12283a]" : "border-transparent hover:border-[#253247] hover:bg-[#111b29]"}`} style={{ borderRadius: 8 }}>
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="font-mono text-[11px] font-semibold text-[#69d7ff]">#{ticket.number}</span>
-                  <span className="text-[10px] text-[#718096]">{relativeTime(ticket.updated_at, i18n.language)}</span>
-                </div>
-                <div className="truncate text-[13px] font-semibold text-[#e8eef8]">{ticket.title}</div>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-[#8290a4]"><span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[#1d2d42] text-[8px] font-semibold text-[#9aaac0]">{initials(ticket.created_by)}</span><span className="truncate">{ticket.created_by}</span></span>
-                  <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-[#9aa6b8]"><span className={`h-1.5 w-1.5 rounded-full ${priorityDot[ticket.priority]}`} />{t(`priority.${ticket.priority}`)}</span>
-                </div>
-                <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[#607188]"><span className={`rounded-[4px] border px-1.5 py-0.5 ${statusBadge[ticket.status]}`}>{t(`status.${ticket.status}`)}</span>{ticket.category && <span className="truncate">· {ticket.category}</span>}{ticket.due_at && <span className={`ml-auto inline-flex items-center gap-1 ${dueTone(ticket.due_at)}`}><Clock3 size={10} />{new Date(ticket.due_at).toLocaleDateString(i18n.language)}</span>}</div>
-              </button>
+              <div key={ticket.id} className={`flex items-stretch gap-1 rounded-[8px] border ${activeId === ticket.id ? "border-[#32718e] bg-[#12283a]" : "border-transparent hover:border-[#253247] hover:bg-[#111b29]"}`}>
+                <input type="checkbox" checked={selectedIds.includes(ticket.id)} onChange={() => onToggleSelect(ticket.id)} className="ml-2 accent-cyan-400" aria-label={ticket.title} />
+                <button onClick={() => onSelect(ticket.id)} className="group min-w-0 flex-1 px-2 py-3 text-left transition-colors">
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] font-semibold text-[#69d7ff]">#{ticket.number}</span>
+                    <span className="text-[10px] text-[#718096]">{relativeTime(ticket.updated_at, i18n.language)}</span>
+                  </div>
+                  <div className="truncate text-[13px] font-semibold text-[#e8eef8]">{ticket.title}</div>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-[#8290a4]"><span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[#1d2d42] text-[8px] font-semibold text-[#9aaac0]">{initials(ticket.created_by)}</span><span className="truncate">{ticket.created_by}</span></span>
+                    <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-[#9aa6b8]"><span className={`h-1.5 w-1.5 rounded-full ${priorityDot[ticket.priority]}`} />{t(`priority.${ticket.priority}`)}</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[#607188]"><span className={`rounded-[4px] border px-1.5 py-0.5 ${statusBadge[ticket.status]}`}>{t(`status.${ticket.status}`)}</span>{ticket.category && <span className="truncate">· {ticket.category}</span>}{ticket.due_at && <span className={`ml-auto inline-flex items-center gap-1 ${dueTone(ticket.due_at)}`}><Clock3 size={10} />{new Date(ticket.due_at).toLocaleDateString(i18n.language)}</span>}</div>
+                </button>
+              </div>
             ))}
           </div>
         )}

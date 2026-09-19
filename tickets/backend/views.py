@@ -7,6 +7,7 @@ from uuid import uuid4
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.db.connection import db
 
+from .models import SavedViewUpdate
 from .permissions import can_manage_team, is_admin
 
 _ALLOWED_FILTERS = {"status", "priority", "team_id", "assigned_to", "project_id", "query", "overdue", "unassigned"}
@@ -72,6 +73,44 @@ def list_views(principal: AuthPrincipal) -> list[dict]:
             (principal.user_id, principal.user_id),
         ).fetchall()
     return [_view(row) for row in rows]
+
+
+def update_view(view_id: str, body: SavedViewUpdate, principal: AuthPrincipal) -> dict:
+    changes = body.model_dump(exclude_unset=True)
+    if "name" in changes:
+        changes["name"] = changes["name"].strip()
+        if not changes["name"]:
+            raise ValueError("invalid_view_name")
+    if "filters" in changes:
+        changes["filters"] = _validate_filters(changes["filters"])
+    if "sort" in changes and changes["sort"] not in _ALLOWED_SORTS:
+        raise ValueError("invalid_view_sort")
+    if "direction" in changes and changes["direction"] not in {"asc", "desc"}:
+        raise ValueError("invalid_view_sort")
+    with db(immediate=True) as conn:
+        row = conn.execute("SELECT * FROM module_ticket_saved_views WHERE id=?", (view_id,)).fetchone()
+        if row is None:
+            raise KeyError("saved_view_not_found")
+        allowed = is_admin(principal) or row["owner_id"] == principal.user_id
+        if row["team_id"]:
+            allowed = allowed or can_manage_team(conn, row["team_id"], principal)
+        if not allowed:
+            raise PermissionError("saved_view_forbidden")
+        assignments: list[str] = []
+        args: list[object] = []
+        for field in ("name", "sort", "direction"):
+            if field in changes:
+                assignments.append(f"{field}=?")
+                args.append(changes[field])
+        if "filters" in changes:
+            assignments.append("filters_json=?")
+            args.append(json.dumps(changes["filters"], ensure_ascii=False))
+        assignments.append("updated_at=?")
+        args.extend((_now(), view_id))
+        if len(assignments) > 1:
+            conn.execute(f"UPDATE module_ticket_saved_views SET {','.join(assignments)} WHERE id=?", args)
+        updated = conn.execute("SELECT * FROM module_ticket_saved_views WHERE id=?", (view_id,)).fetchone()
+    return _view(updated)
 
 
 def delete_view(view_id: str, principal: AuthPrincipal) -> None:

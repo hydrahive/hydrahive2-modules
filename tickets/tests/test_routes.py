@@ -86,6 +86,14 @@ def test_operations_dashboard_and_saved_views(client, ticket_db):
     assert views.json()[0]["name"] == "Urgent"
 
 
+def test_sla_profiles_are_admin_only(client, ticket_db):
+    assert client.get(f"{OPERATIONS}/sla/profiles", headers=headers()).status_code == 403
+    response = client.get(f"{OPERATIONS}/sla/profiles", headers=headers("admin"))
+
+    assert response.status_code == 200
+    assert response.json()[0]["id"] == "default"
+
+
 def test_bulk_update_returns_per_ticket_results(client, ticket_db):
     own = client.post(BASE, json={"title": "Own"}, headers=headers())
     other = client.post(BASE, json={"title": "Other"}, headers=headers("other"))
