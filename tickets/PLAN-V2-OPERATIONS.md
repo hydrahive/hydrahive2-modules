@@ -9,10 +9,10 @@ interne Eskalationsbenachrichtigungen.
 ## Aktueller Stand
 
 Die SLA-Domain, automatische/manuelle Fälligkeiten, Due-Date-Filter, Dashboard-
-Kennzahlen, gespeicherte Ansichten, permission-geprüfte Bulk-Aktionen, idempotente
-SLA-Benachrichtigungen sowie die erste Dashboard-/Fälligkeitsansicht im Frontend
-sind implementiert. SLA-Profilverwaltung, vollständiger View-CRUD, Bulk-UI und die
-abschließende V2-Abnahme folgen.
+Kennzahlen, SLA-Profilverwaltung, vollständiger Saved-View-CRUD, permission-
+geprüfte Bulk-Aktionen, idempotente SLA-Benachrichtigungen sowie die Dashboard-,
+Fälligkeits-, Saved-View-, Bulk- und Admin-SLA-UI sind implementiert. Es folgen nur
+noch die abschließende V2-Abnahme und die Live-Verifikation.
 
 ## Dateien
 
@@ -51,11 +51,11 @@ abschließende V2-Abnahme folgen.
 
 ### Task 3: Dashboard und gespeicherte Ansichten
 
-- [ ] Tests schreiben: Rechtefilter, Kennzahlen, View-CRUD und deklarative Filtervalidierung
-- [ ] Test ausführen: RED wegen fehlender Operationsrouten
-- [ ] Implementierung: Dashboard-/View-Service und API-Routen
-- [ ] Test ausführen: GREEN für Benutzer, Team-Lead und Admin
-- [ ] Commit: `feat(tickets): add operations dashboard and saved views`
+- [x] Tests schreiben: Rechtefilter, Kennzahlen, View-CRUD und deklarative Filtervalidierung
+- [x] Test ausführen: RED wegen fehlender Operationsrouten
+- [x] Implementierung: Dashboard-/View-Service und API-Routen
+- [x] Test ausführen: GREEN für Benutzer, Team-Lead und Admin
+- [x] Commit: `feat(tickets): add operations dashboard and saved views`
 
 ### Task 4: Sichere Bulk-Aktionen
 
@@ -75,10 +75,10 @@ abschließende V2-Abnahme folgen.
 
 ### Task 6: Frontend-Operations-Ansicht
 
-- [ ] Tests/Verträge ergänzen: API-Typen, Filter, Bulk-Payloads und i18n-Schlüssel
-- [ ] Implementierung: Dashboard-Karte, Fälligkeitseditor, Ansichten, Mehrfachauswahl und SLA-Dialog
-- [ ] Test ausführen: TypeScript, ESLint und Produktionsbuild
-- [ ] Commit: `feat(tickets): add operations workflow ui`
+- [x] Tests/Verträge ergänzen: API-Typen, Filter, Bulk-Payloads und i18n-Schlüssel
+- [x] Implementierung: Dashboard-Karte, Fälligkeitseditor, Ansichten, Mehrfachauswahl und SLA-Dialog
+- [x] Test ausführen: TypeScript, ESLint und Produktionsbuild
+- [x] Commit: `feat(tickets): add operations workflow ui`
 
 ### Task 7: Abschlussprüfung und Dokumentation
 
