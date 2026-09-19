@@ -135,15 +135,15 @@ kompatibel.
 
 ## Akzeptanzkriterien
 
-- [ ] Ein neues Ticket erhält abhängig von der Priorität automatisch SLA-Fristen.
-- [ ] Eine manuelle Fälligkeit überschreibt die Berechnung und ist rücksetzbar.
-- [ ] SLA-Fristen und Überfälligkeit werden im Dashboard, in der Liste und im Detail angezeigt.
-- [ ] Dashboard-Kennzahlen beachten die Benutzer- und Teamrechte.
-- [ ] Persönliche und berechtigte Teamansichten können gespeichert, geändert und gelöscht werden.
-- [ ] Bulk-Aktionen prüfen jedes Ticket einzeln und auditieren jede Änderung.
-- [ ] Erinnerungen werden idempotent und nur einmal je Eskalationsstufe erzeugt.
-- [ ] V1-Routen, Agenten-Tools und V1-Tests bleiben kompatibel.
-- [ ] Die Modul-Tests und der Frontend-Produktionsbuild bleiben grün.
+- [x] Ein neues Ticket erhält abhängig von der Priorität automatisch SLA-Fristen.
+- [x] Eine manuelle Fälligkeit überschreibt die Berechnung und ist rücksetzbar.
+- [x] SLA-Fristen und Überfälligkeit werden im Dashboard, in der Liste und im Detail angezeigt.
+- [x] Dashboard-Kennzahlen beachten die Benutzer- und Teamrechte.
+- [x] Persönliche und berechtigte Teamansichten können gespeichert, geändert und gelöscht werden.
+- [x] Bulk-Aktionen prüfen jedes Ticket einzeln und auditieren jede Änderung.
+- [x] Erinnerungen werden idempotent und nur einmal je Eskalationsstufe erzeugt.
+- [x] V1-Routen, Agenten-Tools und V1-Tests bleiben kompatibel.
+- [x] Die Modul-Tests und der Frontend-Produktionsbuild bleiben grün.
 
 ## Nicht in V2.1
 

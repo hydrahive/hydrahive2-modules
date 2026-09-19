@@ -82,20 +82,20 @@ noch die abschließende V2-Abnahme und die Live-Verifikation.
 
 ### Task 7: Abschlussprüfung und Dokumentation
 
-- [ ] Modul-Pytest vollständig ausführen
-- [ ] Frontend-TypeScript, ESLint und Produktionsbuild ausführen
-- [ ] V1-Kompatibilität und Agenten-Tools prüfen
-- [ ] `SPEC-V2-OPERATIONS.md` und Akzeptanzkriterien aktualisieren
-- [ ] Commit: `docs(tickets): document v2 operations acceptance`
+- [x] Modul-Pytest vollständig ausführen
+- [x] Frontend-TypeScript, ESLint und Produktionsbuild ausführen
+- [x] V1-Kompatibilität und Agenten-Tools prüfen
+- [x] `SPEC-V2-OPERATIONS.md` und Akzeptanzkriterien aktualisieren
+- [x] Commit: `docs(tickets): document v2 operations acceptance`
 
 ## Akzeptanzkriterien
 
-- [ ] Automatische SLA-Fristen werden aus Priorität und aktivem Profil berechnet.
-- [ ] Manuelle Fälligkeiten sind editierbar und rücksetzbar.
-- [ ] Dashboard und gespeicherte Ansichten respektieren Berechtigungen.
-- [ ] Bulk-Aktionen können keine Rechte umgehen und sind vollständig auditiert.
-- [ ] Wiederholte Abfragen erzeugen keine doppelten Eskalationsmeldungen.
-- [ ] V1 bleibt kompatibel und alle Tests bleiben grün.
+- [x] Automatische SLA-Fristen werden aus Priorität und aktivem Profil berechnet.
+- [x] Manuelle Fälligkeiten sind editierbar und rücksetzbar.
+- [x] Dashboard und gespeicherte Ansichten respektieren Berechtigungen.
+- [x] Bulk-Aktionen können keine Rechte umgehen und sind vollständig auditiert.
+- [x] Wiederholte Abfragen erzeugen keine doppelten Eskalationsmeldungen.
+- [x] V1 bleibt kompatibel und alle Tests bleiben grün.
 
 ## Nicht in diesem Plan
 
