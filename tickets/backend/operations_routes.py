@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, status
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 from hydrahive.api.middleware.errors import coded
 
-from . import bulk, dashboard, views
+from . import bulk, dashboard, escalation, views
 from .models import BulkUpdateRequest, SavedViewCreate
 
 router = APIRouter()
@@ -17,6 +17,7 @@ Auth = Annotated[AuthPrincipal, Depends(require_principal)]
 
 @router.get("/dashboard")
 def dashboard_route(auth: Auth) -> dict:
+    escalation.evaluate_escalations()
     return dashboard.dashboard_summary(auth)
 
 

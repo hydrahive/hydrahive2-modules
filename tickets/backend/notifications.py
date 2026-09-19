@@ -37,6 +37,20 @@ def notify_ticket(
     )
 
 
+def notify_ticket_once(
+    conn: sqlite3.Connection, ticket_id: str, kind: str,
+) -> bool:
+    """Create one notification for a ticket/kind for idempotent escalations."""
+    exists = conn.execute(
+        "SELECT 1 FROM module_ticket_notifications WHERE ticket_id=? AND kind=? LIMIT 1",
+        (ticket_id, kind),
+    ).fetchone()
+    if exists is not None:
+        return False
+    notify_ticket(conn, ticket_id, None, kind)
+    return True
+
+
 def list_for_user(user_id: str, *, unread_only: bool = True, limit: int = 50) -> list[dict]:
     clause = "AND n.read_at IS NULL" if unread_only else ""
     with db() as conn:

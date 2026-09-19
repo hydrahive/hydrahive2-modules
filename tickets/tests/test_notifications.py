@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from hydrahive.api.middleware.auth import AuthPrincipal
+from hydrahive.db.connection import db
 
+from backend.escalation import evaluate_escalations
 from backend.models import TicketCreate
 from backend.notifications import list_for_user, mark_read
 from backend.service import add_comment, create_ticket
@@ -24,6 +26,26 @@ def test_assignment_creates_internal_notification(ticket_db):
     assert assigned[0]["ticket_id"] == ticket["id"]
     assert assigned[0]["kind"] == "ticket_created"
     assert creator == []
+
+
+def test_sla_escalations_are_idempotent(ticket_db):
+    ticket = create_ticket(
+        TicketCreate(title="Überfällig", due_at="2020-01-01T00:00:00Z"),
+        principal("user-member", "member"),
+    )
+    with db(immediate=True) as conn:
+        conn.execute(
+            "UPDATE module_tickets SET response_due_at=?, resolution_due_at=? WHERE id=?",
+            ("2020-01-01T00:00:00Z", "2020-01-01T00:00:00Z", ticket["id"]),
+        )
+
+    first = evaluate_escalations()
+    second = evaluate_escalations()
+    items = list_for_user("user-member", unread_only=False)
+
+    assert first == 3
+    assert second == 0
+    assert {item["kind"] for item in items} >= {"overdue", "sla_response_breached", "sla_resolution_breached"}
 
 
 def test_comment_notifies_creator_and_can_be_marked_read(ticket_db):
