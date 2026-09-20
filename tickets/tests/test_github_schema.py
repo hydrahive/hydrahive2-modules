@@ -37,13 +37,14 @@ def test_connection_stores_only_credential_reference(ticket_db):
     assert redact_connection(connection) == connection
 
 
-def test_duplicate_connection_is_rejected(ticket_db):
+def test_duplicate_connection_is_idempotent(ticket_db):
     body = GitHubConnectionCreate(
         project_id="project-1", owner="owner", repository="repo", credential_name="github"
     )
-    create_connection(body, principal())
-    with pytest.raises(ValueError, match="github_connection_exists"):
-        create_connection(body, principal())
+    first = create_connection(body, principal())
+    second = create_connection(body, principal())
+    assert second["id"] == first["id"]
+    assert len(list_connections("project-1")) == 1
 
 
 def test_link_requires_existing_ticket_and_connection(ticket_db):

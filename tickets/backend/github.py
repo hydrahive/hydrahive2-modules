@@ -94,7 +94,11 @@ def create_connection(body: GitHubConnectionCreate, principal: AuthPrincipal) ->
             (body.project_id, body.owner, body.repository, body.project_number),
         ).fetchone()
         if duplicate is not None:
-            raise ValueError("github_connection_exists")
+            return _row(conn.execute(
+                "SELECT * FROM module_ticket_github_connections "
+                "WHERE project_id=? AND owner=? AND repository=? AND project_number IS ?",
+                (body.project_id, body.owner, body.repository, body.project_number),
+            ).fetchone())  # type: ignore[return-value]
         try:
             conn.execute(
                 "INSERT INTO module_ticket_github_connections "
