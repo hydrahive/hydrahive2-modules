@@ -1,6 +1,6 @@
 import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { GithubLink, GithubProject, GithubProjectItem, Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
+import type { GithubConnection, GithubLink, GithubProject, GithubProjectItem, Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
 
 export interface TicketDashboard {
   open: number
@@ -98,6 +98,9 @@ export const ticketsApi = {
   slaProfiles: () => api.get<SlaProfile[]>(`${BASE}/sla/profiles`),
   updateSlaProfile: (id: string, payload: Partial<SlaProfile>) => api.patch<SlaProfile>(`${BASE}/sla/profiles/${id}`, payload),
   bulkUpdate: (ticketIds: string[], update: Partial<Ticket>) => api.post<{ updated: number; skipped: number; failed: number }>(`${BASE}/bulk-update`, { ticket_ids: ticketIds, update }),
+  githubConnections: (projectId: string) => api.get<GithubConnection[]>(`${BASE}/github/connections?project_id=${encodeURIComponent(projectId)}`),
+  createGithubConnection: (payload: { project_id: string; owner: string; repository: string; project_number?: number; credential_name: string }) => api.post<GithubConnection>(`${BASE}/github/connections`, payload),
+  disableGithubConnection: (id: string) => api.delete<{ disabled: boolean; connection_id: string }>(`${BASE}/github/connections/${id}`),
   githubLink: (ticketId: string) => api.get<GithubLink>(`${BASE}/tickets/${ticketId}/github`),
   githubProjects: (connectionId: string) => api.get<GithubProject[]>(`${BASE}/github/projects?connection_id=${encodeURIComponent(connectionId)}`),
   githubProjectItems: (projectId: string, connectionId: string, number: number) => api.get<GithubProjectItem[]>(`${BASE}/github/projects/${encodeURIComponent(projectId)}/items?connection_id=${encodeURIComponent(connectionId)}&number=${number}`),

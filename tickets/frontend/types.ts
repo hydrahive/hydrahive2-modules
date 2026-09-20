@@ -114,3 +114,14 @@ export interface GithubProjectItem {
   id: string
   content: { number?: number; title?: string; url?: string; state?: string; repository?: { nameWithOwner: string } } | null
 }
+
+export interface GithubConnection {
+  id: string
+  project_id: string
+  owner: string
+  repository: string
+  project_number: number | null
+  credential_name: string
+  enabled: number
+  sync_mode: "read_only"
+}
