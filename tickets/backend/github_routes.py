@@ -137,3 +137,63 @@ def get_link_route(auth: Auth, ticket_id: str) -> dict:
     if result is None:
         raise coded(status.HTTP_404_NOT_FOUND, "github_link_not_found")
     return result
+
+
+@router.get("/connections")
+def list_connections_query_route(auth: Auth, project_id: str) -> list[dict]:
+    _access(project_id, auth)
+    return github.list_connections(project_id)
+
+
+@router.delete("/connections/{connection_id}")
+def disable_connection_route(auth: Auth, connection_id: str) -> dict:
+    connection = _connection(connection_id)
+    _access(connection["project_id"], auth, "write")
+    from hydrahive.db.connection import db
+    with db(immediate=True) as conn:
+        conn.execute("UPDATE module_ticket_github_connections SET enabled=0, updated_at=strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id=?", (connection_id,))
+    return {"disabled": True, "connection_id": connection_id}
+
+
+@router.post("/connections/{connection_id}/check")
+def check_connection_post_route(auth: Auth, connection_id: str) -> dict:
+    return check_connection_route(auth, connection_id)
+
+
+@router.get("/projects")
+def projects_query_route(auth: Auth, connection_id: str) -> list[dict]:
+    return projects_route(auth, connection_id)
+
+
+@router.get("/projects/{project_id}/items")
+def project_items_spec_route(
+    auth: Auth, project_id: str, connection_id: str, number: Annotated[int | None, Query(ge=1)] = None,
+) -> list[dict]:
+    selected_number = number
+    if selected_number is None:
+        try:
+            selected_number = int(project_id)
+        except ValueError:
+            raise coded(status.HTTP_400_BAD_REQUEST, "github_project_number_required")
+    return project_items_route(auth, connection_id, selected_number)
+
+
+@router.get("/tickets/{ticket_id}/github")
+def ticket_github_route(auth: Auth, ticket_id: str) -> dict:
+    del auth
+    result = github.get_link(ticket_id)
+    if result is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "github_link_not_found")
+    return result
+
+
+@router.post("/tickets/{ticket_id}/github/link", status_code=status.HTTP_201_CREATED)
+def ticket_github_link_route(auth: Auth, ticket_id: str, body: github.GitHubLinkCreate) -> dict:
+    if body.ticket_id != ticket_id:
+        raise coded(status.HTTP_400_BAD_REQUEST, "ticket_id_mismatch")
+    return link_route(auth, body)
+
+
+@router.delete("/tickets/{ticket_id}/github/link")
+def ticket_github_unlink_route(auth: Auth, ticket_id: str) -> dict:
+    return unlink_route(auth, ticket_id)

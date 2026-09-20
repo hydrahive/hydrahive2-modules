@@ -12,6 +12,23 @@ def _read_schema(properties: dict, required: list[str]) -> dict:
     return {"type": "object", "additionalProperties": False, "properties": properties, "required": required}
 
 
+async def _project_list(args: dict, ctx: ToolContext) -> ToolResult:
+    principal = principal_for(ctx)
+    if principal is None:
+        return invalid_principal()
+    try:
+        connection = _connection_for_project(args["connection_id"], ctx.project_id)
+        return ToolResult.ok({"projects": github_provider.list_projects(
+            connection["created_by"], connection["credential_name"], connection["owner"]
+        )})
+    except github_provider.GitHubProviderError as exc:
+        return ToolResult.fail(exc.code)
+    except (KeyError, TypeError, ValueError):
+        return invalid_request()
+    except Exception as exc:
+        return service_failure(exc)
+
+
 async def _project_items(args: dict, ctx: ToolContext) -> ToolResult:
     principal = principal_for(ctx)
     if principal is None:
@@ -78,6 +95,18 @@ def _connection_for_repo(owner: str, repository: str, project_id: str | None) ->
     return dict(row)
 
 
+async def _ticket_read(args: dict, ctx: ToolContext) -> ToolResult:
+    if principal_for(ctx) is None:
+        return invalid_principal()
+    ticket_id = args.get("ticket_id")
+    if not isinstance(ticket_id, str) or not ticket_id:
+        return invalid_request()
+    result = github.get_link(ticket_id)
+    if result is None:
+        return ToolResult.fail("github_link_not_found")
+    return ToolResult.ok(result)
+
+
 async def _link(args: dict, ctx: ToolContext) -> ToolResult:
     principal = principal_for(ctx)
     if principal is None:
@@ -112,23 +141,28 @@ async def _unlink(args: dict, ctx: ToolContext) -> ToolResult:
         return service_failure(exc)
 
 
+GITHUB_PROJECT_LIST_TOOL = Tool(
+    "github_project_list", "Liest GitHub-Projects (read-only).",
+    _read_schema({"connection_id": {"type": "string", "minLength": 1}}, ["connection_id"]),
+    _project_list, category="integrations",
+)
 GITHUB_PROJECT_ITEMS_TOOL = Tool(
-    "github_project_items", "Liest Project-Items aus GitHub (read-only).",
+    "github_project_read", "Liest GitHub-Project-Items (read-only).",
     _read_schema({"connection_id": {"type": "string", "minLength": 1}, "number": {"type": "integer", "minimum": 1}}, ["connection_id", "number"]),
     _project_items, category="integrations",
 )
 GITHUB_ISSUE_TOOL = Tool(
-    "github_issue_read", "Liest ein GitHub-Issue (read-only).",
-    _read_schema({"owner": {"type": "string", "minLength": 1}, "repository": {"type": "string", "minLength": 1}, "number": {"type": "integer", "minimum": 1}}, ["owner", "repository", "number"]),
-    _issue, category="integrations",
+    "ticket_github_read", "Liest die externe Ticket-Verknüpfung (read-only).",
+    _read_schema({"ticket_id": {"type": "string", "minLength": 1}}, ["ticket_id"]),
+    _ticket_read, category="integrations",
 )
 GITHUB_LINK_TOOL = Tool(
-    "github_ticket_link", "Verknüpft ein Ticket mit einem GitHub-Issue.",
+    "ticket_github_link", "Verknüpft ein Ticket mit einem GitHub-Issue.",
     _read_schema({"ticket_id": {"type": "string", "minLength": 1}, "connection_id": {"type": "string", "minLength": 1}, "owner": {"type": "string", "minLength": 1}, "repository": {"type": "string", "minLength": 1}, "issue_number": {"type": "integer", "minimum": 1}, "issue_url": {"type": "string", "pattern": "^https://github\\.com/"}}, ["ticket_id", "connection_id", "owner", "repository", "issue_number", "issue_url"]),
     _link, category="integrations",
 )
 GITHUB_UNLINK_TOOL = Tool(
-    "github_ticket_unlink", "Löst die GitHub-Verknüpfung eines Tickets.",
+    "ticket_github_unlink", "Löst die GitHub-Verknüpfung eines Tickets.",
     _read_schema({"ticket_id": {"type": "string", "minLength": 1}}, ["ticket_id"]),
     _unlink, category="integrations",
 )
