@@ -9,6 +9,12 @@ import type { Credential } from "@/features/credentials/types"
 import { ticketsApi } from "./api"
 import type { GithubConnection, GithubDiscoveryOwner, GithubRepository } from "./types"
 
+function matchesGithubApi(pattern: string) {
+  if (!pattern || pattern === "*") return true
+  const expression = new RegExp(`^${pattern.split("*").map((part) => part.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")).join(".*")}$`)
+  return expression.test("https://api.github.com/graphql")
+}
+
 export function GithubIntegrationSettings() {
   const { t } = useTranslation("tickets")
   const [projects, setProjects] = useState<ProjectBrief[]>([])
@@ -30,7 +36,7 @@ export function GithubIntegrationSettings() {
   useEffect(() => {
     void Promise.all([chatApi.listProjects(), credentialsApi.list()]).then(([availableProjects, availableCredentials]) => {
       setProjects(availableProjects)
-      setCredentials(availableCredentials.filter((item) => item.type === "bearer" && item.value_set))
+      setCredentials(availableCredentials.filter((item) => item.type === "bearer" && item.value_set && matchesGithubApi(item.url_pattern)))
       setProjectsError(false)
     }).catch(() => {
       setProjects([])
