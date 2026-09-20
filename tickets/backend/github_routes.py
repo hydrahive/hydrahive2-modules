@@ -106,3 +106,34 @@ def issue_route(auth: Auth, owner: str, repository: str, number: Annotated[int, 
         return github_provider.get_issue(row["created_by"], row["credential_name"], owner, repository, number)
     except github_provider.GitHubProviderError as exc:
         return _provider_error(exc)
+
+
+@router.post("/links", status_code=status.HTTP_201_CREATED)
+def link_route(auth: Auth, body: github.GitHubLinkCreate) -> dict:
+    try:
+        return github.link_ticket(body, auth)
+    except ValueError as exc:
+        code = str(exc)
+        status_code = status.HTTP_403_FORBIDDEN if code == "ticket_update_forbidden" else status.HTTP_409_CONFLICT
+        if code.endswith("not_found"):
+            status_code = status.HTTP_404_NOT_FOUND
+        raise coded(status_code, code)
+
+
+@router.delete("/links/{ticket_id}")
+def unlink_route(auth: Auth, ticket_id: str) -> dict:
+    try:
+        return {"unlinked": True, "link": github.unlink_ticket(ticket_id, auth)}
+    except ValueError as exc:
+        code = str(exc)
+        status_code = status.HTTP_403_FORBIDDEN if code == "ticket_update_forbidden" else status.HTTP_404_NOT_FOUND
+        raise coded(status_code, code)
+
+
+@router.get("/links/{ticket_id}")
+def get_link_route(auth: Auth, ticket_id: str) -> dict:
+    del auth
+    result = github.get_link(ticket_id)
+    if result is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "github_link_not_found")
+    return result

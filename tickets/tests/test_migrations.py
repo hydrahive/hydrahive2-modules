@@ -54,7 +54,8 @@ def test_register_exposes_router_and_migrations():
     assert len(context.routers) == 1
     assert [tool.name for tool in context.tools] == [
         "ticket_list", "ticket_read", "ticket_create", "ticket_comment",
-        "ticket_update", "ticket_create_task",
+        "ticket_update", "ticket_create_task", "github_project_items", "github_issue_read",
+        "github_ticket_link", "github_ticket_unlink",
     ]
     assert context.migrations == ["migrations"]
 

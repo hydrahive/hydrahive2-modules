@@ -11,6 +11,8 @@ from backend.github import (
     get_link,
     list_connections,
     redact_connection,
+    link_ticket,
+    unlink_ticket,
 )
 
 
@@ -73,3 +75,44 @@ def test_link_is_unique_per_ticket_and_issue(ticket_db):
 
     with pytest.raises(ValueError, match="github_link_exists"):
         create_link(body.model_copy(update={"ticket_id": ticket["id"]}), principal())
+
+
+def test_link_and_unlink_enforce_ticket_rights_and_audit(ticket_db):
+    from backend.audit import list_events
+    from backend.models import TicketCreate
+    from backend.service import create_ticket
+
+    ticket = create_ticket(TicketCreate(title="Audit me"), principal())
+    connection = create_connection(
+        GitHubConnectionCreate(
+            project_id="project-1", owner="owner", repository="repo", credential_name="github"
+        ),
+        principal(),
+    )
+    body = GitHubLinkCreate(
+        ticket_id=ticket["id"], connection_id=connection["id"], owner="owner", repository="repo",
+        issue_number=8, issue_url="https://github.com/owner/repo/issues/8",
+    )
+    link_ticket(body, principal())
+    assert list_events(ticket["id"])[-1]["event_type"] == "github_linked"
+    unlink_ticket(ticket["id"], principal())
+    assert list_events(ticket["id"])[-1]["event_type"] == "github_unlinked"
+
+
+def test_link_rejects_non_owner(ticket_db):
+    from backend.models import TicketCreate
+    from backend.service import create_ticket
+
+    ticket = create_ticket(TicketCreate(title="Nope"), principal())
+    connection = create_connection(
+        GitHubConnectionCreate(
+            project_id="project-1", owner="owner", repository="repo", credential_name="github"
+        ),
+        principal(),
+    )
+    body = GitHubLinkCreate(
+        ticket_id=ticket["id"], connection_id=connection["id"], owner="owner", repository="repo",
+        issue_number=9, issue_url="https://github.com/owner/repo/issues/9",
+    )
+    with pytest.raises(ValueError, match="ticket_update_forbidden"):
+        link_ticket(body, principal("user-other"))

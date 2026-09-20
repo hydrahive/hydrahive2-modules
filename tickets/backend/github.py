@@ -15,6 +15,7 @@ from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.db.connection import db
 
 from .models import StrictModel
+from . import audit, permissions
 
 
 class GitHubConnectionCreate(StrictModel):
@@ -119,3 +120,45 @@ def get_link(ticket_id: str) -> dict | None:
 def redact_connection(connection: dict) -> dict:
     """Return frontend/tool-safe metadata; credential value is never present."""
     return {key: value for key, value in connection.items() if key != "credential_value"}
+
+
+def link_ticket(body: GitHubLinkCreate, principal: AuthPrincipal, *, actor_id: str | None = None) -> dict:
+    with db() as conn:
+        ticket = conn.execute("SELECT * FROM module_tickets WHERE id=?", (body.ticket_id,)).fetchone()
+        if ticket is None:
+            raise ValueError("ticket_not_found")
+        if not permissions.can_update_ticket(conn, ticket, principal):
+            raise ValueError("ticket_update_forbidden")
+        connection = conn.execute(
+            "SELECT * FROM module_ticket_github_connections WHERE id=? AND enabled=1",
+            (body.connection_id,),
+        ).fetchone()
+        if connection is None:
+            raise ValueError("github_connection_not_found")
+        if connection["owner"] != body.owner or connection["repository"] != body.repository:
+            raise ValueError("github_repository_mismatch")
+        if ticket["project_id"] and ticket["project_id"] != connection["project_id"]:
+            raise ValueError("github_project_mismatch")
+    result = create_link(body, principal)
+    with db(immediate=True) as conn:
+        audit.record_event(conn, body.ticket_id, actor_id or principal.user_id, "agent" if actor_id else "user", "github_linked", {
+            "owner": body.owner, "repository": body.repository, "issue_number": body.issue_number,
+        })
+    return result
+
+
+def unlink_ticket(ticket_id: str, principal: AuthPrincipal, *, actor_id: str | None = None) -> dict:
+    with db(immediate=True) as conn:
+        ticket = conn.execute("SELECT * FROM module_tickets WHERE id=?", (ticket_id,)).fetchone()
+        if ticket is None:
+            raise ValueError("ticket_not_found")
+        if not permissions.can_update_ticket(conn, ticket, principal):
+            raise ValueError("ticket_update_forbidden")
+        row = conn.execute("SELECT * FROM module_ticket_github_links WHERE ticket_id=?", (ticket_id,)).fetchone()
+        if row is None:
+            raise ValueError("github_link_not_found")
+        conn.execute("DELETE FROM module_ticket_github_links WHERE ticket_id=?", (ticket_id,))
+        audit.record_event(conn, ticket_id, actor_id or principal.user_id, "agent" if actor_id else "user", "github_unlinked", {
+            "owner": row["owner"], "repository": row["repository"], "issue_number": row["issue_number"],
+        })
+        return dict(row)
