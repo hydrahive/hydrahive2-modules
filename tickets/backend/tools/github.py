@@ -113,7 +113,7 @@ async def _link(args: dict, ctx: ToolContext) -> ToolResult:
         return invalid_principal()
     try:
         body = github.GitHubLinkCreate.model_validate(args)
-        result = github.link_ticket(body, principal, actor_id=ctx.agent_id)
+        result = github.link_ticket(github.validate_remote_link(body), principal, actor_id=ctx.agent_id)
         return ToolResult.ok({"linked": True, "link": result})
     except ValidationError:
         return invalid_request()

@@ -111,7 +111,7 @@ def issue_route(auth: Auth, owner: str, repository: str, number: Annotated[int, 
 @router.post("/links", status_code=status.HTTP_201_CREATED)
 def link_route(auth: Auth, body: github.GitHubLinkCreate) -> dict:
     try:
-        return github.link_ticket(body, auth)
+        return github.link_ticket(github.validate_remote_link(body), auth)
     except ValueError as exc:
         code = str(exc)
         status_code = status.HTTP_403_FORBIDDEN if code == "ticket_update_forbidden" else status.HTTP_409_CONFLICT

@@ -122,6 +122,25 @@ def redact_connection(connection: dict) -> dict:
     return {key: value for key, value in connection.items() if key != "credential_value"}
 
 
+
+def validate_remote_link(body: GitHubLinkCreate) -> GitHubLinkCreate:
+    """Validate the issue through the configured read-only provider before linking."""
+    from . import github_provider
+    with db() as conn:
+        connection = conn.execute(
+            "SELECT * FROM module_ticket_github_connections WHERE id=? AND enabled=1",
+            (body.connection_id,),
+        ).fetchone()
+    if connection is None or connection["owner"] != body.owner or connection["repository"] != body.repository:
+        raise ValueError("github_connection_not_found")
+    try:
+        issue = github_provider.get_issue(
+            connection["created_by"], connection["credential_name"], body.owner, body.repository, body.issue_number
+        )
+    except github_provider.GitHubProviderError as exc:
+        raise ValueError(exc.code) from exc
+    return body.model_copy(update={"issue_node_id": issue.get("id"), "issue_url": issue.get("url") or body.issue_url})
+
 def link_ticket(body: GitHubLinkCreate, principal: AuthPrincipal, *, actor_id: str | None = None) -> dict:
     with db() as conn:
         ticket = conn.execute("SELECT * FROM module_tickets WHERE id=?", (body.ticket_id,)).fetchone()
