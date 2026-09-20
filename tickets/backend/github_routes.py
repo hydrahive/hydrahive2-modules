@@ -50,8 +50,6 @@ def discovery_route(auth: Auth, body: github.GitHubDiscoveryRequest) -> dict:
 @router.post("/connections", status_code=status.HTTP_201_CREATED)
 def create_connection_route(auth: Auth, body: github.GitHubConnectionCreate) -> dict:
     _access(body.project_id, auth, "write")
-    if body.sync_mode != "read_only":
-        raise coded(status.HTTP_400_BAD_REQUEST, "github_sync_mode_unsupported")
     try:
         return github.create_connection(body, auth)
     except ValueError as exc:
@@ -62,6 +60,16 @@ def create_connection_route(auth: Auth, body: github.GitHubConnectionCreate) -> 
 def list_connections_route(auth: Auth, project_id: str) -> list[dict]:
     _access(project_id, auth)
     return github.list_connections(project_id)
+
+
+@router.patch("/connections/{connection_id}")
+def update_connection_route(auth: Auth, connection_id: str, body: github.GitHubConnectionUpdate) -> dict:
+    connection = _connection(connection_id)
+    _access(connection["project_id"], auth, "write")
+    updated = github.update_connection(connection_id, body.sync_mode, auth)
+    if updated is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "github_connection_not_found")
+    return updated
 
 
 @router.get("/connections/{connection_id}/check")
@@ -101,13 +109,43 @@ def project_items_route(
         return _provider_error(exc)
 
 
+@router.get("/connections/{connection_id}/tickets")
+def linked_tickets_route(auth: Auth, connection_id: str) -> list[dict]:
+    connection = _connection(connection_id)
+    _access(connection["project_id"], auth)
+    return github.list_linked_tickets(connection_id)
+
+
+@router.post("/connections/{connection_id}/sync")
+def sync_connection_route(auth: Auth, connection_id: str, body: github.GitHubSyncRequest) -> dict:
+    connection = _connection(connection_id)
+    _access(connection["project_id"], auth, "write")
+    try:
+        issues = github_provider.list_issues(
+            connection["created_by"], connection["credential_name"], connection["owner"], connection["repository"], body.state, connection["project_id"]
+        )[:body.limit]
+        imported = [github.sync_issue_snapshot(connection, issue, auth) for issue in issues]
+        return {"connection_id": connection_id, "state": body.state, "count": len(imported), "created": sum(1 for item in imported if item["created"]), "tickets": imported}
+    except github_provider.GitHubProviderError as exc:
+        return _provider_error(exc)
+    except ValueError as exc:
+        code = str(exc)
+        if code.endswith("forbidden"):
+            raise coded(status.HTTP_403_FORBIDDEN, code)
+        raise coded(status.HTTP_409_CONFLICT, code)
+
+
 @router.get("/connections/{connection_id}/issues")
-def assigned_issues_route(auth: Auth, connection_id: str) -> list[dict]:
+def assigned_issues_route(auth: Auth, connection_id: str, assigned: bool = True, state: str = "open") -> list[dict]:
     connection = _connection(connection_id)
     _access(connection["project_id"], auth)
     try:
-        return github_provider.list_assigned_issues(
-            connection["created_by"], connection["credential_name"], connection["owner"], connection["repository"], connection["project_id"]
+        if assigned:
+            return github_provider.list_assigned_issues(
+                connection["created_by"], connection["credential_name"], connection["owner"], connection["repository"], connection["project_id"]
+            )
+        return github_provider.list_issues(
+            connection["created_by"], connection["credential_name"], connection["owner"], connection["repository"], state, connection["project_id"]
         )
     except github_provider.GitHubProviderError as exc:
         return _provider_error(exc)
@@ -199,6 +237,27 @@ def project_items_spec_route(
         except ValueError:
             raise coded(status.HTTP_400_BAD_REQUEST, "github_project_number_required")
     return project_items_route(auth, connection_id, selected_number)
+
+
+@router.patch("/tickets/{ticket_id}/github")
+def ticket_github_update_route(auth: Auth, ticket_id: str, body: github.GitHubIssueUpdate) -> dict:
+    link = github.get_link(ticket_id)
+    if link is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "github_link_not_found")
+    connection = _connection(link["connection_id"])
+    _access(connection["project_id"], auth, "write")
+    if connection["sync_mode"] not in {"push", "bidirectional"}:
+        raise coded(status.HTTP_409_CONFLICT, "github_write_disabled")
+    if not link["issue_node_id"]:
+        raise coded(status.HTTP_409_CONFLICT, "github_issue_node_id_missing")
+    try:
+        issue = github_provider.update_issue(
+            connection["created_by"], connection["credential_name"], connection["owner"], connection["repository"],
+            link["issue_node_id"], title=body.title, body=body.body, state=body.state, project_id=connection["project_id"],
+        )
+        return github.sync_issue_snapshot(connection, issue, auth)
+    except github_provider.GitHubProviderError as exc:
+        return _provider_error(exc)
 
 
 @router.get("/tickets/{ticket_id}/github")

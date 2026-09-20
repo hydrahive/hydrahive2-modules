@@ -1,7 +1,7 @@
 import { api } from "@/shared/api-client"
 import { credentialsApi } from "@/features/credentials/api"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { GithubConnection, GithubDiscovery, GithubIssue, GithubLink, GithubProject, GithubProjectItem, Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
+import type { GithubConnection, GithubDiscovery, GithubIssue, GithubLink, GithubLinkedTicket, GithubProject, GithubProjectItem, Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
 
 export interface TicketDashboard {
   open: number
@@ -105,9 +105,14 @@ export const ticketsApi = {
   createGithubConnection: (payload: { project_id: string; owner: string; repository: string; project_number?: number; credential_name?: string }) => api.post<GithubConnection>(`${BASE}/github/connections`, payload),
   disableGithubConnection: (id: string) => api.delete<{ disabled: boolean; connection_id: string }>(`${BASE}/github/connections/${id}`),
   githubLink: (ticketId: string) => api.get<GithubLink>(`${BASE}/tickets/${ticketId}/github`),
+  githubUpdate: (ticketId: string, payload: { title?: string; body?: string; state?: "open" | "closed" }) => api.patch<{ ticket: Ticket; link: GithubLink }>(`${BASE}/tickets/${ticketId}/github`, payload),
   githubProjects: (connectionId: string) => api.get<GithubProject[]>(`${BASE}/github/projects?connection_id=${encodeURIComponent(connectionId)}`),
   githubProjectItems: (projectId: string, connectionId: string, number: number) => api.get<GithubProjectItem[]>(`${BASE}/github/projects/${encodeURIComponent(projectId)}/items?connection_id=${encodeURIComponent(connectionId)}&number=${number}`),
   githubAssignedIssues: (connectionId: string) => api.get<GithubIssue[]>(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/issues`),
+  githubIssues: (connectionId: string, state: "open" | "closed" | "all" = "open") => api.get<GithubIssue[]>(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/issues?assigned=false&state=${state}`),
+  githubSync: (connectionId: string, state: "open" | "closed" | "all" = "open", limit = 100) => api.post<{ connection_id: string; state: string; count: number; created: number; tickets: { ticket: Ticket; link: GithubLink; created: boolean }[] }>(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/sync`, { state, limit }),
+  updateGithubConnection: (id: string, sync_mode: "read_only" | "push" | "bidirectional") => api.patch<GithubConnection>(`${BASE}/github/connections/${encodeURIComponent(id)}`, { sync_mode }),
+  githubLinkedTickets: (connectionId: string) => api.get<GithubLinkedTicket[]>(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/tickets`),
   linkGithubIssue: (ticketId: string, payload: { connection_id: string; owner: string; repository: string; issue_number: number; issue_url: string }) => api.post<GithubLink>(`${BASE}/tickets/${ticketId}/github/link`, { ticket_id: ticketId, ...payload }),
   unlinkGithubIssue: (ticketId: string) => api.delete<{ unlinked: boolean; link: GithubLink }>(`${BASE}/tickets/${ticketId}/github/link`),
 }

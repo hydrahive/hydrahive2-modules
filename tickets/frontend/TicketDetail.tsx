@@ -63,6 +63,7 @@ export function TicketDetail({ ticket, teams, onUpdated }: Props) {
   const [githubOwner, setGithubOwner] = useState("")
   const [githubRepository, setGithubRepository] = useState("")
   const [githubIssueNumber, setGithubIssueNumber] = useState("")
+  const [githubConnectionMode, setGithubConnectionMode] = useState<"read_only" | "push" | "bidirectional">("read_only")
 
   useEffect(() => {
     setComments(ticket.comments ?? [])
@@ -84,6 +85,11 @@ export function TicketDetail({ ticket, teams, onUpdated }: Props) {
       setGithubConnectionId("")
     }
   }, [ticket.id, ticket.comments, ticket.attachments, ticket.assigned_to, ticket.project_id])
+
+  useEffect(() => {
+    const connection = githubConnections.find((item) => item.id === githubLink?.connection_id)
+    setGithubConnectionMode(connection?.sync_mode ?? "read_only")
+  }, [githubConnections, githubLink])
 
   async function update(patch: Partial<Ticket>) {
     setBusy(true)
@@ -146,6 +152,23 @@ export function TicketDetail({ ticket, teams, onUpdated }: Props) {
     } finally { setBusy(false) }
   }
 
+  async function pushGithub() {
+    if (!githubLink || githubConnectionMode === "read_only") return
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await ticketsApi.githubUpdate(ticket.id, {
+        title: ticket.title,
+        body: ticket.description,
+        state: ticket.status === "closed" || ticket.status === "cancelled" ? "closed" : "open",
+      })
+      setGithubLink(result.link)
+      onUpdated(result.ticket)
+    } catch {
+      setError(t("githubPushError"))
+    } finally { setBusy(false) }
+  }
+
   async function unlinkGithub() {
     setBusy(true)
     try { await ticketsApi.unlinkGithubIssue(ticket.id); setGithubLink(null) } catch { setError(t("githubLinkError")) } finally { setBusy(false) }
@@ -186,7 +209,7 @@ export function TicketDetail({ ticket, teams, onUpdated }: Props) {
 
             <section className="rounded-[8px] border border-[#1f2a3b] bg-[#0d1420] p-4">
               <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2 text-sm font-semibold text-[#e8eef8]"><GitBranch size={15} className="text-[#69d7ff]" />{t("githubIntegration")}</div>{githubLink && <span className={`rounded px-1.5 py-0.5 text-[9px] uppercase ${githubLink.sync_state === "linked" ? "bg-emerald-400/10 text-emerald-200" : "bg-orange-400/10 text-orange-200"}`}>{githubLink.sync_state}</span>}</div>
-              {githubLink ? <div className="flex items-center gap-2"><a href={githubLink.issue_url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-xs text-[#69d7ff] hover:underline">{githubLink.owner}/{githubLink.repository}#{githubLink.issue_number}</a><button type="button" disabled={busy} onClick={() => void unlinkGithub()} className="rounded border border-[#2b4058] p-1.5 text-[#91a3b8] hover:border-orange-400/50 hover:text-orange-200" title={t("githubUnlink")}><Unlink size={13} /></button></div> : <div className="grid gap-2"><div className="grid grid-cols-2 gap-2"><Select value={githubConnectionId} onChange={(event) => setGithubConnectionId(event.target.value)} disabled={busy || githubConnections.length === 0} className="border-[#253247] bg-[#111b29] text-xs"><option value="">{githubConnections.length ? t("githubChooseConnection") : t("githubNoConnection")}</option>{githubConnections.map((connection) => <option key={connection.id} value={connection.id}>{connection.owner}/{connection.repository}</option>)}</Select><Input value={githubOwner} onChange={(event) => setGithubOwner(event.target.value)} placeholder={t("githubOwner")} className="border-[#253247] bg-[#111b29] text-xs" /></div><div className="grid grid-cols-[1fr_90px] gap-2"><Input value={githubRepository} onChange={(event) => setGithubRepository(event.target.value)} placeholder={t("githubRepository")} className="border-[#253247] bg-[#111b29] text-xs" /><Input type="number" min={1} value={githubIssueNumber} onChange={(event) => setGithubIssueNumber(event.target.value)} placeholder="#" className="border-[#253247] bg-[#111b29] text-xs" /></div><button type="button" disabled={busy} onClick={() => void linkGithub()} className="rounded border border-[#3b83a8] bg-[#163248] px-3 py-2 text-xs text-[#c8f2ff] hover:border-[#69d7ff]">{t("githubLink")}</button></div>}
+              {githubLink ? <div className="flex items-center gap-2"><a href={githubLink.issue_url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-xs text-[#69d7ff] hover:underline">{githubLink.owner}/{githubLink.repository}#{githubLink.issue_number}</a>{githubConnectionMode !== "read_only" && <button type="button" disabled={busy} onClick={() => void pushGithub()} className="rounded border border-[#2b4058] px-2 py-1 text-[10px] text-[#a8dff2] hover:border-[#69d7ff]/60" title={t("githubPush")}>{t("githubPush")}</button>}<button type="button" disabled={busy} onClick={() => void unlinkGithub()} className="rounded border border-[#2b4058] p-1.5 text-[#91a3b8] hover:border-orange-400/50 hover:text-orange-200" title={t("githubUnlink")}><Unlink size={13} /></button></div> : <div className="grid gap-2"><div className="grid grid-cols-2 gap-2"><Select value={githubConnectionId} onChange={(event) => setGithubConnectionId(event.target.value)} disabled={busy || githubConnections.length === 0} className="border-[#253247] bg-[#111b29] text-xs"><option value="">{githubConnections.length ? t("githubChooseConnection") : t("githubNoConnection")}</option>{githubConnections.map((connection) => <option key={connection.id} value={connection.id}>{connection.owner}/{connection.repository}</option>)}</Select><Input value={githubOwner} onChange={(event) => setGithubOwner(event.target.value)} placeholder={t("githubOwner")} className="border-[#253247] bg-[#111b29] text-xs" /></div><div className="grid grid-cols-[1fr_90px] gap-2"><Input value={githubRepository} onChange={(event) => setGithubRepository(event.target.value)} placeholder={t("githubRepository")} className="border-[#253247] bg-[#111b29] text-xs" /><Input type="number" min={1} value={githubIssueNumber} onChange={(event) => setGithubIssueNumber(event.target.value)} placeholder="#" className="border-[#253247] bg-[#111b29] text-xs" /></div><button type="button" disabled={busy} onClick={() => void linkGithub()} className="rounded border border-[#3b83a8] bg-[#163248] px-3 py-2 text-xs text-[#c8f2ff] hover:border-[#69d7ff]">{t("githubLink")}</button></div>}
             </section>
 
             {(ticket.project_id || ticket.task_id || ticket.session_id) && <section className="rounded-[8px] border border-[#1f2a3b] bg-[#0d1420] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#e8eef8]"><Link2 size={15} className="text-[#69d7ff]" />{t("links")}</div><div className="flex flex-wrap gap-2">{ticket.project_id && <LinkChip label={t("project")} value={ticket.project_id} />} {ticket.task_id && <LinkChip label={t("task")} value={ticket.task_id} />} {ticket.session_id && <LinkChip label={t("session")} value={ticket.session_id} />}</div></section>}

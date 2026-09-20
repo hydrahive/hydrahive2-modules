@@ -135,6 +135,47 @@ def test_assigned_issues_use_viewer_and_open_state(monkeypatch):
     assert "states: OPEN" in calls[1]["query"]
 
 
+def test_list_issues_returns_remote_snapshot(monkeypatch):
+    class Credential:
+        type = "bearer"
+        value = "token"
+
+    monkeypatch.setattr(provider, "get_credential", lambda username, name: Credential())
+    monkeypatch.setattr(httpx, "post", lambda *args, **kwargs: Response(200, {"data": {
+        "repository": {"issues": {
+            "nodes": [{
+                "id": "I_1", "number": 12, "title": "Fix sync", "body": "Details",
+                "url": "https://github.com/o/r/issues/12", "state": "OPEN", "updatedAt": "2026-01-01T00:00:00Z",
+                "labels": {"nodes": [{"name": "bug"}]}, "assignees": {"nodes": [{"login": "flowki"}]},
+            }], "pageInfo": {"hasNextPage": False, "endCursor": None}
+        }}
+    }}))
+    assert provider.list_issues("admin", "github", "o", "r") == [{
+        "id": "I_1", "number": 12, "title": "Fix sync", "body": "Details",
+        "url": "https://github.com/o/r/issues/12", "state": "OPEN", "updatedAt": "2026-01-01T00:00:00Z",
+        "labels": {"nodes": [{"name": "bug"}]}, "assignees": {"nodes": [{"login": "flowki"}]},
+    }]
+
+
+def test_update_issue_uses_mutation_input_without_secret(monkeypatch):
+    class Credential:
+        type = "bearer"
+        value = "token"
+
+    monkeypatch.setattr(provider, "get_credential", lambda username, name: Credential())
+    calls = []
+
+    def post(url, **kwargs):
+        calls.append(kwargs["json"])
+        return Response(200, {"data": {"updateIssue": {"issue": {"id": "I_1", "title": "Updated", "state": "OPEN"}}}})
+
+    monkeypatch.setattr(httpx, "post", post)
+    result = provider.update_issue("admin", "github", "o", "r", "I_1", title="Updated", state="open")
+    assert result["title"] == "Updated"
+    assert calls[0]["variables"] == {"input": {"issueId": "I_1", "title": "Updated", "state": "OPEN"}}
+    assert "token" not in str(calls[0])
+
+
 def test_project_token_reference_uses_project_config_without_vault(monkeypatch):
     class ResponseWithHeader(Response):
         pass

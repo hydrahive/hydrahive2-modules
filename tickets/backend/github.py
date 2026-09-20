@@ -5,6 +5,7 @@ models or the ticket database.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -14,8 +15,8 @@ from pydantic import Field
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.db.connection import db
 
-from .models import StrictModel
-from . import audit, permissions
+from .models import StrictModel, TicketCreate, TicketUpdate
+from . import audit, permissions, service
 
 
 class GitHubConnectionCreate(StrictModel):
@@ -27,6 +28,21 @@ class GitHubConnectionCreate(StrictModel):
     credential_name: str = Field(default="project_git_token", min_length=1, max_length=50, pattern=r"^[a-z0-9][a-z0-9_-]{0,49}$")
     enabled: bool = True
     sync_mode: str = Field(default="read_only", pattern=r"^(read_only|push|bidirectional)$")
+
+
+class GitHubSyncRequest(StrictModel):
+    state: str = Field(default="open", pattern=r"^(open|closed|all)$")
+    limit: int = Field(default=100, ge=1, le=500)
+
+
+class GitHubConnectionUpdate(StrictModel):
+    sync_mode: str = Field(pattern=r"^(read_only|push|bidirectional)$")
+
+
+class GitHubIssueUpdate(StrictModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    body: str | None = Field(default=None, max_length=20_000)
+    state: str | None = Field(default=None, pattern=r"^(open|closed)$")
 
 
 class GitHubDiscoveryRequest(StrictModel):
@@ -90,6 +106,32 @@ def list_connections(project_id: str) -> list[dict]:
         ).fetchall()]
 
 
+def list_linked_tickets(connection_id: str) -> list[dict]:
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT t.*, l.issue_number, l.issue_url, l.sync_state, l.last_synced_at, l.last_error, "
+            "l.remote_state, l.remote_labels_json, l.remote_assignees_json "
+            "FROM module_ticket_github_links l JOIN module_tickets t ON t.id=l.ticket_id "
+            "WHERE l.connection_id=? ORDER BY t.updated_at DESC",
+            (connection_id,),
+        ).fetchall()
+    result = []
+    for row in rows:
+        item = dict(row)
+        item["tags"] = json.loads(item.pop("tags_json", "[]"))
+        result.append(item)
+    return result
+
+
+def update_connection(connection_id: str, sync_mode: str, principal: AuthPrincipal) -> dict | None:
+    with db(immediate=True) as conn:
+        row = conn.execute("SELECT * FROM module_ticket_github_connections WHERE id=?", (connection_id,)).fetchone()
+        if row is None:
+            return None
+        conn.execute("UPDATE module_ticket_github_connections SET sync_mode=?, updated_at=? WHERE id=?", (sync_mode, _now(), connection_id))
+        return _row(conn.execute("SELECT * FROM module_ticket_github_connections WHERE id=?", (connection_id,)).fetchone())
+
+
 def create_link(body: GitHubLinkCreate, principal: AuthPrincipal) -> dict:
     link_id = str(uuid4())
     with db(immediate=True) as conn:
@@ -121,6 +163,68 @@ def get_link(ticket_id: str) -> dict | None:
         return _row(conn.execute(
             "SELECT * FROM module_ticket_github_links WHERE ticket_id=?", (ticket_id,)
         ).fetchone())
+
+
+def sync_issue_snapshot(connection: dict, issue: dict, principal: AuthPrincipal) -> dict:
+    """Create or update one local ticket while retaining the remote snapshot."""
+    owner = connection["owner"]
+    repository = connection["repository"]
+    issue_number = int(issue["number"])
+    title = str(issue.get("title") or f"GitHub Issue #{issue_number}")[:200]
+    body = str(issue.get("body") or "")[:20_000]
+    labels = [str(item.get("name")) for item in ((issue.get("labels") or {}).get("nodes") or []) if item.get("name")]
+    assignees = [str(item.get("login")) for item in ((issue.get("assignees") or {}).get("nodes") or []) if item.get("login")]
+    with db() as conn:
+        existing = conn.execute(
+            "SELECT l.*, t.title AS ticket_title, t.description AS ticket_description "
+            "FROM module_ticket_github_links l JOIN module_tickets t ON t.id=l.ticket_id "
+            "WHERE l.connection_id=? AND l.owner=? AND l.repository=? AND l.issue_number=?",
+            (connection["id"], owner, repository, issue_number),
+        ).fetchone()
+    if existing is None:
+        ticket = service.create_ticket(
+            TicketCreate(title=title, description=body, category="github", tags=["github"], project_id=connection["project_id"]),
+            principal,
+            actor_kind="system",
+            actor_id=principal.user_id,
+        )
+        link_id = str(uuid4())
+        with db(immediate=True) as conn:
+            conn.execute(
+                "INSERT INTO module_ticket_github_links "
+                "(id,ticket_id,connection_id,owner,repository,issue_number,issue_node_id,issue_url,created_by) "
+                "VALUES(?,?,?,?,?,?,?,?,?)",
+                (link_id, ticket["id"], connection["id"], owner, repository, issue_number,
+                 issue.get("id"), issue.get("url") or f"https://github.com/{owner}/{repository}/issues/{issue_number}", principal.user_id),
+            )
+        ticket_id = ticket["id"]
+        created = True
+    else:
+        ticket_id = existing["ticket_id"]
+        created = False
+        with db() as conn:
+            ticket_row = conn.execute("SELECT * FROM module_tickets WHERE id=?", (ticket_id,)).fetchone()
+            if ticket_row is None or not permissions.can_update_ticket(conn, ticket_row, principal):
+                raise ValueError("github_ticket_update_forbidden")
+        if existing["ticket_title"] != title or existing["ticket_description"] != body:
+            service.update_ticket(
+                ticket_id,
+                TicketUpdate(title=title, description=body),
+                principal,
+                actor_kind="system",
+                actor_id=principal.user_id,
+            )
+    with db(immediate=True) as conn:
+        conn.execute(
+            "UPDATE module_ticket_github_links SET issue_node_id=?, issue_url=?, sync_state='linked', "
+            "last_synced_at=?, last_error=NULL, remote_title=?, remote_body=?, remote_state=?, "
+            "remote_labels_json=?, remote_assignees_json=?, remote_updated_at=?, updated_at=? WHERE ticket_id=?",
+            (issue.get("id"), issue.get("url") or f"https://github.com/{owner}/{repository}/issues/{issue_number}",
+             _now(), title, body, issue.get("state"), json.dumps(labels), json.dumps(assignees),
+             issue.get("updatedAt"), _now(), ticket_id),
+        )
+        result = conn.execute("SELECT * FROM module_ticket_github_links WHERE ticket_id=?", (ticket_id,)).fetchone()
+    return {"ticket": service.get_ticket(ticket_id), "link": _row(result), "created": created}
 
 
 def redact_connection(connection: dict) -> dict:

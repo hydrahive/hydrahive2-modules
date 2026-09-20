@@ -46,6 +46,17 @@ _ISSUE_QUERY = """query Issue($owner: String!, $repo: String!, $number: Int!) {
   repository(owner: $owner, name: $repo) { issue(number: $number) { id number title body url state labels(first: 20) { nodes { name color } } } }
 }"""
 _VIEWER_LOGIN_QUERY = "query ViewerLogin { viewer { login } }"
+_ISSUES_QUERY = """query RepositoryIssues($owner: String!, $repo: String!, $states: [IssueState!], $after: String) {
+  repository(owner: $owner, name: $repo) {
+    issues(first: 50, after: $after, states: $states) {
+      nodes { id number title body url state updatedAt labels(first: 50) { nodes { name } } assignees(first: 50) { nodes { login } } }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}"""
+_UPDATE_ISSUE_MUTATION = """mutation UpdateIssue($input: UpdateIssueInput!) {
+  updateIssue(input: $input) { issue { id number title body url state updatedAt labels(first: 50) { nodes { name } } assignees(first: 50) { nodes { login } } } }
+}"""
 _ASSIGNED_ISSUES_QUERY = """query AssignedIssues($owner: String!, $repo: String!, $assignee: String!, $after: String) {
   repository(owner: $owner, name: $repo) {
     issues(first: 50, after: $after, states: OPEN, filterBy: {assignee: $assignee}) {
@@ -187,6 +198,39 @@ def list_project_items(username: str, credential_name: str, owner: str, number: 
     raise GitHubProviderError("github_pagination_limit", 502)
 
 
+def list_issues(
+    username: str,
+    credential_name: str,
+    owner: str,
+    repository: str,
+    state: str = "open",
+    project_id: str | None = None,
+) -> list[dict]:
+    states = {"open": ["OPEN"], "closed": ["CLOSED"], "all": None}.get(state)
+    if state not in {"open", "closed", "all"}:
+        raise GitHubProviderError("github_invalid_issue_state", 400)
+    result: list[dict] = []
+    after = None
+    for _ in range(_MAX_PAGES):
+        data = _post(
+            username,
+            credential_name,
+            _ISSUES_QUERY,
+            {"owner": owner, "repo": repository, "states": states, "after": after},
+            project_id=project_id,
+            repository=repository,
+        )
+        issues = ((data.get("repository") or {}).get("issues") or {})
+        result.extend(issues.get("nodes") or [])
+        page = issues.get("pageInfo") or {}
+        if not page.get("hasNextPage"):
+            return result
+        after = page.get("endCursor")
+        if not after:
+            break
+    raise GitHubProviderError("github_pagination_limit", 502)
+
+
 def list_assigned_issues(username: str, credential_name: str, owner: str, repository: str, project_id: str | None = None) -> list[dict]:
     viewer_data = _post(
         username, credential_name, _VIEWER_LOGIN_QUERY, {}, project_id=project_id, repository=repository
@@ -221,4 +265,39 @@ def get_issue(username: str, credential_name: str, owner: str, repository: str, 
     issue = (data.get("repository") or {}).get("issue")
     if not issue:
         raise GitHubProviderError("github_issue_not_found", 404)
+    return issue
+
+
+def update_issue(
+    username: str,
+    credential_name: str,
+    owner: str,
+    repository: str,
+    node_id: str,
+    *,
+    title: str | None = None,
+    body: str | None = None,
+    state: str | None = None,
+    project_id: str | None = None,
+) -> dict:
+    input_data: dict[str, Any] = {"issueId": node_id}
+    if title is not None:
+        input_data["title"] = title
+    if body is not None:
+        input_data["body"] = body
+    if state is not None:
+        input_data["state"] = state.upper()
+    if len(input_data) == 1:
+        raise GitHubProviderError("github_issue_update_empty", 400)
+    data = _post(
+        username,
+        credential_name,
+        _UPDATE_ISSUE_MUTATION,
+        {"input": input_data},
+        project_id=project_id,
+        repository=repository,
+    )
+    issue = (data.get("updateIssue") or {}).get("issue")
+    if not issue:
+        raise GitHubProviderError("github_issue_update_failed", 502)
     return issue

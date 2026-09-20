@@ -81,6 +81,15 @@ export function GithubIntegrationSettings() {
     } catch { setMessage(t("githubSettingsError")) } finally { setBusy(false) }
   }
 
+  async function setMode(id: string, mode: "read_only" | "push" | "bidirectional") {
+    setBusy(true); setMessage(null)
+    try {
+      const updated = await ticketsApi.updateGithubConnection(id, mode)
+      setConnections((current) => current.map((item) => item.id === id ? updated : item))
+      setMessage(t("githubModeSaved"))
+    } catch { setMessage(t("githubSettingsError")) } finally { setBusy(false) }
+  }
+
   async function disable(id: string) {
     setBusy(true)
     try { await ticketsApi.disableGithubConnection(id); setConnections((current) => current.filter((item) => item.id !== id)) } catch { setMessage(t("githubSettingsError")) } finally { setBusy(false) }
@@ -101,7 +110,7 @@ export function GithubIntegrationSettings() {
       {!repoLoading && !repoError && projectId && repoChoices.length === 0 && <p className="text-[10px] text-[#607188]">{t("githubReposEmpty")}</p>}
       <button type="button" disabled={busy || !projectId || !selectedRepo} onClick={() => void create()} className="inline-flex w-full items-center justify-center gap-1 rounded border border-[#2b4058] bg-[#111b29] px-2 py-1.5 text-[11px] text-[#a8dff2] hover:border-[#69d7ff]/60 disabled:opacity-40"><Plus size={12} />{t("githubAdd")}</button>
       {message && <p className="text-[10px] text-orange-200">{message}</p>}
-      {connections.map((connection) => <div key={connection.id} className="flex items-center gap-2 rounded border border-[#1f2a3b] bg-[#0d1420] px-2 py-1.5 text-[10px] text-[#91a3b8]"><span className="min-w-0 flex-1 truncate">{connection.owner}/{connection.repository}</span><button type="button" disabled={busy} onClick={() => void disable(connection.id)} className="text-[#607188] hover:text-orange-200" title={t("githubDisable")}><Trash2 size={12} /></button></div>)}
+      {connections.map((connection) => <div key={connection.id} className="flex items-center gap-2 rounded border border-[#1f2a3b] bg-[#0d1420] px-2 py-1.5 text-[10px] text-[#91a3b8]"><span className="min-w-0 flex-1 truncate">{connection.owner}/{connection.repository}</span><Select value={connection.sync_mode} onChange={(event) => void setMode(connection.id, event.target.value as "read_only" | "push" | "bidirectional")} disabled={busy} className="h-7 w-[108px] border-[#253247] bg-[#111b29] text-[10px]"><option value="read_only">{t("githubModeReadOnly")}</option><option value="push">{t("githubModePush")}</option><option value="bidirectional">{t("githubModeBidirectional")}</option></Select><button type="button" disabled={busy} onClick={() => void disable(connection.id)} className="text-[#607188] hover:text-orange-200" title={t("githubDisable")}><Trash2 size={12} /></button></div>)}
     </div>
   </section>
 }

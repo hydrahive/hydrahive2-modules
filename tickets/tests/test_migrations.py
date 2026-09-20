@@ -25,7 +25,7 @@ def test_manifest_declares_internal_tickets_module():
     )
 
     assert manifest["id"] == "tickets"
-    assert manifest["version"] == "0.7.0"
+    assert manifest["version"] == "0.8.0"
     assert manifest["has_service"] is False
     assert manifest["min_core_version"] == "2.0.0"
 
@@ -68,8 +68,12 @@ def test_migration_creates_all_tables(ticket_db):
             "SELECT name FROM sqlite_master "
             "WHERE type = 'table' AND name LIKE 'module_ticket%'"
         ).fetchall()
+        columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(module_ticket_github_links)").fetchall()
+        }
 
     assert {row["name"] for row in rows} == EXPECTED_TABLES
+    assert {"remote_title", "remote_body", "remote_state", "remote_labels_json", "remote_assignees_json", "remote_updated_at"} <= columns
 
 
 def test_migration_is_idempotent(ticket_db):

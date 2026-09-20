@@ -119,9 +119,21 @@ export interface GithubIssue {
   id: string
   number: number
   title: string
+  body?: string
   url: string
   state: string
   repository?: { nameWithOwner: string }
+}
+
+export interface GithubLinkedTicket extends Ticket {
+  issue_number: number
+  issue_url: string
+  sync_state: "linked" | "stale" | "error"
+  last_synced_at: string | null
+  last_error: string | null
+  remote_state: string | null
+  remote_labels_json: string
+  remote_assignees_json: string
 }
 
 export interface GithubDiscoveryOwner {
@@ -149,5 +161,5 @@ export interface GithubConnection {
   project_number: number | null
   credential_name: string
   enabled: number
-  sync_mode: "read_only"
+  sync_mode: "read_only" | "push" | "bidirectional"
 }
