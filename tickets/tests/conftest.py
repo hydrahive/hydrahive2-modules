@@ -61,6 +61,8 @@ def ticket_db(setup_test_env):
     apply_module_migrations("tickets", MODULE_DIR / "migrations")
     with db() as connection:
         for table in (
+            "module_ticket_github_links",
+            "module_ticket_github_connections",
             "module_ticket_notifications",
             "module_ticket_attachments",
             "module_ticket_events",

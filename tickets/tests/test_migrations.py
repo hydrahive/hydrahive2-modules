@@ -14,6 +14,8 @@ EXPECTED_TABLES = {
     "module_ticket_attachments",
     "module_ticket_sla_profiles",
     "module_ticket_saved_views",
+    "module_ticket_github_connections",
+    "module_ticket_github_links",
 }
 
 
@@ -23,7 +25,7 @@ def test_manifest_declares_internal_tickets_module():
     )
 
     assert manifest["id"] == "tickets"
-    assert manifest["version"] == "0.3.0"
+    assert manifest["version"] == "0.4.0"
     assert manifest["has_service"] is False
     assert manifest["min_core_version"] == "2.0.0"
 
@@ -57,7 +59,7 @@ def test_register_exposes_router_and_migrations():
     assert context.migrations == ["migrations"]
 
 
-def test_migration_creates_all_v1_tables(ticket_db):
+def test_migration_creates_all_tables(ticket_db):
     from hydrahive.db.connection import db
 
     with db() as connection:
