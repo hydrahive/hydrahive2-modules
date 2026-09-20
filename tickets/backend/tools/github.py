@@ -19,7 +19,7 @@ async def _project_list(args: dict, ctx: ToolContext) -> ToolResult:
     try:
         connection = _connection_for_project(args["connection_id"], ctx.project_id)
         return ToolResult.ok({"projects": github_provider.list_projects(
-            connection["created_by"], connection["credential_name"], connection["owner"]
+            connection["created_by"], connection["credential_name"], connection["owner"], connection["project_id"]
         )})
     except github_provider.GitHubProviderError as exc:
         return ToolResult.fail(exc.code)
@@ -40,7 +40,7 @@ async def _project_items(args: dict, ctx: ToolContext) -> ToolResult:
             return invalid_request()
         connection = _connection_for_project(connection_id, ctx.project_id)
         return ToolResult.ok({"items": github_provider.list_project_items(
-            connection["created_by"], connection["credential_name"], connection["owner"], number
+            connection["created_by"], connection["credential_name"], connection["owner"], number, connection["project_id"]
         )})
     except github_provider.GitHubProviderError as exc:
         return ToolResult.fail(exc.code)
@@ -60,7 +60,7 @@ async def _issue(args: dict, ctx: ToolContext) -> ToolResult:
             return invalid_request()
         connection = _connection_for_repo(owner, repository, ctx.project_id)
         return ToolResult.ok(github_provider.get_issue(
-            connection["created_by"], connection["credential_name"], owner, repository, number
+            connection["created_by"], connection["credential_name"], owner, repository, number, connection["project_id"]
         ))
     except github_provider.GitHubProviderError as exc:
         return ToolResult.fail(exc.code)

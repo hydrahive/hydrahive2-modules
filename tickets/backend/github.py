@@ -24,7 +24,7 @@ class GitHubConnectionCreate(StrictModel):
     repository: str = Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9_.-]+$")
     project_number: int | None = Field(default=None, ge=1)
     project_node_id: str | None = Field(default=None, max_length=128)
-    credential_name: str = Field(min_length=1, max_length=50, pattern=r"^[a-z0-9][a-z0-9_-]{0,49}$")
+    credential_name: str = Field(default="project_git_token", min_length=1, max_length=50, pattern=r"^[a-z0-9][a-z0-9_-]{0,49}$")
     enabled: bool = True
     sync_mode: str = Field(default="read_only", pattern=r"^(read_only|push|bidirectional)$")
 
@@ -141,7 +141,7 @@ def validate_remote_link(body: GitHubLinkCreate) -> GitHubLinkCreate:
         raise ValueError("github_connection_not_found")
     try:
         issue = github_provider.get_issue(
-            connection["created_by"], connection["credential_name"], body.owner, body.repository, body.issue_number
+            connection["created_by"], connection["credential_name"], body.owner, body.repository, body.issue_number, connection["project_id"]
         )
     except github_provider.GitHubProviderError as exc:
         raise ValueError(exc.code) from exc

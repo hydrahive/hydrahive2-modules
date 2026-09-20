@@ -7,6 +7,9 @@ from typing import Any
 import httpx
 
 from hydrahive.credentials.store import get_credential
+from hydrahive.projects import config as project_config
+
+PROJECT_TOKEN_REF = "project_git_token"
 
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 _TIMEOUT = httpx.Timeout(10.0, connect=5.0)
@@ -44,20 +47,43 @@ _ISSUE_QUERY = """query Issue($owner: String!, $repo: String!, $number: Int!) {
 }"""
 
 
-def _credential(username: str, name: str):
+def _project_token(project_id: str | None, repository: str | None = None) -> str | None:
+    if not project_id:
+        return None
+    project = project_config.get(project_id)
+    if not project:
+        return None
+    if repository:
+        configured = (project.get("git_repos") or {}).get(repository) or {}
+        if configured.get("git_token"):
+            return configured["git_token"]
+    if project.get("git_token"):
+        return project["git_token"]
+    for configured in (project.get("git_repos") or {}).values():
+        if isinstance(configured, dict) and configured.get("git_token"):
+            return configured["git_token"]
+    return None
+
+
+def _credential(username: str, name: str, project_id: str | None = None, repository: str | None = None):
+    if name == PROJECT_TOKEN_REF:
+        token = _project_token(project_id, repository)
+        if not token:
+            raise GitHubProviderError("github_project_token_unavailable", 424)
+        return token
     credential = get_credential(username, name)
     if credential is None or credential.type != "bearer" or not credential.value:
         raise GitHubProviderError("github_credential_unavailable", 424)
-    return credential
+    return credential.value
 
 
-def _post(username: str, credential_name: str, query: str, variables: dict[str, Any]) -> dict:
-    credential = _credential(username, credential_name)
+def _post(username: str, credential_name: str, query: str, variables: dict[str, Any], *, project_id: str | None = None, repository: str | None = None) -> dict:
+    token = _credential(username, credential_name, project_id, repository)
     try:
         response = httpx.post(
             GITHUB_GRAPHQL_URL,
             json={"query": query, "variables": variables},
-            headers={"Accept": "application/json", "Authorization": f"Bearer {credential.value}"},
+            headers={"Accept": "application/json", "Authorization": f"Bearer {token}"},
             timeout=_TIMEOUT,
         )
     except httpx.TimeoutException as exc:
@@ -87,8 +113,8 @@ def _post(username: str, credential_name: str, query: str, variables: dict[str, 
     return data
 
 
-def discover_owners(username: str, credential_name: str) -> list[dict]:
-    data = _post(username, credential_name, _DISCOVERY_QUERY, {})
+def discover_owners(username: str, credential_name: str, project_id: str | None = None) -> list[dict]:
+    data = _post(username, credential_name, _DISCOVERY_QUERY, {}, project_id=project_id)
     viewer = data.get("viewer") or {}
     login = viewer.get("login")
     organizations = (viewer.get("organizations") or {}).get("nodes") or []
@@ -97,11 +123,11 @@ def discover_owners(username: str, credential_name: str) -> list[dict]:
     return owners
 
 
-def list_repositories(username: str, credential_name: str, owner: str) -> list[dict]:
+def list_repositories(username: str, credential_name: str, owner: str, project_id: str | None = None) -> list[dict]:
     result: list[dict] = []
     after = None
     for _ in range(_MAX_PAGES):
-        data = _post(username, credential_name, _REPOSITORIES_QUERY, {"owner": owner, "after": after})
+        data = _post(username, credential_name, _REPOSITORIES_QUERY, {"owner": owner, "after": after}, project_id=project_id)
         container = (data.get("repositoryOwner") or {}).get("repositories") or {}
         result.extend(item for item in (container.get("nodes") or []) if not item.get("isArchived"))
         page = container.get("pageInfo") or {}
@@ -113,17 +139,17 @@ def list_repositories(username: str, credential_name: str, owner: str) -> list[d
     raise GitHubProviderError("github_pagination_limit", 502)
 
 
-def connection_check(username: str, credential_name: str) -> dict:
-    data = _post(username, credential_name, "query Viewer { viewer { login } }", {})
+def connection_check(username: str, credential_name: str, project_id: str | None = None) -> dict:
+    data = _post(username, credential_name, "query Viewer { viewer { login } }", {}, project_id=project_id)
     viewer = data.get("viewer") or {}
     return {"ok": bool(viewer.get("login")), "login": viewer.get("login")}
 
 
-def list_projects(username: str, credential_name: str, owner: str) -> list[dict]:
+def list_projects(username: str, credential_name: str, owner: str, project_id: str | None = None) -> list[dict]:
     result: list[dict] = []
     after = None
     for _ in range(_MAX_PAGES):
-        data = _post(username, credential_name, _PROJECTS_QUERY, {"login": owner, "after": after})
+        data = _post(username, credential_name, _PROJECTS_QUERY, {"login": owner, "after": after}, project_id=project_id)
         container = (data.get("user") or data.get("organization") or {}).get("projectsV2") or {}
         result.extend(container.get("nodes") or [])
         page = container.get("pageInfo") or {}
@@ -135,11 +161,11 @@ def list_projects(username: str, credential_name: str, owner: str) -> list[dict]
     raise GitHubProviderError("github_pagination_limit", 502)
 
 
-def list_project_items(username: str, credential_name: str, owner: str, number: int) -> list[dict]:
+def list_project_items(username: str, credential_name: str, owner: str, number: int, project_id: str | None = None) -> list[dict]:
     result: list[dict] = []
     after = None
     for _ in range(_MAX_PAGES):
-        data = _post(username, credential_name, _ITEMS_QUERY, {"owner": owner, "number": number, "after": after})
+        data = _post(username, credential_name, _ITEMS_QUERY, {"owner": owner, "number": number, "after": after}, project_id=project_id)
         container = (data.get("user") or data.get("organization") or {}).get("projectV2") or {}
         items = container.get("items") or {}
         result.extend(items.get("nodes") or [])
@@ -152,8 +178,8 @@ def list_project_items(username: str, credential_name: str, owner: str, number: 
     raise GitHubProviderError("github_pagination_limit", 502)
 
 
-def get_issue(username: str, credential_name: str, owner: str, repository: str, number: int) -> dict:
-    data = _post(username, credential_name, _ISSUE_QUERY, {"owner": owner, "repo": repository, "number": number})
+def get_issue(username: str, credential_name: str, owner: str, repository: str, number: int, project_id: str | None = None) -> dict:
+    data = _post(username, credential_name, _ISSUE_QUERY, {"owner": owner, "repo": repository, "number": number}, project_id=project_id, repository=repository)
     issue = (data.get("repository") or {}).get("issue")
     if not issue:
         raise GitHubProviderError("github_issue_not_found", 404)

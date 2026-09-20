@@ -69,7 +69,7 @@ def check_connection_route(auth: Auth, connection_id: str) -> dict:
     connection = _connection(connection_id)
     _access(connection["project_id"], auth)
     try:
-        return github_provider.connection_check(connection["created_by"], connection["credential_name"])
+        return github_provider.connection_check(connection["created_by"], connection["credential_name"], connection["project_id"])
     except github_provider.GitHubProviderError as exc:
         return _provider_error(exc)
 
@@ -80,7 +80,7 @@ def projects_route(auth: Auth, connection_id: str) -> list[dict]:
     _access(connection["project_id"], auth)
     try:
         return github_provider.list_projects(
-            connection["created_by"], connection["credential_name"], connection["owner"]
+            connection["created_by"], connection["credential_name"], connection["owner"], connection["project_id"]
         )
     except github_provider.GitHubProviderError as exc:
         return _provider_error(exc)
@@ -95,7 +95,7 @@ def project_items_route(
     _access(connection["project_id"], auth)
     try:
         return github_provider.list_project_items(
-            connection["created_by"], connection["credential_name"], connection["owner"], number
+            connection["created_by"], connection["credential_name"], connection["owner"], number, connection["project_id"]
         )
     except github_provider.GitHubProviderError as exc:
         return _provider_error(exc)
@@ -114,7 +114,7 @@ def issue_route(auth: Auth, owner: str, repository: str, number: Annotated[int, 
         raise coded(status.HTTP_404_NOT_FOUND, "github_connection_not_found")
     _access(row["project_id"], auth)
     try:
-        return github_provider.get_issue(row["created_by"], row["credential_name"], owner, repository, number)
+        return github_provider.get_issue(row["created_by"], row["credential_name"], owner, repository, number, row["project_id"])
     except github_provider.GitHubProviderError as exc:
         return _provider_error(exc)
 

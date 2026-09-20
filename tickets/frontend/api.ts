@@ -102,7 +102,7 @@ export const ticketsApi = {
   githubCredentials: () => credentialsApi.list(),
   githubDiscovery: (payload: { project_id: string; credential_name: string; owner?: string }) => api.post<GithubDiscovery>(`${BASE}/github/discovery`, payload),
   githubConnections: (projectId: string) => api.get<GithubConnection[]>(`${BASE}/github/connections?project_id=${encodeURIComponent(projectId)}`),
-  createGithubConnection: (payload: { project_id: string; owner: string; repository: string; project_number?: number; credential_name: string }) => api.post<GithubConnection>(`${BASE}/github/connections`, payload),
+  createGithubConnection: (payload: { project_id: string; owner: string; repository: string; project_number?: number; credential_name?: string }) => api.post<GithubConnection>(`${BASE}/github/connections`, payload),
   disableGithubConnection: (id: string) => api.delete<{ disabled: boolean; connection_id: string }>(`${BASE}/github/connections/${id}`),
   githubLink: (ticketId: string) => api.get<GithubLink>(`${BASE}/tickets/${ticketId}/github`),
   githubProjects: (connectionId: string) => api.get<GithubProject[]>(`${BASE}/github/projects?connection_id=${encodeURIComponent(connectionId)}`),

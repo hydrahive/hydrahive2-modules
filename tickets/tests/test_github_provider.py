@@ -109,3 +109,16 @@ def test_repository_discovery_filters_archived_repositories(monkeypatch):
         ], "pageInfo": {"hasNextPage": False, "endCursor": None}}}
     }}))
     assert provider.list_repositories("admin", "github", "flowki") == [{"name": "active", "isArchived": False}]
+
+
+def test_project_token_reference_uses_project_config_without_vault(monkeypatch):
+    class ResponseWithHeader(Response):
+        pass
+
+    monkeypatch.setattr(provider.project_config, "get", lambda project_id: {
+        "git_token": "project-token", "git_repos": {}
+    })
+    monkeypatch.setattr(httpx, "post", lambda *args, **kwargs: ResponseWithHeader(200, {"data": {"viewer": {"login": "flowki"}}}))
+    assert provider.connection_check("unused-user", provider.PROJECT_TOKEN_REF, "project-1") == {
+        "ok": True, "login": "flowki"
+    }
