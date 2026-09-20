@@ -28,6 +28,17 @@ _ITEMS_QUERY = """query ProjectItems($owner: String!, $number: Int!, $after: Str
   user(login: $owner) { projectV2(number: $number) { items(first: 50, after: $after) { nodes { id content { ... on Issue { id number title url state repository { nameWithOwner } } } } pageInfo { hasNextPage endCursor } } } }
   organization(login: $owner) { projectV2(number: $number) { items(first: 50, after: $after) { nodes { id content { ... on Issue { id number title url state repository { nameWithOwner } } } } pageInfo { hasNextPage endCursor } } } }
 }"""
+_DISCOVERY_QUERY = """query ViewerAndOrganizations {
+  viewer { login organizations(first: 100) { nodes { login } } }
+}"""
+_REPOSITORIES_QUERY = """query Repositories($owner: String!, $after: String) {
+  repositoryOwner(login: $owner) {
+    repositories(first: 50, after: $after, orderBy: {field: NAME, direction: ASC}) {
+      nodes { name nameWithOwner url isArchived }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}"""
 _ISSUE_QUERY = """query Issue($owner: String!, $repo: String!, $number: Int!) {
   repository(owner: $owner, name: $repo) { issue(number: $number) { id number title body url state labels(first: 20) { nodes { name color } } } }
 }"""
@@ -74,6 +85,32 @@ def _post(username: str, credential_name: str, query: str, variables: dict[str, 
     if not isinstance(data, dict):
         raise GitHubProviderError("github_invalid_response", 502)
     return data
+
+
+def discover_owners(username: str, credential_name: str) -> list[dict]:
+    data = _post(username, credential_name, _DISCOVERY_QUERY, {})
+    viewer = data.get("viewer") or {}
+    login = viewer.get("login")
+    organizations = (viewer.get("organizations") or {}).get("nodes") or []
+    owners = ([{"login": login, "kind": "user"}] if login else [])
+    owners.extend({"login": item.get("login"), "kind": "organization"} for item in organizations if item.get("login"))
+    return owners
+
+
+def list_repositories(username: str, credential_name: str, owner: str) -> list[dict]:
+    result: list[dict] = []
+    after = None
+    for _ in range(_MAX_PAGES):
+        data = _post(username, credential_name, _REPOSITORIES_QUERY, {"owner": owner, "after": after})
+        container = (data.get("repositoryOwner") or {}).get("repositories") or {}
+        result.extend(item for item in (container.get("nodes") or []) if not item.get("isArchived"))
+        page = container.get("pageInfo") or {}
+        if not page.get("hasNextPage"):
+            return result
+        after = page.get("endCursor")
+        if not after:
+            break
+    raise GitHubProviderError("github_pagination_limit", 502)
 
 
 def connection_check(username: str, credential_name: str) -> dict:

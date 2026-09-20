@@ -115,6 +115,23 @@ export interface GithubProjectItem {
   content: { number?: number; title?: string; url?: string; state?: string; repository?: { nameWithOwner: string } } | null
 }
 
+export interface GithubDiscoveryOwner {
+  login: string
+  kind: "user" | "organization"
+}
+
+export interface GithubRepository {
+  name: string
+  nameWithOwner: string
+  url: string
+  isArchived: boolean
+}
+
+export interface GithubDiscovery {
+  owners: GithubDiscoveryOwner[]
+  repositories: GithubRepository[]
+}
+
 export interface GithubConnection {
   id: string
   project_id: string

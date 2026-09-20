@@ -29,6 +29,12 @@ class GitHubConnectionCreate(StrictModel):
     sync_mode: str = Field(default="read_only", pattern=r"^(read_only|push|bidirectional)$")
 
 
+class GitHubDiscoveryRequest(StrictModel):
+    project_id: str = Field(min_length=1, max_length=128)
+    credential_name: str = Field(min_length=1, max_length=50, pattern=r"^[a-z0-9][a-z0-9_-]{0,49}$")
+    owner: str | None = Field(default=None, max_length=39, pattern=r"^[A-Za-z0-9_.-]+$")
+
+
 class GitHubLinkCreate(StrictModel):
     ticket_id: str = Field(min_length=1, max_length=128)
     connection_id: str = Field(min_length=1, max_length=128)

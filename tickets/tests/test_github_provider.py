@@ -80,3 +80,32 @@ def test_timeout_and_graphql_errors_are_stable(monkeypatch):
     monkeypatch.setattr(httpx, "post", lambda *args, **kwargs: Response(200, {"errors": [{"type": "FORBIDDEN"}]}))
     with pytest.raises(provider.GitHubProviderError, match="github_forbidden"):
         provider.connection_check("admin", "github")
+
+
+def test_discovery_returns_user_and_organizations(monkeypatch):
+    class Credential:
+        type = "bearer"
+        value = "token"
+
+    monkeypatch.setattr(provider, "get_credential", lambda username, name: Credential())
+    monkeypatch.setattr(httpx, "post", lambda *args, **kwargs: Response(200, {"data": {
+        "viewer": {"login": "flowki", "organizations": {"nodes": [{"login": "hydrahive"}]}}
+    }}))
+    assert provider.discover_owners("admin", "github") == [
+        {"login": "flowki", "kind": "user"},
+        {"login": "hydrahive", "kind": "organization"},
+    ]
+
+
+def test_repository_discovery_filters_archived_repositories(monkeypatch):
+    class Credential:
+        type = "bearer"
+        value = "token"
+
+    monkeypatch.setattr(provider, "get_credential", lambda username, name: Credential())
+    monkeypatch.setattr(httpx, "post", lambda *args, **kwargs: Response(200, {"data": {
+        "repositoryOwner": {"repositories": {"nodes": [
+            {"name": "active", "isArchived": False}, {"name": "old", "isArchived": True}
+        ], "pageInfo": {"hasNextPage": False, "endCursor": None}}}
+    }}))
+    assert provider.list_repositories("admin", "github", "flowki") == [{"name": "active", "isArchived": False}]

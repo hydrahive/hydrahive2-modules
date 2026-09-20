@@ -36,6 +36,17 @@ def _provider_error(exc: github_provider.GitHubProviderError):
     raise coded(exc.status, exc.code)
 
 
+@router.post("/discovery")
+def discovery_route(auth: Auth, body: github.GitHubDiscoveryRequest) -> dict:
+    _access(body.project_id, auth)
+    try:
+        if body.owner:
+            return {"owners": [], "repositories": github_provider.list_repositories(auth.username, body.credential_name, body.owner)}
+        return {"owners": github_provider.discover_owners(auth.username, body.credential_name), "repositories": []}
+    except github_provider.GitHubProviderError as exc:
+        return _provider_error(exc)
+
+
 @router.post("/connections", status_code=status.HTTP_201_CREATED)
 def create_connection_route(auth: Auth, body: github.GitHubConnectionCreate) -> dict:
     _access(body.project_id, auth, "write")
