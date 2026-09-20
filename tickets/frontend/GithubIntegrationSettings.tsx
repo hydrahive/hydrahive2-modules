@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Github, Plus, Trash2 } from "lucide-react"
+import { GitBranch, Plus, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Input } from "@/shared/ui"
 import { ticketsApi } from "./api"
@@ -35,7 +35,7 @@ export function GithubIntegrationSettings() {
   }
 
   return <section className="border-t border-[#1f2a3b] p-3">
-    <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#c8d2df]"><Github size={14} className="text-[#69d7ff]" />{t("githubSettings")}</div>
+    <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#c8d2df]"><GitBranch size={14} className="text-[#69d7ff]" />{t("githubSettings")}</div>
     <div className="space-y-2">
       <Input value={projectId} onChange={(event) => setProjectId(event.target.value)} placeholder={t("githubProjectId")} className="h-8 border-[#253247] bg-[#111b29] text-[11px]" />
       <div className="grid grid-cols-2 gap-2"><Input value={owner} onChange={(event) => setOwner(event.target.value)} placeholder={t("githubOwner")} className="h-8 border-[#253247] bg-[#111b29] text-[11px]" /><Input value={repository} onChange={(event) => setRepository(event.target.value)} placeholder={t("githubRepository")} className="h-8 border-[#253247] bg-[#111b29] text-[11px]" /></div>
