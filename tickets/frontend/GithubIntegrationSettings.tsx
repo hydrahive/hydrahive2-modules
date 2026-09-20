@@ -2,11 +2,16 @@ import { useEffect, useState } from "react"
 import { GitBranch, Plus, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Input } from "@/shared/ui"
+import { chatApi, type ProjectBrief } from "@/features/chat/api"
+import { ProjectPicker } from "@/features/chat/ProjectPicker"
 import { ticketsApi } from "./api"
 import type { GithubConnection } from "./types"
 
 export function GithubIntegrationSettings() {
   const { t } = useTranslation("tickets")
+  const [projects, setProjects] = useState<ProjectBrief[]>([])
+  const [projectsLoading, setProjectsLoading] = useState(true)
+  const [projectsError, setProjectsError] = useState(false)
   const [projectId, setProjectId] = useState("")
   const [owner, setOwner] = useState("")
   const [repository, setRepository] = useState("")
@@ -16,9 +21,25 @@ export function GithubIntegrationSettings() {
   const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!projectId.trim()) { setConnections([]); return }
-    void ticketsApi.githubConnections(projectId.trim()).then(setConnections).catch(() => setConnections([]))
+    void chatApi.listProjects().then((available) => {
+      setProjects(available)
+      setProjectsError(false)
+    }).catch(() => {
+      setProjects([])
+      setProjectsError(true)
+    }).finally(() => setProjectsLoading(false))
+  }, [])
+
+  useEffect(() => {
+    if (!projectId) { setConnections([]); return }
+    void ticketsApi.githubConnections(projectId).then(setConnections).catch(() => setConnections([]))
   }, [projectId])
+
+  function pickProject(nextProjectId: string | null) {
+    setProjectId(nextProjectId ?? "")
+    setConnections([])
+    setMessage(null)
+  }
 
   async function create() {
     if (!projectId.trim() || !owner.trim() || !repository.trim() || !credential.trim()) return
@@ -37,7 +58,12 @@ export function GithubIntegrationSettings() {
   return <section className="border-t border-[#1f2a3b] p-3">
     <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#c8d2df]"><GitBranch size={14} className="text-[#69d7ff]" />{t("githubSettings")}</div>
     <div className="space-y-2">
-      <Input value={projectId} onChange={(event) => setProjectId(event.target.value)} placeholder={t("githubProjectId")} className="h-8 border-[#253247] bg-[#111b29] text-[11px]" />
+      <div className="flex items-center gap-2">
+        <ProjectPicker current={projectId || null} projects={projects} onPick={pickProject} busy={projectsLoading || busy} />
+        {projectsLoading && <span className="text-[10px] text-[#607188]">{t("githubProjectsLoading")}</span>}
+      </div>
+      {projectsError && <p className="text-[10px] text-orange-200">{t("githubProjectsError")}</p>}
+      {!projectsLoading && !projectsError && projects.length === 0 && <p className="text-[10px] text-[#607188]">{t("githubProjectsEmpty")}</p>}
       <div className="grid grid-cols-2 gap-2"><Input value={owner} onChange={(event) => setOwner(event.target.value)} placeholder={t("githubOwner")} className="h-8 border-[#253247] bg-[#111b29] text-[11px]" /><Input value={repository} onChange={(event) => setRepository(event.target.value)} placeholder={t("githubRepository")} className="h-8 border-[#253247] bg-[#111b29] text-[11px]" /></div>
       <Input value={credential} onChange={(event) => setCredential(event.target.value)} placeholder={t("githubCredential")} className="h-8 border-[#253247] bg-[#111b29] text-[11px]" />
       <button type="button" disabled={busy} onClick={() => void create()} className="inline-flex w-full items-center justify-center gap-1 rounded border border-[#2b4058] bg-[#111b29] px-2 py-1.5 text-[11px] text-[#a8dff2] hover:border-[#69d7ff]/60 disabled:opacity-40"><Plus size={12} />{t("githubAdd")}</button>
