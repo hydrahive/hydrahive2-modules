@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
 import type { ReactNode } from "react"
-import { CalendarDays, CircleUserRound, Clock3, Download, FileText, Link2, MessageSquare, Paperclip, Send, Tag, UsersRound } from "lucide-react"
+import { CalendarDays, CircleUserRound, Clock3, Download, FileText, Github, Link2, MessageSquare, Paperclip, Send, Tag, Unlink, UsersRound } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Input, Select, Textarea } from "@/shared/ui"
 import { downloadAttachment, ticketsApi } from "./api"
-import type { Team, Ticket, TicketAttachment, TicketComment, TicketPriority, TicketStatus } from "./types"
+import type { GithubLink, Team, Ticket, TicketAttachment, TicketComment, TicketPriority, TicketStatus } from "./types"
 
 interface Props {
   ticket: Ticket
@@ -57,6 +57,11 @@ export function TicketDetail({ ticket, teams, onUpdated }: Props) {
   const [manualDueAt, setManualDueAt] = useState(ticket.manual_due_at ? ticket.manual_due_at.slice(0, 16) : "")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [githubLink, setGithubLink] = useState<GithubLink | null>(null)
+  const [githubConnectionId, setGithubConnectionId] = useState("")
+  const [githubOwner, setGithubOwner] = useState("")
+  const [githubRepository, setGithubRepository] = useState("")
+  const [githubIssueNumber, setGithubIssueNumber] = useState("")
 
   useEffect(() => {
     setComments(ticket.comments ?? [])
@@ -67,6 +72,7 @@ export function TicketDetail({ ticket, teams, onUpdated }: Props) {
       setComments(nextComments)
       setAttachments(nextAttachments)
     }).catch(() => {})
+    void ticketsApi.githubLink(ticket.id).then(setGithubLink).catch(() => setGithubLink(null))
   }, [ticket.id, ticket.comments, ticket.attachments, ticket.assigned_to])
 
   async function update(patch: Partial<Ticket>) {
@@ -117,6 +123,24 @@ export function TicketDetail({ ticket, teams, onUpdated }: Props) {
     }
   }
 
+  async function linkGithub() {
+    const issueNumber = Number(githubIssueNumber)
+    if (!githubConnectionId || !githubOwner || !githubRepository || !Number.isInteger(issueNumber) || issueNumber < 1) return
+    setBusy(true)
+    setError(null)
+    try {
+      const linked = await ticketsApi.linkGithubIssue(ticket.id, { connection_id: githubConnectionId, owner: githubOwner, repository: githubRepository, issue_number: issueNumber, issue_url: `https://github.com/${githubOwner}/${githubRepository}/issues/${issueNumber}` })
+      setGithubLink(linked)
+    } catch {
+      setError(t("githubLinkError"))
+    } finally { setBusy(false) }
+  }
+
+  async function unlinkGithub() {
+    setBusy(true)
+    try { await ticketsApi.unlinkGithubIssue(ticket.id); setGithubLink(null) } catch { setError(t("githubLinkError")) } finally { setBusy(false) }
+  }
+
   return (
     <section className="min-h-0 flex-1 overflow-y-auto bg-[#0a1019]">
       <div className="mx-auto max-w-[1240px] px-4 py-5 lg:px-8 lg:py-7">
@@ -148,6 +172,11 @@ export function TicketDetail({ ticket, teams, onUpdated }: Props) {
                 {comments.length === 0 ? <p className="py-5 text-center text-xs text-[#607188]">{t("noComments")}</p> : comments.map((item) => <article key={item.id} className="flex gap-3"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#2b4058] bg-[#17283c] text-[10px] font-semibold text-[#a9dff1]">{initials(item.author_id)}</div><div className="min-w-0 flex-1"><div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1"><span className="text-xs font-semibold text-[#c8d2df]">{item.author_id}</span><span className="text-[10px] text-[#607188]">{formatDate(item.created_at, i18n.language)}</span>{item.author_kind === "agent" && <span className="rounded-[4px] border border-violet-400/25 bg-violet-400/10 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.08em] text-violet-200">{t("agent")}</span>}</div><div className="rounded-[7px] border border-[#1f2a3b] bg-[#111b29] px-3 py-2.5 text-sm leading-6 text-[#b4c0cf]"><p className="whitespace-pre-wrap">{item.body}</p></div></div></article>)}
                 <div className="border-t border-[#1f2a3b] pt-4"><div className="flex items-end gap-2"><Textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder={t("commentPlaceholder")} rows={3} className="min-h-[82px] border-[#253247] bg-[#0b131f] text-sm" /><button disabled={busy || !comment.trim()} onClick={() => void addComment()} className="grid h-10 w-10 shrink-0 place-items-center rounded-[6px] border border-[#3b83a8] bg-[#163248] text-[#c8f2ff] transition-colors hover:border-[#69d7ff] hover:bg-[#1b3d56] disabled:cursor-not-allowed disabled:opacity-40" title={t("comment")}><Send size={15} /></button></div></div>
               </div>
+            </section>
+
+            <section className="rounded-[8px] border border-[#1f2a3b] bg-[#0d1420] p-4">
+              <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2 text-sm font-semibold text-[#e8eef8]"><Github size={15} className="text-[#69d7ff]" />{t("githubIntegration")}</div>{githubLink && <span className={`rounded px-1.5 py-0.5 text-[9px] uppercase ${githubLink.sync_state === "linked" ? "bg-emerald-400/10 text-emerald-200" : "bg-orange-400/10 text-orange-200"}`}>{githubLink.sync_state}</span>}</div>
+              {githubLink ? <div className="flex items-center gap-2"><a href={githubLink.issue_url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-xs text-[#69d7ff] hover:underline">{githubLink.owner}/{githubLink.repository}#{githubLink.issue_number}</a><button type="button" disabled={busy} onClick={() => void unlinkGithub()} className="rounded border border-[#2b4058] p-1.5 text-[#91a3b8] hover:border-orange-400/50 hover:text-orange-200" title={t("githubUnlink")}><Unlink size={13} /></button></div> : <div className="grid gap-2"><div className="grid grid-cols-2 gap-2"><Input value={githubConnectionId} onChange={(event) => setGithubConnectionId(event.target.value)} placeholder={t("githubConnectionId")} className="border-[#253247] bg-[#111b29] text-xs" /><Input value={githubOwner} onChange={(event) => setGithubOwner(event.target.value)} placeholder={t("githubOwner")} className="border-[#253247] bg-[#111b29] text-xs" /></div><div className="grid grid-cols-[1fr_90px] gap-2"><Input value={githubRepository} onChange={(event) => setGithubRepository(event.target.value)} placeholder={t("githubRepository")} className="border-[#253247] bg-[#111b29] text-xs" /><Input type="number" min={1} value={githubIssueNumber} onChange={(event) => setGithubIssueNumber(event.target.value)} placeholder="#" className="border-[#253247] bg-[#111b29] text-xs" /></div><button type="button" disabled={busy} onClick={() => void linkGithub()} className="rounded border border-[#3b83a8] bg-[#163248] px-3 py-2 text-xs text-[#c8f2ff] hover:border-[#69d7ff]">{t("githubLink")}</button></div>}
             </section>
 
             {(ticket.project_id || ticket.task_id || ticket.session_id) && <section className="rounded-[8px] border border-[#1f2a3b] bg-[#0d1420] p-4"><div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#e8eef8]"><Link2 size={15} className="text-[#69d7ff]" />{t("links")}</div><div className="flex flex-wrap gap-2">{ticket.project_id && <LinkChip label={t("project")} value={ticket.project_id} />} {ticket.task_id && <LinkChip label={t("task")} value={ticket.task_id} />} {ticket.session_id && <LinkChip label={t("session")} value={ticket.session_id} />}</div></section>}

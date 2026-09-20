@@ -88,3 +88,29 @@ export interface TicketNotification {
   read_at: string | null
   created_at: string
 }
+
+
+export interface GithubLink {
+  id: string
+  ticket_id: string
+  connection_id: string
+  owner: string
+  repository: string
+  issue_number: number
+  issue_url: string
+  sync_state: "linked" | "stale" | "error"
+  last_synced_at: string | null
+  last_error: string | null
+}
+
+export interface GithubProject {
+  id: string
+  number: number
+  title: string
+  url: string
+}
+
+export interface GithubProjectItem {
+  id: string
+  content: { number?: number; title?: string; url?: string; state?: string; repository?: { nameWithOwner: string } } | null
+}

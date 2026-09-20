@@ -1,6 +1,6 @@
 import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
+import type { GithubLink, GithubProject, GithubProjectItem, Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
 
 export interface TicketDashboard {
   open: number
@@ -98,6 +98,11 @@ export const ticketsApi = {
   slaProfiles: () => api.get<SlaProfile[]>(`${BASE}/sla/profiles`),
   updateSlaProfile: (id: string, payload: Partial<SlaProfile>) => api.patch<SlaProfile>(`${BASE}/sla/profiles/${id}`, payload),
   bulkUpdate: (ticketIds: string[], update: Partial<Ticket>) => api.post<{ updated: number; skipped: number; failed: number }>(`${BASE}/bulk-update`, { ticket_ids: ticketIds, update }),
+  githubLink: (ticketId: string) => api.get<GithubLink>(`${BASE}/tickets/${ticketId}/github`),
+  githubProjects: (connectionId: string) => api.get<GithubProject[]>(`${BASE}/github/projects?connection_id=${encodeURIComponent(connectionId)}`),
+  githubProjectItems: (projectId: string, connectionId: string, number: number) => api.get<GithubProjectItem[]>(`${BASE}/github/projects/${encodeURIComponent(projectId)}/items?connection_id=${encodeURIComponent(connectionId)}&number=${number}`),
+  linkGithubIssue: (ticketId: string, payload: { connection_id: string; owner: string; repository: string; issue_number: number; issue_url: string }) => api.post<GithubLink>(`${BASE}/tickets/${ticketId}/github/link`, { ticket_id: ticketId, ...payload }),
+  unlinkGithubIssue: (ticketId: string) => api.delete<{ unlinked: boolean; link: GithubLink }>(`${BASE}/tickets/${ticketId}/github/link`),
 }
 
 export async function downloadAttachment(ticketId: string, attachment: TicketAttachment) {
