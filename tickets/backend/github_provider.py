@@ -28,8 +28,17 @@ _PROJECTS_QUERY = """query Projects($login: String!, $after: String) {
   organization(login: $login) { projectsV2(first: 50, after: $after) { nodes { id number title url } pageInfo { hasNextPage endCursor } } }
 }"""
 _ITEMS_QUERY = """query ProjectItems($owner: String!, $number: Int!, $after: String) {
-  user(login: $owner) { projectV2(number: $number) { items(first: 50, after: $after) { nodes { id content { ... on Issue { id number title url state repository { nameWithOwner } } } } pageInfo { hasNextPage endCursor } } } }
-  organization(login: $owner) { projectV2(number: $number) { items(first: 50, after: $after) { nodes { id content { ... on Issue { id number title url state repository { nameWithOwner } } } } pageInfo { hasNextPage endCursor } } } }
+  user(login: $owner) { projectV2(number: $number) { items(first: 50, after: $after) { nodes { id content { ... on Issue { id number title url state repository { nameWithOwner } } } fieldValues(first: 50) { nodes { __typename ... on ProjectV2ItemFieldSingleSelectValue { id name optionId field { ... on ProjectV2SingleSelectField { id name options { id name } } } } } } } pageInfo { hasNextPage endCursor } } } }
+  organization(login: $owner) { projectV2(number: $number) { items(first: 50, after: $after) { nodes { id content { ... on Issue { id number title url state repository { nameWithOwner } } } fieldValues(first: 50) { nodes { __typename ... on ProjectV2ItemFieldSingleSelectValue { id name optionId field { ... on ProjectV2SingleSelectField { id name options { id name } } } } } } } pageInfo { hasNextPage endCursor } } } }
+}"""
+_UPDATE_PROJECT_FIELD_MUTATION = """mutation UpdateProjectField($input: UpdateProjectV2ItemFieldValueInput!) {
+  updateProjectV2ItemFieldValue(input: $input) { projectV2Item { id } }
+}"""
+_ADD_PROJECT_ITEM_MUTATION = """mutation AddProjectItem($input: AddProjectV2ItemByIdInput!) {
+  addProjectV2ItemById(input: $input) { item { id } }
+}"""
+_DELETE_PROJECT_ITEM_MUTATION = """mutation DeleteProjectItem($input: DeleteProjectV2ItemInput!) {
+  deleteProjectV2Item(input: $input) { deletedItemId }
 }"""
 _DISCOVERY_QUERY = """query ViewerAndOrganizations {
   viewer { login organizations(first: 100) { nodes { login } } }
@@ -196,6 +205,65 @@ def list_project_items(username: str, credential_name: str, owner: str, number: 
         if not after:
             break
     raise GitHubProviderError("github_pagination_limit", 502)
+
+
+def update_project_item_field(
+    username: str,
+    credential_name: str,
+    project_id: str,
+    item_id: str,
+    field_id: str,
+    option_id: str,
+    repository: str,
+    connection_project_id: str | None = None,
+) -> dict:
+    data = _post(
+        username,
+        credential_name,
+        _UPDATE_PROJECT_FIELD_MUTATION,
+        {"input": {"projectId": project_id, "itemId": item_id, "fieldId": field_id, "value": {"singleSelectOptionId": option_id}}},
+        project_id=connection_project_id,
+        repository=repository,
+    )
+    return (data.get("updateProjectV2ItemFieldValue") or {}).get("projectV2Item") or {}
+
+
+def add_project_item(
+    username: str,
+    credential_name: str,
+    project_id: str,
+    content_id: str,
+    repository: str,
+    connection_project_id: str | None = None,
+) -> dict:
+    data = _post(
+        username,
+        credential_name,
+        _ADD_PROJECT_ITEM_MUTATION,
+        {"input": {"projectId": project_id, "contentId": content_id}},
+        project_id=connection_project_id,
+        repository=repository,
+    )
+    return (data.get("addProjectV2ItemById") or {}).get("item") or {}
+
+
+def delete_project_item(
+    username: str,
+    credential_name: str,
+    project_id: str,
+    item_id: str,
+    repository: str,
+    connection_project_id: str | None = None,
+) -> dict:
+    data = _post(
+        username,
+        credential_name,
+        _DELETE_PROJECT_ITEM_MUTATION,
+        {"input": {"projectId": project_id, "itemId": item_id}},
+        project_id=connection_project_id,
+        repository=repository,
+    )
+    return (data.get("deleteProjectV2Item") or {})
 
 
 def list_issues(

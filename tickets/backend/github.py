@@ -45,6 +45,19 @@ class GitHubIssueUpdate(StrictModel):
     state: str | None = Field(default=None, pattern=r"^(open|closed)$")
 
 
+class GitHubProjectFieldUpdate(StrictModel):
+    project_id: str = Field(min_length=1, max_length=128)
+    item_id: str = Field(min_length=1, max_length=128)
+    field_id: str = Field(min_length=1, max_length=128)
+    option_id: str = Field(min_length=1, max_length=128)
+
+
+class GitHubProjectItemMutation(StrictModel):
+    project_id: str = Field(min_length=1, max_length=128)
+    content_id: str | None = Field(default=None, max_length=128)
+    item_id: str | None = Field(default=None, max_length=128)
+
+
 class GitHubDiscoveryRequest(StrictModel):
     project_id: str = Field(min_length=1, max_length=128)
     credential_name: str = Field(min_length=1, max_length=50, pattern=r"^[a-z0-9][a-z0-9_-]{0,49}$")

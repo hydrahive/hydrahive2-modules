@@ -109,6 +109,55 @@ def project_items_route(
         return _provider_error(exc)
 
 
+def _require_push(connection: dict, auth: AuthPrincipal) -> None:
+    _access(connection["project_id"], auth, "write")
+    if connection["sync_mode"] not in {"push", "bidirectional"}:
+        raise coded(status.HTTP_409_CONFLICT, "github_write_disabled")
+
+
+@router.patch("/connections/{connection_id}/project-field")
+def project_field_route(auth: Auth, connection_id: str, body: github.GitHubProjectFieldUpdate) -> dict:
+    connection = _connection(connection_id)
+    _require_push(connection, auth)
+    try:
+        return github_provider.update_project_item_field(
+            connection["created_by"], connection["credential_name"], body.project_id, body.item_id, body.field_id,
+            body.option_id, connection["repository"], connection["project_id"],
+        )
+    except github_provider.GitHubProviderError as exc:
+        return _provider_error(exc)
+
+
+@router.post("/connections/{connection_id}/project-items")
+def add_project_item_route(auth: Auth, connection_id: str, body: github.GitHubProjectItemMutation) -> dict:
+    connection = _connection(connection_id)
+    _require_push(connection, auth)
+    if not body.content_id:
+        raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "github_content_id_required")
+    try:
+        return github_provider.add_project_item(
+            connection["created_by"], connection["credential_name"], body.project_id, body.content_id,
+            connection["repository"], connection["project_id"],
+        )
+    except github_provider.GitHubProviderError as exc:
+        return _provider_error(exc)
+
+
+@router.post("/connections/{connection_id}/project-items/remove")
+def remove_project_item_route(auth: Auth, connection_id: str, body: github.GitHubProjectItemMutation) -> dict:
+    connection = _connection(connection_id)
+    _require_push(connection, auth)
+    if not body.item_id:
+        raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "github_item_id_required")
+    try:
+        return github_provider.delete_project_item(
+            connection["created_by"], connection["credential_name"], body.project_id, body.item_id,
+            connection["repository"], connection["project_id"],
+        )
+    except github_provider.GitHubProviderError as exc:
+        return _provider_error(exc)
+
+
 @router.get("/connections/{connection_id}/tickets")
 def linked_tickets_route(auth: Auth, connection_id: str) -> list[dict]:
     connection = _connection(connection_id)

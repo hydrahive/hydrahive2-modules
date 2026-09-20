@@ -112,7 +112,8 @@ export interface GithubProject {
 
 export interface GithubProjectItem {
   id: string
-  content: { number?: number; title?: string; url?: string; state?: string; repository?: { nameWithOwner: string } } | null
+  content: { id?: string; number?: number; title?: string; url?: string; state?: string; repository?: { nameWithOwner: string } } | null
+  fieldValues?: { nodes?: { id?: string; name?: string; optionId?: string; field?: { id?: string; name?: string; options?: { id: string; name: string }[] } }[] }
 }
 
 export interface GithubIssue {

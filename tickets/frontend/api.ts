@@ -113,6 +113,9 @@ export const ticketsApi = {
   githubSync: (connectionId: string, state: "open" | "closed" | "all" = "open", limit = 100) => api.post<{ connection_id: string; state: string; count: number; created: number; tickets: { ticket: Ticket; link: GithubLink; created: boolean }[] }>(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/sync`, { state, limit }),
   updateGithubConnection: (id: string, sync_mode: "read_only" | "push" | "bidirectional") => api.patch<GithubConnection>(`${BASE}/github/connections/${encodeURIComponent(id)}`, { sync_mode }),
   githubLinkedTickets: (connectionId: string) => api.get<GithubLinkedTicket[]>(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/tickets`),
+  githubProjectFieldUpdate: (connectionId: string, payload: { project_id: string; item_id: string; field_id: string; option_id: string }) => api.patch(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/project-field`, payload),
+  githubProjectItemAdd: (connectionId: string, payload: { project_id: string; content_id: string }) => api.post(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/project-items`, payload),
+  githubProjectItemRemove: (connectionId: string, payload: { project_id: string; item_id: string }) => api.post(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/project-items/remove`, payload),
   linkGithubIssue: (ticketId: string, payload: { connection_id: string; owner: string; repository: string; issue_number: number; issue_url: string }) => api.post<GithubLink>(`${BASE}/tickets/${ticketId}/github/link`, { ticket_id: ticketId, ...payload }),
   unlinkGithubIssue: (ticketId: string) => api.delete<{ unlinked: boolean; link: GithubLink }>(`${BASE}/tickets/${ticketId}/github/link`),
 }
