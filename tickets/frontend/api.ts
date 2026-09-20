@@ -1,7 +1,7 @@
 import { api } from "@/shared/api-client"
 import { credentialsApi } from "@/features/credentials/api"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { GithubConnection, GithubDiscovery, GithubLink, GithubProject, GithubProjectItem, Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
+import type { GithubConnection, GithubDiscovery, GithubIssue, GithubLink, GithubProject, GithubProjectItem, Team, TeamMember, Ticket, TicketAttachment, TicketComment, TicketNotification } from "./types"
 
 export interface TicketDashboard {
   open: number
@@ -107,6 +107,7 @@ export const ticketsApi = {
   githubLink: (ticketId: string) => api.get<GithubLink>(`${BASE}/tickets/${ticketId}/github`),
   githubProjects: (connectionId: string) => api.get<GithubProject[]>(`${BASE}/github/projects?connection_id=${encodeURIComponent(connectionId)}`),
   githubProjectItems: (projectId: string, connectionId: string, number: number) => api.get<GithubProjectItem[]>(`${BASE}/github/projects/${encodeURIComponent(projectId)}/items?connection_id=${encodeURIComponent(connectionId)}&number=${number}`),
+  githubAssignedIssues: (connectionId: string) => api.get<GithubIssue[]>(`${BASE}/github/connections/${encodeURIComponent(connectionId)}/issues`),
   linkGithubIssue: (ticketId: string, payload: { connection_id: string; owner: string; repository: string; issue_number: number; issue_url: string }) => api.post<GithubLink>(`${BASE}/tickets/${ticketId}/github/link`, { ticket_id: ticketId, ...payload }),
   unlinkGithubIssue: (ticketId: string) => api.delete<{ unlinked: boolean; link: GithubLink }>(`${BASE}/tickets/${ticketId}/github/link`),
 }

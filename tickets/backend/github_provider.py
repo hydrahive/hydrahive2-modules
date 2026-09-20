@@ -45,6 +45,15 @@ _REPOSITORIES_QUERY = """query Repositories($owner: String!, $after: String) {
 _ISSUE_QUERY = """query Issue($owner: String!, $repo: String!, $number: Int!) {
   repository(owner: $owner, name: $repo) { issue(number: $number) { id number title body url state labels(first: 20) { nodes { name color } } } }
 }"""
+_VIEWER_LOGIN_QUERY = "query ViewerLogin { viewer { login } }"
+_ASSIGNED_ISSUES_QUERY = """query AssignedIssues($owner: String!, $repo: String!, $assignee: String!, $after: String) {
+  repository(owner: $owner, name: $repo) {
+    issues(first: 50, after: $after, states: OPEN, filterBy: {assignee: $assignee}) {
+      nodes { id number title url state repository { nameWithOwner } }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}"""
 
 
 def _project_token(project_id: str | None, repository: str | None = None) -> str | None:
@@ -170,6 +179,35 @@ def list_project_items(username: str, credential_name: str, owner: str, number: 
         items = container.get("items") or {}
         result.extend(items.get("nodes") or [])
         page = items.get("pageInfo") or {}
+        if not page.get("hasNextPage"):
+            return result
+        after = page.get("endCursor")
+        if not after:
+            break
+    raise GitHubProviderError("github_pagination_limit", 502)
+
+
+def list_assigned_issues(username: str, credential_name: str, owner: str, repository: str, project_id: str | None = None) -> list[dict]:
+    viewer_data = _post(
+        username, credential_name, _VIEWER_LOGIN_QUERY, {}, project_id=project_id, repository=repository
+    )
+    login = (viewer_data.get("viewer") or {}).get("login")
+    if not login:
+        raise GitHubProviderError("github_viewer_not_found", 502)
+    result: list[dict] = []
+    after = None
+    for _ in range(_MAX_PAGES):
+        data = _post(
+            username,
+            credential_name,
+            _ASSIGNED_ISSUES_QUERY,
+            {"owner": owner, "repo": repository, "assignee": login, "after": after},
+            project_id=project_id,
+            repository=repository,
+        )
+        issues = ((data.get("repository") or {}).get("issues") or {})
+        result.extend(issues.get("nodes") or [])
+        page = issues.get("pageInfo") or {}
         if not page.get("hasNextPage"):
             return result
         after = page.get("endCursor")

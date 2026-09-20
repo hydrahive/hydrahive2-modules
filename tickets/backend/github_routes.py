@@ -101,6 +101,18 @@ def project_items_route(
         return _provider_error(exc)
 
 
+@router.get("/connections/{connection_id}/issues")
+def assigned_issues_route(auth: Auth, connection_id: str) -> list[dict]:
+    connection = _connection(connection_id)
+    _access(connection["project_id"], auth)
+    try:
+        return github_provider.list_assigned_issues(
+            connection["created_by"], connection["credential_name"], connection["owner"], connection["repository"], connection["project_id"]
+        )
+    except github_provider.GitHubProviderError as exc:
+        return _provider_error(exc)
+
+
 @router.get("/issues/{owner}/{repository}/{number}")
 def issue_route(auth: Auth, owner: str, repository: str, number: Annotated[int, Path(ge=1)]) -> dict:
     # Issue reads are only reachable through a configured project connection.

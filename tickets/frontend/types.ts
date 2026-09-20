@@ -115,6 +115,15 @@ export interface GithubProjectItem {
   content: { number?: number; title?: string; url?: string; state?: string; repository?: { nameWithOwner: string } } | null
 }
 
+export interface GithubIssue {
+  id: string
+  number: number
+  title: string
+  url: string
+  state: string
+  repository?: { nameWithOwner: string }
+}
+
 export interface GithubDiscoveryOwner {
   login: string
   kind: "user" | "organization"

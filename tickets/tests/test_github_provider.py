@@ -111,6 +111,30 @@ def test_repository_discovery_filters_archived_repositories(monkeypatch):
     assert provider.list_repositories("admin", "github", "flowki") == [{"name": "active", "isArchived": False}]
 
 
+def test_assigned_issues_use_viewer_and_open_state(monkeypatch):
+    class Credential:
+        type = "bearer"
+        value = "token"
+
+    monkeypatch.setattr(provider, "get_credential", lambda username, name: Credential())
+    calls = []
+
+    def post(url, **kwargs):
+        query = kwargs["json"]["query"]
+        calls.append(kwargs["json"])
+        if "ViewerLogin" in query:
+            return Response(200, {"data": {"viewer": {"login": "flowki"}}})
+        return Response(200, {"data": {"repository": {"issues": {
+            "nodes": [{"number": 7, "title": "Fix me"}],
+            "pageInfo": {"hasNextPage": False, "endCursor": None},
+        }}}})
+
+    monkeypatch.setattr(httpx, "post", post)
+    assert provider.list_assigned_issues("admin", "github", "gh0stOo", "flowki-studio") == [{"number": 7, "title": "Fix me"}]
+    assert calls[1]["variables"] == {"owner": "gh0stOo", "repo": "flowki-studio", "assignee": "flowki", "after": None}
+    assert "states: OPEN" in calls[1]["query"]
+
+
 def test_project_token_reference_uses_project_config_without_vault(monkeypatch):
     class ResponseWithHeader(Response):
         pass
