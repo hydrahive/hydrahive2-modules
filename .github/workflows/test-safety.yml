@@ -1,0 +1,30 @@
+name: Test-Safety
+
+# Modul-Tests dürfen nie echte Daten löschen. Anlass: Am 26.09.2026 lief eine
+# Testsuite versehentlich gegen das Live-System. `DELETE FROM <tabelle>` ohne
+# WHERE hat dabei ganze Tabellen geleert. Details: scripts/check_test_safety.py
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    name: Tests isoliert, kein breites Löschen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Guard-Tests
+        run: |
+          python -m pip install --quiet pytest
+          python -m pytest scripts/tests -q
+
+      - name: Alle Modul-Suites prüfen
+        run: python3 scripts/check_test_safety.py

@@ -3,13 +3,26 @@ from __future__ import annotations
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
-import bcrypt
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+    TEST_ROOT,
+    isolated_root,
+    only_own_files,
+    only_own_rows,
+    pytest_collection_finish,
+    pytest_configure,
+    pytest_runtest_call,
+    pytest_runtest_setup,
+    pytest_unconfigure,
+    remove_test_tree,
+)
+
+import bcrypt  # noqa: E402
+import pytest  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 CORE_SRC = MODULE_DIR.parents[1] / "hydrahive2" / "core" / "src"
@@ -17,12 +30,9 @@ for path in (MODULE_DIR, CORE_SRC):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-_TMP = tempfile.TemporaryDirectory()
-_ROOT = Path(_TMP.name)
+_ROOT = TEST_ROOT
 os.environ.update(
     {
-        "HH_DATA_DIR": str(_ROOT / "data"),
-        "HH_CONFIG_DIR": str(_ROOT / "config"),
         "HH_SECRET_KEY": "haushaltsbuch-test-secret-key",
         "HH_DISCORD_ENABLED": "0",
         "HH_WA_ENABLED": "0",
@@ -31,8 +41,8 @@ os.environ.update(
         "HH_HAUSHALTSBUCH_LIDL_ENABLED": "1",
     }
 )
-(_ROOT / "data" / "agents").mkdir(parents=True)
-(_ROOT / "config").mkdir(parents=True)
+(_ROOT / "data" / "agents").mkdir(parents=True, exist_ok=True)
+(_ROOT / "config").mkdir(parents=True, exist_ok=True)
 _password = bcrypt.hashpw(b"testpass123", bcrypt.gensalt()).decode("ascii")
 (_ROOT / "config" / "users.json").write_text(
     json.dumps(
@@ -76,7 +86,8 @@ def app() -> FastAPI:
 
 
 @pytest.fixture
-def client(app: FastAPI) -> TestClient:
+def client(app: FastAPI):
+    """Nach jedem Test nur die Haushaltsbuch-Zeilen entfernen, die er angelegt hat."""
     from hydrahive.db import init_db
     from hydrahive.db.connection import db
     from hydrahive.modules.migrations import apply_module_migrations
@@ -84,40 +95,14 @@ def client(app: FastAPI) -> TestClient:
     init_db()
     apply_module_migrations("haushaltsbuch", MODULE_DIR / "migrations")
     with db() as conn:
-        conn.execute("PRAGMA foreign_keys=OFF")
-        for table in reversed(
-            (
-                "households",
-                "members",
-                "loyalty_auth_flows",
-                "loyalty_connections",
-                "loyalty_receipts",
-                "loyalty_receipt_items",
-                "loyalty_receipt_adjustments",
-                "loyalty_partners",
-                "loyalty_sync_runs",
-                "loyalty_balances",
-                "loyalty_activities",
-                "loyalty_expirations",
-                "loyalty_coupons",
-                "invites",
-                "accounts",
-                "categories",
-                "transactions",
-                "postings",
-                "budgets",
-                "budget_periods",
-                "budget_adjustments",
-                "recurring_rules",
-                "audit_events",
-                "import_profiles",
-                "import_batches",
-                "import_rows",
+        tables = [
+            row[0] for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' "
+                "AND name LIKE 'module\\_haushaltsbuch\\_%' ESCAPE '\\' ORDER BY name"
             )
-        ):
-            conn.execute(f"DELETE FROM module_haushaltsbuch_{table}")
-        conn.execute("PRAGMA foreign_keys=ON")
-    return TestClient(app)
+        ]
+    with only_own_rows(*tables):
+        yield TestClient(app)
 
 
 def headers(username: str) -> dict[str, str]:

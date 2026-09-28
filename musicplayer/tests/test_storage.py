@@ -47,8 +47,8 @@ def test_audio_dir_folgt_keinem_media_symlink(tmp_path):
     outside.mkdir()
     media = storage.project_workspace(PROJECT_A) / "media"
     if media.exists() and not media.is_symlink():
-        import shutil
-        shutil.rmtree(media)
+        from _hh_isolation import remove_test_tree
+        remove_test_tree(media)
     media.symlink_to(outside, target_is_directory=True)
     try:
         with pytest.raises(ValueError, match="symlink"):

@@ -23,8 +23,8 @@ def _clear_workspace_audio() -> None:
     reihenfolge-unabhängig."""
     gen = storage.workspace_root(PROJECT_ID) / "generated"
     if gen.is_dir():
-        import shutil
-        shutil.rmtree(gen)
+        from _hh_isolation import remove_test_tree
+        remove_test_tree(gen)
 
 
 def test_audio_browse_requires_auth(client):

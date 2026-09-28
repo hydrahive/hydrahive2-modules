@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from _hh_isolation import only_own_rows
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.db.connection import db
 from hydrahive.tools.base import ToolContext
@@ -90,11 +91,11 @@ async def test_create_task_tool_links_existing_tasks_module(ticket_db):
             "title TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', priority TEXT NOT NULL DEFAULT 'medium', "
             "status TEXT NOT NULL DEFAULT 'open', created_at TEXT NOT NULL DEFAULT 'now', updated_at TEXT NOT NULL DEFAULT 'now')"
         )
-        conn.execute("DELETE FROM module_tasks")
     ticket = make_ticket()
-    result = await CREATE_TASK_TOOL.execute(
-        {"ticket_id": ticket["id"], "title": "Konkrete Umsetzung", "priority": "high"}, ctx()
-    )
+    with only_own_rows("module_tasks"):
+        result = await CREATE_TASK_TOOL.execute(
+            {"ticket_id": ticket["id"], "title": "Konkrete Umsetzung", "priority": "high"}, ctx()
+        )
     linked = get_ticket(ticket["id"])
 
     assert result.success is True
