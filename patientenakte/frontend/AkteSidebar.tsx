@@ -34,6 +34,12 @@ export function AkteSidebar() {
         { to: "/akte/schlaf",   icon: "😴", label: t("nav.sleep") },
       ],
     },
+    {
+      title: t("nav.section_privacy"),
+      items: [
+        { to: "/akte/loeschen", icon: "🗑", label: t("deletion.nav") },
+      ],
+    },
   ]
 
   return (
