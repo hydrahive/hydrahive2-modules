@@ -58,6 +58,7 @@ def setup_test_env():
         from backend.fhir_routes import router as fhir_router
         from backend.ega_routes import router as ega_router
         from backend.health_routes import router as health_router
+        from backend.data_deletion_routes import router as data_deletion_router
         # Exakt wie der Core (mount_module_routers): jeder Router unter /api/modules/<id>.
         # Damit treffen die Tests denselben Pfad wie die Produktion.
         mod_prefix = "/api/modules/patientenakte"
@@ -65,6 +66,7 @@ def setup_test_env():
         main.app.include_router(fhir_router, prefix=mod_prefix)
         main.app.include_router(ega_router, prefix=mod_prefix)
         main.app.include_router(health_router, prefix=mod_prefix)
+        main.app.include_router(data_deletion_router, prefix=mod_prefix)
 
         yield tmp_path
 

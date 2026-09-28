@@ -11,6 +11,7 @@ import { AkteLabCharts } from "./views/AkteLabCharts"
 import { ImportView } from "./views/ImportView"
 import { AppleHealthView } from "./views/AppleHealthView"
 import { SchlafView } from "./views/SchlafView"
+import { DataDeletionView } from "./views/DataDeletionView"
 
 export function AktePage() {
   const { t } = useTranslation("akte")
@@ -48,6 +49,7 @@ export function AktePage() {
               <Route path="import"         element={<ImportView />} />
               <Route path="tracking"       element={<AppleHealthView />} />
               <Route path="schlaf"         element={<SchlafView />} />
+              <Route path="loeschen"       element={<DataDeletionView />} />
             </Routes>
           </AkteErrorBoundary>
         </div>

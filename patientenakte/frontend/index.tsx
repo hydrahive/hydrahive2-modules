@@ -1,5 +1,6 @@
 import { AktePage } from "./AktePage"
 import { HealthBuddyBox } from "./components/HealthBuddyBox"
+import { deletionDe, deletionEn } from "./deletionI18n"
 
 export const routes = [
   { path: "/akte/*", element: <AktePage /> },
@@ -43,8 +44,10 @@ export const i18n = {
         section_tracking: "Tracking",
         tracking: "Apple Health",
         sleep: "Schlaf",
+        section_privacy: "Datenschutz",
       },
       tracking: { trend_title: "Verlauf", sleep_title: "Schlafverlauf" },
+      deletion: deletionDe,
       loading_data: "Daten konnten nicht geladen werden.",
       period_days: "{{days}}T",
       import: {
@@ -125,8 +128,10 @@ export const i18n = {
         section_tracking: "Tracking",
         tracking: "Apple Health",
         sleep: "Sleep",
+        section_privacy: "Privacy",
       },
       tracking: { trend_title: "Trends", sleep_title: "Sleep history" },
+      deletion: deletionEn,
       loading_data: "Could not load data.",
       period_days: "{{days}}d",
       import: {
