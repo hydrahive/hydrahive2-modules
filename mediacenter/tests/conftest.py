@@ -2,13 +2,25 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import sys
-import tempfile
 from pathlib import Path
 
-import pytest
-from fastapi.testclient import TestClient
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+    TEST_ROOT,
+    isolated_root,
+    only_own_files,
+    only_own_rows,
+    pytest_collection_finish,
+    pytest_configure,
+    pytest_runtest_call,
+    pytest_runtest_setup,
+    pytest_unconfigure,
+    remove_test_tree,
+)
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 CORE_SRC = MODULE_DIR.parents[1] / "hydrahive2" / "core" / "src"
@@ -16,9 +28,7 @@ for path in (MODULE_DIR, CORE_SRC):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-_TEST_ROOT = Path(tempfile.mkdtemp(prefix="mediacenter-tests-"))
-os.environ["HH_DATA_DIR"] = str(_TEST_ROOT / "data")
-os.environ["HH_CONFIG_DIR"] = str(_TEST_ROOT / "config")
+_TEST_ROOT = TEST_ROOT
 os.environ["HH_SECRET_KEY"] = "mediacenter-test-secret-key-at-least-32-bytes"
 os.environ["HH_DISCORD_ENABLED"] = "0"
 os.environ["HH_WA_ENABLED"] = "0"
@@ -60,8 +70,7 @@ def setup_test_env():
 
     main.app.include_router(search_router, prefix="/api/modules/mediacenter")
     main.app.include_router(jobs_router, prefix="/api/modules/mediacenter")
-    yield _TEST_ROOT
-    shutil.rmtree(_TEST_ROOT, ignore_errors=True)
+    yield _TEST_ROOT  # aufgeräumt wird in pytest_unconfigure (_hh_isolation)
 
 
 @pytest.fixture

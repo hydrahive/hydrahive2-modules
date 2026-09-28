@@ -4,12 +4,25 @@ from __future__ import annotations
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+    TEST_ROOT,
+    isolated_root,
+    only_own_files,
+    only_own_rows,
+    pytest_collection_finish,
+    pytest_configure,
+    pytest_runtest_call,
+    pytest_runtest_setup,
+    pytest_unconfigure,
+    remove_test_tree,
+)
+
+import pytest  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 CORE_SRC = MODULE_DIR.parents[1] / "hydrahive2" / "core" / "src"
@@ -17,12 +30,9 @@ for path in (MODULE_DIR, CORE_SRC):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-_TMP = tempfile.TemporaryDirectory()
-_ROOT = Path(_TMP.name)
+_ROOT = TEST_ROOT
 os.environ.update(
     {
-        "HH_DATA_DIR": str(_ROOT / "data"),
-        "HH_CONFIG_DIR": str(_ROOT / "config"),
         "HH_SECRET_KEY": "telephony-test-secret-key-at-least-32-bytes",
         "HH_DISCORD_ENABLED": "0",
         "HH_WA_ENABLED": "0",
@@ -30,8 +40,8 @@ os.environ.update(
         "HH_PG_MIRROR_DSN": "",
     }
 )
-(_ROOT / "data" / "agents").mkdir(parents=True)
-(_ROOT / "config").mkdir(parents=True)
+(_ROOT / "data" / "agents").mkdir(parents=True, exist_ok=True)
+(_ROOT / "config").mkdir(parents=True, exist_ok=True)
 (_ROOT / "config" / "users.json").write_text(
     json.dumps(
         {

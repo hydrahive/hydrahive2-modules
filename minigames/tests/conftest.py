@@ -8,11 +8,23 @@ from __future__ import annotations
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
-import pytest
-from fastapi.testclient import TestClient
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+    isolated_root,
+    only_own_files,
+    only_own_rows,
+    pytest_collection_finish,
+    pytest_configure,
+    pytest_runtest_call,
+    pytest_runtest_setup,
+    pytest_unconfigure,
+    remove_test_tree,
+)
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 if str(MODULE_DIR) not in sys.path:
@@ -23,10 +35,8 @@ MOD_PREFIX = "/api/modules/minigames"
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_env():
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with isolated_root() as tmpdir:
         tmp_path = Path(tmpdir)
-        os.environ["HH_DATA_DIR"] = str(tmp_path / "data")
-        os.environ["HH_CONFIG_DIR"] = str(tmp_path / "config")
         os.environ["HH_SECRET_KEY"] = "test-secret-key-for-jwt-signing"
         os.environ["HH_DISCORD_ENABLED"] = "0"
         os.environ["HH_WA_ENABLED"] = "0"
@@ -97,11 +107,9 @@ def third_headers(client):
 def _scores_db(setup_test_env):
     """Migrierte + leere Scores-Tabelle vor jedem Test."""
     from hydrahive.db import init_db
-    from hydrahive.db.connection import db
     from hydrahive.modules.migrations import apply_module_migrations
 
     init_db()
     apply_module_migrations("minigames", MODULE_DIR / "migrations")
-    with db() as c:
-        c.execute("DELETE FROM module_minigames_scores")
-    yield
+    with only_own_rows("module_minigames_scores"):
+        yield

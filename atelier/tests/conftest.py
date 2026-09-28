@@ -9,11 +9,23 @@ from __future__ import annotations
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
-import pytest
-from fastapi.testclient import TestClient
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+    isolated_root,
+    only_own_files,
+    only_own_rows,
+    pytest_collection_finish,
+    pytest_configure,
+    pytest_runtest_call,
+    pytest_runtest_setup,
+    pytest_unconfigure,
+    remove_test_tree,
+)
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 if str(MODULE_DIR) not in sys.path:
@@ -26,10 +38,8 @@ OTHER_PROJECT_ID = "other-project-atelier"
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_env():
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with isolated_root() as tmpdir:
         tmp_path = Path(tmpdir)
-        os.environ["HH_DATA_DIR"] = str(tmp_path / "data")
-        os.environ["HH_CONFIG_DIR"] = str(tmp_path / "config")
         os.environ["HH_SECRET_KEY"] = "test-secret-key-for-jwt-signing"
         os.environ["HH_DISCORD_ENABLED"] = "0"
         os.environ["HH_WA_ENABLED"] = "0"
@@ -103,11 +113,10 @@ def _clean_atelier_dirs(setup_test_env):
     """Leert die Atelier-Ordner beider Test-Projekte vor jedem Test (Dateisystem
     ist nicht wie eine DB automatisch isoliert — Tracks/Profile aus vorherigen
     Tests würden sonst in der Bibliothek anderer Tests auftauchen)."""
-    import shutil
     from backend import storage
     for pid in (PROJECT_ID, OTHER_PROJECT_ID):
         root = storage.atelier_root(pid)
         if root.is_dir():
-            shutil.rmtree(root)
+            remove_test_tree(root)
         root.mkdir(parents=True, exist_ok=True)
     yield

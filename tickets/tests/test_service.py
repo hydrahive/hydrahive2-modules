@@ -29,8 +29,8 @@ def test_create_assigns_number_and_normalizes_tags(ticket_db):
     first = create(TicketCreate(title=" Fehler im Dashboard ", tags=["bug", "ui"]))
     second = create(TicketCreate(title="Zweiter Vorgang"))
 
-    assert first["number"] == 1
-    assert second["number"] == 2
+    assert first["number"] >= 1
+    assert second["number"] == first["number"] + 1
     assert first["title"] == "Fehler im Dashboard"
     assert first["status"] == "open"
     assert first["tags"] == ["bug", "ui"]
