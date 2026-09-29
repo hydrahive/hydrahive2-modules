@@ -1,11 +1,20 @@
 {
   "id": "opentor",
   "name": "OpenTor OSINT",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Kontrollierte Tor-basierte OSINT- und Threat-Intelligence-Recherche.",
   "icon": "ShieldSearch",
   "nav_group": "working",
-  "permissions": ["opentor.read"],
+  "permissions": [
+    "opentor.read"
+  ],
+  "capabilities": [
+    {
+      "id": "module.opentor",
+      "label": "OpenTor-Recherche",
+      "default": "admin_only"
+    }
+  ],
   "has_service": true,
   "default_agent_tools": false,
   "min_core_version": "2.0.0"
