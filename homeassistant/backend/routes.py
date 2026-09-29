@@ -16,6 +16,7 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
 from . import client, favorites_store, validators
+from .access import Control
 
 router = APIRouter()
 
@@ -60,7 +61,7 @@ class ServiceCall(BaseModel):
 
 
 @router.post("/service")
-async def service_call(auth: Auth, body: ServiceCall) -> dict:
+async def service_call(_control: Control, body: ServiceCall) -> dict:
     domain = body.domain.strip().lower()
     service = body.service.strip().lower()
     if not validators.is_domain(domain):
