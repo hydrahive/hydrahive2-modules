@@ -4,6 +4,7 @@ from __future__ import annotations
 from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
 from .. import service
+from ._ids import resolve
 
 _SCHEMA = {
     "type": "object",
@@ -39,7 +40,10 @@ _SCHEMA = {
         },
         "task_id": {
             "type": "string",
-            "description": "Wenn angegeben: bestehenden Task aktualisieren statt neu anlegen.",
+            "description": (
+                "Wenn angegeben: bestehenden Task aktualisieren statt neu anlegen. "
+                "Volle ID oder eindeutiger Anfang (z. B. die ersten 8 Zeichen)."
+            ),
         },
         "status": {
             "type": "string",
@@ -83,10 +87,13 @@ async def _execute(args: dict, ctx: ToolContext) -> ToolResult:
     task_id: str | None = args.get("task_id")
 
     if task_id:
+        task, error = resolve(username, task_id)
+        if task is None:
+            return ToolResult.fail(error)
         try:
             result = service.update_task(
                 username,
-                task_id,
+                task["id"],
                 title=args.get("title"),
                 description=args.get("description"),
                 status=args.get("status"),

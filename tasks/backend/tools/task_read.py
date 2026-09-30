@@ -4,6 +4,7 @@ from __future__ import annotations
 from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
 from .. import service
+from ._ids import resolve
 
 _SCHEMA = {
     "type": "object",
@@ -26,20 +27,9 @@ async def _execute(args: dict, ctx: ToolContext) -> ToolResult:
     if not username:
         return ToolResult.fail("Kein User-Kontext verfügbar.")
 
-    task_id = args["task_id"].strip()
-    task = service.get_task(username, task_id)
-
+    task, error = resolve(username, args.get("task_id"))
     if task is None:
-        # Kurzform-Suche: task_id könnte ein 8-Zeichen-Prefix sein
-        all_tasks = service.list_tasks(username)
-        matches = [t for t in all_tasks if t["id"].startswith(task_id)]
-        if len(matches) == 1:
-            task = matches[0]
-        elif len(matches) > 1:
-            ids = ", ".join(t["id"][:8] for t in matches)
-            return ToolResult.fail(f"Mehrdeutig — {len(matches)} Tasks beginnen mit '{task_id}': {ids}")
-        else:
-            return ToolResult.fail(f"Task '{task_id}' nicht gefunden.")
+        return ToolResult.fail(error)
 
     status_icon = {"open": "○", "in_progress": "◑", "done": "●", "cancelled": "✗"}.get(task["status"], "?")
     lines = [
