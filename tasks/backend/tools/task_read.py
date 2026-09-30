@@ -12,6 +12,10 @@ _SCHEMA = {
             "type": "string",
             "description": "ID des Tasks (vollständig oder die ersten 8 Zeichen).",
         },
+        "history": {
+            "type": "boolean",
+            "description": "true: zusätzlich alle früheren Fassungen von Titel und Beschreibung liefern.",
+        },
     },
     "required": ["task_id"],
 }
@@ -51,7 +55,17 @@ async def _execute(args: dict, ctx: ToolContext) -> ToolResult:
     lines.append(f"Erstellt: {task['created_at']}")
     lines.append(f"Geändert: {task['updated_at']}")
 
-    return ToolResult.ok({"task": task, "summary": "\n".join(lines)})
+    versions = service.history(username, task["id"]) or []
+    if versions:
+        word = "Fassung" if len(versions) == 1 else "Fassungen"
+        lines.append(f"Verlauf:  {len(versions)} frühere {word} (history=true zeigt sie)")
+    result: dict = {"task": task}
+    if args.get("history") and versions:
+        result["history"] = versions
+        for v in versions:
+            lines.append(f"\n--- Fassung vom {v['changed_at']} ({v['source']}) ---\n{v['title']}\n{v['description']}")
+    result["summary"] = "\n".join(lines)
+    return ToolResult.ok(result)
 
 
 TOOL = Tool(

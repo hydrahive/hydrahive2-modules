@@ -15,7 +15,18 @@ _SCHEMA = {
         },
         "description": {
             "type": "string",
-            "description": "Optionale Beschreibung / Details.",
+            "description": (
+                "Beim Anlegen: Beschreibung / Details. Beim Aktualisieren (task_id gesetzt): "
+                "ERSETZT die komplette Beschreibung. Nur für bewusste Korrekturen; die alte "
+                "Fassung bleibt im Verlauf (task_read mit history=true)."
+            ),
+        },
+        "note": {
+            "type": "string",
+            "description": (
+                "Nur beim Aktualisieren: hängt eine datierte Notiz an die Beschreibung an. "
+                "Normalfall für Fortschritt, Befunde, PR-Nummern, Status-Notizen."
+            ),
         },
         "priority": {
             "type": "string",
@@ -45,6 +56,10 @@ WANN Tasks anlegen:
 - Komplexe Anfragen (mehrere Schritte, mehrere Dateien, längere Arbeit): ZUERST alle Teil-Tasks anlegen, dann anfangen.
 - User nennt etwas das erledigt werden soll ("wir müssen noch X", "vergiss nicht Y"): sofort als Task speichern.
 - Am Ende einer Session noch offene Punkte: als Tasks sichern damit sie nicht verloren gehen.
+
+WIE aktualisieren (task_id gesetzt):
+- Fortschritt, Befunde, PR-Nummern → note (wird mit Datum angehängt, nichts geht verloren).
+- description NUR für bewusste Korrekturen: sie ERSETZT den ganzen Text (alte Fassung bleibt im Verlauf).
 
 WANN Status aktualisieren (task_id + status):
 - Fange ich einen Task an → status: in_progress
@@ -76,6 +91,7 @@ async def _execute(args: dict, ctx: ToolContext) -> ToolResult:
                 description=args.get("description"),
                 status=args.get("status"),
                 priority=args.get("priority"),
+                note=args.get("note"),
             )
         except ValueError as exc:
             return ToolResult.fail(str(exc))
