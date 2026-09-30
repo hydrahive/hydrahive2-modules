@@ -165,3 +165,129 @@ async def test_task_read_user_isolation():
 
     r2 = await read.execute({"task_id": task_id}, make_ctx("bob"))
     assert not r2.success
+
+
+# ── Kurz-ID in allen drei Tools gleich (Task d61ae32b) ───────────────────────
+
+@pytest.mark.asyncio
+async def test_task_write_updates_by_prefix():
+    from backend.tools.task_write import TOOL as write
+    ctx = make_ctx()
+    r = await write.execute({"title": "Kurz"}, ctx)
+    full = r.output["task"]["id"]
+
+    r2 = await write.execute({"task_id": full[:8], "title": "Kurz", "status": "done"}, ctx)
+    assert r2.success, r2.error
+    assert r2.output["task"]["id"] == full
+    assert r2.output["task"]["status"] == "done"
+
+
+@pytest.mark.asyncio
+async def test_task_write_prefix_note_appends():
+    from backend.tools.task_write import TOOL as write
+    ctx = make_ctx()
+    r = await write.execute({"title": "Mit Notiz", "description": "Start"}, ctx)
+    full = r.output["task"]["id"]
+
+    r2 = await write.execute({"task_id": full[:8], "title": "Mit Notiz", "note": "weiter"}, ctx)
+    assert r2.success, r2.error
+    desc = r2.output["task"]["description"]
+    assert desc.startswith("Start\n\n[") and desc.endswith("] weiter")
+
+
+@pytest.mark.asyncio
+async def test_task_write_prefix_ambiguous_changes_nothing(monkeypatch):
+    from backend import service
+    from backend.tools.task_write import TOOL as write
+    ctx = make_ctx()
+    ids = iter(["abcd1234-0000-4000-8000-000000000001", "abcd1234-0000-4000-8000-000000000002"])
+    monkeypatch.setattr(service.uuid, "uuid4", lambda: next(ids))
+    await write.execute({"title": "Eins"}, ctx)
+    await write.execute({"title": "Zwei"}, ctx)
+
+    r = await write.execute({"task_id": "abcd1234", "title": "X", "status": "done"}, ctx)
+    assert not r.success
+    assert "Mehrdeutig" in r.error and "abcd1234" in r.error
+    titles = {t["title"] for t in service.list_tasks("alice")}
+    assert titles == {"Eins", "Zwei"}
+
+
+@pytest.mark.asyncio
+async def test_task_write_prefix_foreign_task_not_found():
+    from backend import service
+    from backend.tools.task_write import TOOL as write
+    r = await write.execute({"title": "Von Bob"}, make_ctx("bob"))
+    bob_id = r.output["task"]["id"]
+
+    r2 = await write.execute({"task_id": bob_id[:8], "title": "Übernommen"}, make_ctx("alice"))
+    assert not r2.success
+    assert service.get_task("bob", bob_id)["title"] == "Von Bob"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tool", ["task_read", "task_delete"])
+@pytest.mark.parametrize("bad", ["", "   "])
+async def test_blank_id_never_matches_a_task(tool, bad):
+    """Leere ID darf nicht per startswith("") den einzigen Task treffen."""
+    import importlib
+
+    from backend import service
+    from backend.tools.task_write import TOOL as write
+    ctx = make_ctx()
+    r = await write.execute({"title": "Einziger Task"}, ctx)
+    only = r.output["task"]["id"]
+
+    mod = importlib.import_module(f"backend.tools.{tool}")
+    r2 = await mod.TOOL.execute({"task_id": bad}, ctx)
+    assert not r2.success
+    assert service.get_task("alice", only) is not None
+
+
+@pytest.mark.asyncio
+async def test_task_delete_by_prefix_still_works():
+    from backend import service
+    from backend.tools.task_delete import TOOL as delete
+    from backend.tools.task_write import TOOL as write
+    ctx = make_ctx()
+    r = await write.execute({"title": "Weg damit"}, ctx)
+    full = r.output["task"]["id"]
+
+    r2 = await delete.execute({"task_id": full[:8]}, ctx)
+    assert r2.success
+    assert r2.output["task_id"] == full
+    assert service.get_task("alice", full) is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tool", ["task_read", "task_delete", "task_write"])
+async def test_prefix_with_spaces_resolves(tool):
+    import importlib
+
+    from backend.tools.task_write import TOOL as write
+    ctx = make_ctx()
+    r = await write.execute({"title": "Mit Leerzeichen"}, ctx)
+    full = r.output["task"]["id"]
+
+    args = {"task_id": f"  {full[:8]}  "}
+    if tool == "task_write":
+        args["title"] = "Mit Leerzeichen"
+    mod = importlib.import_module(f"backend.tools.{tool}")
+    r2 = await mod.TOOL.execute(args, ctx)
+    assert r2.success, r2.error
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tool", ["task_read", "task_delete"])
+async def test_foreign_prefix_not_found(tool):
+    import importlib
+
+    from backend import service
+    from backend.tools.task_write import TOOL as write
+    r = await write.execute({"title": "Bobs Geheimnis"}, make_ctx("bob"))
+    bob_id = r.output["task"]["id"]
+
+    mod = importlib.import_module(f"backend.tools.{tool}")
+    r2 = await mod.TOOL.execute({"task_id": bob_id[:8]}, make_ctx("alice"))
+    assert not r2.success
+    assert "Bobs Geheimnis" not in str(r2.output)
+    assert service.get_task("bob", bob_id) is not None
