@@ -98,5 +98,5 @@ def bob(client):
 def clean_tasks():
     from hydrahive.db import init_db
     init_db()
-    with only_own_rows("module_tasks"):
+    with only_own_rows("module_tasks", "module_tasks_history"):
         yield

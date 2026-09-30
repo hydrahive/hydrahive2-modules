@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from "react"
 import { CheckSquare, Plus, Trash2 } from "lucide-react"
 import { useTasks } from "../useTasks"
 import type { Task, TaskStatus, TaskPriority } from "../types"
+import { TaskHistory } from "./TaskHistory"
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   open:        "Offen",
@@ -126,6 +127,7 @@ function TaskRow({ task, onStatusChange, onDelete }: TaskRowProps) {
         {task.description && (
           <p className="text-[10px] text-zinc-600 mt-0.5 truncate ml-5">{task.description}</p>
         )}
+        <TaskHistory taskId={task.id} count={task.history_count ?? 0} />
       </div>
 
       <div className="flex items-center gap-1 flex-shrink-0">

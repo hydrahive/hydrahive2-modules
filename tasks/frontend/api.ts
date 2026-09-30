@@ -1,5 +1,5 @@
 import { api } from "@/shared/api-client"
-import type { Task, TaskStatus, TaskPriority } from "./types"
+import type { Task, TaskStatus, TaskPriority, TaskVersion } from "./types"
 
 const BASE = "/modules/tasks/tasks"
 
@@ -27,8 +27,13 @@ export const tasksApi = {
     description?: string
     status?: TaskStatus
     priority?: TaskPriority
+    note?: string
   }): Promise<Task> {
     return api.patch<Task>(`${BASE}/${taskId}`, data)
+  },
+
+  history(taskId: string): Promise<TaskVersion[]> {
+    return api.get<TaskVersion[]>(`${BASE}/${taskId}/history`)
   },
 
   delete(taskId: string): Promise<void> {

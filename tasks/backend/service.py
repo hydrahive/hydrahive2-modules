@@ -6,8 +6,11 @@ from typing import Any
 
 from hydrahive.db.connection import db
 
+from . import _history
+
 VALID_STATUSES = {"open", "in_progress", "done", "cancelled"}
 VALID_PRIORITIES = {"low", "medium", "high"}
+HISTORY_LIMIT = 200  # Verlaufseinträge pro Task (restored-Einträge zählen mit, werden aber nie entfernt)
 
 
 def list_tasks(
@@ -65,33 +68,64 @@ def update_task(
     description: str | None = None,
     status: str | None = None,
     priority: str | None = None,
+    note: str | None = None,
 ) -> dict[str, Any] | None:
+    """Ändert einen Task. Ändern sich Titel oder Beschreibung, wird die alte
+    Fassung vorher im Verlauf gesichert (Task df2f2eb2). `note` hängt einen
+    datierten Absatz an (nach einem evtl. Ersetzen durch `description`)."""
     task = get_task(username, task_id)
     if not task:
         return None
+    if status is not None and status not in VALID_STATUSES:
+        raise ValueError(f"Ungültiger Status: {status!r}")
+    if priority is not None and priority not in VALID_PRIORITIES:
+        raise ValueError(f"Ungültige Priorität: {priority!r}")
+    new_title = task["title"] if title is None else title
+    new_desc = task["description"] if description is None else description
+    if note is not None and note.strip():
+        new_desc = _history.append_note(new_desc, note)
     fields: dict[str, Any] = {}
-    if title is not None:
-        fields["title"] = title
-    if description is not None:
-        fields["description"] = description
+    if new_title != task["title"]:
+        fields["title"] = new_title
+    if new_desc != task["description"]:
+        fields["description"] = new_desc
     if status is not None:
-        if status not in VALID_STATUSES:
-            raise ValueError(f"Ungültiger Status: {status!r}")
         fields["status"] = status
     if priority is not None:
-        if priority not in VALID_PRIORITIES:
-            raise ValueError(f"Ungültige Priorität: {priority!r}")
         fields["priority"] = priority
     if not fields:
         return task
     set_clause = ", ".join(f"{k} = ?" for k in fields)
     with db() as c:
+        if "title" in fields or "description" in fields:
+            _history.save_version(c, task, HISTORY_LIMIT)
         c.execute(
             f"UPDATE module_tasks SET {set_clause}, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now')"
             " WHERE id = ? AND username = ?",
             [*fields.values(), task_id, username],
         )
     return get_task(username, task_id)
+
+
+def history(username: str, task_id: str) -> list[dict[str, Any]] | None:
+    """Frühere Fassungen, neueste zuerst. None, wenn der Task nicht dem User gehört."""
+    if not get_task(username, task_id):
+        return None
+    with db() as c:
+        return _history.list_for(c, task_id)
+
+
+def history_counts(username: str) -> dict[str, int]:
+    with db() as c:
+        return _history.counts_for(c, username)
+
+
+def add_restored(username: str, task_id: str, *, title: str, description: str, seen_at: str) -> bool:
+    """Trägt eine aus dem Chat-Verlauf wiederhergestellte Fassung ein (idempotent, nur eigene Tasks)."""
+    if not get_task(username, task_id):
+        return False
+    with db() as c:
+        return _history.add_restored(c, task_id, title, description, seen_at)
 
 
 def delete_task(username: str, task_id: str) -> bool:

@@ -12,4 +12,13 @@ export interface Task {
   priority: TaskPriority
   created_at: string
   updated_at: string
+  /** Anzahl früherer Fassungen (Verlauf, Task df2f2eb2). Fehlt bei älteren Backends. */
+  history_count?: number
+}
+
+export interface TaskVersion {
+  title: string
+  description: string
+  changed_at: string
+  source: "update" | "restored"
 }
