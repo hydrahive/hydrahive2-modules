@@ -38,6 +38,7 @@ def setup_test_env():
         os.environ["HH_WA_ENABLED"] = "0"
         os.environ["HH_AGENTLINK_URL"] = ""
         os.environ["HH_PG_MIRROR_DSN"] = ""
+        os.environ["VOICE_BRIDGE_OWNER"] = "user"
         (tmp_path / "data" / "agents").mkdir(parents=True, exist_ok=True)
         (tmp_path / "config").mkdir(parents=True, exist_ok=True)
 
@@ -46,6 +47,7 @@ def setup_test_env():
         (tmp_path / "config" / "users.json").write_text(json.dumps({
             "admin": {"password_hash": ph, "role": "admin"},
             "user": {"password_hash": ph, "role": "user"},
+            "foreign": {"password_hash": ph, "role": "user"},
         }, indent=2))
 
         from hydrahive.api import main
@@ -97,3 +99,8 @@ def admin_headers(client):
 @pytest.fixture
 def user_headers(client):
     return _headers(client, "user")
+
+
+@pytest.fixture
+def foreign_headers(client):
+    return _headers(client, "foreign")

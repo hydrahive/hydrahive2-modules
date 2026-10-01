@@ -13,9 +13,10 @@ import os
 import httpx
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
-
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.llm import media_models
+
+from .access import require_voice_owner
 
 router = APIRouter()
 
@@ -38,7 +39,7 @@ async def get_tts(_auth: tuple = Depends(require_auth)):
 
 
 @router.put("/tts")
-async def put_tts(request: Request, _auth: tuple = Depends(require_auth)):
+async def put_tts(request: Request, _auth: tuple = Depends(require_voice_owner)):
     """Setzt TTS backend/model/voice. Validiert, dann an die Bridge."""
     try:
         body = await request.json()
