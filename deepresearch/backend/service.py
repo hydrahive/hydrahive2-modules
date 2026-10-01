@@ -16,6 +16,7 @@ from typing import Any
 
 from hydrahive.db.connection import db
 
+from .recovery import RUN_TASK_PREFIX
 from .research import run_research
 from .research.models import RunState
 
@@ -26,6 +27,13 @@ _MAX_CONCURRENT = 1
 _SEM = asyncio.Semaphore(_MAX_CONCURRENT)
 
 _UPDATABLE = {"status", "category", "progress_json", "result_json", "error"}
+
+
+def _user_error_message(exc: Exception) -> str:
+    detail = f"{type(exc).__name__}: {exc}".lower()
+    if "llm provider not provided" in detail:
+        return "Das ausgewählte KI-Modell ist nicht korrekt konfiguriert."
+    return "Die Recherche ist fehlgeschlagen – bitte erneut versuchen."
 
 
 def _row(r) -> dict[str, Any]:
@@ -94,26 +102,34 @@ async def _execute_run(
     max_rounds: int | None, category: str | None,
 ) -> None:
     state = RunState(question=question, model=model or None)
+    task = asyncio.current_task()
+    previous_name = task.get_name() if task else None
+    if task:
+        task.set_name(f"{RUN_TASK_PREFIX}{run_id}")
 
     def progress(p: dict) -> None:
         _update(run_id, status="running", progress_json=json.dumps(p), category=p.get("category", "general"))
 
-    async with _SEM:   # Queue: wartet, bis ein Slot frei ist
-        _update(run_id, status="running")
-        try:
-            result = await run_research(
-                state, progress=progress, max_rounds=max_rounds or 6, category=category,
-            )
-            _update(
-                run_id,
-                status="done",
-                category=result["category"],
-                progress_json=json.dumps(result["stats"]),
-                result_json=json.dumps(result, ensure_ascii=False),
-            )
-        except Exception as e:  # noqa: BLE001 - Lauf-Grenze: Fehler in die Zeile, nicht in den Loop
-            logger.exception("deepresearch: Lauf %s fehlgeschlagen", run_id)
-            _update(run_id, status="error", error=str(e))
+    try:
+        async with _SEM:   # Queue: wartet, bis ein Slot frei ist
+            _update(run_id, status="running")
+            try:
+                result = await run_research(
+                    state, progress=progress, max_rounds=max_rounds or 6, category=category,
+                )
+                _update(
+                    run_id,
+                    status="done",
+                    category=result["category"],
+                    progress_json=json.dumps(result["stats"]),
+                    result_json=json.dumps(result, ensure_ascii=False),
+                )
+            except Exception as e:  # Lauf-Grenze: Fehler persistieren, Task erhalten
+                logger.exception("deepresearch: Lauf %s fehlgeschlagen", run_id)
+                _update(run_id, status="error", error=_user_error_message(e))
+    finally:
+        if task and previous_name is not None:
+            task.set_name(previous_name)
 
 
 async def start_run(
@@ -121,7 +137,10 @@ async def start_run(
     max_rounds: int | None = None, category: str | None = None,
 ) -> str:
     run = create_run(username, question, model)
-    asyncio.create_task(_execute_run(run["id"], question, model, max_rounds, category))
+    asyncio.create_task(
+        _execute_run(run["id"], question, model, max_rounds, category),
+        name=f"{RUN_TASK_PREFIX}{run['id']}",
+    )
     return run["id"]
 
 
