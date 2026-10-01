@@ -12,11 +12,11 @@ from __future__ import annotations
 import os
 
 import httpx
-from fastapi import APIRouter, Depends, Query
-from fastapi import Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
-
 from hydrahive.api.middleware.auth import require_auth
+
+from .access import can_access_voice, require_voice_owner
 
 router = APIRouter()
 
@@ -52,9 +52,11 @@ async def _bridge_get(path: str) -> dict | None:
 
 
 @router.get("/status")
-async def voice_status(_user: dict = Depends(require_auth)) -> dict:
-    """Grundstatus der Voicebox — echter Bridge-/Geräte-Zustand (E2)."""
+async def voice_status(auth: tuple = Depends(require_auth)) -> dict:
+    """Grundstatus; Geräte-Details nur für Admins und den Box-Besitzer."""
     health = await _bridge_get("/health")
+    if not await can_access_voice(auth, health):
+        return {"module": "voice", "stage": "e2"}
     if health is None:
         return {
             "module": "voice",
@@ -71,7 +73,7 @@ async def voice_status(_user: dict = Depends(require_auth)) -> dict:
 
 
 @router.get("/settings")
-async def get_settings(_user: dict = Depends(require_auth)):
+async def get_settings(_auth: tuple = Depends(require_voice_owner)):
     """Liefert die aktuellen Geräte-Einstellungen (Live-Werte von der Bridge)."""
     state = await _bridge_get("/state")
     if state is None:
@@ -88,7 +90,7 @@ async def get_settings(_user: dict = Depends(require_auth)):
 
 
 @router.put("/settings")
-async def put_settings(request: Request, _user: dict = Depends(require_auth)):
+async def put_settings(request: Request, _auth: tuple = Depends(require_voice_owner)):
     """Setzt Geräte-Einstellungen — validiert und an die Bridge weitergereicht."""
     try:
         body = await request.json()
@@ -151,7 +153,7 @@ async def put_settings(request: Request, _user: dict = Depends(require_auth)):
 async def get_transcript(
     since: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    _user: dict = Depends(require_auth),
+    _auth: tuple = Depends(require_voice_owner),
 ):
     """Voice-Verlauf (letzte Turns) — proxied von der Bridge. E3.
 
@@ -175,7 +177,7 @@ async def get_transcript(
 
 
 @router.post("/say")
-async def say(request: Request, _user: dict = Depends(require_auth)):
+async def say(request: Request, _auth: tuple = Depends(require_voice_owner)):
     """Getippter Text aus dem Cockpit (E4). Wird an die Bridge weitergereicht,
     die daraus einen Text-Turn macht (Intent/Agent). Die Antwort erscheint über
     den Verlauf (GET /transcript) — das Gerät bleibt still (kein TTS)."""
