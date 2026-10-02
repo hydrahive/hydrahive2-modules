@@ -1,13 +1,14 @@
 import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { GeneratedTrack, Track, TrackLibrary } from "./types"
+import type { ProjectSource, Track, TrackLibrary, MediaKind } from "./types"
 
 const BASE = "/modules/musicplayer"
 const projectBase = (projectId: string) => `${BASE}/projects/${encodeURIComponent(projectId)}`
 
 export const musicApi = {
-  list: (projectId: string): Promise<TrackLibrary> =>
-    api.get<TrackLibrary>(`${projectBase(projectId)}/tracks`),
+  /** Ohne Art: ganze Bibliothek (Audio + Video), getrennt wird im Browser. */
+  list: (projectId: string, kind?: MediaKind): Promise<TrackLibrary> =>
+    api.get<TrackLibrary>(`${projectBase(projectId)}/tracks${kind ? `?kind=${kind}` : ""}`),
 
   upload: (projectId: string, file: File, title: string): Promise<{ id: number; title: string }> => {
     const form = new FormData()
@@ -38,16 +39,17 @@ export const musicApi = {
     const blobUrl = URL.createObjectURL(await response.blob())
     const link = document.createElement("a")
     link.href = blobUrl
-    link.download = `${track.title.replace(/[\\/:*?"<>|]+/g, "_") || `track-${track.id}`}.mp3`
+    link.download = `${track.title.replace(/[\\/:*?"<>|]+/g, "_") || `track-${track.id}`}.${track.ext}`
     document.body.appendChild(link)
     link.click()
     link.remove()
     URL.revokeObjectURL(blobUrl)
   },
 
-  listGenerated: (projectId: string): Promise<GeneratedTrack[]> =>
-    api.get<GeneratedTrack[]>(`${projectBase(projectId)}/generated`),
+  listSources: (projectId: string, kind: MediaKind): Promise<ProjectSource[]> =>
+    api.get<ProjectSource[]>(`${projectBase(projectId)}/sources?kind=${kind}`),
 
-  importGenerated: (projectId: string, path: string): Promise<{ id: number; title: string }> =>
-    api.post<{ id: number; title: string }>(`${projectBase(projectId)}/generated/import`, { path }),
+  importSource: (projectId: string, path: string): Promise<{ id: number; title: string }> =>
+    api.post<{ id: number; title: string }>(`${projectBase(projectId)}/sources/import`, { path }),
+
 }

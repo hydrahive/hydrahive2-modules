@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+import pytest
+from _hh_isolation import (  # noqa: F401 - pytest-Hooks, über conftest registriert
     isolated_root,
     only_own_files,
     only_own_rows,
@@ -18,9 +19,7 @@ from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest r
     pytest_unconfigure,
     remove_test_tree,
 )
-
-import pytest  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 if str(MODULE_DIR) not in sys.path:
@@ -75,17 +74,42 @@ def setup_test_env():
             (project_dir / "config.json").write_text(json.dumps(_project(project_id)))
             (tmp_path / "data" / "workspaces" / "projects" / project_id).mkdir(parents=True)
 
-        from hydrahive.api import main
-        from backend.import_routes import router as import_router
-        from backend.routes import router
-        main.app.include_router(router, prefix=MOD_PREFIX)
-        main.app.include_router(import_router, prefix=MOD_PREFIX)
+        _mount_like_core()
         yield tmp_path
+
+
+def _mount_like_core() -> None:
+    """Router über den echten Kern-Weg einhängen — inklusive Modul-Tor.
+
+    Früher direkt per include_router: Dann fehlte das Tor (require_capability),
+    und ein Kern-Bug (?token= am Tor abgewiesen) blieb hier grün, während auf
+    Prod kein Stream mehr lief.
+    """
+    import backend
+    from hydrahive.api import main
+    from hydrahive.modules.context import ModuleContext
+    from hydrahive.modules.manifest import ModuleManifest
+    from hydrahive.modules.registry import REGISTRY, LoadedModule
+
+    ctx = ModuleContext("musicplayer")
+    backend.register(ctx)
+    saved = dict(REGISTRY)
+    REGISTRY.clear()
+    REGISTRY["musicplayer"] = LoadedModule(
+        name="musicplayer", manifest=ModuleManifest.load(MODULE_DIR / "manifest.json"),
+        path=MODULE_DIR, ctx=ctx, loaded=True,
+    )
+    try:
+        main.mount_module_routers(main.app)
+    finally:
+        REGISTRY.clear()
+        REGISTRY.update(saved)
 
 
 @pytest.fixture
 def client(setup_test_env):
     from contextlib import asynccontextmanager
+
     from fastapi import FastAPI
     from hydrahive.db import init_db
 
@@ -153,18 +177,21 @@ def _tracks_db(setup_test_env):
     """Nach jedem Test nur die Tracks und MP3s entfernen, die er selbst angelegt hat."""
     from contextlib import ExitStack
 
+    from backend import storage
     from hydrahive.db import init_db
     from hydrahive.modules.migrations import apply_module_migrations
-    from backend import storage
 
     init_db()
     apply_module_migrations("musicplayer", MODULE_DIR / "migrations")
     dirs = [storage.legacy_storage_dir()]
     for project_id in (PROJECT_A, PROJECT_B):
-        dirs += [storage.audio_dir(project_id),
-                 storage.project_workspace(project_id) / "generated"]
+        dirs += [
+            storage.audio_dir(project_id),
+            storage.video_dir(project_id),
+            storage.project_workspace(project_id) / "generated",
+        ]
     with ExitStack() as stack:
         stack.enter_context(only_own_rows("module_musicplayer_tracks"))
         for directory in dirs:
-            stack.enter_context(only_own_files(directory, "*.mp3"))
+            stack.enter_context(only_own_files(directory))
         yield

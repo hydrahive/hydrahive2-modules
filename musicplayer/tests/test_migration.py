@@ -42,3 +42,16 @@ def test_project_scope_migration_assigns_only_deterministic_sources():
         ("OtherB", "project-b"),
         ("Ambiguous", None),
     ]
+
+
+def test_media_kind_migration_haelt_bestand_als_audio_mp3():
+    connection = sqlite3.connect(":memory:")
+    for migration in ("001_tracks.sql", "002_source.sql", "003_project_scope.sql"):
+        connection.executescript((ROOT / "migrations" / migration).read_text())
+    _insert(connection, "Legacy", "till", "projects/project-one/generated/legacy.mp3")
+
+    connection.executescript((ROOT / "migrations/004_media_kind.sql").read_text())
+    row = connection.execute(
+        "SELECT media_kind, ext, meta FROM module_musicplayer_tracks WHERE title = 'Legacy'"
+    ).fetchone()
+    assert row == ("audio", "mp3", "")

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from conftest import PROJECT_A, PROJECT_B
 
 PREFIX = "/api/modules/musicplayer"

@@ -1,7 +1,6 @@
 """Frontend-Vertrag des Musicplayer-Moduls für den Buddy-Media-Slot."""
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -57,9 +56,53 @@ def test_frontend_api_is_project_scoped_and_downloads_with_auth_header():
 
 
 def test_project_view_uses_effective_permissions_and_offers_download():
+    """Seit 1.2.0 aufgeteilt: Upload/Import in der Projektansicht,
+    Download/Löschen je Eintrag in der gemeinsamen Liste (Audio + Video)."""
     view = (ROOT / "frontend/MusicPlayerProjectView.tsx").read_text()
+    track_list = (ROOT / "frontend/TrackList.tsx").read_text()
 
     assert "permissions.can_upload" in view
-    assert "permissions.can_delete" in view
-    assert "musicApi.download(projectId, track)" in view
-    assert "mp_download" in view
+    assert "permissions.can_delete" in track_list
+    assert "musicApi.download(projectId, track)" in track_list
+    assert "mp_download" in track_list
+
+
+def test_mediaplayer_has_own_page_and_kind_switch():
+    """Toter Cockpit-Link /musicplayer (Befund 49ee995d) + Umschalter Audio | Video."""
+    index = (ROOT / "frontend/index.tsx").read_text()
+    view = (ROOT / "frontend/MusicPlayerProjectView.tsx").read_text()
+
+    assert 'path: "/musicplayer"' in index and "MediaPlayerPage" in index
+    assert "AudioPlayerView" in view and "VideoPlayerView" in view
+    assert "rememberKind" in view
+
+
+def test_music_keeps_playing_when_switching_to_video():
+    """Till 02.10.: Musik läuft beim Wechsel Audio → Video weiter.
+
+    Dafür muss das <audio>-Element samt Player-Zustand in der Projektansicht
+    leben (bleibt beim Umschalten montiert) und nicht in der Audio-Ansicht.
+    """
+    view = (ROOT / "frontend/MusicPlayerProjectView.tsx").read_text()
+    audio_view = (ROOT / "frontend/AudioPlayerView.tsx").read_text()
+    video_view = (ROOT / "frontend/VideoPlayerView.tsx").read_text()
+
+    assert "useAudioPlayer(" in view and "<audio" in view
+    assert "useAudioPlayer(" not in audio_view and "<audio" not in audio_view
+    # Video hat Ton: Start pausiert die Musik, die Musik-Leiste pausiert das Video.
+    assert "onPlay={pause}" in video_view
+    assert "<NowPlayingBar" in video_view and "video.current?.pause()" in video_view
+    # Bibliothek einmal für beide Arten laden, sonst ist die Audio-Liste bei Video leer.
+    assert "musicApi.list(projectId)" in view
+    # Umschalten lädt neu (wie vorher), damit neue Agent-/Atelier-Medien auftauchen.
+    choose = view.split("const chooseKind", 1)[1].split("}", 1)[0]
+    assert "load()" in choose
+
+
+def test_player_tracks_current_song_by_id():
+    """Import/Upload/Löschen während der Wiedergabe darf das Lied nicht wechseln."""
+    hook = (ROOT / "frontend/useAudioPlayer.ts").read_text()
+
+    assert 'from "./playlist"' in hook
+    assert "currentOf(" in hook
+    assert "useState(-1)" not in hook
