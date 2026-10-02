@@ -19,6 +19,8 @@ export interface PlayerUI {
   select: (id: number) => void
   toggle: () => void
   pause: () => void
+  /** Weiter an derselben Stelle (nach dem Video); tut nichts ohne gewähltes Lied. */
+  resume: () => void
   prev: () => void
   next: () => void
   seek: (t: number) => void
@@ -72,6 +74,10 @@ export function useAudioPlayer(projectId: string, tracks: Track[]): PlayerUI {
   }, [current, tracks])
 
   const pause = useCallback(() => { audioRef.current?.pause() }, [])
+  const resume = useCallback(() => {
+    const a = audioRef.current
+    if (a && a.getAttribute("src") && a.paused) void a.play().catch(() => {})
+  }, [])
 
   const step = (pick: typeof nextId) => {
     const id = pick(tracks, current?.id ?? null, order)
@@ -140,6 +146,6 @@ export function useAudioPlayer(projectId: string, tracks: Track[]): PlayerUI {
 
   return {
     audioRef, activeTrack: current, playing, elapsed: currentTime, duration, volume, shuffle, repeat,
-    select, toggle, pause, prev, next, seek, setVolume, toggleShuffle, cycleRepeat,
+    select, toggle, pause, resume, prev, next, seek, setVolume, toggleShuffle, cycleRepeat,
   }
 }

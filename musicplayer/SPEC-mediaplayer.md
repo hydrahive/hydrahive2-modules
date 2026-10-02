@@ -118,7 +118,16 @@ Rechte unverändert (`require_project_access` read/write/admin, Stream-Token per
 - In der Video-Ansicht zeigt eine schmale Leiste das laufende Lied mit Pause/Weiter;
   Klick auf den Titel wechselt zurück zu Audio.
 - Es spielt immer nur eins mit Ton: Startet ein Video, pausiert die Musik. Startet die Musik
-  (Leiste), pausiert das Video. Kein automatisches Weiterspielen danach.
+  (Leiste), pausiert das Video.
+- **Musik setzt nach dem Video fort (Till, 02.10.2026, Variante B):** Hält das Video an oder
+  endet es, läuft die Musik an derselben Stelle weiter — nur wenn sie vor dem Video lief.
+  - Fortsetzen erst nach kurzer Wartezeit (300 ms) und nur, wenn das Video dann noch steht und
+    keine Maustaste/Finger auf dem Video ist. Grund: Chrome pausiert beim Spulen über die
+    Zeitleiste kurz, und beim Wechsel zum nächsten Video entsteht ebenfalls eine kurze Pause —
+    dabei darf die Musik nicht kurz anspringen.
+  - Startet oder stoppt der Nutzer die Musik selbst (Leiste), wird nichts mehr fortgesetzt.
+  - Wechsel zu Audio, während das Video läuft oder kurz davor stand: Musik setzt fort.
+  - Hinweis C (leiser statt aus) ist bewusst nicht Teil; siehe Task 9723c628.
 - Das laufende Lied wird über seine ID gemerkt, nicht über die Position in der Liste:
   Import/Upload/Löschen während der Wiedergabe wechselt nicht das Lied. Wird das laufende
   Lied gelöscht, stoppt die Wiedergabe.
@@ -161,6 +170,9 @@ Frontend (vitest, ohne App-Importe):
   der Liste ändert weder das laufende noch das nächste Lied; gelöschtes Lied → kein aktuelles.
 - Struktur (pytest, Quelltext): `<audio>` und `useAudioPlayer` in der Projektansicht, nicht in der
   Audio-Ansicht; Video meldet `onPlay`; Bibliothek ohne Art-Filter geladen.
+- Fortsetzen nach Video (`mediaFocus.ts`, vitest): merkt nur, wenn Musik lief; bleibt gemerkt bei
+  Video-Wechsel; kein Fortsetzen bei laufendem Video oder gedrückter Maus; Vertragstest für
+  Verdrahtung (onPause/onEnded/Pointer/Aushängen, Leiste löscht das Gemerkte).
 
 Prüfung auf dem Test-Server im Browser: Projekt mit echten Atelier-Clips, Audio und Video
 importieren, abspielen, spulen, Vollbild, Seite `/musicplayer`, Bestandstracks spielen weiter.
