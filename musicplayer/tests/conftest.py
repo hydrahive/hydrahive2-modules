@@ -76,10 +76,10 @@ def setup_test_env():
 
         from hydrahive.api import main
 
-        from backend.import_routes import router as import_router
         from backend.routes import router
+        from backend.sources_routes import router as sources_router
         main.app.include_router(router, prefix=MOD_PREFIX)
-        main.app.include_router(import_router, prefix=MOD_PREFIX)
+        main.app.include_router(sources_router, prefix=MOD_PREFIX)
         yield tmp_path
 
 

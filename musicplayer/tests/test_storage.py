@@ -71,6 +71,15 @@ def test_audio_dir_folgt_keinem_media_symlink(tmp_path):
         media.unlink(missing_ok=True)
 
 
+def test_copy_blockt_quelle_ausserhalb_workspace(tmp_path):
+    import pytest
+
+    outside = tmp_path / "outside.mp3"
+    outside.write_bytes(b"outside")
+    with pytest.raises(ValueError, match="outside"):
+        storage.copy_into_library(PROJECT_A, outside)
+
+
 def test_uuid_namen_eindeutig():
     first = storage.save_bytes(PROJECT_A, b"a")
     second = storage.save_bytes(PROJECT_A, b"b")
