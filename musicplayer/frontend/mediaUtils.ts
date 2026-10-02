@@ -17,8 +17,15 @@ export function groupedSources(sources: ProjectSource[]): Array<[string, Project
 export function trackSubtitle(meta: TrackMeta, maxPrompt = 100): { text: string; promptTitle?: string } {
   const prompt = meta.prompt?.trim()
   const shortPrompt = prompt && prompt.length > maxPrompt ? `${prompt.slice(0, maxPrompt - 1)}…` : prompt
-  const details = [meta.model, meta.duration ? String(meta.duration) : undefined].filter(Boolean)
+  const details = [meta.model, formatDuration(meta.duration)].filter(Boolean)
   return { text: [shortPrompt, details.join(" · ")].filter(Boolean).join(" · "), promptTitle: prompt }
+}
+/** Atelier speichert die Dauer als Zahl oder Zeichenkette in Sekunden („4“). */
+export function formatDuration(value: TrackMeta["duration"]): string | undefined {
+  const seconds = typeof value === "string" ? Number(value) : value
+  if (seconds === undefined || !Number.isFinite(seconds) || seconds <= 0) return undefined
+  if (seconds < 60) return `${Math.round(seconds)} s`
+  return `${Math.floor(seconds / 60)}:${Math.round(seconds % 60).toString().padStart(2, "0")} min`
 }
 export function rememberedKind(projectId: string): MediaKind {
   try { return localStorage.getItem(`${STORAGE_PREFIX}${projectId}`) === "video" ? "video" : "audio" } catch { return "audio" }
