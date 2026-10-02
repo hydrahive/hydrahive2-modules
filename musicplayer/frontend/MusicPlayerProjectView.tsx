@@ -46,6 +46,7 @@ export function MusicPlayerProjectView({ projectId, large = false }: { projectId
   const chooseKind = (next: MediaKind) => {
     rememberKind(projectId, next)
     setKind(next)
+    load() // neue Agent-/Atelier-Medien; laufendes Lied hängt an der ID, bleibt also
   }
   const remove = async (id: number) => {
     await musicApi.remove(projectId, id).catch(() => {})

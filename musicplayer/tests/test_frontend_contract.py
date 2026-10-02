@@ -94,6 +94,9 @@ def test_music_keeps_playing_when_switching_to_video():
     assert "<NowPlayingBar" in video_view and "video.current?.pause()" in video_view
     # Bibliothek einmal für beide Arten laden, sonst ist die Audio-Liste bei Video leer.
     assert "musicApi.list(projectId)" in view
+    # Umschalten lädt neu (wie vorher), damit neue Agent-/Atelier-Medien auftauchen.
+    choose = view.split("const chooseKind", 1)[1].split("}", 1)[0]
+    assert "load()" in choose
 
 
 def test_player_tracks_current_song_by_id():
