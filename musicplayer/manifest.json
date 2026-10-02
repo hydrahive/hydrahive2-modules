@@ -1,12 +1,20 @@
 {
   "id": "musicplayer",
-  "name": "Musicplayer",
-  "version": "1.1.2",
-  "description": "Audio-Player für generierte und hochgeladene Musik mit Playlist und Equalizer. Höre deine im Atelier erzeugten Stücke direkt in der App.",
-  "icon": "Music",
+  "name": "Mediaplayer",
+  "version": "1.2.0",
+  "description": "Medien-Player für Audio und Video mit Umschalter, Playlist und Equalizer. Spielt Atelier-Musik, Szenen-Clips und Filme sowie hochgeladene Dateien direkt in der App ab.",
+  "icon": "Clapperboard",
   "nav_group": "working",
   "permissions": [],
   "has_service": false,
   "min_core_version": "2.0.0",
-  "persistent_paths": ["*.mp3"]
+  "persistent_paths": [
+    "*.mp3",
+    "*.wav",
+    "*.ogg",
+    "*.m4a",
+    "*.flac",
+    "*.mp4",
+    "*.webm"
+  ]
 }
