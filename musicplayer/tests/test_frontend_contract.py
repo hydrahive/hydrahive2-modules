@@ -90,7 +90,11 @@ def test_music_keeps_playing_when_switching_to_video():
     assert "useAudioPlayer(" in view and "<audio" in view
     assert "useAudioPlayer(" not in audio_view and "<audio" not in audio_view
     # Video hat Ton: Start pausiert die Musik, die Musik-Leiste pausiert das Video.
-    assert "onPlay={pause}" in video_view
+    # Seit 1.2.1 über useResumeAfterVideo; dessen onVideoPlay pausiert die Musik.
+    assert "onPlay={focus.onVideoPlay}" in video_view
+    hook = (ROOT / "frontend/useResumeAfterVideo.ts").read_text()
+    play = hook.split("const onVideoPlay", 1)[1].split("}, [])", 1)[0]
+    assert "pauseMusic()" in play
     assert "<NowPlayingBar" in video_view and "video.current?.pause()" in video_view
     # Bibliothek einmal für beide Arten laden, sonst ist die Audio-Liste bei Video leer.
     assert "musicApi.list(projectId)" in view
@@ -106,3 +110,23 @@ def test_player_tracks_current_song_by_id():
     assert 'from "./playlist"' in hook
     assert "currentOf(" in hook
     assert "useState(-1)" not in hook
+
+
+def test_music_resumes_after_video():
+    """Till 02.10. (Variante B): Musik läuft nach Video-Pause/-Ende weiter, wenn sie vorher lief."""
+    video_view = (ROOT / "frontend/VideoPlayerView.tsx").read_text()
+    hook = (ROOT / "frontend/useResumeAfterVideo.ts").read_text()
+
+    # Verdrahtung am Video-Element
+    for handler in ("onPlay={focus.onVideoPlay}", "onPause={focus.onVideoStop}",
+                    "onEnded={focus.onVideoStop}", "onPointerDown=", "onPointerUp=",
+                    "onSeeking={focus.onSeek}", "onSeeked={focus.onSeek}"):
+        assert handler in video_view, handler
+    # Leiste bedient die Musik selbst → nichts mehr automatisch fortsetzen
+    assert "focus.forget()" in video_view.split("const toggleMusic", 1)[1].split("}", 1)[0]
+    # Entscheidung über die reine Logik, verzögert, und beim Aushängen (Wechsel zu Audio) fortsetzen
+    assert 'from "./mediaFocus"' in hook and "shouldResume(" in hook
+    assert "setTimeout(" in hook and "clearTimeout(" in hook
+    # Beim Aushängen (Wechsel zu Audio) fortsetzen, falls gemerkt.
+    unmount = hook.split("useEffect(() => () => {", 1)[1].split("}, [])", 1)[0]
+    assert "resumeMusic()" in unmount

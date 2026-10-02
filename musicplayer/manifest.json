@@ -1,7 +1,7 @@
 {
   "id": "musicplayer",
   "name": "Mediaplayer",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Medien-Player für Audio und Video mit Umschalter, Playlist und Equalizer. Spielt Atelier-Musik, Szenen-Clips und Filme sowie hochgeladene Dateien direkt in der App ab.",
   "icon": "Clapperboard",
   "nav_group": "working",
