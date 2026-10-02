@@ -7,10 +7,10 @@ export type RepeatMode = "off" | "all" | "one"
 
 export interface PlayerUI {
   audioRef: React.RefObject<HTMLAudioElement | null>
-  current: Track | null
+  activeTrack: Track | null
   index: number
   playing: boolean
-  currentTime: number
+  elapsed: number
   duration: number
   volume: number
   shuffle: boolean
@@ -151,7 +151,7 @@ export function useAudioPlayer(projectId: string, tracks: Track[]): PlayerUI {
   }, [])
 
   return {
-    audioRef, current, index, playing, currentTime, duration, volume, shuffle, repeat,
+    audioRef, activeTrack: current, index, playing, elapsed: currentTime, duration, volume, shuffle, repeat,
     select, toggle, prev, next, seek, setVolume, toggleShuffle, cycleRepeat,
   }
 }

@@ -1,0 +1,14 @@
+import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react"
+import { type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
+import { Equalizer } from "./Equalizer"
+import { TrackList } from "./TrackList"
+import { useAudioPlayer } from "./useAudioPlayer"
+import type { LibraryPermissions, Track } from "./types"
+const fmt = (n: number) => !Number.isFinite(n) || n < 0 ? "0:00" : `${Math.floor(n / 60)}:${Math.floor(n % 60).toString().padStart(2, "0")}`
+const cls = "grid h-8 w-8 place-items-center rounded-[4px] text-[#8d9ab0] hover:bg-[#172133] hover:text-[#e8eef8]"
+function Control({ children, onClick }: { children: ReactNode; onClick: () => void }) { return <button type="button" className={cls} onClick={onClick}>{children}</button> }
+export function AudioPlayerView({ projectId, tracks, permissions, onRemove }: { projectId: string; tracks: Track[]; permissions: LibraryPermissions; onRemove: (id: number) => void }) {
+ const { t } = useTranslation("musicplayer"); const { audioRef, activeTrack, playing, elapsed, duration, volume, select, seek, setVolume, toggle, prev, next, toggleShuffle, cycleRepeat, repeat } = useAudioPlayer(projectId, tracks)
+ return <div className="space-y-3"><div className="rounded-[4px] border border-[#2a364b] bg-[#0d1420] p-3"><p className="mb-2 text-[9px] font-black uppercase tracking-[.15em] text-[#69d7ff]">{t("mp_now_playing")}</p><div className="flex gap-2"><Equalizer active={playing} color="#d946ef" /><span className="truncate text-xs font-bold">{activeTrack?.title ?? t("mp_nothing")}</span></div><div className="mt-3 flex gap-2 text-[9px]"><span>{fmt(elapsed)}</span><input aria-label={t("mp_seek")} type="range" min={0} max={duration || 0} step={.1} value={elapsed} onChange={(e) => seek(+e.target.value)} className="flex-1 accent-fuchsia-500"/><span>{fmt(duration)}</span></div><div className="mt-2 flex justify-center gap-1"><Control onClick={toggleShuffle}><Shuffle size={14}/></Control><Control onClick={prev}><SkipBack size={14}/></Control><button type="button" onClick={toggle} className="grid h-9 w-9 place-items-center rounded-[4px] bg-fuchsia-500">{playing ? <Pause size={16}/> : <Play size={16}/>}</button><Control onClick={next}><SkipForward size={14}/></Control><Control onClick={cycleRepeat}>{repeat === "one" ? <Repeat1 size={14}/> : <Repeat size={14}/>}</Control></div><div className="mt-2 flex gap-2 border-t border-[#2a364b] pt-2"><Volume2 size={13}/><input aria-label={t("mp_volume")} type="range" min={0} max={1} step={.01} value={volume} onChange={(e) => setVolume(+e.target.value)} className="flex-1 accent-fuchsia-500"/></div></div><TrackList projectId={projectId} kind="audio" tracks={tracks} activeId={activeTrack?.id} permissions={permissions} onSelect={(track) => select(tracks.indexOf(track))} onRemove={onRemove}/><audio ref={audioRef} preload="metadata" className="hidden" /></div>
+}
