@@ -57,9 +57,22 @@ def test_frontend_api_is_project_scoped_and_downloads_with_auth_header():
 
 
 def test_project_view_uses_effective_permissions_and_offers_download():
+    """Seit 1.2.0 aufgeteilt: Upload/Import in der Projektansicht,
+    Download/Löschen je Eintrag in der gemeinsamen Liste (Audio + Video)."""
     view = (ROOT / "frontend/MusicPlayerProjectView.tsx").read_text()
+    track_list = (ROOT / "frontend/TrackList.tsx").read_text()
 
     assert "permissions.can_upload" in view
-    assert "permissions.can_delete" in view
-    assert "musicApi.download(projectId, track)" in view
-    assert "mp_download" in view
+    assert "permissions.can_delete" in track_list
+    assert "musicApi.download(projectId, track)" in track_list
+    assert "mp_download" in track_list
+
+
+def test_mediaplayer_has_own_page_and_kind_switch():
+    """Toter Cockpit-Link /musicplayer (Befund 49ee995d) + Umschalter Audio | Video."""
+    index = (ROOT / "frontend/index.tsx").read_text()
+    view = (ROOT / "frontend/MusicPlayerProjectView.tsx").read_text()
+
+    assert 'path: "/musicplayer"' in index and "MediaPlayerPage" in index
+    assert "AudioPlayerView" in view and "VideoPlayerView" in view
+    assert "rememberKind" in view
