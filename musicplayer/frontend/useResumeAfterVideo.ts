@@ -10,6 +10,7 @@ export const RESUME_DELAY_MS = 300
 export interface ResumeAfterVideo {
   onVideoPlay: () => void
   onVideoStop: () => void
+  onSeek: () => void
   onPointerDown: () => void
   onPointerUp: () => void
   forget: () => void
@@ -36,7 +37,11 @@ export function useResumeAfterVideo(
   const tryResume = useCallback(() => {
     timer.current = null
     const v = video.current
-    const moment = { videoPaused: !v || v.paused || v.ended, pointerDown: pointerDown.current }
+    const moment = {
+      videoPaused: !v || v.paused || v.ended,
+      pointerDown: pointerDown.current,
+      seeking: Boolean(v?.seeking),
+    }
     if (!shouldResume(state.current, moment)) return
     state.current = forget()
     latest.current.resumeMusic()
@@ -53,6 +58,11 @@ export function useResumeAfterVideo(
     timer.current = setTimeout(tryResume, RESUME_DELAY_MS)
   }, [tryResume])
 
+  // Jeder Spul-Schritt schiebt das Fortsetzen hinaus; erst nach dem letzten wird geprüft.
+  const onSeek = useCallback(() => {
+    if (timer.current !== null) onVideoStop()
+  }, [onVideoStop])
+
   const onPointerDown = useCallback(() => { pointerDown.current = true; cancel() }, [])
   const onPointerUp = useCallback(() => {
     pointerDown.current = false
@@ -67,5 +77,5 @@ export function useResumeAfterVideo(
     if (state.current.resume) latest.current.resumeMusic()
   }, [])
 
-  return { onVideoPlay, onVideoStop, onPointerDown, onPointerUp, forget: forgetResume }
+  return { onVideoPlay, onVideoStop, onSeek, onPointerDown, onPointerUp, forget: forgetResume }
 }

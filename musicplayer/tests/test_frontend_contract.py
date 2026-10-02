@@ -119,7 +119,8 @@ def test_music_resumes_after_video():
 
     # Verdrahtung am Video-Element
     for handler in ("onPlay={focus.onVideoPlay}", "onPause={focus.onVideoStop}",
-                    "onEnded={focus.onVideoStop}", "onPointerDown=", "onPointerUp="):
+                    "onEnded={focus.onVideoStop}", "onPointerDown=", "onPointerUp=",
+                    "onSeeking={focus.onSeek}", "onSeeked={focus.onSeek}"):
         assert handler in video_view, handler
     # Leiste bedient die Musik selbst → nichts mehr automatisch fortsetzen
     assert "focus.forget()" in video_view.split("const toggleMusic", 1)[1].split("}", 1)[0]

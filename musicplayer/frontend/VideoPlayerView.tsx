@@ -52,6 +52,8 @@ export function VideoPlayerView({ projectId, tracks, permissions, onRemove, musi
           onPlay={focus.onVideoPlay}
           onPause={focus.onVideoStop}
           onEnded={focus.onVideoStop}
+          onSeeking={focus.onSeek}
+          onSeeked={focus.onSeek}
           onPointerDown={focus.onPointerDown}
           onPointerUp={focus.onPointerUp}
           onPointerCancel={focus.onPointerUp}

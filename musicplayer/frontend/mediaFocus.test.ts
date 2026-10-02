@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { forget, onVideoStart, shouldResume, type ResumeState } from "./mediaFocus"
 
 const idle: ResumeState = { resume: false }
-const moment = { videoPaused: true, pointerDown: false }
+const moment = { videoPaused: true, pointerDown: false, seeking: false }
 
 describe("Musik nach dem Video fortsetzen", () => {
   it("merkt sich nur, wenn die Musik beim Video-Start lief", () => {
@@ -29,6 +29,11 @@ describe("Musik nach dem Video fortsetzen", () => {
 
   it("setzt nicht fort, solange Maus oder Finger auf dem Video sind (Zeitleiste ziehen)", () => {
     expect(shouldResume({ resume: true }, { ...moment, pointerDown: true })).toBe(false)
+  })
+
+  it("setzt nicht fort, solange gespult wird (Zeitleiste der eingebauten Bedienung)", () => {
+    // Die eingebaute Zeitleiste meldet kein pointerdown an die Seite, nur seeking.
+    expect(shouldResume({ resume: true }, { ...moment, seeking: true })).toBe(false)
   })
 
   it("vergisst alles, wenn der Nutzer die Musik selbst bedient", () => {
