@@ -1,22 +1,24 @@
 // Audio-Player-State über ein einzelnes <audio>-Element (kein externes Lib).
+// Lebt in der Projektansicht, damit die Musik beim Umschalten auf Video weiterläuft.
 import { useCallback, useEffect, useRef, useState } from "react"
 import { musicApi } from "./api"
+import { afterEnded, currentOf, nextId, prevId, type Order, type RepeatMode } from "./playlist"
 import type { Track } from "./types"
 
-export type RepeatMode = "off" | "all" | "one"
+export type { RepeatMode } from "./playlist"
 
 export interface PlayerUI {
   audioRef: React.RefObject<HTMLAudioElement | null>
   activeTrack: Track | null
-  index: number
   playing: boolean
   elapsed: number
   duration: number
   volume: number
   shuffle: boolean
   repeat: RepeatMode
-  select: (i: number) => void
+  select: (id: number) => void
   toggle: () => void
+  pause: () => void
   prev: () => void
   next: () => void
   seek: (t: number) => void
@@ -29,7 +31,7 @@ const REPEAT_ORDER: RepeatMode[] = ["off", "all", "one"]
 
 export function useAudioPlayer(projectId: string, tracks: Track[]): PlayerUI {
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [index, setIndex] = useState(-1)
+  const [currentId, setCurrentId] = useState<number | null>(null)
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -37,57 +39,46 @@ export function useAudioPlayer(projectId: string, tracks: Track[]): PlayerUI {
   const [shuffle, setShuffle] = useState(false)
   const [repeat, setRepeat] = useState<RepeatMode>("off")
 
-  const current = index >= 0 && index < tracks.length ? tracks[index] : null
+  const current = currentOf(tracks, currentId)
+  const order: Order = { shuffle, random: Math.random }
 
-  // Track-Wechsel: Quelle setzen und (falls vorher gespielt) weiterspielen.
+  // Quelle wechseln (neues Lied) oder stoppen (Lied gelöscht). Weiterspielen, falls vorher gespielt.
   useEffect(() => {
     const a = audioRef.current
-    if (!a || !current) return
+    if (!a) return
+    if (!current) {
+      if (a.getAttribute("src")) { a.pause(); a.removeAttribute("src"); a.load() }
+      return
+    }
     a.src = musicApi.streamUrl(projectId, current.id)
     a.load()
     if (playing) void a.play().catch(() => setPlaying(false))
-    // `playing` wird absichtlich nicht als Abhängigkeit verwendet: dieser Effekt reagiert auf Quellenwechsel.
+    // `playing` absichtlich nicht als Abhängigkeit: der Effekt reagiert nur auf Quellenwechsel.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, current?.id])
 
-  const select = useCallback((i: number) => {
-    setIndex(i)
-    setPlaying(true)
-  }, [])
+  const select = useCallback((id: number) => { setCurrentId(id); setPlaying(true) }, [])
 
   const toggle = useCallback(() => {
     const a = audioRef.current
     if (!a) return
-    if (index < 0 && tracks.length > 0) { setIndex(0); setPlaying(true); return }
+    if (!current) {
+      const first = nextId(tracks, null, { shuffle: false, random: Math.random })
+      if (first !== null) { setCurrentId(first); setPlaying(true) }
+      return
+    }
     if (a.paused) { void a.play().catch(() => {}); setPlaying(true) }
     else { a.pause(); setPlaying(false) }
-  }, [index, tracks.length])
+  }, [current, tracks])
 
-  // Nächster Index — berücksichtigt Shuffle (zufällig, nicht derselbe).
-  const pickNext = useCallback((cur: number): number => {
-    const n = tracks.length
-    if (n === 0) return -1
-    if (shuffle && n > 1) {
-      let r = cur
-      while (r === cur) r = Math.floor(Math.random() * n)
-      return r
-    }
-    return (cur + 1) % n
-  }, [shuffle, tracks.length])
+  const pause = useCallback(() => { audioRef.current?.pause() }, [])
 
-  const next = useCallback(() => {
-    if (tracks.length === 0) return
-    setIndex((i) => pickNext(i))
-    setPlaying(true)
-  }, [tracks.length, pickNext])
-
-  const prev = useCallback(() => {
-    const n = tracks.length
-    if (n === 0) return
-    if (shuffle && n > 1) { setIndex((i) => pickNext(i)); setPlaying(true); return }
-    setIndex((i) => (i <= 0 ? n - 1 : i - 1))
-    setPlaying(true)
-  }, [tracks.length, shuffle, pickNext])
+  const step = (pick: typeof nextId) => {
+    const id = pick(tracks, current?.id ?? null, order)
+    if (id !== null) { setCurrentId(id); setPlaying(true) }
+  }
+  const next = () => step(nextId)
+  const prev = () => step(prevId)
 
   const seek = useCallback((t: number) => {
     const a = audioRef.current
@@ -106,18 +97,15 @@ export function useAudioPlayer(projectId: string, tracks: Track[]): PlayerUI {
     [],
   )
 
-  // Track-Ende: repeat-one wiederholt, repeat-off stoppt am Listenende, sonst weiter.
   const handleEnded = useCallback(() => {
     const a = audioRef.current
     if (!a) return
-    if (repeat === "one") { a.currentTime = 0; void a.play().catch(() => {}); return }
-    if (repeat === "off" && !shuffle && index === tracks.length - 1) {
-      setPlaying(false)
-      return
-    }
-    setIndex((i) => pickNext(i))
+    const action = afterEnded(tracks, currentId, repeat, { shuffle, random: Math.random })
+    if (action.kind === "repeat") { a.currentTime = 0; void a.play().catch(() => {}); return }
+    if (action.kind === "stop") { setPlaying(false); return }
+    setCurrentId(action.id)
     setPlaying(true)
-  }, [repeat, shuffle, index, tracks.length, pickNext])
+  }, [tracks, currentId, repeat, shuffle])
 
   // Audio-Events an den State binden.
   useEffect(() => {
@@ -151,7 +139,7 @@ export function useAudioPlayer(projectId: string, tracks: Track[]): PlayerUI {
   }, [])
 
   return {
-    audioRef, activeTrack: current, index, playing, elapsed: currentTime, duration, volume, shuffle, repeat,
-    select, toggle, prev, next, seek, setVolume, toggleShuffle, cycleRepeat,
+    audioRef, activeTrack: current, playing, elapsed: currentTime, duration, volume, shuffle, repeat,
+    select, toggle, pause, prev, next, seek, setVolume, toggleShuffle, cycleRepeat,
   }
 }

@@ -6,8 +6,9 @@ const BASE = "/modules/musicplayer"
 const projectBase = (projectId: string) => `${BASE}/projects/${encodeURIComponent(projectId)}`
 
 export const musicApi = {
-  list: (projectId: string, kind: MediaKind): Promise<TrackLibrary> =>
-    api.get<TrackLibrary>(`${projectBase(projectId)}/tracks?kind=${kind}`),
+  /** Ohne Art: ganze Bibliothek (Audio + Video), getrennt wird im Browser. */
+  list: (projectId: string, kind?: MediaKind): Promise<TrackLibrary> =>
+    api.get<TrackLibrary>(`${projectBase(projectId)}/tracks${kind ? `?kind=${kind}` : ""}`),
 
   upload: (projectId: string, file: File, title: string): Promise<{ id: number; title: string }> => {
     const form = new FormData()

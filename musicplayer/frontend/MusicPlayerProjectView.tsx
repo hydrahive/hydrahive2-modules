@@ -1,5 +1,7 @@
 // Mediaplayer pro Projekt: Umschalter Audio | Video, Bibliothek, Upload, Import.
-import { useCallback, useEffect, useState } from "react"
+// Der Audio-Player (Element + Zustand) lebt hier und nicht in der Audio-Ansicht:
+// So läuft die Musik beim Umschalten auf Video weiter (Till, 02.10.2026).
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { musicApi } from "./api"
 import { AudioPlayerView } from "./AudioPlayerView"
@@ -7,6 +9,7 @@ import { GeneratedImport } from "./GeneratedImport"
 import { filterByKind, rememberedKind, rememberKind } from "./mediaUtils"
 import { MusicPlayerPanel } from "./MusicPlayerPanel"
 import { UploadButton } from "./UploadButton"
+import { useAudioPlayer } from "./useAudioPlayer"
 import { VideoPlayerView } from "./VideoPlayerView"
 import type { LibraryPermissions, MediaKind, Track } from "./types"
 
@@ -20,18 +23,25 @@ export function MusicPlayerProjectView({ projectId, large = false }: { projectId
   const [permissions, setPermissions] = useState<LibraryPermissions>(NO_PERMISSIONS)
 
   const load = useCallback(() => {
-    musicApi.list(projectId, kind)
+    musicApi.list(projectId)
       .then((library) => {
-        setTracks(filterByKind(library.tracks, kind))
+        setTracks(library.tracks)
         setPermissions(library.permissions)
       })
       .catch(() => {
         setTracks([])
         setPermissions(NO_PERMISSIONS)
       })
-  }, [projectId, kind])
+  }, [projectId])
 
   useEffect(() => { load() }, [load])
+
+  const audioTracks = useMemo(() => filterByKind(tracks, "audio"), [tracks])
+  const videoTracks = useMemo(() => filterByKind(tracks, "video"), [tracks])
+  const shown = kind === "audio" ? audioTracks : videoTracks
+  const music = useAudioPlayer(projectId, audioTracks)
+  // Entpackt: sonst hält react-hooks/refs `music.audioRef` für einen Ref-Zugriff im Render.
+  const { audioRef } = music
 
   const chooseKind = (next: MediaKind) => {
     rememberKind(projectId, next)
@@ -60,9 +70,19 @@ export function MusicPlayerProjectView({ projectId, large = false }: { projectId
         ))}
       </div>
       {kind === "audio"
-        // key: Wechsel der Art startet den Player frisch (kein Weiterspielen im Hintergrund).
-        ? <AudioPlayerView key="audio" projectId={projectId} tracks={tracks} permissions={permissions} onRemove={remove} />
-        : <VideoPlayerView key="video" projectId={projectId} tracks={tracks} permissions={permissions} onRemove={remove} large={large} />}
+        ? <AudioPlayerView projectId={projectId} tracks={audioTracks} permissions={permissions} onRemove={remove} player={music} />
+        : (
+          <VideoPlayerView
+            projectId={projectId}
+            tracks={videoTracks}
+            permissions={permissions}
+            onRemove={remove}
+            music={music}
+            onShowAudio={() => chooseKind("audio")}
+            large={large}
+          />
+        )}
+      <audio ref={audioRef} preload="metadata" className="hidden" />
       {permissions.can_upload && (
         <div className="space-y-2 border-t border-[#2a364b] pt-3">
           <UploadButton projectId={projectId} kind={kind} onDone={load} />
@@ -72,5 +92,5 @@ export function MusicPlayerProjectView({ projectId, large = false }: { projectId
     </div>
   )
 
-  return large ? content : <MusicPlayerPanel title={t("mp_title")} trackCount={tracks.length}>{content}</MusicPlayerPanel>
+  return large ? content : <MusicPlayerPanel title={t("mp_title")} trackCount={shown.length}>{content}</MusicPlayerPanel>
 }

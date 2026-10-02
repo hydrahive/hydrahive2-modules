@@ -1,10 +1,12 @@
-// Audio-Ansicht des Mediaplayers: Wiedergabe, Steuerung, Playlist.
+// Audio-Ansicht des Mediaplayers: Steuerung und Playlist.
+// Der Player selbst (Audio-Element + Zustand) lebt in der Projektansicht, damit die
+// Musik beim Umschalten auf Video weiterläuft.
 import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide-react"
 import { type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { Equalizer } from "./Equalizer"
 import { TrackList } from "./TrackList"
-import { useAudioPlayer } from "./useAudioPlayer"
+import type { PlayerUI } from "./useAudioPlayer"
 import type { LibraryPermissions, Track } from "./types"
 
 const CONTROL_CLASS =
@@ -37,18 +39,18 @@ function ControlButton({ label, active, onClick, children }: {
   )
 }
 
-export function AudioPlayerView({ projectId, tracks, permissions, onRemove }: {
+export function AudioPlayerView({ projectId, tracks, permissions, onRemove, player }: {
   projectId: string
   tracks: Track[]
   permissions: LibraryPermissions
   onRemove: (id: number) => void
+  player: PlayerUI
 }) {
   const { t } = useTranslation("musicplayer")
-  // Entpackt statt x: sonst hält react-hooks/refs jeden Zugriff für einen Ref-Zugriff.
   const {
-    audioRef, activeTrack, playing, elapsed, duration, volume, shuffle, repeat,
+    activeTrack, playing, elapsed, duration, volume, shuffle, repeat,
     select, toggle, prev, next, seek, setVolume, toggleShuffle, cycleRepeat,
-  } = useAudioPlayer(projectId, tracks)
+  } = player
   const playLabel = playing ? t("mp_pause") : t("mp_play")
 
   return (
@@ -120,10 +122,9 @@ export function AudioPlayerView({ projectId, tracks, permissions, onRemove }: {
         tracks={tracks}
         activeId={activeTrack?.id}
         permissions={permissions}
-        onSelect={(track) => select(tracks.indexOf(track))}
+        onSelect={(track) => select(track.id)}
         onRemove={onRemove}
       />
-      <audio ref={audioRef} preload="metadata" className="hidden" />
     </div>
   )
 }

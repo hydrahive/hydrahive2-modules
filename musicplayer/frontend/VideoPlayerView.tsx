@@ -1,23 +1,35 @@
 // Video-Ansicht des Mediaplayers: 16:9-Player, Vollbild, Liste zum Nachschlagen.
+// Es spielt immer nur eins mit Ton: Video-Start pausiert die Musik (onPlay),
+// Musik-Start über die Leiste pausiert das Video.
 import { Maximize, SquareArrowOutUpRight } from "lucide-react"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { musicApi } from "./api"
+import { NowPlayingBar } from "./NowPlayingBar"
 import { TrackList } from "./TrackList"
+import type { PlayerUI } from "./useAudioPlayer"
 import type { LibraryPermissions, Track } from "./types"
 
 const BAR_BUTTON = "flex items-center gap-1 text-xs text-[#c4cedd] hover:text-[#e8eef8]"
 
-export function VideoPlayerView({ projectId, tracks, permissions, onRemove, large = false }: {
+export function VideoPlayerView({ projectId, tracks, permissions, onRemove, music, onShowAudio, large = false }: {
   projectId: string
   tracks: Track[]
   permissions: LibraryPermissions
   onRemove: (id: number) => void
+  music: PlayerUI
+  onShowAudio: () => void
   large?: boolean
 }) {
   const { t } = useTranslation("musicplayer")
   const video = useRef<HTMLVideoElement>(null)
   const [current, setCurrent] = useState<Track | null>(null)
+  const { activeTrack, playing, toggle, pause } = music
+
+  const toggleMusic = () => {
+    if (!playing) video.current?.pause()
+    toggle()
+  }
 
   const select = (track: Track) => {
     setCurrent(track)
@@ -27,11 +39,13 @@ export function VideoPlayerView({ projectId, tracks, permissions, onRemove, larg
 
   return (
     <div className="space-y-3">
+      <NowPlayingBar track={activeTrack} playing={playing} onToggle={toggleMusic} onOpen={onShowAudio} />
       <div className={`overflow-hidden rounded-[4px] border border-[#2a364b] bg-black ${large ? "max-w-6xl" : ""}`}>
         <video
           ref={video}
           controls
           preload="metadata"
+          onPlay={pause}
           className="aspect-video w-full"
           src={current ? musicApi.streamUrl(projectId, current.id) : undefined}
         >

@@ -112,6 +112,21 @@ Rechte unverändert (`require_project_access` read/write/admin, Stream-Token per
   zeigt nur die gerade gewählte Art.
 - Upload-Knopf nimmt die erlaubten Endungen der gewählten Art.
 
+**Musik läuft beim Umschalten weiter (Till, 02.10.2026):**
+- Wechsel Audio → Video stoppt die Musik nicht. Der Audio-Player lebt in der Projektansicht,
+  nicht in der Audio-Ansicht; das `<audio>`-Element bleibt beim Umschalten erhalten.
+- In der Video-Ansicht zeigt eine schmale Leiste das laufende Lied mit Pause/Weiter;
+  Klick auf den Titel wechselt zurück zu Audio.
+- Es spielt immer nur eins mit Ton: Startet ein Video, pausiert die Musik. Startet die Musik
+  (Leiste), pausiert das Video. Kein automatisches Weiterspielen danach.
+- Das laufende Lied wird über seine ID gemerkt, nicht über die Position in der Liste:
+  Import/Upload/Löschen während der Wiedergabe wechselt nicht das Lied. Wird das laufende
+  Lied gelöscht, stoppt die Wiedergabe.
+- Die Bibliothek wird einmal für beide Arten geladen und im Browser getrennt, damit die
+  Audio-Liste beim Blick auf Video stehen bleibt.
+- Grenze: Wer die Seite verlässt (anderer Menüpunkt, anderes Projekt), beendet die Musik
+  weiterhin. Seitenübergreifende Wiedergabe ist nicht Teil dieser Etappe.
+
 **Eigene Seite `/musicplayer` (neu, behebt den toten Cockpit-Link):**
 - Volle Breite, gleiche Komponenten, Video groß. Projekt = aktives Projekt (wie Buddy); ohne Projekt
   Hinweis „Projekt wählen“.
@@ -142,6 +157,10 @@ Backend (pytest, vorhandene Isolation):
 
 Frontend (vitest, ohne App-Importe):
 - Umschalter filtert Liste und Import nach Art; Titel/Untertitel aus meta.
+- Playlist-Logik nach ID (`playlist.ts`): weiter/zurück/Ende/Shuffle/Repeat; neues Lied vorne in
+  der Liste ändert weder das laufende noch das nächste Lied; gelöschtes Lied → kein aktuelles.
+- Struktur (pytest, Quelltext): `<audio>` und `useAudioPlayer` in der Projektansicht, nicht in der
+  Audio-Ansicht; Video meldet `onPlay`; Bibliothek ohne Art-Filter geladen.
 
 Prüfung auf dem Test-Server im Browser: Projekt mit echten Atelier-Clips, Audio und Video
 importieren, abspielen, spulen, Vollbild, Seite `/musicplayer`, Bestandstracks spielen weiter.
