@@ -2,15 +2,18 @@
 from __future__ import annotations
 
 from conftest import PROJECT_A, PROJECT_B
+
 from backend import storage
 
 
-def test_is_allowed_upload():
+def test_is_allowed_upload_und_art_kommen_nur_aus_endung():
     assert storage.is_allowed_upload("song.mp3", "audio/mpeg")
     assert storage.is_allowed_upload("SONG.MP3", "audio/mp3")
-    assert storage.is_allowed_upload("song.mp3", None)
+    assert storage.is_allowed_upload("song.mp3", "image/png")
+    assert storage.is_allowed_upload("clip.webm", None)
+    assert storage.media_kind("voice.wav") == "audio"
+    assert storage.media_kind("clip.MP4") == "video"
     assert not storage.is_allowed_upload("bild.png", "image/png")
-    assert not storage.is_allowed_upload("song.mp3", "image/png")
     assert not storage.is_allowed_upload("noext", "audio/mpeg")
 
 
@@ -25,6 +28,16 @@ def test_save_und_path_roundtrip_im_projektworkspace():
 
     storage.delete_file(PROJECT_A, name)
     assert storage.file_path(PROJECT_A, name) is None
+
+
+def test_video_save_und_path_roundtrip_im_projektworkspace():
+    name = storage.save_bytes(PROJECT_A, b"hello-video", ext="mp4")
+    path = storage.file_path(PROJECT_A, name)
+
+    assert path is not None
+    assert path.read_bytes() == b"hello-video"
+    assert path.parent == storage.project_workspace(PROJECT_A) / "media" / "video"
+    storage.delete_file(PROJECT_A, name)
 
 
 def test_file_path_blockt_traversal():
