@@ -74,13 +74,36 @@ def setup_test_env():
             (project_dir / "config.json").write_text(json.dumps(_project(project_id)))
             (tmp_path / "data" / "workspaces" / "projects" / project_id).mkdir(parents=True)
 
-        from hydrahive.api import main
-
-        from backend.routes import router
-        from backend.sources_routes import router as sources_router
-        main.app.include_router(router, prefix=MOD_PREFIX)
-        main.app.include_router(sources_router, prefix=MOD_PREFIX)
+        _mount_like_core()
         yield tmp_path
+
+
+def _mount_like_core() -> None:
+    """Router über den echten Kern-Weg einhängen — inklusive Modul-Tor.
+
+    Früher direkt per include_router: Dann fehlte das Tor (require_capability),
+    und ein Kern-Bug (?token= am Tor abgewiesen) blieb hier grün, während auf
+    Prod kein Stream mehr lief.
+    """
+    import backend
+    from hydrahive.api import main
+    from hydrahive.modules.context import ModuleContext
+    from hydrahive.modules.manifest import ModuleManifest
+    from hydrahive.modules.registry import REGISTRY, LoadedModule
+
+    ctx = ModuleContext("musicplayer")
+    backend.register(ctx)
+    saved = dict(REGISTRY)
+    REGISTRY.clear()
+    REGISTRY["musicplayer"] = LoadedModule(
+        name="musicplayer", manifest=ModuleManifest.load(MODULE_DIR / "manifest.json"),
+        path=MODULE_DIR, ctx=ctx, loaded=True,
+    )
+    try:
+        main.mount_module_routers(main.app)
+    finally:
+        REGISTRY.clear()
+        REGISTRY.update(saved)
 
 
 @pytest.fixture
@@ -154,10 +177,9 @@ def _tracks_db(setup_test_env):
     """Nach jedem Test nur die Tracks und MP3s entfernen, die er selbst angelegt hat."""
     from contextlib import ExitStack
 
+    from backend import storage
     from hydrahive.db import init_db
     from hydrahive.modules.migrations import apply_module_migrations
-
-    from backend import storage
 
     init_db()
     apply_module_migrations("musicplayer", MODULE_DIR / "migrations")
