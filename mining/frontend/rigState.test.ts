@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { activity, isValidRigName, OFFLINE_AFTER_MS, rigBadge, rigCards, sensorHint, stopReasonKey, userHasWorkerSuffix } from "./rigState"
+import { activity, activityLines, isValidRigName, OFFLINE_AFTER_MS, rigBadge, rigCards, sensorHint, stopReasonKey, userHasWorkerSuffix } from "./rigState"
 
 const now = Date.parse("2026-10-03T15:00:00Z")
 const ago = (ms: number) => new Date(now - ms).toISOString()
@@ -64,5 +64,38 @@ describe("Mehrkarten", () => {
     expect(sensorHint([{ sensors: "ok" }, { sensors: "ok" }])).toBeNull()
     expect(sensorHint([{ sensors: "ok" }, { sensors: "asleep" }])).toBe("asleep")
     expect(sensorHint([{ sensors: "asleep" }, { sensors: "no_hwmon" }])).toBe("no_hwmon")
+  })
+})
+
+describe("activityLines (Hersteller-Gruppen)", () => {
+  const asg = (mode: "mine" | "benchmark" | "stop", coin: string | null, miner: string | null) =>
+    ({ mode, coin, miner, reason: mode === "stop" ? "disabled" : "best", since: null })
+  const grp = (vendor: string, a: ReturnType<typeof asg>, extra = {}) =>
+    ({ vendor, assignment: a, bench_done: 3, bench_failed: 1, bench_total: 20, hashrate: 5e7, ...extra })
+
+  it("ein Hersteller: eine Zeile ohne Hersteller-Etikett (wie bisher)", () => {
+    const rig = { assignment: asg("mine", "qtc", "srbminer"), bench_done: 3, bench_failed: 1, bench_total: 20,
+      groups: [grp("nvidia", asg("mine", "qtc", "srbminer"))], last_report: { hashrate: 5e7 } }
+    const lines = activityLines(rig)
+    expect(lines).toHaveLength(1)
+    expect(lines[0].vendor).toBeNull()
+    expect(lines[0].activity).toEqual({ kind: "mining", coin: "qtc", miner: "srbminer" })
+  })
+  it("gemischt: je Gruppe eine Zeile mit eigenem Zähler und eigener Hashrate", () => {
+    const rig = { assignment: null, bench_done: 0, bench_failed: 0, bench_total: 42, last_report: null,
+      groups: [grp("nvidia", asg("mine", "qtc", "srbminer"), { hashrate: 3e8 }),
+               grp("amd", asg("benchmark", "erg", "lolminer"), { bench_done: 5, bench_failed: 0, bench_total: 22 })] }
+    const lines = activityLines(rig)
+    expect(lines.map((l) => l.vendor)).toEqual(["nvidia", "amd"])
+    expect(lines[0].hashrate).toBe(3e8)
+    expect(lines[1].activity).toEqual({ kind: "benchmark", coin: "erg", miner: "lolminer", done: 6, total: 22 })
+  })
+  it("alter Server ohne groups: eine Zeile aus den Kopfdaten", () => {
+    const rig = { assignment: asg("benchmark", "cfx", "rigel"), bench_done: 2, bench_failed: 0, bench_total: 20,
+      last_report: { hashrate: 1e7 } }
+    const lines = activityLines(rig)
+    expect(lines).toHaveLength(1)
+    expect(lines[0].activity).toEqual({ kind: "benchmark", coin: "cfx", miner: "rigel", done: 3, total: 20 })
+    expect(lines[0].hashrate).toBe(1e7)
   })
 })

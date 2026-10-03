@@ -42,9 +42,24 @@ export function activity(rig: Pick<Rig, "assignment" | "bench_done" | "bench_fai
   return { kind: "mining", coin: a.coin, miner: a.miner }
 }
 
+export interface ActivityLine { vendor: string | null; activity: Activity; hashrate: number | null | undefined }
+
+type LineRig = Pick<Rig, "assignment" | "bench_done" | "bench_failed" | "bench_total" | "groups"> & {
+  last_report: { hashrate?: number | null } | null
+}
+
+/** Eine Zeile je Hersteller-Gruppe; Rechner mit einem Hersteller (oder alter Server): eine Zeile ohne Etikett. */
+export function activityLines(rig: LineRig): ActivityLine[] {
+  const groups = rig.groups ?? []
+  if (groups.length > 1) {
+    return groups.map((g) => ({ vendor: g.vendor, activity: activity(g, g.bench_total), hashrate: g.hashrate }))
+  }
+  return [{ vendor: null, activity: activity(rig, rig.bench_total), hashrate: rig.last_report?.hashrate }]
+}
+
 /** Gründe des Servers → Übersetzungsschlüssel (unbekannte → generisch). */
 const STOP_KEYS = ["awaiting_approval", "disabled", "no_kryptex_user", "no_supported_gpu", "power_budget",
-  "power_source_down", "no_profitable_option"] as const
+  "power_source_down", "no_profitable_option", "mixed_rig_old_client"] as const
 
 export function stopReasonKey(reason: string): string {
   return (STOP_KEYS as readonly string[]).includes(reason) ? `stop_${reason}` : "stop_other"

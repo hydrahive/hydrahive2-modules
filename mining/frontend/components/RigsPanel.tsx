@@ -59,7 +59,7 @@ export function RigsPanel({ canControl, powerActive }: { canControl: boolean; po
             </thead>
             <tbody className="divide-y divide-white/5">
               {rigs.map((r) => (
-                <RigRow key={r.id} rig={r} canControl={canControl} benchTotal={r.bench_total} powerActive={powerActive}
+                <RigRow key={r.id} rig={r} canControl={canControl} powerActive={powerActive}
                   onApprove={(id) => act(miningApi.approve(id))} onRevoke={confirmRevoke}
                   onToggle={(id, en) => act(miningApi.setEnabled(id, en))} onRemove={(id) => act(miningApi.remove(id))}
                   onRebench={confirmRebench} onFollowPower={(id, f, p) => act(miningApi.setPower(id, f, p))} />

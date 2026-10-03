@@ -36,6 +36,12 @@ def family(coin: str) -> str:
     return data()["coins"][coin]["family"]
 
 
+def min_mem_mb(coin: str) -> int | None:
+    """Mindest-Grafikspeicher für den Coin (z. B. Cuckaroo29 ≥ 6 GB), sonst None."""
+    v = (data()["coins"].get(coin) or {}).get("min_mem_mb")
+    return int(v) if isinstance(v, int) and v > 0 else None
+
+
 def options(coin: str, vendor: str) -> list[tuple[str, str]]:
     """[(miner, algo), …] in Vorzugsreihenfolge für Coin + Hersteller."""
     entry = data()["coins"].get(coin) or {}

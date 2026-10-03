@@ -61,7 +61,7 @@ def test_read_amd_sysfs(tmp_path):
 def test_detect_none(monkeypatch):
     monkeypatch.setattr(gpu, "_nvidia", list)
     monkeypatch.setattr(gpu, "read_amd", list)
-    assert gpu.detect() == {"gpu_vendor": "none", "gpu_count": 0, "gpus": []}
+    assert gpu.detect() == {"gpu_vendor": "none", "gpu_count": 0, "gpus": [], "groups": {}}
 
 
 def _cert(key_type="ec"):

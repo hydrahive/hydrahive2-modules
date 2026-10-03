@@ -63,7 +63,7 @@ OFF_NO_DATA = "power_source_down"
 OFF_REASONS = (OFF_BUDGET, OFF_NO_DATA)
 
 
-def allowed(rig: dict, *, now: datetime) -> tuple[bool, bool, str]:
+def allowed(rig: dict, *, now: datetime, state_key: str | None = None) -> tuple[bool, bool, str]:
     """(darf laufen, Energie-Zustand hat sich geändert, Grund falls aus).
 
     Mindestzeit gilt nur für Budget-Wechsel (gegen Flattern bei Wolken).
@@ -80,7 +80,8 @@ def allowed(rig: dict, *, now: datetime) -> tuple[bool, bool, str]:
         from .rigs import active_rigs_for_power
         budget = (_state["watts"] or 0) - cfg.get("power_reserve_w", 100)
         want, reason = rig["id"] in plan(active_rigs_for_power(), budget), OFF_BUDGET
-    cur, _, power_since = runtime_store.get_assignment(rig["id"])
+    # Energy switches the whole rig; its state lives in the assignment of the first group.
+    cur, _, power_since = runtime_store.get_assignment(state_key or rig["id"])
     was_on = cur is not None and cur.reason not in OFF_REASONS
     came_from_no_data = cur is not None and cur.reason == OFF_NO_DATA
     if (cur is not None and want != was_on and power_since is not None and not stale and not came_from_no_data

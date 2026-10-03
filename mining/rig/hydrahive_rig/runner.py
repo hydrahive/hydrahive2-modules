@@ -1,6 +1,6 @@
 """Miner-Prozess führen: starten, stoppen, beobachten, messen, Watchdog.
 
-Ein Rig hat höchstens einen Miner. ``apply(desired)`` wird nach jeder Meldung
+Je Hersteller-Gruppe höchstens ein Miner. ``apply(desired)`` wird nach jeder Meldung
 aufgerufen und gleicht ab. ``tick()`` liefert den Zustand für die nächste
 Meldung (inkl. fertigem Benchmark-Ergebnis, das danach verworfen wird).
 
@@ -26,9 +26,10 @@ MAX_RESTARTS = 3
 
 
 class Runner:
-    def __init__(self, state_dir: Path, vendor: str, *, clock=time.monotonic, spawn=subprocess.Popen,
-                 ensure=fetch.ensure, read_api=minerapi.read) -> None:
+    def __init__(self, state_dir: Path, vendor: str, *, group: str | None = None, mixed: bool = False,
+                 clock=time.monotonic, spawn=subprocess.Popen, ensure=fetch.ensure, read_api=minerapi.read) -> None:
         self.state_dir, self.vendor = state_dir, vendor
+        self.group, self.mixed = group or vendor, mixed
         self._clock, self._spawn, self._ensure, self._read = clock, spawn, ensure, read_api
         self.proc = None
         self.key = None            # (action, coin, miner)
@@ -57,7 +58,7 @@ class Runner:
         if key == self.key and self.proc is not None:
             return
         try:
-            spec = catalog.build(job, self.vendor)
+            spec = catalog.build(job, self.vendor, mixed=self.mixed, group=self.group)
         except catalog.JobError as exc:
             self._fail(key, f"job_rejected:{exc}")
             return
@@ -74,9 +75,10 @@ class Runner:
         except (fetch.FetchError, OSError) as exc:
             self._fail(self.key, f"fetch:{exc}")
             return
-        log = (self.state_dir / "miner.log").open("ab")
+        log = (self.state_dir / ("miner.log" if not self.mixed else f"miner-{self.group}.log")).open("ab")
+        env = {**os.environ, **self.spec.get("env", {})}
         self.proc = self._spawn([str(exe), *self.spec["args"]], stdout=log, stderr=subprocess.STDOUT,
-                                stdin=subprocess.DEVNULL, cwd=str(exe.parent), start_new_session=True)
+                                stdin=subprocess.DEVNULL, cwd=str(exe.parent), start_new_session=True, env=env)
         self.started = self.last_hash_at = self._clock()
         logger.info("Miner gestartet: %s %s (%s)", self.spec["miner"], self.spec["algo"], self.key[0])
 
@@ -104,7 +106,7 @@ class Runner:
     def tick(self, gpu_watts: float | None) -> dict:
         now = self._clock()
         if self.proc is not None:
-            api = self._read(self.spec["api"], catalog.API_PORT) or {}
+            api = self._read(self.spec["api"], self.spec.get("api_port", catalog.API_PORT)) or {}
             if api:
                 self.last = {**self.last, **{k: v for k, v in api.items() if v is not None}}
                 self.last["hashrate"] = api.get("hashrate")

@@ -42,7 +42,24 @@ def _client(fail: set[str] | None = None, index_status: int = 200) -> httpx.Asyn
 
 
 def test_gpu_coins_filters_device_and_invalid_ticker():
-    assert kryptex.gpu_coins(INDEX) == ["rvn", "xel"]
+    assert kryptex.gpu_coins(INDEX, mineable=()) == ["rvn", "xel"]
+
+
+def test_catalog_coins_are_fetched_even_if_kryptex_marks_them_asic():
+    """etc/ethw/octa/alph/xtm-sha3x stehen bei Kryptex als „asic“, unsere GPU-Miner können sie aber.
+    Abgerufen wird, was im Katalog steht und Kryptex anbietet — der Benchmark entscheidet über den Ertrag."""
+    idx = {**INDEX, "etc": {"algo": "Etchash", "device_types": ["asic"]}}
+    assert kryptex.gpu_coins(idx, mineable=("etc", "gibt-es-nicht")) == ["etc", "rvn", "xel"]
+
+
+def test_every_catalog_coin_is_known_to_kryptex_live_list():
+    """Katalog-Coins müssen Kryptex-Ticker sein (Stand 03.10.2026, /api/v1/index) — sonst Tippfehler."""
+    from backend import catalog
+    kryptex_tickers = {"iron", "kas", "nexa", "cfx", "xmr", "rvn", "erg", "etc", "ethw", "zeph", "xna", "btc", "alph",
+                       "xel", "octa", "ltc", "bch", "fb", "xec", "dgb", "xtm-rx", "xtm-sha3x", "xtm-c29", "zec",
+                       "quai-kawpow", "quai-sha256", "quai-scrypt", "bsv", "prl", "qtc"}
+    assert set(catalog.coins()) <= kryptex_tickers
+    assert len(catalog.coins()) == 16
 
 
 async def test_fetch_quotes_normalizes():

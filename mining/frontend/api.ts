@@ -98,6 +98,20 @@ export interface Rig {
   bench_done: number
   bench_failed: number
   bench_total: number
+  /** Hersteller-Gruppen (Modul ab 0.6.0); gemischte Rechner haben zwei. */
+  groups?: RigGroup[]
+}
+
+export interface RigGroup {
+  vendor: string
+  assignment: Assignment | null
+  bench_done: number
+  bench_failed: number
+  bench_total: number
+  gpu_count?: number | null
+  gpu_model?: string | null
+  hashrate?: number | null
+  power_w?: number | null
 }
 
 export interface Pairing {
