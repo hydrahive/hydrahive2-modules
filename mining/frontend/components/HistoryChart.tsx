@@ -68,7 +68,7 @@ export function HistoryChart() {
       {rows.length < 2 ? (
         <div className="grid h-64 place-items-center text-sm text-zinc-500">{t("history_empty")}</div>
       ) : (
-        <ResponsiveContainer width="100%" height={288}>
+        <ResponsiveContainer width="100%" height={310}>
           <LineChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis dataKey="ts" type="number" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={fmtTime}
@@ -83,7 +83,7 @@ export function HistoryChart() {
                 return [`${fmt(metric, Number(v))}${coin ? ` · ${String(coin).toUpperCase()}` : ""}`, name] as [string, string]
               }}
             />
-            <Legend wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }} />
+            <Legend wrapperStyle={{ fontSize: 12, color: "#a1a1aa", paddingTop: 8 }} iconType="plainline" iconSize={18} />
             {series.map((s, i) => (
               <Line key={s.key} type="monotone" dataKey={s.key} name={s.label} stroke={s.color}
                 strokeDasharray={i >= 12 ? "4 3" : undefined}
