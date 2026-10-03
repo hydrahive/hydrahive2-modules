@@ -149,3 +149,31 @@ def test_runner_reads_its_own_api_port(tmp_path, monkeypatch):
     r.apply({"action": "mine", "job": JOB})
     r.tick(None)
     assert ports == [catalog.api_port("amd")]
+
+
+# ---- CUDA verstecken: SRBMiner 3.7.1 ignoriert --disable-gpu-nvidia (auf wks197 gemessen) ----
+@pytest.mark.parametrize("miner, algo", [("srbminer", "autolykos2"), ("lolminer", "AUTOLYKOS2")])
+def test_mixed_amd_group_hides_cuda(miner, algo):
+    spec = catalog.build({**JOB, "miner": miner, "algo": algo}, "amd", mixed=True, group="amd")
+    assert spec["env"] == {"CUDA_VISIBLE_DEVICES": ""}
+
+
+def test_nvidia_group_and_single_vendor_keep_cuda():
+    nv = catalog.build({**JOB, "miner": "srbminer", "algo": "autolykos2"}, "nvidia", mixed=True, group="nvidia")
+    amd_only = catalog.build(JOB, "amd")
+    assert nv.get("env", {}) == {} and amd_only.get("env", {}) == {}
+
+
+def test_runner_passes_env_to_miner(tmp_path, monkeypatch):
+    seen = {}
+
+    def spawn(args, **kw):
+        seen.update(kw.get("env") or {})
+        return type("P", (), {"pid": 1, "poll": lambda s: None, "wait": lambda s, timeout=None: 0})()
+
+    monkeypatch.setenv("HH_PROBE", "bleibt")
+    r = runner.Runner(tmp_path, "amd", group="amd", mixed=True, spawn=spawn, ensure=lambda n, d: tmp_path / n,
+                      read_api=lambda kind, port: None)
+    monkeypatch.setattr(runner.os, "killpg", lambda *a: None)
+    r.apply({"action": "mine", "job": JOB})
+    assert seen.get("CUDA_VISIBLE_DEVICES") == "" and seen.get("HH_PROBE") == "bleibt"

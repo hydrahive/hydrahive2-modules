@@ -19,6 +19,9 @@ _USER_RE = re.compile(r"^[A-Za-z0-9._@+\-]{1,128}$")
 API_PORT = 4068
 GROUP_PORTS = {"nvidia": 4068, "amd": 4069}
 # Nur auf den Karten der eigenen Gruppe schürfen (gemischte Rechner). rigel ist ohnehin nur NVIDIA.
+# AMD-Gruppe zusätzlich ohne CUDA: SRBMiner 3.7.1 schürft trotz --disable-gpu-nvidia auf der
+# NVIDIA-Karte weiter (auf wks197 gemessen). AMD läuft über OpenCL/ROCm, braucht kein CUDA.
+GROUP_ENV = {"amd": {"CUDA_VISIBLE_DEVICES": ""}}
 DEVICE_FILTER = {
     "lolminer": {"nvidia": ["--devices", "NVIDIA"], "amd": ["--devices", "AMD"]},
     "srbminer": {"nvidia": ["--disable-gpu-amd", "--disable-gpu-intel"],
@@ -70,7 +73,9 @@ def build(job: dict, vendor: str, *, mixed: bool = False, group: str | None = No
         worker = f"{worker}-{vendor}"[:40]
     values = {"algo": algo, "pool": pool, "user": user, "worker": worker, "port": str(port)}
     args = [a.format(**values) for a in m["args"]]
+    env: dict[str, str] = {}
     if mixed:
         args += DEVICE_FILTER.get(name, {}).get(vendor, [])
+        env = dict(GROUP_ENV.get(vendor, {}))
     return {"coin": coin, "miner": name, "algo": algo, "pool": pool, "version": m["version"],
-            "args": args, "api": m["api"], "api_port": port}
+            "args": args, "api": m["api"], "api_port": port, "env": env}

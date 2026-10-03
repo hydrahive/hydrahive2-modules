@@ -76,8 +76,9 @@ class Runner:
             self._fail(self.key, f"fetch:{exc}")
             return
         log = (self.state_dir / ("miner.log" if not self.mixed else f"miner-{self.group}.log")).open("ab")
+        env = {**os.environ, **self.spec.get("env", {})}
         self.proc = self._spawn([str(exe), *self.spec["args"]], stdout=log, stderr=subprocess.STDOUT,
-                                stdin=subprocess.DEVNULL, cwd=str(exe.parent), start_new_session=True)
+                                stdin=subprocess.DEVNULL, cwd=str(exe.parent), start_new_session=True, env=env)
         self.started = self.last_hash_at = self._clock()
         logger.info("Miner gestartet: %s %s (%s)", self.spec["miner"], self.spec["algo"], self.key[0])
 
