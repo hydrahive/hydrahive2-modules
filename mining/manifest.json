@@ -1,8 +1,8 @@
 {
   "id": "mining",
   "name": "Mining",
-  "version": "0.4.0",
-  "description": "Verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade ertragreichsten Kryptex-Coin schürfen. Zeigt Live-Erträge je Coin.",
+  "version": "0.5.0",
+  "description": "Verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade ertragreichsten Kryptex-Coin schürfen. Zeigt Live-Erträge je Coin. Buddy kann den Zustand abfragen, auswerten und Rechner steuern.",
   "icon": "Pickaxe",
   "nav_group": "working",
   "permissions": [],
@@ -15,10 +15,14 @@
     {
       "id": "mining.control",
       "label": "Mining steuern (Rechner, Einstellungen)",
-      "default": "admin_only"
+      "default": "admin_only",
+      "tools": [
+        "mining_rig_control",
+        "mining_settings"
+      ]
     }
   ],
   "has_service": false,
-  "default_agent_tools": false,
+  "default_agent_tools": true,
   "min_core_version": "2.0.0"
 }
