@@ -4,7 +4,7 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.4.0: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
+Stand 0.5.0: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
 Schürfen mit Benchmark, automatischem Umschalten, Watchdog und Energie-Steuerung.
 
 ## Einmalig in HydraHive
@@ -113,6 +113,30 @@ sie zu, solange die Leistung reicht (Reserve abgezogen). Zuerst die mit mehr
 Ertrag pro Watt. Zwischen Ein und Aus liegt eine Mindestzeit (Standard 10 min),
 damit Wolken nicht ständig schalten. Antwortet die Quelle nicht mehr, pausieren
 diese Rechner.
+
+## Mit Buddy
+
+Buddy kennt das Mining (Skill `mining-workflow`, wird beim Laden des Moduls
+installiert) und hat Werkzeuge dafür:
+
+| Werkzeug | Was | Freigabe |
+|---|---|---|
+| `mining_status` | Überblick: welche Rechner online, was sie tun, letzter Fehler | Mining ansehen |
+| `mining_earnings` | Ertrag €/Tag jetzt und im Schnitt (24 h / 7 Tage) | Mining ansehen |
+| `mining_rig_history` | Verlauf eines Rechners, Coin-Wechsel | Mining ansehen |
+| `mining_benchmarks` | Messungen eines Rechners, nach Ertrag sortiert | Mining ansehen |
+| `mining_rig_control` | Rechner ein/aus, neu messen, Energie folgen | Mining steuern |
+| `mining_settings` | Einstellungen anzeigen/ändern | Mining steuern (ändern) |
+
+Beispiele: „Wie läuft das Mining?“, „Was hab ich diese Woche verdient?“, „Warum ist
+rig-03 so schwach?“, „Schalte rig-02 aus“.
+
+**Nicht per Chat** (nur Oberfläche): Rechner koppeln, freigeben, sperren, löschen und
+den Kryptex-Benutzer ändern.
+
+Master-Agenten (auch Buddy) bekommen die Werkzeuge beim nächsten Neustart von HydraHive
+automatisch nachgetragen. Wer keine Freigabe „Mining steuern“ hat, sieht die beiden
+Steuer-Werkzeuge nicht — sie prüfen das zusätzlich selbst.
 
 ## Entfernen
 
