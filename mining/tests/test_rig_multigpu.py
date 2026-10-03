@@ -228,3 +228,28 @@ def test_benchmark_watts_of_big_rig_are_kept(client, admin_headers, quotes):
     _report(client, e, {"benchmark_result": {"coin": j["coin"], "miner": j["miner"], "hashrate": 9e7, "watts": 2600}})
     (b,) = client.get(f"{P}/rigs/{e['rig_id']}/benchmarks", headers=admin_headers).json()
     assert b["watts"] == 2600
+
+
+def test_client_report_sends_every_card(monkeypatch):
+    """Live auf hydratest gefunden: report_once schickte nur die Summenfelder, die Kartenliste fehlte."""
+    from hydrahive_rig import agent
+    from hydrahive_rig.config import RigConfig
+    cards = [{"gpu_vendor": "amd", "gpu_model": "RX 6800 XT", "temp_c": 60.0 + i, "power_w": 200.0,
+              "pci": f"0000:0{i}:00.0", "sensors": "ok"} for i in range(3)]
+    monkeypatch.setattr(gpu, "_nvidia", list)
+    monkeypatch.setattr(gpu, "read_amd", lambda: cards)
+    sent = {}
+
+    class FakeServer:
+        def __init__(self, *a):
+            pass
+
+        def post(self, path, body, headers):
+            sent.update(body)
+            return {"desired": {"action": "stop"}}
+
+    monkeypatch.setattr(agent, "Server", FakeServer)
+    agent.report_once(RigConfig(server="https://x", token="hhrig_t", name="r", rig_id="i"))
+    st = sent["state"]
+    assert st["gpu_count"] == 3 and [g["pci"] for g in st["gpus"]] == ["0000:00:00.0", "0000:01:00.0", "0000:02:00.0"]
+    assert st["power_w"] == 600.0 and st["temp_c"] == 62.0
