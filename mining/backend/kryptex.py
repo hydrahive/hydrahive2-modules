@@ -38,13 +38,20 @@ async def _get(http: httpx.AsyncClient, path: str, **params: Any) -> Any:
     return r.json()
 
 
-def gpu_coins(index: dict) -> list[str]:
-    """Ticker aller Coins, die Kryptex für GPUs anbietet (validiert)."""
+def gpu_coins(index: dict, mineable: tuple[str, ...] | None = None) -> list[str]:
+    """Ticker, die abgerufen werden: von Kryptex als „gpu“ markiert ODER in unserem Miner-Katalog.
+
+    Kryptex markiert etc/ethw/octa/alph/xtm-sha3x als „asic“, unsere GPU-Miner können sie
+    trotzdem. Ob sie sich lohnen, entscheidet der Benchmark. ``mineable`` = Katalog-Coins.
+    """
+    if mineable is None:
+        from . import catalog
+        mineable = tuple(catalog.coins())
     out = []
     for ticker, info in (index or {}).items():
-        if not isinstance(info, dict) or "gpu" not in (info.get("device_types") or []):
+        if not isinstance(info, dict) or not _COIN_RE.match(str(ticker)):
             continue
-        if _COIN_RE.match(str(ticker)):
+        if "gpu" in (info.get("device_types") or []) or str(ticker) in mineable:
             out.append(str(ticker))
     return sorted(out)
 

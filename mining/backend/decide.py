@@ -29,11 +29,18 @@ class Assignment:
     reason: str = ""
 
 
-def pending_benchmarks(vendor: str, done: set[tuple[str, str]], quotes: dict[str, CoinQuote]) -> list[tuple[str, str, str]]:
-    """(coin, miner, algo) ohne Messung — nur Coins, die Kryptex gerade anbietet."""
+def pending_benchmarks(vendor: str, done: set[tuple[str, str]], quotes: dict[str, CoinQuote],
+                       mem_mb: int | None = None) -> list[tuple[str, str, str]]:
+    """(coin, miner, algo) ohne Messung — nur Coins, die Kryptex gerade anbietet und die Karte schafft.
+
+    ``mem_mb`` = Speicher der kleinsten Karte; unbekannt → messen (der Benchmark zeigt es dann).
+    """
     out = []
     for coin in catalog.coins():
         if coin not in quotes:
+            continue
+        need = catalog.min_mem_mb(coin)
+        if need and mem_mb and mem_mb < need:
             continue
         for miner, algo in catalog.options(coin, vendor):
             if (coin, miner) not in done:
@@ -78,7 +85,7 @@ def decide(*, rig: dict, cfg: dict, quotes: dict[str, CoinQuote], bench: dict[tu
         return Assignment("stop", reason="no_supported_gpu")
     if not power_ok:
         return Assignment("stop", reason=power_reason)
-    todo = pending_benchmarks(vendor, set(bench) | failed, quotes)
+    todo = pending_benchmarks(vendor, set(bench) | failed, quotes, mem_mb=rig.get("gpu_mem_mb"))
     if todo:
         coin, miner, algo = todo[0]
         return Assignment("benchmark", coin, miner, algo, reason=f"benchmark {len(todo)} offen")

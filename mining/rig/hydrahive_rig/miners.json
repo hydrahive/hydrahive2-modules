@@ -1,5 +1,5 @@
 {
-  "_note": "Miner-Katalog — gemeinsame Quelle für Rig-Client UND Server (backend/catalog.py liest diese Datei). Der Rig baut den Startbefehl ausschließlich hieraus; der Server schickt nur coin/miner/algo. Hashes = sha256-Digest der offiziellen GitHub-Releases, am 03.10.2026 geprüft. Algo-Namen am 03.10. auf tills-master-wks (RTX 5060 Ti) gegen Kryptex getestet (Pool-Verbindung je Miner×Algo; Shares: rigel kawpow, srbminer pearlhash, lolminer octopus).",
+  "_note": "Miner-Katalog — gemeinsame Quelle für Rig-Client UND Server (backend/catalog.py liest diese Datei). Der Rig baut den Startbefehl ausschließlich hieraus; der Server schickt nur coin/miner/algo. Hashes = sha256-Digest der offiziellen GitHub-Releases, am 03.10.2026 geprüft. Algo-Namen am 03.10. auf tills-master-wks (RTX 5060 Ti) gegen Kryptex getestet (Pool-Verbindung je Miner×Algo; Shares: rigel kawpow, srbminer pearlhash, lolminer octopus). Erweitert 03.10.2026 auf alle mit GPU schürfbaren Kryptex-Coins: qtc, xtm-c29 (Kryptex: gpu) sowie etc, ethw, octa, alph, xtm-sha3x (Kryptex: asic, aber von rigel/lolMiner/SRBMiner unterstützt — Algo-Namen aus rigel-README, lolMiner --list-algos, SRBMiner --list-algorithms; Ports aus /{coin}/api/v1/pool/info). Nicht machbar: kas (kHeavyHash), zec (Equihash 200,9), SHA256/Scrypt (ASIC), xmr/zeph/xtm-rx (CPU).",
   "miners": {
     "rigel": {
       "version": "1.23.2",
@@ -281,6 +281,185 @@
         ]
       },
       "family": "pearlhash"
+    },
+    "qtc": {
+      "port": 7049,
+      "family": "quantus",
+      "options": {
+        "nvidia": [
+          [
+            "srbminer",
+            "quantus"
+          ]
+        ],
+        "amd": [
+          [
+            "srbminer",
+            "quantus"
+          ]
+        ]
+      }
+    },
+    "xtm-c29": {
+      "port": 7040,
+      "family": "cuckaroo29",
+      "min_mem_mb": 6144,
+      "options": {
+        "nvidia": [
+          [
+            "lolminer",
+            "CR29"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "CR29"
+          ]
+        ]
+      }
+    },
+    "etc": {
+      "port": 7033,
+      "family": "etchash",
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "etchash"
+          ],
+          [
+            "lolminer",
+            "ETCHASH"
+          ],
+          [
+            "srbminer",
+            "etchash"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "ETCHASH"
+          ],
+          [
+            "srbminer",
+            "etchash"
+          ]
+        ]
+      }
+    },
+    "ethw": {
+      "port": 7034,
+      "family": "ethash",
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "ethash"
+          ],
+          [
+            "lolminer",
+            "ETHASH"
+          ],
+          [
+            "srbminer",
+            "ethash"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "ETHASH"
+          ],
+          [
+            "srbminer",
+            "ethash"
+          ]
+        ]
+      }
+    },
+    "octa": {
+      "port": 7032,
+      "family": "ethash",
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "ethash"
+          ],
+          [
+            "lolminer",
+            "ETHASH"
+          ],
+          [
+            "srbminer",
+            "ethash"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "ETHASH"
+          ],
+          [
+            "srbminer",
+            "ethash"
+          ]
+        ]
+      }
+    },
+    "alph": {
+      "port": 7010,
+      "family": "blake3",
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "alephium"
+          ],
+          [
+            "lolminer",
+            "ALEPH"
+          ],
+          [
+            "srbminer",
+            "blake3_an"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "ALEPH"
+          ],
+          [
+            "srbminer",
+            "blake3_an"
+          ]
+        ]
+      }
+    },
+    "xtm-sha3x": {
+      "port": 7039,
+      "family": "sha3x",
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "sha3x"
+          ],
+          [
+            "lolminer",
+            "SHA3X"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "SHA3X"
+          ]
+        ]
+      }
     }
   }
 }

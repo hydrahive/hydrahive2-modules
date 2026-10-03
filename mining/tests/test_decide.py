@@ -157,3 +157,23 @@ def test_prop_discount_changes_choice():
     quotes["xel"] = _q("xel", profit=1.1e-6, fee_type="PROP")
     assert _run(quotes=quotes, bench=bench).coin == "xel"
     assert _run(quotes=quotes, bench=bench, cfg={**CFG, "prop_discount": 0.2}).coin != "xel"
+
+
+def test_min_memory_skips_cuckaroo_on_small_cards():
+    """xtm-c29 (Cuckaroo29, lolMiner) braucht ≥ 6 GB — kleinere Karten messen es gar nicht erst."""
+    from backend.decide import pending_benchmarks
+    quotes = {c: _q(c) for c in catalog.coins()}
+    small = {(c, m) for c, m, _ in pending_benchmarks("nvidia", set(), quotes, mem_mb=4096)}
+    big = {(c, m) for c, m, _ in pending_benchmarks("nvidia", set(), quotes, mem_mb=8192)}
+    unknown = {(c, m) for c, m, _ in pending_benchmarks("nvidia", set(), quotes, mem_mb=None)}
+    assert ("xtm-c29", "lolminer") not in small and ("xtm-c29", "lolminer") in big
+    assert ("xtm-c29", "lolminer") in unknown           # unbekannt → versuchen, Benchmark zeigt es
+    assert len(big) - len(small) == 1
+
+
+def test_all_sixteen_coins_are_benchmarked_on_nvidia():
+    from backend.decide import pending_benchmarks
+    quotes = {c: _q(c) for c in catalog.coins()}
+    todo = pending_benchmarks("nvidia", set(), quotes, mem_mb=16384)
+    assert {c for c, _, _ in todo} == set(catalog.coins()) and len(todo) == 35
+    assert len(pending_benchmarks("amd", set(), quotes, mem_mb=16384)) == 22
