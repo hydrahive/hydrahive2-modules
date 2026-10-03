@@ -1,7 +1,7 @@
 {
   "id": "mining",
   "name": "Mining",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade ertragreichsten Kryptex-Coin schürfen. Zeigt Live-Erträge je Coin.",
   "icon": "Pickaxe",
   "nav_group": "working",
