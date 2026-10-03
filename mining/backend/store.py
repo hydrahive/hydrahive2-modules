@@ -21,8 +21,25 @@ DEFAULTS: dict[str, Any] = {
     "switch_threshold": 0.05,  # Wechsel erst ab 5 % mehr Ertrag
     "min_runtime_min": 15,     # frühestens nach 15 min wechseln
     "prop_discount": 0.0,      # Abschlag für PROP-Coins (0..0.5)
+    # Energie-Steuerung (E5): off | fixed | http
+    "power_mode": "off",
+    "power_fixed_w": 2000,
+    "power_url": "",           # nur LAN, z. B. http://192.168.178.50/api/surplus
+    "power_field": "",         # JSON-Pfad, z. B. data.surplus_w
+    "power_scale": 1.0,        # z. B. 1000 wenn die Quelle kW liefert
+    "power_reserve_w": 100,
+    "power_min_minutes": 10,
+    "power_stale_minutes": 15,
 }
+POWER_MODES = ("off", "fixed", "http")
+_FIELD_RE = re.compile(r"^[A-Za-z0-9_.\-]{0,100}$")
 _USER_RE = re.compile(r"^[A-Za-z0-9._@+\-]{0,128}$")
+
+
+_LIMITS = {"switch_threshold": (0.0, 1.0), "min_runtime_min": (1, 1440), "prop_discount": (0.0, 0.5),
+           "power_fixed_w": (0, 1_000_000), "power_scale": (0.000001, 1_000_000), "power_reserve_w": (0, 100_000),
+           "power_min_minutes": (1, 240), "power_stale_minutes": (1, 240)}
+_INTS = {"min_runtime_min", "power_fixed_w", "power_reserve_w", "power_min_minutes", "power_stale_minutes"}
 
 
 class ConfigError(ValueError):
@@ -101,11 +118,26 @@ def _validate(key: str, value: Any) -> Any:
         if value not in REGIONS:
             raise ConfigError("region_invalid")
         return value
-    limits = {"switch_threshold": (0.0, 1.0), "min_runtime_min": (1, 1440), "prop_discount": (0.0, 0.5)}
-    lo, hi = limits[key]
+    if key == "power_mode":
+        if value not in POWER_MODES:
+            raise ConfigError("power_mode_invalid")
+        return value
+    if key == "power_url":
+        if value == "":
+            return ""
+        from .power_source import validate_url
+        try:
+            return validate_url(str(value).strip())
+        except ValueError as exc:
+            raise ConfigError(str(exc)) from exc
+    if key == "power_field":
+        if not isinstance(value, str) or not _FIELD_RE.match(value):
+            raise ConfigError("power_field_invalid")
+        return value
+    lo, hi = _LIMITS[key]
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not lo <= value <= hi:
         raise ConfigError(f"{key}_out_of_range")
-    return int(value) if key == "min_runtime_min" else float(value)
+    return int(value) if key in _INTS else float(value)
 
 
 def update_config(changes: dict[str, Any]) -> dict[str, Any]:
