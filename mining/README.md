@@ -4,7 +4,7 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.5.0: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
+Stand 0.6.0: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
 Schürfen mit Benchmark, automatischem Umschalten, Watchdog und Energie-Steuerung.
 
 ## Einmalig in HydraHive
@@ -88,6 +88,17 @@ Nach 2 Minuten ohne Meldung gilt ein Rechner als offline.
    startet der Rechner ihn neu. Nach 3 Versuchen gibt er auf und meldet den
    Fehler; HydraHive nimmt dann einen anderen Coin.
 
+### Rechner mit AMD- und NVIDIA-Karten
+
+Stecken Karten beider Hersteller in einem Rechner (Client ab 0.4.0), läuft je
+Hersteller ein eigener Miner: eigene Messung, eigener Coin. Die Liste zeigt
+dann zwei Zeilen mit „NVIDIA“ und „AMD“. Bei Kryptex erscheinen sie als
+`<rechner>-nvidia` und `<rechner>-amd`. Rechner mit nur einem Hersteller
+bleiben wie bisher (Name ohne Zusatz, Messwerte bleiben erhalten).
+
+Ein alter Client (0.3.x) in so einem Rechner bleibt aus und meldet „bitte
+Client aktualisieren“.
+
 **Neu messen** (Knopf in der Liste): nach Treiber- oder Kartenwechsel.
 
 ### Verlauf
@@ -162,6 +173,7 @@ Steuer-Werkzeuge nicht — sie prüfen das zusätzlich selbst.
 | `sha256_mismatch` im Log | Download beschädigt oder verändert → Rechner lädt beim nächsten Versuch neu |
 | Coin wird übersprungen (`failed`) | Miner lief auf dieser Karte nicht (z. B. zu wenig Speicher) → „Neu messen“ nach Treiber-Update |
 | „pausiert: Energie-Quelle antwortet nicht“ | Adresse/Feld der Quelle prüfen; nur Adressen im eigenen Netz |
+| „AMD + NVIDIA im Rechner: bitte Client aktualisieren“ | Client neu installieren (Befehl unter „Rechner koppeln“) |
 
 Getestet: Ubuntu 26.04 mit NVIDIA RTX 5060 Ti, Debian 12 (ohne Grafikkarte).
 AMD bisher nur mit nachgestellten Daten.
