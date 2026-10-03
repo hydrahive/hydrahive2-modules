@@ -185,3 +185,22 @@ def test_revoked_rig_is_invisible_to_tools(rig, quotes):
     assert not run(buddy_tools.CONTROL, {"rig": "rig-01", "action": "on"}).success
     assert not run(buddy_tools.HISTORY, {"rig": "rig-01"}).success
     assert run(buddy_tools.STATUS, {}).output["summary"]["total"] == 0
+
+
+def test_core_filter_viewer_keeps_read_tools_loses_control(monkeypatch):
+    """Wer Mining ansehen, aber nicht steuern darf: Lese-Werkzeuge bleiben, Steuer-Werkzeuge fallen weg.
+
+    Nachgebaut wie im Server (api/lifespan.py): Werkzeuge mit module_id registriert.
+    """
+    import dataclasses
+
+    from hydrahive.access import check, tool_filter
+    from hydrahive.tools import REGISTRY, register_module_tools
+    register_module_tools([dataclasses.replace(t, module_id="mining") for t in buddy_tools.TOOLS])
+    try:
+        monkeypatch.setattr(check, "can_use_as", lambda user, cap: cap == "module.mining")
+        names = [t.name for t in buddy_tools.TOOLS]
+        assert tool_filter.filter_tools("viewer", names) == names[:4]
+    finally:
+        for t in buddy_tools.TOOLS:
+            REGISTRY.pop(t.name, None)
