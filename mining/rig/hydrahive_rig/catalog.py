@@ -17,6 +17,17 @@ REGION_SUFFIX = {"global": "", "eu": "-eu", "us": "-us", "br": "-br", "sg": "-sg
 _WORKER_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
 _USER_RE = re.compile(r"^[A-Za-z0-9._@+\-]{1,128}$")
 API_PORT = 4068
+GROUP_PORTS = {"nvidia": 4068, "amd": 4069}
+# Nur auf den Karten der eigenen Gruppe schürfen (gemischte Rechner). rigel ist ohnehin nur NVIDIA.
+DEVICE_FILTER = {
+    "lolminer": {"nvidia": ["--devices", "NVIDIA"], "amd": ["--devices", "AMD"]},
+    "srbminer": {"nvidia": ["--disable-gpu-amd", "--disable-gpu-intel"],
+                 "amd": ["--disable-gpu-nvidia", "--disable-gpu-intel"]},
+}
+
+
+def api_port(group: str | None) -> int:
+    return GROUP_PORTS.get(group or "", API_PORT)
 
 
 class JobError(ValueError):
@@ -35,8 +46,12 @@ def miner(name: str) -> dict:
     return m
 
 
-def build(job: dict, vendor: str) -> dict:
-    """Auftrag prüfen und Startbeschreibung bauen. Wirft JobError bei allem Fremden."""
+def build(job: dict, vendor: str, *, mixed: bool = False, group: str | None = None) -> dict:
+    """Auftrag prüfen und Startbeschreibung bauen. Wirft JobError bei allem Fremden.
+
+    ``mixed``: Rechner hat Karten beider Hersteller → Miner nur auf Karten von ``vendor``,
+    eigener API-Port und Worker-Name ``<rechner>-<hersteller>`` (Kryptex zählt getrennt).
+    """
     coin, name, algo = job.get("coin"), job.get("miner"), job.get("algo")
     user, worker, region = job.get("user") or "", job.get("worker") or "", job.get("region") or ""
     entry = data()["coins"].get(coin)
@@ -50,6 +65,12 @@ def build(job: dict, vendor: str) -> dict:
         raise JobError("bad_region")
     m = miner(name)
     pool = f"{coin}{REGION_SUFFIX[region]}.{POOL_DOMAIN}:{entry['port']}"
-    values = {"algo": algo, "pool": pool, "user": user, "worker": worker, "port": str(API_PORT)}
+    port = api_port(group if mixed else None)
+    if mixed:
+        worker = f"{worker}-{vendor}"[:40]
+    values = {"algo": algo, "pool": pool, "user": user, "worker": worker, "port": str(port)}
+    args = [a.format(**values) for a in m["args"]]
+    if mixed:
+        args += DEVICE_FILTER.get(name, {}).get(vendor, [])
     return {"coin": coin, "miner": name, "algo": algo, "pool": pool, "version": m["version"],
-            "args": [a.format(**values) for a in m["args"]], "api": m["api"]}
+            "args": args, "api": m["api"], "api_port": port}

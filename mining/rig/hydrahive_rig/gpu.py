@@ -149,6 +149,19 @@ def summarize(gpus: list[dict]) -> dict:
     }
 
 
+VENDORS = ("nvidia", "amd")
+
+
 def detect() -> dict:
-    """Alle Karten (NVIDIA vor AMD; gemischte Rigs: nur der erste Hersteller) + Zusammenfassung."""
-    return summarize(_nvidia() or read_amd())
+    """Alle Karten beider Hersteller + Zusammenfassung; ``groups`` je Hersteller.
+
+    Gemischter Rechner → ``gpu_vendor = "mixed"``; jede Gruppe bekommt eigenen Miner.
+    """
+    by_vendor = {"nvidia": _nvidia(), "amd": read_amd()}
+    groups = {v: summarize(cards) for v, cards in by_vendor.items() if cards}
+    out = summarize(by_vendor["nvidia"] + by_vendor["amd"])
+    if len(groups) > 1:
+        out["gpu_vendor"] = "mixed"
+        out["gpu_model"] = " + ".join(g["gpu_model"] for g in groups.values())
+    out["groups"] = groups
+    return out
