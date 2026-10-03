@@ -5,6 +5,7 @@ GET    /rigs/log             Wechsel-Protokoll (optional ?rig_id=)
 GET    /rigs/power           Zustand der Energie-Steuerung
 POST   /rigs/{id}/power      {"follows_power": bool, "priority": int}
 GET    /rigs/{id}/benchmarks Messungen; POST …/benchmarks/reset = neu messen
+GET    /rigs/history?hours=24 Verlauf fürs Diagramm (1–168 h)
 POST   /rigs/pairing         Kopplungs-Code + fertiger Installationsbefehl
 POST   /rigs/{id}/approve    freigeben
 POST   /rigs/{id}/revoke     sperren (Token sofort ungültig)
@@ -14,14 +15,16 @@ DELETE /rigs/{id}            gesperrten Rig löschen
 from __future__ import annotations
 
 import shlex
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Query, Request, status
 
-from . import pairing, power, rigs, runtime_store, tls_pin
+from . import history, pairing, power, rigs, runtime_store, store, tls_pin
 from .access import Control
 
 rig_router = APIRouter(prefix="/rigs")
+HISTORY_POINTS = 300
 CLIENT_URL = "https://raw.githubusercontent.com/hydrahive/hydrahive2-modules/main/mining/rig/install.sh"
 
 
@@ -99,6 +102,16 @@ def reset_benchmarks(_control: Control, rig_id: str) -> dict:
 @rig_router.get("/log")
 def log(_control: Control, rig_id: str | None = None) -> list[dict]:
     return runtime_store.switch_log(rig_id)
+
+
+@rig_router.get("/history")
+def rig_history(_control: Control, hours: int = Query(24, ge=1, le=168)) -> dict:
+    """Verlauf aller nicht gesperrten Rigs, je Rig höchstens ~300 Punkte."""
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    out = [{"id": r["id"], "name": r["name"],
+            "points": history.downsample(history.points(r["id"], since=since), HISTORY_POINTS)}
+           for r in rigs.list_rigs() if r["status"] != "revoked"]
+    return {"hours": hours, "usd_per_eur": store.get_usd_per_eur(), "rigs": out}
 
 
 @rig_router.get("/power")

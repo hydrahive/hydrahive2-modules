@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Plus } from "lucide-react"
 import { miningApi, type Rig } from "../api"
+import { HistoryChart } from "./HistoryChart"
 import { PairDialog } from "./PairDialog"
 import { RigRow } from "./RigRow"
 
@@ -67,6 +68,7 @@ export function RigsPanel({ canControl, powerActive }: { canControl: boolean; po
           </table>
         </div>
       )}
+      {rigs.some((r) => r.status === "active") && <HistoryChart />}
     </section>
   )
 }
