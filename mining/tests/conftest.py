@@ -31,7 +31,8 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 MOD_PREFIX = "/api/modules/mining"
-TABLES = ("module_mining_quotes", "module_mining_config")
+DEV_PREFIX = "/api/module-device/mining"
+TABLES = ("module_mining_quotes", "module_mining_config", "module_mining_rigs", "module_mining_pairing")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -54,9 +55,28 @@ def setup_test_env():
         }, indent=2))
 
         from hydrahive.api import main
+        from backend.device_routes import device_auth, device_router
+        from backend.rig_routes import rig_router
         from backend.routes import router
         main.app.include_router(router, prefix=MOD_PREFIX)
+        main.app.include_router(rig_router, prefix=MOD_PREFIX)
+        _mount_device(main.app, device_router, device_auth)
         yield tmp_path
+
+
+def _mount_device(app, router, auth) -> None:
+    """Wie der Kern (api/module_devices.py): Rate-Limit + auth als Pflicht-Dependencies.
+
+    Älterer Kern ohne module_devices → nur auth (Tests prüfen dann die Modul-Seite).
+    """
+    from fastapi import Depends
+    try:
+        from hydrahive.api.module_devices import DEVICE_PREFIX, _rate_limit_for
+        deps = [Depends(_rate_limit_for("mining")), Depends(auth)]
+        prefix = f"{DEVICE_PREFIX}/mining"
+    except ImportError:
+        deps, prefix = [Depends(auth)], DEV_PREFIX
+    app.include_router(router, prefix=prefix, dependencies=deps)
 
 
 @pytest.fixture

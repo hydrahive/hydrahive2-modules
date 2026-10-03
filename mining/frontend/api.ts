@@ -38,6 +38,32 @@ export interface MiningConfig {
   prop_discount: number
 }
 
+export interface Rig {
+  id: string
+  name: string
+  status: "pending" | "active" | "revoked"
+  enabled: number
+  hostname: string | null
+  os: string | null
+  client_version: string | null
+  gpu_vendor: string | null
+  gpu_model: string | null
+  gpu_mem_mb: number | null
+  driver: string | null
+  remote_ip: string | null
+  last_seen: string | null
+  last_report: { miner?: string; temp_c?: number | null; power_w?: number | null; util_pct?: number | null } | null
+}
+
+export interface Pairing {
+  code: string
+  name: string
+  expires_at: string
+  server: string
+  pin: string | null
+  command: string
+}
+
 export const REGIONS = ["global", "eu", "us", "br", "sg", "hk", "ru", "ae"] as const
 
 export const miningApi = {
@@ -46,4 +72,10 @@ export const miningApi = {
   config: () => api.get<MiningConfig>(`${BASE}/config`),
   saveConfig: (c: Partial<MiningConfig>) => api.put<MiningConfig>(`${BASE}/config`, c),
   refresh: () => api.post<{ coins: number }>(`${BASE}/refresh`, {}),
+  rigs: () => api.get<Rig[]>(`${BASE}/rigs`),
+  pair: (name: string) => api.post<Pairing>(`${BASE}/rigs/pairing`, { name }),
+  approve: (id: string) => api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/approve`, {}),
+  revoke: (id: string) => api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/revoke`, {}),
+  setEnabled: (id: string, enabled: boolean) => api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/enabled`, { enabled }),
+  remove: (id: string) => api.delete<{ ok: boolean }>(`${BASE}/rigs/${id}`),
 }

@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react"
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import { useMyAccess } from "@/features/access/useMyAccess"
 import { CoinTable } from "./components/CoinTable"
+import { RigsPanel } from "./components/RigsPanel"
 import { SettingsPanel } from "./components/SettingsPanel"
 import { isStale, minutesSince } from "./format"
 import { useMining } from "./useMining"
@@ -34,6 +35,9 @@ export function MiningPage() {
 
       {error && <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</div>}
 
+      <RigsPanel canControl={canControl} />
+
+      <h2 className="pt-2 text-sm font-semibold text-zinc-200">{t("earnings_title")}</h2>
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <label className="text-zinc-400">{t("gpu")}</label>
         <select value={gpu} onChange={(e) => setGpu(e.target.value)}

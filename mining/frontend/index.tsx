@@ -12,6 +12,39 @@ export const nav = [
   },
 ]
 
+const rigsDe = {
+  rigs_title: "Rechner", rigs_empty: "Noch kein Rechner gekoppelt. „Rechner koppeln“ erzeugt einen Befehl für den Rechner.",
+  earnings_title: "Erträge je Coin",
+  pair_button: "Rechner koppeln", pair_title: "Neuen Rechner koppeln", rig_name: "Name des Rechners",
+  rig_name_hint: "Nur Kleinbuchstaben, Ziffern und Bindestrich, höchstens 32 Zeichen. Der Name erscheint auch bei Kryptex.",
+  pair_create: "Befehl erzeugen", cancel: "Abbrechen", done: "Fertig", copy: "Kopieren", copied: "Kopiert.",
+  pair_step1: "1. Diesen Befehl auf dem Rechner „{{name}}“ in ein Terminal einfügen:",
+  pair_step2: "2. Danach erscheint der Rechner unten als „wartet auf Freigabe“. Dort auf „Freigeben“ klicken.",
+  pair_code: "Code", pair_valid_until: "gültig bis {{time}}, nur einmal verwendbar",
+  pair_pinned: "Server-Zertifikat ist im Befehl hinterlegt",
+  col_rig: "Rechner", col_state: "Zustand", col_temp: "Temp.", col_power: "Strom", col_load: "Last", col_system: "System",
+  badge_pending: "wartet auf Freigabe", badge_online: "online", badge_offline: "offline",
+  badge_disabled: "ausgeschaltet", badge_revoked: "gesperrt",
+  approve: "Freigeben", turn_off: "Ausschalten", turn_on: "Einschalten", revoke: "Sperren", remove: "Entfernen",
+  revoke_confirm: "Rechner sperren? Er verliert sofort den Zugang und muss neu gekoppelt werden.",
+}
+const rigsEn = {
+  rigs_title: "Rigs", rigs_empty: "No rig paired yet. “Pair rig” creates a command for the machine.",
+  earnings_title: "Earnings per coin",
+  pair_button: "Pair rig", pair_title: "Pair a new rig", rig_name: "Rig name",
+  rig_name_hint: "Lowercase letters, digits and hyphen only, max. 32 characters. The name is also shown on Kryptex.",
+  pair_create: "Create command", cancel: "Cancel", done: "Done", copy: "Copy", copied: "Copied.",
+  pair_step1: "1. Paste this command into a terminal on “{{name}}”:",
+  pair_step2: "2. The rig then appears below as “awaiting approval”. Click “Approve” there.",
+  pair_code: "Code", pair_valid_until: "valid until {{time}}, single use",
+  pair_pinned: "server certificate is pinned in the command",
+  col_rig: "Rig", col_state: "State", col_temp: "Temp.", col_power: "Power", col_load: "Load", col_system: "System",
+  badge_pending: "awaiting approval", badge_online: "online", badge_offline: "offline",
+  badge_disabled: "switched off", badge_revoked: "revoked",
+  approve: "Approve", turn_off: "Switch off", turn_on: "Switch on", revoke: "Revoke", remove: "Remove",
+  revoke_confirm: "Revoke this rig? It loses access immediately and has to be paired again.",
+}
+
 const regionsDe = {
   region_global: "Weltweit", region_eu: "Europa", region_us: "Nordamerika", region_br: "Südamerika",
   region_sg: "Singapur", region_hk: "Hongkong", region_ru: "Russland", region_ae: "Naher Osten",
@@ -48,6 +81,7 @@ export const i18n = {
       prop_discount: "Abschlag für PROP-Coins (%)",
       save: "Speichern",
       ...regionsDe,
+      ...rigsDe,
     },
   },
   en: {
@@ -76,6 +110,7 @@ export const i18n = {
       prop_discount: "Discount for PROP coins (%)",
       save: "Save",
       ...regionsEn,
+      ...rigsEn,
     },
   },
 }
