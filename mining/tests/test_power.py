@@ -143,3 +143,15 @@ def test_power_url_lan_ok_and_json_path():
 def test_power_status_route(client, admin_headers, user_headers):
     assert client.get(f"{P}/rigs/power", headers=user_headers).status_code == 403
     assert client.get(f"{P}/rigs/power", headers=admin_headers).json()["mode"] == "off"
+
+
+def test_switching_power_on_reads_source_at_once(client, admin_headers, quotes):
+    """Live auf hydratest gefunden: „aus“ → „fester Wert“ stoppte laufende Rigs bis zum nächsten
+    Abfrage-Lauf (30 s) als „Quelle antwortet nicht“. Speichern liest die Quelle jetzt sofort."""
+    store.update_config({"kryptex_user": "krxTEST"})
+    e = _rig(client, admin_headers)
+    assert _report(client, e)["action"] == "benchmark"
+    r = client.put(f"{P}/config", headers=admin_headers, json={"power_mode": "fixed", "power_fixed_w": 5000})
+    assert r.status_code == 200
+    assert _report(client, e)["action"] == "benchmark"           # kein Halt durch fehlende Daten
+    assert power.status()["available_w"] == 5000
