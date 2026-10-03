@@ -15,7 +15,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from hydrahive.api.middleware.client_ip import client_ip
 
-from . import pairing, rigs
+from . import pairing, rigs, store
 
 device_router = APIRouter()
 _UNAUTH = {"code": "device_unauthorized"}
@@ -61,4 +61,6 @@ def report(request: Request, body: dict[str, Any], dev: Device) -> dict:
         rigs.report(dev.rig, body, client_ip(request))
     except rigs.RigError as exc:
         raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail={"code": str(exc)}) from exc
-    return {"rig": {"name": dev.rig["name"], "status": dev.rig["status"]}, "desired": rigs.desired(dev.rig)}
+    desired = rigs.desired(dev.rig, body.get("state") if isinstance(body.get("state"), dict) else {})
+    desired["stop_when_offline"] = store.get_config().get("power_mode", "off") != "off"
+    return {"rig": {"name": dev.rig["name"], "status": dev.rig["status"]}, "desired": desired}

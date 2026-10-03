@@ -1,6 +1,10 @@
 """Rig-Verwaltung für Admins (unter /api/modules/mining, zusätzlich mining.control).
 
-GET    /rigs                 Liste (ohne Tokens)
+GET    /rigs                 Liste (ohne Tokens) inkl. Zuteilung
+GET    /rigs/log             Wechsel-Protokoll (optional ?rig_id=)
+GET    /rigs/power           Zustand der Energie-Steuerung
+POST   /rigs/{id}/power      {"follows_power": bool, "priority": int}
+GET    /rigs/{id}/benchmarks Messungen; POST …/benchmarks/reset = neu messen
 POST   /rigs/pairing         Kopplungs-Code + fertiger Installationsbefehl
 POST   /rigs/{id}/approve    freigeben
 POST   /rigs/{id}/revoke     sperren (Token sofort ungültig)
@@ -14,7 +18,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
 
-from . import pairing, rigs, tls_pin
+from . import pairing, power, rigs, runtime_store, tls_pin
 from .access import Control
 
 rig_router = APIRouter(prefix="/rigs")
@@ -69,3 +73,34 @@ def set_enabled(_control: Control, rig_id: str, body: dict[str, Any]) -> dict:
 def delete(_control: Control, rig_id: str) -> dict:
     _not_found(rigs.delete(rig_id))
     return {"ok": True}
+
+
+@rig_router.post("/{rig_id}/power")
+def set_power(_control: Control, rig_id: str, body: dict[str, Any]) -> dict:
+    fp, prio = body.get("follows_power"), body.get("priority", 0)
+    if not isinstance(fp, bool) or isinstance(prio, bool) or not isinstance(prio, int) or not -100 <= prio <= 100:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail={"code": "power_prefs_invalid"})
+    _not_found(rigs.set_power_prefs(rig_id, fp, prio))
+    return {"ok": True}
+
+
+@rig_router.get("/{rig_id}/benchmarks")
+def benchmarks(_control: Control, rig_id: str) -> list[dict]:
+    return runtime_store.list_bench(rig_id)
+
+
+@rig_router.post("/{rig_id}/benchmarks/reset")
+def reset_benchmarks(_control: Control, rig_id: str) -> dict:
+    """Neu messen (z. B. nach Treiber-Update oder Übertakten)."""
+    runtime_store.clear_bench(rig_id)
+    return {"ok": True}
+
+
+@rig_router.get("/log")
+def log(_control: Control, rig_id: str | None = None) -> list[dict]:
+    return runtime_store.switch_log(rig_id)
+
+
+@rig_router.get("/power")
+def power_status(_control: Control) -> dict:
+    return power.status()
