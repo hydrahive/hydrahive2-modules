@@ -23,7 +23,10 @@ NVSMI = "NVIDIA GeForce RTX 5060 Ti, 16311, 595.91.07, 55, 28.01, 0, 0\n"
 def test_parse_nvidia_smi_real_output():
     (g,) = gpu.parse_nvidia_smi(NVSMI)
     assert g == {"gpu_vendor": "nvidia", "gpu_model": "NVIDIA GeForce RTX 5060 Ti", "gpu_mem_mb": 16311,
-                 "driver": "595.91.07", "temp_c": 55.0, "power_w": 28.01, "fan_pct": 0.0, "util_pct": 0.0}
+                 "driver": "595.91.07", "temp_c": 55.0, "power_w": 28.01, "fan_pct": 0.0, "util_pct": 0.0,
+                 "pci": None, "sensors": "ok"}
+    (g2,) = gpu.parse_nvidia_smi(NVSMI.strip() + ", 00000000:01:00.0\n")      # mit pci.bus_id (ab 0.3.1)
+    assert g2["pci"] == "00000000:01:00.0" and g2["power_w"] == 28.01
 
 
 def test_parse_nvidia_smi_not_supported_fields():
@@ -58,7 +61,7 @@ def test_read_amd_sysfs(tmp_path):
 def test_detect_none(monkeypatch):
     monkeypatch.setattr(gpu, "_nvidia", list)
     monkeypatch.setattr(gpu, "read_amd", list)
-    assert gpu.detect() == {"gpu_vendor": "none", "gpu_count": 0}
+    assert gpu.detect() == {"gpu_vendor": "none", "gpu_count": 0, "gpus": []}
 
 
 def _cert(key_type="ec"):

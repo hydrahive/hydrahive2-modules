@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next"
 import type { Rig } from "../api"
-import { BADGE_CLASS, rigBadge } from "../rigState"
+import { BADGE_CLASS, rigBadge, rigCards, sensorHint } from "../rigState"
 import { RigActivity } from "./RigActivity"
+import { RigCards } from "./RigCards"
 
 interface Props {
   rig: Rig
@@ -23,6 +24,8 @@ export function RigRow({ rig, canControl, benchTotal, powerActive, onApprove, on
   const { t } = useTranslation("mining")
   const badge = rigBadge(rig)
   const live = rig.last_report
+  const cards = rigCards(rig)
+  const hint = sensorHint(cards)
   const fmt = (v: number | null | undefined, unit: string) => (v === null || v === undefined ? "—" : `${Math.round(v)} ${unit}`)
 
   return (
@@ -36,6 +39,8 @@ export function RigRow({ rig, canControl, benchTotal, powerActive, onApprove, on
       <td className="px-3 py-2 text-zinc-300">
         <div>{rig.gpu_model ?? "—"}</div>
         <div className="text-xs text-zinc-500">{rig.gpu_mem_mb ? `${Math.round(rig.gpu_mem_mb / 1024)} GB` : ""} {rig.driver ? `· ${rig.driver}` : ""}</div>
+        {hint && <div className="mt-0.5 text-xs text-amber-300" title={t(`sensors_${hint}_hint`)}>{t(`sensors_${hint}`)}</div>}
+        <RigCards cards={cards} />
       </td>
       <td className="px-3 py-2 text-right text-zinc-300">{fmt(live?.temp_c, "°C")}</td>
       <td className="px-3 py-2 text-right text-zinc-300">{fmt(live?.power_w, "W")}</td>

@@ -13,6 +13,7 @@ from . import catalog, power, runtime_store, store
 from .decide import Assignment, decide
 
 logger = logging.getLogger(__name__)
+MAX_RIG_WATTS = 20_000   # bis ~20 Karten à 1 kW; alles darüber ist Unsinn
 BENCH_SECONDS = 180
 
 
@@ -27,7 +28,7 @@ def _record_benchmark(rig: dict, state: dict) -> None:
     hr = res.get("hashrate")
     hr = float(hr) if isinstance(hr, (int, float)) and not isinstance(hr, bool) and 0 < hr < 1e18 else None
     w = res.get("watts")
-    w = float(w) if isinstance(w, (int, float)) and not isinstance(w, bool) and 0 < w < 2000 else None
+    w = float(w) if isinstance(w, (int, float)) and not isinstance(w, bool) and 0 < w < MAX_RIG_WATTS else None
     runtime_store.save_bench(rig["id"], cur.coin, cur.miner, cur.algo, hr, w,
                              None if hr else str(res.get("error") or "no_hashrate"))
 

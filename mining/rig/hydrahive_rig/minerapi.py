@@ -17,6 +17,12 @@ def _num(v) -> float | None:
     return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
 
 
+def _sum_power(values) -> float | None:
+    """Watt aller Karten (Mehrkarten-Rigs); unbekannte/0-Werte zählen nicht."""
+    known = [v for v in (_num(x) for x in values) if v is not None and v > 0]
+    return round(sum(known), 3) if known else None
+
+
 def parse(kind: str, d: dict) -> dict:
     out = {"hashrate": None, "accepted": 0, "rejected": 0, "watts": None}
     if kind == "rigel":
@@ -25,8 +31,7 @@ def parse(kind: str, d: dict) -> dict:
         for s in (d.get("solution_stat") or {}).values():
             out["accepted"] += int(s.get("accepted") or 0)
             out["rejected"] += int(s.get("rejected") or 0) + int(s.get("invalid") or 0)
-        dev = (d.get("devices") or [{}])[0]
-        out["watts"] = _num(dev.get("power_usage"))
+        out["watts"] = _sum_power(dev.get("power_usage") for dev in (d.get("devices") or []))
     elif kind == "srbminer":
         a = (d.get("algorithms") or [{}])[0]
         out["hashrate"] = _num(((a.get("hashrate") or {}).get("gpu") or {}).get("total"))
@@ -37,7 +42,7 @@ def parse(kind: str, d: dict) -> dict:
         perf, fac = _num(a.get("Total_Performance")), _num(a.get("Performance_Factor")) or 1.0
         out["hashrate"] = perf * fac if perf is not None else None
         out["accepted"], out["rejected"] = int(a.get("Total_Accepted") or 0), int(a.get("Total_Rejected") or 0)
-        out["watts"] = _num((d.get("Workers") or [{}])[0].get("Power"))
+        out["watts"] = _sum_power(w.get("Power") for w in (d.get("Workers") or []))
     if out["hashrate"] is not None and out["hashrate"] <= 0:
         out["hashrate"] = None
     return out

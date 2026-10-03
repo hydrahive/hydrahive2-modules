@@ -61,6 +61,17 @@ export interface Assignment {
   since: string | null
 }
 
+/** Eine Karte im Rig (Client ab 0.3.1). sensors: ok | asleep (Linux ≥ 6.15, Karte ruht) | no_hwmon */
+export interface GpuCard {
+  gpu_model?: string | null
+  gpu_mem_mb?: number | null
+  temp_c?: number | null
+  power_w?: number | null
+  util_pct?: number | null
+  pci?: string | null
+  sensors?: "ok" | "asleep" | "no_hwmon"
+}
+
 export interface Rig {
   id: string
   name: string
@@ -80,6 +91,7 @@ export interface Rig {
   last_report: {
     miner?: string; temp_c?: number | null; power_w?: number | null; util_pct?: number | null
     hashrate?: number | null; accepted?: number | null; rejected?: number | null; error?: string | null; restarts?: number
+    gpu_count?: number; gpus?: GpuCard[]
   } | null
   assignment: Assignment | null
   bench_done: number

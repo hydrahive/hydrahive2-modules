@@ -49,7 +49,8 @@ def enroll(server: str, code: str, pin: str | None) -> RigConfig:
 
 def report_once(cfg: RigConfig, runner: Runner | None = None) -> dict:
     card = gpu.detect()
-    state = {"miner": "idle", "gpu_count": card.get("gpu_count", 0), **{k: card.get(k) for k in _LIVE}}
+    state = {"miner": "idle", "gpu_count": card.get("gpu_count", 0), "gpus": card.get("gpus") or [],
+             **{k: card.get(k) for k in _LIVE}}
     if runner is not None:
         state.update(runner.tick(card.get("power_w")))
     return Server(cfg.server, cfg.pin).post(

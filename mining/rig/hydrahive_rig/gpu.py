@@ -1,27 +1,36 @@
-"""Grafikkarte erkennen und Messwerte lesen — ohne Abhängigkeiten.
+"""Grafikkarten erkennen und Messwerte lesen — ohne Abhängigkeiten.
 
-NVIDIA: ``nvidia-smi --query-gpu=… --format=csv,noheader,nounits``
+NVIDIA: ``nvidia-smi --query-gpu=… --format=csv,noheader,nounits`` (eine Zeile je Karte)
 AMD:    sysfs des amdgpu-Treibers (/sys/class/drm/card*/device):
-        vendor 0x1002, mem_info_vram_total (Bytes), hwmon/temp1_input (m°C),
+        vendor 0x1002, mem_info_vram_total (Bytes), hwmon/temp*_input (m°C),
         hwmon/power1_average bzw. power1_input (µW), gpu_busy_percent (%).
-V1: genau eine Karte pro Rig (Spec). Mehrere → erste, mit Hinweis.
+
+Alle Karten werden gemeldet (``gpus``); dazu eine Zusammenfassung für Anzeige und
+Energie-Steuerung: Watt summiert, Temperatur der heißesten Karte. Die Miner nutzen
+ohne Geräte-Auswahl ohnehin alle Karten, die Hashrate ist schon die Summe.
+
+AMD ab Linux 6.15: Temperatur/Watt/Last liefern im Laufzeit-Ruhezustand nur EPERM
+(amdgpu_pm_get_access_if_active) — die Karte wird fürs Auslesen nicht mehr geweckt.
+Dann ``sensors: asleep`` statt stiller Lücken.
 """
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
+from collections import Counter
 from pathlib import Path
 
-NVIDIA_FIELDS = "name,memory.total,driver_version,temperature.gpu,power.draw,fan.speed,utilization.gpu"
+NVIDIA_FIELDS = "name,memory.total,driver_version,temperature.gpu,power.draw,fan.speed,utilization.gpu,pci.bus_id"
 AMD_VENDOR = "0x1002"
-NVIDIA_VENDOR = "0x10de"
+_CARD_RE = re.compile(r"^card(\d+)$")
 
 
-def _num(v: str) -> float | None:
+def _num(v: str | None) -> float | None:
     try:
-        return float(v.strip())
+        return float(v.strip())  # type: ignore[union-attr]
     except (ValueError, AttributeError):
-        return None  # "[N/A]", "[Not Supported]" …
+        return None  # "[N/A]", "[Not Supported]", None …
 
 
 def parse_nvidia_smi(out: str) -> list[dict]:
@@ -35,6 +44,7 @@ def parse_nvidia_smi(out: str) -> list[dict]:
             "gpu_vendor": "nvidia", "gpu_model": parts[0], "gpu_mem_mb": int(mem) if mem else None,
             "driver": parts[2], "temp_c": _num(parts[3]), "power_w": _num(parts[4]),
             "fan_pct": _num(parts[5]), "util_pct": _num(parts[6]),
+            "pci": parts[7] if len(parts) > 7 else None, "sensors": "ok",
         })
     return gpus
 
@@ -51,44 +61,94 @@ def _nvidia() -> list[dict]:
     return parse_nvidia_smi(r.stdout) if r.returncode == 0 else []
 
 
-def _read(p: Path) -> str | None:
-    try:
-        return p.read_text().strip()
-    except OSError:
+class _Reader:
+    """Liest sysfs-Werte und merkt sich, ob der Treiber Lesen verweigert hat (EPERM)."""
+
+    def __init__(self) -> None:
+        self.denied = False
+
+    def text(self, p: Path | None) -> str | None:
+        if p is None:
+            return None
+        try:
+            return p.read_text().strip()
+        except PermissionError:
+            self.denied = True
+            return None
+        except OSError:
+            return None
+
+    def first(self, paths: list[Path], div: float) -> float | None:
+        """Erster lesbare Wert > 0 aus mehreren Kandidaten (z. B. average, sonst input)."""
+        for p in paths:
+            v = _num(self.text(p)) if p.exists() else None
+            if v is not None and v > 0:
+                return round(v / div, 1)
         return None
 
 
-def _scaled(p: Path | None, div: float) -> float | None:
-    if p is None:
-        return None
-    v = _num(_read(p) or "")
-    return round(v / div, 1) if v is not None else None
+def _pci_slot(rd: _Reader, dev: Path) -> str | None:
+    for line in (rd.text(dev / "uevent") or "").splitlines():
+        if line.startswith("PCI_SLOT_NAME="):
+            return line.split("=", 1)[1]
+    return None
 
 
 def read_amd(drm_root: Path = Path("/sys/class/drm")) -> list[dict]:
+    cards = sorted((int(m.group(1)), p) for p in drm_root.glob("card*") if (m := _CARD_RE.match(p.name)))
     gpus = []
-    for dev in sorted(drm_root.glob("card[0-9]*/device")):
-        if "-" in dev.parent.name or _read(dev / "vendor") != AMD_VENDOR:
+    for _, card in cards:
+        dev = card / "device"
+        rd = _Reader()
+        if rd.text(dev / "vendor") != AMD_VENDOR:
             continue
         hw = next(iter(sorted(dev.glob("hwmon/hwmon*"))), None)
-        power = None
+        temp = power = None
         if hw is not None:
-            power = next((hw / f for f in ("power1_average", "power1_input") if (hw / f).exists()), None)
-        vram = _num(_read(dev / "mem_info_vram_total") or "")
+            temp = rd.first([hw / f"temp{i}_input" for i in (1, 2, 3)], 1000)        # edge, hotspot, mem
+            power = rd.first([hw / "power1_average", hw / "power1_input"], 1_000_000)
+        util = _num(rd.text(dev / "gpu_busy_percent"))
+        vram = _num(rd.text(dev / "mem_info_vram_total"))
+        asleep = rd.denied or rd.text(dev / "power" / "runtime_status") == "suspended"
+        sensors = "no_hwmon" if hw is None else ("asleep" if asleep and temp is None and power is None else "ok")
         gpus.append({
-            "gpu_vendor": "amd", "gpu_model": _read(dev / "product_name") or f"AMD {_read(dev / 'device')}",
+            "gpu_vendor": "amd", "gpu_model": rd.text(dev / "product_name") or f"AMD {rd.text(dev / 'device')}",
             "gpu_mem_mb": int(vram / 1048576) if vram else None,
-            "driver": _read(dev / "driver/module/version") or "amdgpu",
-            "temp_c": _scaled(hw / "temp1_input" if hw else None, 1000),
-            "power_w": _scaled(power, 1_000_000),
-            "fan_pct": None, "util_pct": _num(_read(dev / "gpu_busy_percent") or ""),
+            "driver": rd.text(dev / "driver/module/version") or "amdgpu",
+            "temp_c": temp, "power_w": power, "fan_pct": None, "util_pct": util,
+            "pci": _pci_slot(rd, dev), "sensors": sensors,
         })
     return gpus
 
 
-def detect() -> dict:
-    """Erste gefundene Karte (NVIDIA vor AMD) oder ``gpu_vendor: none``."""
-    gpus = _nvidia() or read_amd()
+def _model_summary(gpus: list[dict]) -> str:
+    if len(gpus) == 1:
+        return gpus[0].get("gpu_model") or "—"
+    vendor = {"amd": "AMD", "nvidia": "NVIDIA"}.get(gpus[0].get("gpu_vendor") or "", "GPU")
+    parts = ", ".join(f"{n}× {m}" for m, n in Counter(g.get("gpu_model") or "?" for g in gpus).most_common())
+    return f"{len(gpus)}× {vendor} ({parts})"
+
+
+def summarize(gpus: list[dict]) -> dict:
+    """Ein Rig-Eintrag aus allen Karten: Watt-Summe, heißeste Karte, mittlere Last, kleinster Speicher."""
     if not gpus:
-        return {"gpu_vendor": "none", "gpu_count": 0}
-    return {**gpus[0], "gpu_count": len(gpus)}
+        return {"gpu_vendor": "none", "gpu_count": 0, "gpus": []}
+
+    def known(k):
+        return [g[k] for g in gpus if isinstance(g.get(k), (int, float))]
+
+    power, temps, utils, mems = known("power_w"), known("temp_c"), known("util_pct"), known("gpu_mem_mb")
+    first = gpus[0]
+    return {
+        "gpu_vendor": first.get("gpu_vendor"), "gpu_model": _model_summary(gpus),
+        "gpu_mem_mb": min(mems) if mems else None, "driver": first.get("driver"),
+        "temp_c": max(temps) if temps else None, "power_w": round(sum(power), 1) if power else None,
+        "util_pct": round(sum(utils) / len(utils), 1) if utils else None,
+        "fan_pct": first.get("fan_pct") if len(gpus) == 1 else None,
+        "gpu_count": len(gpus), "gpus": gpus,
+    }
+
+
+def detect() -> dict:
+    """Alle Karten (NVIDIA vor AMD; gemischte Rigs: nur der erste Hersteller) + Zusammenfassung."""
+    return summarize(_nvidia() or read_amd())
