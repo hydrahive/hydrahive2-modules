@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 from hydrahive.db.connection import db
 
-from . import runtime_store, store
+from . import groups, runtime_store, store
 from .profit import usd_per_day
 
 KEEP_DAYS = 7
@@ -35,28 +35,45 @@ def _cards(state: dict) -> list[dict]:
             for g in raw[:MAX_CARDS]]
 
 
-def _sample(rig_id: str, state: dict) -> dict:
-    cur, _, _ = runtime_store.get_assignment(rig_id)
+def _group_sample(key: str, gstate: dict) -> dict:
+    cur, _, _ = runtime_store.get_assignment(key)
     mode = cur.mode if cur else "stop"
     out = {"mode": mode, "coin": cur.coin if cur else None, "miner": cur.miner if cur else None,
-           "usd_day": None, "pct": None, "cards": _cards(state)}
-    hr = _num(state.get("hashrate"), 1e-9, 1e18)
+           "usd_day": None, "pct": None}
+    hr = _num(gstate.get("hashrate"), 1e-9, 1e18)
     if mode != "mine" or not cur or not cur.coin or hr is None:
         return out
     quote = next((q for q in store.load_quotes()[0] if q.coin == cur.coin), None)
     if quote is not None:
         out["usd_day"] = usd_per_day(quote, hr, prop_discount=store.get_config().get("prop_discount", 0.0))
-    bench, _ = runtime_store.bench_for(rig_id)
+    bench, _ = runtime_store.bench_for(key)
     ref = bench.get((cur.coin, cur.miner or ""))
     if ref:
         out["pct"] = round(hr / ref * 100, 1)
     return out
 
 
+def _sample(rig: dict, state: dict) -> dict:
+    """Eine Probe je Rechner; gemischte Rechner: Gruppen zusammengefasst (Summe Ertrag, Coins mit +)."""
+    ks = groups.keys(rig, state) or {"": rig["id"]}
+    mixed = len(ks) > 1
+    parts = [_group_sample(k, groups.group_state(state, v, mixed) if v else state) for v, k in sorted(ks.items())]
+    if len(parts) == 1:
+        return {**parts[0], "cards": _cards(state)}
+    mining = [p for p in parts if p["mode"] == "mine"]
+    usd = [p["usd_day"] for p in parts if p["usd_day"] is not None]
+    pcts = [p["pct"] for p in parts if p["pct"] is not None]
+    lead = mining[0] if mining else parts[0]
+    return {"mode": lead["mode"], "coin": "+".join(sorted(p["coin"] for p in mining if p["coin"])) or lead["coin"],
+            "miner": "+".join(sorted({p["miner"] for p in mining if p["miner"]})) or lead["miner"],
+            "usd_day": sum(usd) if usd else None, "pct": round(min(pcts), 1) if pcts else None,
+            "cards": _cards(state)}
+
+
 def record(rig: dict, state: dict, *, now: datetime | None = None) -> None:
     """Probe speichern; gleiche Minute → nichts tun (Rig meldet alle 30 s)."""
     now = (now or datetime.now(timezone.utc)).replace(second=0, microsecond=0)
-    data = json.dumps(_sample(rig["id"], state if isinstance(state, dict) else {}), separators=(",", ":"))
+    data = json.dumps(_sample(rig, state if isinstance(state, dict) else {}), separators=(",", ":"))
     with db() as c:
         c.execute("INSERT OR IGNORE INTO module_mining_samples (rig_id, ts, data) VALUES (?, ?, ?)",
                   (rig["id"], now.isoformat(), data))

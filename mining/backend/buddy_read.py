@@ -119,11 +119,12 @@ async def _benchmarks(args: dict, ctx: ToolContext) -> ToolResult:
     measured, failed = [], []
     for b in runtime_store.list_bench(rig["id"]):
         if not b.get("hashrate"):
-            failed.append({"coin": b["coin"], "miner": b["miner"], "error": b.get("error")})
+            failed.append({"coin": b["coin"], "miner": b["miner"], "vendor": b.get("vendor"), "error": b.get("error")})
             continue
         q = quotes.get(b["coin"])
         usd = usd_per_day(q, b["hashrate"], prop_discount=discount) if q else None
-        measured.append({"coin": b["coin"], "miner": b["miner"], "hashrate": b["hashrate"], "watts": b.get("watts"),
+        measured.append({"coin": b["coin"], "miner": b["miner"], "vendor": b.get("vendor"),
+                         "hashrate": b["hashrate"], "watts": b.get("watts"),
                          "eur_day": usd / rate if usd is not None and rate else None})
     measured.sort(key=lambda x: x["eur_day"] or 0, reverse=True)
     return ToolResult.ok({"rig": rig["name"], "measured": measured, "failed": failed,

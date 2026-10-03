@@ -45,7 +45,7 @@ def _clean_info(info: dict) -> dict:
             out[k] = int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v < 10**7 else None
         else:
             out[k] = str(v)[:120]
-    if out.get("gpu_vendor") not in (None, "nvidia", "amd", "none"):
+    if out.get("gpu_vendor") not in (None, "nvidia", "amd", "mixed", "none"):
         out["gpu_vendor"] = "unknown"
     return out
 
@@ -121,14 +121,19 @@ def list_rigs() -> list[dict]:
         d.pop("token_hash", None)
         d["last_report"] = json.loads(d["last_report"]) if d.get("last_report") else None
         out.append(d)
-    from . import runtime_store
+    from . import groups, runtime_store
     for d in out:
+        d["groups"] = groups.overview(d)
+        if d["groups"]:   # Kopfzeile = erste Gruppe, Mess-Zähler über alle Gruppen
+            first = d["groups"][0]
+            d["assignment"] = first["assignment"]
+            for k in ("bench_done", "bench_failed", "bench_total"):
+                d[k] = sum(g[k] for g in d["groups"])
+            continue
         a, since, _ = runtime_store.get_assignment(d["id"])
         d["assignment"] = ({"mode": a.mode, "coin": a.coin, "miner": a.miner, "reason": a.reason,
                             "since": since.isoformat() if since else None} if a else None)
-        bench, failed = runtime_store.bench_for(d["id"])
-        d["bench_done"], d["bench_failed"] = len(bench), len(failed)
-        d["bench_total"] = bench_total(d.get("gpu_vendor") or "", d.get("gpu_mem_mb"))
+        d["bench_done"], d["bench_failed"], d["bench_total"] = 0, 0, 0
     return out
 
 

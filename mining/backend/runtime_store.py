@@ -14,6 +14,14 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+# Rechner + alle seine Hersteller-Gruppen (Schlüssel "<rig_id>#<hersteller>"); substr statt LIKE (_ ist Joker).
+_ALL_KEYS = "(rig_id = ? OR substr(rig_id, 1, ?) = ?)"
+
+
+def _all(rig_id: str) -> tuple:
+    return (rig_id, len(rig_id) + 1, rig_id + "#")
+
+
 def bench_for(rig_id: str) -> tuple[dict[tuple[str, str], float], set[tuple[str, str]]]:
     """({(coin, miner): H/s}, {(coin, miner) fehlgeschlagen})."""
     with db() as c:
@@ -37,15 +45,20 @@ def save_bench(rig_id: str, coin: str, miner: str, algo: str, hashrate: float | 
 
 
 def list_bench(rig_id: str) -> list[dict]:
+    """Messungen des Rechners samt aller Hersteller-Gruppen; ``vendor`` nur bei gemischten Rechnern."""
     with db() as c:
-        return [dict(r) for r in c.execute(
-            "SELECT coin, miner, algo, hashrate, watts, error, measured_at FROM module_mining_benchmarks"
-            " WHERE rig_id = ? ORDER BY coin, miner", (rig_id,))]
+        rows = [dict(r) for r in c.execute(
+            "SELECT rig_id, coin, miner, algo, hashrate, watts, error, measured_at FROM module_mining_benchmarks"
+            f" WHERE {_ALL_KEYS} ORDER BY coin, miner", _all(rig_id))]
+    for r in rows:
+        key = r.pop("rig_id")
+        r["vendor"] = key.split("#", 1)[1] if "#" in key else None
+    return rows
 
 
 def clear_bench(rig_id: str) -> None:
     with db() as c:
-        c.execute("DELETE FROM module_mining_benchmarks WHERE rig_id = ?", (rig_id,))
+        c.execute(f"DELETE FROM module_mining_benchmarks WHERE {_ALL_KEYS}", _all(rig_id))
 
 
 def get_assignment(rig_id: str) -> tuple[Assignment | None, datetime | None, datetime | None]:
@@ -85,8 +98,8 @@ def switch_log(rig_id: str | None = None, limit: int = 50) -> list[dict]:
     q = "SELECT rig_id, from_coin, to_coin, reason, at FROM module_mining_switch_log"
     args: tuple = ()
     if rig_id:
-        q += " WHERE rig_id = ?"
-        args = (rig_id,)
+        q += f" WHERE {_ALL_KEYS}"
+        args = _all(rig_id)
     with db() as c:
         return [dict(r) for r in c.execute(q + " ORDER BY id DESC LIMIT ?", (*args, limit))]
 
@@ -95,4 +108,4 @@ def forget_rig(rig_id: str) -> None:
     with db() as c:
         for t in ("module_mining_benchmarks", "module_mining_assignments", "module_mining_switch_log",
                   "module_mining_samples"):
-            c.execute(f"DELETE FROM {t} WHERE rig_id = ?", (rig_id,))
+            c.execute(f"DELETE FROM {t} WHERE {_ALL_KEYS}", _all(rig_id))
