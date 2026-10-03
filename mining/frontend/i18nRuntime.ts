@@ -1,6 +1,16 @@
 // Texte für Betrieb (Schürfen, Benchmark, Energie). Getrennt von index.tsx wegen Dateigröße.
 
 export const runtimeDe = {
+  history_title: "Verlauf",
+  history_total: "zusammen {{v}} €/Tag",
+  history_m_eur: "Ertrag €/Tag",
+  history_m_pct: "Leistung %",
+  history_m_watt: "Watt",
+  history_m_temp: "Temperatur",
+  history_r_24: "24 h",
+  history_r_168: "7 Tage",
+  history_per_rig_hint: "Ertrag und Leistung je Rechner — die Miner melden nur die Hashrate aller Karten zusammen. Leistung = % der eigenen Benchmark-Messung. Während Benchmark oder Pause bleibt die Linie leer.",
+  history_empty: "Noch zu wenig Daten — der Verlauf füllt sich mit jeder Minute.",
   cards_show: "{{n}} Karten anzeigen",
   sensors_asleep: "Sensoren schlafen",
   sensors_asleep_hint: "Die Karte ist im Ruhezustand. Ab Linux 6.15 liefert der AMD-Treiber dann keine Temperatur und Watt. Sobald geschürft wird, kommen die Werte.",
@@ -40,6 +50,16 @@ export const runtimeDe = {
 }
 
 export const runtimeEn: Record<keyof typeof runtimeDe, string> = {
+  history_title: "History",
+  history_total: "total {{v}} €/day",
+  history_m_eur: "Earnings €/day",
+  history_m_pct: "Performance %",
+  history_m_watt: "Watts",
+  history_m_temp: "Temperature",
+  history_r_24: "24 h",
+  history_r_168: "7 days",
+  history_per_rig_hint: "Earnings and performance per rig — miners only report the hashrate of all cards combined. Performance = % of the rig's own benchmark. The line stays empty during benchmark or pause.",
+  history_empty: "Not enough data yet — the history fills up every minute.",
   cards_show: "show {{n}} cards",
   sensors_asleep: "sensors asleep",
   sensors_asleep_hint: "The card is in runtime suspend. Since Linux 6.15 the AMD driver reports no temperature or power then. Values appear once mining starts.",

@@ -1,4 +1,5 @@
 import { api } from "@/shared/api-client"
+import type { HistoryResponse } from "./history"
 
 const BASE = "/modules/mining"
 
@@ -126,4 +127,5 @@ export const miningApi = {
     api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/power`, { follows_power, priority }),
   resetBench: (id: string) => api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/benchmarks/reset`, {}),
   power: () => api.get<PowerStatus>(`${BASE}/rigs/power`),
+  history: (hours: number) => api.get<HistoryResponse>(`${BASE}/rigs/history?hours=${hours}`),
 }

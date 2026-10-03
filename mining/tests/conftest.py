@@ -33,7 +33,8 @@ if str(MODULE_DIR) not in sys.path:
 MOD_PREFIX = "/api/modules/mining"
 DEV_PREFIX = "/api/module-device/mining"
 TABLES = ("module_mining_quotes", "module_mining_config", "module_mining_rigs", "module_mining_pairing",
-          "module_mining_benchmarks", "module_mining_assignments", "module_mining_switch_log")
+          "module_mining_benchmarks", "module_mining_assignments", "module_mining_switch_log",
+          "module_mining_samples")
 
 
 @pytest.fixture(scope="session", autouse=True)

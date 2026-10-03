@@ -10,12 +10,15 @@ prüfen danach selbst, ob der passende Nachweis vorliegt.
 """
 from __future__ import annotations
 
+import logging
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from hydrahive.api.middleware.client_ip import client_ip
 
-from . import pairing, rigs, store
+from . import history, pairing, rigs, store
+
+logger = logging.getLogger(__name__)
 
 device_router = APIRouter()
 _UNAUTH = {"code": "device_unauthorized"}
@@ -61,6 +64,12 @@ def report(request: Request, body: dict[str, Any], dev: Device) -> dict:
         rigs.report(dev.rig, body, client_ip(request))
     except rigs.RigError as exc:
         raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail={"code": str(exc)}) from exc
-    desired = rigs.desired(dev.rig, body.get("state") if isinstance(body.get("state"), dict) else {})
+    state = body.get("state") if isinstance(body.get("state"), dict) else {}
+    desired = rigs.desired(dev.rig, state)
+    if dev.rig["status"] == "active":
+        try:
+            history.record(dev.rig, state)
+        except Exception:  # Diagramm darf das Melden nie kaputt machen
+            logger.exception("Mining: Verlauf für %s nicht gespeichert", dev.rig.get("name"))
     desired["stop_when_offline"] = store.get_config().get("power_mode", "off") != "off"
     return {"rig": {"name": dev.rig["name"], "status": dev.rig["status"]}, "desired": desired}

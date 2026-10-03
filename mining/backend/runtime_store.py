@@ -93,5 +93,6 @@ def switch_log(rig_id: str | None = None, limit: int = 50) -> list[dict]:
 
 def forget_rig(rig_id: str) -> None:
     with db() as c:
-        for t in ("module_mining_benchmarks", "module_mining_assignments", "module_mining_switch_log"):
+        for t in ("module_mining_benchmarks", "module_mining_assignments", "module_mining_switch_log",
+                  "module_mining_samples"):
             c.execute(f"DELETE FROM {t} WHERE rig_id = ?", (rig_id,))

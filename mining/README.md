@@ -4,7 +4,7 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.3.0: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
+Stand 0.4.0: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
 Schürfen mit Benchmark, automatischem Umschalten, Watchdog und Energie-Steuerung.
 
 ## Einmalig in HydraHive
@@ -89,6 +89,14 @@ Nach 2 Minuten ohne Meldung gilt ein Rechner als offline.
    Fehler; HydraHive nimmt dann einen anderen Coin.
 
 **Neu messen** (Knopf in der Liste): nach Treiber- oder Kartenwechsel.
+
+### Verlauf
+
+Unter der Rechner-Liste zeigt eine Box den Verlauf aller Rechner, jede Linie in
+eigener Farbe: **Ertrag €/Tag** (Standard), **Leistung %** der eigenen
+Benchmark-Messung, **Watt** und **Temperatur** je Karte. Zeitraum 24 h oder
+7 Tage. HydraHive speichert dafür höchstens einen Wert pro Rechner und Minute und
+löscht ihn nach 7 Tagen.
 
 ### Energie-Steuerung (für PV)
 
