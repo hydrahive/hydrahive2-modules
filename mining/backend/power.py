@@ -36,9 +36,12 @@ def refresh() -> None:
 
 
 def rig_watts(rig: dict) -> float:
+    """Gemessene Watt des ganzen Rigs; unbekannt/Leerlauf → Schätzung je Karte."""
     rep = rig.get("last_report_obj") or {}
+    cards = rep.get("gpu_count")
+    cards = int(cards) if isinstance(cards, int) and not isinstance(cards, bool) and 1 <= cards <= 64 else 1
     w = rep.get("power_w")
-    return float(w) if isinstance(w, (int, float)) and w > 30 else DEFAULT_RIG_WATTS
+    return float(w) if isinstance(w, (int, float)) and w > 30 * cards else DEFAULT_RIG_WATTS * cards
 
 
 def plan(rigs: list[dict], budget: float) -> set[str]:

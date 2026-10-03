@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { activity, isValidRigName, OFFLINE_AFTER_MS, rigBadge, stopReasonKey, userHasWorkerSuffix } from "./rigState"
+import { activity, isValidRigName, OFFLINE_AFTER_MS, rigBadge, rigCards, sensorHint, stopReasonKey, userHasWorkerSuffix } from "./rigState"
 
 const now = Date.parse("2026-10-03T15:00:00Z")
 const ago = (ms: number) => new Date(now - ms).toISOString()
@@ -51,5 +51,18 @@ describe("Hinweise", () => {
     expect(userHasWorkerSuffix("krxXJK8JJW")).toBe(false)
     expect(userHasWorkerSuffix(" krxXJK8JJW ")).toBe(false)
     expect(userHasWorkerSuffix("RVNwalletAdresse.x")).toBe(false)
+  })
+})
+
+describe("Mehrkarten", () => {
+  it("Karten aus dem Report, alte Clients ohne Liste", () => {
+    expect(rigCards({ last_report: { gpus: [{ pci: "a" }, { pci: "b" }] } })).toHaveLength(2)
+    expect(rigCards({ last_report: { temp_c: 50 } })).toEqual([])
+    expect(rigCards({ last_report: null })).toEqual([])
+  })
+  it("Sensor-Hinweis: fehlender Treiber-Sensor schlägt Ruhezustand", () => {
+    expect(sensorHint([{ sensors: "ok" }, { sensors: "ok" }])).toBeNull()
+    expect(sensorHint([{ sensors: "ok" }, { sensors: "asleep" }])).toBe("asleep")
+    expect(sensorHint([{ sensors: "asleep" }, { sensors: "no_hwmon" }])).toBe("no_hwmon")
   })
 })

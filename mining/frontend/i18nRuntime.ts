@@ -1,6 +1,11 @@
 // Texte für Betrieb (Schürfen, Benchmark, Energie). Getrennt von index.tsx wegen Dateigröße.
 
 export const runtimeDe = {
+  cards_show: "{{n}} Karten anzeigen",
+  sensors_asleep: "Sensoren schlafen",
+  sensors_asleep_hint: "Die Karte ist im Ruhezustand. Ab Linux 6.15 liefert der AMD-Treiber dann keine Temperatur und Watt. Sobald geschürft wird, kommen die Werte.",
+  sensors_no_hwmon: "keine Sensoren",
+  sensors_no_hwmon_hint: "Der Treiber stellt keine Sensoren bereit (amdgpu ohne Energieverwaltung?). Am Rechner prüfen: ls /sys/class/drm/card*/device/hwmon",
   benchmarking: "Benchmark {{done}}/{{total}}",
   shares: "{{n}} Shares",
   rebench: "Neu messen",
@@ -35,6 +40,11 @@ export const runtimeDe = {
 }
 
 export const runtimeEn: Record<keyof typeof runtimeDe, string> = {
+  cards_show: "show {{n}} cards",
+  sensors_asleep: "sensors asleep",
+  sensors_asleep_hint: "The card is in runtime suspend. Since Linux 6.15 the AMD driver reports no temperature or power then. Values appear once mining starts.",
+  sensors_no_hwmon: "no sensors",
+  sensors_no_hwmon_hint: "The driver exposes no sensors (amdgpu without power management?). Check on the rig: ls /sys/class/drm/card*/device/hwmon",
   benchmarking: "Benchmark {{done}}/{{total}}",
   shares: "{{n}} shares",
   rebench: "Re-measure",

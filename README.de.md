@@ -45,7 +45,7 @@ einem Build, der das `frontend/index.tsx` jedes Moduls lädt.
 | **Haushaltsbuch** | 1.5.3 | — | router, migration | Lokales Haushalts-Ledger mit Bank-Import, automatischer Kategorisierung und experimentellem Read-Only-Lidl-Plus-Beleg-Sync. |
 | **Home Assistant** | 1.0.2 | — | router, migration, 4 Tools | Verbindet Home Assistant: Entities listen/lesen, Templates rendern und Services aufrufen. |
 | **Mediacenter** | 0.8.1 | — | router, migration, 5 Tools, Queue/History | Treasure-Maps-Suche mit Medien-Profilen, idempotenter SABnzbd-Übergabe und Per-User-Queue/History. |
-| **Mining** | 0.3.0 | — | router, Geräte-Router, migration, Poll-Job, frontend routes, nav, i18n, Rig-Client | Verwaltet GPU-Rechner im Netz für Kryptex: Live-Erträge, Rechner koppeln/freigeben/sperren, Benchmark, automatisches Umschalten auf den besten Coin, Watchdog, Energie-Steuerung (PV). |
+| **Mining** | 0.3.1 | — | router, Geräte-Router, migration, Poll-Job, frontend routes, nav, i18n, Rig-Client | Verwaltet GPU-Rechner im Netz für Kryptex: Live-Erträge, Rechner koppeln/freigeben/sperren, Benchmark, automatisches Umschalten auf den besten Coin, Watchdog, Energie-Steuerung (PV). |
 | **Minigames** | 1.0.2 | — | router, migration, `buddyWidgets` | Eine Sammlung kleiner Browser-Spiele für kurze Pausen. |
 | **Musicplayer** | 1.1.1 | — | router, migration, `buddyMediaWidgets` | Projektgebundene, rollenbasierte Audio-Bibliothek im Buddy-Media-Slot; speichert updatefest unter `media/audio`, unterstützt Upload, Import, Streaming und Download. |
 | **Notizbuch** | 1.0.2 | — | router, migration | Einfaches Notizbuch für Texte und Ideen, verfügbar über Projekte hinweg. |

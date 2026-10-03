@@ -1,5 +1,5 @@
 // Reine Logik für die Rechner-Liste — ohne App-Importe, damit sie in Tests läuft.
-import type { Rig } from "./api"
+import type { GpuCard, Rig } from "./api"
 
 export type RigBadge = "pending" | "online" | "offline" | "disabled" | "revoked"
 
@@ -53,4 +53,16 @@ export function stopReasonKey(reason: string): string {
 /** Kryptex-Benutzername mit „.worker“-Teil? (häufiger Fehler: „krxABC.Mining“) */
 export function userHasWorkerSuffix(user: string): boolean {
   return /^krx[A-Za-z0-9]+[./].+/.test(user.trim())
+}
+
+/** Karten eines Rigs für die Anzeige; ältere Clients (≤ 0.3.0) melden keine Einzelkarten. */
+export function rigCards(rig: Pick<Rig, "last_report">): GpuCard[] {
+  return rig.last_report?.gpus ?? []
+}
+
+/** Hinweis, warum Temperatur/Watt fehlen — oder null, wenn alles da ist. */
+export function sensorHint(cards: GpuCard[]): "asleep" | "no_hwmon" | null {
+  if (cards.some((c) => c.sensors === "no_hwmon")) return "no_hwmon"
+  if (cards.some((c) => c.sensors === "asleep")) return "asleep"
+  return null
 }
