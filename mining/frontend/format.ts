@@ -13,7 +13,10 @@ export function formatHashrate(hs: number | null | undefined): string {
 
 export function formatMoney(v: number | null | undefined, currency: "EUR" | "USD", locale = "de-DE"): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return "—"
-  return new Intl.NumberFormat(locale, { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(v)
+  // Zwei Nachkommastellen; nur Beträge unter 10 Cent bekommen eine dritte,
+  // sonst liest man „1,811 €“ leicht als tausend.
+  const digits = Math.abs(v) > 0 && Math.abs(v) < 0.1 ? 3 : 2
+  return new Intl.NumberFormat(locale, { style: "currency", currency, minimumFractionDigits: digits, maximumFractionDigits: digits }).format(v)
 }
 
 export function formatPercent(v: number, locale = "de-DE"): string {

@@ -21,6 +21,12 @@ describe("formatMoney", () => {
     expect(formatMoney(1.5, "EUR")).toMatch(/^1,50\s€$/)
     expect(formatMoney(null, "EUR")).toBe("—")
   })
+  it("zeigt zwei Nachkommastellen, kleine Beträge drei", () => {
+    expect(formatMoney(1.811, "EUR")).toMatch(/^1,81\s€$/)
+    expect(formatMoney(54.344, "EUR")).toMatch(/^54,34\s€$/)
+    expect(formatMoney(0.0734, "EUR")).toMatch(/^0,073\s€$/)
+    expect(formatMoney(0, "EUR")).toMatch(/^0,00\s€$/)
+  })
 })
 
 describe("Stand der Daten", () => {
