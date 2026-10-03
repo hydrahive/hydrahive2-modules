@@ -128,7 +128,14 @@ def list_rigs() -> list[dict]:
                             "since": since.isoformat() if since else None} if a else None)
         bench, failed = runtime_store.bench_for(d["id"])
         d["bench_done"], d["bench_failed"] = len(bench), len(failed)
+        d["bench_total"] = bench_total(d.get("gpu_vendor") or "")
     return out
+
+
+def bench_total(vendor: str) -> int:
+    """Anzahl Coin×Miner-Paare, die ein Rig dieses Herstellers misst."""
+    from . import catalog
+    return sum(len(catalog.options(c, vendor)) for c in catalog.coins())
 
 
 def _update(rig_id: str, sql: str, *args) -> bool:

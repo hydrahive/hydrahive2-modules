@@ -126,3 +126,15 @@ def test_absurd_benchmark_hashrate_is_rejected(client, admin_headers, quotes):
     j = _report(client, e)["job"]
     _report(client, e, {"benchmark_result": {"coin": j["coin"], "miner": j["miner"], "hashrate": 1e30}})
     assert runtime_store.bench_for(e["rig_id"]) == ({}, {(j["coin"], j["miner"])})
+
+
+def test_rig_list_reports_benchmark_progress(client, admin_headers, quotes):
+    """Die Oberfläche zeigt „Benchmark x/y“ — y kommt vom Server aus dem Katalog."""
+    store.update_config({"kryptex_user": "krxTEST"})
+    e = _rig(client, admin_headers)
+    j = _report(client, e)["job"]
+    _report(client, e, {"benchmark_result": {"coin": j["coin"], "miner": j["miner"], "hashrate": 1e6}})
+    (row,) = client.get(f"{P}/rigs", headers=admin_headers).json()
+    total = sum(len(catalog.options(c, "nvidia")) for c in catalog.coins())
+    assert (row["bench_done"], row["bench_failed"], row["bench_total"]) == (1, 0, total)
+    assert row["assignment"]["mode"] == "benchmark"
