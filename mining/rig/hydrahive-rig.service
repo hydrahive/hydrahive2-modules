@@ -10,15 +10,20 @@ Group=hh-rig
 SupplementaryGroups=video render
 Environment=PYTHONPATH=/opt/hydrahive-rig
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/usr/bin/python3 -m hydrahive_rig --config /etc/hydrahive-rig/config.json run
+ExecStart=/usr/bin/python3 -m hydrahive_rig --config /etc/hydrahive-rig/config.json --state /var/lib/hydrahive-rig run
 Restart=always
 RestartSec=10
+# Miner laufen als Kindprozesse im selben cgroup und werden mit dem Dienst beendet.
+KillMode=control-group
+TimeoutStopSec=30
 
 # Härtung: der Client braucht nur Netz, GPU-Geräte und seine Konfiguration.
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 ReadWritePaths=/etc/hydrahive-rig
+StateDirectory=hydrahive-rig
+StateDirectoryMode=0700
 PrivateTmp=yes
 ProtectKernelTunables=yes
 ProtectControlGroups=yes

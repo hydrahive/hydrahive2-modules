@@ -1,0 +1,286 @@
+{
+  "_note": "Miner-Katalog — gemeinsame Quelle für Rig-Client UND Server (backend/catalog.py liest diese Datei). Der Rig baut den Startbefehl ausschließlich hieraus; der Server schickt nur coin/miner/algo. Hashes = sha256-Digest der offiziellen GitHub-Releases, am 03.10.2026 geprüft. Algo-Namen am 03.10. auf tills-master-wks (RTX 5060 Ti) gegen Kryptex getestet (Pool-Verbindung je Miner×Algo; Shares: rigel kawpow, srbminer pearlhash, lolminer octopus).",
+  "miners": {
+    "rigel": {
+      "version": "1.23.2",
+      "url": "https://github.com/rigelminer/rigel/releases/download/1.23.2/rigel-1.23.2-linux.tar.gz",
+      "sha256": "eae492ffb64aeb4ab4ba7e66631567984a31d5adb1ef547bda6601aee1793f0d",
+      "binary": "rigel-1.23.2-linux/rigel",
+      "vendors": [
+        "nvidia"
+      ],
+      "api": "rigel",
+      "args": [
+        "-a",
+        "{algo}",
+        "-o",
+        "stratum+tcp://{pool}",
+        "-u",
+        "{user}",
+        "-w",
+        "{worker}",
+        "--no-tui",
+        "--api-bind",
+        "127.0.0.1:{port}"
+      ]
+    },
+    "srbminer": {
+      "version": "3.7.1",
+      "url": "https://github.com/doktor83/SRBMiner-Multi/releases/download/3.7.1/SRBMiner-Multi-3-7-1-Linux.tar.gz",
+      "sha256": "9d8699a9e3bbce5ba6aae30298be25eecee8cf5910abb65feee27f2b40762de9",
+      "binary": "SRBMiner-Multi-3-7-1/SRBMiner-MULTI",
+      "vendors": [
+        "nvidia",
+        "amd"
+      ],
+      "api": "srbminer",
+      "args": [
+        "--algorithm",
+        "{algo}",
+        "--pool",
+        "{pool}",
+        "--wallet",
+        "{user}/{worker}",
+        "--disable-cpu",
+        "--api-enable",
+        "--api-port",
+        "{port}"
+      ]
+    },
+    "lolminer": {
+      "version": "1.98a",
+      "url": "https://github.com/Lolliedieb/lolMiner-releases/releases/download/1.98a/lolMiner_v1.98a_Lin64.tar.gz",
+      "sha256": "0b8078299654a12846e4967f1db3506409cfb8b1031687a910965d1a99c6f270",
+      "binary": "1.98a/lolMiner",
+      "vendors": [
+        "nvidia",
+        "amd"
+      ],
+      "api": "lolminer",
+      "args": [
+        "-a",
+        "{algo}",
+        "-p",
+        "{pool}",
+        "-u",
+        "{user}/{worker}",
+        "--apiport",
+        "{port}",
+        "--apihost",
+        "127.0.0.1"
+      ]
+    }
+  },
+  "coins": {
+    "rvn": {
+      "port": 7031,
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "kawpow"
+          ],
+          [
+            "srbminer",
+            "kawpow"
+          ]
+        ],
+        "amd": [
+          [
+            "srbminer",
+            "kawpow"
+          ]
+        ]
+      },
+      "family": "kawpow"
+    },
+    "xna": {
+      "port": 7024,
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "kawpow"
+          ],
+          [
+            "srbminer",
+            "kawpow"
+          ]
+        ],
+        "amd": [
+          [
+            "srbminer",
+            "kawpow"
+          ]
+        ]
+      },
+      "family": "kawpow"
+    },
+    "quai-kawpow": {
+      "port": 7043,
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "kawpow"
+          ],
+          [
+            "srbminer",
+            "kawpow"
+          ]
+        ],
+        "amd": [
+          [
+            "srbminer",
+            "kawpow"
+          ]
+        ]
+      },
+      "family": "kawpow"
+    },
+    "iron": {
+      "port": 7017,
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "fishhash"
+          ],
+          [
+            "lolminer",
+            "FISHHASH"
+          ],
+          [
+            "srbminer",
+            "fishhash"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "FISHHASH"
+          ],
+          [
+            "srbminer",
+            "fishhash"
+          ]
+        ]
+      },
+      "family": "fishhash"
+    },
+    "erg": {
+      "port": 7021,
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "autolykos2"
+          ],
+          [
+            "lolminer",
+            "AUTOLYKOS2"
+          ],
+          [
+            "srbminer",
+            "autolykos2"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "AUTOLYKOS2"
+          ],
+          [
+            "srbminer",
+            "autolykos2"
+          ]
+        ]
+      },
+      "family": "autolykos2"
+    },
+    "cfx": {
+      "port": 7027,
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "octopus"
+          ],
+          [
+            "lolminer",
+            "OCTOPUS"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "OCTOPUS"
+          ]
+        ]
+      },
+      "family": "octopus"
+    },
+    "nexa": {
+      "port": 7026,
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "nexapow"
+          ],
+          [
+            "lolminer",
+            "NEXA"
+          ]
+        ],
+        "amd": [
+          [
+            "lolminer",
+            "NEXA"
+          ]
+        ]
+      },
+      "family": "nexapow"
+    },
+    "xel": {
+      "port": 7019,
+      "options": {
+        "nvidia": [
+          [
+            "rigel",
+            "xelishashv3"
+          ],
+          [
+            "srbminer",
+            "xelishashv3"
+          ]
+        ],
+        "amd": [
+          [
+            "srbminer",
+            "xelishashv3"
+          ]
+        ]
+      },
+      "family": "xelishashv3"
+    },
+    "prl": {
+      "port": 7048,
+      "options": {
+        "nvidia": [
+          [
+            "srbminer",
+            "pearlhash"
+          ]
+        ],
+        "amd": [
+          [
+            "srbminer",
+            "pearlhash"
+          ]
+        ]
+      },
+      "family": "pearlhash"
+    }
+  }
+}
