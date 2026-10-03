@@ -1,0 +1,147 @@
+{
+ "source": "https://www.kryptex.com/en/hardware/<slug>",
+ "fetched": "2026-10-03",
+ "note": "Herstellerangaben von Kryptex, ohne Übertakten. Nur Startwerte, bis der Rig selbst gemessen hat.",
+ "gpus": {
+  "nvidia-rtx-5060-ti-16gb": {
+   "name": "NVIDIA RTX 5060 Ti 16GB",
+   "vendor": "nvidia",
+   "watts": 180.0,
+   "hashrates": {
+    "cfx": 58500000.0,
+    "erg": 125500000.0,
+    "iron": 44000000.0,
+    "nexa": 95500000.0,
+    "prl": 91000000000000.0,
+    "qtc": 320000000.0,
+    "quai-kawpow": 32000000.0,
+    "rvn": 32000000.0,
+    "xel": 8300.0,
+    "xna": 32000000.0,
+    "xtm-c29": 6.5
+   }
+  },
+  "nvidia-rtx-3060": {
+   "name": "NVIDIA RTX 3060",
+   "vendor": "nvidia",
+   "watts": 135.0,
+   "hashrates": {
+    "cfx": 46000000.0,
+    "erg": 110000000.0,
+    "iron": 31000000.0,
+    "nexa": 49000000.0,
+    "prl": 47000000000000.0,
+    "qtc": 195000000.0,
+    "quai-kawpow": 24000000.0,
+    "rvn": 24000000.0,
+    "xel": 6000.0,
+    "xna": 24000000.0,
+    "xtm-c29": 4.0
+   }
+  },
+  "nvidia-rtx-3060-ti": {
+   "name": "NVIDIA RTX 3060 Ti",
+   "vendor": "nvidia",
+   "watts": 125.0,
+   "hashrates": {
+    "erg": 160000000.0,
+    "iron": 38500000.0,
+    "nexa": 68000000.0,
+    "prl": 61000000000000.0,
+    "qtc": 253000000.0,
+    "quai-kawpow": 27000000.0,
+    "rvn": 27000000.0,
+    "xel": 7800.0,
+    "xna": 27000000.0,
+    "xtm-c29": 5.4
+   }
+  },
+  "nvidia-rtx-3070": {
+   "name": "NVIDIA RTX 3070",
+   "vendor": "nvidia",
+   "watts": 125.0,
+   "hashrates": {
+    "erg": 160000000.0,
+    "iron": 40000000.0,
+    "nexa": 78000000.0,
+    "prl": 73000000000000.0,
+    "qtc": 305000000.0,
+    "quai-kawpow": 31000000.0,
+    "rvn": 31000000.0,
+    "xel": 8200.0,
+    "xna": 31000000.0,
+    "xtm-c29": 6.3
+   }
+  },
+  "nvidia-rtx-3080": {
+   "name": "NVIDIA RTX 3080",
+   "vendor": "nvidia",
+   "watts": 250.0,
+   "hashrates": {
+    "cfx": 94000000.0,
+    "erg": 190000000.0,
+    "iron": 61000000.0,
+    "nexa": 100000000.0,
+    "prl": 105000000000000.0,
+    "qtc": 420000000.0,
+    "quai-kawpow": 42000000.0,
+    "rvn": 42000000.0,
+    "xel": 11000.0,
+    "xna": 42000000.0,
+    "xtm-c29": 9.3
+   }
+  },
+  "nvidia-rtx-3090": {
+   "name": "NVIDIA RTX 3090",
+   "vendor": "nvidia",
+   "watts": 320.0,
+   "hashrates": {
+    "cfx": 115000000.0,
+    "erg": 238000000.0,
+    "iron": 79500000.0,
+    "nexa": 145000000.0,
+    "prl": 125000000000000.0,
+    "qtc": 500000000.0,
+    "quai-kawpow": 58000000.0,
+    "rvn": 58000000.0,
+    "xel": 11700.0,
+    "xna": 58000000.0,
+    "xtm-c29": 11.2
+   }
+  },
+  "nvidia-rtx-4060": {
+   "name": "NVIDIA RTX 4060",
+   "vendor": "nvidia",
+   "watts": 115.0,
+   "hashrates": {
+    "erg": 86000000.0,
+    "iron": 22500000.0,
+    "nexa": 58000000.0,
+    "prl": 65000000000000.0,
+    "qtc": 240000000.0,
+    "quai-kawpow": 17900000.0,
+    "rvn": 17900000.0,
+    "xel": 4600.0,
+    "xna": 17900000.0,
+    "xtm-c29": 4.0
+   }
+  },
+  "nvidia-rtx-4060-ti": {
+   "name": "NVIDIA RTX 4060 Ti",
+   "vendor": "nvidia",
+   "watts": 200.0,
+   "hashrates": {
+    "erg": 90000000.0,
+    "iron": 25000000.0,
+    "nexa": 86000000.0,
+    "prl": 86000000000000.0,
+    "qtc": 320000000.0,
+    "quai-kawpow": 19500000.0,
+    "rvn": 19500000.0,
+    "xel": 5000.0,
+    "xna": 19500000.0,
+    "xtm-c29": 5.1
+   }
+  }
+ }
+}
