@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react"
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import { useMyAccess } from "@/features/access/useMyAccess"
 import { CoinTable } from "./components/CoinTable"
+import { PowerPanel } from "./components/PowerPanel"
 import { RigsPanel } from "./components/RigsPanel"
 import { SettingsPanel } from "./components/SettingsPanel"
 import { isStale, minutesSince } from "./format"
@@ -35,7 +36,7 @@ export function MiningPage() {
 
       {error && <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</div>}
 
-      <RigsPanel canControl={canControl} />
+      <RigsPanel canControl={canControl} powerActive={(config?.power_mode ?? "off") !== "off"} />
 
       <h2 className="pt-2 text-sm font-semibold text-zinc-200">{t("earnings_title")}</h2>
       <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -56,6 +57,7 @@ export function MiningPage() {
       {overview && <p className="text-xs text-zinc-500">{t("reference_note", { date: overview.reference.fetched })} {t("estimated_note")}</p>}
 
       {config && <SettingsPanel key={JSON.stringify(config)} config={config} canEdit={canControl} onSave={saveConfig} />}
+      {config && canControl && <PowerPanel key={`p${JSON.stringify(config)}`} config={config} canEdit={canControl} onSave={saveConfig} />}
     </div>
   )
 }

@@ -36,6 +36,29 @@ export interface MiningConfig {
   switch_threshold: number
   min_runtime_min: number
   prop_discount: number
+  power_mode: "off" | "fixed" | "http"
+  power_fixed_w: number
+  power_url: string
+  power_field: string
+  power_scale: number
+  power_reserve_w: number
+  power_min_minutes: number
+  power_stale_minutes: number
+}
+
+export interface PowerStatus {
+  mode: "off" | "fixed" | "http"
+  available_w: number | null
+  ok_at: string | null
+  reserve_w: number
+}
+
+export interface Assignment {
+  mode: "mine" | "benchmark" | "stop"
+  coin: string | null
+  miner: string | null
+  reason: string
+  since: string | null
 }
 
 export interface Rig {
@@ -52,7 +75,16 @@ export interface Rig {
   driver: string | null
   remote_ip: string | null
   last_seen: string | null
-  last_report: { miner?: string; temp_c?: number | null; power_w?: number | null; util_pct?: number | null } | null
+  follows_power: number
+  priority: number
+  last_report: {
+    miner?: string; temp_c?: number | null; power_w?: number | null; util_pct?: number | null
+    hashrate?: number | null; accepted?: number | null; rejected?: number | null; error?: string | null; restarts?: number
+  } | null
+  assignment: Assignment | null
+  bench_done: number
+  bench_failed: number
+  bench_total: number
 }
 
 export interface Pairing {
@@ -78,4 +110,8 @@ export const miningApi = {
   revoke: (id: string) => api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/revoke`, {}),
   setEnabled: (id: string, enabled: boolean) => api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/enabled`, { enabled }),
   remove: (id: string) => api.delete<{ ok: boolean }>(`${BASE}/rigs/${id}`),
+  setPower: (id: string, follows_power: boolean, priority: number) =>
+    api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/power`, { follows_power, priority }),
+  resetBench: (id: string) => api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/benchmarks/reset`, {}),
+  power: () => api.get<PowerStatus>(`${BASE}/rigs/power`),
 }

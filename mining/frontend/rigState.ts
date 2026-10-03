@@ -26,3 +26,31 @@ export const BADGE_CLASS: Record<RigBadge, string> = {
 export function isValidRigName(name: string): boolean {
   return /^[a-z0-9][a-z0-9-]{0,31}$/.test(name)
 }
+
+export type Activity =
+  | { kind: "mining"; coin: string; miner: string }
+  | { kind: "benchmark"; coin: string; miner: string; done: number; total: number }
+  | { kind: "stopped"; reason: string }
+
+/** Was macht der Rechner gerade? ``total`` = Anzahl Coin×Miner-Paare für seinen Hersteller. */
+export function activity(rig: Pick<Rig, "assignment" | "bench_done" | "bench_failed">, total: number): Activity {
+  const a = rig.assignment
+  if (!a || a.mode === "stop" || !a.coin || !a.miner) return { kind: "stopped", reason: a?.reason ?? "" }
+  if (a.mode === "benchmark") {
+    return { kind: "benchmark", coin: a.coin, miner: a.miner, done: rig.bench_done + rig.bench_failed + 1, total }
+  }
+  return { kind: "mining", coin: a.coin, miner: a.miner }
+}
+
+/** Gründe des Servers → Übersetzungsschlüssel (unbekannte → generisch). */
+const STOP_KEYS = ["awaiting_approval", "disabled", "no_kryptex_user", "no_supported_gpu", "power_budget",
+  "power_source_down", "no_profitable_option"] as const
+
+export function stopReasonKey(reason: string): string {
+  return (STOP_KEYS as readonly string[]).includes(reason) ? `stop_${reason}` : "stop_other"
+}
+
+/** Kryptex-Benutzername mit „.worker“-Teil? (häufiger Fehler: „krxABC.Mining“) */
+export function userHasWorkerSuffix(user: string): boolean {
+  return /^krx[A-Za-z0-9]+[./].+/.test(user.trim())
+}
