@@ -4,8 +4,8 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.2.0: Ertragstabelle, Rechner koppeln, freigeben, an/aus, sperren.
-Das Schürfen selbst (Miner, Messen, Umschalten) folgt in den nächsten Versionen.
+Stand 0.3.0: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
+Schürfen mit Benchmark, automatischem Umschalten, Watchdog und Energie-Steuerung.
 
 ## Einmalig in HydraHive
 
@@ -73,6 +73,39 @@ In HydraHive zeigt die Liste je Rechner: Zustand (online, offline,
 ausgeschaltet, gesperrt), Grafikkarte, Temperatur, Strom und Last.
 Nach 2 Minuten ohne Meldung gilt ein Rechner als offline.
 
+### Was der Rechner tut
+
+1. **Benchmark**: Nach der Freigabe misst jeder Rechner alle Coins, die seine
+   Karte kann, je etwa 3 Minuten (Anzeige „Benchmark 4/17“). Das dauert beim
+   ersten Mal knapp eine Stunde. Danach rechnet HydraHive mit den echten Werten.
+2. **Schürfen**: HydraHive wählt je Rechner den Coin mit dem höchsten Ertrag
+   und schickt ihn an den Miner (rigel, lolMiner, SRBMiner — lädt der Rechner
+   selbst von GitHub und prüft die Prüfsumme).
+3. **Umschalten**: Lohnt ein anderer Coin um mehr als die *Schwelle* (Standard
+   5 %) und läuft der aktuelle schon länger als die *Mindestlaufzeit*, wird
+   gewechselt.
+4. **Watchdog**: Stürzt der Miner ab oder liefert er 3 Minuten keine Hashrate,
+   startet der Rechner ihn neu. Nach 3 Versuchen gibt er auf und meldet den
+   Fehler; HydraHive nimmt dann einen anderen Coin.
+
+**Neu messen** (Knopf in der Liste): nach Treiber- oder Kartenwechsel.
+
+### Energie-Steuerung (für PV)
+
+Unter *Energie-Steuerung* eine Quelle wählen:
+
+- **aus**: alle Rechner laufen immer (Standard).
+- **fester Wert**: z. B. 2000 W für alle Rechner zusammen.
+- **abfragen**: eine Adresse im eigenen Netz, die JSON liefert, z. B.
+  `http://192.168.178.50/api/surplus` mit Feld `data.surplus_w`. Öffentliche
+  Adressen sind gesperrt.
+
+Nur Rechner mit Haken **folgt Energie** werden gesteuert. HydraHive schaltet
+sie zu, solange die Leistung reicht (Reserve abgezogen). Zuerst die mit mehr
+Ertrag pro Watt. Zwischen Ein und Aus liegt eine Mindestzeit (Standard 10 min),
+damit Wolken nicht ständig schalten. Antwortet die Quelle nicht mehr, pausieren
+diese Rechner.
+
 ## Entfernen
 
 1. In HydraHive den Rechner **sperren**. Er verliert sofort den Zugang. Danach
@@ -93,6 +126,10 @@ Nach 2 Minuten ohne Meldung gilt ein Rechner als offline.
 | `python3 >= 3.11 nötig` | System zu alt → Ubuntu 24.04+ / Debian 12+ |
 | Grafikkarte „—“ in der Liste | Treiber fehlt: NVIDIA → `nvidia-smi` prüfen, AMD → `amdgpu` geladen? |
 | `Server lehnt diesen Rig ab` im Log | Rechner wurde gesperrt → neu koppeln |
+| „kein Kryptex-Benutzer eingetragen“ | Einstellungen → Kryptex-Benutzername |
+| `sha256_mismatch` im Log | Download beschädigt oder verändert → Rechner lädt beim nächsten Versuch neu |
+| Coin wird übersprungen (`failed`) | Miner lief auf dieser Karte nicht (z. B. zu wenig Speicher) → „Neu messen“ nach Treiber-Update |
+| „pausiert: Energie-Quelle antwortet nicht“ | Adresse/Feld der Quelle prüfen; nur Adressen im eigenen Netz |
 
 Getestet: Ubuntu 26.04 mit NVIDIA RTX 5060 Ti, Debian 12 (ohne Grafikkarte).
 AMD bisher nur mit nachgestellten Daten.
