@@ -37,8 +37,9 @@ def create_pairing(request: Request, _control: Control, body: dict[str, Any]) ->
         created = pairing.create(str(body.get("name") or ""), created_by=None)
     except pairing.PairingError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail={"code": str(exc)}) from exc
-    server = f"https://{request.headers.get('host') or request.url.netloc}"
-    pin = tls_pin.server_pin()
+    host = request.headers.get("host") or request.url.netloc
+    server = f"https://{host}"
+    pin = tls_pin.server_pin(host)
     args = ["--server", server, "--code", created["code"]] + (["--pin", pin] if pin else [])
     cmd = f"curl -fsSL {CLIENT_URL} | sudo sh -s -- {shlex.join(args)}"
     return {**created, "server": server, "pin": pin, "command": cmd}

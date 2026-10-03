@@ -244,3 +244,44 @@ def test_spki_pin_matches_openssl_format():
                                          serialization.PublicFormat.SubjectPublicKeyInfo)
     assert pin == "sha256//" + base64.b64encode(hashlib.sha256(spki).digest()).decode()
     assert tls_pin.spki_pin_from_pem(b"kein zertifikat") is None
+
+
+# ---- Pin nur bei lokalen Adressen (Fehler beim Kollegen 03.10.: Cloudflare-Domain) ----
+@pytest.mark.parametrize("host,local", [
+    ("192.168.178.75", True), ("192.168.178.217:443", True), ("[fd00::1]:8443", True), ("fd00::1", True),
+    ("hydrahive", True), ("hydra.local", True), ("server.lan", True), ("nas.home.arpa", True),
+    ("hydra.myemployeeai.com", False), ("hydra.myemployeeai.com:443", False), ("example.org", False),
+    ("", False),
+])
+def test_is_local_host(host, local):
+    assert tls_pin.is_local_host(host) is local
+
+
+def _fake_cert(tmp_path, monkeypatch):
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    key = ec.generate_private_key(ec.SECP256R1())
+    name = x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, "hydrahive2")])
+    now = datetime.now(timezone.utc)
+    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
+            .serial_number(1).not_valid_before(now).not_valid_after(now + timedelta(days=1)).sign(key, hashes.SHA256()))
+    p = tmp_path / "hydrahive.crt"
+    p.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
+    monkeypatch.setattr(tls_pin, "_cert_path", lambda: p)
+
+
+def test_pairing_command_without_pin_for_public_domain(client, admin_headers, tmp_path, monkeypatch):
+    _fake_cert(tmp_path, monkeypatch)
+    r = client.post(f"{P}/rigs/pairing", headers={**admin_headers, "Host": "hydra.myemployeeai.com"},
+                    json={"name": "kollege"})
+    body = r.json()
+    assert body["pin"] is None and "--pin" not in body["command"]
+    assert "--server https://hydra.myemployeeai.com" in body["command"]
+
+
+def test_pairing_command_with_pin_for_lan_ip(client, admin_headers, tmp_path, monkeypatch):
+    _fake_cert(tmp_path, monkeypatch)
+    r = client.post(f"{P}/rigs/pairing", headers={**admin_headers, "Host": "192.168.178.75"}, json={"name": "heim"})
+    body = r.json()
+    assert body["pin"] and body["pin"].startswith("sha256//") and f"--pin {body['pin']}" in body["command"]
