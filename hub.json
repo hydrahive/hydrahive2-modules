@@ -109,6 +109,11 @@
       "id": "tickets",
       "name": "Tickets",
       "path": "tickets"
+    },
+    {
+      "id": "mining",
+      "name": "Mining",
+      "path": "mining"
     }
   ]
 }

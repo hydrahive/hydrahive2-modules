@@ -1,0 +1,24 @@
+{
+  "id": "mining",
+  "name": "Mining",
+  "version": "0.1.0",
+  "description": "Verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade ertragreichsten Kryptex-Coin schürfen. Zeigt Live-Erträge je Coin.",
+  "icon": "Pickaxe",
+  "nav_group": "working",
+  "permissions": [],
+  "capabilities": [
+    {
+      "id": "module.mining",
+      "label": "Mining ansehen",
+      "default": "admin_only"
+    },
+    {
+      "id": "mining.control",
+      "label": "Mining steuern (Rechner, Einstellungen)",
+      "default": "admin_only"
+    }
+  ],
+  "has_service": false,
+  "default_agent_tools": false,
+  "min_core_version": "2.0.0"
+}
