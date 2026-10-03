@@ -13,7 +13,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from hydrahive.api.middleware.auth import require_auth
 
-from . import poller, reference, store
+from . import poller, power, reference, store
 from .access import Control
 from .profit import usd_per_day
 
@@ -57,9 +57,14 @@ def get_config(_: Auth) -> dict:
 @router.put("/config")
 def put_config(_control: Control, body: dict[str, Any]) -> dict:
     try:
-        return store.update_config(body)
+        cfg = store.update_config(body)
     except store.ConfigError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail={"code": str(exc)}) from exc
+    if any(k.startswith("power_") for k in body):
+        # Quelle sofort lesen — sonst stehen laufende Rigs bis zum nächsten Abfrage-Lauf (30 s)
+        # als „Quelle antwortet nicht“. Sync-Route läuft im Threadpool, blockiert keine Event-Loop.
+        power.refresh()
+    return cfg
 
 
 @router.post("/refresh")

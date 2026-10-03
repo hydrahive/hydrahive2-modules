@@ -7,7 +7,7 @@ import { RigRow } from "./RigRow"
 
 const POLL_MS = 15_000
 
-export function RigsPanel({ canControl }: { canControl: boolean }) {
+export function RigsPanel({ canControl, powerActive }: { canControl: boolean; powerActive: boolean }) {
   const { t } = useTranslation("mining")
   const [rigs, setRigs] = useState<Rig[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -27,6 +27,7 @@ export function RigsPanel({ canControl }: { canControl: boolean }) {
 
   const act = (p: Promise<unknown>) => { p.then(reload).catch((e) => setError(String(e))) }
   const confirmRevoke = (id: string) => { if (window.confirm(t("revoke_confirm"))) act(miningApi.revoke(id)) }
+  const confirmRebench = (id: string) => { if (window.confirm(t("rebench_confirm"))) act(miningApi.resetBench(id)) }
 
   if (!canControl) return null
   return (
@@ -57,9 +58,10 @@ export function RigsPanel({ canControl }: { canControl: boolean }) {
             </thead>
             <tbody className="divide-y divide-white/5">
               {rigs.map((r) => (
-                <RigRow key={r.id} rig={r} canControl={canControl}
+                <RigRow key={r.id} rig={r} canControl={canControl} benchTotal={r.bench_total} powerActive={powerActive}
                   onApprove={(id) => act(miningApi.approve(id))} onRevoke={confirmRevoke}
-                  onToggle={(id, en) => act(miningApi.setEnabled(id, en))} onRemove={(id) => act(miningApi.remove(id))} />
+                  onToggle={(id, en) => act(miningApi.setEnabled(id, en))} onRemove={(id) => act(miningApi.remove(id))}
+                  onRebench={confirmRebench} onFollowPower={(id, f, p) => act(miningApi.setPower(id, f, p))} />
               ))}
             </tbody>
           </table>

@@ -15,6 +15,7 @@ from .config import DEFAULT_PATH, RigConfig
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="hydrahive-rig")
     p.add_argument("--config", type=Path, default=DEFAULT_PATH)
+    p.add_argument("--state", type=Path, default=Path("/var/lib/hydrahive-rig"), help="Miner + Logs")
     sub = p.add_subparsers(dest="cmd", required=True)
     e = sub.add_parser("enroll", help="mit Kopplungs-Code beim Server anmelden")
     e.add_argument("--server", required=True)
@@ -49,5 +50,6 @@ def main(argv: list[str] | None = None) -> int:
             log.error("Melden fehlgeschlagen: %s", exc)
             return 1
         return 0
-    agent.run_forever(cfg)
+    args.state.mkdir(parents=True, exist_ok=True)
+    agent.run_forever(cfg, state_dir=args.state)
     return 0

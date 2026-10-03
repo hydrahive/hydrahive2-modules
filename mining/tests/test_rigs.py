@@ -152,9 +152,10 @@ def test_enroll_sanitizes_info(client, admin_headers):
 def test_report_pending_then_approved(client, admin_headers):
     e = _enroll(client, _pair(client, admin_headers)["code"]).json()
     r = _report(client, e["token"])
-    assert r.status_code == 200 and r.json()["desired"] == {"action": "stop", "reason": "awaiting_approval"}
+    d = r.json()["desired"]
+    assert r.status_code == 200 and (d["action"], d["reason"]) == ("stop", "awaiting_approval")
     assert client.post(f"{P}/rigs/{e['rig_id']}/approve", headers=admin_headers).status_code == 200
-    assert _report(client, e["token"]).json()["desired"]["reason"] == "no_miner_yet"
+    assert _report(client, e["token"]).json()["desired"]["reason"] == "no_kryptex_user"
     rig = client.get(f"{P}/rigs", headers=admin_headers).json()[0]
     assert rig["status"] == "active" and rig["last_report"] == {"miner": "idle"}
 

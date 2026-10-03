@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { REGIONS, type MiningConfig } from "../api"
+import { userHasWorkerSuffix } from "../rigState"
 
 interface Props {
   config: MiningConfig
@@ -30,6 +31,7 @@ export function SettingsPanel({ config, canEdit, onSave }: Props) {
           <span>{t("kryptex_user")}</span>
           <input className={input} disabled={!canEdit} value={draft.kryptex_user} maxLength={128}
             placeholder={t("kryptex_user_ph")} onChange={(e) => set("kryptex_user", e.target.value)} />
+          {userHasWorkerSuffix(draft.kryptex_user) && <span className="block text-amber-300">{t("user_has_worker")}</span>}
         </label>
         <label className="space-y-1 text-xs text-zinc-400">
           <span>{t("region")}</span>

@@ -1,4 +1,5 @@
 import { MiningPage } from "./MiningPage"
+import { runtimeDe, runtimeEn } from "./i18nRuntime"
 
 export const routes = [{ path: "/mining", element: <MiningPage /> }]
 
@@ -82,6 +83,7 @@ export const i18n = {
       save: "Speichern",
       ...regionsDe,
       ...rigsDe,
+      ...runtimeDe,
     },
   },
   en: {
@@ -111,6 +113,7 @@ export const i18n = {
       save: "Save",
       ...regionsEn,
       ...rigsEn,
+      ...runtimeEn,
     },
   },
 }

@@ -117,7 +117,7 @@ def test_run_loop_handles_401_and_network_errors(monkeypatch):
     seq = [client.ClientError(401, "x"), OSError("down"), {"desired": {"action": "stop", "reason": "r"}}]
     sleeps: list[int] = []
 
-    def fake_report(cfg):
+    def fake_report(cfg, runner=None):
         v = seq.pop(0)
         if isinstance(v, Exception):
             raise v

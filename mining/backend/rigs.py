@@ -93,13 +93,23 @@ def report(rig: dict, data: dict, remote_ip: str) -> None:
                   (raw, _now(), remote_ip, *clean.values(), rig["id"]))
 
 
-def desired(rig: dict) -> dict:
-    """Soll-Zustand für den Rig. E2: nur stop; Mining folgt mit E3/E4."""
-    if rig["status"] != "active":
-        return {"action": "stop", "reason": "awaiting_approval"}
-    if not rig["enabled"]:
-        return {"action": "stop", "reason": "disabled"}
-    return {"action": "stop", "reason": "no_miner_yet"}
+def desired(rig: dict, state: dict | None = None) -> dict:
+    """Soll-Zustand für den Rig (Entscheider in planner.py)."""
+    from . import planner
+    return planner.desired_for(rig, state or {})
+
+
+def active_rigs_for_power() -> list[dict]:
+    """Freigegebene, eingeschaltete Rigs mit letzter Meldung — für die Energie-Verteilung."""
+    with db() as c:
+        rows = c.execute("SELECT id, name, follows_power, priority, last_report FROM module_mining_rigs"
+                         " WHERE status = 'active' AND enabled = 1").fetchall()
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["last_report_obj"] = json.loads(d.pop("last_report") or "{}")
+        out.append(d)
+    return out
 
 
 def list_rigs() -> list[dict]:
@@ -111,7 +121,21 @@ def list_rigs() -> list[dict]:
         d.pop("token_hash", None)
         d["last_report"] = json.loads(d["last_report"]) if d.get("last_report") else None
         out.append(d)
+    from . import runtime_store
+    for d in out:
+        a, since, _ = runtime_store.get_assignment(d["id"])
+        d["assignment"] = ({"mode": a.mode, "coin": a.coin, "miner": a.miner, "reason": a.reason,
+                            "since": since.isoformat() if since else None} if a else None)
+        bench, failed = runtime_store.bench_for(d["id"])
+        d["bench_done"], d["bench_failed"] = len(bench), len(failed)
+        d["bench_total"] = bench_total(d.get("gpu_vendor") or "")
     return out
+
+
+def bench_total(vendor: str) -> int:
+    """Anzahl Coin×Miner-Paare, die ein Rig dieses Herstellers misst."""
+    from . import catalog
+    return sum(len(catalog.options(c, vendor)) for c in catalog.coins())
 
 
 def _update(rig_id: str, sql: str, *args) -> bool:
@@ -131,11 +155,19 @@ def set_enabled(rig_id: str, enabled: bool) -> bool:
     return _update(rig_id, "enabled = ?", int(bool(enabled)))
 
 
+def set_power_prefs(rig_id: str, follows_power: bool, priority: int) -> bool:
+    return _update(rig_id, "follows_power = ?, priority = ?", int(bool(follows_power)), int(priority))
+
+
 def delete(rig_id: str) -> bool:
-    """Nur gesperrte Rigs löschen (Name wird wieder frei)."""
+    """Nur gesperrte Rigs löschen (Name wird wieder frei, Messungen + Protokoll weg)."""
     with db() as c:
-        return c.execute("DELETE FROM module_mining_rigs WHERE id = ? AND status = 'revoked'",
-                         (rig_id,)).rowcount == 1
+        ok = c.execute("DELETE FROM module_mining_rigs WHERE id = ? AND status = 'revoked'",
+                       (rig_id,)).rowcount == 1
+    if ok:
+        from . import runtime_store
+        runtime_store.forget_rig(rig_id)
+    return ok
 
 
 def _is(rig_id: str, status: str) -> bool:
