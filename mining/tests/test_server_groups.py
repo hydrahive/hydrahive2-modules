@@ -6,7 +6,7 @@ from backend import catalog, groups, runtime_store, store
 from backend.profit import CoinQuote
 from tests.test_planner import P, _rig
 
-MIXED_INFO = {"gpu_vendor": "mixed", "gpu_model": "RTX 3070 + RX 6800", "gpu_mem_mb": 8192}
+MIXED_INFO = {"gpu_vendor": "mixed", "gpu_model": "RTX 3070 + RX 6800", "gpu_mem_mb": 8192, "client_version": "0.4.0"}
 
 
 @pytest.fixture

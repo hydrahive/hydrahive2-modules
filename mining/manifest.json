@@ -1,7 +1,7 @@
 {
   "id": "mining",
   "name": "Mining",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade ertragreichsten Kryptex-Coin schürfen. Zeigt Live-Erträge je Coin. Buddy kann den Zustand abfragen, auswerten und Rechner steuern.",
   "icon": "Pickaxe",
   "nav_group": "working",

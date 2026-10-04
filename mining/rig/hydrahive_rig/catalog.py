@@ -77,5 +77,9 @@ def build(job: dict, vendor: str, *, mixed: bool = False, group: str | None = No
     if mixed:
         args += DEVICE_FILTER.get(name, {}).get(vendor, [])
         env = dict(GROUP_ENV.get(vendor, {}))
+    # Eigene Log-Datei für Miner, die ohne Terminal nichts ausgeben (SRBMiner); Pfad setzt der Runner.
+    log_args = list(m.get("log_args") or [])
+    log_file = (f"{name}.log" if not mixed else f"{name}-{vendor}.log") if log_args else None
     return {"coin": coin, "miner": name, "algo": algo, "pool": pool, "version": m["version"],
-            "args": args, "api": m["api"], "api_port": port, "env": env}
+            "args": args, "api": m["api"], "api_port": port, "env": env, "log_args": log_args,
+            "log_file": log_file}

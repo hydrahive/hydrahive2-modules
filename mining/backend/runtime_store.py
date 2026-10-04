@@ -56,6 +56,13 @@ def list_bench(rig_id: str) -> list[dict]:
     return rows
 
 
+def forget_failures(rig_id: str) -> int:
+    """Fehlgeschlagene Messungen des Rechners (alle Gruppen) löschen → werden neu versucht."""
+    with db() as c:
+        return c.execute(f"DELETE FROM module_mining_benchmarks WHERE hashrate IS NULL AND {_ALL_KEYS}",
+                         _all(rig_id)).rowcount
+
+
 def clear_bench(rig_id: str) -> None:
     with db() as c:
         c.execute(f"DELETE FROM module_mining_benchmarks WHERE {_ALL_KEYS}", _all(rig_id))

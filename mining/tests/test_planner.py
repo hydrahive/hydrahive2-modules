@@ -8,7 +8,7 @@ from backend.profit import CoinQuote
 
 P = "/api/modules/mining"
 D = "/api/module-device/mining"
-INFO = {"gpu_vendor": "nvidia", "gpu_model": "RTX 5060 Ti"}
+INFO = {"gpu_vendor": "nvidia", "gpu_model": "RTX 5060 Ti", "client_version": "0.4.0"}
 
 
 @pytest.fixture(autouse=True)

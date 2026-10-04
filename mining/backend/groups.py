@@ -55,20 +55,23 @@ def mem_mb(rig: dict, state: dict, vendor: str, mixed: bool) -> int | None:
 
 def overview(rig: dict) -> list[dict]:
     """Je Gruppe: Zuteilung + Messfortschritt (für Rechner-Liste und Buddy)."""
-    from . import runtime_store
+    from . import compat, runtime_store
     from .rigs import bench_total
     state = rig.get("last_report") if isinstance(rig.get("last_report"), dict) else {}
     ks = keys(rig, state)
     mixed = len(ks) > 1
+    known = compat.known_coins(rig.get("client_version"))
     out = []
     for vendor, k in ks.items():
         a, since, _ = runtime_store.get_assignment(k)
         bench, failed = runtime_store.bench_for(k)
+        bench = {p: v for p, v in bench.items() if p[0] in known}          # nur was der Client kennt
+        failed = {p for p in failed if p[0] in known}
         g = group_state(state or {}, vendor, mixed)
         out.append({"vendor": vendor, "key": k, "gpu_count": g.get("gpu_count"), "gpu_model": g.get("gpu_model"),
                     "hashrate": g.get("hashrate"), "power_w": g.get("power_w"),
                     "assignment": ({"mode": a.mode, "coin": a.coin, "miner": a.miner, "reason": a.reason,
                                     "since": since.isoformat() if since else None} if a else None),
                     "bench_done": len(bench), "bench_failed": len(failed),
-                    "bench_total": bench_total(vendor, mem_mb(rig, state or {}, vendor, mixed))})
+                    "bench_total": bench_total(vendor, mem_mb(rig, state or {}, vendor, mixed), known)})
     return out
