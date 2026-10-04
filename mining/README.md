@@ -4,8 +4,13 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.6.1: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
-Schürfen mit Benchmark, automatischem Umschalten, Watchdog und Energie-Steuerung.
+Stand 0.6.1 (Rechner-Client 0.4.1): Ertragstabelle mit 16 Coins, Rechner
+koppeln/freigeben/an/aus/sperren, echtes Schürfen mit Benchmark, automatischem
+Umschalten, Watchdog und Energie-Steuerung. Rechner mit AMD- und NVIDIA-Karten
+zugleich bekommen je Hersteller einen eigenen Miner.
+
+**Schon im Einsatz?** Nach einem Modul-Update auch die Rechner aktualisieren,
+siehe [Client aktualisieren](#client-aktualisieren).
 
 ## Einmalig in HydraHive
 
@@ -62,6 +67,33 @@ freigeben. Pro Rechner dauert das etwa eine Minute.
   (nur für `hh-rig` lesbar)
 - startet den Dienst `hydrahive-rig`. Er läuft auch nach einem Neustart weiter.
 
+## Client aktualisieren
+
+Kommt eine neue Version des Moduls, braucht der Rechner oft auch einen neuen
+Client. Am Rechner:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hydrahive/hydrahive2-modules/main/mining/rig/install.sh \
+  | sudo sh -s -- --update
+```
+
+- Die Kopplung bleibt. Kein neuer Code, keine neue Freigabe.
+- Messwerte und Verlauf bleiben in HydraHive erhalten.
+- Am Ende steht die neue Version, z. B. `Fertig: Client 0.4.1. Kopplung unverändert.`
+  In HydraHive steht sie in der Rechner-Liste unter dem Betriebssystem (`v0.4.1`).
+- Coins, die vorher auf diesem Rechner fehlgeschlagen sind, versucht HydraHive
+  nach dem Update automatisch neu.
+
+**Was braucht welche Version?**
+
+| Client | Kann |
+|---|---|
+| 0.3.x | 9 Coins: CFX, ERG, IRON, NEXA, PRL, QUAI, RVN, XEL, XNA |
+| ab 0.4.0 | zusätzlich ALPH, ETC, ETHW, OCTA, QTC, XTM (Cuckaroo29 und SHA3X); AMD + NVIDIA im selben Rechner |
+| ab 0.4.1 | bei einem Miner-Abbruch steht der Grund im Journal |
+
+Ein alter Client schürft weiter, bekommt aber nur die Coins, die er kennt.
+
 ## Im Betrieb
 
 ```bash
@@ -76,8 +108,11 @@ Nach 2 Minuten ohne Meldung gilt ein Rechner als offline.
 ### Was der Rechner tut
 
 1. **Benchmark**: Nach der Freigabe misst jeder Rechner alle Coins, die seine
-   Karte kann, je etwa 3 Minuten (Anzeige „Benchmark 4/17“). Das dauert beim
-   ersten Mal knapp eine Stunde. Danach rechnet HydraHive mit den echten Werten.
+   Karte kann, je etwa 3 Minuten. Manche Coins gehen mit mehreren Minern, dann
+   wird jeder gemessen. Das sind bei NVIDIA 35 Messungen, bei AMD 22 (Anzeige
+   z. B. „Benchmark 4/35“). Beim ersten Mal dauert das 1 bis 2 Stunden. Danach
+   rechnet HydraHive mit den echten Werten. In der Ertragstabelle steht bei
+   manchen Coins „—“, bis ein Rechner sie gemessen hat.
 2. **Schürfen**: HydraHive wählt je Rechner den Coin mit dem höchsten Ertrag
    und schickt ihn an den Miner (rigel, lolMiner, SRBMiner — lädt der Rechner
    selbst von GitHub und prüft die Prüfsumme).
@@ -97,7 +132,7 @@ dann zwei Zeilen mit „NVIDIA“ und „AMD“. Bei Kryptex erscheinen sie als
 bleiben wie bisher (Name ohne Zusatz, Messwerte bleiben erhalten).
 
 Ein alter Client (0.3.x) in so einem Rechner bleibt aus und meldet „bitte
-Client aktualisieren“.
+Client aktualisieren“ → [Client aktualisieren](#client-aktualisieren).
 
 **Neu messen** (Knopf in der Liste): nach Treiber- oder Kartenwechsel.
 
@@ -170,12 +205,14 @@ Steuer-Werkzeuge nicht — sie prüfen das zusätzlich selbst.
 | Grafikkarte „—“ in der Liste | Treiber fehlt: NVIDIA → `nvidia-smi` prüfen, AMD → `amdgpu` geladen? |
 | `Server lehnt diesen Rig ab` im Log | Rechner wurde gesperrt → neu koppeln |
 | „kein Kryptex-Benutzer eingetragen“ | Einstellungen → Kryptex-Benutzername |
-| Coin wird übersprungen, Rechner hat alten Client | Alte Clients bekommen nur Coins, die sie kennen. Client aktualisieren: `curl -fsSL https://raw.githubusercontent.com/hydrahive/hydrahive2-modules/main/mining/rig/install.sh \| sudo sh -s -- --update`. Danach werden fehlgeschlagene Coins automatisch neu versucht. |
-| `watchdog:exited` im Log | Miner bricht ab. Darunter stehen im Journal die letzten Zeilen des Miners (`journalctl -u hydrahive-rig`); SRBMiner schreibt zusätzlich nach `/var/lib/hydrahive-rig/srbminer.log` |
+| Neue Coins werden nie gemessen | Alter Client → [Client aktualisieren](#client-aktualisieren) |
+| `job_rejected:unknown_coin` im Log | Alter Client an neuem Modul → [Client aktualisieren](#client-aktualisieren). Danach versucht HydraHive diese Coins neu |
+| `watchdog:exited` im Log | Miner bricht ab. Ab Client 0.4.1 stehen direkt darunter seine letzten Zeilen: `sudo journalctl -u hydrahive-rig -n 40 --no-pager`. SRBMiner schreibt zusätzlich nach `/var/lib/hydrahive-rig/srbminer.log` |
 | `sha256_mismatch` im Log | Download beschädigt oder verändert → Rechner lädt beim nächsten Versuch neu |
 | Coin wird übersprungen (`failed`) | Miner lief auf dieser Karte nicht (z. B. zu wenig Speicher) → „Neu messen“ nach Treiber-Update |
 | „pausiert: Energie-Quelle antwortet nicht“ | Adresse/Feld der Quelle prüfen; nur Adressen im eigenen Netz |
-| „AMD + NVIDIA im Rechner: bitte Client aktualisieren“ | Client neu installieren (Befehl unter „Rechner koppeln“) |
+| „AMD + NVIDIA im Rechner: bitte Client aktualisieren“ | [Client aktualisieren](#client-aktualisieren) |
 
-Getestet: Ubuntu 26.04 mit NVIDIA RTX 5060 Ti, Debian 12 (ohne Grafikkarte).
-AMD bisher nur mit nachgestellten Daten.
+Getestet: Ubuntu 26.04 mit NVIDIA RTX 5060 Ti, Debian 12 (ohne Grafikkarte, auch
+das Update von Client 0.3.1 auf 0.4.1). AMD und Rechner mit AMD + NVIDIA bisher
+nur mit nachgestellten Daten.
