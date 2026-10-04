@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import signal
 import subprocess
 import time
@@ -23,6 +24,23 @@ logger = logging.getLogger("hydrahive_rig")
 WARMUP_SECONDS = 60     # DAG-Aufbau etc. — so lange keine Hashrate erwarten
 STALL_SECONDS = 180
 MAX_RESTARTS = 3
+TAIL_LINES = 12          # so viele Miner-Logzeilen beim Aufgeben ins Journal
+
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def log_tail(path: Path, lines: int = TAIL_LINES, max_bytes: int = 16384) -> list[str]:
+    """Letzte Zeilen einer Miner-Log-Datei, ohne Farbcodes. Fehlt die Datei → []."""
+    try:
+        with path.open("rb") as f:
+            f.seek(0, os.SEEK_END)
+            f.seek(max(0, f.tell() - max_bytes))
+            raw = f.read().decode("utf-8", "replace")
+    except OSError:
+        return []
+    text = _ANSI.sub("", raw).replace("\r", "\n")
+    return [ln.strip()[:300] for ln in text.splitlines() if ln.strip()][-lines:]
 
 
 class Runner:
@@ -75,9 +93,10 @@ class Runner:
         except (fetch.FetchError, OSError) as exc:
             self._fail(self.key, f"fetch:{exc}")
             return
-        log = (self.state_dir / ("miner.log" if not self.mixed else f"miner-{self.group}.log")).open("ab")
+        log = self._stdout_log().open("ab")
         env = {**os.environ, **self.spec.get("env", {})}
-        self.proc = self._spawn([str(exe), *self.spec["args"]], stdout=log, stderr=subprocess.STDOUT,
+        extra = [a.replace("{logfile}", str(self._miner_log())) for a in self.spec.get("log_args") or []]
+        self.proc = self._spawn([str(exe), *self.spec["args"], *extra], stdout=log, stderr=subprocess.STDOUT,
                                 stdin=subprocess.DEVNULL, cwd=str(exe.parent), start_new_session=True, env=env)
         self.started = self.last_hash_at = self._clock()
         logger.info("Miner gestartet: %s %s (%s)", self.spec["miner"], self.spec["algo"], self.key[0])
@@ -95,10 +114,21 @@ class Runner:
             self.proc.wait(timeout=5)
         self.proc = None
 
+    def _stdout_log(self) -> Path:
+        return self.state_dir / ("miner.log" if not self.mixed else f"miner-{self.group}.log")
+
+    def _miner_log(self) -> Path:
+        """Wo der Miner selbst schreibt: eigene Datei (SRBMiner) oder seine Ausgabe."""
+        name = (self.spec or {}).get("log_file")
+        return self.state_dir / name if name else self._stdout_log()
+
     def _fail(self, key, error: str) -> None:
         self.stop()
         self.failed_key, self.key, self.error = key, None, error
         logger.error("Miner-Auftrag aufgegeben: %s (%s)", key, error)
+        if error.startswith("watchdog:") and self.spec:
+            for line in log_tail(self._miner_log()):
+                logger.error("  %s: %s", self.spec["miner"], line)
         if key and key[0] == "benchmark":
             self.bench_result = {"coin": key[1], "miner": key[2], "hashrate": None, "error": error}
 

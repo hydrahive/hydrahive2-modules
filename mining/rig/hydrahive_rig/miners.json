@@ -45,6 +45,12 @@
         "--api-enable",
         "--api-port",
         "{port}"
+      ],
+      "log_args": [
+        "--log-file",
+        "{logfile}",
+        "--log-file-mode",
+        "1"
       ]
     },
     "lolminer": {
