@@ -155,13 +155,13 @@ def test_runner_reads_its_own_api_port(tmp_path, monkeypatch):
 @pytest.mark.parametrize("miner, algo", [("srbminer", "autolykos2"), ("lolminer", "AUTOLYKOS2")])
 def test_mixed_amd_group_hides_cuda(miner, algo):
     spec = catalog.build({**JOB, "miner": miner, "algo": algo}, "amd", mixed=True, group="amd")
-    assert spec["env"] == {"CUDA_VISIBLE_DEVICES": ""}
+    assert spec["env"] == {"CUDA_VISIBLE_DEVICES": "", "RUSTICL_ENABLE": "radeonsi"}
 
 
 def test_nvidia_group_and_single_vendor_keep_cuda():
     nv = catalog.build({**JOB, "miner": "srbminer", "algo": "autolykos2"}, "nvidia", mixed=True, group="nvidia")
     amd_only = catalog.build(JOB, "amd")
-    assert nv.get("env", {}) == {} and amd_only.get("env", {}) == {}
+    assert nv.get("env", {}) == {} and "CUDA_VISIBLE_DEVICES" not in amd_only["env"]
 
 
 def test_runner_passes_env_to_miner(tmp_path, monkeypatch):

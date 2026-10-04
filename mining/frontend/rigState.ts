@@ -59,7 +59,7 @@ export function activityLines(rig: LineRig): ActivityLine[] {
 
 /** Gründe des Servers → Übersetzungsschlüssel (unbekannte → generisch). */
 const STOP_KEYS = ["awaiting_approval", "disabled", "no_kryptex_user", "no_supported_gpu", "power_budget",
-  "power_source_down", "no_profitable_option", "mixed_rig_old_client"] as const
+  "power_source_down", "no_profitable_option", "mixed_rig_old_client", "amd_opencl_missing"] as const
 
 export function stopReasonKey(reason: string): string {
   return (STOP_KEYS as readonly string[]).includes(reason) ? `stop_${reason}` : "stop_other"

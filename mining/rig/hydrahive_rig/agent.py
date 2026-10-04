@@ -53,6 +53,8 @@ def group_states(card: dict, runners: dict[str, Runner]) -> dict[str, dict]:
     for vendor, grp in (card.get("groups") or {}).items():
         st = {"gpu_count": grp.get("gpu_count", 0), "gpu_model": grp.get("gpu_model"),
               "gpu_mem_mb": grp.get("gpu_mem_mb"), **{k: grp.get(k) for k in _LIVE}}
+        if "opencl" in grp:
+            st["opencl"] = grp["opencl"]
         r = runners.get(vendor)
         if r is not None:
             st.update(r.tick(grp.get("power_w")))

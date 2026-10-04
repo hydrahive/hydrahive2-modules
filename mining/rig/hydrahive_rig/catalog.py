@@ -22,6 +22,9 @@ GROUP_PORTS = {"nvidia": 4068, "amd": 4069}
 # AMD-Gruppe zusätzlich ohne CUDA: SRBMiner 3.7.1 schürft trotz --disable-gpu-nvidia auf der
 # NVIDIA-Karte weiter (auf wks197 gemessen). AMD läuft über OpenCL/ROCm, braucht kein CUDA.
 GROUP_ENV = {"amd": {"CUDA_VISIBLE_DEVICES": ""}}
+# AMD ohne ROCm: Mesa-OpenCL (rusticl, Paket mesa-opencl-icd) meldet Grafikkarten nur mit
+# RUSTICL_ENABLE. Gilt auch für Rechner nur mit AMD. Stört ROCm/amdgpu-pro nicht.
+AMD_ENV = {"RUSTICL_ENABLE": "radeonsi"}
 DEVICE_FILTER = {
     "lolminer": {"nvidia": ["--devices", "NVIDIA"], "amd": ["--devices", "AMD"]},
     "srbminer": {"nvidia": ["--disable-gpu-amd", "--disable-gpu-intel"],
@@ -73,10 +76,10 @@ def build(job: dict, vendor: str, *, mixed: bool = False, group: str | None = No
         worker = f"{worker}-{vendor}"[:40]
     values = {"algo": algo, "pool": pool, "user": user, "worker": worker, "port": str(port)}
     args = [a.format(**values) for a in m["args"]]
-    env: dict[str, str] = {}
+    env: dict[str, str] = dict(AMD_ENV) if vendor == "amd" else {}
     if mixed:
         args += DEVICE_FILTER.get(name, {}).get(vendor, [])
-        env = dict(GROUP_ENV.get(vendor, {}))
+        env.update(GROUP_ENV.get(vendor, {}))
     # Eigene Log-Datei für Miner, die ohne Terminal nichts ausgeben (SRBMiner); Pfad setzt der Runner.
     log_args = list(m.get("log_args") or [])
     log_file = (f"{name}.log" if not mixed else f"{name}-{vendor}.log") if log_args else None
