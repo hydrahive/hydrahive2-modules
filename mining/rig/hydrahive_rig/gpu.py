@@ -21,6 +21,8 @@ import subprocess
 from collections import Counter
 from pathlib import Path
 
+from . import amdinfo
+
 NVIDIA_FIELDS = "name,memory.total,driver_version,temperature.gpu,power.draw,fan.speed,utilization.gpu,pci.bus_id"
 AMD_VENDOR = "0x1002"
 _CARD_RE = re.compile(r"^card(\d+)$")
@@ -94,6 +96,23 @@ def _pci_slot(rd: _Reader, dev: Path) -> str | None:
     return None
 
 
+def _amd_model(rd: _Reader, dev: Path) -> str:
+    """product_name (nur Profi-Karten) → Name aus amdgpu.ids → „AMD 0x67df“."""
+    device = rd.text(dev / "device")
+    return rd.text(dev / "product_name") or amdinfo.name(device, rd.text(dev / "revision")) or f"AMD {device}"
+
+
+def _fan_pct(rd: _Reader, hw: Path | None) -> float | None:
+    """Lüfter in % aus hwmon pwm1 (0…pwm1_max, Standard 255)."""
+    if hw is None:
+        return None
+    pwm, top = _num(rd.text(hw / "pwm1")), _num(rd.text(hw / "pwm1_max"))
+    top = 255.0 if top is None else top          # fehlt pwm1_max → Kernel-Standard 255
+    if pwm is None or pwm < 0 or top <= 0:
+        return None
+    return round(min(pwm / top, 1.0) * 100, 1)
+
+
 def read_amd(drm_root: Path = Path("/sys/class/drm")) -> list[dict]:
     cards = sorted((int(m.group(1)), p) for p in drm_root.glob("card*") if (m := _CARD_RE.match(p.name)))
     gpus = []
@@ -107,15 +126,16 @@ def read_amd(drm_root: Path = Path("/sys/class/drm")) -> list[dict]:
         if hw is not None:
             temp = rd.first([hw / f"temp{i}_input" for i in (1, 2, 3)], 1000)        # edge, hotspot, mem
             power = rd.first([hw / "power1_average", hw / "power1_input"], 1_000_000)
+        fan = _fan_pct(rd, hw)
         util = _num(rd.text(dev / "gpu_busy_percent"))
         vram = _num(rd.text(dev / "mem_info_vram_total"))
         asleep = rd.denied or rd.text(dev / "power" / "runtime_status") == "suspended"
         sensors = "no_hwmon" if hw is None else ("asleep" if asleep and temp is None and power is None else "ok")
         gpus.append({
-            "gpu_vendor": "amd", "gpu_model": rd.text(dev / "product_name") or f"AMD {rd.text(dev / 'device')}",
+            "gpu_vendor": "amd", "gpu_model": _amd_model(rd, dev),
             "gpu_mem_mb": int(vram / 1048576) if vram else None,
             "driver": rd.text(dev / "driver/module/version") or "amdgpu",
-            "temp_c": temp, "power_w": power, "fan_pct": None, "util_pct": util,
+            "temp_c": temp, "power_w": power, "fan_pct": fan, "util_pct": util,
             "pci": _pci_slot(rd, dev), "sensors": sensors,
         })
     return gpus
@@ -138,18 +158,23 @@ def summarize(gpus: list[dict]) -> dict:
         return [g[k] for g in gpus if isinstance(g.get(k), (int, float))]
 
     power, temps, utils, mems = known("power_w"), known("temp_c"), known("util_pct"), known("gpu_mem_mb")
+    fans = known("fan_pct")
     first = gpus[0]
     return {
         "gpu_vendor": first.get("gpu_vendor"), "gpu_model": _model_summary(gpus),
         "gpu_mem_mb": min(mems) if mems else None, "driver": first.get("driver"),
         "temp_c": max(temps) if temps else None, "power_w": round(sum(power), 1) if power else None,
         "util_pct": round(sum(utils) / len(utils), 1) if utils else None,
-        "fan_pct": first.get("fan_pct") if len(gpus) == 1 else None,
+        "fan_pct": max(fans) if fans else None,
         "gpu_count": len(gpus), "gpus": gpus,
     }
 
 
 VENDORS = ("nvidia", "amd")
+
+
+def amd_opencl(dirs: list[Path] | None = None) -> str:
+    return amdinfo.opencl(dirs)
 
 
 def detect() -> dict:
@@ -159,6 +184,8 @@ def detect() -> dict:
     """
     by_vendor = {"nvidia": _nvidia(), "amd": read_amd()}
     groups = {v: summarize(cards) for v, cards in by_vendor.items() if cards}
+    if "amd" in groups:
+        groups["amd"]["opencl"] = amd_opencl()
     out = summarize(by_vendor["nvidia"] + by_vendor["amd"])
     if len(groups) > 1:
         out["gpu_vendor"] = "mixed"
