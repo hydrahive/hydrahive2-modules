@@ -4,7 +4,7 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.6.1 (Rechner-Client 0.4.1): Ertragstabelle mit 16 Coins, Rechner
+Stand 0.6.2 (Rechner-Client 0.4.2): Ertragstabelle mit 16 Coins, Rechner
 koppeln/freigeben/an/aus/sperren, echtes Schürfen mit Benchmark, automatischem
 Umschalten, Watchdog und Energie-Steuerung. Rechner mit AMD- und NVIDIA-Karten
 zugleich bekommen je Hersteller einen eigenen Miner.
@@ -29,7 +29,17 @@ siehe [Client aktualisieren](#client-aktualisieren).
 - Ubuntu 24.04 oder neuer, oder Debian 12 oder neuer (Python 3.11+ ist dort dabei)
 - Grafikkarte mit installiertem Treiber
   - NVIDIA: `nvidia-smi` muss im Terminal funktionieren
-  - AMD: Treiber `amdgpu` (bei Ubuntu/Debian Standard)
+  - AMD: Treiber `amdgpu` (bei Ubuntu/Debian Standard) **und ein OpenCL-Treiber**.
+    Den bringt Ubuntu/Debian nicht von selbst mit, ohne ihn finden die Miner keine
+    Karte. Einfachster Weg, auch für ältere Karten (RX 470/570/580, RX 550, Radeon VII):
+
+    ```bash
+    sudo apt install mesa-opencl-icd clinfo
+    RUSTICL_ENABLE=radeonsi clinfo -l      # muss jede AMD-Karte zeigen
+    ```
+
+    Den Schalter `RUSTICL_ENABLE` setzt der Client beim Starten der Miner selbst.
+    Wer ROCm von AMD installiert hat, braucht `mesa-opencl-icd` nicht.
 - `curl` und `sudo` (Debian minimal: `apt install curl sudo`)
 - Der Rechner muss den HydraHive-Server per HTTPS erreichen. Am Rechner wird
   **kein Port geöffnet**, er verbindet sich von selbst zum Server.
@@ -91,6 +101,7 @@ curl -fsSL https://raw.githubusercontent.com/hydrahive/hydrahive2-modules/main/m
 | 0.3.x | 9 Coins: CFX, ERG, IRON, NEXA, PRL, QUAI, RVN, XEL, XNA |
 | ab 0.4.0 | zusätzlich ALPH, ETC, ETHW, OCTA, QTC, XTM (Cuckaroo29 und SHA3X); AMD + NVIDIA im selben Rechner |
 | ab 0.4.1 | bei einem Miner-Abbruch steht der Grund im Journal |
+| ab 0.4.2 | AMD: Mesa-OpenCL (`mesa-opencl-icd`) wird genutzt; fehlt OpenCL, zeigt HydraHive das statt zu messen; echte Kartennamen (z. B. „RX 470“ statt „0x67df“) und Lüfter |
 
 Ein alter Client schürft weiter, bekommt aber nur die Coins, die er kennt.
 
@@ -203,6 +214,8 @@ Steuer-Werkzeuge nicht — sie prüfen das zusätzlich selbst.
 | `server_pin_mismatch` | Server-Zertifikat wurde getauscht → neuen Befehl erzeugen |
 | `python3 >= 3.11 nötig` | System zu alt → Ubuntu 24.04+ / Debian 12+ |
 | Grafikkarte „—“ in der Liste | Treiber fehlt: NVIDIA → `nvidia-smi` prüfen, AMD → `amdgpu` geladen? |
+| „AMD: OpenCL-Treiber fehlt“ | `sudo apt install mesa-opencl-icd`, dann `sudo systemctl restart hydrahive-rig` |
+| `OpenCL not found` / `Number of OpenCL supported GPUs: 0` im Log | wie oben: OpenCL-Treiber für AMD fehlt. Mit Client 0.4.2 misst der Rechner dann gar nicht erst |
 | `Server lehnt diesen Rig ab` im Log | Rechner wurde gesperrt → neu koppeln |
 | „kein Kryptex-Benutzer eingetragen“ | Einstellungen → Kryptex-Benutzername |
 | Neue Coins werden nie gemessen | Alter Client → [Client aktualisieren](#client-aktualisieren) |
@@ -214,5 +227,6 @@ Steuer-Werkzeuge nicht — sie prüfen das zusätzlich selbst.
 | „AMD + NVIDIA im Rechner: bitte Client aktualisieren“ | [Client aktualisieren](#client-aktualisieren) |
 
 Getestet: Ubuntu 26.04 mit NVIDIA RTX 5060 Ti, Debian 12 (ohne Grafikkarte, auch
-das Update von Client 0.3.1 auf 0.4.1). AMD und Rechner mit AMD + NVIDIA bisher
-nur mit nachgestellten Daten.
+das Update von Client 0.3.1 auf 0.4.1). AMD: Mesa-OpenCL erkennt auf Ubuntu 26.04
+RX 470, Radeon VII und RX 550 (Kugelfang); Schürfen damit noch ungeprüft. Rechner
+mit AMD + NVIDIA bisher nur mit nachgestellten Daten.
