@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
-from . import catalog, groups, power, runtime_store, store
+from . import catalog, compat, groups, power, runtime_store, store
 from .decide import Assignment, decide
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,8 @@ def _decide_group(rig: dict, vendor: str, key: str, gstate: dict, mem: int | Non
                   now: datetime, power: tuple[bool, bool, str]) -> Assignment:
     _record_benchmark(key, gstate)
     bench, failed = runtime_store.bench_for(key)
+    known = set(compat.known_coins(rig.get("client_version")))    # alte Clients lehnen neue Coins ab
+    quotes = {c: q for c, q in quotes.items() if c in known}
     cur, since, _ = runtime_store.get_assignment(key)
     power_ok, power_changed, power_reason = power
     new = decide(rig={**rig, "gpu_vendor": vendor, "gpu_mem_mb": mem}, cfg=cfg, quotes=quotes, bench=bench,

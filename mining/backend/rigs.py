@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import secrets
 import uuid
 from datetime import datetime, timezone
@@ -17,6 +18,8 @@ from datetime import datetime, timezone
 from hydrahive.db.connection import db
 
 from . import pairing
+
+logger = logging.getLogger(__name__)
 
 TOKEN_PREFIX = "hhrig_"
 MAX_REPORT_BYTES = 8192
@@ -91,6 +94,14 @@ def report(rig: dict, data: dict, remote_ip: str) -> None:
     with db() as c:
         c.execute(f"UPDATE module_mining_rigs SET {', '.join(sets)} WHERE id = ?",
                   (raw, _now(), remote_ip, *clean.values(), rig["id"]))
+    new_ver = clean.get("client_version")
+    if new_ver and new_ver != rig.get("client_version"):
+        # Neuer Client kennt evtl. neue Coins oder läuft stabiler → Fehlschläge neu versuchen.
+        from . import runtime_store
+        n = runtime_store.forget_failures(rig["id"])
+        logger.info("Mining: %s Client %s → %s, %d Fehlschläge werden neu versucht",
+                    rig.get("name"), rig.get("client_version"), new_ver, n)
+    rig.update(clean)                     # Planer sieht schon in dieser Meldung die neue Version
 
 
 def desired(rig: dict, state: dict | None = None) -> dict:
@@ -137,10 +148,13 @@ def list_rigs() -> list[dict]:
     return out
 
 
-def bench_total(vendor: str, mem_mb: int | None = None) -> int:
-    """Anzahl Coin×Miner-Paare, die ein Rig dieses Herstellers misst (Speichergrenzen beachtet)."""
+def bench_total(vendor: str, mem_mb: int | None = None, coins: list[str] | None = None) -> int:
+    """Anzahl Coin×Miner-Paare, die ein Rig dieses Herstellers misst (Speichergrenzen beachtet).
+
+    ``coins``: nur diese (Coins, die der Client kennt); None = alle im Katalog.
+    """
     from . import catalog
-    return sum(len(catalog.options(c, vendor)) for c in catalog.coins()
+    return sum(len(catalog.options(c, vendor)) for c in (catalog.coins() if coins is None else coins)
                if not (catalog.min_mem_mb(c) and mem_mb and mem_mb < catalog.min_mem_mb(c)))
 
 
