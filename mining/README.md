@@ -4,7 +4,7 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.6.0: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
+Stand 0.6.1: Ertragstabelle, Rechner koppeln/freigeben/an/aus/sperren, echtes
 Schürfen mit Benchmark, automatischem Umschalten, Watchdog und Energie-Steuerung.
 
 ## Einmalig in HydraHive
@@ -170,6 +170,8 @@ Steuer-Werkzeuge nicht — sie prüfen das zusätzlich selbst.
 | Grafikkarte „—“ in der Liste | Treiber fehlt: NVIDIA → `nvidia-smi` prüfen, AMD → `amdgpu` geladen? |
 | `Server lehnt diesen Rig ab` im Log | Rechner wurde gesperrt → neu koppeln |
 | „kein Kryptex-Benutzer eingetragen“ | Einstellungen → Kryptex-Benutzername |
+| Coin wird übersprungen, Rechner hat alten Client | Alte Clients bekommen nur Coins, die sie kennen. Client aktualisieren: `curl -fsSL https://raw.githubusercontent.com/hydrahive/hydrahive2-modules/main/mining/rig/install.sh \| sudo sh -s -- --update`. Danach werden fehlgeschlagene Coins automatisch neu versucht. |
+| `watchdog:exited` im Log | Miner bricht ab. Darunter stehen im Journal die letzten Zeilen des Miners (`journalctl -u hydrahive-rig`); SRBMiner schreibt zusätzlich nach `/var/lib/hydrahive-rig/srbminer.log` |
 | `sha256_mismatch` im Log | Download beschädigt oder verändert → Rechner lädt beim nächsten Versuch neu |
 | Coin wird übersprungen (`failed`) | Miner lief auf dieser Karte nicht (z. B. zu wenig Speicher) → „Neu messen“ nach Treiber-Update |
 | „pausiert: Energie-Quelle antwortet nicht“ | Adresse/Feld der Quelle prüfen; nur Adressen im eigenen Netz |
