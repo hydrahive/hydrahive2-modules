@@ -28,6 +28,16 @@ done
 
 say() { printf '\033[1;36m[hydrahive-rig]\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31m[hydrahive-rig]\033[0m %s\n' "$*" >&2; exit 1; }
+warn() { printf '\033[1;33m[hydrahive-rig]\033[0m %s\n' "$*" >&2; }
+
+# AMD-Karte (amdgpu) da, aber kein OpenCL-Treiber für AMD → Miner finden keine Karte. Nur Hinweis.
+check_amd_opencl() {
+  grep -qs '^0x1002$' /sys/class/drm/card*/device/vendor || return 0
+  cat /etc/OpenCL/vendors/*.icd /usr/local/etc/OpenCL/vendors/*.icd 2>/dev/null \
+    | grep -qi -e rusticl -e mesaopencl -e amdocl && return 0
+  warn "AMD-Grafikkarte gefunden, aber kein OpenCL-Treiber. Ohne ihn können die Miner nicht rechnen."
+  warn "Bitte installieren:  sudo apt install mesa-opencl-icd   (danach: sudo systemctl restart hydrahive-rig)"
+}
 
 [ "$(id -u)" -eq 0 ] || die "Bitte mit sudo ausführen."
 if [ "$UPDATE" -eq 1 ]; then
@@ -69,6 +79,7 @@ if [ "$UPDATE" -eq 1 ]; then
   systemctl daemon-reload
   systemctl restart hydrahive-rig.service
   say "Fertig: Client $(PYTHONPATH=$PREFIX python3 -c 'import hydrahive_rig; print(hydrahive_rig.__version__)'). Kopplung unverändert."
+  check_amd_opencl
   exit 0
 fi
 
@@ -83,3 +94,4 @@ install -m 644 "$TMP/rig/hydrahive-rig.service" /etc/systemd/system/hydrahive-ri
 systemctl daemon-reload
 systemctl enable --now hydrahive-rig.service
 say "Fertig. In HydraHive unter Mining → Rechner den neuen Rechner freigeben."
+check_amd_opencl

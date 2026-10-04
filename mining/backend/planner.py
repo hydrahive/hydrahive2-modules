@@ -36,6 +36,10 @@ def _record_benchmark(key: str, state: dict) -> None:
 def _decide_group(rig: dict, vendor: str, key: str, gstate: dict, mem: int | None, *, cfg: dict, quotes: dict,
                   now: datetime, power: tuple[bool, bool, str]) -> Assignment:
     _record_benchmark(key, gstate)
+    if vendor == "amd" and gstate.get("opencl") == "missing" and rig.get("status") == "active":
+        new = Assignment("stop", reason="amd_opencl_missing")   # Miner fände keine Karte → nicht messen
+        runtime_store.set_assignment(key, new, runtime_store.get_assignment(key)[0], power_changed=False)
+        return new
     bench, failed = runtime_store.bench_for(key)
     known = set(compat.known_coins(rig.get("client_version")))    # alte Clients lehnen neue Coins ab
     quotes = {c: q for c, q in quotes.items() if c in known}
