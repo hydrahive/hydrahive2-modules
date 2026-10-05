@@ -260,3 +260,12 @@ def test_clore_dryrun_tool_reads_summary_in_eur(quotes):
 def test_clore_dryrun_tool_without_runs(quotes):
     r = run(buddy_tools.CLORE_DRYRUN, {})
     assert r.success and r.output["last_run"] is None and r.output["hits_24h"] == []
+    # Ab Werk aus: Buddy muss das sagen, statt „lohnt sich nicht“ zu melden.
+    assert r.output["enabled"] is False and "Einstellungen" in r.output["hint"]
+
+
+def test_clore_dryrun_tool_cannot_switch_on(quotes):
+    """Einschalten nur in der Oberfläche, nicht über Buddy."""
+    assert "clore_dryrun" not in buddy_tools.SETTABLE
+    r = run(buddy_tools.SETTINGS_TOOL, {"changes": {"clore_dryrun": True}})
+    assert not r.success and store.get_config()["clore_dryrun"] is False

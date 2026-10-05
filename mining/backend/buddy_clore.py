@@ -7,6 +7,8 @@ from . import clore_store, store
 
 NOTE = ("Nur gerechnet, nichts gemietet: öffentlicher Clore-Marktplatz alle 15 min gegen Kryptex-Ertrag. "
         "„Treffer“ = mindestens 12 % konservatives Plus. Spot ist nur das Mindestgebot.")
+OFF_HINT = ("Der Clore-Probelauf ist ausgeschaltet (ab Werk aus), es wird nichts gerechnet. Einschalten nur in der "
+            "Oberfläche: Mining-Seite → Einstellungen → Haken „Clore-Probelauf“.")
 
 
 def _eur(v: float | None, rate: float | None) -> float | None:
@@ -28,8 +30,9 @@ async def _clore(args: dict, ctx: ToolContext) -> ToolResult:
              "seen_runs_24h": h.get("seen")}
             for h in s["hits_24h"][:20]]
     days = [{**d, "best_roi_pct": _pct(d.pop("best_roi", None))} for d in s["days"]]
+    enabled = bool(store.get_config().get("clore_dryrun"))
     return ToolResult.ok({"note": NOTE, "last_run": s["last_run"], "hits_24h": hits, "days": days,
-                          "enabled": bool(store.get_config().get("clore_dryrun"))})
+                          "enabled": enabled, "hint": None if enabled else OFF_HINT})
 
 
 CLORE_DRYRUN = Tool(

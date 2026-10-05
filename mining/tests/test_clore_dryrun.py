@@ -216,6 +216,26 @@ async def test_job_respects_switch(quotes, monkeypatch):
     assert calls == [1] and clore_store.summary()["last_run"]["hits"] == 1
 
 
+async def test_dryrun_off_by_default(quotes, monkeypatch):
+    """Till 05.10.: ab Werk aus. Ohne gespeicherten Schalter liest der Job nichts."""
+    calls = []
+
+    async def fake_fetch():
+        calls.append(1)
+        return [_server(1, od=1.0)]
+
+    monkeypatch.setattr(clore, "fetch_marketplace", fake_fetch)
+    assert store.get_config()["clore_dryrun"] is False
+    await clore.job()
+    assert calls == [] and clore_store.summary()["last_run"] is None
+
+
+def test_route_reports_switch(client, admin_headers, quotes):
+    assert client.get(f"{P}/clore", headers=admin_headers).json()["enabled"] is False
+    store.update_config({"clore_dryrun": True})
+    assert client.get(f"{P}/clore", headers=admin_headers).json()["enabled"] is True
+
+
 async def test_job_fetch_error_stored(quotes, monkeypatch):
     async def boom():
         raise clore.CloreError("timeout")
