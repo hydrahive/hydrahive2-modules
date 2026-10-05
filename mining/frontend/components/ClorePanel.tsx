@@ -2,10 +2,10 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { miningApi } from "../api"
 import { bestRoi, cloreLine, gpuLabel, toEur, type CloreSummary } from "../clore"
-import { formatPercent } from "../format"
+import { formatMoney, formatPercent } from "../format"
 
 const POLL_MS = 5 * 60_000
-const eur = (v: number | null) => (v === null ? "—" : `${v.toFixed(2)} €`)
+const eur = (v: number | null) => (v === null ? "—" : formatMoney(v, "EUR"))
 const pct = (v: number | null) => (v === null ? "—" : formatPercent(v))
 
 /** Clore-Probelauf: Würde sich Mieten lohnen? Nur gerechnet, nichts gemietet. */
