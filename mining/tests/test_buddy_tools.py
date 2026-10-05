@@ -170,6 +170,41 @@ def test_skill_sync_installs_and_respects_admin_edit(tmp_path, monkeypatch):
     assert live.read_text() == "Admin hat das angepasst"       # Admin-Änderung bleibt
 
 
+SKILL_050_SHA = "259a9bab20fea282f0caf9830407b792b689c0686bb730fb338fd3023bc4302f"  # Auslieferung 0.5.0
+
+
+def test_skill_history_knows_all_shipped_versions():
+    """Ohne Eintrag gilt eine alte Auslieferung als Admin-Änderung und wird nie ersetzt
+    (05.10.2026: Prod und hydratest blieben auf der 0.5.0-Fassung ohne Clore-Werkzeug)."""
+    import hashlib
+    import json
+
+    from backend import skill_sync
+    history = json.loads((skill_sync.SKILLS_SRC / "_history.json").read_text())
+    for f in skill_sync.SKILLS_SRC.glob("*.md"):
+        assert hashlib.sha256(f.read_bytes()).hexdigest() in history.get(f.name, []), f.name
+    assert SKILL_050_SHA in history["mining-workflow.md"]
+
+
+def test_skill_sync_replaces_earlier_shipped_version(tmp_path, monkeypatch):
+    import hashlib
+    import json
+
+    from backend import skill_sync
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "mining-workflow.md").write_text("neu")
+    old = b"alt ausgeliefert"
+    (src / "_history.json").write_text(json.dumps({"mining-workflow.md": [hashlib.sha256(old).hexdigest()]}))
+    live_dir = tmp_path / "live"
+    live_dir.mkdir()
+    (live_dir / "mining-workflow.md").write_bytes(old)
+    monkeypatch.setattr(skill_sync, "SKILLS_SRC", src)
+    monkeypatch.setattr("hydrahive.skills._paths.system_dir", lambda: live_dir)
+    skill_sync.install()
+    assert (live_dir / "mining-workflow.md").read_text() == "neu"
+
+
 def test_skill_sync_never_raises(monkeypatch):
     from backend import skill_sync
 

@@ -4,7 +4,7 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.7.0 (Rechner-Client 0.4.2): Ertragstabelle mit 16 Coins, Rechner
+Stand 0.7.1 (Rechner-Client 0.4.2): Ertragstabelle mit 16 Coins, Rechner
 koppeln/freigeben/an/aus/sperren, echtes Schürfen mit Benchmark, automatischem
 Umschalten, Watchdog und Energie-Steuerung. Rechner mit AMD- und NVIDIA-Karten
 zugleich bekommen je Hersteller einen eigenen Miner. Neu: Clore-Probelauf (rechnet, ob sich
