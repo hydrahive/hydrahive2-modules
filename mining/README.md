@@ -4,10 +4,11 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.6.2 (Rechner-Client 0.4.2): Ertragstabelle mit 16 Coins, Rechner
+Stand 0.7.0 (Rechner-Client 0.4.2): Ertragstabelle mit 16 Coins, Rechner
 koppeln/freigeben/an/aus/sperren, echtes Schürfen mit Benchmark, automatischem
 Umschalten, Watchdog und Energie-Steuerung. Rechner mit AMD- und NVIDIA-Karten
-zugleich bekommen je Hersteller einen eigenen Miner.
+zugleich bekommen je Hersteller einen eigenen Miner. Neu: Clore-Probelauf (rechnet, ob sich
+gemietete GPU-Server lohnen würden – mietet nichts).
 
 **Schon im Einsatz?** Nach einem Modul-Update auch die Rechner aktualisieren,
 siehe [Client aktualisieren](#client-aktualisieren).
@@ -171,6 +172,25 @@ Ertrag pro Watt. Zwischen Ein und Aus liegt eine Mindestzeit (Standard 10 min),
 damit Wolken nicht ständig schalten. Antwortet die Quelle nicht mehr, pausieren
 diese Rechner.
 
+### Clore-Probelauf (nur rechnen)
+
+Alle 15 Minuten liest HydraHive den öffentlichen Marktplatz von [Clore.ai](https://clore.ai)
+und rechnet für jeden freien Server: **Kryptex-Ertrag pro Tag gegen Miete pro Tag**. Es wird
+**nichts gemietet**, es braucht keinen Clore-Zugang und kein Geld.
+
+- **Treffer** = mindestens 12 % Plus, nachdem der Ertrag vorsichtig gekürzt wurde
+  (−15 % bei Herstellerwerten, −8 % bei eigenen Messungen, PROP-Coins mindestens −10 %),
+  und der Server ist bei Clore zu mindestens 90 % zuverlässig.
+- Miete inklusive Mietergebühr von Clore (+5 % normal, +1,25 % Spot). Spot ist nur das
+  Mindestgebot – ob man es bekommt, ist offen.
+- Hashraten: eigene Messwerte aus `backend/clore_benchmarks.json` (✓ in der Liste),
+  sonst Herstellerangaben von Kryptex. Für Karten ohne Werte gibt es keine Rechnung.
+- Die Box **Clore-Probelauf** auf der Mining-Seite zeigt den letzten Lauf, die besten Treffer
+  der letzten 24 h und je Tag, wie oft es Treffer gab. Ergebnisse bleiben 14 Tage gespeichert.
+- Ausschalten: *Einstellungen* → Haken „Clore-Probelauf“.
+
+Ausführlich: `docs/clore-dryrun.md`.
+
 ## Mit Buddy
 
 Buddy kennt das Mining (Skill `mining-workflow`, wird beim Laden des Moduls
@@ -182,10 +202,11 @@ installiert) und hat Werkzeuge dafür:
 | `mining_earnings` | Ertrag €/Tag jetzt und im Schnitt (24 h / 7 Tage) | Mining ansehen |
 | `mining_rig_history` | Verlauf eines Rechners, Coin-Wechsel | Mining ansehen |
 | `mining_benchmarks` | Messungen eines Rechners, nach Ertrag sortiert | Mining ansehen |
+| `mining_clore_dryrun` | Clore-Probelauf: würde sich Mieten lohnen? | Mining ansehen |
 | `mining_rig_control` | Rechner ein/aus, neu messen, Energie folgen | Mining steuern |
 | `mining_settings` | Einstellungen anzeigen/ändern | Mining steuern (ändern) |
 
-Beispiele: „Wie läuft das Mining?“, „Was hab ich diese Woche verdient?“, „Warum ist
+Beispiele: „Würde sich Clore lohnen?“, „Wie läuft das Mining?“, „Was hab ich diese Woche verdient?“, „Warum ist
 rig-03 so schwach?“, „Schalte rig-02 aus“.
 
 **Nicht per Chat** (nur Oberfläche): Rechner koppeln, freigeben, sperren, löschen und

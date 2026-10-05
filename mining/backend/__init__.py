@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 
-from . import buddy_tools, poller, power, skill_sync
+from . import buddy_tools, clore, poller, power, skill_sync
 from .device_routes import device_auth, device_router
 from .rig_routes import rig_router
 from .routes import router
@@ -34,6 +34,7 @@ def register(ctx) -> None:
     ctx.register_job("kryptex_poll", poller.poll, interval_seconds=poller.INTERVAL_SECONDS,
                      initial_delay_seconds=20)
     ctx.register_job("power_poll", _power_poll, interval_seconds=30, initial_delay_seconds=10)
+    ctx.register_job("clore_scan", clore.job, interval_seconds=clore.INTERVAL_SECONDS, initial_delay_seconds=60)
     for tool in buddy_tools.TOOLS:
         ctx.register_tool(tool)
     skill_sync.install()

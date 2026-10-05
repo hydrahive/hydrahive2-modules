@@ -13,7 +13,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from hydrahive.api.middleware.auth import require_auth
 
-from . import poller, power, reference, store
+from . import clore_store, poller, power, reference, store
 from .access import Control
 from .profit import usd_per_day
 
@@ -42,6 +42,12 @@ def overview(_: Auth, gpu: str = Query("nvidia-rtx-5060-ti-16gb", max_length=64)
     rows.sort(key=lambda r: (r["usd_day"] is None, -(r["usd_day"] or 0)))
     return {"gpu": gpu, "fetched_at": fetched_at, "usd_per_eur": eur_rate,
             "rows": rows, "reference": reference.meta()}
+
+
+@router.get("/clore")
+def clore_dryrun(_: Auth) -> dict:
+    """Clore-Probelauf: letzter Lauf, Treffer 24 h, Tageszusammenfassung (nichts wird gemietet)."""
+    return clore_store.summary()
 
 
 @router.get("/gpus")

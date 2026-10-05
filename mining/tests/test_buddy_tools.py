@@ -45,7 +45,7 @@ def rig(client, admin_headers):
 def test_all_tools_registered_and_named():
     names = [t.name for t in buddy_tools.TOOLS]
     assert names == ["mining_status", "mining_earnings", "mining_rig_history", "mining_benchmarks",
-                     "mining_rig_control", "mining_settings"]
+                     "mining_clore_dryrun", "mining_rig_control", "mining_settings"]
     assert all(t.description and t.schema["type"] == "object" for t in buddy_tools.TOOLS)
 
 
@@ -200,7 +200,28 @@ def test_core_filter_viewer_keeps_read_tools_loses_control(monkeypatch):
     try:
         monkeypatch.setattr(check, "can_use_as", lambda user, cap: cap == "module.mining")
         names = [t.name for t in buddy_tools.TOOLS]
-        assert tool_filter.filter_tools("viewer", names) == names[:4]
+        read = ["mining_status", "mining_earnings", "mining_rig_history", "mining_benchmarks", "mining_clore_dryrun"]
+        assert tool_filter.filter_tools("viewer", names) == read
     finally:
         for t in buddy_tools.TOOLS:
             REGISTRY.pop(t.name, None)
+
+
+def test_clore_dryrun_tool_reads_summary_in_eur(quotes):
+    from backend import clore_store
+    clore_store.save_run({"ok": True, "free": 3, "rated": 2, "hits": 1, "best_roi": 0.4},
+                         [{"server_id": 5, "gpu": "nvidia-rtx-3070", "count": 2, "coin": "prl", "source": "reference",
+                           "revenue": 2.5, "cost_od": 1.25, "cost_spot": None, "roi_od": 1.0, "roi_spot": None,
+                           "reliability": 0.99, "mrl": 72}])
+    r = run(buddy_tools.CLORE_DRYRUN, {})
+    assert r.success, r.error
+    d = r.output
+    assert d["note"].startswith("Nur gerechnet") and d["last_run"]["hits"] == 1
+    (hit,) = d["hits_24h"]
+    assert hit["revenue_eur_day"] == pytest.approx(2.0) and hit["cost_od_eur_day"] == pytest.approx(1.0)
+    assert hit["roi_od_pct"] == pytest.approx(100.0) and hit["roi_spot_pct"] is None
+
+
+def test_clore_dryrun_tool_without_runs(quotes):
+    r = run(buddy_tools.CLORE_DRYRUN, {})
+    assert r.success and r.output["last_run"] is None and r.output["hits_24h"] == []

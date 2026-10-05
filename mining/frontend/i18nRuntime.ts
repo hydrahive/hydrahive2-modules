@@ -49,6 +49,17 @@ export const runtimeDe = {
   power_min_minutes: "Mindestzeit zwischen Ein/Aus (Minuten)",
   power_available: "verfügbar: {{w}} W",
   power_no_data: "keine Daten — Rechner mit „folgt Energie“ pausieren",
+  clore_title: "Clore-Probelauf",
+  clore_switch: "Clore-Probelauf: Marktplatz alle 15 min lesen und rechnen (mietet nichts)",
+  clore_note: "Nur gerechnet, nichts gemietet: Alle 15 Minuten wird der Clore-Marktplatz mit dem Kryptex-Ertrag verglichen. Treffer = mindestens 12 % Plus nach Abschlag und mindestens 90 % Zuverlässigkeit. Spot ist nur das Mindestgebot. ✓ = eigener Messwert.",
+  clore_never: "Noch kein Lauf.",
+  clore_error: "Letzter Lauf ohne Ergebnis: {{error}}",
+  clore_none: "Letzter Lauf: {{n}} Server bewertet, keiner lohnt sich (bester: {{best}}).",
+  clore_hits: "Letzter Lauf: {{hits}} von {{n}} Servern würden sich lohnen (bester: {{best}}).",
+  clore_col_gpu: "Karten",
+  clore_col_revenue: "Ertrag/Tag",
+  clore_col_cost: "Miete/Tag",
+  clore_day: "{{day}}: {{hit}}/{{runs}} Läufe mit Treffer",
 }
 
 export const runtimeEn: Record<keyof typeof runtimeDe, string> = {
@@ -100,4 +111,15 @@ export const runtimeEn: Record<keyof typeof runtimeDe, string> = {
   power_min_minutes: "Minimum time between on/off (minutes)",
   power_available: "available: {{w}} W",
   power_no_data: "no data — rigs with “follows power” are paused",
+  clore_title: "Clore dry run",
+  clore_switch: "Clore dry run: read marketplace every 15 min and calculate (rents nothing)",
+  clore_note: "Calculated only, nothing rented: every 15 minutes the Clore marketplace is compared with Kryptex earnings. Hit = at least 12 % profit after safety margin and at least 90 % reliability. Spot is only the minimum bid. ✓ = own measurement.",
+  clore_never: "No run yet.",
+  clore_error: "Last run without result: {{error}}",
+  clore_none: "Last run: {{n}} servers rated, none profitable (best: {{best}}).",
+  clore_hits: "Last run: {{hits}} of {{n}} servers would be profitable (best: {{best}}).",
+  clore_col_gpu: "GPUs",
+  clore_col_revenue: "Earnings/day",
+  clore_col_cost: "Rent/day",
+  clore_day: "{{day}}: {{hit}}/{{runs}} runs with hits",
 }

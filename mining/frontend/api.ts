@@ -1,4 +1,5 @@
 import { api } from "@/shared/api-client"
+import type { CloreSummary } from "./clore"
 import type { HistoryResponse } from "./history"
 
 const BASE = "/modules/mining"
@@ -45,6 +46,7 @@ export interface MiningConfig {
   power_reserve_w: number
   power_min_minutes: number
   power_stale_minutes: number
+  clore_dryrun: boolean
 }
 
 export interface PowerStatus {
@@ -142,4 +144,5 @@ export const miningApi = {
   resetBench: (id: string) => api.post<{ ok: boolean }>(`${BASE}/rigs/${id}/benchmarks/reset`, {}),
   power: () => api.get<PowerStatus>(`${BASE}/rigs/power`),
   history: (hours: number) => api.get<HistoryResponse>(`${BASE}/rigs/history?hours=${hours}`),
+  clore: () => api.get<CloreSummary>(`${BASE}/clore`),
 }
