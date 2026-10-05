@@ -134,6 +134,16 @@ def test_scan_stores_run_and_hits(quotes):
     assert s["last_run"]["hits"] == 1 and [h["server_id"] for h in s["hits_24h"]] == [1]
 
 
+def test_best_roi_ignores_unreliable_servers(quotes):
+    """Echttest: „bester“ ROI 143 % kam von einem Server mit 41 % Zuverlässigkeit – darf nicht zählen."""
+    good, shaky = _server(1, od=1.0, spot=0.9), _server(2, od=0.2, spot=0.1, rel=0.41)
+    run = clore.scan([good, shaky], quotes, prop_discount=0.0)
+    expect = clore.evaluate(good, quotes, prop_discount=0.0)
+    assert run["best_roi"] == pytest.approx(max(expect["roi_od"], expect["roi_spot"]))
+    only_shaky = clore.scan([shaky], quotes, prop_discount=0.0)
+    assert only_shaky["rated"] == 1 and only_shaky["best_roi"] is None
+
+
 def test_failed_fetch_is_stored_as_not_ok(quotes):
     clore_store.save_run({"ok": False, "free": 0, "rated": 0, "hits": 0, "best_roi": None, "error": "timeout"}, [])
     assert clore_store.summary()["last_run"]["ok"] is False

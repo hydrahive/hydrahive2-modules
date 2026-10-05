@@ -117,7 +117,7 @@ def evaluate(server: dict, quotes: dict[str, CoinQuote], *, prop_discount: float
     reliable = isinstance(rel, (int, float)) and not isinstance(rel, bool) and rel >= MIN_RELIABILITY
     return {**out, "status": "rated", "gpu": gpu, "count": count, "coin": coin, "source": source,
             "revenue": revenue, "cost_od": cost_od, "cost_spot": cost_spot, "roi_od": roi_od, "roi_spot": roi_spot,
-            "hit_od": reliable and roi_od is not None and roi_od >= MIN_ROI,
+            "reliable": reliable, "hit_od": reliable and roi_od is not None and roi_od >= MIN_ROI,
             "hit_spot": reliable and roi_spot is not None and roi_spot >= MIN_ROI}
 
 
@@ -126,7 +126,7 @@ def scan(servers: list[dict], quotes: dict[str, CoinQuote], *, prop_discount: fl
     free = [r for r in rated if r["status"] != "rented"]
     ok = [r for r in free if r["status"] == "rated"]
     hits = [r for r in ok if r["hit_od"] or r["hit_spot"]]
-    rois = [x for r in ok for x in (r["roi_od"], r["roi_spot"]) if x is not None]
+    rois = [x for r in ok if r["reliable"] for x in (r["roi_od"], r["roi_spot"]) if x is not None]
     run = {"ok": True, "free": len(free), "rated": len(ok), "hits": len(hits), "best_roi": max(rois, default=None)}
     clore_store.save_run(run, hits)
     return run
