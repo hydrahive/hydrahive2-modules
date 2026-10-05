@@ -2,7 +2,7 @@
 name: mining-workflow
 description: Mining-Modul auswerten und verwalten — Zustand der Rechner, Erträge, Verlauf, Messungen, Rechner schalten, Einstellungen, Fehlersuche
 when_to_use: Wenn der User nach Mining, Rechnern/Rigs, Grafikkarten, Hashrate, Kryptex, Ertrag/Verdienst, Benchmark, Energie-/PV-Steuerung fragt oder einen Rechner ein-/ausschalten will
-tools_required: [mining_status, mining_earnings, mining_rig_history, mining_benchmarks, mining_rig_control, mining_settings]
+tools_required: [mining_status, mining_earnings, mining_rig_history, mining_benchmarks, mining_clore_dryrun, mining_rig_control, mining_settings]
 ---
 
 # Mining mit HydraHive
@@ -20,6 +20,7 @@ Coin um mehr als die Schwelle besser ist **und** die Mindestlaufzeit um ist.
 | „Was verdiene ich?“, „Ertrag der letzten Woche?“ | `mining_earnings` (hours: 24 oder 168) |
 | „Warum ist rig-03 so schwach?“, „Was hat rig-01 heute gemacht?“ | `mining_rig_history` |
 | „Welcher Coin lohnt auf rig-02?“, „Was ist beim Messen schiefgegangen?“ | `mining_benchmarks` |
+| „Würde sich Mieten bei Clore lohnen?“, „Was sagt der Clore-Probelauf?“ | `mining_clore_dryrun` |
 | „Schalte rig-04 aus“, „Miss rig-02 neu“ | `mining_rig_control` |
 | „Wechsle erst ab 10 % mehr Ertrag“, Energie-Steuerung | `mining_settings` |
 

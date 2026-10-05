@@ -30,6 +30,7 @@ DEFAULTS: dict[str, Any] = {
     "power_reserve_w": 100,
     "power_min_minutes": 10,
     "power_stale_minutes": 15,
+    "clore_dryrun": True,      # Clore-Probelauf: Marktplatz lesen und rechnen, nichts mieten
 }
 POWER_MODES = ("off", "fixed", "http")
 _FIELD_RE = re.compile(r"^[A-Za-z0-9_.\-]{0,100}$")
@@ -117,6 +118,10 @@ def _validate(key: str, value: Any) -> Any:
     if key == "region":
         if value not in REGIONS:
             raise ConfigError("region_invalid")
+        return value
+    if key == "clore_dryrun":
+        if not isinstance(value, bool):
+            raise ConfigError("clore_dryrun_invalid")
         return value
     if key == "power_mode":
         if value not in POWER_MODES:

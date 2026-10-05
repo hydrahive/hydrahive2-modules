@@ -34,7 +34,7 @@ MOD_PREFIX = "/api/modules/mining"
 DEV_PREFIX = "/api/module-device/mining"
 TABLES = ("module_mining_quotes", "module_mining_config", "module_mining_rigs", "module_mining_pairing",
           "module_mining_benchmarks", "module_mining_assignments", "module_mining_switch_log",
-          "module_mining_samples")
+          "module_mining_samples", "module_mining_clore_runs", "module_mining_clore_hits")
 
 
 @pytest.fixture(scope="session", autouse=True)

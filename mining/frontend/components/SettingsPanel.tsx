@@ -56,6 +56,11 @@ export function SettingsPanel({ config, canEdit, onSave }: Props) {
             value={Math.round(draft.prop_discount * 100)}
             onChange={(e) => set("prop_discount", Number(e.target.value) / 100)} />
         </label>
+        <label className="flex items-center gap-2 text-xs text-zinc-400 sm:col-span-2">
+          <input type="checkbox" disabled={!canEdit} checked={draft.clore_dryrun}
+            onChange={(e) => set("clore_dryrun", e.target.checked)} />
+          <span>{t("clore_switch")}</span>
+        </label>
       </div>
       {canEdit && (
         <button onClick={save} disabled={!dirty || busy}

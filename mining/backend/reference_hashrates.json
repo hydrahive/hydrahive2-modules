@@ -1,6 +1,6 @@
 {
  "source": "https://www.kryptex.com/en/hardware/<slug>",
- "fetched": "2026-10-03",
+ "fetched": "2026-10-05",
  "note": "Herstellerangaben von Kryptex, ohne Übertakten. Nur Startwerte, bis der Rig selbst gemessen hat.",
  "gpus": {
   "nvidia-rtx-5060-ti-16gb": {
@@ -141,6 +141,127 @@
     "xel": 5000.0,
     "xna": 19500000.0,
     "xtm-c29": 5.1
+   }
+  },
+  "nvidia-v100": {
+   "name": "NVIDIA Tesla V100",
+   "vendor": "nvidia",
+   "watts": 300.0,
+   "hashrates": {
+    "xna": 50200000.0,
+    "cfx": 94000000.0,
+    "rvn": 50200000.0,
+    "erg": 344000000.0,
+    "ethw": 89500000.0,
+    "xel": 8300.0
+   }
+  },
+  "nvidia-rtx-4090": {
+   "name": "NVIDIA RTX 4090",
+   "vendor": "nvidia",
+   "watts": 300.0,
+   "hashrates": {
+    "qtc": 1150000000.0,
+    "xtm-c29": 16.6,
+    "prl": 293000000000000.0,
+    "xna": 65000000.0,
+    "cfx": 130000000.0,
+    "iron": 82500000.0,
+    "nexa": 320000000.0,
+    "rvn": 65000000.0,
+    "erg": 265000000.0,
+    "ethw": 127000000.0,
+    "xel": 12800.0
+   }
+  },
+  "nvidia-rtx-5090": {
+   "name": "NVIDIA RTX 5090",
+   "vendor": "nvidia",
+   "watts": 575.0,
+   "hashrates": {
+    "qtc": 1580000000.0,
+    "xtm-c29": 28.7,
+    "prl": 400000000000000.0,
+    "xna": 100500000.0,
+    "cfx": 210000000.0,
+    "iron": 133500000.0,
+    "nexa": 450000000.0,
+    "rvn": 100500000.0,
+    "erg": 575000000.0,
+    "ethw": 215000000.0,
+    "xel": 33300.0
+   }
+  },
+  "nvidia-rtx-5070-ti": {
+   "name": "NVIDIA RTX 5070 Ti",
+   "vendor": "nvidia",
+   "watts": 300.0,
+   "hashrates": {
+    "qtc": 636000000.0,
+    "xtm-c29": 12.2,
+    "prl": 179000000000000.0,
+    "xna": 55500000.0,
+    "cfx": 99000000.0,
+    "iron": 73500000.0,
+    "nexa": 220500000.0,
+    "rvn": 55500000.0,
+    "erg": 265500000.0,
+    "ethw": 107000000.0,
+    "xel": 18000.0
+   }
+  },
+  "nvidia-rtx-5080": {
+   "name": "NVIDIA RTX 5080",
+   "vendor": "nvidia",
+   "watts": 360.0,
+   "hashrates": {
+    "qtc": 750000000.0,
+    "xtm-c29": 14.4,
+    "prl": 215000000000000.0,
+    "xna": 62500000.0,
+    "cfx": 122500000.0,
+    "iron": 85000000.0,
+    "nexa": 275000000.0,
+    "rvn": 62500000.0,
+    "erg": 315000000.0,
+    "ethw": 123000000.0,
+    "xel": 21000.0
+   }
+  },
+  "nvidia-rtx-5070": {
+   "name": "NVIDIA RTX 5070",
+   "vendor": "nvidia",
+   "watts": 250.0,
+   "hashrates": {
+    "qtc": 440000000.0,
+    "xtm-c29": 9.0,
+    "prl": 124000000000000.0,
+    "xna": 45500000.0,
+    "cfx": 82500000.0,
+    "iron": 60000000.0,
+    "nexa": 152500000.0,
+    "rvn": 45500000.0,
+    "erg": 225500000.0,
+    "ethw": 86000000.0,
+    "xel": 13900.0
+   }
+  },
+  "nvidia-rtx-3080-ti": {
+   "name": "NVIDIA RTX 3080 Ti",
+   "vendor": "nvidia",
+   "watts": 320.0,
+   "hashrates": {
+    "qtc": 497000000.0,
+    "xtm-c29": 10.9,
+    "prl": 129000000000000.0,
+    "xna": 55000000.0,
+    "cfx": 98000000.0,
+    "iron": 77000000.0,
+    "nexa": 122000000.0,
+    "rvn": 55000000.0,
+    "erg": 265000000.0,
+    "ethw": 122000000.0,
+    "xel": 13000.0
    }
   }
  }

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next"
 import { RefreshCw } from "lucide-react"
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import { useMyAccess } from "@/features/access/useMyAccess"
+import { ClorePanel } from "./components/ClorePanel"
 import { CoinTable } from "./components/CoinTable"
 import { PowerPanel } from "./components/PowerPanel"
 import { RigsPanel } from "./components/RigsPanel"
@@ -55,6 +56,8 @@ export function MiningPage() {
         <div className="rounded-lg border border-white/10 p-4 text-sm text-zinc-400">{t("empty")}</div>
       )}
       {overview && <p className="text-xs text-zinc-500">{t("reference_note", { date: overview.reference.fetched })} {t("estimated_note")}</p>}
+
+      <ClorePanel usdPerEur={overview?.usd_per_eur ?? null} />
 
       {config && <SettingsPanel key={JSON.stringify(config)} config={config} canEdit={canControl} onSave={saveConfig} />}
       {config && canControl && <PowerPanel key={`p${JSON.stringify(config)}`} config={config} canEdit={canControl} onSave={saveConfig} />}

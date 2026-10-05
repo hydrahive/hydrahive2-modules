@@ -13,6 +13,7 @@ from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
 from . import rigs, runtime_store, store
 from .access import CONTROL as CONTROL_CAP
+from .buddy_clore import CLORE_DRYRUN
 from .buddy_read import BENCHMARKS, EARNINGS, HISTORY, STATUS, ToolInputError, find_rig
 
 ACTIONS = ("on", "off", "rebench", "follow_power", "ignore_power")
@@ -100,4 +101,4 @@ SETTINGS_TOOL = Tool(
                 "(Auszahlungsziel) ändert nur die Oberfläche.")
 
 CONTROL, SETTINGS = CONTROL_TOOL, SETTINGS_TOOL  # kurze Namen; die Freigabe heißt hier CONTROL_CAP
-TOOLS = (STATUS, EARNINGS, HISTORY, BENCHMARKS, CONTROL_TOOL, SETTINGS_TOOL)
+TOOLS = (STATUS, EARNINGS, HISTORY, BENCHMARKS, CLORE_DRYRUN, CONTROL_TOOL, SETTINGS_TOOL)
