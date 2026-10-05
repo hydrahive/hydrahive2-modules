@@ -45,7 +45,7 @@ loads each module's `frontend/index.tsx`.
 | **Haushaltsbuch** | 1.5.3 | — | router, migration | Local household ledger with bank import, automatic categorisation and an experimental read-only Lidl Plus receipt sync. |
 | **Home Assistant** | 1.0.2 | — | router, migration, 4 tools | Connects Home Assistant: list/read entities, render templates and call services. |
 | **Mediacenter** | 0.8.1 | — | router, migration, 5 tools, queue/history | Treasure Maps search with media profiles, idempotent SABnzbd hand-off and per-user queue/history. |
-| **Mining** | 0.7.1 | — | router, device router, migration, poll job, frontend routes, nav, i18n, rig client, agent tools, skill | Manages GPU rigs on the network for Kryptex: live earnings, pair/approve/revoke rigs, benchmark, auto-switch to the most profitable coin, watchdog, power control (PV). |
+| **Mining** | 0.7.2 | — | router, device router, migration, poll job, frontend routes, nav, i18n, rig client, agent tools, skill | Manages GPU rigs on the network for Kryptex: live earnings, pair/approve/revoke rigs, benchmark, auto-switch to the most profitable coin, watchdog, power control (PV). |
 | **Minigames** | 1.0.2 | — | router, migration, `buddyWidgets` | A collection of small browser games for short breaks. |
 | **Musicplayer** | 1.1.1 | — | router, migration, `buddyMediaWidgets` | Project-scoped, role-aware audio library in Buddy's media slot; stores tracks safely under `media/audio` and supports upload, import, streaming, and download. |
 | **Notizbuch** | 1.0.2 | — | router, migration | Simple notepad for texts and ideas, available across projects. |

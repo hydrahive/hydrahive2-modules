@@ -29,7 +29,7 @@ export interface CloreHit {
 
 export interface CloreDay { day: string; runs: number; runs_with_hits: number; best_roi: number | null; top_gpu: string | null }
 
-export interface CloreSummary { last_run: CloreRun | null; hits_24h: CloreHit[]; days: CloreDay[] }
+export interface CloreSummary { last_run: CloreRun | null; hits_24h: CloreHit[]; days: CloreDay[]; enabled: boolean }
 
 /** „nvidia-rtx-3060-ti“, 2 → „2× RTX 3060 Ti“ */
 export function gpuLabel(gpu: string | null, count: number): string {
@@ -53,12 +53,14 @@ export function toEur(usd: number | null | undefined, usdPerEur: number | null |
 }
 
 export type CloreLine =
+  | { kind: "off" }
   | { kind: "never" }
   | { kind: "error"; error: string }
   | { kind: "none"; rated: number; best: number | null }
   | { kind: "hits"; rated: number; hits: number; best: number | null }
 
-export function cloreLine(run: CloreRun | null): CloreLine {
+export function cloreLine(run: CloreRun | null, enabled = true): CloreLine {
+  if (!enabled) return { kind: "off" }
   if (!run) return { kind: "never" }
   if (!run.ok) return { kind: "error", error: run.error || "?" }
   if (!run.hits) return { kind: "none", rated: run.rated, best: run.best_roi }

@@ -22,13 +22,14 @@ export function ClorePanel({ usdPerEur }: { usdPerEur: number | null }) {
   }, [])
 
   if (!data) return null
-  const line = cloreLine(data.last_run)
+  const line = cloreLine(data.last_run, data.enabled)
   const hits = data.hits_24h.slice(0, 8)
   return (
     <section className="space-y-2 rounded-xl border border-white/10 p-4">
       <h2 className="text-sm font-semibold text-zinc-200">{t("clore_title")}</h2>
       <p className="text-xs text-zinc-500">{t("clore_note")}</p>
       <p className="text-sm text-zinc-300">
+        {line.kind === "off" && t("clore_off")}
         {line.kind === "never" && t("clore_never")}
         {line.kind === "error" && <span className="text-amber-300">{t("clore_error", { error: line.error })}</span>}
         {line.kind === "none" && t("clore_none", { n: line.rated, best: pct(line.best) })}

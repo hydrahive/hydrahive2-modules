@@ -17,6 +17,10 @@ describe("Clore-Probelauf: Anzeige", () => {
     expect(toEur(2.5, null)).toBeNull()
     expect(toEur(null, 1.25)).toBeNull()
   })
+  it("Zeile: ausgeschaltet geht vor allem anderen", () => {
+    expect(cloreLine(null, false)).toEqual({ kind: "off" })
+    expect(cloreLine({ ok: true, free: 1, rated: 1, hits: 1, best_roi: 0.4, ts: "x" }, false)).toEqual({ kind: "off" })
+  })
   it("Zeile: letzter Lauf mit/ohne Treffer, Fehler, nie gelaufen", () => {
     expect(cloreLine(null)).toEqual({ kind: "never" })
     expect(cloreLine({ ok: false, error: "timeout", free: 0, rated: 0, hits: 0, best_roi: null, ts: "x" }))

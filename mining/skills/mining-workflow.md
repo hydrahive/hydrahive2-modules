@@ -20,7 +20,7 @@ Coin um mehr als die Schwelle besser ist **und** die Mindestlaufzeit um ist.
 | „Was verdiene ich?“, „Ertrag der letzten Woche?“ | `mining_earnings` (hours: 24 oder 168) |
 | „Warum ist rig-03 so schwach?“, „Was hat rig-01 heute gemacht?“ | `mining_rig_history` |
 | „Welcher Coin lohnt auf rig-02?“, „Was ist beim Messen schiefgegangen?“ | `mining_benchmarks` |
-| „Würde sich Mieten bei Clore lohnen?“, „Was sagt der Clore-Probelauf?“ | `mining_clore_dryrun` |
+| „Würde sich Mieten bei Clore lohnen?“, „Was sagt der Clore-Probelauf?“ | `mining_clore_dryrun` (ab Werk aus – dann `hint` weitergeben) |
 | „Schalte rig-04 aus“, „Miss rig-02 neu“ | `mining_rig_control` |
 | „Wechsle erst ab 10 % mehr Ertrag“, Energie-Steuerung | `mining_settings` |
 

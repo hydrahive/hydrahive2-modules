@@ -4,11 +4,11 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.7.1 (Rechner-Client 0.4.2): Ertragstabelle mit 16 Coins, Rechner
+Stand 0.7.2 (Rechner-Client 0.4.2): Ertragstabelle mit 16 Coins, Rechner
 koppeln/freigeben/an/aus/sperren, echtes Schürfen mit Benchmark, automatischem
 Umschalten, Watchdog und Energie-Steuerung. Rechner mit AMD- und NVIDIA-Karten
 zugleich bekommen je Hersteller einen eigenen Miner. Neu: Clore-Probelauf (rechnet, ob sich
-gemietete GPU-Server lohnen würden – mietet nichts).
+gemietete GPU-Server lohnen würden – mietet nichts, ab Werk aus).
 
 **Schon im Einsatz?** Nach einem Modul-Update auch die Rechner aktualisieren,
 siehe [Client aktualisieren](#client-aktualisieren).
@@ -174,7 +174,7 @@ diese Rechner.
 
 ### Clore-Probelauf (nur rechnen)
 
-Alle 15 Minuten liest HydraHive den öffentlichen Marktplatz von [Clore.ai](https://clore.ai)
+Wenn eingeschaltet, liest HydraHive alle 15 Minuten den öffentlichen Marktplatz von [Clore.ai](https://clore.ai)
 und rechnet für jeden freien Server: **Kryptex-Ertrag pro Tag gegen Miete pro Tag**. Es wird
 **nichts gemietet**, es braucht keinen Clore-Zugang und kein Geld.
 
@@ -187,9 +187,7 @@ und rechnet für jeden freien Server: **Kryptex-Ertrag pro Tag gegen Miete pro T
   sonst Herstellerangaben von Kryptex. Für Karten ohne Werte gibt es keine Rechnung.
 - Die Box **Clore-Probelauf** auf der Mining-Seite zeigt den letzten Lauf, die besten Treffer
   der letzten 24 h und je Tag, wie oft es Treffer gab. Ergebnisse bleiben 14 Tage gespeichert.
-- Ausschalten: *Einstellungen* → Haken „Clore-Probelauf“.
-
-Ausführlich: `docs/clore-dryrun.md`.
+- **Ab Werk aus.** Einschalten: *Einstellungen* → Haken „Clore-Probelauf“.
 
 ## Mit Buddy
 

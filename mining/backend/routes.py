@@ -47,7 +47,7 @@ def overview(_: Auth, gpu: str = Query("nvidia-rtx-5060-ti-16gb", max_length=64)
 @router.get("/clore")
 def clore_dryrun(_: Auth) -> dict:
     """Clore-Probelauf: letzter Lauf, Treffer 24 h, Tageszusammenfassung (nichts wird gemietet)."""
-    return clore_store.summary()
+    return {**clore_store.summary(), "enabled": bool(store.get_config().get("clore_dryrun"))}
 
 
 @router.get("/gpus")
