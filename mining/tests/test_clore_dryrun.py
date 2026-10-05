@@ -144,6 +144,17 @@ def test_best_roi_ignores_unreliable_servers(quotes):
     assert only_shaky["rated"] == 1 and only_shaky["best_roi"] is None
 
 
+def test_hits_24h_one_row_per_server_newest_with_seen_count(quotes):
+    """Jeder Lauf speichert seine Treffer; die Liste zeigt je Server nur den neuesten, mit Anzahl."""
+    clore.scan([_server(1, od=1.0), _server(2, od=0.5)], quotes, prop_discount=0.0)
+    clore.scan([_server(1, od=0.9)], quotes, prop_discount=0.0)
+    hits = clore_store.summary()["hits_24h"]
+    assert sorted(h["server_id"] for h in hits) == [1, 2]
+    one = next(h for h in hits if h["server_id"] == 1)
+    assert one["seen"] == 2 and one["cost_od"] == pytest.approx(0.9 * 1.05)
+    assert next(h for h in hits if h["server_id"] == 2)["seen"] == 1
+
+
 def test_failed_fetch_is_stored_as_not_ok(quotes):
     clore_store.save_run({"ok": False, "free": 0, "rated": 0, "hits": 0, "best_roi": None, "error": "timeout"}, [])
     assert clore_store.summary()["last_run"]["ok"] is False

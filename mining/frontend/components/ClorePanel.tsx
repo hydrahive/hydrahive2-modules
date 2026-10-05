@@ -52,7 +52,7 @@ export function ClorePanel({ usdPerEur }: { usdPerEur: number | null }) {
                   <td className="text-right">{eur(toEur(h.revenue, usdPerEur))}</td>
                   <td className="text-right">{eur(toEur(cost, usdPerEur))}{b.kind === "spot" ? " (Spot)" : ""}</td>
                   <td className="text-right text-emerald-300">{pct(b.roi)}</td>
-                  <td className="text-right text-zinc-500">{h.server_id}</td>
+                  <td className="text-right text-zinc-500">{h.server_id}{h.seen > 1 ? ` (${h.seen}×)` : ""}</td>
                 </tr>
               )
             })}

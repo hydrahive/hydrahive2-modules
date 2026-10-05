@@ -24,7 +24,8 @@ async def _clore(args: dict, ctx: ToolContext) -> ToolResult:
              "coin": h.get("coin"), "hashrate_source": h.get("source"),
              "revenue_eur_day": _eur(h.get("revenue"), rate), "cost_od_eur_day": _eur(h.get("cost_od"), rate),
              "cost_spot_eur_day": _eur(h.get("cost_spot"), rate), "roi_od_pct": _pct(h.get("roi_od")),
-             "roi_spot_pct": _pct(h.get("roi_spot")), "reliability": h.get("reliability"), "max_hours": h.get("mrl")}
+             "roi_spot_pct": _pct(h.get("roi_spot")), "reliability": h.get("reliability"), "max_hours": h.get("mrl"),
+             "seen_runs_24h": h.get("seen")}
             for h in s["hits_24h"][:20]]
     days = [{**d, "best_roi_pct": _pct(d.pop("best_roi", None))} for d in s["days"]]
     return ToolResult.ok({"note": NOTE, "last_run": s["last_run"], "hits_24h": hits, "days": days,

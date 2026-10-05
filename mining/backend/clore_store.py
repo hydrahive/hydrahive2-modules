@@ -45,12 +45,12 @@ def _hit_row(r) -> dict:
 
 
 def summary() -> dict:
-    """Letzter Lauf, Treffer der letzten 24 h (bester zuerst), Zusammenfassung je Tag."""
+    """Letzter Lauf, Treffer der letzten 24 h (je Server der neueste, mit Anzahl „seen“), je Tag."""
     since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat(timespec="seconds")
     with db() as c:
         last = c.execute("SELECT * FROM module_mining_clore_runs ORDER BY id DESC LIMIT 1").fetchone()
-        hits = [_hit_row(r) for r in c.execute(
-            "SELECT ts, data FROM module_mining_clore_hits WHERE ts >= ? ORDER BY id DESC LIMIT 500", (since,))]
+        rows = [_hit_row(r) for r in c.execute(
+            "SELECT ts, data FROM module_mining_clore_hits WHERE ts >= ? ORDER BY id DESC LIMIT 2000", (since,))]
         runs = c.execute("SELECT substr(ts,1,10) AS day, hits, best_roi FROM module_mining_clore_runs "
                          "WHERE ok = 1 ORDER BY ts").fetchall()
         all_hits = c.execute("SELECT substr(ts,1,10) AS day, data FROM module_mining_clore_hits").fetchall()
@@ -67,6 +67,9 @@ def summary() -> dict:
     for d in days.values():
         top = gpus.get(d["day"])
         d["top_gpu"] = top.most_common(1)[0][0] if top else None
-    hits.sort(key=lambda h: max(h.get("roi_od") or -9, h.get("roi_spot") or -9), reverse=True)
+    newest: dict = {}
+    for h in rows:  # neueste zuerst → erster Eintrag je Server bleibt
+        newest.setdefault(h.get("server_id"), {**h, "seen": 0})["seen"] += 1
+    hits = sorted(newest.values(), key=lambda h: max(h.get("roi_od") or -9, h.get("roi_spot") or -9), reverse=True)
     return {"last_run": (dict(last) | {"ok": bool(last["ok"])}) if last else None,
             "hits_24h": hits[:100], "days": sorted(days.values(), key=lambda d: d["day"])}

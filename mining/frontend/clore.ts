@@ -24,6 +24,7 @@ export interface CloreHit {
   roi_spot: number | null
   reliability: number | null
   mrl: number | null
+  seen: number
 }
 
 export interface CloreDay { day: string; runs: number; runs_with_hits: number; best_roi: number | null; top_gpu: string | null }
