@@ -151,3 +151,13 @@ def test_snapshot_with_same_text_as_newest_is_not_duplicated():
     assert again["id"] == first["id"] and len(snapshots.list_snapshots(PROJECT_ID, b["id"], sid)) == 1
     snapshots.add_snapshot(PROJECT_ID, b["id"], sid, text="anders")
     assert len(snapshots.list_snapshots(PROJECT_ID, b["id"], sid)) == 2
+
+
+def test_files_and_imported_folders_are_readable_like_the_rest_of_the_workspace():
+    """mkstemp/mkdtemp legen 0600/0700 an – Bücher sollen für Projekt-Gruppe/Agenten lesbar sein wie andere Dateien."""
+    import stat as st_mod
+    b = importer.import_book(PROJECT_ID, _payload())
+    d = storage.book_dir(PROJECT_ID, b["id"])
+    assert st_mod.S_IMODE(d.stat().st_mode) == st_mod.S_IMODE(storage.books_dir(PROJECT_ID).stat().st_mode)
+    for f in [d / "book.json", d / "structure.json", *(d / "scenes").iterdir()]:
+        assert st_mod.S_IMODE(f.stat().st_mode) == 0o664, f

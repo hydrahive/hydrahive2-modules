@@ -72,6 +72,9 @@ def inside(base: Path, *parts: str) -> Path:
     return p
 
 
+FILE_MODE = 0o664  # wie die übrigen Workspace-Dateien (Dienst-umask 002); mkstemp allein gäbe 0600
+
+
 def write_atomic(path: Path, data: str) -> None:
     """Temp-Datei im selben Ordner, dann ``os.replace``. Bei Fehler bleibt die alte Datei, kein Rest."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,6 +82,7 @@ def write_atomic(path: Path, data: str) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(data)
+        os.chmod(tmp, FILE_MODE)
         os.replace(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import stat
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -78,6 +79,7 @@ def import_book(project_id: str, data: dict[str, Any]) -> dict:
     books = storage.books_dir(project_id)
     books.mkdir(parents=True, exist_ok=True)
     tmp = tempfile.mkdtemp(dir=books, prefix=".import-")
+    os.chmod(tmp, stat.S_IMODE(books.stat().st_mode))  # wie der Elternordner, nicht mkdtemps 0700
     try:
         for meta, text in scenes:
             write_atomic(Path(tmp) / "scenes" / f"{meta['id']}.md", text)
