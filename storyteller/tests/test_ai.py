@@ -181,3 +181,13 @@ def test_suggest_returns_proposal_without_heading(client, auth_headers, monkeypa
     monkeypatch.setattr(ai, "complete", chatty)
     r = client.post(f"{P}/books/{b['id']}/ai/suggest", json={"scene_id": sid, "action": "shorten", "selection": "Es regnete lange."}, headers=auth_headers)
     assert r.status_code == 200 and r.json()["proposal"] == "Es regnete."
+
+
+def test_previous_scenes_without_summary_add_no_empty_heading(client, auth_headers, fake_llm):
+    """Vorige Szenen ohne Zusammenfassung: keine leere Überschrift „Was vorher geschah:“ im Prompt."""
+    b = storage.create_book(PROJECT_ID, {"title": "T", "kind": "novel", "language": "de"})
+    ch = storage.get_structure(PROJECT_ID, b["id"])["parts"][0]["chapters"][0]["id"]
+    s2 = storage.add_scene(PROJECT_ID, b["id"], ch, title="Zwei")["scene"]
+    r = client.post(f"{P}/books/{b['id']}/ai/suggest", json={"scene_id": s2["id"], "action": "continue", "selection": ""}, headers=auth_headers)
+    assert r.status_code == 200, r.text
+    assert "Was vorher geschah" not in fake_llm[-1]["messages"][1]["content"]
