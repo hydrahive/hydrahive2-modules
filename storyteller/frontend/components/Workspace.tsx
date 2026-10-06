@@ -101,7 +101,7 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
             </button>
           )}
           {current && (
-            <SceneEditor key={current.scene.id} book={book} found={current} focus={focus}
+            <SceneEditor key={current.scene.id} book={book} found={current} focus={focus} textRev={state.textRev}
               onText={(text) => state.setScene(current.scene.id, { text })}
               onEditor={(e) => { editorRef.current = e }}
               onOpenScene={openScene} />

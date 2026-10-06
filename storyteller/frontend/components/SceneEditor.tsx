@@ -12,12 +12,14 @@ interface Props {
   book: Book
   found: { path: ScenePath; scene: Scene; chapter: Chapter }
   focus: boolean
+  /** Erhöht sich, wenn der Text von außen ersetzt wurde → Editor neu laden. */
+  textRev: number
   onText: (markdown: string) => void
   onEditor: (e: Editor) => void
   onOpenScene: (id: string) => void
 }
 
-export function SceneEditor({ book, found, focus, onText, onEditor, onOpenScene }: Props) {
+export function SceneEditor({ book, found, focus, textRev, onText, onEditor, onOpenScene }: Props) {
   const { t } = useTranslation("storyteller")
   const [reading, setReading] = useState(false)
   const { scene, chapter } = found
@@ -47,7 +49,7 @@ export function SceneEditor({ book, found, focus, onText, onEditor, onOpenScene 
       ) : (
         <ProseEditor
           value={scene.text}
-          docKey={scene.id}
+          docKey={`${scene.id}#${textRev}`}
           onChange={onText}
           onReady={onEditor}
           language={book.language}

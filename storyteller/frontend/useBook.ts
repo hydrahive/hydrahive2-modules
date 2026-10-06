@@ -10,7 +10,7 @@ import { useSnapshots } from "./useSnapshots"
 export type { Conflict, SaveState } from "./bookSync"
 
 export function useBook(projectId: string, initial: Book, versions: Versions) {
-  const [view, setView] = useState<SyncView>({ book: initial, saveState: "saved", saveError: "", conflict: null })
+  const [view, setView] = useState<SyncView>({ book: initial, saveState: "saved", saveError: "", conflict: null, textRev: 0 })
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   // Einmal je geöffnetem Buch (Workspace hat key=book.id); setView ist stabil.
   const [sync] = useState(() => new BookSync(projectId, initial, versions, setView))
@@ -46,7 +46,7 @@ export function useBook(projectId: string, initial: Book, versions: Versions) {
   }, [])
 
   return {
-    projectId, book: view.book, saveState: view.saveState, saveError: view.saveError, conflict: view.conflict,
+    projectId, book: view.book, saveState: view.saveState, saveError: view.saveError, conflict: view.conflict, textRev: view.textRev,
     change, setScene, resolveConflict,
     flush: useCallback(() => sync.flush(), [sync]),
     adoptStructure: useCallback((...a: Parameters<BookSync["adoptStructure"]>) => sync.adoptStructure(...a), [sync]),

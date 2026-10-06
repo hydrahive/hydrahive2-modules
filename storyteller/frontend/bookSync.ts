@@ -15,7 +15,9 @@ export type Conflict =
   | { kind: "structure"; theirs: ServerStructure }
   | { kind: "book"; theirs: ServerBook }
 
-export interface SyncView { book: Book; saveState: SaveState; saveError: string; conflict: Conflict | null }
+/** `textRev` zählt Texte, die von außen ersetzt wurden (Konflikt neu geladen, Schnappschuss zurück):
+ *  der Editor lädt dann neu, statt den alten Text weiter anzuzeigen. */
+export interface SyncView { book: Book; saveState: SaveState; saveError: string; conflict: Conflict | null; textRev: number }
 type Api = Pick<typeof storyApi, "patchBook" | "putScene" | "putStructure" | "addSnapshot">
 
 export class BookSync {
@@ -25,6 +27,7 @@ export class BookSync {
   private state: SaveState = "saved"
   private error = ""
   private conflict: Conflict | null = null
+  private textRev = 0
   private running: Promise<void> | null = null
   private timer: ReturnType<typeof setTimeout> | null = null
   private readonly projectId: string
@@ -69,6 +72,12 @@ export class BookSync {
     if (!this.conflict && this.state !== "failed" && this.diff()) await this.flush()
   }
 
+  /** Szenentext von außen ersetzen (Schnappschuss zurückholen): wie eine Änderung, Editor lädt neu. */
+  replaceText(sceneId: string, text: string): void {
+    this.textRev += 1
+    this.edit(updateScene(this.local, sceneId, { text }))
+  }
+
   /** Server hat die Struktur selbst geändert (Szene/Kapitel angelegt oder gelöscht). */
   adoptStructure(st: ServerStructure, added?: ServerScene): void {
     this.versions.structure = st.version
@@ -94,7 +103,10 @@ export class BookSync {
       this.versions.scenes[c.sceneId] = c.theirs.version
       const theirs = sceneFromServer(c.theirs)
       this.saved = updateScene(this.saved, c.sceneId, theirs)
-      if (how === "reload") this.local = updateScene(this.local, c.sceneId, theirs)
+      if (how === "reload") {
+        this.local = updateScene(this.local, c.sceneId, theirs)
+        this.textRev += 1
+      }
       snapScene = c.sceneId
     } else if (c.kind === "structure") {
       this.versions.structure = c.theirs.version
@@ -179,7 +191,7 @@ export class BookSync {
   private setState(s: SaveState): void { this.state = s; this.emit() }
 
   private emit(): void {
-    this.onChange({ book: this.local, saveState: this.state, saveError: this.error, conflict: this.conflict })
+    this.onChange({ book: this.local, saveState: this.state, saveError: this.error, conflict: this.conflict, textRev: this.textRev })
   }
 }
 

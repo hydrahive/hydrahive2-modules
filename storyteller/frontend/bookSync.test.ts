@@ -124,6 +124,20 @@ describe("BookSync", () => {
     expect(text(sync.book, "s1")).toBe("vom Agenten")
     expect(srv.db.scenes.s1).toMatchObject({ text: "vom Agenten", version: 2 })
     expect(view?.conflict).toBeNull()
+    expect(view?.textRev).toBe(1)  // Editor muss den fremden Text neu laden
+  })
+
+  it("„meine behalten“ lädt den Editor nicht neu; Text von außen ersetzen schon", async () => {
+    srv.db.scenes.s1 = { ...srv.db.scenes.s1, text: "vom Agenten", version: 2 }
+    sync.edit(updateScene(sync.book, "s1", { text: "meins" }))
+    await sync.flush()
+    await sync.resolve("keep")
+    expect(view?.textRev).toBe(0)
+    sync.replaceText("s1", "alter Stand")
+    expect(view?.textRev).toBe(1)
+    expect(text(sync.book, "s1")).toBe("alter Stand")
+    await sync.flush()
+    expect(srv.db.scenes.s1.text).toBe("alter Stand")
   })
 
   it("Konflikt „meine behalten“: fremde Fassung als Schnappschuss, dann eigene speichern", async () => {

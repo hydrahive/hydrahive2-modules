@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react"
 import { storyApi, type SnapshotInfo } from "./api"
 import type { BookSync } from "./bookSync"
-import { findScene, updateScene } from "./model"
+import { findScene } from "./model"
 
 export function useSnapshots(projectId: string, bookId: string, sync: BookSync) {
   const [snapshots, setSnapshots] = useState<Record<string, SnapshotInfo[]>>({})
@@ -33,7 +33,7 @@ export function useSnapshots(projectId: string, bookId: string, sync: BookSync) 
     try {
       const snap = await storyApi.getSnapshot(projectId, bookId, sceneId, snapId)
       if (!(await snapshot(sceneId))) return false
-      sync.edit(updateScene(sync.book, sceneId, { text: snap.text ?? "" }))
+      sync.replaceText(sceneId, snap.text ?? "")
       return true
     } catch (e) { fail(e); return false }
   }, [projectId, bookId, sync, snapshot])
