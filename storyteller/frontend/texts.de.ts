@@ -113,6 +113,7 @@ export const textsDe = {
   ai_err_rate_limited: "Zu viele KI-Anfragen – bitte eine Minute warten.",
   ai_err_llm_empty: "Das Modell hat keinen Text geliefert. Nochmal versuchen oder anderes Modell wählen.",
   ai_err_not_authenticated: "Nicht mehr angemeldet.",
+  ai_err_project_read_only: "Du hast in diesem Projekt nur Leserechte.",
   ai_err_llm_failed: "Die KI ist gerade nicht erreichbar: {{message}}",
   ai_err_snapshot: "Schnappschuss ging nicht – Vorschlag nicht eingesetzt.",
   ai_model_label: "Modell:",
@@ -139,6 +140,7 @@ export const textsDe = {
   err_title_required: "Titel darf nicht leer sein",
   err_entity_name_required: "Steckbrief braucht einen Namen",
   err_text_too_long: "Szene ist zu lang (max. 200 KB)",
+  err_project_read_only: "du hast in diesem Projekt nur Leserechte",
   err_too_many_scenes: "zu viele Szenen",
   // Projekt + Konflikt
   project_badge_title: "Projekt: {{name}} – das Buch liegt in dessen Ordner",

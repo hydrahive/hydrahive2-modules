@@ -109,6 +109,7 @@ export const textsEn: Texts = {
   ai_err_rate_limited: "Too many AI requests – please wait a minute.",
   ai_err_llm_empty: "The model returned no text. Try again or pick another model.",
   ai_err_not_authenticated: "You are no longer logged in.",
+  ai_err_project_read_only: "You only have read access in this project.",
   ai_err_llm_failed: "The AI is not reachable right now: {{message}}",
   ai_err_snapshot: "Snapshot failed – suggestion not inserted.",
   ai_model_label: "Model:",
@@ -134,6 +135,7 @@ export const textsEn: Texts = {
   err_title_required: "title must not be empty",
   err_entity_name_required: "profile needs a name",
   err_text_too_long: "scene is too long (max. 200 KB)",
+  err_project_read_only: "you only have read access in this project",
   err_too_many_scenes: "too many scenes",
   // Project + conflict
   project_badge_title: "Project: {{name}} – the book lives in its folder",

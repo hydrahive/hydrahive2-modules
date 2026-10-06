@@ -75,3 +75,32 @@ def test_bad_input_is_400_not_500(client, auth_headers):
     b = _book(client, auth_headers)
     assert client.get(f"{P}/books/{b['id']}/scenes/{'z' * 32}/snapshots", headers=auth_headers).status_code == 404
     assert client.get(f"{P}/books/{'0' * 32}", headers=auth_headers).status_code == 404
+
+
+def test_reader_may_read_but_not_change(client, auth_headers, reader_headers):
+    """Projektrolle „read“: Liste/Öffnen/Schnappschüsse lesen ja; schreiben, anlegen, KI nein (403)."""
+    b = _book(client, auth_headers)
+    full = client.get(f"{P}/books/{b['id']}", headers=reader_headers)
+    assert full.status_code == 200
+    sid = full.json()["structure"]["parts"][0]["chapters"][0]["scenes"][0]
+    assert client.get(f"{P}/books", headers=reader_headers).status_code == 200
+    assert client.get(f"{P}/books/{b['id']}/scenes/{sid}/snapshots", headers=reader_headers).status_code == 200
+    denied = [
+        client.post(f"{P}/books", json={"title": "X", "kind": "novel"}, headers=reader_headers),
+        client.put(f"{P}/books/{b['id']}/scenes/{sid}", json={"text": "fremd", "base_version": 1}, headers=reader_headers),
+        client.patch(f"{P}/books/{b['id']}", json={"title": "fremd", "base_version": 1}, headers=reader_headers),
+        client.delete(f"{P}/books/{b['id']}", headers=reader_headers),
+        client.post(f"{P}/books/{b['id']}/scenes/{sid}/snapshots", json={}, headers=reader_headers),
+        client.post(f"{P}/books/{b['id']}/ai/suggest", json={"scene_id": sid, "action": "continue"}, headers=reader_headers),
+    ]
+    assert [r.status_code for r in denied] == [403] * len(denied)
+    assert denied[0].json()["detail"]["code"] == "project_read_only"
+    assert client.get(f"{P}/books/{b['id']}", headers=auth_headers).json()["scenes"][sid]["text"] == ""
+
+
+def test_system_admin_reaches_every_project_but_not_missing_ones(client, auth_headers, admin_headers):
+    """Wie im Kern: System-Admin darf in jedes Projekt, auch ohne Mitglied zu sein; unbekanntes Projekt bleibt 404."""
+    b = _book(client, auth_headers)
+    assert client.get(f"{P}/books/{b['id']}", headers=admin_headers).status_code == 200
+    assert client.post(f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/books", json={"title": "A", "kind": "novel"}, headers=admin_headers).status_code == 200
+    assert client.get(f"{MOD_PREFIX}/projects/gibt-es-nicht-123/books", headers=admin_headers).status_code == 404

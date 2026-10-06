@@ -9,7 +9,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from hydrahive.projects._config_io import list_for_user
+from hydrahive.projects import _members_model
+from hydrahive.projects._config_io import get as get_project
 from hydrahive.projects._paths import ensure_workspace
 
 _ID_RE = re.compile(r"^[a-f0-9]{32}$")
@@ -39,8 +40,19 @@ def is_project_id(value: str) -> bool:
     return bool(_PROJECT_ID_RE.match(value or ""))
 
 
-def user_can_access(username: str, project_id: str) -> bool:
-    return any(p.get("id") == project_id for p in list_for_user(username))
+def project_access(username: str, system_role: str, project_id: str, need: str) -> str:
+    """Wie der Kern (check_project_access): System-Admin darf alles, sonst zählt die Projektrolle
+    (read < write < admin). Ergebnis: "ok", "missing" (kein Projekt/kein Mitglied → 404) oder
+    "read_only" (Mitglied, aber Rolle reicht nicht → 403)."""
+    project = get_project(project_id) if is_project_id(project_id) else None
+    if project is None:
+        return "missing"
+    if system_role == "admin":
+        return "ok"
+    role = _members_model.role_of(project, username)
+    if role is None:
+        return "missing"
+    return "ok" if _members_model.has_at_least(role, need) else "read_only"
 
 
 def story_root(project_id: str) -> Path:

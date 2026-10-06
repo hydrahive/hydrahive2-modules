@@ -51,13 +51,17 @@ def setup_test_env():
         (tmp_path / "config" / "users.json").write_text(json.dumps({
             "testuser": {"password_hash": ph, "role": "user"},
             "other": {"password_hash": ph, "role": "user"},
+            "reader": {"password_hash": ph, "role": "user"},
+            "sysadmin": {"password_hash": ph, "role": "admin"},
         }, indent=2))
 
-        for pid, member in ((PROJECT_ID, "testuser"), (OTHER_PROJECT_ID, "other")):
+        # PROJECT_ID: testuser legt an, reader darf nur lesen. sysadmin ist nirgends Mitglied (System-Admin).
+        for pid, creator, members in ((PROJECT_ID, "testuser", ["testuser", {"username": "reader", "role": "read"}]),
+                                      (OTHER_PROJECT_ID, "other", ["other"])):
             pdir = tmp_path / "data" / "projects" / pid
             pdir.mkdir(parents=True, exist_ok=True)
             (pdir / "config.json").write_text(json.dumps({
-                "id": pid, "name": pid, "members": [member], "created_by": member,
+                "id": pid, "name": pid, "members": members, "created_by": creator,
             }, indent=2))
 
         from hydrahive.api import main
@@ -103,6 +107,16 @@ def auth_headers(client):
 @pytest.fixture
 def other_headers(client):
     return _login(client, "other")
+
+
+@pytest.fixture
+def reader_headers(client):
+    return _login(client, "reader")
+
+
+@pytest.fixture
+def admin_headers(client):
+    return _login(client, "sysadmin")
 
 
 @pytest.fixture(autouse=True)

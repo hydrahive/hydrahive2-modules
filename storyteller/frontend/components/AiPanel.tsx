@@ -112,7 +112,7 @@ export function AiPanel({ state, scene, editorRef }: Props) {
 
 function aiError(e: unknown, t: (k: string, o?: Record<string, unknown>) => string): string {
   if (!(e instanceof StoryApiError)) return t("ai_err_llm_failed", { message: String(e) })
-  const known = ["ai_busy", "rate_limited", "llm_empty", "selection_required", "not_authenticated"]
+  const known = ["ai_busy", "rate_limited", "llm_empty", "selection_required", "not_authenticated", "project_read_only"]
   if (known.includes(e.code)) return t(`ai_err_${e.code}`)
   return t("ai_err_llm_failed", { message: e.message || e.code })
 }

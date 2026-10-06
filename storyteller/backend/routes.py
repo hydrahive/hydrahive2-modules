@@ -45,27 +45,27 @@ class StructureIn(BaseModel):
 
 @router.get("/projects/{project_id}/books")
 def list_books(project_id: str, auth: Auth):
-    _guard(auth[0], project_id)
+    _guard(auth, project_id, "read")
     return _call(storage.list_books, project_id)
 
 
 @router.post("/projects/{project_id}/books")
 def create_book(project_id: str, body: BookIn, auth: Auth):
-    _guard(auth[0], project_id)
+    _guard(auth, project_id)
     return _call(storage.create_book, project_id, body.model_dump())
 
 
 @router.post("/projects/{project_id}/books/import")
 def import_book(project_id: str, body: dict[str, Any], auth: Auth):
     """Ganzes Buch auf einmal (Beispielbuch, Übernahme aus dem Entwurf). Prüft alles vor dem Schreiben."""
-    _guard(auth[0], project_id)
+    _guard(auth, project_id)
     return _call(importer.import_book, project_id, body)
 
 
 @router.get("/projects/{project_id}/books/{book_id}")
 def open_book(project_id: str, book_id: str, auth: Auth):
     """Alles zum Öffnen: Kopf, Struktur und alle Szenen (Text + Infos)."""
-    _guard(auth[0], project_id)
+    _guard(auth, project_id, "read")
 
     def _all():
         st = storage.get_structure(project_id, book_id)
@@ -77,20 +77,20 @@ def open_book(project_id: str, book_id: str, auth: Auth):
 
 @router.patch("/projects/{project_id}/books/{book_id}")
 def patch_book(project_id: str, book_id: str, body: BookPatch, auth: Auth):
-    _guard(auth[0], project_id)
+    _guard(auth, project_id)
     return _call(storage.update_book, project_id, book_id, _set(body), body.base_version)
 
 
 @router.delete("/projects/{project_id}/books/{book_id}")
 def delete_book(project_id: str, book_id: str, auth: Auth):
-    _guard(auth[0], project_id)
+    _guard(auth, project_id)
     _call(storage.delete_book, project_id, book_id)
     return {"ok": True}
 
 
 @router.put("/projects/{project_id}/books/{book_id}/structure")
 def put_structure(project_id: str, book_id: str, body: StructureIn, auth: Auth):
-    _guard(auth[0], project_id)
+    _guard(auth, project_id)
     return _call(storage.save_structure, project_id, book_id, body.structure, body.base_version)
 
 

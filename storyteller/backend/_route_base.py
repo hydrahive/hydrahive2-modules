@@ -10,15 +10,19 @@ from pydantic import BaseModel
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from ._files import StoryError, is_project_id, user_can_access
+from ._files import StoryError, project_access
 from .storage import Conflict
 
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
 
 
-def _guard(user: str, project_id: str) -> None:
-    if not is_project_id(project_id) or not user_can_access(user, project_id):
+def _guard(auth: tuple[str, str], project_id: str, need: str = "write") -> None:
+    """Lesen: jedes Projektmitglied. Ändern (und KI, kostet Geld): Rolle write/admin. System-Admin: alles."""
+    result = project_access(auth[0], auth[1], project_id, need)
+    if result == "missing":
         raise coded(status.HTTP_404_NOT_FOUND, "project_not_found")
+    if result == "read_only":
+        raise coded(status.HTTP_403_FORBIDDEN, "project_read_only")
 
 
 def _call(fn, *args, **kw):
