@@ -15,6 +15,7 @@ from typing import Any
 from . import storage
 from ._book import _now
 from ._files import StoryError, new_id, write_atomic, write_json
+from ._ghost_settings import GHOST_DEFAULTS, ORIGINS
 from ._names import KINDS, LANGUAGES
 from ._structure import validate_structure
 
@@ -41,7 +42,7 @@ def _prepare(data: dict[str, Any]) -> tuple[dict, dict, list[tuple[dict, str]]]:
             "idea": _text(data.get("idea"), 2000, "idea_invalid"),
             "notes": _text(data.get("notes"), 50_000, "notes_invalid"),
             "model": _text(data.get("model"), 200, "model_invalid"),
-            "version": 1, "created_at": now, "updated_at": now}
+            "ghost": dict(GHOST_DEFAULTS), "version": 1, "created_at": now, "updated_at": now}
     parts_in = data.get("parts")
     if not isinstance(parts_in, list) or not parts_in:
         raise StoryError("structure_invalid")
@@ -58,10 +59,11 @@ def _prepare(data: dict[str, Any]) -> tuple[dict, dict, list[tuple[dict, str]]]:
                 if len(text.encode("utf-8")) > storage.MAX_SCENE_BYTES:
                     raise StoryError("text_too_long")
                 status = s.get("status") if s.get("status") in _STATUSES else "draft"
+                origin = s.get("origin") if s.get("origin") in ORIGINS else "human"
                 meta = {"id": new_id(), "title": _text(s.get("title"), 200, "title_invalid").strip() or "…",
                         "summary": _text(s.get("summary"), 2000, "summary_invalid"),
                         "pov": _text(s.get("pov"), 200, "pov_invalid"), "status": status,
-                        "version": 1, "updated_at": now}
+                        "origin": origin, "version": 1, "updated_at": now}
                 scenes.append((meta, text))
                 ids.append(meta["id"])
             chapters.append({"id": new_id(), "title": (c.get("title") if isinstance(c, dict) else None) or "…", "scenes": ids})

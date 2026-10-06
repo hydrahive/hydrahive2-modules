@@ -35,6 +35,7 @@ class BookPatch(BaseModel):
     idea: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=50_000)
     model: str | None = Field(default=None, max_length=200)
+    ghost: dict[str, Any] | None = None  # Prüfung in _ghost_settings.merge_ghost
 
 
 
