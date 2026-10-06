@@ -170,3 +170,14 @@ def test_continue_writes_after_the_cursor_anchor_not_at_the_end(client, auth_hea
 ])
 def test_clean_proposal_strips_heading_and_preamble_only_at_the_start(raw, clean):
     assert ai.clean_proposal(raw) == clean
+
+
+def test_suggest_returns_proposal_without_heading(client, auth_headers, monkeypatch):
+    """Im echten Ablauf: Modell antwortet mit Überschrift → beim Nutzer kommt nur der Text an."""
+    b, sid = _book_with_text()
+
+    async def chatty(messages, model=None, temperature=0.7, max_tokens=4096):
+        return "# Gekürzte Fassung\n\nEs regnete."
+    monkeypatch.setattr(ai, "complete", chatty)
+    r = client.post(f"{P}/books/{b['id']}/ai/suggest", json={"scene_id": sid, "action": "shorten", "selection": "Es regnete lange."}, headers=auth_headers)
+    assert r.status_code == 200 and r.json()["proposal"] == "Es regnete."
