@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from . import importer, storage
 from ._route_base import Auth, _call, _guard, _set
+from .ghost_routes import router as ghost_router
 from .routes_scenes import router as scenes_router
 
 router = APIRouter()
@@ -35,6 +36,7 @@ class BookPatch(BaseModel):
     idea: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=50_000)
     model: str | None = Field(default=None, max_length=200)
+    ghost: dict[str, Any] | None = None  # Prüfung in _ghost_settings.merge_ghost
 
 
 
@@ -95,3 +97,4 @@ def put_structure(project_id: str, book_id: str, body: StructureIn, auth: Auth):
 
 
 router.include_router(scenes_router)
+router.include_router(ghost_router)

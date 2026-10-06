@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from ._files import StoryError, check_id, inside, new_id, read_json, story_root, write_json, write_scene
+from ._ghost_settings import GHOST_DEFAULTS, ghost_of, merge_ghost
 from ._names import KINDS, LANGUAGES, default_names
 from ._structure import validate_structure
 
@@ -72,19 +73,21 @@ def create_book(project_id: str, data: dict[str, Any]) -> dict:
     names = default_names(kind, language)
     bid, cid, pid, sid = new_id(), new_id(), new_id(), new_id()
     book = {"id": bid, "kind": kind, "language": language, "audience": "", "idea": "", "notes": "", "model": "",
-            **head, "title": head["title"].strip(), "version": 1, "created_at": _now(), "updated_at": _now()}
+            **head, "title": head["title"].strip(), "ghost": dict(GHOST_DEFAULTS),
+            "version": 1, "created_at": _now(), "updated_at": _now()}
     structure = {"version": 1, "entities": [], "parts": [
         {"id": pid, "title": names.part, "chapters": [{"id": cid, "title": names.chapter(1), "scenes": [sid]}]}]}
     d = book_dir(project_id, bid)
     write_scene(d, sid, {"id": sid, "title": names.scene(1), "summary": "", "pov": "", "status": "idea",
-                          "version": 1, "updated_at": _now()}, "")
+                          "origin": "human", "version": 1, "updated_at": _now()}, "")
     write_json(d / "structure.json", structure)
     write_json(d / "book.json", book)  # zuletzt: erst dann gilt das Buch als vorhanden
     return book
 
 
 def get_book(project_id: str, book_id: str) -> dict:
-    return read_json(_existing(project_id, book_id) / "book.json")
+    book = read_json(_existing(project_id, book_id) / "book.json")
+    return {**book, "ghost": ghost_of(book)}
 
 
 def update_book(project_id: str, book_id: str, data: dict[str, Any], base_version: int) -> dict:
@@ -94,6 +97,8 @@ def update_book(project_id: str, book_id: str, data: dict[str, Any], base_versio
     patch = _clip(_BOOK_FIELDS, data)
     if "title" in patch and not patch["title"].strip():
         raise StoryError("title_required")
+    if "ghost" in data:
+        patch["ghost"] = merge_ghost(book["ghost"], data["ghost"])
     book.update(patch, version=book["version"] + 1, updated_at=_now())
     write_json(book_dir(project_id, book_id) / "book.json", book)
     return book

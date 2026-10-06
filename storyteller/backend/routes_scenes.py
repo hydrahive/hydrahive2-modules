@@ -23,6 +23,7 @@ class SceneIn(BaseModel):
     summary: str | None = Field(default=None, max_length=2000)
     pov: str | None = Field(default=None, max_length=200)
     status: str | None = Field(default=None, max_length=20)
+    origin: str | None = Field(default=None, max_length=20)
 
 
 class NewScene(BaseModel):

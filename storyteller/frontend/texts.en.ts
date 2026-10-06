@@ -1,5 +1,6 @@
 // Oberflächentexte Englisch – gleiche Schlüssel wie texts.de.ts (Typ erzwingt Vollständigkeit).
 import type { Texts } from "./texts.de"
+import { ghostEn } from "./texts.ghost.en"
 
 export const textsEn: Texts = {
   title: "Storyteller",
@@ -154,4 +155,5 @@ export const textsEn: Texts = {
   words_unit: "words",
   shortcuts: "Shortcuts",
   shortcuts_list: "Ctrl+B navigator · Ctrl+J context · Ctrl+Shift+F focus · Alt+↑/↓ move scene · Ctrl+Z undo",
+  ...ghostEn,
 }

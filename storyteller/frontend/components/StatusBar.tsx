@@ -1,7 +1,7 @@
 // Statusleiste: Speicherstand, Wörter (Szene/Kapitel/Buch), Tastenkürzel. Später: Tagesziel, Kosten.
 import { useTranslation } from "react-i18next"
 import { Keyboard } from "lucide-react"
-import { bookWords, chapterWords, countWords, type Book, type Chapter, type Scene, type ScenePath } from "../model"
+import { aiShare, bookWords, chapterWords, countWords, type Book, type Chapter, type Scene, type ScenePath } from "../model"
 import type { SaveState } from "../useBook"
 
 interface Props {
@@ -29,6 +29,7 @@ export function StatusBar({ book, found, saveState, saveError, onRetry }: Props)
       {found && <span>{t("w_scene")} {n(countWords(found.scene.text))}</span>}
       {found && <span>{t("w_chapter")} {n(chapterWords(found.chapter))}</span>}
       <span>{t("w_book")} {n(bookWords(book))} {t("words_unit")}</span>
+      {aiShare(book) > 0 && <span className="st-ai-share text-violet-300/80">{t("ai_share", { n: aiShare(book) })}</span>}
       <span className="ml-auto inline-flex items-center gap-1" title={t("shortcuts_list")}>
         <Keyboard className="h-3.5 w-3.5" />{t("shortcuts")}
       </span>

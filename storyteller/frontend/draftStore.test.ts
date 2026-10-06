@@ -11,7 +11,7 @@ vi.stubGlobal("localStorage", {
 })
 
 const book = (id: string, title = id): Book => ({
-  id, title, kind: "novel", language: "de", audience: "", idea: "", notes: "", model: "", updatedAt: "",
+  id, title, kind: "novel", language: "de", audience: "", idea: "", notes: "", model: "", ghost: { model: "", length_words: 0, chunk_words: 0, style: "" }, updatedAt: "",
   parts: [], entities: [],
 })
 const seed = (projectId: string, books: object[]) =>

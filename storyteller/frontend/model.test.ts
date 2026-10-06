@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
 import {
-  bookWords, countWords, entitiesInText, findScene, moveScene, newId, nudgeScene,
+  aiShare, bookWords, countWords, entitiesInText, originAfterEdit, findScene, moveScene, newId, nudgeScene,
   renameNode, updateScene, type Book, type Scene,
 } from "./model"
 
-const sc = (id: string, text = ""): Scene => ({ id, title: id, summary: "", pov: "", status: "draft", text })
+const sc = (id: string, text = ""): Scene => ({ id, title: id, summary: "", pov: "", status: "draft", origin: "human", text })
 const book = (): Book => ({
-  id: "b", title: "T", kind: "novel", language: "de", audience: "", idea: "", notes: "", model: "", updatedAt: "",
+  id: "b", title: "T", kind: "novel", language: "de", audience: "", idea: "", notes: "", model: "", ghost: { model: "", length_words: 0, chunk_words: 0, style: "" }, updatedAt: "",
   parts: [{
     id: "p1", title: "Teil 1", chapters: [
       { id: "c1", title: "Kap 1", scenes: [sc("a", "Eins zwei drei."), sc("b"), sc("c")] },
@@ -89,5 +89,20 @@ describe("Steckbriefe im Text", () => {
     expect(entitiesInText(e, "Gregors Zimmer").map((x) => x.id)).toEqual(["e3"])
     expect(entitiesInText(e, "Grete und Gregor Samsa").map((x) => x.id).sort()).toEqual(["e1", "e2"])
     expect(entitiesInText(e, "Nichts davon.")).toEqual([])
+  })
+})
+
+describe("Herkunft", () => {
+  it("KI-Entwurf wird bei Textänderung „bearbeitet“, eigener Text bleibt eigener", () => {
+    expect(originAfterEdit("ai_draft")).toBe("ai_edited")
+    expect(originAfterEdit("ai_edited")).toBe("ai_edited")
+    expect(originAfterEdit("human")).toBe("human")
+  })
+  it("KI-Anteil nach Wörtern", () => {
+    const b = book()
+    expect(aiShare(b)).toBe(0)
+    const half = updateScene(b, "a", { origin: "ai_draft" })   // „Eins zwei drei.“ = 3 von 4 Wörtern
+    expect(aiShare(half)).toBe(75)
+    expect(aiShare({ ...b, parts: [] })).toBe(0)
   })
 })

@@ -2,50 +2,12 @@
 // sonst 409 mit aktuellem Stand). Prüft: nur Geändertes wird gesendet, Konflikt stoppt das
 // Speichern, beide Auflösungen verlieren nichts.
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { StoryApiError, type ServerBook, type ServerScene, type ServerStructure } from "./api"
 import { BookSync, type SyncView } from "./bookSync"
+import { fakeServer, scene } from "./bookSync.fake"
 import { findScene, updateScene, type Book } from "./model"
 import { fromServer } from "./serverBook"
 
 vi.mock("@/features/auth/useAuthStore", () => ({ useAuthStore: { getState: () => ({ token: "", logout: () => {} }) } }))
-
-const scene = (id: string, text = ""): ServerScene => ({ id, title: id, summary: "", pov: "", status: "draft", text, version: 1, updated_at: "" })
-
-function fakeServer() {
-  const db = {
-    book: { id: "b", title: "T", kind: "novel", language: "de", audience: "", idea: "", notes: "", model: "", version: 1, created_at: "", updated_at: "" } as ServerBook,
-    structure: { version: 1, entities: [], parts: [{ id: "p", title: "Teil", chapters: [{ id: "c", title: "K", scenes: ["s1", "s2"] }] }] } as ServerStructure,
-    scenes: { s1: scene("s1", "eins"), s2: scene("s2", "zwei") } as Record<string, ServerScene>,
-    snapshots: [] as { sceneId: string; text: string }[],
-  }
-  const calls: string[] = []
-  const conflict = (current: unknown) => new StoryApiError(409, "version_conflict", current)
-  const api = {
-    patchBook: vi.fn(async (_p: string, _b: string, v: number, patch: Partial<ServerBook>) => {
-      calls.push("book")
-      if (v !== db.book.version) throw conflict(db.book)
-      db.book = { ...db.book, ...patch, version: v + 1 }
-      return db.book
-    }),
-    putScene: vi.fn(async (_p: string, _b: string, id: string, v: number, patch: Partial<ServerScene>) => {
-      calls.push(`scene:${id}`)
-      if (v !== db.scenes[id].version) throw conflict(db.scenes[id])
-      db.scenes[id] = { ...db.scenes[id], ...patch, version: v + 1 }
-      return db.scenes[id]
-    }),
-    putStructure: vi.fn(async (_p: string, _b: string, v: number, st: Omit<ServerStructure, "version">) => {
-      calls.push("structure")
-      if (v !== db.structure.version) throw conflict(db.structure)
-      db.structure = { ...st, version: v + 1 }
-      return db.structure
-    }),
-    addSnapshot: vi.fn(async (_p: string, _b: string, sceneId: string, text?: string) => {
-      db.snapshots.push({ sceneId, text: text ?? "" })
-      return { id: "x", at: "", words: 0 }
-    }),
-  }
-  return { db, api, calls }
-}
 
 let srv: ReturnType<typeof fakeServer>
 let view: SyncView | null
@@ -182,5 +144,42 @@ describe("BookSync", () => {
     expect(text(sync.book, "s1")).toBe("noch nicht gespeichert")
     await sync.flush()
     expect(srv.calls).toEqual(["scene:s1"])  // keine Struktur-Speicherung nötig (Version 2 übernommen)
+  })
+})
+
+describe("BookSync – Ghostwriter-Einstellungen", () => {
+  it("speichert nur die geänderte Einstellung, andere bleiben", async () => {
+    sync.edit({ ...sync.book, ghost: { ...sync.book.ghost, length_words: 1500 } })
+    await sync.flush()
+    expect(srv.calls).toEqual(["book"])
+    expect(srv.db.book.ghost).toEqual({ model: "", length_words: 1500, chunk_words: 0, style: "" })
+    sync.edit({ ...sync.book, ghost: { ...sync.book.ghost, style: "knapp" } })
+    await sync.flush()
+    expect(srv.db.book.ghost).toEqual({ model: "", length_words: 1500, chunk_words: 0, style: "knapp" })
+    expect(srv.api.patchBook.mock.calls[1][3]).toEqual({ ghost: { style: "knapp" } })
+  })
+})
+
+describe("BookSync – Text mit Herkunft und Server-Szene übernehmen", () => {
+  it("replaceText mit Herkunft: Editor lädt neu, origin wird gespeichert", async () => {
+    sync.replaceText("s1", "KI-Szene", "ai_draft")
+    expect(view?.textRev).toBe(1)
+    await sync.flush()
+    expect(srv.db.scenes.s1).toMatchObject({ text: "KI-Szene", origin: "ai_draft", version: 2 })
+  })
+  it("adoptScene übernimmt Server-Stand (Version + Felder) ohne erneutes Speichern", async () => {
+    const fromServerSide = { ...srv.db.scenes.s2, summary: "neu vom Server", version: 7 }
+    sync.adoptScene(fromServerSide)
+    expect(findScene(sync.book, "s2")?.scene.summary).toBe("neu vom Server")
+    await sync.flush()
+    expect(srv.calls).toEqual([])                       // nichts zu speichern
+    sync.edit(updateScene(sync.book, "s2", { text: "weiter" }))
+    await sync.flush()
+    expect(srv.api.putScene.mock.calls[0][3]).toBe(7)    // baut auf der übernommenen Version auf
+  })
+  it("adoptScene behält ungespeicherte eigene Änderungen an anderen Feldern", () => {
+    sync.edit(updateScene(sync.book, "s2", { text: "noch nicht gespeichert" }))
+    sync.adoptScene({ ...srv.db.scenes.s2, summary: "Server", version: 2 })
+    expect(findScene(sync.book, "s2")?.scene).toMatchObject({ summary: "Server", text: "noch nicht gespeichert" })
   })
 })

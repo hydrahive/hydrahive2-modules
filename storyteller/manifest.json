@@ -1,8 +1,8 @@
 {
   "id": "storyteller",
   "name": "Storyteller",
-  "version": "0.2.1",
-  "description": "Bücher und Geschichten schreiben – Romane, Sach- und Lernbücher – mit Kapitel-Navigator, Steckbriefen und einer KI, die nur Vorschläge macht. Bücher liegen als Markdown/JSON im Projektordner (storyteller/books), gleichzeitiges Bearbeiten überschreibt nichts still, KI über die HydraHive-Modelle mit Modellwahl je Buch.",
+  "version": "0.3.0",
+  "description": "Bücher und Geschichten schreiben – Romane, Sach- und Lernbücher – mit Kapitel-Navigator, Steckbriefen und einer KI, die nur Vorschläge macht. Ghostwriter „Szene schreiben“: die KI schreibt eine ganze Szene aus Zusammenfassung, Steckbriefen und Gedächtnis, live sichtbar, erst nach Annehmen übernommen; Herkunft je Szene und KI-Anteil werden angezeigt. Bücher liegen als Markdown/JSON im Projektordner (storyteller/books), gleichzeitiges Bearbeiten überschreibt nichts still, KI über die HydraHive-Modelle mit Modellwahl je Buch.",
   "icon": "Feather",
   "nav_group": "working",
   "permissions": [],

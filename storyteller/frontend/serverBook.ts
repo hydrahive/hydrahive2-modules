@@ -1,24 +1,24 @@
 // Umrechnung zwischen Server-Ablage (Kopf, Struktur mit Szenen-IDs, Szenen einzeln) und dem
 // verschachtelten Buchmodell der Oberfläche. Rein, ohne React → testbar.
 import type { ServerBook, ServerFull, ServerScene, ServerStructure } from "./api"
-import { allScenes, type Book, type Scene } from "./model"
+import { allScenes, GHOST_EMPTY, type Book, type GhostSettings, type Scene } from "./model"
 
 export interface Versions { book: number; structure: number; scenes: Record<string, number> }
 
 const HEAD_FIELDS = ["title", "audience", "idea", "notes", "model"] as const
-const SCENE_FIELDS = ["title", "summary", "pov", "status", "text"] as const
-export type HeadPatch = Partial<Pick<Book, (typeof HEAD_FIELDS)[number]>>
+const SCENE_FIELDS = ["title", "summary", "pov", "status", "origin", "text"] as const
+export type HeadPatch = Partial<Pick<Book, (typeof HEAD_FIELDS)[number]>> & { ghost?: Partial<GhostSettings> }
 export type ScenePatch = Partial<Pick<Scene, (typeof SCENE_FIELDS)[number]>>
 
 export function sceneFromServer(s: ServerScene): Scene {
-  return { id: s.id, title: s.title, summary: s.summary, pov: s.pov, status: s.status, text: s.text }
+  return { id: s.id, title: s.title, summary: s.summary, pov: s.pov, status: s.status, origin: s.origin ?? "human", text: s.text }
 }
 
 export function fromServer(full: ServerFull): { book: Book; versions: Versions } {
   const { book: h, structure, scenes } = full
   const book: Book = {
     id: h.id, title: h.title, kind: h.kind, language: h.language, audience: h.audience, idea: h.idea,
-    notes: h.notes, model: h.model ?? "", updatedAt: h.updated_at,
+    notes: h.notes, model: h.model ?? "", ghost: { ...GHOST_EMPTY, ...(h.ghost ?? {}) }, updatedAt: h.updated_at,
     entities: structure.entities.map((e) => ({ ...e, aliases: [...e.aliases], fields: e.fields.map((f) => ({ ...f })) })),
     parts: applyStructure(structure, (id) => (scenes[id] ? sceneFromServer(scenes[id]) : undefined)),
   }
@@ -57,6 +57,11 @@ export function structureChanged(a: Book, b: Book): boolean {
 export function headPatch(now: Book, saved: Book): HeadPatch {
   const out: HeadPatch = {}
   for (const k of HEAD_FIELDS) if (now[k] !== saved[k]) out[k] = now[k]
+  const g: Partial<GhostSettings> = {}
+  for (const k of Object.keys(GHOST_EMPTY) as (keyof GhostSettings)[]) {
+    if (now.ghost[k] !== saved.ghost[k]) (g as Record<string, unknown>)[k] = now.ghost[k]
+  }
+  if (Object.keys(g).length) out.ghost = g
   return out
 }
 
@@ -81,7 +86,8 @@ export function structureProblem(book: Book): string {
 }
 
 export function headFromServer(book: Book, h: ServerBook): Book {
-  return { ...book, title: h.title, audience: h.audience, idea: h.idea, notes: h.notes, model: h.model ?? "", updatedAt: h.updated_at }
+  return { ...book, title: h.title, audience: h.audience, idea: h.idea, notes: h.notes, model: h.model ?? "",
+    ghost: { ...GHOST_EMPTY, ...(h.ghost ?? {}) }, updatedAt: h.updated_at }
 }
 
 /** Ganzes Buch für POST …/books/import (Beispielbuch, Übernahme aus dem Entwurf). */
@@ -93,7 +99,7 @@ export function toImport(book: Book) {
       title: p.title,
       chapters: p.chapters.map((c) => ({
         title: c.title,
-        scenes: c.scenes.map((s) => ({ title: s.title, summary: s.summary, pov: s.pov, status: s.status, text: s.text })),
+        scenes: c.scenes.map((s) => ({ title: s.title, summary: s.summary, pov: s.pov, status: s.status, origin: s.origin, text: s.text })),
       })),
     })),
     entities: book.entities.map(({ kind, name, aliases, description, fields }) => ({ kind, name, aliases, description, fields })),

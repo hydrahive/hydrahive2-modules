@@ -4,6 +4,8 @@
 export type BookKind = "novel" | "story" | "nonfiction" | "learning"
 export type SceneStatus = "idea" | "draft" | "revised" | "done"
 export type EntityKind = "character" | "place" | "item"
+/** Herkunft des Szenentexts: eigener Text, KI-Entwurf (Ghostwriter), vom Menschen bearbeiteter KI-Entwurf. */
+export type SceneOrigin = "human" | "ai_draft" | "ai_edited"
 
 export interface Scene {
   id: string
@@ -11,8 +13,13 @@ export interface Scene {
   summary: string
   pov: string
   status: SceneStatus
+  origin: SceneOrigin
   text: string
 }
+
+/** Ghostwriter-Einstellungen je Buch (leer/0 = nicht gesetzt; kein festes Modell im Code). */
+export interface GhostSettings { model: string; length_words: number; chunk_words: number; style: string }
+export const GHOST_EMPTY: GhostSettings = { model: "", length_words: 0, chunk_words: 0, style: "" }
 
 export interface Chapter { id: string; title: string; scenes: Scene[] }
 export interface Part { id: string; title: string; chapters: Chapter[] }
@@ -38,6 +45,7 @@ export interface Book {
   notes: string
   /** KI-Modell des Buchs; leer = HydraHive-Standardmodell für Chat. */
   model: string
+  ghost: GhostSettings
   updatedAt: string
 }
 
@@ -150,4 +158,21 @@ export function entitiesInText(entities: Entity[], text: string): Entity[] {
     const re = new RegExp(`(^|[^\\p{L}\\p{N}])${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^\\p{L}\\p{N}])`, "u")
     return re.test(lower)
   }))
+}
+
+/** Herkunft nach einer Textänderung durch den Menschen: KI-Entwurf wird „bearbeitet“. */
+export function originAfterEdit(origin: SceneOrigin): SceneOrigin {
+  return origin === "ai_draft" ? "ai_edited" : origin
+}
+
+/** Anteil der Wörter in Szenen mit KI-Herkunft (0–100, gerundet). */
+export function aiShare(book: Book): number {
+  let ai = 0
+  let all = 0
+  for (const { scene } of allScenes(book)) {
+    const w = countWords(scene.text)
+    all += w
+    if (scene.origin !== "human") ai += w
+  }
+  return all ? Math.round((ai / all) * 100) : 0
 }

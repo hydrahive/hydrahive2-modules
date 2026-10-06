@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from ._files import StoryError, new_id, read_json, scene_paths, write_json, write_scene
+from ._ghost_settings import next_origin
 from ._book import MAX_SCENE_BYTES, MAX_SCENES, Conflict, _clip, _existing, _now, book_dir
 
 _SCENE_FIELDS = {"title": 200, "summary": 2000, "pov": 200}
@@ -14,7 +15,7 @@ def get_scene(project_id: str, book_id: str, scene_id: str) -> dict:
     d = _existing(project_id, book_id)
     meta_path, text_path = scene_paths(d, scene_id)
     meta = read_json(meta_path)
-    return {**meta, "text": text_path.read_text(encoding="utf-8") if text_path.exists() else ""}
+    return {"origin": "human", **meta, "text": text_path.read_text(encoding="utf-8") if text_path.exists() else ""}
 
 
 def save_scene(project_id: str, book_id: str, scene_id: str, data: dict[str, Any], base_version: int) -> dict:
@@ -30,7 +31,8 @@ def save_scene(project_id: str, book_id: str, scene_id: str, data: dict[str, Any
     if not isinstance(text, str) or len(text.encode("utf-8")) > MAX_SCENE_BYTES:
         raise StoryError("text_too_long")
     meta = {k: v for k, v in current.items() if k != "text"}
-    meta.update(patch, version=current["version"] + 1, updated_at=_now())
+    meta.update(patch, origin=next_origin(current["origin"], data, text != current["text"]),
+                version=current["version"] + 1, updated_at=_now())
     write_scene(_existing(project_id, book_id), scene_id, meta, text)
     _touch(project_id, book_id)
     return {**meta, "text": text}
@@ -49,7 +51,7 @@ def add_scene(project_id: str, book_id: str, chapter_id: str, title: str = "", a
         raise StoryError("title_invalid")
     sid = new_id()
     meta = {"id": sid, "title": title.strip() or "…", "summary": "", "pov": "", "status": "idea",
-            "version": 1, "updated_at": _now()}
+            "origin": "human", "version": 1, "updated_at": _now()}
     write_scene(d, sid, meta, "")
     at = chapter["scenes"].index(after) + 1 if after in chapter["scenes"] else len(chapter["scenes"])
     chapter["scenes"].insert(at, sid)
@@ -72,7 +74,7 @@ def add_chapter(project_id: str, book_id: str, part_id: str, title: str, scene_t
             raise StoryError("title_invalid")
     sid = new_id()
     meta = {"id": sid, "title": scene_title.strip(), "summary": "", "pov": "", "status": "idea",
-            "version": 1, "updated_at": _now()}
+            "origin": "human", "version": 1, "updated_at": _now()}
     write_scene(d, sid, meta, "")
     part["chapters"].append({"id": new_id(), "title": title.strip(), "scenes": [sid]})
     st["version"] += 1

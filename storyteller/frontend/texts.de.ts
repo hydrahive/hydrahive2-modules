@@ -1,5 +1,7 @@
 // Oberflächentexte Deutsch (i18n-Namespace „storyteller“). Englisch: texts.en.ts, gleiche Schlüssel.
 
+import { ghostDe } from "./texts.ghost.de"
+
 export const textsDe = {
   title: "Storyteller",
   subtitle: "Bücher und Geschichten schreiben – die KI macht nur Vorschläge, du entscheidest.",
@@ -159,6 +161,7 @@ export const textsDe = {
   words_unit: "Wörter",
   shortcuts: "Tastenkürzel",
   shortcuts_list: "Strg+B Navigator · Strg+J Kontext · Strg+Shift+F Fokus · Alt+↑/↓ Szene verschieben · Strg+Z rückgängig",
+  ...ghostDe,
 }
 
 export type Texts = typeof textsDe

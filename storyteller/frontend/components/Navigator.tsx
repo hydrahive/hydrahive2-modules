@@ -1,7 +1,7 @@
 // Linke Spalte: Gliederung (Teil → Kapitel → Szene) mit Ziehen, Alt+↑/↓, Umbenennen; darunter Steckbriefe.
 import { useRef, useState, type DragEvent } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, ChevronRight, FilePlus2, FolderPlus } from "lucide-react"
+import { ChevronDown, ChevronRight, FilePlus2, FolderPlus, Sparkles } from "lucide-react"
 import { storyApi, type Created } from "../api"
 import { defaultNames } from "../bookFactory"
 import { moveScene, nudgeScene, renameNode } from "../model"
@@ -100,6 +100,10 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
                       className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left ${s.id === sceneId ? "bg-violet-500/20 text-violet-100" : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"} ${drag === s.id ? "opacity-40" : ""}`}>
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot(s.status)}`} />
                       <Title id={s.id} title={s.title} cls="truncate" />
+                      {s.origin !== "human" && (
+                        <Sparkles className={`st-origin ml-auto h-3 w-3 shrink-0 ${s.origin === "ai_draft" ? "text-violet-300" : "text-violet-300/40"}`}
+                          aria-label={t(`origin_${s.origin}`)}><title>{t(`origin_${s.origin}`)}</title></Sparkles>
+                      )}
                     </button>
                   </div>
                 ))}

@@ -33,6 +33,21 @@ class AiError(Exception):
         self.code, self.message, self.status = code, message, status
 
 
+def acquire(user: str, book_id: str) -> tuple[str, str]:
+    """Gemeinsame Sperre + Drosselung für alle KI-Läufe eines Buchs (Vorschlag, Ghostwriter).
+    Gibt den Schlüssel zurück; der Aufrufer gibt ihn mit release() frei."""
+    key = (user, book_id)
+    if key in _busy:
+        raise AiError("ai_busy", "Für dieses Buch läuft schon eine KI-Anfrage – bitte warten.", 409)
+    _check_rate(user)
+    _busy.add(key)
+    return key
+
+
+def release(key: tuple[str, str]) -> None:
+    _busy.discard(key)
+
+
 def _check_rate(user: str) -> None:
     now = time.monotonic()
     q = _rate[user]
@@ -103,20 +118,16 @@ def clean_proposal(raw: str) -> str:
 
 async def suggest(user: str, project_id: str, book_id: str, scene_id: str, action: str,
                   selection: str, model: str | None) -> dict:
-    key = (user, book_id)
-    if key in _busy:
-        raise AiError("ai_busy", "Für dieses Buch läuft schon eine KI-Anfrage – bitte warten.", 409)
-    _check_rate(user)
     system, prompt = _context(project_id, book_id, scene_id, selection, action)
     use_model = model or storage.get_book(project_id, book_id).get("model") or None
     messages = [{"role": "system", "content": system}, {"role": "user", "content": f"{prompt}\n\nAUFGABE: {_INSTRUCTION[action]}"}]
-    _busy.add(key)
+    key = acquire(user, book_id)
     try:
         out = await complete(messages, model=use_model, temperature=0.7, max_tokens=MAX_TOKENS)
     except Exception as exc:  # Modell-/Schlüssel-/Netzfehler lesbar an die Oberfläche geben
         raise AiError("llm_failed", str(exc)[:300] or exc.__class__.__name__, 502) from exc
     finally:
-        _busy.discard(key)
+        release(key)
     proposal = clean_proposal(out or "")
     if not proposal:
         raise AiError("llm_empty", "Das Modell hat keinen Text geliefert.", 502)
