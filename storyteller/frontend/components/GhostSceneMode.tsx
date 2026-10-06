@@ -56,7 +56,7 @@ export function GhostSceneMode({ state, scene, onGoScene }: Props) {
           <button onClick={onGoScene} className="font-semibold underline hover:text-amber-100">{t("ghost_go_summary")}</button>
         </div>
       )}
-      {!noSummary && scene.text.trim() && run.phase === "idle" && <p className="text-xs text-zinc-500">{t("ghost_has_text")}</p>}
+      {!noSummary && scene.text.trim() && (run.phase === "idle" || run.phase === "accepted") && <p className="text-xs text-zinc-500">{t("ghost_has_text")}</p>}
       {run.estimate && run.phase === "idle" && (
         <p className="st-ghost-estimate text-[11px] text-zinc-500">
           {t("ghost_estimate", { sections: run.estimate.sections, out: n(run.estimate.output_tokens), in: n(run.estimate.input_tokens),
