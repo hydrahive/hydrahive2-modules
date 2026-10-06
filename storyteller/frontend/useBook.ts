@@ -2,7 +2,7 @@
 // vom Server + KI-Vorschläge dieser Sitzung.
 import { useCallback, useEffect, useState } from "react"
 import { BookSync, type SyncView } from "./bookSync"
-import { updateScene, type Book, type Scene } from "./model"
+import { findScene, originAfterEdit, updateScene, type Book, type Scene } from "./model"
 import type { Versions } from "./serverBook"
 import type { Suggestion } from "./suggest"
 import { useSnapshots } from "./useSnapshots"
@@ -30,6 +30,15 @@ export function useBook(projectId: string, initial: Book, versions: Versions) {
     change((b) => updateScene(b, sceneId, patch))
   }, [change])
 
+  /** Text aus dem Editor (Mensch tippt): KI-Entwurf wird dabei „bearbeitet“ (wie auf dem Server). */
+  const typeText = useCallback((sceneId: string, text: string) => {
+    change((b) => {
+      const s = findScene(b, sceneId)?.scene
+      if (!s || s.text === text) return b
+      return updateScene(b, sceneId, { text, origin: originAfterEdit(s.origin) })
+    })
+  }, [change])
+
   const snaps = useSnapshots(projectId, initial.id, sync)
 
   const resolveConflict = useCallback(async (how: "reload" | "keep") => {
@@ -47,9 +56,11 @@ export function useBook(projectId: string, initial: Book, versions: Versions) {
 
   return {
     projectId, book: view.book, saveState: view.saveState, saveError: view.saveError, conflict: view.conflict, textRev: view.textRev,
-    change, setScene, resolveConflict,
+    change, setScene, typeText, resolveConflict,
     flush: useCallback(() => sync.flush(), [sync]),
     adoptStructure: useCallback((...a: Parameters<BookSync["adoptStructure"]>) => sync.adoptStructure(...a), [sync]),
+    adoptScene: useCallback((s: Parameters<BookSync["adoptScene"]>[0]) => sync.adoptScene(s), [sync]),
+    replaceSceneText: useCallback((id: string, text: string, origin?: Scene["origin"]) => sync.replaceText(id, text, origin), [sync]),
     ...snaps,
     suggestions, addSuggestion, resolveSuggestion,
   }

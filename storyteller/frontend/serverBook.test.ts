@@ -1,19 +1,20 @@
 import { describe, expect, it } from "vitest"
 import type { ServerFull } from "./api"
-import { allScenes } from "./model"
+import { allScenes, updateScene } from "./model"
 import { fromServer, headPatch, scenePatches, structureChanged, structureProblem, toImport, toStructure } from "./serverBook"
 
 const full = (): ServerFull => ({
-  book: { id: "b", title: "T", kind: "novel", language: "de", audience: "A", idea: "I", notes: "N", model: "m/x", version: 3, created_at: "", updated_at: "2026-10-06" },
+  book: { id: "b", title: "T", kind: "novel", language: "de", audience: "A", idea: "I", notes: "N", model: "m/x",
+    ghost: { model: "g/m", length_words: 1500, chunk_words: 0, style: "" }, version: 3, created_at: "", updated_at: "2026-10-06" },
   structure: {
     version: 7,
     entities: [{ id: "e", kind: "character", name: "Gregor", aliases: ["Samsa"], description: "", fields: [{ key: "Beruf", value: "Reisender" }] }],
     parts: [{ id: "p", title: "Teil", chapters: [{ id: "c1", title: "K1", scenes: ["s2", "s1"] }, { id: "c2", title: "K2", scenes: ["s3"] }] }],
   },
   scenes: {
-    s1: { id: "s1", title: "Eins", summary: "", pov: "", status: "draft", text: "a", version: 2, updated_at: "" },
-    s2: { id: "s2", title: "Zwei", summary: "", pov: "", status: "idea", text: "b", version: 5, updated_at: "" },
-    s3: { id: "s3", title: "Drei", summary: "", pov: "", status: "done", text: "c", version: 1, updated_at: "" },
+    s1: { id: "s1", title: "Eins", summary: "", pov: "", status: "draft", origin: "human", text: "a", version: 2, updated_at: "" },
+    s2: { id: "s2", title: "Zwei", summary: "", pov: "", status: "idea", origin: "human", text: "b", version: 5, updated_at: "" },
+    s3: { id: "s3", title: "Drei", summary: "", pov: "", status: "done", origin: "ai_draft", text: "c", version: 1, updated_at: "" },
   },
 })
 
@@ -47,5 +48,26 @@ describe("serverBook", () => {
     expect(imp.parts[0].chapters[0].scenes.map((s) => s.text)).toEqual(["b", "a"])
     expect(JSON.stringify(imp)).not.toMatch(/"id"/)
     expect(imp.entities[0]).toEqual({ kind: "character", name: "Gregor", aliases: ["Samsa"], description: "", fields: [{ key: "Beruf", value: "Reisender" }] })
+  })
+})
+
+describe("serverBook – Ghostwriter-Einstellungen und Herkunft", () => {
+  it("übernimmt ghost und origin; ältere Antworten ohne Felder bekommen Standardwerte", () => {
+    const { book } = fromServer(full())
+    expect(book.ghost).toEqual({ model: "g/m", length_words: 1500, chunk_words: 0, style: "" })
+    expect(allScenes(book).find((x) => x.scene.id === "s3")?.scene.origin).toBe("ai_draft")
+    const f = full()
+    delete (f.book as Partial<typeof f.book>).ghost
+    delete (f.scenes.s1 as Partial<typeof f.scenes.s1>).origin
+    const old = fromServer(f).book
+    expect(old.ghost.model).toBe("")
+    expect(allScenes(old).find((x) => x.scene.id === "s1")?.scene.origin).toBe("human")
+  })
+  it("ghost-Änderung geht als Teil-Patch in den Kopf, origin als Szenenfeld", () => {
+    const { book } = fromServer(full())
+    const edited = { ...book, ghost: { ...book.ghost, style: "knapp" } }
+    expect(headPatch(edited, book)).toEqual({ ghost: { style: "knapp" } })
+    const s = updateScene(book, "s1", { text: "neu", origin: "ai_draft" })
+    expect(scenePatches(s, book)).toEqual([{ id: "s1", patch: { origin: "ai_draft", text: "neu" } }])
   })
 })

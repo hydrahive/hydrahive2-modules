@@ -1,7 +1,7 @@
 // Beispielbuch: „Die Verwandlung“ (Franz Kafka, 1915), gemeinfrei.
 // Quelle: Projekt Gutenberg #22367. Kapitel wie im Original, je Kapitel 3 Szenen
 // (an Absatzgrenzen geteilt), „--“ zu „–“ modernisiert. Wird erst beim Öffnen geladen.
-import { newId, type Book, type Entity } from "./model"
+import { GHOST_EMPTY, newId, type Book, type Entity } from "./model"
 
 interface SampleScene { title: string; summary: string; paras: string[] }
 interface SampleFile { chapters: { title: string; scenes: SampleScene[] }[] }
@@ -21,6 +21,7 @@ export async function loadSampleBook(): Promise<Book> {
     audience: "Erwachsene",
     idea: "Ein Handlungsreisender erwacht als Ungeziefer, und seine Familie muss damit leben.",
     model: "",
+    ghost: { ...GHOST_EMPTY },
     notes: "Beispielbuch (gemeinfrei, Projekt Gutenberg #22367). Zum Ausprobieren: Text ändern, Szenen verschieben, KI-Vorschläge testen.",
     updatedAt: new Date().toISOString(),
     parts: [{
@@ -31,7 +32,7 @@ export async function loadSampleBook(): Promise<Book> {
         title: c.title,
         scenes: c.scenes.map((s) => ({
           id: newId(), title: s.title, summary: s.summary, pov: "Gregor",
-          status: "done" as const, text: s.paras.join("\n\n"),
+          status: "done" as const, origin: "human" as const, text: s.paras.join("\n\n"),
         })),
       })),
     }],

@@ -1,7 +1,7 @@
 // Storyteller – Server-Aufrufe (Ablage im Projektordner, KI). Fehler kommen als StoryApiError
 // mit Code und – bei 409 – dem aktuellen Stand auf dem Server (`current`).
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import type { BookKind, EntityKind, SceneStatus } from "./model"
+import type { BookKind, EntityKind, GhostSettings, SceneOrigin, SceneStatus } from "./model"
 import type { SuggestAction } from "./suggest"
 
 const BASE = "/api/modules/storyteller"
@@ -20,13 +20,14 @@ export class StoryApiError extends Error {
 
 export interface ServerBook {
   id: string; title: string; kind: BookKind; language: string; audience: string; idea: string
-  notes: string; model: string; version: number; created_at: string; updated_at: string
+  notes: string; model: string; ghost: GhostSettings; version: number; created_at: string; updated_at: string
 }
 export interface ServerBookInfo extends ServerBook { words: number }
 export interface ServerScene {
-  id: string; title: string; summary: string; pov: string; status: SceneStatus; text: string
+  id: string; title: string; summary: string; pov: string; status: SceneStatus; origin: SceneOrigin; text: string
   version: number; updated_at: string
 }
+export interface GhostEstimate { model: string; length_words: number; sections: number; input_tokens: number; output_tokens: number }
 export interface ServerEntity {
   id: string; kind: EntityKind; name: string; aliases: string[]; description: string; fields: { key: string; value: string }[]
 }
@@ -39,30 +40,35 @@ export interface ServerFull { book: ServerBook; structure: ServerStructure; scen
 export interface SnapshotInfo { id: string; at: string; words: number; text?: string }
 export interface Created { scene: ServerScene; structure: ServerStructure }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+export const authHeader = (): Record<string, string> => {
   const token = useAuthStore.getState().token
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+/** Fehler aus einer Server-Antwort lesen (auch für den Ghostwriter-Stream). */
+export async function errorFrom(res: Response): Promise<StoryApiError> {
+  if (res.status === 401) useAuthStore.getState().logout()
+  const data = await res.json().catch(() => ({}))
+  const d = (data as { detail?: unknown }).detail
+  const obj = typeof d === "object" && d !== null && !Array.isArray(d) ? (d as Record<string, unknown>) : null
+  const code = res.status === 401 ? "not_authenticated" : obj && typeof obj.code === "string" ? obj.code : `http_${res.status}`
+  const msg = obj && typeof obj.message === "string" ? obj.message : typeof d === "string" ? d : undefined
+  return new StoryApiError(res.status, code, obj?.current, msg)
+}
+
+async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: { "Content-Type": "application/json", ...authHeader() },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  if (res.status === 401) {
-    useAuthStore.getState().logout()
-    throw new StoryApiError(401, "not_authenticated")
-  }
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    const d = (data as { detail?: unknown }).detail
-    const obj = typeof d === "object" && d !== null && !Array.isArray(d) ? (d as Record<string, unknown>) : null
-    const code = obj && typeof obj.code === "string" ? obj.code : `http_${res.status}`
-    const msg = obj && typeof obj.message === "string" ? obj.message : typeof d === "string" ? d : undefined
-    throw new StoryApiError(res.status, code, obj?.current, msg)
-  }
-  return data as T
+  if (!res.ok) throw await errorFrom(res)
+  return (await res.json().catch(() => ({}))) as T
 }
 
 const p = (projectId: string) => `/projects/${encodeURIComponent(projectId)}`
 const b = (projectId: string, bookId: string) => `${p(projectId)}/books/${encodeURIComponent(bookId)}`
+export const storyBase = (pid: string, bid: string) => `${BASE}${b(pid, bid)}`
 
 export const storyApi = {
   listBooks: (pid: string) => call<ServerBookInfo[]>("GET", `${p(pid)}/books`),
@@ -70,7 +76,7 @@ export const storyApi = {
     call<ServerBook>("POST", `${p(pid)}/books`, f),
   importBook: (pid: string, payload: unknown) => call<ServerBook>("POST", `${p(pid)}/books/import`, payload),
   openBook: (pid: string, bid: string) => call<ServerFull>("GET", b(pid, bid)),
-  patchBook: (pid: string, bid: string, baseVersion: number, patch: Partial<ServerBook>) =>
+  patchBook: (pid: string, bid: string, baseVersion: number, patch: Partial<Omit<ServerBook, "ghost">> & { ghost?: Partial<GhostSettings> }) =>
     call<ServerBook>("PATCH", b(pid, bid), { ...patch, base_version: baseVersion }),
   deleteBook: (pid: string, bid: string) => call<{ ok: boolean }>("DELETE", b(pid, bid)),
   putStructure: (pid: string, bid: string, baseVersion: number, structure: Omit<ServerStructure, "version">) =>
@@ -91,4 +97,8 @@ export const storyApi = {
     call<SnapshotInfo>("GET", `${b(pid, bid)}/scenes/${encodeURIComponent(sid)}/snapshots/${encodeURIComponent(snapId)}`),
   suggest: (pid: string, bid: string, body: { scene_id: string; action: SuggestAction; selection: string; model?: string }) =>
     call<{ proposal: string; model: string }>("POST", `${b(pid, bid)}/ai/suggest`, body),
+  ghostEstimate: (pid: string, bid: string, sid: string, lengthWords?: number) =>
+    call<GhostEstimate>("GET", `${b(pid, bid)}/ghost/estimate?scene_id=${encodeURIComponent(sid)}${lengthWords ? `&length_words=${lengthWords}` : ""}`),
+  ghostSummarize: (pid: string, bid: string, sid: string) =>
+    call<{ kept: boolean; scene: ServerScene }>("POST", `${b(pid, bid)}/ghost/summarize`, { scene_id: sid }),
 }

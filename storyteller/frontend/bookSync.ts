@@ -2,18 +2,16 @@
 // `local` = was der Nutzer sieht, `saved` = was der Server sicher hat. Gespeichert wird nur der
 // Unterschied, jeweils mit der Version, auf der er aufbaut. Veraltete Version → Konflikt, und es
 // wird nichts mehr gespeichert, bis der Nutzer entschieden hat (Spec 1b §3).
-import { storyApi, StoryApiError, type ServerBook, type ServerScene, type ServerStructure } from "./api"
+import { storyApi, StoryApiError, type ServerScene, type ServerStructure } from "./api"
 import { findScene, updateScene, type Book, type Scene } from "./model"
 import {
-  applyStructure, headFromServer, headPatch, sceneFromServer, scenePatches, structureChanged,
+  applyStructure, headPatch, sceneFromServer, scenePatches, structureChanged,
   structureProblem, toStructure, type Versions,
 } from "./serverBook"
+import { applyResolution, conflictSnapshot, sceneMap, toConflict, type Conflict } from "./syncConflict"
 
 export type SaveState = "saved" | "saving" | "failed" | "conflict"
-export type Conflict =
-  | { kind: "scene"; sceneId: string; title: string; mine: Scene; theirs: ServerScene }
-  | { kind: "structure"; theirs: ServerStructure }
-  | { kind: "book"; theirs: ServerBook }
+export type { Conflict } from "./syncConflict"
 
 /** `textRev` zählt Texte, die von außen ersetzt wurden (Konflikt neu geladen, Schnappschuss zurück):
  *  der Editor lädt dann neu, statt den alten Text weiter anzuzeigen. */
@@ -73,9 +71,27 @@ export class BookSync {
   }
 
   /** Szenentext von außen ersetzen (Schnappschuss zurückholen): wie eine Änderung, Editor lädt neu. */
-  replaceText(sceneId: string, text: string): void {
+  replaceText(sceneId: string, text: string, origin?: Scene["origin"]): void {
     this.textRev += 1
-    this.edit(updateScene(this.local, sceneId, { text }))
+    this.edit(updateScene(this.local, sceneId, origin ? { text, origin } : { text }))
+  }
+
+  /** Szene, die der Server selbst geändert hat (z. B. Gedächtnis-Zusammenfassung): Version und
+   *  Server-Felder übernehmen; ungespeicherte eigene Änderungen an anderen Feldern bleiben. */
+  adoptScene(s: ServerScene): void {
+    const fresh = sceneFromServer(s)
+    const mine = findScene(this.local, s.id)?.scene
+    const saved = findScene(this.saved, s.id)?.scene
+    this.versions.scenes[s.id] = s.version
+    this.saved = updateScene(this.saved, s.id, fresh)
+    if (mine && saved) {
+      const keep: Partial<Scene> = {}
+      for (const k of ["title", "summary", "pov", "status", "origin", "text"] as const) {
+        if (mine[k] !== saved[k]) (keep as Record<string, unknown>)[k] = mine[k]
+      }
+      this.local = updateScene(this.local, s.id, { ...fresh, ...keep })
+    }
+    this.emit()
   }
 
   /** Server hat die Struktur selbst geändert (Szene/Kapitel angelegt oder gelöscht). */
@@ -97,34 +113,16 @@ export class BookSync {
   async resolve(how: "reload" | "keep"): Promise<string | null> {
     const c = this.conflict
     if (!c) return null
-    let snapScene: string | null = null
-    if (c.kind === "scene") {
-      await this.api.addSnapshot(this.projectId, this.local.id, c.sceneId, how === "reload" ? c.mine.text : c.theirs.text)
-      this.versions.scenes[c.sceneId] = c.theirs.version
-      const theirs = sceneFromServer(c.theirs)
-      this.saved = updateScene(this.saved, c.sceneId, theirs)
-      if (how === "reload") {
-        this.local = updateScene(this.local, c.sceneId, theirs)
-        this.textRev += 1
-      }
-      snapScene = c.sceneId
-    } else if (c.kind === "structure") {
-      this.versions.structure = c.theirs.version
-      const take = (b: Book) => {
-        const known = sceneMap(b)
-        return { ...b, parts: applyStructure(c.theirs, (id) => known.get(id)), entities: c.theirs.entities }
-      }
-      this.saved = take(this.saved)
-      if (how === "reload") this.local = take(this.local)
-    } else {
-      this.versions.book = c.theirs.version
-      this.saved = headFromServer(this.saved, c.theirs)
-      if (how === "reload") this.local = headFromServer(this.local, c.theirs)
-    }
+    const snap = conflictSnapshot(c, how)
+    if (snap) await this.api.addSnapshot(this.projectId, this.local.id, snap.sceneId, snap.text)
+    const r = applyResolution(c, how, this.saved, this.local, this.versions)
+    this.saved = r.saved
+    this.local = r.local
+    if (r.reloadText) this.textRev += 1
     this.conflict = null
     this.setState("saved")
     await this.flush()
-    return snapScene
+    return snap?.sceneId ?? null
   }
 
   dispose(): void { if (this.timer) clearTimeout(this.timer) }
@@ -167,7 +165,7 @@ export class BookSync {
     if ("title" in head && !this.local.title.trim()) throw new StoryApiError(400, "title_required")
     const h = await this.api.patchBook(this.projectId, this.local.id, this.versions.book, head)
     this.versions.book = h.version
-    this.saved = { ...this.saved, ...head, updatedAt: h.updated_at }
+    this.saved = { ...this.saved, ...head, ghost: { ...this.saved.ghost, ...(head.ghost ?? {}) }, updatedAt: h.updated_at }
   }
 
   private async saveScenes(): Promise<void> {
@@ -193,18 +191,4 @@ export class BookSync {
   private emit(): void {
     this.onChange({ book: this.local, saveState: this.state, saveError: this.error, conflict: this.conflict, textRev: this.textRev })
   }
-}
-
-function sceneMap(b: Book): Map<string, Scene> {
-  return new Map(b.parts.flatMap((p) => p.chapters.flatMap((c) => c.scenes)).map((s) => [s.id, s]))
-}
-
-/** 409-Antwort einordnen: Struktur (hat parts), Buchkopf (hat kind+notes) oder Szene. */
-export function toConflict(current: unknown, now: Book): Conflict {
-  const c = (current ?? {}) as Record<string, unknown>
-  if (Array.isArray(c.parts)) return { kind: "structure", theirs: c as unknown as ServerStructure }
-  if (typeof c.kind === "string" && "notes" in c) return { kind: "book", theirs: c as unknown as ServerBook }
-  const theirs = c as unknown as ServerScene
-  const mine = findScene(now, theirs.id)?.scene ?? sceneFromServer(theirs)
-  return { kind: "scene", sceneId: theirs.id, title: mine.title, mine, theirs }
 }
