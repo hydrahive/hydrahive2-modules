@@ -16,7 +16,7 @@ interface Props {
 export function EntityList({ book, activeId, onOpen, change }: Props) {
   const { t } = useTranslation("storyteller")
   const add = (kind: EntityKind) => {
-    const id = newId("e")
+    const id = newId()
     change((b) => ({ ...b, entities: [...b.entities, { id, kind, name: t("entity_new_name"), aliases: [], description: "", fields: [] }] }))
     onOpen(id)
   }

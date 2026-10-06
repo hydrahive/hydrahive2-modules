@@ -1,56 +1,61 @@
-// Reiter „KI“: Aktion wählen → Vorschlag als Änderung (rot/grün) → Annehmen/Ablehnen/Nochmal.
-// Regel (Spec §3 W3, §7): Ohne „Annehmen“ ändert sich am Buch nichts; vor dem Annehmen Schnappschuss.
+// Reiter „KI“: Modell, Aktion wählen → Vorschlag vom Server als Änderung (rot/grün) → Annehmen/
+// Ablehnen/Nochmal. Regel (Spec 1b §4): Der Server ändert nichts; erst „Annehmen“ setzt den Text ein,
+// vorher wird ein Schnappschuss angelegt.
 import { useEffect, useState, type MutableRefObject } from "react"
 import { useTranslation } from "react-i18next"
 import type { Editor } from "@tiptap/react"
-import { Check, RotateCcw, Sparkles, X } from "lucide-react"
+import { Loader2, Sparkles } from "lucide-react"
+import { storyApi, StoryApiError } from "../api"
 import { newId, type Scene } from "../model"
-import { draftSuggestion, wordDiff, type SuggestAction, type Suggestion } from "../suggest"
-import type { useBook } from "../useBook"
+import type { SuggestAction, Suggestion } from "../suggest"
+import { isStale } from "../staleCheck"
+import type { BookState } from "../useBook"
+import { ModelChooser } from "./ModelChooser"
+import { ProposalCard } from "./ProposalCard"
 
 const ACTIONS: SuggestAction[] = ["rewrite", "expand", "shorten", "continue"]
+const CONTEXT_CHARS = 300  // „Weiterschreiben“: so viel Text vor dem Cursor zeigt dem Server die Stelle
 
-interface Props { state: ReturnType<typeof useBook>; scene: Scene; editorRef: MutableRefObject<Editor | null> }
+interface Props { state: BookState; scene: Scene; editorRef: MutableRefObject<Editor | null> }
 
 export function AiPanel({ state, scene, editorRef }: Props) {
   const { t } = useTranslation("storyteller")
-  const [variant, setVariant] = useState(0)
+  const [busy, setBusy] = useState<SuggestAction | null>(null)
+  const [error, setError] = useState("")
   const mine = state.suggestions.filter((s) => s.sceneId === scene.id)
   const open = mine.find((s) => s.state === "open")
-  const [stale, setStale] = useState(false)
+  const { book } = state
 
-  // Passt die Stelle im Editor noch zum Vorschlag? Bei jeder Änderung neu prüfen (außerhalb des Renderns).
-  useEffect(() => {
+  const request = async (action: SuggestAction) => {
     const ed = editorRef.current
-    if (!open || !ed) { setStale(false); return }
-    const check = () => setStale(isStale(ed, open))
-    check()
-    ed.on("update", check)
-    return () => { ed.off("update", check) }
-  }, [open, editorRef])
-
-  const request = (action: SuggestAction, again = false) => {
-    const ed = editorRef.current
-    if (!ed) return
+    if (!ed || busy) return
     let { from, to } = ed.state.selection
-    if (action !== "continue" && from === to) {  // keine Markierung → aktueller Absatz
-      const $f = ed.state.selection.$from
-      from = $f.start(); to = $f.end()
-    }
+    const $f = ed.state.selection.$from
+    if (action !== "continue" && from === to) { from = $f.start(); to = $f.end() }  // keine Markierung → Absatz
     if (action === "continue") from = to
     const original = action === "continue" ? "" : ed.state.doc.textBetween(from, to, "\n")
-    const v = again ? variant + 1 : 0
-    setVariant(v)
-    state.addSuggestion({
-      id: newId("ai"), sceneId: scene.id, action, original, from, to,
-      proposal: draftSuggestion(action, original, v), createdAt: new Date().toISOString(), state: "open",
-    })
+    if (action !== "continue" && !original.trim()) { setError(t("ai_err_selection_required")); return }
+    // Weiterschreiben: Text vor dem Cursor mitschicken, damit der Server die Stelle findet.
+    const anchor = action === "continue" ? ed.state.doc.textBetween($f.start(), to, "\n").slice(-CONTEXT_CHARS) : original
+    setBusy(action)
+    setError("")
+    try {
+      await state.flush()  // Server braucht den aktuellen Text als Zusammenhang
+      const r = await storyApi.suggest(state.projectId, book.id, { scene_id: scene.id, action, selection: anchor, ...(book.model ? { model: book.model } : {}) })
+      state.addSuggestion({
+        id: newId(), sceneId: scene.id, action, original, from, to, model: r.model,
+        proposal: r.proposal, createdAt: new Date().toISOString(), state: "open",
+      })
+    } catch (e) {
+      setError(aiError(e, t))
+    } finally { setBusy(null) }
   }
 
-  const accept = (s: Suggestion) => {
+  const accept = async (s: Suggestion) => {
     const ed = editorRef.current
     if (!ed || isStale(ed, s)) return
-    state.snapshot(scene.id)
+    if (!(await state.snapshot(scene.id))) { setError(t("ai_err_snapshot")); return }
+    if (isStale(ed, s)) return
     const text = s.action === "continue" ? ` ${s.proposal}` : s.proposal
     ed.chain().focus().insertContentAt({ from: s.from, to: s.to }, text).run()
     state.resolveSuggestion(s.id, "accepted")
@@ -59,7 +64,7 @@ export function AiPanel({ state, scene, editorRef }: Props) {
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); accept(open) }
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); void accept(open) }
       else if (e.key === "Escape") { e.preventDefault(); state.resolveSuggestion(open.id, "rejected") }
     }
     window.addEventListener("keydown", onKey)
@@ -68,41 +73,24 @@ export function AiPanel({ state, scene, editorRef }: Props) {
 
   return (
     <div className="space-y-4">
+      <ModelChooser value={book.model} onChange={(model) => state.change((b) => ({ ...b, model }))} />
       <p className="text-xs text-zinc-400">{t("ai_intro")}</p>
       <div className="grid grid-cols-2 gap-2">
         {ACTIONS.map((a) => (
-          <button key={a} onClick={() => request(a)}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/10 px-2 py-2 text-sm text-zinc-200 hover:border-violet-400/50 hover:bg-violet-500/10">
-            <Sparkles className="h-3.5 w-3.5 text-violet-300" />{t(`ai_${a}`)}
+          <button key={a} onClick={() => { void request(a) }} disabled={!!busy}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/10 px-2 py-2 text-sm text-zinc-200 hover:border-violet-400/50 hover:bg-violet-500/10 disabled:opacity-50">
+            {busy === a ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300" /> : <Sparkles className="h-3.5 w-3.5 text-violet-300" />}
+            {t(`ai_${a}`)}
           </button>
         ))}
       </div>
-      <p className="rounded border border-amber-400/20 bg-amber-400/5 px-2 py-1 text-[11px] text-amber-200/80">{t("ai_placeholder_note")}</p>
+      {busy && <p className="text-xs text-zinc-400" aria-live="polite">{t("ai_working")}</p>}
+      {error && <p className="st-ai-error rounded border border-red-400/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-200" role="alert">{error}</p>}
 
       {open && (
-        <section className="space-y-2 rounded-xl border border-violet-400/30 bg-violet-500/5 p-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-violet-300">{t("ai_proposal")} · {t(`ai_${open.action}`)}</h3>
-          <div className="max-h-72 overflow-y-auto font-serif text-sm leading-relaxed text-zinc-200">
-            {wordDiff(open.original, open.proposal).map((p, i) => (
-              <span key={i} className={p.kind === "del" ? "bg-red-500/15 text-red-300 line-through" : p.kind === "add" ? "bg-emerald-500/15 text-emerald-200" : ""}>{p.text}</span>
-            ))}
-          </div>
-          {stale && <p className="text-xs text-amber-300">{t("ai_stale")}</p>}
-          <div className="flex flex-wrap gap-2 pt-1">
-            <button onClick={() => accept(open)} disabled={stale}
-              className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-40">
-              <Check className="h-4 w-4" />{t("ai_accept")}
-            </button>
-            <button onClick={() => state.resolveSuggestion(open.id, "rejected")}
-              className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/5">
-              <X className="h-4 w-4" />{t("ai_reject")}
-            </button>
-            <button onClick={() => request(open.action, true)}
-              className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-violet-300 hover:bg-violet-500/10">
-              <RotateCcw className="h-4 w-4" />{t("ai_again")}
-            </button>
-          </div>
-        </section>
+        <ProposalCard suggestion={open} editorRef={editorRef} busy={!!busy}
+          onAccept={() => { void accept(open) }} onReject={() => state.resolveSuggestion(open.id, "rejected")}
+          onAgain={() => { void request(open.action) }} />
       )}
 
       <section>
@@ -118,15 +106,13 @@ export function AiPanel({ state, scene, editorRef }: Props) {
           </ul>
         )}
       </section>
-      <p className="text-[11px] text-zinc-600">{t("ai_model")}</p>
     </div>
   )
 }
 
-/** Ist die markierte Stelle noch dieselbe wie beim Vorschlag? Sonst nicht blind ersetzen. */
-function isStale(ed: Editor | null, s: Suggestion): boolean {
-  if (!ed) return true
-  const size = ed.state.doc.content.size
-  if (s.to > size || s.from > size) return true
-  return s.action !== "continue" && ed.state.doc.textBetween(s.from, s.to, "\n") !== s.original
+function aiError(e: unknown, t: (k: string, o?: Record<string, unknown>) => string): string {
+  if (!(e instanceof StoryApiError)) return t("ai_err_llm_failed", { message: String(e) })
+  const known = ["ai_busy", "rate_limited", "llm_empty", "selection_required", "not_authenticated", "project_read_only"]
+  if (known.includes(e.code)) return t(`ai_err_${e.code}`)
+  return t("ai_err_llm_failed", { message: e.message || e.code })
 }

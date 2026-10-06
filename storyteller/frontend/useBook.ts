@@ -1,66 +1,41 @@
-// Zustand eines geöffneten Buchs: Änderungen, Autosave (1 s), Schnappschüsse, KI-Vorschläge.
-import { useCallback, useEffect, useRef, useState } from "react"
-import { draftStore } from "./draftStore"
-import { findScene, newId, updateScene, type Book, type Scene } from "./model"
+// Zustand eines geöffneten Buchs für React: BookSync (Speichern mit Versionen) + Schnappschüsse
+// vom Server + KI-Vorschläge dieser Sitzung.
+import { useCallback, useEffect, useState } from "react"
+import { BookSync, type SyncView } from "./bookSync"
+import { updateScene, type Book, type Scene } from "./model"
+import type { Versions } from "./serverBook"
 import type { Suggestion } from "./suggest"
+import { useSnapshots } from "./useSnapshots"
 
-export type SaveState = "saved" | "saving" | "failed"
-export interface Snapshot { id: string; sceneId: string; at: string; text: string }
+export type { Conflict, SaveState } from "./bookSync"
 
-const MAX_SNAPSHOTS = 50
-
-export function useBook(projectId: string, initial: Book) {
-  const [book, setBook] = useState<Book>(initial)
-  const [saveState, setSaveState] = useState<SaveState>("saved")
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([])
+export function useBook(projectId: string, initial: Book, versions: Versions) {
+  const [view, setView] = useState<SyncView>({ book: initial, saveState: "saved", saveError: "", conflict: null, textRev: 0 })
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const latest = useRef(book)
+  // Einmal je geöffnetem Buch (Workspace hat key=book.id); setView ist stabil.
+  const [sync] = useState(() => new BookSync(projectId, initial, versions, setView))
 
-  const flush = useCallback(() => {
-    if (timer.current) { clearTimeout(timer.current); timer.current = null }
-    setSaveState(draftStore.save(projectId, latest.current) ? "saved" : "failed")
-  }, [projectId])
-
-  /** Jede Änderung geht hier durch: sofort sichtbar, gespeichert 1 s nach der letzten. */
-  const change = useCallback((next: Book | ((b: Book) => Book)) => {
-    setBook((prev) => {
-      const b = typeof next === "function" ? next(prev) : next
-      latest.current = b
-      return b
-    })
-    setSaveState("saving")
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(flush, 1000)
-  }, [flush])
-
-  // Beim Verlassen (Buchwechsel, Seite schließen) ausstehende Änderungen sofort sichern.
+  // Beim Verlassen: ausstehende Änderungen sofort senden; Seite schließen mit Ungespeichertem → Nachfrage.
   useEffect(() => {
-    const onLeave = () => { if (timer.current) flush() }
+    const onLeave = (e: BeforeUnloadEvent) => { if (sync.dirty) { void sync.flush(); e.preventDefault() } }
     window.addEventListener("beforeunload", onLeave)
-    return () => { window.removeEventListener("beforeunload", onLeave); onLeave() }
-  }, [flush])
+    return () => { window.removeEventListener("beforeunload", onLeave); void sync.flush(); sync.dispose() }
+  }, [sync])
+
+  const change = useCallback((next: Book | ((b: Book) => Book)) => {
+    sync.edit(typeof next === "function" ? next(sync.book) : next)
+  }, [sync])
 
   const setScene = useCallback((sceneId: string, patch: Partial<Scene>) => {
     change((b) => updateScene(b, sceneId, patch))
   }, [change])
 
-  const snapshot = useCallback((sceneId: string) => {
-    const s = findScene(latest.current, sceneId)?.scene
-    if (!s) return
-    setSnapshots((all) => {
-      const mine = all.filter((x) => x.sceneId === sceneId)
-      if (mine[0]?.text === s.text) return all  // nichts Neues
-      const others = all.filter((x) => x.sceneId !== sceneId)
-      const snap = { id: newId("snap"), sceneId, at: new Date().toISOString(), text: s.text }
-      return [snap, ...mine].slice(0, MAX_SNAPSHOTS).concat(others)
-    })
-  }, [])
+  const snaps = useSnapshots(projectId, initial.id, sync)
 
-  const restore = useCallback((snap: Snapshot) => {
-    snapshot(snap.sceneId)
-    setScene(snap.sceneId, { text: snap.text })
-  }, [snapshot, setScene])
+  const resolveConflict = useCallback(async (how: "reload" | "keep") => {
+    const sceneId = await sync.resolve(how)
+    if (sceneId) snaps.refresh(sceneId)
+  }, [sync, snaps])
 
   const addSuggestion = useCallback((s: Suggestion) => {
     setSuggestions((all) => [s, ...all.map((x) => (x.sceneId === s.sceneId && x.state === "open" ? { ...x, state: "rejected" as const } : x))])
@@ -71,8 +46,13 @@ export function useBook(projectId: string, initial: Book) {
   }, [])
 
   return {
-    book, change, setScene, saveState, flush,
-    snapshots, snapshot, restore,
+    projectId, book: view.book, saveState: view.saveState, saveError: view.saveError, conflict: view.conflict, textRev: view.textRev,
+    change, setScene, resolveConflict,
+    flush: useCallback(() => sync.flush(), [sync]),
+    adoptStructure: useCallback((...a: Parameters<BookSync["adoptStructure"]>) => sync.adoptStructure(...a), [sync]),
+    ...snaps,
     suggestions, addSuggestion, resolveSuggestion,
   }
 }
+
+export type BookState = ReturnType<typeof useBook>

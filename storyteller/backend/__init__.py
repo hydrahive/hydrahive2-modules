@@ -1,25 +1,14 @@
-"""Storyteller — KI-gestütztes Schreiben von Büchern (Spec: storyteller/docs/specs, lokal).
+"""Storyteller — KI-gestütztes Schreiben von Büchern.
 
-Stufe 1, klickbarer ENTWURF: Die Oberfläche speichert Bücher noch im Browser, die
-KI-Vorschläge sind Platzhalter. Das Backend meldet nur den Stand; die Ablage im
-Projekt-Workspace (Spec §8/§9) kommt nach Tills Durchsicht des Entwurfs.
+Specs (lokal): storyteller/docs/specs/stufe-1-grundoberflaeche.md, stufe-1b-ablage-ki.md.
+Stufe 1b: Bücher als Dateien im Projektordner (storage.py), Versionen gegen stilles
+Überschreiben, Schnappschüsse als Dateien, KI-Vorschläge über die HydraHive-Modelle (ai.py).
 """
 from __future__ import annotations
 
-from typing import Annotated
+from .routes import router
 
-from fastapi import APIRouter, Depends
-from hydrahive.api.middleware.auth import require_auth
-
-router = APIRouter()
-Auth = Annotated[tuple[str, str], Depends(require_auth)]
-
-STAGE = "draft"
-
-
-@router.get("/status")
-def status(_: Auth) -> dict:
-    return {"stage": STAGE, "storage": "browser", "ai": "placeholder"}
+__all__ = ["router", "register"]
 
 
 def register(ctx) -> None:

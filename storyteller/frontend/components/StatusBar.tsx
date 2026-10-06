@@ -4,15 +4,24 @@ import { Keyboard } from "lucide-react"
 import { bookWords, chapterWords, countWords, type Book, type Chapter, type Scene, type ScenePath } from "../model"
 import type { SaveState } from "../useBook"
 
-interface Props { book: Book; found: { path: ScenePath; scene: Scene; chapter: Chapter } | null; saveState: SaveState }
+interface Props {
+  book: Book; found: { path: ScenePath; scene: Scene; chapter: Chapter } | null
+  saveState: SaveState; saveError: string; onRetry: () => void
+}
 
-export function StatusBar({ book, found, saveState }: Props) {
+export function StatusBar({ book, found, saveState, saveError, onRetry }: Props) {
   const { t, i18n } = useTranslation("storyteller")
   const n = (v: number) => v.toLocaleString(i18n.language)
   const save = {
     saved: <span className="text-emerald-400/80">● {t("saved")}</span>,
     saving: <span className="text-zinc-400">○ {t("saving")}</span>,
-    failed: <span className="font-semibold text-red-400">● {t("save_failed")}</span>,
+    failed: (
+      <span className="st-save-failed font-semibold text-red-400" title={saveError}>
+        ● {t("save_failed")}{saveError && t(`err_${saveError}`, { defaultValue: "" }) ? ` – ${t(`err_${saveError}`)}` : ""}
+        <button onClick={onRetry} className="ml-2 rounded px-1.5 font-normal text-red-200 underline hover:bg-red-500/10">{t("save_retry")}</button>
+      </span>
+    ),
+    conflict: <span className="font-semibold text-amber-300">● {t("save_conflict")}</span>,
   }[saveState]
   return (
     <footer className="st-status flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 px-3 py-1.5 text-xs text-zinc-500" aria-live="polite">

@@ -3,7 +3,7 @@ import type { MutableRefObject } from "react"
 import { useTranslation } from "react-i18next"
 import type { Editor } from "@tiptap/react"
 import type { Scene } from "../model"
-import type { useBook } from "../useBook"
+import type { BookState } from "../useBook"
 import { AiPanel } from "./AiPanel"
 import { EntityPanel } from "./EntityPanel"
 import { ScenePanel } from "./ScenePanel"
@@ -14,14 +14,15 @@ const TABS: ContextTab[] = ["scene", "entity", "ai", "notes"]
 interface Props {
   tab: ContextTab
   setTab: (t: ContextTab) => void
-  state: ReturnType<typeof useBook>
+  state: BookState
   scene: Scene
   entityId: string | null
   setEntityId: (id: string | null) => void
   editorRef: MutableRefObject<Editor | null>
+  onSceneRemoved: (nextSceneId: string) => void
 }
 
-export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId, editorRef }: Props) {
+export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId, editorRef, onSceneRemoved }: Props) {
   const { t } = useTranslation("storyteller")
   const open = (id: string) => { setEntityId(id); setTab("entity") }
   return (
@@ -35,7 +36,7 @@ export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId,
         ))}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        {tab === "scene" && <ScenePanel state={state} scene={scene} onOpenEntity={open} />}
+        {tab === "scene" && <ScenePanel state={state} scene={scene} onOpenEntity={open} onRemoved={onSceneRemoved} />}
         {tab === "entity" && <EntityPanel state={state} entityId={entityId} onDeleted={() => setEntityId(null)} />}
         {tab === "ai" && <AiPanel state={state} scene={scene} editorRef={editorRef} />}
         {tab === "notes" && (

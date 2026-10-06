@@ -1,22 +1,28 @@
-// Einstieg: Projekt wählen → Bücherliste → Arbeitsplatz.
+// Einstieg: Projekt wählen → Bücherliste → Arbeitsplatz. Bücher liegen im Projektordner (Spec 1b).
 import { lazy, Suspense, useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { projectsApi } from "@/features/projects/api"
 import type { Project } from "@/features/projects/types"
+import { storyApi } from "./api"
 import { BookList } from "./components/BookList"
-import { draftStore } from "./draftStore"
 import type { Book } from "./model"
+import { fromServer, type Versions } from "./serverBook"
 
 const PROJECT_KEY = "storyteller.project"
 // Arbeitsplatz (mit Prosa-Editor) erst beim Öffnen eines Buchs laden – hält andere Seiten schlank.
 const Workspace = lazy(() => import("./components/Workspace").then((m) => ({ default: m.Workspace })))
 
+interface Opened { book: Book; versions: Versions; sceneId?: string }
+
 export function StorytellerPage() {
   const { t } = useTranslation("storyteller")
   const [projects, setProjects] = useState<Project[] | null>(null)
   const [projectId, setProjectId] = useState("")
-  const [open, setOpen] = useState<{ book: Book; sceneId?: string } | null>(null)
+  const [open, setOpen] = useState<Opened | null>(null)
+  const [opening, setOpening] = useState(false)
+  const [error, setError] = useState("")
   const [tick, setTick] = useState(0)
+  const project = projects?.find((p) => p.id === projectId)
 
   useEffect(() => {
     projectsApi.list().then((ps) => {
@@ -31,12 +37,24 @@ export function StorytellerPage() {
     localStorage.setItem(PROJECT_KEY, id)
   }
 
+  const openBook = useCallback(async (bookId: string, sceneId?: string) => {
+    setOpening(true)
+    setError("")
+    try {
+      const { book, versions } = fromServer(await storyApi.openBook(projectId, bookId))
+      setOpen({ book, versions, sceneId })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally { setOpening(false) }
+  }, [projectId])
+
   const close = useCallback(() => { setOpen(null); setTick((n) => n + 1) }, [])
 
-  if (open && projectId) {
+  if (open && project) {
     return (
       <Suspense fallback={<div className="p-8 text-sm text-zinc-500">…</div>}>
-        <Workspace key={open.book.id} projectId={projectId} initial={open.book} initialSceneId={open.sceneId} onClose={close} />
+        <Workspace key={open.book.id} projectId={projectId} projectName={project.name} initial={open.book}
+          versions={open.versions} initialSceneId={open.sceneId} onClose={close} />
       </Suspense>
     )
   }
@@ -45,12 +63,7 @@ export function StorytellerPage() {
     <div className="mx-auto max-w-5xl space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight text-zinc-100">
-            {t("title")}
-            <span className="rounded border border-amber-400/40 bg-amber-400/10 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-amber-300">
-              {t("draft_badge")}
-            </span>
-          </h1>
+          <h1 className="text-2xl font-black tracking-tight text-zinc-100">{t("title")}</h1>
           <p className="mt-1 text-sm text-zinc-400">{t("subtitle")}</p>
         </div>
         {projects && projects.length > 0 && (
@@ -63,13 +76,13 @@ export function StorytellerPage() {
           </label>
         )}
       </header>
-      <p className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-200/80">{t("draft_hint")}</p>
+      {project && <p className="text-xs text-zinc-500">{t("storage_hint", { name: project.name })}</p>}
+      {error && <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200" role="alert">{error}</p>}
+      {opening && <p className="text-sm text-zinc-500">{t("opening")}</p>}
       {projects === null ? null : projects.length === 0 ? (
         <p className="text-sm text-zinc-400">{t("project_none")}</p>
       ) : (
-        <BookList key={`${projectId}-${tick}`} projectId={projectId}
-          last={draftStore.last(projectId)}
-          onOpen={(book, sceneId) => setOpen({ book, sceneId })} />
+        <BookList key={`${projectId}-${tick}`} projectId={projectId} onOpen={(id, sceneId) => { void openBook(id, sceneId) }} />
       )}
     </div>
   )

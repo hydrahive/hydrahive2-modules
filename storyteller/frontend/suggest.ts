@@ -1,4 +1,4 @@
-// KI-Vorschläge: Datenform, Vergleich alt/neu und (im Entwurf) eine Platzhalter-KI.
+// KI-Vorschläge: Datenform und Vergleich alt/neu (die Vorschläge selbst kommen vom Server).
 // Grundregel der Spec: Ein Vorschlag ändert nichts, bis er angenommen wird.
 
 export type SuggestAction = "rewrite" | "expand" | "shorten" | "continue"
@@ -14,6 +14,8 @@ export interface Suggestion {
   from: number
   to: number
   createdAt: string
+  /** Modell, das den Vorschlag gemacht hat (leer = Standard). */
+  model: string
   state: "open" | "accepted" | "rejected"
 }
 
@@ -48,26 +50,4 @@ export function wordDiff(a: string, b: string): DiffPart[] {
   while (i < x.length) push("del", x[i++])
   while (j < y.length) push("add", y[j++])
   return out
-}
-
-/**
- * Platzhalter-KI für den klickbaren Entwurf (kein Modellaufruf, keine Kosten).
- * Liefert sichtbar markierte Beispieltexte, damit der Ablauf Vorschlag → Annehmen/Ablehnen
- * ausprobiert werden kann. Im Ausbau ersetzt durch den Backend-Aufruf (Spec §7).
- */
-export function draftSuggestion(action: SuggestAction, original: string, variant = 0): string {
-  const text = original.trim()
-  const sentences = text.split(/(?<=[.!?…«])\s+/).filter(Boolean)
-  switch (action) {
-    case "shorten":
-      return sentences.length > 1
-        ? sentences.filter((_, i) => i % 2 === 0).join(" ")
-        : text.split(/\s+/).slice(0, Math.max(3, Math.ceil(text.split(/\s+/).length * 0.6))).join(" ")
-    case "expand":
-      return `${text} ${["Für einen Augenblick war es ganz still.", "Draußen schlug der Regen gegen das Fensterblech.", "Niemand im Haus schien etwas zu bemerken."][variant % 3]}`
-    case "rewrite":
-      return sentences.length > 1 ? [...sentences].reverse().join(" ") : `${text.replace(/\.$/, "")} – so jedenfalls schien es.`
-    case "continue":
-      return ["Erst nach einer Weile wagte er, sich zu rühren.", "Da klopfte es leise an der Tür.", "Er beschloss, noch ein wenig zu warten."][variant % 3]
-  }
 }
