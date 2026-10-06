@@ -2,6 +2,7 @@
 import { useRef, useState, type DragEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { ChevronDown, ChevronRight, FilePlus2, FolderPlus } from "lucide-react"
+import { defaultNames } from "../bookFactory"
 import { addChapter, addScene, moveScene, nudgeScene, renameNode, type Book } from "../model"
 import { EntityList } from "./EntityList"
 
@@ -36,6 +37,8 @@ export function Navigator({ book, sceneId, entityId, onOpenScene, onOpenEntity, 
     endDrag()
   }
 
+  const names = defaultNames(book.kind, book.language)
+  const chapterCount = book.parts.reduce((k, p) => k + p.chapters.length, 0)
   const rename = (id: string, title: string) => { change((b) => renameNode(b, id, title)); setEditing(null) }
   const Title = ({ id, title, cls }: { id: string; title: string; cls: string }) => editing === id ? (
     <input autoFocus defaultValue={title} className="w-full rounded bg-zinc-950 px-1 text-sm text-zinc-100"
@@ -61,7 +64,7 @@ export function Navigator({ book, sceneId, entityId, onOpenScene, onOpenEntity, 
                     {closed[c.id] ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
                   <Title id={c.id} title={c.title} cls="flex-1 truncate font-semibold text-zinc-200" />
-                  <button onClick={() => { const r = addScene(book, c.id); change(() => r.book); onOpenScene(r.id) }}
+                  <button onClick={() => { const r = addScene(book, c.id, undefined, names.scene(c.scenes.length + 1)); change(() => r.book); onOpenScene(r.id) }}
                     title={t("add_scene")} className="text-zinc-600 opacity-0 hover:text-zinc-200 group-hover:opacity-100">
                     <FilePlus2 className="h-3.5 w-3.5" />
                   </button>
@@ -87,7 +90,7 @@ export function Navigator({ book, sceneId, entityId, onOpenScene, onOpenEntity, 
                 ))}
               </div>
             ))}
-            <button onClick={() => { const r = addChapter(book, p.id); change(() => r.book); onOpenScene(r.sceneId) }}
+            <button onClick={() => { const r = addChapter(book, p.id, names.chapter(chapterCount + 1), names.scene(1)); change(() => r.book); onOpenScene(r.sceneId) }}
               className="ml-1 mt-1 flex items-center gap-1.5 rounded px-1 py-1 text-xs text-zinc-500 hover:bg-white/5 hover:text-zinc-200">
               <FolderPlus className="h-3.5 w-3.5" />{t("add_chapter")}
             </button>

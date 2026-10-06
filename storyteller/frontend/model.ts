@@ -88,9 +88,9 @@ export function updateScene(book: Book, sceneId: string, patch: Partial<Scene>):
 }
 
 /** Neue leere Szene hinter `afterSceneId` (oder am Ende des Kapitels). Liefert Buch + neue ID. */
-export function addScene(book: Book, chapterId: string, afterSceneId?: string): { book: Book; id: string } {
+export function addScene(book: Book, chapterId: string, afterSceneId?: string, title = "Neue Szene"): { book: Book; id: string } {
   const id = newId("s")
-  const fresh: Scene = { id, title: "Neue Szene", summary: "", pov: "", status: "idea", text: "" }
+  const fresh: Scene = { id, title, summary: "", pov: "", status: "idea", text: "" }
   const parts = book.parts.map((p) => ({
     ...p,
     chapters: p.chapters.map((c) => {
@@ -105,11 +105,11 @@ export function addScene(book: Book, chapterId: string, afterSceneId?: string): 
 }
 
 /** Neues Kapitel mit einer leeren Szene am Ende des Teils. */
-export function addChapter(book: Book, partId: string, title = "Neues Kapitel"): { book: Book; sceneId: string } {
+export function addChapter(book: Book, partId: string, title = "Neues Kapitel", sceneTitle = "Szene 1"): { book: Book; sceneId: string } {
   const sceneId = newId("s")
   const chapter: Chapter = {
     id: newId("c"), title,
-    scenes: [{ id: sceneId, title: "Szene 1", summary: "", pov: "", status: "idea", text: "" }],
+    scenes: [{ id: sceneId, title: sceneTitle, summary: "", pov: "", status: "idea", text: "" }],
   }
   return {
     book: { ...book, parts: book.parts.map((p) => (p.id === partId ? { ...p, chapters: [...p.chapters, chapter] } : p)) },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { blankBook, groupLabelKey, isFiction } from "./bookFactory"
+import { blankBook, defaultNames, groupLabelKey, isFiction } from "./bookFactory"
 import { allScenes } from "./model"
 
 describe("bookFactory", () => {
@@ -17,5 +17,13 @@ describe("bookFactory", () => {
     expect(groupLabelKey("novel", "place")).toBe("group_place")
     expect(groupLabelKey("learning", "character")).toBe("group_person")
     expect(groupLabelKey("nonfiction", "item")).toBe("group_source")
+  })
+  it("Standardnamen folgen Buchart und Buchsprache", () => {
+    expect(defaultNames("nonfiction", "de").scene(2)).toBe("Abschnitt 2")
+    expect(defaultNames("novel", "de").chapter(3)).toBe("Kapitel 3")
+    expect(defaultNames("novel", "en").scene(1)).toBe("Scene 1")
+    expect(defaultNames("learning", "en-GB").scene(4)).toBe("Section 4")
+    const b = blankBook({ title: "X", kind: "story", language: "en", audience: "", idea: "" })
+    expect([b.parts[0].title, b.parts[0].chapters[0].title]).toEqual(["Part 1", "Chapter 1"])
   })
 })
