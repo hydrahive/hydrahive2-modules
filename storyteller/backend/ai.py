@@ -71,8 +71,9 @@ def _context(project_id: str, book_id: str, scene_id: str, selection: str, actio
     parts = []
     if book.get("idea"):
         parts.append(f"Worum es im Buch geht: {book['idea']}")
-    if prev:
-        parts.append("Was vorher geschah:\n" + "\n".join(f"- {p['title']}: {p['summary']}" for p in prev if p.get("summary")))
+    earlier = [f"- {p['title']}: {p['summary']}" for p in prev if p.get("summary")]
+    if earlier:  # ohne Zusammenfassungen keine leere Überschrift
+        parts.append("Was vorher geschah:\n" + "\n".join(earlier))
     if people:
         parts.append("Steckbriefe:\n" + "\n".join(
             f"- {e['name']}: {e.get('description', '')} " + "; ".join(f"{f['key']}: {f['value']}" for f in e.get("fields", []))
