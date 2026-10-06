@@ -15,7 +15,7 @@ export function StatusBar({ book, found, saveState }: Props) {
     failed: <span className="font-semibold text-red-400">● {t("save_failed")}</span>,
   }[saveState]
   return (
-    <footer className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 px-3 py-1.5 text-xs text-zinc-500" aria-live="polite">
+    <footer className="st-status flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/10 px-3 py-1.5 text-xs text-zinc-500" aria-live="polite">
       {save}
       {found && <span>{t("w_scene")} {n(countWords(found.scene.text))}</span>}
       {found && <span>{t("w_chapter")} {n(chapterWords(found.chapter))}</span>}

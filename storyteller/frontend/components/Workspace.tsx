@@ -77,7 +77,7 @@ export function Workspace({ projectId, initial, initialSceneId, onClose }: Props
       )}
       <div className="flex min-h-0 flex-1">
         {showLeft && (
-          <aside className="w-64 shrink-0 overflow-y-auto border-r border-white/10">
+          <aside className="st-nav w-64 shrink-0 overflow-y-auto border-r border-white/10">
             <Navigator book={book} sceneId={sceneId} entityId={tab === "entity" ? entityId : null}
               onOpenScene={openScene} onOpenEntity={openEntity} change={state.change} />
           </aside>
@@ -96,7 +96,7 @@ export function Workspace({ projectId, initial, initialSceneId, onClose }: Props
           )}
         </main>
         {showRight && current && (
-          <aside className="w-80 shrink-0 overflow-y-auto border-l border-white/10">
+          <aside className="st-context w-80 shrink-0 overflow-y-auto border-l border-white/10">
             <ContextPanel tab={tab} setTab={setTab} state={state} scene={current.scene}
               entityId={entityId} setEntityId={setEntityId} editorRef={editorRef} />
           </aside>
