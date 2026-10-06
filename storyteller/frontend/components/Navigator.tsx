@@ -2,21 +2,36 @@
 import { useRef, useState, type DragEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { ChevronDown, ChevronRight, FilePlus2, FolderPlus } from "lucide-react"
+import { storyApi, type Created } from "../api"
 import { defaultNames } from "../bookFactory"
-import { addChapter, addScene, moveScene, nudgeScene, renameNode, type Book } from "../model"
+import { moveScene, nudgeScene, renameNode } from "../model"
+import type { BookState } from "../useBook"
 import { EntityList } from "./EntityList"
 
 interface Props {
-  book: Book
+  state: BookState
   sceneId: string
   entityId: string | null
   onOpenScene: (id: string) => void
   onOpenEntity: (id: string) => void
-  change: (fn: (b: Book) => Book) => void
 }
 
-export function Navigator({ book, sceneId, entityId, onOpenScene, onOpenEntity, change }: Props) {
+export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity }: Props) {
   const { t } = useTranslation("storyteller")
+  const { book, change } = state
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState("")
+  /** Szene/Kapitel legt der Server an (er vergibt IDs und Version); danach die neue Szene öffnen. */
+  const create = async (make: () => Promise<Created>) => {
+    setBusy(true)
+    try {
+      await state.flush()
+      const r = await make()
+      state.adoptStructure(r.structure, r.scene)
+      setError("")
+      onOpenScene(r.scene.id)
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)) } finally { setBusy(false) }
+  }
   const [closed, setClosed] = useState<Record<string, boolean>>({})
   const [editing, setEditing] = useState<string | null>(null)
   // Gezogene Szene: im Ref sofort verfügbar (dragover kommt vor dem nächsten Render),
@@ -64,8 +79,8 @@ export function Navigator({ book, sceneId, entityId, onOpenScene, onOpenEntity, 
                     {closed[c.id] ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
                   <Title id={c.id} title={c.title} cls="flex-1 truncate font-semibold text-zinc-200" />
-                  <button onClick={() => { const r = addScene(book, c.id, undefined, names.scene(c.scenes.length + 1)); change(() => r.book); onOpenScene(r.id) }}
-                    title={t("add_scene")} className="text-zinc-600 opacity-0 hover:text-zinc-200 group-hover:opacity-100">
+                  <button disabled={busy} onClick={() => { void create(() => storyApi.addScene(state.projectId, book.id, c.id, names.scene(c.scenes.length + 1))) }}
+                    title={t("add_scene")} aria-label={t("add_scene")} className="text-zinc-600 opacity-0 hover:text-zinc-200 focus:opacity-100 group-hover:opacity-100">
                     <FilePlus2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -90,12 +105,13 @@ export function Navigator({ book, sceneId, entityId, onOpenScene, onOpenEntity, 
                 ))}
               </div>
             ))}
-            <button onClick={() => { const r = addChapter(book, p.id, names.chapter(chapterCount + 1), names.scene(1)); change(() => r.book); onOpenScene(r.sceneId) }}
+            <button disabled={busy} onClick={() => { void create(() => storyApi.addChapter(state.projectId, book.id, p.id, names.chapter(chapterCount + 1), names.scene(1))) }}
               className="ml-1 mt-1 flex items-center gap-1.5 rounded px-1 py-1 text-xs text-zinc-500 hover:bg-white/5 hover:text-zinc-200">
               <FolderPlus className="h-3.5 w-3.5" />{t("add_chapter")}
             </button>
           </div>
         ))}
+        {error && <p className="px-1 pt-1 text-xs text-red-300">{error}</p>}
         <p className="px-1 pt-1 text-[11px] text-zinc-600">{t("drag_hint")} F2 · Alt+↑/↓</p>
       </div>
       <EntityList book={book} activeId={entityId} onOpen={onOpenEntity} change={change} />

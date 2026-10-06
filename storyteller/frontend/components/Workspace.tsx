@@ -2,10 +2,12 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { Editor } from "@tiptap/react"
-import { ArrowLeft, Maximize2, Minimize2, PanelLeft, PanelRight } from "lucide-react"
-import { draftStore } from "../draftStore"
+import { ArrowLeft, FolderOpen, Maximize2, Minimize2, PanelLeft, PanelRight } from "lucide-react"
+import { lastPlace } from "../lastPlace"
 import { allScenes, findScene, type Book } from "../model"
+import type { Versions } from "../serverBook"
 import { useBook } from "../useBook"
+import { ConflictDialog } from "./ConflictDialog"
 import { ContextPanel, type ContextTab } from "./ContextPanel"
 import { Navigator } from "./Navigator"
 import { SceneEditor } from "./SceneEditor"
@@ -17,14 +19,18 @@ const readLayout = (): Layout => {
   try { return { left: true, right: true, ...JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? "{}") } } catch { return { left: true, right: true } }
 }
 
-interface Props { projectId: string; initial: Book; initialSceneId?: string; onClose: () => void }
+interface Props {
+  projectId: string; projectName: string; initial: Book; versions: Versions; initialSceneId?: string; onClose: () => void
+}
 
-export function Workspace({ projectId, initial, initialSceneId, onClose }: Props) {
+export function Workspace({ projectId, projectName, initial, versions, initialSceneId, onClose }: Props) {
   const { t } = useTranslation("storyteller")
-  const state = useBook(projectId, initial)
+  const state = useBook(projectId, initial, versions)
   const { book } = state
   const first = allScenes(book)[0]?.scene.id ?? ""
-  const [sceneId, setSceneId] = useState(initialSceneId && findScene(book, initialSceneId) ? initialSceneId : first)
+  const [wanted, setSceneId] = useState(initialSceneId ?? first)
+  // Gewünschte Szene weg (gelöscht, Konflikt neu geladen)? Dann die erste zeigen.
+  const sceneId = findScene(book, wanted) ? wanted : first
   const [layout, setLayout] = useState<Layout>(readLayout)
   const [focus, setFocus] = useState(false)
   const [tab, setTab] = useState<ContextTab>("scene")
@@ -33,9 +39,11 @@ export function Workspace({ projectId, initial, initialSceneId, onClose }: Props
   const current = findScene(book, sceneId)
 
   useEffect(() => { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)) }, [layout])
-  useEffect(() => { if (sceneId) draftStore.setLast(projectId, book.id, sceneId) }, [projectId, book.id, sceneId])
+  useEffect(() => { if (sceneId) lastPlace.set(projectId, book.id, sceneId) }, [projectId, book.id, sceneId])
 
-  const openScene = useCallback((id: string) => { state.flush(); setSceneId(id) }, [state])
+  const { flush } = state
+  const openScene = useCallback((id: string) => { void flush(); setSceneId(id) }, [flush])
+  const close = useCallback(async () => { await flush(); onClose() }, [flush, onClose])
   const openEntity = useCallback((id: string) => { setEntityId(id); setTab("entity"); setLayout((l) => ({ ...l, right: true })) }, [])
 
   useEffect(() => {
@@ -58,9 +66,13 @@ export function Workspace({ projectId, initial, initialSceneId, onClose }: Props
     <div className="flex h-[calc(100dvh-9rem)] min-h-[520px] flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0d1119]">
       {!focus && (
         <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2">
-          <button onClick={() => { state.flush(); onClose() }} className={`${iconBtn} flex items-center gap-1 text-sm`}>
+          <button onClick={() => { void close() }} className={`${iconBtn} flex items-center gap-1 text-sm`}>
             <ArrowLeft className="h-4 w-4" />{t("back_books")}
           </button>
+          <span className="st-project-badge inline-flex max-w-[12rem] shrink-0 items-center gap-1 truncate rounded-md border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 text-xs text-sky-200"
+            title={t("project_badge_title", { name: projectName })}>
+            <FolderOpen className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{projectName}</span>
+          </span>
           <input value={book.title} aria-label={t("nb_title")}
             onChange={(e) => state.change((b) => ({ ...b, title: e.target.value }))}
             className="min-w-0 flex-1 truncate rounded-md bg-transparent px-2 py-1 text-base font-semibold text-zinc-100 hover:bg-white/5 focus:bg-white/5 focus:outline-none" />
@@ -78,8 +90,8 @@ export function Workspace({ projectId, initial, initialSceneId, onClose }: Props
       <div className="flex min-h-0 flex-1">
         {showLeft && (
           <aside className="st-nav w-64 shrink-0 overflow-y-auto border-r border-white/10">
-            <Navigator book={book} sceneId={sceneId} entityId={tab === "entity" ? entityId : null}
-              onOpenScene={openScene} onOpenEntity={openEntity} change={state.change} />
+            <Navigator state={state} sceneId={sceneId} entityId={tab === "entity" ? entityId : null}
+              onOpenScene={openScene} onOpenEntity={openEntity} />
           </aside>
         )}
         <main className="relative min-w-0 flex-1 overflow-y-auto">
@@ -98,11 +110,12 @@ export function Workspace({ projectId, initial, initialSceneId, onClose }: Props
         {showRight && current && (
           <aside className="st-context w-80 shrink-0 overflow-y-auto border-l border-white/10">
             <ContextPanel tab={tab} setTab={setTab} state={state} scene={current.scene}
-              entityId={entityId} setEntityId={setEntityId} editorRef={editorRef} />
+              entityId={entityId} setEntityId={setEntityId} editorRef={editorRef} onSceneRemoved={(next) => setSceneId(next || first)} />
           </aside>
         )}
       </div>
-      {!focus && <StatusBar book={book} found={current} saveState={state.saveState} />}
+      {!focus && <StatusBar book={book} found={current} saveState={state.saveState} saveError={state.saveError} onRetry={() => { void flush() }} />}
+      {state.conflict && <ConflictDialog conflict={state.conflict} onResolve={state.resolveConflict} />}
     </div>
   )
 }

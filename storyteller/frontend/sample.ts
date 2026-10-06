@@ -1,4 +1,4 @@
-// Beispielbuch für den Entwurf: „Die Verwandlung“ (Franz Kafka, 1915), gemeinfrei.
+// Beispielbuch: „Die Verwandlung“ (Franz Kafka, 1915), gemeinfrei.
 // Quelle: Projekt Gutenberg #22367. Kapitel wie im Original, je Kapitel 3 Szenen
 // (an Absatzgrenzen geteilt), „--“ zu „–“ modernisiert. Wird erst beim Öffnen geladen.
 import { newId, type Book, type Entity } from "./model"
@@ -8,28 +8,29 @@ interface SampleFile { chapters: { title: string; scenes: SampleScene[] }[] }
 
 const ent = (kind: Entity["kind"], name: string, aliases: string[], description: string,
   fields: [string, string][] = []): Entity => ({
-  id: newId("e"), kind, name, aliases, description, fields: fields.map(([key, value]) => ({ key, value })),
+  id: newId(), kind, name, aliases, description, fields: fields.map(([key, value]) => ({ key, value })),
 })
 
 export async function loadSampleBook(): Promise<Book> {
   const data = (await import("./sample/verwandlung.json")).default as SampleFile
   return {
-    id: newId("b"),
+    id: newId(),
     title: "Die Verwandlung",
     kind: "novel",
     language: "de",
     audience: "Erwachsene",
     idea: "Ein Handlungsreisender erwacht als Ungeziefer, und seine Familie muss damit leben.",
+    model: "",
     notes: "Beispielbuch (gemeinfrei, Projekt Gutenberg #22367). Zum Ausprobieren: Text ändern, Szenen verschieben, KI-Vorschläge testen.",
     updatedAt: new Date().toISOString(),
     parts: [{
-      id: newId("p"),
+      id: newId(),
       title: "Die Verwandlung",
       chapters: data.chapters.map((c) => ({
-        id: newId("c"),
+        id: newId(),
         title: c.title,
         scenes: c.scenes.map((s) => ({
-          id: newId("s"), title: s.title, summary: s.summary, pov: "Gregor",
+          id: newId(), title: s.title, summary: s.summary, pov: "Gregor",
           status: "done" as const, text: s.paras.join("\n\n"),
         })),
       })),

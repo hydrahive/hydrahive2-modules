@@ -2,12 +2,12 @@
 import { useTranslation } from "react-i18next"
 import { Plus, X } from "lucide-react"
 import type { Entity } from "../model"
-import type { useBook } from "../useBook"
+import type { BookState } from "../useBook"
 
 const field = "w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
 const label = "block space-y-1 text-xs text-zinc-400"
 
-interface Props { state: ReturnType<typeof useBook>; entityId: string | null; onDeleted: () => void }
+interface Props { state: BookState; entityId: string | null; onDeleted: () => void }
 
 export function EntityPanel({ state, entityId, onDeleted }: Props) {
   const { t } = useTranslation("storyteller")

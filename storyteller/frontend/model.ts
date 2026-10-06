@@ -1,5 +1,5 @@
 // Storyteller – Datenmodell und reine Hilfsfunktionen (ohne React, testbar).
-// Spec: storyteller/docs/specs/stufe-1-grundoberflaeche.md (lokal).
+// Spec: storyteller/docs/specs/stufe-1-grundoberflaeche.md + stufe-1b-ablage-ki.md (lokal).
 
 export type BookKind = "novel" | "story" | "nonfiction" | "learning"
 export type SceneStatus = "idea" | "draft" | "revised" | "done"
@@ -36,16 +36,18 @@ export interface Book {
   parts: Part[]
   entities: Entity[]
   notes: string
+  /** KI-Modell des Buchs; leer = HydraHive-Standardmodell für Chat. */
+  model: string
   updatedAt: string
 }
 
 export interface ScenePath { part: number; chapter: number; scene: number }
 
-let seq = 0
-/** Kurze, eindeutige ID im Browser (Entwurf; das Backend vergibt später echte IDs). */
-export function newId(prefix: string): string {
-  seq += 1
-  return `${prefix}-${Date.now().toString(36)}-${seq.toString(36)}`
+/** ID wie auf dem Server: 32 Hex-Zeichen (z. B. für neue Steckbriefe). */
+export function newId(): string {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")
 }
 
 /** Wörter zählen wie der Editor: Folgen ohne Leerraum, Markdown-Zeichen ignoriert. */
@@ -87,36 +89,6 @@ export function updateScene(book: Book, sceneId: string, patch: Partial<Scene>):
   }
 }
 
-/** Neue leere Szene hinter `afterSceneId` (oder am Ende des Kapitels). Liefert Buch + neue ID. */
-export function addScene(book: Book, chapterId: string, afterSceneId?: string, title = "Neue Szene"): { book: Book; id: string } {
-  const id = newId("s")
-  const fresh: Scene = { id, title, summary: "", pov: "", status: "idea", text: "" }
-  const parts = book.parts.map((p) => ({
-    ...p,
-    chapters: p.chapters.map((c) => {
-      if (c.id !== chapterId) return c
-      const at = afterSceneId ? c.scenes.findIndex((s) => s.id === afterSceneId) + 1 : c.scenes.length
-      const scenes = [...c.scenes]
-      scenes.splice(at <= 0 ? c.scenes.length : at, 0, fresh)
-      return { ...c, scenes }
-    }),
-  }))
-  return { book: { ...book, parts }, id }
-}
-
-/** Neues Kapitel mit einer leeren Szene am Ende des Teils. */
-export function addChapter(book: Book, partId: string, title = "Neues Kapitel", sceneTitle = "Szene 1"): { book: Book; sceneId: string } {
-  const sceneId = newId("s")
-  const chapter: Chapter = {
-    id: newId("c"), title,
-    scenes: [{ id: sceneId, title: sceneTitle, summary: "", pov: "", status: "idea", text: "" }],
-  }
-  return {
-    book: { ...book, parts: book.parts.map((p) => (p.id === partId ? { ...p, chapters: [...p.chapters, chapter] } : p)) },
-    sceneId,
-  }
-}
-
 /**
  * Szene innerhalb des Buchs verschieben: vor `beforeSceneId` oder ans Ende von `toChapterId`.
  * Bleibt die Szene am selben Platz oder ist ein Ziel unbekannt, kommt das Buch unverändert zurück.
@@ -152,18 +124,6 @@ export function nudgeScene(book: Book, sceneId: string, delta: -1 | 1): Book {
   if (j < 0 || j >= scenes.length) return book
   const before = delta === -1 ? scenes[j].id : scenes[j + 1]?.id
   return moveScene(book, sceneId, found.chapter.id, before)
-}
-
-/** Szene löschen. Die letzte Szene eines Kapitels bleibt (ein Kapitel ist nie leer). */
-export function removeScene(book: Book, sceneId: string): Book {
-  const found = findScene(book, sceneId)
-  if (!found || found.chapter.scenes.length <= 1) return book
-  return {
-    ...book,
-    parts: book.parts.map((p) => ({
-      ...p, chapters: p.chapters.map((c) => ({ ...c, scenes: c.scenes.filter((s) => s.id !== sceneId) })),
-    })),
-  }
 }
 
 export function renameNode(book: Book, id: string, title: string): Book {

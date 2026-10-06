@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { draftSuggestion, wordDiff } from "./suggest"
+import { wordDiff } from "./suggest"
 
 const join = (parts: { kind: string; text: string }[], keep: string[]) =>
   parts.filter((p) => keep.includes(p.kind)).map((p) => p.text).join("")
@@ -23,18 +23,5 @@ describe("wordDiff", () => {
     const a = Array.from({ length: 600 }, (_, i) => `w${i}`).join(" ")
     const b = Array.from({ length: 600 }, (_, i) => `v${i}`).join(" ")
     expect(wordDiff(a, b)).toEqual([{ kind: "del", text: a }, { kind: "add", text: b }])
-  })
-})
-
-describe("draftSuggestion (Platzhalter-KI)", () => {
-  const t = "Erster Satz. Zweiter Satz. Dritter Satz."
-  it("kürzen wird kürzer, ausbauen länger, umschreiben anders", () => {
-    expect(draftSuggestion("shorten", t).length).toBeLessThan(t.length)
-    expect(draftSuggestion("expand", t).length).toBeGreaterThan(t.length)
-    expect(draftSuggestion("rewrite", t)).not.toBe(t)
-  })
-  it("„Nochmal“ liefert eine andere Variante", () => {
-    expect(draftSuggestion("continue", "", 0)).not.toBe(draftSuggestion("continue", "", 1))
-    expect(draftSuggestion("expand", t, 0)).not.toBe(draftSuggestion("expand", t, 1))
   })
 })

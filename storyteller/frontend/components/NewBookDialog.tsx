@@ -1,13 +1,14 @@
-// Dialog „Neues Buch“: Titel, Art, Sprache, Zielgruppe, Idee → Buch mit Vorlage Teil/Kapitel/Szene.
+// Dialog „Neues Buch“: Titel, Art, Sprache, Zielgruppe, Idee. Die Vorlage Teil/Kapitel/Szene legt der Server an.
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { blankBook } from "../bookFactory"
-import type { Book, BookKind } from "../model"
+import type { BookKind } from "../model"
 
 const KINDS: BookKind[] = ["novel", "story", "nonfiction", "learning"]
 const input = "w-full rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600"
 
-export function NewBookDialog({ onCancel, onCreate }: { onCancel: () => void; onCreate: (b: Book) => void }) {
+export interface NewBookFields { title: string; kind: BookKind; language: string; audience: string; idea: string }
+
+export function NewBookDialog({ onCancel, onCreate }: { onCancel: () => void; onCreate: (f: NewBookFields) => void }) {
   const { t, i18n } = useTranslation("storyteller")
   const [f, setF] = useState({ title: "", kind: "novel" as BookKind, language: i18n.language.startsWith("en") ? "en" : "de", audience: "", idea: "" })
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }))
@@ -17,7 +18,7 @@ export function NewBookDialog({ onCancel, onCreate }: { onCancel: () => void; on
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true"
       onKeyDown={(e) => { if (e.key === "Escape") onCancel() }}>
       <form className="w-full max-w-lg space-y-4 rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"
-        onSubmit={(e) => { e.preventDefault(); if (ok) onCreate(blankBook(f)) }}>
+        onSubmit={(e) => { e.preventDefault(); if (ok) onCreate({ ...f, title: f.title.trim(), audience: f.audience.trim(), idea: f.idea.trim() }) }}>
         <h2 className="text-lg font-bold text-zinc-100">{t("new_book")}</h2>
         <label className="block space-y-1 text-xs text-zinc-400">
           <span>{t("nb_title")}</span>

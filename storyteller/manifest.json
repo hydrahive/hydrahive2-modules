@@ -1,8 +1,8 @@
 {
   "id": "storyteller",
   "name": "Storyteller",
-  "version": "0.1.0",
-  "description": "Bücher und Geschichten schreiben – Romane, Sach- und Lernbücher – mit Kapitel-Navigator, Steckbriefen und einer KI, die nur Vorschläge macht. Bücher gehören immer zu einem Projekt. Stand 0.1.0: klickbarer Entwurf (Ablage im Browser, KI simuliert).",
+  "version": "0.2.0",
+  "description": "Bücher und Geschichten schreiben – Romane, Sach- und Lernbücher – mit Kapitel-Navigator, Steckbriefen und einer KI, die nur Vorschläge macht. Bücher liegen als Markdown/JSON im Projektordner (storyteller/books), gleichzeitiges Bearbeiten überschreibt nichts still, KI über die HydraHive-Modelle mit Modellwahl je Buch.",
   "icon": "Feather",
   "nav_group": "working",
   "permissions": [],

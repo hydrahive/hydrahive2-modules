@@ -1,7 +1,8 @@
 """Self-contained Test-Fixtures fürs Storyteller-Modul.
 
 Eigenständig (kein Core-conftest), hängt den Modul-Router wie der Core unter
-/api/modules/storyteller an die App.
+/api/modules/storyteller an die App. Zwei Test-Projekte mit je einem Mitglied,
+damit Zugriffsschutz zwischen Projekten geprüft werden kann.
 """
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest r
     pytest_runtest_call,
     pytest_runtest_setup,
     pytest_unconfigure,
+    remove_test_tree,
 )
 
 import pytest  # noqa: E402
@@ -28,6 +30,8 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 MOD_PREFIX = "/api/modules/storyteller"
+PROJECT_ID = "test-project-story"
+OTHER_PROJECT_ID = "other-project-story"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -48,6 +52,13 @@ def setup_test_env():
             "testuser": {"password_hash": ph, "role": "user"},
             "other": {"password_hash": ph, "role": "user"},
         }, indent=2))
+
+        for pid, member in ((PROJECT_ID, "testuser"), (OTHER_PROJECT_ID, "other")):
+            pdir = tmp_path / "data" / "projects" / pid
+            pdir.mkdir(parents=True, exist_ok=True)
+            (pdir / "config.json").write_text(json.dumps({
+                "id": pid, "name": pid, "members": [member], "created_by": member,
+            }, indent=2))
 
         from hydrahive.api import main
         from backend import router
@@ -78,8 +89,31 @@ def client(setup_test_env):
     main.app.router.lifespan_context = original
 
 
-@pytest.fixture
-def auth_headers(client):
-    r = client.post("/api/auth/login", json={"username": "testuser", "password": "testpass123"})
+def _login(client, user: str) -> dict:
+    r = client.post("/api/auth/login", json={"username": user, "password": "testpass123"})
     assert r.status_code == 200
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+
+@pytest.fixture
+def auth_headers(client):
+    return _login(client, "testuser")
+
+
+@pytest.fixture
+def other_headers(client):
+    return _login(client, "other")
+
+
+@pytest.fixture(autouse=True)
+def _clean_story_dirs(setup_test_env):
+    """Storyteller-Ordner beider Test-Projekte vor jedem Test leeren (Dateisystem ist nicht isoliert)."""
+    from backend import storage
+    from backend.ai import _busy, _rate
+    for pid in (PROJECT_ID, OTHER_PROJECT_ID):
+        root = storage.story_root(pid)
+        if root.is_dir():
+            remove_test_tree(root)
+    _rate.clear()
+    _busy.clear()
+    yield
