@@ -64,6 +64,11 @@ def setup_test_env():
                 "id": pid, "name": pid, "members": members, "created_by": creator,
             }, indent=2))
 
+        from hydrahive.db import init_db
+        from hydrahive.modules.migrations import apply_module_migrations
+        init_db()
+        apply_module_migrations("storyteller", MODULE_DIR / "migrations")
+
         from hydrahive.api import main
         from backend import router
         main.app.include_router(router, prefix=MOD_PREFIX)
