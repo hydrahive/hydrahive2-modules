@@ -66,7 +66,8 @@ def _context(project_id: str, book_id: str, scene_id: str, selection: str, actio
     lang = LANGUAGE_LABEL.get(book["language"], book["language"])
     system = (f"Du bist Lektor und Co-Autor für ein Buch. Art: {KIND_LABEL.get(book['kind'], book['kind'])}. "
               f"Sprache: {lang}. Zielgruppe: {book.get('audience') or 'nicht angegeben'}. "
-              f"Antworte ausschließlich mit dem neuen Text auf {lang}, ohne Erklärung, ohne Anführungszeichen drumherum.")
+              f"Antworte ausschließlich mit dem neuen Text auf {lang}: keine Überschrift, kein Vorspann wie "
+              f"„Hier ist …“, keine Erklärung, keine Anführungszeichen drumherum. Dein Text wird unverändert eingesetzt.")
     parts = []
     if book.get("idea"):
         parts.append(f"Worum es im Buch geht: {book['idea']}")
@@ -81,6 +82,22 @@ def _context(project_id: str, book_id: str, scene_id: str, selection: str, actio
     if after:
         parts.append(f"Text danach:\n{after}")
     return system, "\n\n".join(parts)
+
+
+_LEAD_HEADING = re.compile(r"^\s*#{1,6}[^\n]*\n+")
+_LEAD_LABEL = re.compile(r"^\s*(?:\*\*)?(?:hier ist|here is|gekürzte|überarbeitete|ausgebaute|neue|fortsetzung|vorschlag|"
+                         r"rewritten|shortened|expanded|continuation|revised)[^\n]{0,80}:(?:\*\*)?\s*\n+", re.IGNORECASE)
+
+
+def clean_proposal(raw: str) -> str:
+    """Denkblöcke und typischen Vorspann entfernen (Überschrift „# Gekürzte Fassung“, „Hier ist …:“).
+    Der Vorschlag wird 1:1 in die Szene eingesetzt – so etwas darf dort nicht landen."""
+    text = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
+    for _ in range(2):
+        text = _LEAD_LABEL.sub("", _LEAD_HEADING.sub("", text, count=1), count=1).strip()
+    if len(text) > 1 and text[0] == text[-1] and text[0] in "\"'":
+        text = text[1:-1].strip()
+    return text
 
 
 async def suggest(user: str, project_id: str, book_id: str, scene_id: str, action: str,
@@ -99,7 +116,7 @@ async def suggest(user: str, project_id: str, book_id: str, scene_id: str, actio
         raise AiError("llm_failed", str(exc)[:300] or exc.__class__.__name__, 502) from exc
     finally:
         _busy.discard(key)
-    proposal = re.sub(r"<think>.*?</think>", "", out or "", flags=re.DOTALL).strip()
+    proposal = clean_proposal(out or "")
     if not proposal:
         raise AiError("llm_empty", "Das Modell hat keinen Text geliefert.", 502)
     return {"proposal": proposal, "model": use_model or ""}

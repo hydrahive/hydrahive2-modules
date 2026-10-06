@@ -156,3 +156,17 @@ def test_continue_writes_after_the_cursor_anchor_not_at_the_end(client, auth_hea
     client.post(f"{P}/books/{b['id']}/ai/suggest", json={"scene_id": sid, "action": "continue", "selection": "gibt es nicht"}, headers=auth_headers)
     prompt = fake_llm[-1]["messages"][1]["content"]
     assert "Text davor:\nAnfang hier. Mitte dort. Schluss am Ende." in prompt and "Text danach" not in prompt
+
+
+@pytest.mark.parametrize("raw, clean", [
+    ("# Gekürzte Fassung\n\nEr erwachte.", "Er erwachte."),
+    ("## Gekürzte Fassung (überarbeitete Version)\n\nEr erwachte.\n", "Er erwachte."),
+    ("Hier ist die gekürzte Fassung:\n\nEr erwachte.", "Er erwachte."),
+    ("**Überarbeitete Version:**\nEr erwachte.", "Er erwachte."),
+    ("<think>hm</think>\n\"Er erwachte.\"", "Er erwachte."),
+    ("Er erwachte. Dann: nichts.", "Er erwachte. Dann: nichts."),          # normaler Text bleibt
+    ("»Was ist mit mir?« dachte er.", "»Was ist mit mir?« dachte er."),    # deutsche Anführung bleibt
+    ("Er sah ihn an.\n\n## Zweiter Teil\nDanach.", "Er sah ihn an.\n\n## Zweiter Teil\nDanach."),  # nur vorne
+])
+def test_clean_proposal_strips_heading_and_preamble_only_at_the_start(raw, clean):
+    assert ai.clean_proposal(raw) == clean
