@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from . import importer, storage
 from ._route_base import Auth, _call, _guard, _set
+from .ghost_routes import router as ghost_router
 from .routes_scenes import router as scenes_router
 
 router = APIRouter()
@@ -96,3 +97,4 @@ def put_structure(project_id: str, book_id: str, body: StructureIn, auth: Auth):
 
 
 router.include_router(scenes_router)
+router.include_router(ghost_router)

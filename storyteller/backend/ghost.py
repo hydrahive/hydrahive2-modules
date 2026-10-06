@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass
 from typing import AsyncIterator
 
-from hydrahive.llm.client import stream
+from hydrahive.llm.client import complete, stream
 
 from . import storage
 from ._files import StoryError
@@ -109,20 +109,24 @@ async def write_scene(material: Material, *, model: str | None, length_words: in
         messages = [{"role": "system", "content": material.system},
                     {"role": "user", "content": f"{material.prompt}{so_far}\n\nAUFGABE: {task}"}]
         head, sent = "", False   # Anfang puffern, bis Überschrift/Vorspann sicher erkannt ist
-        async for piece in stream(messages, model=model, temperature=0.8, max_tokens=max(1024, target * 3)):
-            if sent:
-                written += piece
-                yield piece
-                continue
-            head += piece
-            if len(head) < _HEAD_BUFFER:
-                continue
-            clean = clean_proposal(head)
-            if clean:
-                out = ("\n\n" if written else "") + clean + _trailing_ws(head)
-                written += out
-                sent = True
-                yield out
+        llm = stream(messages, model=model, temperature=0.8, max_tokens=max(1024, target * 3))
+        try:
+            async for piece in llm:
+                if sent:
+                    written += piece
+                    yield piece
+                    continue
+                head += piece
+                if len(head) < _HEAD_BUFFER:
+                    continue
+                clean = clean_proposal(head)
+                if clean:
+                    out = ("\n\n" if written else "") + clean + _trailing_ws(head)
+                    written += out
+                    sent = True
+                    yield out
+        finally:
+            await llm.aclose()   # Abbruch durch den Nutzer: Verbindung zum Modell sofort schließen
         if not sent:                    # sehr kurze Antwort: alles war im Puffer
             clean = clean_proposal(head)
             if not clean:
@@ -130,3 +134,22 @@ async def write_scene(material: Material, *, model: str | None, length_words: in
             out = ("\n\n" if written else "") + clean
             written += out
             yield out
+
+
+async def summarize_scene(project_id: str, book_id: str, scene_id: str) -> dict:
+    """Gedächtnis nach dem Annehmen: 2–3 Sätze, nur wenn die Zusammenfassung leer ist."""
+    book = storage.get_book(project_id, book_id)
+    scene = storage.get_scene(project_id, book_id, scene_id)
+    if scene["summary"].strip() or not scene["text"].strip():
+        return {"kept": True, "scene": scene}
+    lang = LANGUAGE_LABEL.get(book["language"], book["language"])
+    raw = await complete([
+        {"role": "system", "content": f"Fasse die Szene in 2–3 Sätzen auf {lang} zusammen: was passiert und welche "
+                                      "Fakten über Figuren neu sind. Nur die Zusammenfassung, keine Überschrift."},
+        {"role": "user", "content": scene["text"][-12000:]},
+    ], model=choose_model(book, None), temperature=0.2, max_tokens=400)
+    summary = clean_proposal(raw or "")[:2000]
+    if not summary:
+        raise StoryError("llm_empty", 502)
+    saved = storage.save_scene(project_id, book_id, scene_id, {"summary": summary}, base_version=scene["version"])
+    return {"kept": False, "scene": saved}
