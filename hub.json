@@ -16,6 +16,11 @@
       "path": "scratchpad"
     },
     {
+      "id": "storyteller",
+      "name": "Storyteller",
+      "path": "storyteller"
+    },
+    {
       "id": "patientenakte",
       "name": "Meine Akte",
       "path": "patientenakte"
