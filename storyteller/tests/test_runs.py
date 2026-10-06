@@ -57,6 +57,14 @@ def test_set_scene_state_and_counters():
     assert got["cost_micros"] == 2100 and got["cost_partial"] is True
 
 
+def test_update_run_can_clear_fields():
+    r = _new(book="a7" * 16)
+    runs.update_run(r["id"], current_scene="x" * 32, error="alt")
+    runs.update_run(r["id"], current_scene=None, error=None)
+    got = runs.get_run(PROJECT_ID, "a7" * 16, r["id"])
+    assert got["current_scene"] is None and got["error"] is None
+
+
 def test_update_run_ignores_unknown_fields():
     r = _new(book="a1" * 16)
     runs.update_run(r["id"], status="error", error="x", project_id="hack")

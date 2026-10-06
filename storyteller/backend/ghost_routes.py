@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from hydrahive.api.middleware.errors import coded
 
-from . import ai, ghost, storage
+from . import _cost, ai, ghost, storage
 from ._files import StoryError
 from ._route_base import Auth, _guard
 
@@ -82,12 +82,8 @@ def ghost_estimate(project_id: str, book_id: str, scene_id: str, auth: Auth, len
         length, chunk = ghost.plan_lengths(book, length_words)
     except StoryError as exc:
         raise coded(exc.status, exc.code) from exc
-    sections = min(ghost.MAX_SECTIONS, -(-length // chunk))
-    base_in = (len(material.system) + len(material.prompt)) // 4
-    # Je Abschnitt dasselbe Material plus das bisher Geschriebene (höchstens _SO_FAR Zeichen ≈ /4 Tokens).
-    so_far = sum(min(i * chunk * 7, ghost._SO_FAR) // 4 for i in range(sections))  # ~7 Zeichen je deutsches Wort
-    return {"model": ghost.choose_model(book, None) or "", "length_words": length, "sections": sections,
-            "input_tokens": base_in * sections + so_far, "output_tokens": int(length * 1.6)}
+    e = _cost.scene_estimate(material, length_words=length, chunk_words=chunk)
+    return {"model": ghost.choose_model(book, None) or "", "length_words": length, **e}
 
 
 @router.post("/projects/{project_id}/books/{book_id}/ghost/summarize")
