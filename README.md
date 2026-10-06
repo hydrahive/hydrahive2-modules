@@ -51,6 +51,7 @@ loads each module's `frontend/index.tsx`.
 | **Notizbuch** | 1.0.2 | — | router, migration | Simple notepad for texts and ideas, available across projects. |
 | **Meine Akte** | 1.0.2 | — | router, migration, 2 read tools, `buddyWidgets` | Personal medical record for findings, medications and diagnoses, with structured imports. |
 | **Scratchpad** | 1.0.2 | — | router, 2 tools, nav, i18n, routes | Shared notepad between user and agent with separate, non-shared zones. |
+| **Storyteller** | 0.1.0 | — | router, frontend routes, nav, i18n | Write books and stories (novel, non-fiction, textbook) with chapter navigator, profiles and AI suggestions. 0.1.0: clickable draft, needs core with prose editor (TipTap). |
 | **Aufgaben** | 1.0.1 | — | router, migration, 4 tools, `buddyWidgets`, `workspaceTabs` | Persistent task management that survives chat sessions. The agent can create, update and complete tasks. |
 | **Video-Editor** | 0.1.2 | — | router, frontend routes, nav, i18n | Web video editor with timeline, filmstrip preview and hybrid export. |
 | **Voice** | 0.8.0 | — | router, frontend routes, nav | Voicebox for the HydraHive voice assistant (HA Voice PE) with voice, volume and wake-word settings. |

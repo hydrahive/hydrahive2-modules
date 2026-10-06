@@ -1,0 +1,18 @@
+{
+  "id": "storyteller",
+  "name": "Storyteller",
+  "version": "0.1.0",
+  "description": "Bücher und Geschichten schreiben – Romane, Sach- und Lernbücher – mit Kapitel-Navigator, Steckbriefen und einer KI, die nur Vorschläge macht. Bücher gehören immer zu einem Projekt. Stand 0.1.0: klickbarer Entwurf (Ablage im Browser, KI simuliert).",
+  "icon": "Feather",
+  "nav_group": "working",
+  "permissions": [],
+  "capabilities": [
+    {
+      "id": "module.storyteller",
+      "label": "Storyteller nutzen",
+      "default": "admin_only"
+    }
+  ],
+  "has_service": false,
+  "min_core_version": "2.0.0"
+}
