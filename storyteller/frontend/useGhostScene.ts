@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { storyApi, StoryApiError, type GhostEstimate } from "./api"
 import { acceptGhostText } from "./ghostAccept"
+import { runGhost } from "./ghostRun"
 import { streamGhostScene, type GhostDone } from "./ghostStream"
 import type { Scene } from "./model"
 import type { BookState } from "./useBook"
@@ -36,27 +37,23 @@ export function useGhostScene(state: BookState, scene: Scene, lengthWords: numbe
   useEffect(() => () => abortRef.current?.abort(), [])
 
   const start = useCallback(async () => {
+    abortRef.current?.abort()
+    const ctrl = new AbortController()
+    abortRef.current = ctrl   // ab sofort abbrechbar – auch während noch gespeichert wird
     setError(null)
     setText("")
     textRef.current = ""
     setDone(null)
     setPhase("running")
-    await state.flush()   // Zusammenfassung/Steckbriefe müssen auf dem Server sein
-    const ctrl = new AbortController()
-    abortRef.current = ctrl
-    try {
-      const d = await streamGhostScene(projectId, book.id, { scene_id: scene.id, length_words: lengthWords },
-        (t) => { textRef.current += t; setText(textRef.current) }, ctrl.signal)
-      setDone(d)
-      setPhase("ready")
-    } catch (e) {
-      const err = e instanceof StoryApiError ? e : new StoryApiError(0, "llm_failed", undefined, String(e))
-      if (err.code !== "aborted") setError(err)
-      // Abgebrochen mit schon geschriebenem Text → bleibt als Vorschlag stehen (Annehmen/Ablehnen).
-      setPhase(err.code === "aborted" && textRef.current.trim() ? "ready" : "idle")
-    } finally {
-      abortRef.current = null
-    }
+    const r = await runGhost({
+      flush: state.flush,
+      stream: (onText, signal) => streamGhostScene(projectId, book.id, { scene_id: scene.id, length_words: lengthWords }, onText, signal),
+    }, ctrl, (all) => { textRef.current = all; setText(all) })
+    if (abortRef.current === ctrl) abortRef.current = null
+    if (r.kind === "done") { setDone(r.done); setPhase("ready"); return }
+    if (r.kind === "error") setError(r.error)
+    // Abgebrochen oder Fehler mit schon geschriebenem Text → bleibt als Vorschlag stehen.
+    setPhase(r.kind === "aborted" && r.text.trim() ? "ready" : "idle")
   }, [state, projectId, book.id, scene.id, lengthWords])
 
   const stop = useCallback(() => abortRef.current?.abort(), [])
