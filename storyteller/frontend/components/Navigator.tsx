@@ -1,5 +1,5 @@
 // Linke Spalte: Gliederung (Teil → Kapitel → Szene) mit Ziehen, Alt+↑/↓, Umbenennen; darunter Steckbriefe.
-import { useState } from "react"
+import { useRef, useState, type DragEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { ChevronDown, ChevronRight, FilePlus2, FolderPlus } from "lucide-react"
 import { addChapter, addScene, moveScene, nudgeScene, renameNode, type Book } from "../model"
@@ -18,8 +18,23 @@ export function Navigator({ book, sceneId, entityId, onOpenScene, onOpenEntity, 
   const { t } = useTranslation("storyteller")
   const [closed, setClosed] = useState<Record<string, boolean>>({})
   const [editing, setEditing] = useState<string | null>(null)
+  // Gezogene Szene: im Ref sofort verfügbar (dragover kommt vor dem nächsten Render),
+  // im State nur für die Darstellung (halbtransparent).
+  const dragRef = useRef<string | null>(null)
   const [drag, setDrag] = useState<string | null>(null)
   const [over, setOver] = useState<string | null>(null)
+  const startDrag = (e: DragEvent, id: string) => {
+    dragRef.current = id
+    e.dataTransfer.effectAllowed = "move"
+    e.dataTransfer.setData("text/plain", id)  // Firefox startet das Ziehen nur mit Daten
+    setDrag(id)
+  }
+  const endDrag = () => { dragRef.current = null; setDrag(null); setOver(null) }
+  const dropOn = (chapterId: string, beforeSceneId?: string) => {
+    const id = dragRef.current
+    if (id) change((b) => moveScene(b, id, chapterId, beforeSceneId))
+    endDrag()
+  }
 
   const rename = (id: string, title: string) => { change((b) => renameNode(b, id, title)); setEditing(null) }
   const Title = ({ id, title, cls }: { id: string; title: string; cls: string }) => editing === id ? (
@@ -39,8 +54,8 @@ export function Navigator({ book, sceneId, entityId, onOpenScene, onOpenEntity, 
             {book.parts.length > 1 && <Title id={p.id} title={p.title} cls="block px-1 py-1 text-xs font-semibold text-zinc-400" />}
             {p.chapters.map((c) => (
               <div key={c.id} className="mb-1"
-                onDragOver={(e) => { if (drag) { e.preventDefault(); setOver(`c:${c.id}`) } }}
-                onDrop={(e) => { e.preventDefault(); if (drag && over === `c:${c.id}`) change((b) => moveScene(b, drag, c.id)); setDrag(null); setOver(null) }}>
+                onDragOver={(e) => { if (dragRef.current) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setOver(`c:${c.id}`) } }}
+                onDrop={(e) => { e.preventDefault(); dropOn(c.id) }}>
                 <div className={`group flex items-center gap-1 rounded px-1 py-1 ${over === `c:${c.id}` ? "bg-violet-500/10" : ""}`}>
                   <button onClick={() => setClosed((x) => ({ ...x, [c.id]: !x[c.id] }))} className="text-zinc-500 hover:text-zinc-200" aria-label={c.title}>
                     {closed[c.id] ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -53,9 +68,11 @@ export function Navigator({ book, sceneId, entityId, onOpenScene, onOpenEntity, 
                 </div>
                 {!closed[c.id] && c.scenes.map((s) => (
                   <div key={s.id} draggable
-                    onDragStart={() => setDrag(s.id)} onDragEnd={() => { setDrag(null); setOver(null) }}
-                    onDragOver={(e) => { if (drag && drag !== s.id) { e.preventDefault(); e.stopPropagation(); setOver(`s:${s.id}`) } }}
-                    onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (drag) change((b) => moveScene(b, drag, c.id, s.id)); setDrag(null); setOver(null) }}
+                    onDragStart={(e) => startDrag(e, s.id)} onDragEnd={endDrag}
+                    onDragOver={(e) => {
+                      if (dragRef.current && dragRef.current !== s.id) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; setOver(`s:${s.id}`) }
+                    }}
+                    onDrop={(e) => { e.preventDefault(); e.stopPropagation(); dropOn(c.id, s.id) }}
                     className={`ml-4 border-t-2 ${over === `s:${s.id}` ? "border-violet-400" : "border-transparent"}`}>
                     <button onClick={() => onOpenScene(s.id)} aria-current={s.id === sceneId}
                       onKeyDown={(e) => {
