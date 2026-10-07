@@ -2,8 +2,12 @@
 // offene Vorschläge nachfragen, fehlende Storyteller-Werkzeuge zuschalten (nur Admin, Kern-Route).
 import { authHeader, errorFrom, storyBase, StoryApiError, type ProposalInfo, type ServerScene, type ServerStructure } from "./api"
 import type { EntityProposal } from "./entityProposal"
+import type { Outline } from "./outlineModel"
 import type { InfoProposal } from "./infoProposal"
 import type { ProposalMark } from "./serverBook"
+
+/** G4d: offener Gliederungs-Vorschlag des Agenten (genau einer je Buch). */
+export interface OutlineProposal { outline: Outline; base_structure_version: number; source: "run" | "agent"; session_id: string; note: string; at: string }
 
 export interface ChatInfo { agent: { id: string; name: string } | null; tools_missing: string[]; can_start: boolean }
 export interface ChatStart { session_id: string; url: string; intro: string; agent: { id: string; name: string } }
@@ -36,6 +40,14 @@ export const chatApi = {
   info: (pid: string, bid: string) => call<ChatInfo>(`${storyBase(pid, bid)}/chat`, "GET"),
   start: (pid: string, bid: string, sceneId: string) => call<ChatStart>(`${storyBase(pid, bid)}/chat`, "POST", { scene_id: sceneId }),
   proposals: (pid: string, bid: string) => call<ProposalInfo[]>(`${storyBase(pid, bid)}/proposals`, "GET"),
+  outlineProposal: async (pid: string, bid: string): Promise<OutlineProposal | null> => {
+    try { return await call<OutlineProposal>(`${storyBase(pid, bid)}/proposals/outline`, "GET") }
+    catch (e) { if (e instanceof StoryApiError && e.status === 404) return null; throw e }
+  },
+  acceptOutline: (pid: string, bid: string, outline: Outline, baseVersion: number) =>
+    call<{ structure: ServerStructure; scenes: Record<string, ServerScene> }>(`${storyBase(pid, bid)}/proposals/outline/accept`, "POST",
+      { outline, base_version: baseVersion }),
+  discardOutline: (pid: string, bid: string) => call<{ ok: boolean }>(`${storyBase(pid, bid)}/proposals/outline`, "DELETE"),
   entityProposals: (pid: string, bid: string) => call<EntityProposal[]>(`${storyBase(pid, bid)}/proposals/entities`, "GET"),
   acceptEntity: (pid: string, bid: string, id: string, baseVersion: number) =>
     call<ServerStructure>(`${storyBase(pid, bid)}/proposals/entities/${encodeURIComponent(id)}/accept`, "POST", { base_version: baseVersion }),

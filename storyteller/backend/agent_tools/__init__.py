@@ -5,7 +5,7 @@ Grundsätze:
 - Rechte wie die Oberfläche: Projektrolle des Nutzers (``ToolContext.user_id``), System-Admin darf alles.
   Lesen: ``read``. Vorschläge: ``write``.
 - Der Agent ändert das Buch nie direkt; Text landet als abgelegter Vorschlag (proposals.py).
-Erweiterungen (Spec §11.5) kommen als weitere ``storyteller_propose_*``-Werkzeuge dazu (G4b: Szenen-Infos, G4c: Steckbriefe).
+Erweiterungen (Spec §11.5) kommen als weitere ``storyteller_propose_*``-Werkzeuge dazu (G4b: Szenen-Infos, G4c: Steckbriefe, G4d: Gliederung).
 """
 from __future__ import annotations
 
@@ -19,7 +19,8 @@ Neuen oder überarbeiteten Szenentext NIE mit Datei-Werkzeugen in storyteller/bo
 immer mit storyteller_propose_text: Das legt einen Vorschlag an der Szene ab, den der Autor im Storyteller
 ansieht und übernimmt oder verwirft. Titel, Zusammenfassung oder Perspektive einer Szene schlägst du mit
 storyteller_propose_scene_info vor, neue oder geänderte Steckbriefe (Figuren, Orte, Gegenstände) mit
-storyteller_propose_entity. Vorher die Szene lesen; Steckbriefe und Zusammenfassungen beachten.
+storyteller_propose_entity, neue Kapitel mit Szenen (Gliederung) mit storyteller_propose_outline.
+Vorher die Szene lesen; Steckbriefe und Zusammenfassungen beachten.
 """
 
 
@@ -40,7 +41,8 @@ def scope(ctx: ToolContext, need: str = "read") -> tuple[str | None, ToolResult 
 
 
 from .entity import PROPOSE_ENTITY
+from .outline_tool import PROPOSE_OUTLINE
 from .propose import PROPOSE_INFO, PROPOSE_TEXT
 from .read import BOOKS, OUTLINE, READ
 
-TOOLS = [BOOKS, OUTLINE, READ, PROPOSE_TEXT, PROPOSE_INFO, PROPOSE_ENTITY]
+TOOLS = [BOOKS, OUTLINE, READ, PROPOSE_TEXT, PROPOSE_INFO, PROPOSE_ENTITY, PROPOSE_OUTLINE]

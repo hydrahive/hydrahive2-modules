@@ -10,6 +10,7 @@ import { costLabel } from "../runView"
 import type { BookState } from "../useBook"
 import { useGhostRun } from "../useGhostRun"
 import { OutlinePanel } from "./OutlinePanel"
+import { OutlineProposalBox } from "./OutlineProposalBox"
 import { RunProgress } from "./RunProgress"
 
 const field = "rounded-lg border border-white/10 bg-zinc-950 px-2 py-1 text-sm text-zinc-100"
@@ -87,6 +88,7 @@ export function GhostChapterMode({ state, scene, onOpenScene }: Props) {
       )}
       {run.error && <p className="st-ai-error rounded border border-red-400/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-200" role="alert">
         {t(`ai_err_${run.error.code}`, { defaultValue: run.error.message || run.error.code })}</p>}
+      {!run.active && state.outlineProposal && <OutlineProposalBox key={state.outlineProposal.at} state={state} proposal={state.outlineProposal} />}
       {!run.active && <OutlinePanel state={state} />}
     </div>
   )

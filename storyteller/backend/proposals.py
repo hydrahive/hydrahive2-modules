@@ -57,7 +57,7 @@ def list_for_book(project_id: str, book_id: str) -> list[dict]:
     d = _existing(project_id, book_id) / "proposals"
     out = []
     for p in sorted(d.glob("*.json")) if d.is_dir() else []:
-        if p.name.endswith(".meta.json"):   # Vorschläge für Szenen-Infos (G4b) → proposals_info
+        if p.name.endswith(".meta.json") or p.name == "outline.json":   # Szenen-Infos (G4b), Gliederung (G4d)
             continue
         if p.with_suffix(".md").is_file():
             out.append({"source": "run", "session_id": "", "note": "", **read_json(p)})   # ältere ohne Herkunft

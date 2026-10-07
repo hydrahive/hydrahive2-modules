@@ -1,15 +1,17 @@
 """Storyteller – Routen für Vorschläge des Agenten (Spec §11.5):
-G4b Szenen-Infos (Titel, Zusammenfassung, Perspektive), G4c Steckbriefe (neu/ändern).
+G4b Szenen-Infos (Titel, Zusammenfassung, Perspektive), G4c Steckbriefe (neu/ändern), G4d Gliederung.
 
-Wird VOR run_routes eingebunden, damit ``…/proposals/info`` und ``…/proposals/entities`` nicht als Szenen-ID von
+Wird VOR run_routes eingebunden, damit ``…/proposals/info|entities|outline`` nicht als Szenen-ID von
 ``…/proposals/{scene_id}`` gelesen werden.
 """
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from . import proposals_entities, proposals_info
+from . import proposals_entities, proposals_info, proposals_outline
 from ._route_base import Auth, _call, _guard
 
 router = APIRouter()
@@ -60,4 +62,28 @@ def entity_accept(project_id: str, book_id: str, proposal_id: str, body: EntityA
 def entity_discard(project_id: str, book_id: str, proposal_id: str, auth: Auth):
     _guard(auth, project_id)
     _call(proposals_entities.discard, project_id, book_id, proposal_id)
+    return {"ok": True}
+
+
+class OutlineAcceptIn(BaseModel):
+    outline: dict[str, Any]   # die (ggf. bearbeitete) Fassung; geprüft wie „Gliederung aus Idee“
+    base_version: int         # Version der Struktur
+
+
+@router.get(f"{B}/proposals/outline")
+def outline_get(project_id: str, book_id: str, auth: Auth):
+    _guard(auth, project_id, "read")
+    return _call(proposals_outline.get, project_id, book_id)
+
+
+@router.post(f"{B}/proposals/outline/accept")
+def outline_accept(project_id: str, book_id: str, body: OutlineAcceptIn, auth: Auth):
+    _guard(auth, project_id)
+    return _call(proposals_outline.accept, project_id, book_id, body.outline, body.base_version)
+
+
+@router.delete(f"{B}/proposals/outline")
+def outline_discard(project_id: str, book_id: str, auth: Auth):
+    _guard(auth, project_id)
+    _call(proposals_outline.discard, project_id, book_id)
     return {"ok": True}

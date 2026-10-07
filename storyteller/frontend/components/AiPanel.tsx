@@ -49,7 +49,7 @@ export function AiPanel({ state, scene, editorRef, onGoScene, onOpenScene }: Pro
       {mode === "scene" && <GhostSceneMode key={scene.id} state={state} scene={scene} onGoScene={onGoScene} />}
       {mode === "chapter" && <GhostChapterMode key={scene.id} state={state} scene={scene} onOpenScene={onOpenScene} />}
       {mode === "interview" && <InterviewMode key={scene.id} state={state} scene={scene} onOpenScene={onOpenScene} />}
-      {mode === "chat" && <ChatMode key={scene.id} state={state} scene={scene} />}
+      {mode === "chat" && <ChatMode key={scene.id} state={state} scene={scene} onGoOutline={() => setMode("chapter")} />}
     </div>
   )
 }

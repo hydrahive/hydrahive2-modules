@@ -124,5 +124,5 @@ export function openedFromServer(full: ServerFull) {
     proposals[p.scene_id] = { words: p.words, model: p.model, at: p.at, source: p.source ?? "run", note: p.note ?? "" }
   }
   return { book, versions, canWrite: full.can_write ?? true, proposals, infoProposals: infoMarks(full.info_proposals),
-    entityProposals: full.entity_proposals ?? [] }
+    entityProposals: full.entity_proposals ?? [], outlineProposal: full.outline_proposal ?? null }
 }
