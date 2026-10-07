@@ -20,6 +20,8 @@ immer mit storyteller_propose_text: Das legt einen Vorschlag an der Szene ab, de
 ansieht und übernimmt oder verwirft. Titel, Zusammenfassung oder Perspektive einer Szene schlägst du mit
 storyteller_propose_scene_info vor, neue oder geänderte Steckbriefe (Figuren, Orte, Gegenstände) mit
 storyteller_propose_entity, neue Kapitel mit Szenen (Gliederung) mit storyteller_propose_outline.
+Befunde und Wissen (Widerspruch, Stilproblem, Recherche mit Quellen) legst du mit storyteller_note ab,
+lesen mit storyteller_notes.
 Vorher die Szene lesen; Steckbriefe und Zusammenfassungen beachten.
 """
 
@@ -41,8 +43,9 @@ def scope(ctx: ToolContext, need: str = "read") -> tuple[str | None, ToolResult 
 
 
 from .entity import PROPOSE_ENTITY
+from .note import NOTE, NOTES
 from .outline_tool import PROPOSE_OUTLINE
 from .propose import PROPOSE_INFO, PROPOSE_TEXT
 from .read import BOOKS, OUTLINE, READ
 
-TOOLS = [BOOKS, OUTLINE, READ, PROPOSE_TEXT, PROPOSE_INFO, PROPOSE_ENTITY, PROPOSE_OUTLINE]
+TOOLS = [BOOKS, OUTLINE, READ, PROPOSE_TEXT, PROPOSE_INFO, PROPOSE_ENTITY, PROPOSE_OUTLINE, NOTE, NOTES]
