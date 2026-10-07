@@ -52,16 +52,16 @@ async def ghost_scene(project_id: str, book_id: str, body: GhostSceneIn, auth: A
         raise coded(exc.status, exc.code) from exc
 
     async def events():
-        words = 0
+        text = ""   # Wörter am Ende aus dem Ganzen zählen – Stücke trennen Wörter mitten drin
         try:
             gen = ghost.write_scene(material, model=model, length_words=length, chunk_words=chunk)
             try:
                 async for piece in gen:
-                    words += len(piece.split())
+                    text += piece
                     yield _sse("delta", {"text": piece})
             finally:
                 await gen.aclose()
-            yield _sse("done", {"words": words, "model": model or "", "mode": material.mode})
+            yield _sse("done", {"words": len(text.split()), "model": model or "", "mode": material.mode})
         except Exception as exc:  # Modell-/Schlüssel-/Netzfehler lesbar an die Oberfläche geben
             logger.warning("Ghostwriter-Lauf fehlgeschlagen: %s", exc)
             yield _sse("error", {"code": "llm_failed", "message": str(exc)[:300] or exc.__class__.__name__})

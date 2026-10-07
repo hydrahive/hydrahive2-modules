@@ -24,6 +24,7 @@ _PREV_END = 1500        # so viel vom Ende der vorigen Szene, für den nahtlosen
 _SO_FAR = 3000          # so viel vom bereits Geschriebenen bei Folgeabschnitten
 _MEMORY = 4000          # Gedächtnis: höchstens so viele Zeichen Zusammenfassungen (die jüngsten)
 _HEAD_BUFFER = 400      # Anfang eines Abschnitts so lange zurückhalten (Überschrift/Vorspann erkennen)
+_OUTLINE_HEAD = 400     # je früherem Abschnitt so viel vom Anfang als Übersicht (gegen Wiederholungen)
 
 
 @dataclass(frozen=True)
@@ -98,14 +99,18 @@ async def write_scene(material: Material, *, model: str | None, length_words: in
     """Schreibt Abschnitt für Abschnitt, bis die Länge ungefähr erreicht ist (max. MAX_SECTIONS).
     Liefert Textstücke; Überschrift/Vorspann je Abschnitt entfernt. Schließen des Generators bricht ab."""
     written = ""
+    starts: list[str] = []   # Anfang jedes geschriebenen Abschnitts – Übersicht für spätere Abschnitte
     for section in range(MAX_SECTIONS):
         left = length_words - len(written.split())
         if left <= length_words * (1 - REACHED):
             return
         target = min(chunk_words, max(left, 150))
         task = (f"Schreibe den {'Anfang' if section == 0 else 'nächsten Abschnitt'} dieser Szene, etwa {target} Wörter."
-                + (" Setze genau dort fort, wo der Text aufhört; nichts wiederholen." if written else ""))
-        so_far = f"\n\nSO WEIT GESCHRIEBEN (Ende):\n…{written[-_SO_FAR:]}" if written else ""
+                + (" Setze genau dort fort, wo der Text aufhört. Nichts wiederholen: keine Gespräche, Fragen oder "
+                   "Ereignisse, die oben schon vorkommen – die Handlung geht weiter." if written else ""))
+        overview = ("\n\nBISHERIGE ABSCHNITTE DIESER SZENE (jeweils der Anfang):\n"
+                    + "\n".join(f"{i + 1}. {h}…" for i, h in enumerate(starts))) if len(starts) > 1 else ""
+        so_far = f"{overview}\n\nSO WEIT GESCHRIEBEN (Ende):\n…{written[-_SO_FAR:]}" if written else ""
         messages = [{"role": "system", "content": material.system},
                     {"role": "user", "content": f"{material.prompt}{so_far}\n\nAUFGABE: {task}"}]
         head, sent = "", False   # Anfang puffern, bis Überschrift/Vorspann sicher erkannt ist
@@ -123,6 +128,7 @@ async def write_scene(material: Material, *, model: str | None, length_words: in
                 if clean:
                     out = ("\n\n" if written else "") + clean + _trailing_ws(head)
                     written += out
+                    starts.append(" ".join(clean[:_OUTLINE_HEAD].split()))
                     sent = True
                     yield out
         finally:
@@ -133,6 +139,7 @@ async def write_scene(material: Material, *, model: str | None, length_words: in
                 return
             out = ("\n\n" if written else "") + clean
             written += out
+            starts.append(" ".join(clean[:_OUTLINE_HEAD].split()))
             yield out
 
 

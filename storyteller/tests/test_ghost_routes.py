@@ -4,6 +4,8 @@ from __future__ import annotations
 import json
 import re
 
+import pytest
+
 from conftest import MOD_PREFIX, OTHER_PROJECT_ID, PROJECT_ID
 
 from backend import ai, ghost, storage
@@ -62,6 +64,21 @@ def test_scene_stream_delivers_text_and_changes_no_file(client, auth_headers, mo
     assert done["data"]["mode"] == "fill" and len(text.split()) >= 600 * 0.85
     assert calls[0]["model"] == "test/m"
     assert _files(b["id"]) == before                               # Vorschlag – nichts geschrieben
+
+
+def test_done_word_count_matches_text_even_if_words_are_split_across_pieces(client, auth_headers, monkeypatch):
+    """Befund hydratest 07.10.: Zählen je Stream-Stück zählt geteilte Wörter doppelt (3479 statt 2461)."""
+    b, sid = _setup(length=200, chunk=200)
+
+    async def split_stream(messages, model=None, temperature=0.7, max_tokens=4096):
+        text = "Gregor " * 250
+        for i in range(0, len(text), 3):        # Stücke mitten im Wort
+            yield text[i:i + 3]
+    monkeypatch.setattr(ghost, "stream", split_stream)
+    r = client.post(f"{P}/books/{b['id']}/ghost/scene", json={"scene_id": sid}, headers=auth_headers)
+    evs = _events(r.text)
+    text = "".join(e["data"]["text"] for e in evs if e["event"] == "delta")
+    assert evs[-1]["data"]["words"] == len(text.split())
 
 
 def test_request_overrides_length_and_model(client, auth_headers, monkeypatch):
@@ -144,9 +161,10 @@ def test_summarize_writes_only_empty_summary(client, auth_headers, monkeypatch):
     assert r.json()["kept"] is True and storage.get_scene(PROJECT_ID, b["id"], sid)["version"] == s["version"]
 
 
-def test_estimate_matches_what_a_run_actually_sends(client, auth_headers, monkeypatch):
-    """Schätzung der Eingabe gegen die tatsächlich gesendeten Anfragen (Zeichen/4), ±35 %."""
-    b, sid = _setup(length=900, chunk=300)
+@pytest.mark.parametrize("length,chunk", [(900, 300), (2500, 700)])
+def test_estimate_matches_what_a_run_actually_sends(client, auth_headers, monkeypatch, length, chunk):
+    """Schätzung der Eingabe gegen die tatsächlich gesendeten Anfragen (Zeichen/4), ±35 % – auch mit 4 Abschnitten."""
+    b, sid = _setup(length=length, chunk=chunk)
     calls = _fake(monkeypatch)
     est = client.get(f"{P}/books/{b['id']}/ghost/estimate", params={"scene_id": sid}, headers=auth_headers).json()
     client.post(f"{P}/books/{b['id']}/ghost/scene", json={"scene_id": sid}, headers=auth_headers)

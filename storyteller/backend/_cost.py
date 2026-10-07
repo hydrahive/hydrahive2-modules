@@ -19,12 +19,14 @@ def tokens(text: str) -> int:
 
 def scene_estimate(material, *, length_words: int, chunk_words: int) -> dict:
     """Wie viele Abschnitte und Tokens eine Szene ungefähr braucht (gleiches Verfahren wie ghost.write_scene)."""
-    from .ghost import _SO_FAR, MAX_SECTIONS
+    from .ghost import _OUTLINE_HEAD, _SO_FAR, MAX_SECTIONS
     sections = min(MAX_SECTIONS, -(-length_words // chunk_words))
     base_in = (len(material.system) + len(material.prompt)) // 4
-    # Je Abschnitt dasselbe Material plus das bisher Geschriebene (höchstens _SO_FAR Zeichen).
+    # Je Abschnitt dasselbe Material plus das bisher Geschriebene (höchstens _SO_FAR Zeichen) und ab dem
+    # dritten Abschnitt die Übersicht über die früheren Abschnitte (je Abschnitt dessen Anfang).
     so_far = sum(min(i * chunk_words * _CHARS_PER_WORD, _SO_FAR) // 4 for i in range(sections))
-    return {"sections": sections, "input_tokens": base_in * sections + so_far,
+    overview = sum(i * _OUTLINE_HEAD // 4 for i in range(2, sections))
+    return {"sections": sections, "input_tokens": base_in * sections + so_far + overview,
             "output_tokens": int(length_words * _OUT_PER_WORD)}
 
 
