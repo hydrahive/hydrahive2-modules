@@ -58,7 +58,7 @@ export function EntityProposalBox({ state, proposal, current, onDone }: Props) {
         <div className="flex flex-wrap gap-2">
           <button onClick={() => { void accept() }} disabled={busy}
             className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white disabled:opacity-40">
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}{t(isNew ? "entity_proposal_create" : "ghost_accept_replace")}
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}{t(isNew ? "entity_proposal_create" : "entity_proposal_apply")}
           </button>
           <button onClick={() => { void discard() }} disabled={busy} className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs hover:bg-white/10">
             <X className="h-3.5 w-3.5" />{t("ghost_reject")}

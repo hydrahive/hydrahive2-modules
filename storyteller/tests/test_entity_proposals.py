@@ -110,3 +110,63 @@ def test_accept_validates_against_entity_limit(monkeypatch):
     with pytest.raises(StoryError):
         pe.accept(PROJECT_ID, bid, p["id"], base_version=st["version"])
     assert storage.get_structure(PROJECT_ID, bid)["version"] == st["version"]
+
+
+def test_new_without_kind_or_with_wrong_kind_never_stored():
+    """Neue Steckbriefe brauchen eine gültige Art – auch wenn die Prüfung des Steckbriefs selbst sie nicht sähe."""
+    bid, _ = _book()
+    for changes in ({"name": "Ohne Art"}, {"kind": "", "name": "Leer"}, {"kind": None, "name": "None"}):
+        with pytest.raises(StoryError) as exc:
+            pe.store(PROJECT_ID, bid, None, changes)
+        assert exc.value.code == "entity_invalid"
+    assert pe.list_for_book(PROJECT_ID, bid) == []
+
+
+def test_accept_with_stale_version_never_writes_even_if_save_would(monkeypatch):
+    """Versionsprüfung beim Übernehmen kommt vor dem Speichern – auch wenn save_structure sie nicht machte."""
+    from backend import proposals_entities as mod
+    bid, st = _book()
+    p = pe.store(PROJECT_ID, bid, None, {"kind": "place", "name": "Leuchtturm"})
+    calls = []
+    monkeypatch.setattr(mod, "save_structure", lambda *a, **kw: calls.append(1) or {})
+    with pytest.raises(Conflict):
+        pe.accept(PROJECT_ID, bid, p["id"], base_version=st["version"] - 1)
+    assert calls == []
+
+
+def test_store_holds_the_lock(monkeypatch):
+    """Zwei gleichzeitige neue Steckbriefe mit demselben Namen: genau einer wird abgelegt."""
+    import threading
+    import time
+
+    from backend import proposals_entities as mod
+    bid, _ = _book()
+    real = mod.list_for_book
+
+    def slow(*a, **kw):
+        out = real(*a, **kw)
+        time.sleep(0.2)
+        return out
+    monkeypatch.setattr(mod, "list_for_book", slow)
+    errs = []
+
+    def go():
+        try:
+            pe.store(PROJECT_ID, bid, MIA, {"description": f"D{threading.get_ident()}"})
+        except StoryError as exc:
+            errs.append(exc)
+    ts = [threading.Thread(target=go) for _ in range(2)]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+    assert len(real(PROJECT_ID, bid)) == 1          # höchstens ein offener Änderungsvorschlag je Steckbrief
+
+
+def test_proposal_ids_are_checked_no_path_escape():
+    bid, _ = _book()
+    for bad in ("../../structure", "..", "x/y", "a" * 31):
+        for fn in (pe.get, pe.discard):
+            with pytest.raises(StoryError):
+                fn(PROJECT_ID, bid, bad)
+    assert (storage.book_dir(PROJECT_ID, bid) / "structure.json").is_file()

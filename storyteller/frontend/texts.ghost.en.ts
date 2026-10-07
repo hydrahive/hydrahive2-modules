@@ -146,6 +146,7 @@ export const ghostEn: GhostTexts = {
   ai_err_nothing_changed: "The proposal changes nothing.",
   entity_proposal_new: "Proposal from the agent: new entry ({{group}})",
   entity_proposal_change: "Proposal from the agent: change to this profile",
+  entity_proposal_apply: "Apply change",
   entity_proposal_create: "Create",
   entity_proposal_badge: "Proposal",
   ai_err_entity_not_found: "This profile no longer exists – please discard the proposal.",

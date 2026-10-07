@@ -146,6 +146,7 @@ export const ghostDe = {
   ai_err_nothing_changed: "Der Vorschlag ändert nichts.",
   entity_proposal_new: "Vorschlag vom Agenten: neuer Eintrag ({{group}})",
   entity_proposal_change: "Vorschlag vom Agenten: Änderung an diesem Steckbrief",
+  entity_proposal_apply: "Änderung übernehmen",
   entity_proposal_create: "Anlegen",
   entity_proposal_badge: "Vorschlag",
   ai_err_entity_not_found: "Diesen Steckbrief gibt es nicht mehr – den Vorschlag bitte verwerfen.",

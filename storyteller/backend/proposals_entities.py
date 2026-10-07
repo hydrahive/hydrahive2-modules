@@ -73,9 +73,7 @@ def store(project_id: str, book_id: str, entity_id: str | None, changes: dict[st
             raise StoryError("nothing_changed")
         kind, replaced = base["kind"], [p for p in open_props if p["entity_id"] == entity_id]
     else:
-        kind = changes.get("kind")
-        if kind not in _structure._ENTITY_KINDS or not isinstance(changes.get("name"), str) or not changes["name"].strip():
-            raise StoryError("entity_invalid")
+        kind = changes.get("kind")   # Art und Name prüft _clean (wie gespeicherte Steckbriefe; Name ist dort Pflicht)
         diff = _clean(kind, changes, None)
         taken = next((e for e in entities if _names(e) & _names({"name": diff["name"], "aliases": diff.get("aliases", [])})), None)
         if taken:
