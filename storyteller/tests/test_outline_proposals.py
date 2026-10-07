@@ -98,3 +98,27 @@ def test_text_and_info_lists_ignore_outline_file_even_with_outline_md():
     po.store(PROJECT_ID, bid, OUT)
     (storage.book_dir(PROJECT_ID, bid) / "proposals" / "outline.md").write_text("x", encoding="utf-8")
     assert proposals.list_for_book(PROJECT_ID, bid) == [] and proposals_info.list_for_book(PROJECT_ID, bid) == []
+
+
+def test_store_holds_the_lock_so_base_version_matches_the_structure(monkeypatch):
+    """Während abgelegt wird, ändert niemand die Gliederung: die gespeicherte Basisversion ist die echte."""
+    import threading
+    import time
+
+    from backend import outline as outline_mod
+    bid, st = _book()
+    real = outline_mod.validate
+
+    def slow(data):
+        out = real(data)
+        time.sleep(0.3)
+        return out
+    monkeypatch.setattr(outline_mod, "validate", slow)
+    t = threading.Thread(target=lambda: po.store(PROJECT_ID, bid, OUT))
+    t.start()
+    time.sleep(0.1)
+    ch = st["parts"][0]["chapters"][0]["id"]
+    storage.add_scene(PROJECT_ID, bid, ch, "Parallel")          # muss warten, bis abgelegt ist
+    t.join()
+    assert po.get(PROJECT_ID, bid)["base_structure_version"] == st["version"]
+    assert storage.get_structure(PROJECT_ID, bid)["version"] == st["version"] + 1

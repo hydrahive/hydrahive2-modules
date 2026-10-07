@@ -36,7 +36,7 @@ export function OutlineEditor({ draft, setDraft, busy, canWrite, onApply, onReje
                     onChange={(e) => setDraft(editScene(draft, ci, si, { title: e.target.value }))} />
                   {canWrite && <button title={t("outline_remove")} onClick={() => setDraft(removeScene(draft, ci, si))} className="text-zinc-500 hover:text-red-300"><Trash2 className="h-3 w-3" /></button>}
                 </div>
-                <textarea className={`${field} min-h-[44px]`} value={s.summary} aria-label={t("scene_summary")} readOnly={!canWrite}
+                <textarea className={`${field} min-h-[44px] max-h-40 [field-sizing:content]`} value={s.summary} aria-label={t("scene_summary")} readOnly={!canWrite}
                   onChange={(e) => setDraft(editScene(draft, ci, si, { summary: e.target.value }))} />
               </div>
             ))}
