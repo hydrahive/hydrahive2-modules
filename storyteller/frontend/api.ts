@@ -57,6 +57,8 @@ export interface ServerFull {
   entity_proposals?: EntityProposal[]
   /** Ab 0.9.0: offener Gliederungs-Vorschlag des Agenten (G4d), sonst null. */
   outline_proposal?: OutlineProposal | null
+  /** Ab 0.12.0: offene Hinweise/Notizen des Teams je Szene (T1d). */
+  open_notes?: Record<string, number>
 }
 export interface SnapshotInfo { id: string; at: string; words: number; text?: string }
 export interface Created { scene: ServerScene; structure: ServerStructure }

@@ -124,5 +124,6 @@ export function openedFromServer(full: ServerFull) {
     proposals[p.scene_id] = markOf(p)
   }
   return { book, versions, canWrite: full.can_write ?? true, proposals, infoProposals: infoMarks(full.info_proposals),
-    entityProposals: full.entity_proposals ?? [], outlineProposal: full.outline_proposal ?? null }
+    entityProposals: full.entity_proposals ?? [], outlineProposal: full.outline_proposal ?? null,
+    openNotes: full.open_notes ?? {} }
 }

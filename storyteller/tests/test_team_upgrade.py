@@ -56,6 +56,22 @@ def test_second_call_changes_nothing(old_team, monkeypatch):
     assert upgrade.ensure_current(old_team["id"]) is False
 
 
+def test_agent_from_other_project_with_matching_name_is_untouched(old_team):
+    """Steht ein fremder Agent (anderes Projekt) in allowed_specialists und heißt wie eine Rolle → nicht anfassen."""
+    from hydrahive.agents import config as ac
+    from hydrahive.projects import config as pc
+    from conftest import OTHER_PROJECT_ID
+    alien = ac.create(agent_type="specialist", name="Der Leuchtturm — Lektor", llm_model="claude-sonnet-4-6",
+                      tools=["shell_exec"], owner="other", temperature=0.7, max_tokens=1000, thinking_budget=0,
+                      project_id=OTHER_PROJECT_ID)
+    try:
+        pc.update(old_team["id"], allowed_specialists=[*old_team["allowed_specialists"], alien["id"]])
+        upgrade.ensure_current(old_team["id"])
+        assert ac.get(alien["id"])["tools"] == ["shell_exec"]
+    finally:
+        ac.delete(alien["id"])
+
+
 def test_foreign_agents_and_normal_projects_untouched(old_team):
     from hydrahive.agents import config as ac
     stranger = ac.create(agent_type="specialist", name="Fremder", llm_model="claude-sonnet-4-6", tools=["shell_exec"],

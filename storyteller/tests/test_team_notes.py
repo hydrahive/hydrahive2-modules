@@ -116,7 +116,9 @@ def test_parallel_adds_from_several_helpers_all_land():
         t.start()
     for t in threads:
         t.join()
-    assert not errors and len(team_notes.list_notes(PROJECT_ID, bid)) == 20
+    notes = team_notes.list_notes(PROJECT_ID, bid)
+    assert not errors and len(notes) == 20
+    assert sorted(n["seq"] for n in notes) == list(range(1, 21))      # Reihenfolge eindeutig (Sperre wirkt)
 
 
 def test_unknown_book_is_404():

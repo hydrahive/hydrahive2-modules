@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, FilePlus2, FolderPlus, Sparkles } from "luci
 import { storyApi, type Created } from "../api"
 import { defaultNames } from "../bookFactory"
 import { moveScene, nudgeScene, renameNode } from "../model"
+import { countByScene } from "../teamNotes"
 import type { BookState } from "../useBook"
 import { EntityList } from "./EntityList"
 
@@ -19,6 +20,8 @@ interface Props {
 export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity }: Props) {
   const { t } = useTranslation("storyteller")
   const { book, change } = state
+  // T1d: offene Hinweise je Szene – aus der geladenen Liste, bis dahin aus dem Öffnen des Buchs.
+  const noteCounts = state.notes ? countByScene(state.notes) : state.openNotesAtOpen
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   /** Szene/Kapitel legt der Server an (er vergibt IDs und Version); danach die neue Szene öffnen. */
@@ -102,6 +105,10 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
                       <Title id={s.id} title={s.title} cls="truncate" />
                       {(state.proposals[s.id] || state.infoProposals[s.id]) && (
                         <span className="st-has-proposal h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" title={t("proposal_ready_short")} />
+                      )}
+                      {(noteCounts[s.id] ?? 0) > 0 && (
+                        <span className="st-has-notes shrink-0 rounded-full bg-amber-400/20 px-1 text-[10px] leading-4 text-amber-200"
+                          title={t("team_open_n", { n: noteCounts[s.id] })}>{noteCounts[s.id]}</span>
                       )}
                       {s.origin !== "human" && (
                         <Sparkles className={`st-origin ml-auto h-3 w-3 shrink-0 ${s.origin === "ai_draft" ? "text-violet-300" : "text-violet-300/40"}`}

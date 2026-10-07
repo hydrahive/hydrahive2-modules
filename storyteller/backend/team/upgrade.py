@@ -48,7 +48,7 @@ def ensure_current(project_id: str) -> bool:
         _apply(project)
         project_config.update(project_id, metadata={**project["metadata"],
                                                     "storyteller": {**meta, "team_version": TEAM_VERSION}})
-    except Exception:
+    except Exception:  # noqa: BLE001 — Buch öffnen hat Vorrang; nächstes Öffnen versucht es erneut
         logger.exception("Schreib-Team in Projekt %s konnte nicht nachgezogen werden", project_id)
         return False
     logger.info("Schreib-Team in Projekt %s auf Version %d nachgezogen", project_id, TEAM_VERSION)

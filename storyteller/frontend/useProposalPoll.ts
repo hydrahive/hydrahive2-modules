@@ -3,18 +3,20 @@
 import { useCallback, useEffect } from "react"
 import { chatApi, proposalMarks } from "./chatApi"
 import { infoMarks } from "./infoProposal"
+import { notesApi } from "./teamNotes"
 import type { BookState } from "./useBook"
 
 export const POLL_MS = 10_000
 
 export function useProposalPoll(state: BookState, active: boolean) {
-  const { projectId, book, markProposals, setInfoProposals, setEntityProposals, setOutlineProposal } = state
+  const { projectId, book, markProposals, setInfoProposals, setEntityProposals, setOutlineProposal, setNotes } = state
   const poll = useCallback(async () => {
     try { markProposals(proposalMarks(await chatApi.proposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
     try { setInfoProposals(infoMarks(await chatApi.infoProposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
     try { setEntityProposals(await chatApi.entityProposals(projectId, book.id)) } catch { /* nächste Abfrage */ }
     try { setOutlineProposal(await chatApi.outlineProposal(projectId, book.id)) } catch { /* nächste Abfrage */ }
-  }, [projectId, book.id, markProposals, setInfoProposals, setEntityProposals, setOutlineProposal])
+    try { setNotes(await notesApi.list(projectId, book.id)) } catch { /* nächste Abfrage */ }   // T1d
+  }, [projectId, book.id, markProposals, setInfoProposals, setEntityProposals, setOutlineProposal, setNotes])
 
   useEffect(() => {
     if (!active) return

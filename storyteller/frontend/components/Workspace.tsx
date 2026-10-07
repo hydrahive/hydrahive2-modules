@@ -34,12 +34,13 @@ interface Props {
   infoProposals?: Record<string, InfoProposal>
   entityProposals?: EntityProposal[]
   outlineProposal?: OutlineProposal | null
+  openNotes?: Record<string, number>
   onClose: () => void
 }
 
-export function Workspace({ projectId, projectName, initial, versions, initialSceneId, canWrite, proposals, infoProposals, entityProposals, outlineProposal, onClose }: Props) {
+export function Workspace({ projectId, projectName, initial, versions, initialSceneId, canWrite, proposals, infoProposals, entityProposals, outlineProposal, openNotes, onClose }: Props) {
   const { t } = useTranslation("storyteller")
-  const state = useBook(projectId, initial, versions, { canWrite, proposals, infoProposals, entityProposals, outlineProposal })
+  const state = useBook(projectId, initial, versions, { canWrite, proposals, infoProposals, entityProposals, outlineProposal, openNotes })
   const { book } = state
   const first = allScenes(book)[0]?.scene.id ?? ""
   const [wanted, setSceneId] = useState(initialSceneId ?? first)
