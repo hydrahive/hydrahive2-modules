@@ -47,7 +47,7 @@ export function ChatMode({ state, scene }: Props) {
       {started && (
         <div className="st-chat-started space-y-2 rounded border border-violet-400/30 bg-violet-500/5 p-2">
           <p className="text-xs text-zinc-300">{t("chat_started")}</p>
-          <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded bg-black/30 p-2 text-xs text-zinc-200">{started.intro}</pre>
+          <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded bg-black/30 p-2 text-xs text-zinc-200">{started.intro}</pre>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => { void copy() }} className={`st-chat-copy ${btn} border border-white/10 text-zinc-200 hover:bg-white/5`}>
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{t(copied ? "chat_copied" : "chat_copy")}
