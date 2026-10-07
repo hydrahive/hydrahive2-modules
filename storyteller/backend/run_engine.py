@@ -23,6 +23,11 @@ def cancel(run_id: str) -> None:
     _cancelled.add(run_id)
 
 
+def live_ids() -> set[str]:
+    """IDs der Läufe, die in diesem Prozess gerade einen lebenden Task haben."""
+    return runs._live_run_ids()
+
+
 class _Stop(Exception):
     """Abbruch durch den Nutzer (innerhalb des Laufs)."""
 
