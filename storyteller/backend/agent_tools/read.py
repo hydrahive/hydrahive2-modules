@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
-from .. import interviews, proposals, proposals_info, storage
+from .. import interviews, proposals, proposals_entities, proposals_info, storage
 from .._files import StoryError
 from . import HINT, scope
 
@@ -40,6 +40,7 @@ async def _outline(args: dict, ctx: ToolContext) -> ToolResult:
     st = storage.get_structure(pid, book["id"])
     open_props = {p["scene_id"] for p in proposals.list_for_book(pid, book["id"])}
     open_infos = {p["scene_id"] for p in proposals_info.list_for_book(pid, book["id"])}
+    ents = {e["id"]: e["name"] for e in st.get("entities", [])}
 
     def scene(sid: str) -> dict:
         s = storage.get_scene(pid, book["id"], sid)
@@ -55,6 +56,9 @@ async def _outline(args: dict, ctx: ToolContext) -> ToolResult:
             for p in st["parts"]],
         "entities": [{"id": e["id"], "kind": e["kind"], "name": e["name"], "aliases": e.get("aliases", []),
                       "description": e.get("description", ""), "fields": e.get("fields", [])} for e in st.get("entities", [])],
+        "entity_proposals": [{"id": p["id"], "entity_id": p["entity_id"], "kind": p["kind"],
+                              "name": p["changes"].get("name") or ents.get(p["entity_id"], ""), "fields": list(p["changes"])}
+                             for p in proposals_entities.list_for_book(pid, book["id"])],
     })
 
 

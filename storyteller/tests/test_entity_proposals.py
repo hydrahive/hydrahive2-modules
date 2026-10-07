@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import pytest
-from conftest import PROJECT_ID
-
 from backend import proposals_entities as pe
 from backend import storage
 from backend._files import StoryError
 from backend.storage import Conflict
+from conftest import PROJECT_ID
 
 MIA = "e" * 32
 
@@ -44,7 +43,7 @@ def test_change_proposal_only_changed_fields_and_accept():
 
 
 def test_rejections():
-    bid, st = _book()
+    bid, _st = _book()
     cases = [
         (None, {"name": "Ohne Art"}, "entity_invalid"),
         (None, {"kind": "monster", "name": "X"}, "entity_invalid"),

@@ -37,7 +37,8 @@ def _intro(book: dict, scene: dict | None) -> str:
     return (f"Ich arbeite im Storyteller am Buch „{book['title']}“ (book_id {book['id']}).{where}\n"
             "Lies zuerst mit storyteller_outline die Gliederung und mit storyteller_read die Szene. "
             "Neuen Text legst du nur mit storyteller_propose_text als Vorschlag ab, Titel/Zusammenfassung/Perspektive "
-            "mit storyteller_propose_scene_info – ich übernehme sie im Storyteller.\n\n"
+            "mit storyteller_propose_scene_info, Steckbriefe mit storyteller_propose_entity – ich übernehme sie im "
+            "Storyteller.\n\n"
             "Meine Bitte: ")
 
 
