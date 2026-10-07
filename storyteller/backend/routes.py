@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from . import importer, proposals, storage
 from ._files import project_access
 from ._route_base import Auth, _call, _guard, _set
+from .chat_routes import router as chat_router
 from .ghost_routes import router as ghost_router
 from .interview_routes import router as interview_router
 from .run_routes import router as run_router
@@ -106,3 +107,4 @@ router.include_router(scenes_router)
 router.include_router(ghost_router)
 router.include_router(run_router)
 router.include_router(interview_router)
+router.include_router(chat_router)

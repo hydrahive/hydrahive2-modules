@@ -37,7 +37,11 @@ export interface ServerStructure {
   entities: ServerEntity[]
 }
 /** Abgelegter Ghostwriter-Vorschlag (Szene hatte Text oder wurde während des Laufs geändert). */
-export interface ProposalInfo { scene_id: string; run_id: string; model: string; base_version: number; words: number; at: string }
+export interface ProposalInfo {
+  scene_id: string; run_id: string; model: string; base_version: number; words: number; at: string
+  /** Ab 0.6.0: Herkunft (Ghostwriter-Lauf oder Agent im Chat), Chat-Sitzung, Notiz des Agenten. */
+  source?: "run" | "agent"; session_id?: string; note?: string
+}
 export interface ServerFull {
   book: ServerBook; structure: ServerStructure; scenes: Record<string, ServerScene>
   /** Ab 0.4.0: Schreibrecht im Projekt (Oberfläche sperrt Knöpfe) und offene Vorschläge. */

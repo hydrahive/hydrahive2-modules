@@ -24,14 +24,20 @@ def _words(text: str) -> int:
     return sum(1 for w in text.split() if any(c.isalnum() for c in w))
 
 
+SOURCES = ("run", "agent")
+
+
 def store(project_id: str, book_id: str, scene_id: str, text: str, *, run_id: str, model: str,
-          base_version: int) -> dict:
-    """Vorschlag ablegen (ersetzt einen älteren). Die Szene selbst wird nicht angefasst."""
+          base_version: int, source: str = "run", session_id: str = "", note: str = "") -> dict:
+    """Vorschlag ablegen (ersetzt einen älteren). Die Szene selbst wird nicht angefasst.
+    ``source``: run (Ghostwriter-Lauf) | agent (Agent im Chat, mit ``session_id``)."""
     meta_path, text_path = _paths(project_id, book_id, scene_id)
     if not isinstance(text, str) or len(text.encode("utf-8")) > MAX_SCENE_BYTES:
         raise StoryError("text_too_long")
+    if source not in SOURCES:
+        raise StoryError("source_invalid")
     meta = {"scene_id": scene_id, "run_id": run_id, "model": model, "base_version": base_version,
-            "words": _words(text), "at": _now()}
+            "words": _words(text), "at": _now(), "source": source, "session_id": session_id, "note": note}
     write_atomic(text_path, text)
     write_json(meta_path, meta)
     return meta
@@ -41,7 +47,7 @@ def get(project_id: str, book_id: str, scene_id: str) -> dict:
     meta_path, text_path = _paths(project_id, book_id, scene_id)
     if not meta_path.is_file() or not text_path.is_file():
         raise StoryError("proposal_not_found", 404)
-    return {**read_json(meta_path), "text": text_path.read_text(encoding="utf-8")}
+    return {"source": "run", "session_id": "", "note": "", **read_json(meta_path), "text": text_path.read_text(encoding="utf-8")}
 
 
 def list_for_book(project_id: str, book_id: str) -> list[dict]:
@@ -50,7 +56,7 @@ def list_for_book(project_id: str, book_id: str) -> list[dict]:
     out = []
     for p in sorted(d.glob("*.json")) if d.is_dir() else []:
         if p.with_suffix(".md").is_file():
-            out.append(read_json(p))
+            out.append({"source": "run", "session_id": "", "note": "", **read_json(p)})   # ältere ohne Herkunft
     return out
 
 
