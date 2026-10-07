@@ -53,7 +53,7 @@ export const textsDe = {
   add_chapter: "Kapitel hinzufügen",
   rename: "Umbenennen",
   remove_scene: "Szene löschen",
-  remove_scene_confirm: "Szene „{{title}}“ löschen?",
+  remove_scene_confirm: "Szene „{{title}}“ löschen? Text, Schnappschüsse und ein offener Vorschlag wandern in den Papierkorb des Projekts (storyteller/trash).",
   remove_scene_last: "Die letzte Szene eines Kapitels bleibt.",
   move_up: "Nach oben (Alt+↑)",
   move_down: "Nach unten (Alt+↓)",

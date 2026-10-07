@@ -7,6 +7,7 @@ from typing import Any
 from ._files import StoryError, new_id, read_json, scene_paths, text_sha, write_json, write_scene
 from ._ghost_settings import next_origin
 from ._locks import locked
+from ._trash import trash_scene
 from ._book import MAX_SCENE_BYTES, MAX_SCENES, Conflict, _clip, _existing, _now, book_dir
 
 logger = logging.getLogger(__name__)
@@ -107,8 +108,7 @@ def remove_scene(project_id: str, book_id: str, scene_id: str) -> dict:
     chapter["scenes"].remove(scene_id)
     st["version"] += 1
     write_json(d / "structure.json", st)
-    for p in scene_paths(d, scene_id):
-        p.unlink(missing_ok=True)
+    trash_scene(project_id, book_id, d, scene_id)   # Papierkorb statt endgültig löschen
     return st
 
 

@@ -20,6 +20,7 @@ from ._ghost_settings import ghost_of
 from ._locks import locked
 from ._names import KIND_LABEL, LANGUAGE_LABEL, is_fiction
 from ._think import strip_think
+from ._trash import trash_scene
 from .storage import Conflict
 
 MAX_CHAPTERS, MAX_SCENES_PER_CHAPTER = 40, 8
@@ -136,6 +137,5 @@ def apply(project_id: str, book_id: str, outline_data: dict, base_version: int) 
     st["version"] += 1
     write_json(d / "structure.json", st)
     if replace:
-        for p in (d / "scenes" / f"{ids[0]}.md", d / "scenes" / f"{ids[0]}.json"):
-            p.unlink(missing_ok=True)
+        trash_scene(project_id, book_id, d, ids[0])   # leere Platzhalter-Szene: Papierkorb wie jede gelöschte
     return {"structure": st, "scenes": {s: storage.get_scene(project_id, book_id, s) for s in created}}
