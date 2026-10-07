@@ -121,7 +121,7 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
         {error && <p className="px-1 pt-1 text-xs text-red-300">{error}</p>}
         <p className="px-1 pt-1 text-[11px] text-zinc-600">{t("drag_hint")} F2 · Alt+↑/↓</p>
       </div>
-      <EntityList book={book} activeId={entityId} onOpen={onOpenEntity} change={change} />
+      <EntityList book={book} activeId={entityId} onOpen={onOpenEntity} change={change} proposals={state.entityProposals} />
     </div>
   )
 }

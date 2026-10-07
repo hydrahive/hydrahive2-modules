@@ -1,6 +1,7 @@
 // Ghostwriter G4 – Chat mit dem Projekt-Agenten (Spec ghostwriter.md §11.3): Info, Sitzung anlegen,
 // offene Vorschläge nachfragen, fehlende Storyteller-Werkzeuge zuschalten (nur Admin, Kern-Route).
-import { authHeader, errorFrom, storyBase, StoryApiError, type ProposalInfo, type ServerScene } from "./api"
+import { authHeader, errorFrom, storyBase, StoryApiError, type ProposalInfo, type ServerScene, type ServerStructure } from "./api"
+import type { EntityProposal } from "./entityProposal"
 import type { InfoProposal } from "./infoProposal"
 import type { ProposalMark } from "./serverBook"
 
@@ -35,6 +36,11 @@ export const chatApi = {
   info: (pid: string, bid: string) => call<ChatInfo>(`${storyBase(pid, bid)}/chat`, "GET"),
   start: (pid: string, bid: string, sceneId: string) => call<ChatStart>(`${storyBase(pid, bid)}/chat`, "POST", { scene_id: sceneId }),
   proposals: (pid: string, bid: string) => call<ProposalInfo[]>(`${storyBase(pid, bid)}/proposals`, "GET"),
+  entityProposals: (pid: string, bid: string) => call<EntityProposal[]>(`${storyBase(pid, bid)}/proposals/entities`, "GET"),
+  acceptEntity: (pid: string, bid: string, id: string, baseVersion: number) =>
+    call<ServerStructure>(`${storyBase(pid, bid)}/proposals/entities/${encodeURIComponent(id)}/accept`, "POST", { base_version: baseVersion }),
+  discardEntity: (pid: string, bid: string, id: string) =>
+    call<{ ok: boolean }>(`${storyBase(pid, bid)}/proposals/entities/${encodeURIComponent(id)}`, "DELETE"),
   infoProposals: (pid: string, bid: string) => call<InfoProposal[]>(`${storyBase(pid, bid)}/proposals/info`, "GET"),
   acceptInfo: (pid: string, bid: string, sid: string, baseVersion: number, fields: string[]) =>
     call<ServerScene>(`${storyBase(pid, bid)}/proposals/${encodeURIComponent(sid)}/info/accept`, "POST", { base_version: baseVersion, fields }),

@@ -9,7 +9,7 @@ import type { BookState } from "./useBook"
 export const POLL_MS = 10_000
 
 export function useChatMode(state: BookState, sceneId: string) {
-  const { projectId, book, markProposals, setInfoProposals } = state
+  const { projectId, book, markProposals, setInfoProposals, setEntityProposals } = state
   const [info, setInfo] = useState<ChatInfo | null>(null)
   const [started, setStarted] = useState<ChatStart | null>(null)
   const [busy, setBusy] = useState(false)
@@ -22,7 +22,8 @@ export function useChatMode(state: BookState, sceneId: string) {
   const poll = useCallback(async () => {
     try { markProposals(proposalMarks(await chatApi.proposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
     try { setInfoProposals(infoMarks(await chatApi.infoProposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
-  }, [projectId, book.id, markProposals, setInfoProposals])
+    try { setEntityProposals(await chatApi.entityProposals(projectId, book.id)) } catch { /* nächste Abfrage */ }
+  }, [projectId, book.id, markProposals, setInfoProposals, setEntityProposals])
 
   useEffect(() => {
     let alive = true
