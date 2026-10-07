@@ -55,3 +55,18 @@ def test_tools_available_drops_missing_optional_tools():
     have = STORY | CORE_OK - {"research_report"}
     tools = team.available_tools(next(h for h in team.HELPERS if h.key == "research"), have)
     assert "research_report" not in tools and "web_search" in tools
+
+
+def test_version_2_gives_note_tools():
+    assert team.TEAM_VERSION == 2
+    by = {r.key: set(r.tools) for r in (team.AUTHOR, *team.HELPERS)}
+    for key, tools in by.items():
+        assert "storyteller_notes" in tools, key
+    for key in ("author", "plausibility", "research", "editor", "critic", "creative", "structure", "profiles"):
+        assert "storyteller_note" in by[key], key
+
+
+def test_prompts_ask_helpers_to_file_findings_as_notes():
+    for role in team.HELPERS:
+        assert "storyteller_note" in team.prompt_for(role, book_title="X"), role.key
+    assert "storyteller_notes" in team.prompt_for(team.AUTHOR, book_title="X")
