@@ -21,10 +21,11 @@ _PROJECT_ID_RE = re.compile(r"^[A-Za-z0-9-]{8,64}$")
 class StoryError(ValueError):
     """Ungültige Eingabe oder unbekanntes Objekt → HTTP 400/404."""
 
-    def __init__(self, code: str, status: int = 400):
+    def __init__(self, code: str, status: int = 400, detail: dict | None = None):
         super().__init__(code)
         self.code = code
         self.status = status
+        self.detail = detail or {}   # Zusatzangaben für Oberfläche/Agent (z. B. vorhandene Steckbrief-ID)
 
 
 def new_id() -> str:
