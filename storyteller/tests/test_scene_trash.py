@@ -1,9 +1,8 @@
 """Szene löschen verschiebt in den Papierkorb statt endgültig zu löschen (Fix 0.6.1, Task af55e68c)."""
 from __future__ import annotations
 
-from conftest import PROJECT_ID
-
 from backend import outline, proposals, snapshots, storage
+from conftest import PROJECT_ID
 
 
 def _book_with_scene():

@@ -16,12 +16,13 @@ _CLOSE_TAGS = ("</think>", "</thinking>")
 
 
 def _partial_tag(buf: str, tags: tuple[str, ...]) -> str:
-    """Ende von ``buf``, das der Anfang eines Tags sein könnte (ab dem letzten „<“), sonst ""."""
+    """Ende von ``buf``, das der Anfang eines Tags sein könnte (ab dem letzten „<“), sonst "".
+    Vollständige Tags kommen hier nie an – die findet vorher der reguläre Ausdruck."""
     i = buf.rfind("<")
     if i < 0:
         return ""
     tail = buf[i:].lower()
-    return buf[i:] if any(t.startswith(tail) and t != tail for t in tags) else ""
+    return buf[i:] if any(t.startswith(tail) for t in tags) else ""
 
 
 class ThinkFilter:

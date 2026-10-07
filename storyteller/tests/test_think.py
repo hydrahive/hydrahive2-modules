@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from backend import ghost
 from backend._think import ThinkFilter, strip_think
 from backend.ai import clean_proposal
@@ -82,3 +81,23 @@ async def test_write_scene_thought_in_the_middle_of_a_section(monkeypatch):
     m = ghost.Material("s", "fill", "sys", "prompt")
     out = "".join([p async for p in ghost.write_scene(m, model=None, length_words=60, chunk_words=60)])
     assert "nachdenken" not in out and "<think" not in out and "Dann ging sie schlafen." in out
+
+
+def test_filter_end_releases_held_back_text_and_drops_partial_close():
+    f = ThinkFilter()
+    assert f.feed("Er schrieb ein Herz: <") == "Er schrieb ein Herz: "
+    assert f.end() == "<"
+    g = ThinkFilter()
+    assert g.feed("Text<think>denkt noch</thi") == "Text"
+    assert g.end() == ""                                 # offener Block samt halbem Schlusstag fällt weg
+
+
+async def test_write_scene_releases_text_held_back_at_the_very_end(monkeypatch):
+    for text in (BODY + "und dann <", "Kurz <"):          # langer Abschnitt (gesendet) und kurzer (nur im Puffer)
+        async def fake_stream(messages, model=None, temperature=0.7, max_tokens=4096, text=text):
+            for i in range(0, len(text), 9):
+                yield text[i:i + 9]
+        monkeypatch.setattr(ghost, "stream", fake_stream)
+        m = ghost.Material("s", "fill", "sys", "prompt")
+        out = "".join([p async for p in ghost.write_scene(m, model=None, length_words=60, chunk_words=60)])
+        assert out.rstrip().endswith("<"), text
