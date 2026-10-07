@@ -6,11 +6,12 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from . import importer, proposals, storage
+from . import importer, proposals, proposals_info, storage
 from ._files import project_access
 from ._route_base import Auth, _call, _guard, _set
 from .chat_routes import router as chat_router
 from .ghost_routes import router as ghost_router
+from .info_routes import router as info_router
 from .interview_routes import router as interview_router
 from .run_routes import router as run_router
 from .routes_scenes import router as scenes_router
@@ -80,7 +81,8 @@ def open_book(project_id: str, book_id: str, auth: Auth):
                 "scenes": {s: storage.get_scene(project_id, book_id, s) for s in ids},
                 # Oberfläche sperrt Knöpfe für Leser (der Server prüft trotzdem jeden Aufruf).
                 "can_write": project_access(auth[0], auth[1], project_id, "write") == "ok",
-                "proposals": proposals.list_for_book(project_id, book_id)}
+                "proposals": proposals.list_for_book(project_id, book_id),
+                "info_proposals": proposals_info.list_for_book(project_id, book_id)}
     return _call(_all)
 
 
@@ -105,6 +107,7 @@ def put_structure(project_id: str, book_id: str, body: StructureIn, auth: Auth):
 
 router.include_router(scenes_router)
 router.include_router(ghost_router)
+router.include_router(info_router)   # vor run_router: …/proposals/info
 router.include_router(run_router)
 router.include_router(interview_router)
 router.include_router(chat_router)
