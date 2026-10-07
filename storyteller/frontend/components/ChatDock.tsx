@@ -29,6 +29,8 @@ export function ChatDock({ state, sceneId, width, onWidth, onClose }: Props) {
 
   // Die Kern-Chatansicht merkt sich die offene Sitzung je Projekt (Cockpit, nach F5). Das Fenster darf den Merker
   // des Cockpits nicht auf die Storyteller-Sitzung umbiegen → beim Öffnen sichern, beim Schließen zurückschreiben.
+  // Ab Kern mit metadata.embedded_in (Task 8fd82c02, Server setzt es in chat_routes) übergeht der Kern die
+  // Buch-Sitzung von selbst; dieser Schutz bleibt für ältere Kerne.
   useEffect(() => keepCockpitSession(state.projectId), [state.projectId])
 
   const drag = (e: React.PointerEvent<HTMLDivElement>) => {
