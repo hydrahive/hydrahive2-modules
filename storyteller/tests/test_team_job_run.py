@@ -61,6 +61,29 @@ def test_done_sets_status_session_summary_tokens_and_cost(helper, monkeypatch):
     assert s.title.startswith("Storyteller-Auftrag: Szene prüfen")
 
 
+def test_summary_is_only_the_last_answer_not_all_rounds(helper, monkeypatch):
+    """Echter Lauf auf hydratest: „Ich lese zuerst …parallel.Der Widerspruch …“ – Zwischentexte gehören nicht dazu."""
+    from hydrahive.runner.events import Done, MessageStart, TextDelta
+    # Mit Streaming liefert der Kern NUR TextDelta (TextBlock nur im Nicht-Streaming-Fallback, runner/_call.py).
+    monkeypatch.setattr(team_job_run, "_runner", lambda: _fake([
+        MessageStart(), TextDelta(text="Ich lese zuerst."),
+        MessageStart(), TextDelta(text="Ein Widerspruch "), TextDelta(text="abgelegt."),
+        Done(message_id="m", iterations=2)]))
+    bid, job = _job(helper)
+    _run(bid, job)
+    assert team_jobs.get(PROJECT_ID, bid, job["id"])["summary"] == "Ein Widerspruch abgelegt."
+
+
+def test_last_round_without_text_keeps_earlier_text(helper, monkeypatch):
+    """Endet der Lauf mit einer Runde ohne Text (nur Werkzeug), bleibt der letzte Text stehen."""
+    from hydrahive.runner.events import Done, MessageStart, TextDelta
+    monkeypatch.setattr(team_job_run, "_runner", lambda: _fake([
+        MessageStart(), TextDelta(text="Zwei Hinweise abgelegt."), MessageStart(), Done(message_id="m", iterations=2)]))
+    bid, job = _job(helper)
+    _run(bid, job)
+    assert team_jobs.get(PROJECT_ID, bid, job["id"])["summary"] == "Zwei Hinweise abgelegt."
+
+
 def test_session_is_guarded_against_a_second_run(helper, monkeypatch):
     """Während der Helfer läuft, darf niemand über den Chat einen zweiten Lauf auf derselben Sitzung starten."""
     from hydrahive.runner import concurrency

@@ -37,19 +37,23 @@ def _cost(model: str, done) -> int | None:
 async def _drive(project_id: str, book_id: str, job: dict, agent: dict, task: str) -> None:
     from hydrahive.db import sessions as sessions_db
     from hydrahive.runner.concurrency import session_run_guard
-    from hydrahive.runner.events import Done, Error, TextBlock, TextDelta
+    from hydrahive.runner.events import Done, Error, MessageStart, TextBlock, TextDelta
     label = jobs_catalog.get(job["job"]).label
     session = sessions_db.create(agent_id=agent["id"], user_id=job["user"], project_id=project_id,
                                  title=f"Storyteller-Auftrag: {label} – {job['place_title']}"[:200],
                                  metadata={"storyteller_job": job["id"], "storyteller_book": book_id, **_EMBED})
     team_jobs.set_running(project_id, book_id, job["id"], session_id=session.id)
-    text, block, done, error = [], "", None, ""
+    # Zusammenfassung = Text der LETZTEN Antwortrunde mit Text (Zwischensätze wie „Ich lese zuerst …“ nicht).
+    rounds: list[str] = [""]
+    done, error = None, ""
     async with session_run_guard(session.id):     # wie der Chat: kein zweiter Lauf auf derselben Sitzung
         async for ev in _runner()(session.id, task):
-            if isinstance(ev, TextDelta):
-                text.append(ev.text)
-            elif isinstance(ev, TextBlock):
-                block = ev.text
+            if isinstance(ev, MessageStart):
+                rounds.append("")
+            elif isinstance(ev, TextDelta):
+                rounds[-1] += ev.text
+            elif isinstance(ev, TextBlock):       # ohne Streaming: ganzer Text der Runde auf einmal
+                rounds[-1] = ev.text
             elif isinstance(ev, Done):
                 done = ev
             elif isinstance(ev, Error):
@@ -57,7 +61,7 @@ async def _drive(project_id: str, book_id: str, job: dict, agent: dict, task: st
     if error or done is None:
         team_jobs.finish(project_id, book_id, job["id"], status="error", error=error or "Lauf ohne Ergebnis beendet")
         return
-    team_jobs.finish(project_id, book_id, job["id"], status="done", summary=(block or "".join(text)).strip(),
+    team_jobs.finish(project_id, book_id, job["id"], status="done", summary=next((r for r in reversed(rounds) if r.strip()), "").strip(),
                      tokens_in=done.input_tokens + done.cache_read_tokens + done.cache_creation_tokens,
                      tokens_out=done.output_tokens, cost_micros=_cost(agent.get("llm_model") or "", done))
 
