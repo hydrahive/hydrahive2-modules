@@ -4,9 +4,8 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from conftest import PROJECT_ID
-
 from backend import storage, team_job_run, team_jobs
+from conftest import PROJECT_ID
 
 FIELDS = {"job": "check_scene", "role": "plausibility", "agent_name": "T — Plausibilität", "place_id": "s1",
           "place_title": "Am Hafen", "estimate_micros": 1, "user": "testuser"}
@@ -53,7 +52,7 @@ def test_done_sets_status_session_summary_tokens_and_cost(helper, monkeypatch):
     assert out["status"] == "done" and out["summary"] == "Zwei Befunde."
     assert out["tokens_in"] == 1050 and out["tokens_out"] == 200
     assert out["cost_micros"] is not None and out["cost_micros"] > 0
-    session_id, text, kw = seen[0]
+    session_id, text, _kw = seen[0]
     assert out["session_id"] == session_id and text == "Prüfe."
     from hydrahive.db import sessions as sdb
     s = sdb.get(session_id)

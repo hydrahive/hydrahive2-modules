@@ -81,7 +81,7 @@ async def execute(project_id: str, book_id: str, job_id: str, *, task: str) -> N
     except asyncio.CancelledError:
         team_jobs.finish(project_id, book_id, job_id, status="cancelled")
         raise
-    except Exception as exc:  # Lauf-Grenze: Fehler lesbar speichern, Server läuft weiter
+    except Exception as exc:  # noqa: BLE001 — Lauf-Grenze: Fehler lesbar speichern, Server läuft weiter
         logger.warning("storyteller: Team-Auftrag %s fehlgeschlagen: %s", job_id, exc)
         team_jobs.finish(project_id, book_id, job_id, status="error", error=str(exc)[:300] or exc.__class__.__name__)
 
@@ -127,7 +127,7 @@ async def recover_stale_jobs() -> int:
                 continue
             try:
                 n += team_jobs.mark_stale(project["id"], d.name, live_ids=live)
-            except Exception:  # noqa: BLE001 — ein Buch darf die Bereinigung der anderen nicht verhindern
+            except Exception:  # ein Buch darf die Bereinigung der anderen nicht verhindern
                 logger.exception("storyteller: Team-Aufträge in %s/%s nicht bereinigt", project["id"], d.name)
     if n:
         logger.warning("storyteller: %d abgebrochene Team-Aufträge bereinigt", n)

@@ -13,7 +13,7 @@ from . import runs, team_job_run
 from .agent_tools import TOOLS
 from .routes import router
 
-__all__ = ["router", "register"]
+__all__ = ["register", "router"]
 
 
 def register(ctx) -> None:

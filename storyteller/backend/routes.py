@@ -21,11 +21,11 @@ from .chat_routes import router as chat_router
 from .ghost_routes import router as ghost_router
 from .interview_routes import router as interview_router
 from .note_routes import router as note_router
-from .team_job_routes import router as team_job_router
 from .proposal_routes import router as proposal_router
 from .routes_scenes import router as scenes_router
 from .run_routes import router as run_router
 from .team import upgrade as team_upgrade
+from .team_job_routes import router as team_job_router
 from .team_routes import router as team_router
 
 router = APIRouter()

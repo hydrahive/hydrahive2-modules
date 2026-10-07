@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from backend import team
 from backend._files import StoryError
 from backend.team import jobs_catalog as cat

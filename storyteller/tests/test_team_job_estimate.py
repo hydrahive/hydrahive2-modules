@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import pytest
-from conftest import PROJECT_ID
-
 from backend import scenes, storage, team_job_estimate
 from backend._files import StoryError
 from backend.team import jobs_catalog as cat
+from conftest import PROJECT_ID
 
 
 def _book_with_text(words: int = 1000):

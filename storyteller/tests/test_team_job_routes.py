@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 import pytest
-from conftest import MOD_PREFIX, PROJECT_ID
-
 from backend import storage, team, team_job_run, team_jobs
+from conftest import MOD_PREFIX, PROJECT_ID
 
 P = f"{MOD_PREFIX}/projects/{PROJECT_ID}"
 

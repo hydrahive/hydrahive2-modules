@@ -2,17 +2,15 @@
 from __future__ import annotations
 
 import pytest
-from conftest import OTHER_PROJECT_ID
-
 from backend import team
 from backend.team import setup
+from conftest import OTHER_PROJECT_ID
 
 
 @pytest.fixture(autouse=True)
 def _tools(monkeypatch):
-    from hydrahive.tools import REGISTRY
-
     from backend.agent_tools import TOOLS
+    from hydrahive.tools import REGISTRY
     for t in TOOLS:
         monkeypatch.setitem(REGISTRY, t.name, t)
 

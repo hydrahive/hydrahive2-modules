@@ -4,10 +4,9 @@ from __future__ import annotations
 import threading
 
 import pytest
-from conftest import PROJECT_ID
-
 from backend import storage, team_jobs
 from backend._files import StoryError
+from conftest import PROJECT_ID
 
 FIELDS = {"job": "check_scene", "role": "plausibility", "agent_id": "a1", "agent_name": "T — Plausibilität",
           "place_id": "s1", "place_title": "Am Hafen", "estimate_micros": 1200, "user": "testuser"}

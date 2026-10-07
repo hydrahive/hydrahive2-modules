@@ -4,24 +4,21 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from backend import storage, team_job_run, team_jobs
 
 
 @pytest.fixture(autouse=True)
 def _tools(monkeypatch):
-    from hydrahive.tools import REGISTRY
-
     from backend.agent_tools import TOOLS
+    from hydrahive.tools import REGISTRY
     for t in TOOLS:
         monkeypatch.setitem(REGISTRY, t.name, t)
 
 
 @pytest.fixture
 def book_project():
-    from hydrahive.projects import config as pc
-
     from backend.team import setup
+    from hydrahive.projects import config as pc
     out = setup.create_book_project("testuser", {"title": "T", "kind": "novel", "language": "de"}, model="m")
     yield out["project_id"], out["book"]["id"]
     pc.delete(out["project_id"])

@@ -17,7 +17,7 @@ def test_status_reports_draft(client, auth_headers):
 def test_register_adds_router_migrations_and_recovery_job():
     """Ohne Migration gibt es keine Lauf-Tabelle, ohne Job bleiben Läufe nach einem Neustart „laufend“."""
     import backend
-    from backend import runs
+    from backend import runs, team_job_run
 
     seen = {"routers": [], "migrations": [], "jobs": []}
 
@@ -37,7 +37,8 @@ def test_register_adds_router_migrations_and_recovery_job():
     backend.register(Ctx())
     assert seen["routers"] == [backend.router]
     assert seen["migrations"] == ["migrations"]
-    assert seen["jobs"] == [("recover_stale_runs", runs.recover_stale_runs, 0)]
+    assert seen["jobs"] == [("recover_stale_runs", runs.recover_stale_runs, 0),
+                            ("recover_stale_team_jobs", team_job_run.recover_stale_jobs, 0)]
     assert seen["tools"] == ["storyteller_books", "storyteller_outline", "storyteller_read", "storyteller_propose_text",
                              "storyteller_propose_scene_info", "storyteller_propose_entity",
                              "storyteller_propose_outline", "storyteller_note", "storyteller_notes"]
