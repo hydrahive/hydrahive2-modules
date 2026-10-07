@@ -9,7 +9,7 @@ Agent-Werkzeuge für den Chat (agent_tools/).
 """
 from __future__ import annotations
 
-from . import runs
+from . import runs, team_job_run
 from .agent_tools import TOOLS
 from .routes import router
 
@@ -21,6 +21,9 @@ def register(ctx) -> None:
     ctx.register_migrations("migrations")
     # Ghostwriter-Läufe ohne lebenden Task (Dienst neu gestartet) als abgebrochen markieren.
     ctx.register_job("recover_stale_runs", runs.recover_stale_runs, interval_seconds=300, initial_delay_seconds=0)
+    # Team-Aufträge (T1e) ebenso: nach einem Neustart kein ewiges „läuft …“.
+    ctx.register_job("recover_stale_team_jobs", team_job_run.recover_stale_jobs, interval_seconds=300,
+                     initial_delay_seconds=0)
     # Agent im Chat (G4): Bücher lesen, Szenentext als Vorschlag ablegen. Nie direkt ins Buch schreiben.
     for tool in TOOLS:
         ctx.register_tool(tool)

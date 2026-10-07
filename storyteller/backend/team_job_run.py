@@ -106,3 +106,29 @@ def cancel(project_id: str, book_id: str, job_id: str) -> bool:
 def live_ids() -> set[str]:
     return {t.get_name().removeprefix(TASK_PREFIX) for t in asyncio.all_tasks()
             if not t.done() and t.get_name().startswith(TASK_PREFIX)}
+
+
+async def recover_stale_jobs() -> int:
+    """Aufträge ohne lebenden Lauf (Dienst neu gestartet) beenden – nur in Buch-Projekten (``metadata.storyteller``).
+
+    Andere Projekte werden nicht angefasst (``story_root`` würde dort sonst Ordner anlegen). Ein kaputtes Buch hält die
+    übrigen nicht auf."""
+    from hydrahive.projects import config as project_config
+
+    from ._book import books_dir
+    await asyncio.sleep(0)
+    live, n = live_ids(), 0
+    for project in project_config.list_all():
+        if not isinstance((project.get("metadata") or {}).get("storyteller"), dict):
+            continue
+        root = books_dir(project["id"])
+        for d in sorted(root.iterdir()) if root.is_dir() else []:
+            if not (d / "jobs").is_dir():
+                continue
+            try:
+                n += team_jobs.mark_stale(project["id"], d.name, live_ids=live)
+            except Exception:  # noqa: BLE001 — ein Buch darf die Bereinigung der anderen nicht verhindern
+                logger.exception("storyteller: Team-Aufträge in %s/%s nicht bereinigt", project["id"], d.name)
+    if n:
+        logger.warning("storyteller: %d abgebrochene Team-Aufträge bereinigt", n)
+    return n
