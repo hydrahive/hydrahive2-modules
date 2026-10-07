@@ -60,7 +60,7 @@ export function ChatDock({ state, sceneId, width, onWidth, onClose }: Props) {
       {error && <p className="m-3 text-xs text-red-200" role="alert">{t(`ai_err_${error.code}`, { defaultValue: error.message || error.code })}</p>}
       {/* Kopf der Kern-Chatansicht ist für das breite Cockpit gebaut (Knopfleiste ~730 px, schrumpft nicht). Im schmalen
           Fenster darf die Kopfzeile umbrechen: Titel/Modell oben, Knöpfe darunter – statt den Titel zusammenzuquetschen. */}
-      <div className="st-chat-dock-body min-h-0 flex-1 [&_h2]:whitespace-normal [&_div:has(>h2)]:min-w-[12rem] [&_div:has(>div>h2)]:flex-wrap [&_div:has(>div>h2)]:py-2">
+      <div className="st-chat-dock-body min-h-0 flex-1 [&_h2]:whitespace-normal [&_div:has(>h2)]:min-w-[12rem] [&_div:has(>div>h2)]:flex-wrap [&_div:has(>div>h2)]:py-2 [&_div:has(>div>h2)>div:last-child]:shrink [&_div:has(>div>h2)>div:last-child]:flex-wrap">
         {sessionId && info?.agent ? (
           <ChatPane key={sessionId} projectId={state.projectId} showSidePanels={false} preferredAgentId={info.agent.id}
             agentSelectionExplicit openSessionRequest={request} onSessionRequestHandled={() => setRequest(null)} />
