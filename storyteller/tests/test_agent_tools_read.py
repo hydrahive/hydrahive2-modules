@@ -34,7 +34,7 @@ def _tool(name):
 
 async def test_no_project_in_session_gives_clear_message():
     res = await _tool("storyteller_books").execute({}, _ctx(project_id=None))
-    assert not res.success and "Projekt" in res.error
+    assert not res.success and "keinem Projekt" in res.error and "Kein Zugriff" not in res.error
 
 
 async def test_non_member_gets_no_access_and_no_details():

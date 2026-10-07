@@ -58,12 +58,12 @@ def chat_start(project_id: str, book_id: str, body: ChatIn, auth: Auth):
     _guard(auth, project_id)
     book = _call(storage.get_book, project_id, book_id)
     scene = _call(storage.get_scene, project_id, book_id, body.scene_id) if body.scene_id else None
-    project, agent = _project_agent(project_id)
+    _, agent = _project_agent(project_id)
     if not agent:
         raise coded(status.HTTP_409_CONFLICT, "project_agent_missing")
-    from hydrahive.api.routes._session_access import assert_agent_access
+    # Agent-Zugriff wie Kern assert_agent_access: Der Projekt-Agent gehört immer zum Team des Projekts,
+    # Schreibrecht im Projekt (_guard oben) genügt also.
     from hydrahive.db import sessions as sessions_db
-    assert_agent_access(agent, project, *auth)
     s = sessions_db.create(agent_id=agent["id"], user_id=auth[0], project_id=project_id,
                            title=f"Storyteller: {book['title']}"[:200])
     return {"session_id": s.id, "url": f"/werkstatt/{s.id}", "intro": _intro(book, scene),

@@ -70,6 +70,8 @@ def test_unknown_scene_and_book(client, auth_headers, project_agent):
     bid, _ = _book()
     assert client.post(f"{P}/books/{bid}/chat", json={"scene_id": "f" * 32}, headers=auth_headers).status_code == 404
     assert client.post(f"{P}/books/{'f' * 32}/chat", json={}, headers=auth_headers).status_code == 404
+    assert client.get(f"{P}/books/{'f' * 32}/chat", headers=auth_headers).status_code == 404
+    assert client.get(f"{P}/books/{'f' * 32}/proposals", headers=auth_headers).status_code == 404
 
 
 def test_project_without_agent_is_clear(client, auth_headers, setup_test_env):
@@ -95,3 +97,10 @@ def test_proposals_list_route_for_polling(client, auth_headers, project_agent):
     proposals.store(PROJECT_ID, bid, sid, "Vom Agenten.", run_id="", model="", base_version=1, source="agent", session_id="s1")
     r = client.get(f"{P}/books/{bid}/proposals", headers=auth_headers)
     assert r.status_code == 200 and r.json()[0]["scene_id"] == sid and r.json()[0]["source"] == "agent"
+
+
+def test_foreign_user_sees_neither_chat_info_nor_proposals(client, other_headers, project_agent):
+    bid, _ = _book()
+    assert client.get(f"{P}/books/{bid}/chat", headers=other_headers).status_code == 404
+    assert client.get(f"{P}/books/{bid}/proposals", headers=other_headers).status_code == 404
+    assert client.get(f"{P}/books/{'f' * 32}/proposals", headers=other_headers).status_code == 404

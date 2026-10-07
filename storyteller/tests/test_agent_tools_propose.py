@@ -51,7 +51,8 @@ async def test_reader_cannot_propose():
 async def test_non_member_and_no_project():
     bid, sid, _ = _book()
     assert not (await PROPOSE.execute({"book_id": bid, "scene_id": sid, "text": "X"}, _ctx(user="other"))).success
-    assert not (await PROPOSE.execute({"book_id": bid, "scene_id": sid, "text": "X"}, _ctx(project_id=None))).success
+    res = await PROPOSE.execute({"book_id": bid, "scene_id": sid, "text": "X"}, _ctx(project_id=None))
+    assert not res.success and "keinem Projekt" in res.error
     assert proposals.list_for_book(PROJECT_ID, bid) == []
 
 
@@ -84,3 +85,13 @@ def test_old_proposals_without_source_read_as_run():
     meta.write_text(json.dumps(raw))
     assert proposals.get(PROJECT_ID, bid, sid)["source"] == "run"
     assert proposals.list_for_book(PROJECT_ID, bid)[0]["source"] == "run"
+
+
+def test_store_rejects_unknown_source():
+    import pytest
+
+    from backend._files import StoryError
+    bid, sid, s = _book()
+    with pytest.raises(StoryError) as exc:
+        proposals.store(PROJECT_ID, bid, sid, "x", run_id="", model="", base_version=s["version"], source="hacker")
+    assert exc.value.code == "source_invalid" and proposals.list_for_book(PROJECT_ID, bid) == []
