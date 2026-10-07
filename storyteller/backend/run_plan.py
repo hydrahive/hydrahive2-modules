@@ -4,6 +4,7 @@ from __future__ import annotations
 from . import _cost, ghost, storage
 from ._files import StoryError
 from ._ghost_settings import ghost_of
+from .interview_ai import interview_material
 from .runs import MAX_RUN_SCENES
 
 SCOPES = ("chapter", "from", "book")
@@ -26,22 +27,39 @@ def scenes_in_scope(project_id: str, book_id: str, scope: str, chapter_id: str |
     raise StoryError("scope_invalid")
 
 
+def interview_for(project_id: str, book_id: str, source: str, scope: str, chapter_id: str | None):
+    """Quelle „interview“ (G3): nur für ein Kapitel und nur mit mindestens einer Antwort."""
+    if source == "outline":
+        return None
+    if source != "interview":
+        raise StoryError("source_invalid")
+    if scope != "chapter" or not chapter_id:
+        raise StoryError("interview_needs_chapter")
+    iv = interview_material(project_id, book_id, chapter_id)
+    if iv.empty:
+        raise StoryError("interview_empty")
+    return iv
+
+
 def plan(project_id: str, book_id: str, *, scope: str, chapter_id: str | None = None, scene_id: str | None = None,
-         skip_filled: bool = True, length_words: int | None = None) -> dict:
-    """Szenen zum Schreiben + Schätzung. Übersprungen: ohne Zusammenfassung, mit Text (wenn gewünscht)."""
+         skip_filled: bool = True, length_words: int | None = None, source: str = "outline") -> dict:
+    """Szenen zum Schreiben + Schätzung. Übersprungen: ohne Zusammenfassung (außer Quelle Interview), mit Text
+    (wenn gewünscht)."""
     book = storage.get_book(project_id, book_id)
+    iv = interview_for(project_id, book_id, source, scope, chapter_id)
     todo, filled, no_summary = [], 0, 0
     tin = tout = 0
     for sid in scenes_in_scope(project_id, book_id, scope, chapter_id, scene_id):
         s = storage.get_scene(project_id, book_id, sid)
-        if not s["summary"].strip():
+        if not s["summary"].strip() and iv is None:
             no_summary += 1
             continue
         if s["text"].strip() and skip_filled:
             filled += 1
             continue
         length, chunk = ghost.plan_lengths(book, length_words)
-        e = _cost.scene_estimate(ghost.build_material(project_id, book_id, sid), length_words=length, chunk_words=chunk)
+        e = _cost.scene_estimate(ghost.build_material(project_id, book_id, sid, interview=iv), length_words=length,
+                                 chunk_words=chunk)
         tin, tout = tin + e["input_tokens"], tout + e["output_tokens"]
         todo.append(sid)
     if len(todo) > MAX_RUN_SCENES:
