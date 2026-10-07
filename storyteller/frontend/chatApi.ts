@@ -4,7 +4,7 @@ import { authHeader, errorFrom, storyBase, StoryApiError, type ProposalInfo, typ
 import type { EntityProposal } from "./entityProposal"
 import type { Outline } from "./outlineModel"
 import type { InfoProposal } from "./infoProposal"
-import type { ProposalMark } from "./serverBook"
+import { markOf, type ProposalMark } from "./proposalMark"
 
 /** G4d: offener Gliederungs-Vorschlag des Agenten (genau einer je Buch). */
 export interface OutlineProposal { outline: Outline; base_structure_version: number; source: "run" | "agent"; session_id: string; note: string; at: string }
@@ -27,7 +27,7 @@ async function call<T>(url: string, method: string, body?: unknown): Promise<T> 
 /** Offene Vorschläge als Markierungen je Szene (Herkunft „agent“ oder „run“). */
 export function proposalMarks(list: ProposalInfo[]): Record<string, ProposalMark> {
   const out: Record<string, ProposalMark> = {}
-  for (const p of list) out[p.scene_id] = { words: p.words, model: p.model, at: p.at, source: p.source ?? "run", note: p.note ?? "" }
+  for (const p of list) out[p.scene_id] = markOf(p)
   return out
 }
 

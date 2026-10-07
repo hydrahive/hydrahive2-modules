@@ -137,6 +137,7 @@ export const ghostEn: GhostTexts = {
   chat_proposals_hint: "New proposals from the agent appear here automatically (checked every 10 seconds).",
   proposal_from_agent: "Proposal from the agent in chat ({{words}} words). Your text stays until you accept.",
   proposal_note: "Agent's note: {{note}}",
+  proposal_shrinks: "Careful: the proposal has only {{words}} words, the scene has {{scene}}. Accepting replaces the whole scene – view it first.",
   ai_err_project_agent_missing: "This project has no project agent.",
   ai_err_agent_no_access: "No access to the project agent.",
   info_proposal_title: "Proposal from the agent for this scene",

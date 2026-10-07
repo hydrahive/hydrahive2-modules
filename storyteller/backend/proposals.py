@@ -26,20 +26,23 @@ def _words(text: str) -> int:
 
 
 SOURCES = ("run", "agent")
+_DEFAULTS = {"source": "run", "session_id": "", "note": "", "scene_words": 0}   # ältere Vorschläge ohne diese Felder
 
 
 @locked
 def store(project_id: str, book_id: str, scene_id: str, text: str, *, run_id: str, model: str,
-          base_version: int, source: str = "run", session_id: str = "", note: str = "") -> dict:
+          base_version: int, source: str = "run", session_id: str = "", note: str = "", scene_words: int = 0) -> dict:
     """Vorschlag ablegen (ersetzt einen älteren). Die Szene selbst wird nicht angefasst.
-    ``source``: run (Ghostwriter-Lauf) | agent (Agent im Chat, mit ``session_id``)."""
+    ``source``: run (Ghostwriter-Lauf) | agent (Agent im Chat, mit ``session_id``).
+    ``scene_words``: Wortzahl der Szene beim Ablegen – die Oberfläche warnt, wenn der Vorschlag viel kürzer ist."""
     meta_path, text_path = _paths(project_id, book_id, scene_id)
     if not isinstance(text, str) or len(text.encode("utf-8")) > MAX_SCENE_BYTES:
         raise StoryError("text_too_long")
     if source not in SOURCES:
         raise StoryError("source_invalid")
     meta = {"scene_id": scene_id, "run_id": run_id, "model": model, "base_version": base_version,
-            "words": _words(text), "at": _now(), "source": source, "session_id": session_id, "note": note}
+            "words": _words(text), "at": _now(), "source": source, "session_id": session_id, "note": note,
+            "scene_words": scene_words}
     write_atomic(text_path, text)
     write_json(meta_path, meta)
     return meta
@@ -49,7 +52,7 @@ def get(project_id: str, book_id: str, scene_id: str) -> dict:
     meta_path, text_path = _paths(project_id, book_id, scene_id)
     if not meta_path.is_file() or not text_path.is_file():
         raise StoryError("proposal_not_found", 404)
-    return {"source": "run", "session_id": "", "note": "", **read_json(meta_path), "text": text_path.read_text(encoding="utf-8")}
+    return {**_DEFAULTS, **read_json(meta_path), "text": text_path.read_text(encoding="utf-8")}
 
 
 def list_for_book(project_id: str, book_id: str) -> list[dict]:
@@ -60,7 +63,7 @@ def list_for_book(project_id: str, book_id: str) -> list[dict]:
         if p.name.endswith(".meta.json") or p.name == "outline.json":   # Szenen-Infos (G4b), Gliederung (G4d)
             continue
         if p.with_suffix(".md").is_file():
-            out.append({"source": "run", "session_id": "", "note": "", **read_json(p)})   # ältere ohne Herkunft
+            out.append({**_DEFAULTS, **read_json(p)})   # ältere ohne Herkunft
     return out
 
 

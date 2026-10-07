@@ -8,8 +8,8 @@ describe("chatApi", () => {
       { scene_id: "a", run_id: "", model: "", base_version: 2, words: 40, at: "t1", source: "agent", session_id: "s", note: "kürzer" },
       { scene_id: "b", run_id: "r", model: "m", base_version: 1, words: 9, at: "t2" },
     ])).toEqual({
-      a: { words: 40, model: "", at: "t1", source: "agent", note: "kürzer" },
-      b: { words: 9, model: "m", at: "t2", source: "run", note: "" },
+      a: { words: 40, model: "", at: "t1", source: "agent", note: "kürzer", sceneWords: 0 },
+      b: { words: 9, model: "m", at: "t2", source: "run", note: "", sceneWords: 0 },
     })
     expect(proposalMarks([])).toEqual({})
   })

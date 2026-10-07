@@ -2,6 +2,7 @@
 // verschachtelten Buchmodell der Oberfläche. Rein, ohne React → testbar.
 import type { ServerBook, ServerFull, ServerScene, ServerStructure } from "./api"
 import { infoMarks } from "./infoProposal"
+import { markOf, type ProposalMark } from "./proposalMark"
 import { allScenes, GHOST_EMPTY, type Book, type GhostSettings, type Scene } from "./model"
 
 export interface Versions { book: number; structure: number; scenes: Record<string, number> }
@@ -112,8 +113,7 @@ export function toImport(book: Book) {
   }
 }
 
-/** Kurzinfo eines abgelegten Vorschlags je Szene (für den Hinweis an der Szene). */
-export interface ProposalMark { words: number; model: string; at: string; source?: "run" | "agent"; note?: string }
+export type { ProposalMark } from "./proposalMark"
 
 /** Alles, was beim Öffnen gebraucht wird: Buch, Versionen, Schreibrecht, offene Vorschläge.
  *  Ältere Server (vor 0.4.0) liefern die neuen Felder nicht: dann Schreiben erlaubt, keine Vorschläge. */
@@ -121,7 +121,7 @@ export function openedFromServer(full: ServerFull) {
   const { book, versions } = fromServer(full)
   const proposals: Record<string, ProposalMark> = {}
   for (const p of full.proposals ?? []) {
-    proposals[p.scene_id] = { words: p.words, model: p.model, at: p.at, source: p.source ?? "run", note: p.note ?? "" }
+    proposals[p.scene_id] = markOf(p)
   }
   return { book, versions, canWrite: full.can_write ?? true, proposals, infoProposals: infoMarks(full.info_proposals),
     entityProposals: full.entity_proposals ?? [], outlineProposal: full.outline_proposal ?? null }
