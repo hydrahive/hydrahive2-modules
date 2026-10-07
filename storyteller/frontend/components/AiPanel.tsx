@@ -1,5 +1,5 @@
-// Reiter „KI“: oben die Modus-Auswahl (Spec ghostwriter.md §2). Noch nicht gebaute Modi stehen mit
-// „kommt bald“ da. Die Buchart wählt vor: Roman/Geschichte mit leerer Szene → Szene schreiben,
+// Reiter „KI“: oben die Modus-Auswahl (Spec ghostwriter.md §2). Noch nicht gebaute Modi stünden mit
+// „kommt bald“ da (seit G4 sind alle gebaut). Die Buchart wählt vor: Roman/Geschichte mit leerer Szene → Szene schreiben,
 // Sach-/Lernbuch → Interview, sonst Bearbeiten.
 import { useState, type MutableRefObject } from "react"
 import { useTranslation } from "react-i18next"
@@ -7,6 +7,7 @@ import type { Editor } from "@tiptap/react"
 import { isFiction } from "../bookFactory"
 import type { Scene } from "../model"
 import type { BookState } from "../useBook"
+import { ChatMode } from "./ChatMode"
 import { EditMode } from "./EditMode"
 import { GhostChapterMode } from "./GhostChapterMode"
 import { GhostSceneMode } from "./GhostSceneMode"
@@ -15,7 +16,7 @@ import { InterviewMode } from "./InterviewMode"
 export type AiMode = "edit" | "scene" | "chapter" | "interview" | "chat"
 const MODES: { id: AiMode; ready: boolean }[] = [
   { id: "edit", ready: true }, { id: "scene", ready: true }, { id: "chapter", ready: true },
-  { id: "interview", ready: true }, { id: "chat", ready: false },
+  { id: "interview", ready: true }, { id: "chat", ready: true },
 ]
 
 interface Props {
@@ -48,6 +49,7 @@ export function AiPanel({ state, scene, editorRef, onGoScene, onOpenScene }: Pro
       {mode === "scene" && <GhostSceneMode key={scene.id} state={state} scene={scene} onGoScene={onGoScene} />}
       {mode === "chapter" && <GhostChapterMode key={scene.id} state={state} scene={scene} onOpenScene={onOpenScene} />}
       {mode === "interview" && <InterviewMode key={scene.id} state={state} scene={scene} onOpenScene={onOpenScene} />}
+      {mode === "chat" && <ChatMode key={scene.id} state={state} scene={scene} />}
     </div>
   )
 }

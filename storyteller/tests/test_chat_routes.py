@@ -4,9 +4,8 @@ from __future__ import annotations
 import json
 
 import pytest
-from conftest import MOD_PREFIX, OTHER_PROJECT_ID, PROJECT_ID
-
 from backend import storage
+from conftest import MOD_PREFIX, OTHER_PROJECT_ID, PROJECT_ID
 
 P = f"{MOD_PREFIX}/projects/{PROJECT_ID}"
 

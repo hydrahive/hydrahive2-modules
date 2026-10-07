@@ -37,7 +37,7 @@ def scope(ctx: ToolContext, need: str = "read") -> tuple[str | None, ToolResult 
     return pid, None
 
 
-from .propose import PROPOSE_TEXT  # noqa: E402
-from .read import BOOKS, OUTLINE, READ  # noqa: E402
+from .propose import PROPOSE_TEXT
+from .read import BOOKS, OUTLINE, READ
 
 TOOLS = [BOOKS, OUTLINE, READ, PROPOSE_TEXT]

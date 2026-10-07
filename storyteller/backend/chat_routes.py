@@ -7,9 +7,8 @@ Rechte wie die Kern-Route POST /api/sessions: Schreibrecht im Projekt + Zugriff 
 from __future__ import annotations
 
 from fastapi import APIRouter, status
-from pydantic import BaseModel, Field
-
 from hydrahive.api.middleware.errors import coded
+from pydantic import BaseModel, Field
 
 from . import proposals, storage
 from ._files import project_access

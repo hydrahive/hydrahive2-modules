@@ -112,13 +112,15 @@ export function toImport(book: Book) {
 }
 
 /** Kurzinfo eines abgelegten Vorschlags je Szene (für den Hinweis an der Szene). */
-export interface ProposalMark { words: number; model: string; at: string }
+export interface ProposalMark { words: number; model: string; at: string; source?: "run" | "agent"; note?: string }
 
 /** Alles, was beim Öffnen gebraucht wird: Buch, Versionen, Schreibrecht, offene Vorschläge.
  *  Ältere Server (vor 0.4.0) liefern die neuen Felder nicht: dann Schreiben erlaubt, keine Vorschläge. */
 export function openedFromServer(full: ServerFull) {
   const { book, versions } = fromServer(full)
   const proposals: Record<string, ProposalMark> = {}
-  for (const p of full.proposals ?? []) proposals[p.scene_id] = { words: p.words, model: p.model, at: p.at }
+  for (const p of full.proposals ?? []) {
+    proposals[p.scene_id] = { words: p.words, model: p.model, at: p.at, source: p.source ?? "run", note: p.note ?? "" }
+  }
   return { book, versions, canWrite: full.can_write ?? true, proposals }
 }

@@ -4,10 +4,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from conftest import OTHER_PROJECT_ID, PROJECT_ID
-
 from backend import interviews, proposals, storage
 from backend.agent_tools import TOOLS, read
+from conftest import OTHER_PROJECT_ID, PROJECT_ID
 
 
 def _ctx(project_id=PROJECT_ID, user="testuser"):
@@ -60,7 +59,7 @@ async def test_books_lists_with_words():
 
 
 async def test_outline_structure_entities_origin_and_proposal_flag():
-    bid, cid, s1, s2 = _book()
+    bid, _cid, s1, s2 = _book()
     proposals.store(PROJECT_ID, bid, s2, "Vorschlag", run_id="r", model="m", base_version=1)
     res = await _tool("storyteller_outline").execute({"book_id": bid}, _ctx())
     assert res.success
@@ -81,7 +80,7 @@ async def test_outline_unknown_book_is_clear():
 
 
 async def test_read_scenes_with_limit_and_cut_hint(monkeypatch):
-    bid, cid, s1, s2 = _book()
+    bid, _cid, s1, s2 = _book()
     monkeypatch.setattr(read, "MAX_TEXT", 20)
     res = await _tool("storyteller_read").execute({"book_id": bid, "scene_ids": [s1, s2]}, _ctx(user="reader"))
     assert res.success
@@ -91,7 +90,7 @@ async def test_read_scenes_with_limit_and_cut_hint(monkeypatch):
 
 
 async def test_read_limits_number_and_unknown_scene():
-    bid, cid, s1, s2 = _book()
+    bid, _cid, s1, _s2 = _book()
     many = await _tool("storyteller_read").execute({"book_id": bid, "scene_ids": [s1] * 4}, _ctx())
     assert not many.success and "3" in many.error
     unknown = await _tool("storyteller_read").execute({"book_id": bid, "scene_ids": ["a" * 32]}, _ctx())

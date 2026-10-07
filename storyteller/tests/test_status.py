@@ -56,10 +56,9 @@ def test_core_access_filter_maps_tools_to_storyteller_capability():
     nutzen darf, dessen Agenten bekommen sie)."""
     from pathlib import Path
 
+    from backend.agent_tools import TOOLS
     from hydrahive.access.capabilities import Catalog
     from hydrahive.modules.manifest import ModuleManifest
-
-    from backend.agent_tools import TOOLS
     cat = Catalog.with_core()
     cat.register_module(ModuleManifest.load(Path(__file__).resolve().parents[1] / "manifest.json"))
     for t in TOOLS:

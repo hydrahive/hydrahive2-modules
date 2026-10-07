@@ -1,4 +1,4 @@
-// Ghostwriter G2 – Hinweis über dem Editor: „KI-Vorschlag liegt bereit“ (Spec §9.3). Ansehen, Übernehmen
+// Ghostwriter G2 – Hinweis über dem Editor: „KI-Vorschlag liegt bereit“ (Spec §9.3); seit G4 auch vom Agenten im Chat. Ansehen, Übernehmen
 // (Server legt vorher einen Schnappschuss an, Versionsprüfung) oder Verwerfen. Die Szene bleibt bis dahin unberührt.
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -43,7 +43,7 @@ export function ProposalBanner({ state, sceneId, mark }: Props) {
     <div className="st-proposal-banner mx-auto mb-4 max-w-3xl space-y-2 rounded-lg border border-violet-400/40 bg-violet-500/10 px-3 py-2 text-sm text-violet-100">
       <div className="flex flex-wrap items-center gap-2">
         <Sparkles className="h-4 w-4 shrink-0 text-violet-300" />
-        <span className="flex-1">{t("proposal_ready", { words: mark.words })}</span>
+        <span className="flex-1">{t(mark.source === "agent" ? "proposal_from_agent" : "proposal_ready", { words: mark.words })}</span>
         <button onClick={() => { void view() }} className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs hover:bg-white/10">
           {text === null ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}{t(text === null ? "proposal_view" : "proposal_hide")}
         </button>
@@ -56,6 +56,7 @@ export function ProposalBanner({ state, sceneId, mark }: Props) {
           </button>
         </>}
       </div>
+      {mark.note && <p className="st-proposal-note text-xs text-violet-200/80">{t("proposal_note", { note: mark.note })}</p>}
       {text !== null && <div className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded bg-black/20 p-2 font-serif text-sm leading-relaxed text-zinc-200">{text}</div>}
       {error && <p className="text-xs text-red-200" role="alert">{error}</p>}
     </div>

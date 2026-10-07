@@ -3,10 +3,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from conftest import PROJECT_ID
-
 from backend import proposals, storage
 from backend.agent_tools import TOOLS
+from conftest import PROJECT_ID
 
 
 def _ctx(user="testuser", project_id=PROJECT_ID, session="sess-42"):
@@ -89,7 +88,6 @@ def test_old_proposals_without_source_read_as_run():
 
 def test_store_rejects_unknown_source():
     import pytest
-
     from backend._files import StoryError
     bid, sid, s = _book()
     with pytest.raises(StoryError) as exc:
