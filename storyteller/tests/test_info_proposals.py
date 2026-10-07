@@ -101,3 +101,33 @@ def test_text_list_ignores_info_even_if_a_meta_md_exists():
     proposals_info.store(PROJECT_ID, bid, sid, {"title": "Neu"}, base_version=s["version"])
     (storage.book_dir(PROJECT_ID, bid) / "proposals" / f"{sid}.meta.md").write_text("x", encoding="utf-8")
     assert proposals.list_for_book(PROJECT_ID, bid) == []
+
+
+def test_get_and_discard_on_unknown_scene_are_404_not_silent():
+    bid, _, _ = _scene()
+    for fn in (proposals_info.get, proposals_info.discard):
+        with pytest.raises(StoryError) as exc:
+            fn(PROJECT_ID, bid, "f" * 32)
+        assert exc.value.code == "scene_not_found"
+
+
+def test_accept_holds_the_lock_so_a_new_info_proposal_survives(monkeypatch):
+    """Wie 0.6.1: zwischen Speichern und Aufräumen legt der Agent einen neuen Infos-Vorschlag ab – der bleibt."""
+    import threading
+    import time
+    bid, sid, s = _scene()
+    proposals_info.store(PROJECT_ID, bid, sid, {"title": "Erster"}, base_version=s["version"])
+    real = proposals_info.save_scene
+
+    def slow(*a, **kw):
+        out = real(*a, **kw)
+        time.sleep(0.3)
+        return out
+    monkeypatch.setattr(proposals_info, "save_scene", slow)
+    t = threading.Thread(target=lambda: proposals_info.accept(PROJECT_ID, bid, sid, base_version=s["version"]))
+    t.start()
+    time.sleep(0.1)
+    proposals_info.store(PROJECT_ID, bid, sid, {"summary": "Zweiter Vorschlag"}, base_version=s["version"] + 1)
+    t.join()
+    assert storage.get_scene(PROJECT_ID, bid, sid)["title"] == "Erster"
+    assert proposals_info.get(PROJECT_ID, bid, sid)["fields"] == {"summary": "Zweiter Vorschlag"}

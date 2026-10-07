@@ -6,7 +6,7 @@ Herkunft des Szenentexts bleibt dabei unverändert. Alle Änderungen unter der S
 """
 from __future__ import annotations
 
-from ._book import Conflict, _existing, _now
+from ._book import _existing, _now
 from ._files import StoryError, check_id, inside, read_json, write_json
 from ._locks import locked
 from .proposals import SOURCES
@@ -72,9 +72,7 @@ def accept(project_id: str, book_id: str, scene_id: str, base_version: int, fiel
     chosen = list(proposal["fields"]) if fields is None else fields
     if not chosen or any(f not in proposal["fields"] for f in chosen):
         raise StoryError("fields_invalid")
-    current = get_scene(project_id, book_id, scene_id)
-    if current["version"] != base_version:
-        raise Conflict(current)
+    # Versionsprüfung macht save_scene (unter derselben Sperre) → Conflict, Vorschlag bleibt.
     saved = save_scene(project_id, book_id, scene_id, {k: proposal["fields"][k] for k in chosen}, base_version=base_version)
     _path(project_id, book_id, scene_id).unlink(missing_ok=True)
     return saved
