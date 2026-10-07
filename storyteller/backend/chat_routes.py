@@ -32,7 +32,7 @@ BOOK_KEY = "storyteller_book"   # Kennzeichen in session.metadata: zu welchem Bu
 
 def _book_session(username: str, agent_id: str, project_id: str, book_id: str):
     from hydrahive.db import sessions as sessions_db
-    return next((s for s in sessions_db.list_for_user(username, limit=200)    # neueste zuerst
+    return next((s for s in sessions_db.list_for_user(username, limit=500)    # neueste zuerst
                  if s.agent_id == agent_id and s.project_id == project_id and s.metadata.get(BOOK_KEY) == book_id), None)
 
 
@@ -79,6 +79,9 @@ def chat_start(project_id: str, book_id: str, body: ChatIn, auth: Auth):
     from hydrahive.db import sessions as sessions_db
     s = _book_session(auth[0], agent["id"], project_id, book_id) if body.reuse else None
     reused = s is not None
+    if reused:
+        # nach vorn: die Kern-Chatansicht lädt nur die neuesten Sitzungen des Nutzers (GET /api/sessions, 50)
+        sessions_db.touch(s.id)
     if s is None:
         s = sessions_db.create(agent_id=agent["id"], user_id=auth[0], project_id=project_id,
                                title=f"Storyteller: {book['title']}"[:200], metadata={BOOK_KEY: book_id})

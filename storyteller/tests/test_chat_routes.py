@@ -142,3 +142,17 @@ def test_reuse_only_own_session_same_book_agent_and_project(client, auth_headers
 def test_reuse_respects_reader_rights(client, reader_headers, project_agent):
     bid, _ = _book()
     assert client.post(f"{P}/books/{bid}/chat", json={"reuse": True}, headers=reader_headers).status_code == 403
+
+
+def test_reuse_moves_the_session_to_the_front(client, auth_headers, project_agent):
+    """Fund 07.10.: Die Kern-Chatansicht lädt nur die neuesten Sitzungen – die wiederverwendete muss vorn stehen."""
+    import time
+
+    from hydrahive.db import sessions as sessions_db
+    bid, _ = _book()
+    story = client.post(f"{P}/books/{bid}/chat", json={}, headers=auth_headers).json()["session_id"]
+    time.sleep(0.01)
+    newer = sessions_db.create(agent_id=project_agent["id"], user_id="testuser", project_id=PROJECT_ID, title="Anderer Chat")
+    assert sessions_db.list_for_user("testuser")[0].id == newer.id
+    r = client.post(f"{P}/books/{bid}/chat", json={"reuse": True}, headers=auth_headers).json()
+    assert r["session_id"] == story and sessions_db.list_for_user("testuser")[0].id == story
