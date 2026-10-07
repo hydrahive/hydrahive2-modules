@@ -1,12 +1,16 @@
 """Storyteller — Szenen: lesen, speichern (mit Versionsprüfung), anlegen, löschen; Kapitel anlegen."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
-from ._files import StoryError, new_id, read_json, scene_paths, write_json, write_scene
+from ._files import StoryError, new_id, read_json, scene_paths, text_sha, write_json, write_scene
 from ._ghost_settings import next_origin
+from ._locks import locked
+from ._trash import trash_scene
 from ._book import MAX_SCENE_BYTES, MAX_SCENES, Conflict, _clip, _existing, _now, book_dir
 
+logger = logging.getLogger(__name__)
 _SCENE_FIELDS = {"title": 200, "summary": 2000, "pov": 200}
 _STATUSES = ("idea", "draft", "revised", "done")
 
@@ -15,9 +19,17 @@ def get_scene(project_id: str, book_id: str, scene_id: str) -> dict:
     d = _existing(project_id, book_id)
     meta_path, text_path = scene_paths(d, scene_id)
     meta = read_json(meta_path)
-    return {"origin": "human", **meta, "text": text_path.read_text(encoding="utf-8") if text_path.exists() else ""}
+    text = text_path.read_text(encoding="utf-8") if text_path.exists() else ""
+    sha = meta.pop("text_sha", None)
+    if sha is not None and sha != text_sha(text):
+        # Absturz zwischen Text und Infos: der Text auf der Platte gilt (nichts geht verloren), das nächste
+        # Speichern erhöht die Version und schreibt den Hash neu.
+        logger.warning("storyteller: Szene %s/%s – Text passt nicht zur gespeicherten Version %s",
+                       book_id, scene_id, meta.get("version"))
+    return {"origin": "human", **meta, "text": text}
 
 
+@locked
 def save_scene(project_id: str, book_id: str, scene_id: str, data: dict[str, Any], base_version: int) -> dict:
     current = get_scene(project_id, book_id, scene_id)
     if current["version"] != base_version:
@@ -38,6 +50,7 @@ def save_scene(project_id: str, book_id: str, scene_id: str, data: dict[str, Any
     return {**meta, "text": text}
 
 
+@locked
 def add_scene(project_id: str, book_id: str, chapter_id: str, title: str = "", after: str | None = None) -> dict:
     d = _existing(project_id, book_id)
     st = read_json(d / "structure.json")
@@ -60,6 +73,7 @@ def add_scene(project_id: str, book_id: str, chapter_id: str, title: str = "", a
     return {"scene": {**meta, "text": ""}, "structure": st}
 
 
+@locked
 def add_chapter(project_id: str, book_id: str, part_id: str, title: str, scene_title: str) -> dict:
     """Neues Kapitel am Ende des Teils, mit einer leeren Szene (ein Kapitel ist nie leer)."""
     d = _existing(project_id, book_id)
@@ -82,6 +96,7 @@ def add_chapter(project_id: str, book_id: str, part_id: str, title: str, scene_t
     return {"scene": {**meta, "text": ""}, "structure": st}
 
 
+@locked
 def remove_scene(project_id: str, book_id: str, scene_id: str) -> dict:
     d = _existing(project_id, book_id)
     st = read_json(d / "structure.json")
@@ -93,8 +108,7 @@ def remove_scene(project_id: str, book_id: str, scene_id: str) -> dict:
     chapter["scenes"].remove(scene_id)
     st["version"] += 1
     write_json(d / "structure.json", st)
-    for p in scene_paths(d, scene_id):
-        p.unlink(missing_ok=True)
+    trash_scene(project_id, book_id, d, scene_id)   # Papierkorb statt endgültig löschen
     return st
 
 

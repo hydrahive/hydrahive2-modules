@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from ._book import MAX_SCENE_BYTES, _existing
 from ._files import StoryError, check_id, inside, write_atomic
+from ._locks import locked
 
 MAX_SNAPSHOTS = 50
 _STAMP_RE = re.compile(r"^\d{8}T\d{12}$")
@@ -19,6 +20,7 @@ def _dir(project_id: str, book_id: str, scene_id: str):
     return d, inside(d, "snapshots", scene_id)
 
 
+@locked
 def add_snapshot(project_id: str, book_id: str, scene_id: str, text: str | None = None) -> dict:
     """Stand der Szene sichern – oder ``text`` (z. B. die eigene Fassung bei einem Konflikt)."""
     d, snap_dir = _dir(project_id, book_id, scene_id)

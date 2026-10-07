@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from ._book import MAX_SCENE_BYTES, Conflict, _existing, _now
 from ._files import StoryError, check_id, inside, read_json, write_atomic, write_json
+from ._locks import locked
 from .scenes import get_scene, save_scene
 from .snapshots import add_snapshot
 
@@ -27,6 +28,7 @@ def _words(text: str) -> int:
 SOURCES = ("run", "agent")
 
 
+@locked
 def store(project_id: str, book_id: str, scene_id: str, text: str, *, run_id: str, model: str,
           base_version: int, source: str = "run", session_id: str = "", note: str = "") -> dict:
     """Vorschlag ablegen (ersetzt einen älteren). Die Szene selbst wird nicht angefasst.
@@ -60,11 +62,13 @@ def list_for_book(project_id: str, book_id: str) -> list[dict]:
     return out
 
 
+@locked
 def discard(project_id: str, book_id: str, scene_id: str) -> None:
     for p in _paths(project_id, book_id, scene_id):
         p.unlink(missing_ok=True)
 
 
+@locked
 def accept(project_id: str, book_id: str, scene_id: str, base_version: int) -> dict:
     """Vorschlag einsetzen: Versionsprüfung (der Autor muss den aktuellen Stand kennen), Schnappschuss
     des bisherigen Texts, Text + Herkunft „KI-Entwurf“, dann Vorschlag löschen."""
