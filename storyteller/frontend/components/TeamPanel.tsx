@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { AlertTriangle, Check, ChevronDown, ChevronRight, ExternalLink, Lightbulb, X } from "lucide-react"
 import { filterNotes, notesApi, safeUrl, type NoteScope, type TeamNote } from "../teamNotes"
 import type { BookState } from "../useBook"
+import { NoteText } from "./NoteText"
 
 interface Props { state: BookState; sceneId: string; onOpenScene: (id: string) => void }
 const SCOPES: NoteScope[] = ["scene", "chapter", "book"]
@@ -70,7 +71,7 @@ export function TeamPanel({ state, sceneId, onOpenScene }: Props) {
                 </button>
                 {open && (
                   <div className="mt-2 space-y-2 pl-6">
-                    <p className="whitespace-pre-wrap text-zinc-300">{n.text}</p>
+                    <NoteText text={n.text} />
                     {n.sources.length > 0 && (
                       <ul className="space-y-0.5 text-xs">
                         {n.sources.map((s, i) => {
