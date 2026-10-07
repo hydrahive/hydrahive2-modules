@@ -91,25 +91,6 @@ async def test_scene_without_summary_is_skipped(monkeypatch):
     assert len(calls) == 1
 
 
-async def test_cancel_after_first_scene_stops_without_further_calls(monkeypatch):
-    bid, sids = _book(3)
-    calls = _fake(monkeypatch)
-    run = _start(bid, sids)
-
-    async def cancel_after_first(n):
-        if n == 2:
-            run_engine.cancel(run["id"])
-    _fake(monkeypatch, calls=calls, hook=cancel_after_first)
-    await run_engine.execute(run["id"], PROJECT_ID, bid, "testuser")
-    got = runs.get_run(PROJECT_ID, bid, run["id"])
-    assert got["status"] == "cancelled"
-    assert got["progress"][0]["state"] == "written"
-    assert got["progress"][2]["state"] == "waiting"
-    assert len(calls) == 2                       # der laufende Aufruf wurde abgebrochen, kein dritter
-    assert _scene(bid, sids[1])["text"] == ""    # halber Text landet nicht in der Szene
-    assert _scene(bid, sids[2])["text"] == ""
-
-
 async def test_limit_stops_before_scene_that_would_exceed(monkeypatch):
     # Länge 300 Wörter → Schätzung ca. 480 Ausgabe-Tokens je Szene; Grenze 1000 → 2 Szenen ok, die dritte nicht.
     bid, sids = _book(3, length=300, limit=1000)

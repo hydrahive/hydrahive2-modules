@@ -161,8 +161,6 @@ def test_reader_and_foreign_project(client, auth_headers, reader_headers, other_
     assert client.post(f"{base}/ghost/run", json={"scope": "book", "confirm": True}, headers=reader_headers).status_code == 403
     assert client.post(f"{base}/ghost/outline", json={"chapters": 1, "scenes_per_chapter": 1},
                        headers=reader_headers).status_code == 403
-    assert client.post(f"{base}/proposals/{sids[0]}/accept", json={"base_version": 1},
-                       headers=reader_headers).status_code == 403
     assert client.get(f"{base}/ghost/run/estimate", params={"scope": "book"}, headers=reader_headers).status_code == 200
     assert client.get(f"{base}/ghost/run", headers=other_headers).status_code == 404
     other = f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/books/{bid}/ghost/run"

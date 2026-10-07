@@ -74,3 +74,15 @@ def test_outline_llm_error_is_readable_and_frees_lock(client, auth_headers, monk
     r = client.post(f"{P}/books/{b['id']}/ghost/outline", json={"chapters": 1, "scenes_per_chapter": 1}, headers=auth_headers)
     assert r.status_code == 502 and r.json()["detail"]["code"] == "llm_failed"
     assert ("testuser", b["id"]) not in ai._busy
+
+
+def test_reader_can_view_but_not_accept_or_discard_proposal(client, auth_headers, reader_headers):
+    bid, _, sids = _book(1)
+    proposals.store(PROJECT_ID, bid, sids[0], "KI", run_id="r", model="m", base_version=2)
+    base = f"{P}/books/{bid}/proposals/{sids[0]}"
+    assert client.get(base, headers=reader_headers).json()["text"] == "KI"
+    r = client.post(f"{base}/accept", json={"base_version": 2}, headers=reader_headers)
+    assert r.status_code == 403 and r.json()["detail"]["code"] == "project_read_only"
+    assert client.delete(base, headers=reader_headers).status_code == 403
+    assert storage.get_scene(PROJECT_ID, bid, sids[0])["text"] == ""
+    assert proposals.get(PROJECT_ID, bid, sids[0])["text"] == "KI"

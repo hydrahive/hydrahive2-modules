@@ -66,13 +66,15 @@ def test_discard_only_removes_proposal():
     proposals.discard(PROJECT_ID, bid, sid)   # zweimal: kein Fehler
 
 
-@pytest.mark.parametrize("bad", ["../x", "a" * 31, "Z" * 32])
+@pytest.mark.parametrize("bad", ["../x", "a" * 31, "Z" * 32, "..", "a" * 32 + "/../b"])
 def test_invalid_scene_ids_are_rejected(bad):
+    """Erst die ID-Prüfung (scene_invalid), der Pfadschutz ist nur die zweite Sicherung."""
     bid, _, _ = _book_with_text()
-    with pytest.raises(StoryError):
-        proposals.store(PROJECT_ID, bid, bad, "x", run_id="r", model="", base_version=1)
-    with pytest.raises(StoryError):
-        proposals.get(PROJECT_ID, bid, bad)
+    for call in (lambda: proposals.store(PROJECT_ID, bid, bad, "x", run_id="r", model="", base_version=1),
+                 lambda: proposals.get(PROJECT_ID, bid, bad), lambda: proposals.discard(PROJECT_ID, bid, bad)):
+        with pytest.raises(StoryError) as e:
+            call()
+        assert e.value.code == "scene_invalid"
 
 
 def test_unknown_scene_is_rejected():
