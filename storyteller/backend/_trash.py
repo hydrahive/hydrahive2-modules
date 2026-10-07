@@ -4,6 +4,7 @@
         <szene>.md, <szene>.json      Text und Infos
         snapshots/*.md                Schnappschüsse
         proposal.md, proposal.json    offener KI-Vorschlag (falls vorhanden)
+        proposal.info.json            offener Vorschlag für Szenen-Infos (G4b)
 Wiederherstellen gibt es (noch) nicht in der Oberfläche; die Dateien sind vollständig da.
 Aufrufer hält die Sperre des Buchs.
 """
@@ -25,7 +26,8 @@ def trash_scene(project_id: str, book_id: str, book_dir: Path, scene_id: str) ->
              (inside(book_dir, "scenes", f"{scene_id}.json"), target / f"{scene_id}.json"),
              (inside(book_dir, "snapshots", scene_id), target / "snapshots"),
              (inside(book_dir, "proposals", f"{scene_id}.md"), target / "proposal.md"),
-             (inside(book_dir, "proposals", f"{scene_id}.json"), target / "proposal.json")]
+             (inside(book_dir, "proposals", f"{scene_id}.json"), target / "proposal.json"),
+             (inside(book_dir, "proposals", f"{scene_id}.meta.json"), target / "proposal.info.json")]
     for src, dst in moves:
         if src.exists():
             shutil.move(str(src), str(dst))

@@ -40,7 +40,8 @@ def test_chat_info_lists_agent_and_missing_tools(client, auth_headers, reader_he
     assert r.status_code == 200
     info = r.json()
     assert info["agent"] == {"id": project_agent["id"], "name": "Projekt-Agent Story"}
-    assert info["tools_missing"] == ["storyteller_outline", "storyteller_read", "storyteller_propose_text"]
+    assert info["tools_missing"] == ["storyteller_outline", "storyteller_read", "storyteller_propose_text",
+                                     "storyteller_propose_scene_info"]
     assert info["can_start"] is False                          # Leser
 
 

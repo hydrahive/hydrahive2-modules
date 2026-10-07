@@ -67,7 +67,7 @@ async def test_outline_structure_entities_origin_and_proposal_flag():
     scenes = [s for p in o["parts"] for c in p["chapters"] for s in c["scenes"]]
     assert [s["id"] for s in scenes] == [s1, s2]
     assert scenes[0] == {"id": s1, "title": scenes[0]["title"], "summary": "Mia kommt an.", "pov": "", "status": scenes[0]["status"],
-                         "origin": "human", "words": 12, "has_proposal": False}
+                         "origin": "human", "words": 12, "has_proposal": False, "has_info_proposal": False}
     assert scenes[1]["has_proposal"] is True
     assert o["entities"][0]["name"] == "Mia" and o["entities"][0]["description"] == "Zwölf."
     dumped = json.dumps(o)                          # muss serialisierbar sein
