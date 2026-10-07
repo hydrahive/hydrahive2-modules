@@ -170,3 +170,12 @@ def test_proposal_ids_are_checked_no_path_escape():
             with pytest.raises(StoryError):
                 fn(PROJECT_ID, bid, bad)
     assert (storage.book_dir(PROJECT_ID, bid) / "structure.json").is_file()
+
+
+def test_list_keeps_creation_order_within_the_same_second(monkeypatch):
+    """Fund 07.10.: Zeitstempel nur sekundengenau → Vorschläge aus derselben Sekunde standen in Zufallsreihenfolge."""
+    from backend import proposals_entities as mod
+    monkeypatch.setattr(mod, "_now", lambda: "2026-10-07T12:00:00+00:00")
+    bid, _ = _book()
+    ids = [pe.store(PROJECT_ID, bid, None, {"kind": "item", "name": f"Ding {i}"})["id"] for i in range(12)]
+    assert [p["id"] for p in pe.list_for_book(PROJECT_ID, bid)] == ids

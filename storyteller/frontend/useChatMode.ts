@@ -2,14 +2,14 @@
 // Tab öffnen, solange der Modus offen ist alle 10 s nach neuen Vorschlägen des Agenten fragen (Spec §11.3).
 import { useCallback, useEffect, useState } from "react"
 import { StoryApiError } from "./api"
-import { chatApi, proposalMarks, type ChatInfo, type ChatStart } from "./chatApi"
-import { infoMarks } from "./infoProposal"
+import { chatApi, type ChatInfo, type ChatStart } from "./chatApi"
 import type { BookState } from "./useBook"
+import { useProposalPoll } from "./useProposalPoll"
 
-export const POLL_MS = 10_000
+export { POLL_MS } from "./useProposalPoll"
 
 export function useChatMode(state: BookState, sceneId: string) {
-  const { projectId, book, markProposals, setInfoProposals, setEntityProposals, setOutlineProposal } = state
+  const { projectId, book } = state
   const [info, setInfo] = useState<ChatInfo | null>(null)
   const [started, setStarted] = useState<ChatStart | null>(null)
   const [busy, setBusy] = useState(false)
@@ -19,22 +19,22 @@ export function useChatMode(state: BookState, sceneId: string) {
     try { setInfo(await chatApi.info(projectId, book.id)); setError(null) } catch (e) { setError(e as StoryApiError) }
   }, [projectId, book.id])
 
-  const poll = useCallback(async () => {
-    try { markProposals(proposalMarks(await chatApi.proposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
-    try { setInfoProposals(infoMarks(await chatApi.infoProposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
-    try { setEntityProposals(await chatApi.entityProposals(projectId, book.id)) } catch { /* nächste Abfrage */ }
-    try { setOutlineProposal(await chatApi.outlineProposal(projectId, book.id)) } catch { /* nächste Abfrage */ }
-  }, [projectId, book.id, markProposals, setInfoProposals, setEntityProposals, setOutlineProposal])
+  const poll = useProposalPoll(state, true)
 
   useEffect(() => {
     let alive = true
     chatApi.info(projectId, book.id)
       .then((x) => { if (alive) { setInfo(x); setError(null) } })
       .catch((e: unknown) => { if (alive) setError(e as StoryApiError) })
-    void poll()
-    const timer = window.setInterval(() => { void poll() }, POLL_MS)
-    return () => { alive = false; window.clearInterval(timer) }
-  }, [projectId, book.id, poll])
+    return () => { alive = false }
+  }, [projectId, book.id])
+
+  /** G4e: im Chat-Fenster des Storytellers öffnen (dieselbe Sitzung je Buch, Verlauf bleibt). */
+  const openHere = useCallback(async () => {
+    setBusy(true); setError(null)
+    try { return await chatApi.start(projectId, book.id, sceneId, true) }
+    catch (e) { setError(e as StoryApiError); return null } finally { setBusy(false) }
+  }, [projectId, book.id, sceneId])
 
   const start = useCallback(async () => {
     setBusy(true); setError(null)
@@ -57,5 +57,5 @@ export function useChatMode(state: BookState, sceneId: string) {
     catch (e) { setError(e as StoryApiError) } finally { setBusy(false) }
   }, [info, loadInfo])
 
-  return { info, started, busy, error, start, addTools, refresh: poll }
+  return { info, started, busy, error, start, openHere, addTools, refresh: poll }
 }

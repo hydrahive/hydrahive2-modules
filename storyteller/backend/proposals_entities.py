@@ -45,7 +45,8 @@ def _clean(kind: str, changes: dict[str, Any], base: dict | None) -> dict:
 def list_for_book(project_id: str, book_id: str) -> list[dict]:
     d = _dir(project_id, book_id)
     out = [read_json(p) for p in d.glob("*.json")] if d.is_dir() else []
-    return sorted(out, key=lambda p: p["at"])
+    # Reihenfolge des Ablegens: seq (ab 0.10.0) – „at“ ist nur sekundengenau; ältere ohne seq zuerst nach Zeit.
+    return sorted(out, key=lambda p: (p.get("seq", 0), p["at"]))
 
 
 def get(project_id: str, book_id: str, proposal_id: str) -> dict:
@@ -81,7 +82,8 @@ def store(project_id: str, book_id: str, entity_id: str | None, changes: dict[st
         if sum(1 for p in open_props if not p["entity_id"]) >= MAX_NEW:
             raise StoryError("too_many_proposals")
         replaced = []
-    proposal = {"id": new_id(), "entity_id": entity_id or "", "kind": kind, "changes": diff,
+    seq = max((p.get("seq", 0) for p in open_props), default=0) + 1   # unter der Sperre: eindeutig je Buch
+    proposal = {"id": new_id(), "seq": seq, "entity_id": entity_id or "", "kind": kind, "changes": diff,
                 "base_structure_version": st["version"], "source": source, "session_id": session_id, "note": note,
                 "at": _now()}
     write_json(_path(project_id, book_id, proposal["id"]), proposal)

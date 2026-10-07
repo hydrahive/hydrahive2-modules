@@ -10,7 +10,7 @@ import type { ProposalMark } from "./serverBook"
 export interface OutlineProposal { outline: Outline; base_structure_version: number; source: "run" | "agent"; session_id: string; note: string; at: string }
 
 export interface ChatInfo { agent: { id: string; name: string } | null; tools_missing: string[]; can_start: boolean }
-export interface ChatStart { session_id: string; url: string; intro: string; agent: { id: string; name: string } }
+export interface ChatStart { session_id: string; url: string; intro: string; agent: { id: string; name: string }; reused?: boolean }
 
 async function call<T>(url: string, method: string, body?: unknown): Promise<T> {
   let res: Response
@@ -38,7 +38,9 @@ export function withTools(have: string[], missing: string[]): string[] {
 
 export const chatApi = {
   info: (pid: string, bid: string) => call<ChatInfo>(`${storyBase(pid, bid)}/chat`, "GET"),
-  start: (pid: string, bid: string, sceneId: string) => call<ChatStart>(`${storyBase(pid, bid)}/chat`, "POST", { scene_id: sceneId }),
+  /** reuse (G4e): jüngste eigene Sitzung dieses Buchs weiternutzen statt eine neue anzulegen. */
+  start: (pid: string, bid: string, sceneId: string, reuse = false) =>
+    call<ChatStart>(`${storyBase(pid, bid)}/chat`, "POST", { scene_id: sceneId, reuse }),
   proposals: (pid: string, bid: string) => call<ProposalInfo[]>(`${storyBase(pid, bid)}/proposals`, "GET"),
   outlineProposal: async (pid: string, bid: string): Promise<OutlineProposal | null> => {
     try { return await call<OutlineProposal>(`${storyBase(pid, bid)}/proposals/outline`, "GET") }

@@ -8,9 +8,9 @@ import type { Scene } from "../model"
 import type { BookState } from "../useBook"
 import { useChatMode } from "../useChatMode"
 
-interface Props { state: BookState; scene: Scene; onGoOutline: () => void }
+interface Props { state: BookState; scene: Scene; onGoOutline: () => void; onOpenChat?: () => void }
 
-export function ChatMode({ state, scene, onGoOutline }: Props) {
+export function ChatMode({ state, scene, onGoOutline, onOpenChat }: Props) {
   const { t } = useTranslation("storyteller")
   const isAdmin = useAuthStore((s) => s.role) === "admin"
   const chat = useChatMode(state, scene.id)
@@ -39,10 +39,17 @@ export function ChatMode({ state, scene, onGoOutline }: Props) {
         </div>
       )}
       {info?.agent && (
-        <button onClick={() => { void chat.start() }} disabled={busy || !info.can_start}
-          className={`st-chat-start ${btn} bg-violet-600 font-semibold text-white`}>
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessagesSquare className="h-4 w-4" />}{t("chat_start")}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {onOpenChat && (
+            <button onClick={onOpenChat} disabled={!info.can_start} className={`st-chat-here ${btn} bg-violet-600 font-semibold text-white`}>
+              <MessagesSquare className="h-4 w-4" />{t("chat_here")}
+            </button>
+          )}
+          <button onClick={() => { void chat.start() }} disabled={busy || !info.can_start}
+            className={`st-chat-start ${btn} ${onOpenChat ? "border border-white/10 text-zinc-200 hover:bg-white/5" : "bg-violet-600 font-semibold text-white"}`}>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{t("chat_start")}
+          </button>
+        </div>
       )}
       {started && (
         <div className="st-chat-started space-y-2 rounded border border-violet-400/30 bg-violet-500/5 p-2">

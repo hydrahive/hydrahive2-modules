@@ -129,7 +129,7 @@ export const ghostDe = {
   chat_tools_missing: "Dem Agenten fehlen Storyteller-Werkzeuge: {{tools}}. Ohne sie kann er das Buch nicht lesen bzw. nichts vorschlagen.",
   chat_add_tools: "Werkzeuge zuschalten",
   chat_tools_ask_admin: "Ein Admin kann sie unter Agenten → Werkzeuge zuschalten.",
-  chat_start: "Chat mit dem Projekt-Agenten öffnen",
+  chat_start: "Im neuen Tab öffnen",
   chat_started: "Der Chat ist in einem neuen Tab offen. Diesen Einstieg dort einfügen und deine Bitte ergänzen:",
   chat_copy: "Einstieg kopieren",
   chat_copied: "Kopiert",
@@ -155,6 +155,14 @@ export const ghostDe = {
   outline_proposal_title: "Vorschlag vom Agenten: neue Kapitel (werden beim Übernehmen am Ende angehängt)",
   outline_proposal_hint: "Der Agent hat neue Kapitel vorgeschlagen – unter „Kapitel/Buch“ ansehen, bearbeiten und übernehmen.",
   outline_proposal_go: "Ansehen",
+  chat_dock_toggle: "Chat mit dem Projekt-Agenten (Strg+Shift+K)",
+  chat_dock_title: "Chat: {{name}}",
+  chat_dock_title_plain: "Chat",
+  chat_dock_close: "Chat schließen",
+  chat_dock_resize: "Breite des Chats ändern",
+  chat_dock_loading: "Chat wird geöffnet …",
+  chat_dock_read_only: "Nur Leserechte – Chatten mit dem Agenten ist nicht möglich.",
+  chat_here: "Hier im Storyteller chatten",
 }
 
 export type GhostTexts = typeof ghostDe
