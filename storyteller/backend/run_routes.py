@@ -27,6 +27,7 @@ class RunIn(BaseModel):
     scene_id: str | None = Field(default=None, max_length=64)
     skip_filled: bool = True
     length_words: int | None = Field(default=None, ge=200, le=6000)
+    source: str = Field(default="outline", max_length=12)   # outline | interview (G3)
     confirm: bool = False
     confirm_over_limit: bool = False
 
@@ -53,10 +54,11 @@ def _err(status: int, code: str, message: str = "") -> JSONResponse:
 
 @router.get(f"{B}/ghost/run/estimate")
 def run_estimate(project_id: str, book_id: str, scope: str, auth: Auth, chapter_id: str | None = None,
-                 scene_id: str | None = None, skip_filled: bool = True, length_words: int | None = None):
+                 scene_id: str | None = None, skip_filled: bool = True, length_words: int | None = None,
+                 source: str = "outline"):
     _guard(auth, project_id, "read")
     out = _call(run_plan.plan, project_id, book_id, scope=scope, chapter_id=chapter_id, scene_id=scene_id,
-                skip_filled=skip_filled, length_words=length_words)
+                skip_filled=skip_filled, length_words=length_words, source=source)
     if isinstance(out, dict):
         out.pop("scene_ids", None)
     return out
@@ -71,7 +73,8 @@ async def run_start(project_id: str, book_id: str, body: RunIn, auth: Auth):
     try:
         # Planung liest viele Dateien → im Thread, damit der Server nicht blockiert.
         p = await asyncio.to_thread(run_plan.plan, project_id, book_id, scope=body.scope, chapter_id=body.chapter_id,
-                                    scene_id=body.scene_id, skip_filled=body.skip_filled, length_words=body.length_words)
+                                    scene_id=body.scene_id, skip_filled=body.skip_filled, length_words=body.length_words,
+                                    source=body.source)
     except StoryError as exc:
         raise coded(exc.status, exc.code) from exc
     if not p["scene_ids"]:
@@ -85,7 +88,8 @@ async def run_start(project_id: str, book_id: str, body: RunIn, auth: Auth):
     except ai.AiError as exc:
         return _err(exc.status, exc.code, exc.message)
     options = {"skip_filled": body.skip_filled, "length_words": body.length_words or 0,
-               "limit_tokens": 0 if body.confirm_over_limit else p["limit_tokens"]}
+               "limit_tokens": 0 if body.confirm_over_limit else p["limit_tokens"], "source": body.source,
+               "chapter_id": body.chapter_id or ""}
     run = runs.create_run(user=auth[0], project_id=project_id, book_id=book_id, scope=body.scope,
                           scene_ids=p["scene_ids"], model=p["model"], options=options)
     run_engine.start_background(run["id"], project_id, book_id, auth[0], key)

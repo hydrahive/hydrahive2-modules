@@ -13,6 +13,7 @@ import logging
 from . import _cost, ai, ghost, proposals, runs, storage
 from ._files import StoryError
 from ._ghost_settings import ghost_of
+from .interview_ai import interview_material
 from .storage import Conflict
 
 logger = logging.getLogger(__name__)
@@ -69,13 +70,14 @@ async def _scene(run_id: str, project_id: str, book_id: str, scene_id: str, opts
                  used_out: int) -> tuple[str, int, int]:
     book = storage.get_book(project_id, book_id)
     scene = storage.get_scene(project_id, book_id, scene_id)
-    if not scene["summary"].strip():
+    iv = interview_material(project_id, book_id, opts["chapter_id"]) if opts.get("source") == "interview" else None
+    if not scene["summary"].strip() and iv is None:
         return "skipped_no_summary", 0, 0
     start_empty = not scene["text"].strip()
     if not start_empty and opts.get("skip_filled", True):
         return "skipped_filled", 0, 0
     length, chunk = ghost.plan_lengths(book, opts.get("length_words") or None)
-    material = ghost.build_material(project_id, book_id, scene_id)
+    material = ghost.build_material(project_id, book_id, scene_id, interview=iv)
     est = _cost.scene_estimate(material, length_words=length, chunk_words=chunk)
     if limit and used_out + est["output_tokens"] > limit:
         raise _Limit

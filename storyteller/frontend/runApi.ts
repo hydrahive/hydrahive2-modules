@@ -6,6 +6,8 @@ import type { RunInfo } from "./runView"
 export type RunScope = "chapter" | "from" | "book"
 export interface RunRequest {
   scope: RunScope; chapter_id?: string; scene_id?: string; skip_filled: boolean; length_words?: number
+  /** Quelle: Gliederung/Zusammenfassungen (Standard) oder Interview (G3, nur Kapitel). */
+  source?: "outline" | "interview"
 }
 export interface RunEstimate {
   scenes: number; skipped_filled: number; skipped_no_summary: number; input_tokens: number; output_tokens: number
@@ -28,7 +30,7 @@ async function call<T>(pid: string, bid: string, method: string, path: string, b
 
 const query = (r: RunRequest) => new URLSearchParams(Object.entries({
   scope: r.scope, chapter_id: r.chapter_id ?? "", scene_id: r.scene_id ?? "", skip_filled: String(r.skip_filled),
-  length_words: r.length_words ? String(r.length_words) : "",
+  length_words: r.length_words ? String(r.length_words) : "", source: r.source ?? "",
 }).filter(([, v]) => v !== "")).toString()
 
 export const runApi = {

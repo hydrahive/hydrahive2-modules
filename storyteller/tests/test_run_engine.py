@@ -160,7 +160,8 @@ async def test_start_in_background_names_task_for_recovery(monkeypatch):
     task = run_engine.start_background(run["id"], PROJECT_ID, bid, "testuser", lock_key=None)
     await asyncio.sleep(0.05)
     assert task.get_name() == f"{runs.RUN_TASK_PREFIX}{run['id']}"
-    assert await runs.recover_stale_runs() == 0          # lebender Lauf wird nicht angefasst
+    await runs.recover_stale_runs()                      # (verwaiste Läufe anderer Tests dürfen bereinigt werden)
+    assert runs.get_run(PROJECT_ID, bid, run["id"])["status"] == "running"   # lebender Lauf wird nicht angefasst
     gate.set()
     await task
     assert runs.get_run(PROJECT_ID, bid, run["id"])["status"] == "done"
