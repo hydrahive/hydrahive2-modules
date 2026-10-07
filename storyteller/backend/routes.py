@@ -15,6 +15,7 @@ from .proposal_routes import router as proposal_router
 from .interview_routes import router as interview_router
 from .run_routes import router as run_router
 from .routes_scenes import router as scenes_router
+from .team_routes import router as team_router
 
 router = APIRouter()
 
@@ -113,3 +114,4 @@ router.include_router(proposal_router)   # vor run_router: â€¦/proposals/info, â
 router.include_router(run_router)
 router.include_router(interview_router)
 router.include_router(chat_router)
+router.include_router(team_router)
