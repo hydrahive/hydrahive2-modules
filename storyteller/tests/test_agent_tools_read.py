@@ -85,8 +85,10 @@ async def test_read_scenes_with_limit_and_cut_hint(monkeypatch):
     res = await _tool("storyteller_read").execute({"book_id": bid, "scene_ids": [s1, s2]}, _ctx(user="reader"))
     assert res.success
     a, b = res.output["scenes"]
-    assert a["id"] == s1 and len(a["text"]) == 20 and a["cut"] is True and a["words"] == 12 and a["version"] == 2
-    assert b["id"] == s2 and b["text"] == "" and b["cut"] is False
+    # T1a: Schnitt am Wortende (≤ 20 Zeichen), Weiterlesen über next_offset
+    assert a["id"] == s1 and a["text"] == "Mia stand am Kai. " and a["cut"] is True and a["next_offset"] == 18
+    assert a["words"] == 12 and a["version"] == 2
+    assert b["id"] == s2 and b["text"] == "" and b["cut"] is False and b["next_offset"] is None
 
 
 async def test_read_limits_number_and_unknown_scene():
