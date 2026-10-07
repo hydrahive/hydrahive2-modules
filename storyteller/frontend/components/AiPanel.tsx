@@ -26,9 +26,10 @@ interface Props {
   /** Zum Reiter „Szene“ springen (z. B. um die Zusammenfassung einzutragen). */
   onGoScene: () => void
   onOpenScene: (id: string) => void
+  onOpenChat?: () => void
 }
 
-export function AiPanel({ state, scene, editorRef, onGoScene, onOpenScene }: Props) {
+export function AiPanel({ state, scene, editorRef, onGoScene, onOpenScene, onOpenChat }: Props) {
   const { t } = useTranslation("storyteller")
   const [mode, setMode] = useState<AiMode>(() => (!isFiction(state.book.kind) ? "interview" : !scene.text.trim() ? "scene" : "edit"))
   return (
@@ -49,7 +50,7 @@ export function AiPanel({ state, scene, editorRef, onGoScene, onOpenScene }: Pro
       {mode === "scene" && <GhostSceneMode key={scene.id} state={state} scene={scene} onGoScene={onGoScene} />}
       {mode === "chapter" && <GhostChapterMode key={scene.id} state={state} scene={scene} onOpenScene={onOpenScene} />}
       {mode === "interview" && <InterviewMode key={scene.id} state={state} scene={scene} onOpenScene={onOpenScene} />}
-      {mode === "chat" && <ChatMode key={scene.id} state={state} scene={scene} onGoOutline={() => setMode("chapter")} />}
+      {mode === "chat" && <ChatMode key={scene.id} state={state} scene={scene} onGoOutline={() => setMode("chapter")} onOpenChat={onOpenChat} />}
     </div>
   )
 }

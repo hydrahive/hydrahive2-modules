@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { Editor } from "@tiptap/react"
-import { ArrowLeft, FolderOpen, Maximize2, Minimize2, PanelLeft, PanelRight } from "lucide-react"
+import { ArrowLeft, FolderOpen, Maximize2, MessagesSquare, Minimize2, PanelLeft, PanelRight } from "lucide-react"
 import { lastPlace } from "../lastPlace"
 import { allScenes, findScene, type Book } from "../model"
 import type { OutlineProposal } from "../chatApi"
@@ -10,6 +10,8 @@ import type { EntityProposal } from "../entityProposal"
 import type { InfoProposal } from "../infoProposal"
 import type { ProposalMark, Versions } from "../serverBook"
 import { useBook } from "../useBook"
+import { useChatDock } from "../useChatDock"
+import { ChatDock } from "./ChatDock"
 import { ConflictDialog } from "./ConflictDialog"
 import { ContextPanel, type ContextTab } from "./ContextPanel"
 import { Navigator } from "./Navigator"
@@ -49,6 +51,7 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
   const [entityId, setEntityId] = useState<string | null>(null)
   const editorRef = useRef<Editor | null>(null)
   const current = findScene(book, sceneId)
+  const dock = useChatDock(state.canWrite)   // G4e: Chat-Fenster (nur mit Schreibrecht – Chat-Start braucht es)
 
   useEffect(() => { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)) }, [layout])
   useEffect(() => { if (sceneId) lastPlace.set(projectId, book.id, sceneId) }, [projectId, book.id, sceneId])
@@ -96,6 +99,8 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
           </nav>
           <button onClick={() => setLayout((l) => ({ ...l, left: !l.left }))} title={t("toggle_left")} className={iconBtn}><PanelLeft className="h-4 w-4" /></button>
           <button onClick={() => setLayout((l) => ({ ...l, right: !l.right }))} title={t("toggle_right")} className={iconBtn}><PanelRight className="h-4 w-4" /></button>
+          {state.canWrite && <button onClick={dock.toggle} title={t("chat_dock_toggle")} aria-pressed={dock.open}
+            className={`${iconBtn} st-chat-dock-toggle ${dock.open ? "bg-violet-500/20 text-violet-100" : ""}`}><MessagesSquare className="h-4 w-4" /></button>}
           <button onClick={() => setFocus(true)} title={t("focus")} className={iconBtn}><Maximize2 className="h-4 w-4" /></button>
         </header>
       )}
@@ -122,11 +127,12 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
               onOpenScene={openScene} />
           )}
         </main>
+        {dock.open && !focus && <ChatDock state={state} sceneId={sceneId} width={dock.width} onWidth={dock.setWidth} onClose={dock.close} />}
         {showRight && current && (
           <aside className="st-context w-80 shrink-0 overflow-y-auto border-l border-white/10">
             <ContextPanel tab={tab} setTab={setTab} state={state} scene={current.scene}
               entityId={entityId} setEntityId={setEntityId} editorRef={editorRef} onSceneRemoved={(next) => setSceneId(next || first)}
-              onOpenScene={openScene} />
+              onOpenScene={openScene} onOpenChat={dock.show} />
           </aside>
         )}
       </div>
