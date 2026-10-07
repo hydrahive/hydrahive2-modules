@@ -50,6 +50,11 @@ export function toStructure(book: Book): Omit<ServerStructure, "version"> {
   }
 }
 
+/** Gibt es irgendetwas zu speichern (Kopf, Szenen oder Struktur)? */
+export function hasChanges(now: Book, saved: Book): boolean {
+  return Object.keys(headPatch(now, saved)).length > 0 || scenePatches(now, saved).length > 0 || structureChanged(now, saved)
+}
+
 export function structureChanged(a: Book, b: Book): boolean {
   return JSON.stringify(toStructure(a)) !== JSON.stringify(toStructure(b))
 }
@@ -104,4 +109,16 @@ export function toImport(book: Book) {
     })),
     entities: book.entities.map(({ kind, name, aliases, description, fields }) => ({ kind, name, aliases, description, fields })),
   }
+}
+
+/** Kurzinfo eines abgelegten Vorschlags je Szene (für den Hinweis an der Szene). */
+export interface ProposalMark { words: number; model: string; at: string }
+
+/** Alles, was beim Öffnen gebraucht wird: Buch, Versionen, Schreibrecht, offene Vorschläge.
+ *  Ältere Server (vor 0.4.0) liefern die neuen Felder nicht: dann Schreiben erlaubt, keine Vorschläge. */
+export function openedFromServer(full: ServerFull) {
+  const { book, versions } = fromServer(full)
+  const proposals: Record<string, ProposalMark> = {}
+  for (const p of full.proposals ?? []) proposals[p.scene_id] = { words: p.words, model: p.model, at: p.at }
+  return { book, versions, canWrite: full.can_write ?? true, proposals }
 }

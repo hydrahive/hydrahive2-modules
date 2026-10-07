@@ -86,3 +86,14 @@ def test_reader_can_view_but_not_accept_or_discard_proposal(client, auth_headers
     assert client.delete(base, headers=reader_headers).status_code == 403
     assert storage.get_scene(PROJECT_ID, bid, sids[0])["text"] == ""
     assert proposals.get(PROJECT_ID, bid, sids[0])["text"] == "KI"
+
+
+def test_get_single_scene_for_reload_after_run(client, auth_headers, reader_headers, other_headers):
+    """Nachladen einzelner Szenen nach einem Lauf (statt das ganze Buch neu zu öffnen): lesend erlaubt."""
+    bid, _, sids = _book(1)
+    storage.save_scene(PROJECT_ID, bid, sids[0], {"text": "Vom Lauf.", "origin": "ai_draft"}, base_version=2)
+    url = f"{P}/books/{bid}/scenes/{sids[0]}"
+    r = client.get(url, headers=reader_headers)
+    assert r.status_code == 200 and r.json()["text"] == "Vom Lauf." and r.json()["version"] == 3
+    assert client.get(url, headers=other_headers).status_code == 404
+    assert client.get(f"{P}/books/{bid}/scenes/{'f' * 32}", headers=auth_headers).status_code == 404

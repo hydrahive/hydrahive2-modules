@@ -36,7 +36,13 @@ export interface ServerStructure {
   parts: { id: string; title: string; chapters: { id: string; title: string; scenes: string[] }[] }[]
   entities: ServerEntity[]
 }
-export interface ServerFull { book: ServerBook; structure: ServerStructure; scenes: Record<string, ServerScene> }
+/** Abgelegter Ghostwriter-Vorschlag (Szene hatte Text oder wurde während des Laufs geändert). */
+export interface ProposalInfo { scene_id: string; run_id: string; model: string; base_version: number; words: number; at: string }
+export interface ServerFull {
+  book: ServerBook; structure: ServerStructure; scenes: Record<string, ServerScene>
+  /** Ab 0.4.0: Schreibrecht im Projekt (Oberfläche sperrt Knöpfe) und offene Vorschläge. */
+  can_write?: boolean; proposals?: ProposalInfo[]
+}
 export interface SnapshotInfo { id: string; at: string; words: number; text?: string }
 export interface Created { scene: ServerScene; structure: ServerStructure }
 

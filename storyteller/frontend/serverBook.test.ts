@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest"
 import type { ServerFull } from "./api"
 import { allScenes, updateScene } from "./model"
-import { fromServer, headPatch, scenePatches, structureChanged, structureProblem, toImport, toStructure } from "./serverBook"
+import { fromServer, headPatch, openedFromServer, scenePatches, structureChanged, structureProblem, toImport, toStructure } from "./serverBook"
 
 const full = (): ServerFull => ({
   book: { id: "b", title: "T", kind: "novel", language: "de", audience: "A", idea: "I", notes: "N", model: "m/x",
-    ghost: { model: "g/m", length_words: 1500, chunk_words: 0, style: "" }, version: 3, created_at: "", updated_at: "2026-10-06" },
+    ghost: { model: "g/m", length_words: 1500, chunk_words: 0, style: "", limit_tokens: 0 }, version: 3, created_at: "", updated_at: "2026-10-06" },
   structure: {
     version: 7,
     entities: [{ id: "e", kind: "character", name: "Gregor", aliases: ["Samsa"], description: "", fields: [{ key: "Beruf", value: "Reisender" }] }],
@@ -54,7 +54,7 @@ describe("serverBook", () => {
 describe("serverBook – Ghostwriter-Einstellungen und Herkunft", () => {
   it("übernimmt ghost und origin; ältere Antworten ohne Felder bekommen Standardwerte", () => {
     const { book } = fromServer(full())
-    expect(book.ghost).toEqual({ model: "g/m", length_words: 1500, chunk_words: 0, style: "" })
+    expect(book.ghost).toEqual({ model: "g/m", length_words: 1500, chunk_words: 0, style: "", limit_tokens: 0 })
     expect(allScenes(book).find((x) => x.scene.id === "s3")?.scene.origin).toBe("ai_draft")
     const f = full()
     delete (f.book as Partial<typeof f.book>).ghost
@@ -69,5 +69,23 @@ describe("serverBook – Ghostwriter-Einstellungen und Herkunft", () => {
     expect(headPatch(edited, book)).toEqual({ ghost: { style: "knapp" } })
     const s = updateScene(book, "s1", { text: "neu", origin: "ai_draft" })
     expect(scenePatches(s, book)).toEqual([{ id: "s1", patch: { origin: "ai_draft", text: "neu" } }])
+  })
+})
+
+describe("serverBook – Schreibrecht und abgelegte Vorschläge (G2)", () => {
+  it("liest can_write und die Szenen mit Vorschlag; ältere Server ohne Felder: Schreiben erlaubt, keine Vorschläge", () => {
+    const f = { ...full(), can_write: false, proposals: [{ scene_id: "s1", run_id: "r", model: "m", base_version: 2, words: 812, at: "" }] }
+    const o = openedFromServer(f)
+    expect(o.canWrite).toBe(false)
+    expect(o.proposals).toEqual({ s1: { words: 812, model: "m", at: "" } })
+    expect(o.book.id).toBe("b")
+    const old = openedFromServer(full())
+    expect(old.canWrite).toBe(true)
+    expect(old.proposals).toEqual({})
+  })
+  it("ältere Antwort ohne limit_tokens bekommt 0", () => {
+    const f = full()
+    f.book.ghost = { model: "", length_words: 0, chunk_words: 0, style: "" } as typeof f.book.ghost
+    expect(fromServer(f).book.ghost.limit_tokens).toBe(0)
   })
 })

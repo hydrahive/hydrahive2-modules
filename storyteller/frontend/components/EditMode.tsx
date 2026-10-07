@@ -73,11 +73,11 @@ export function EditMode({ state, scene, editorRef }: Props) {
 
   return (
     <div className="space-y-4">
-      <ModelChooser value={book.model} onChange={(model) => state.change((b) => ({ ...b, model }))} />
+      {state.canWrite && <ModelChooser value={book.model} onChange={(model) => state.change((b) => ({ ...b, model }))} />}
       <p className="text-xs text-zinc-400">{t("ai_intro")}</p>
       <div className="grid grid-cols-2 gap-2">
         {ACTIONS.map((a) => (
-          <button key={a} onClick={() => { void request(a) }} disabled={!!busy}
+          <button key={a} onClick={() => { void request(a) }} disabled={!!busy || !state.canWrite}
             className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/10 px-2 py-2 text-sm text-zinc-200 hover:border-violet-400/50 hover:bg-violet-500/10 disabled:opacity-50">
             {busy === a ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300" /> : <Sparkles className="h-3.5 w-3.5 text-violet-300" />}
             {t(`ai_${a}`)}

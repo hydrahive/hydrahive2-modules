@@ -8,7 +8,7 @@ export const scene = (id: string, text = ""): ServerScene => ({ id, title: id, s
 export function fakeServer() {
   const db = {
     book: { id: "b", title: "T", kind: "novel", language: "de", audience: "", idea: "", notes: "", model: "",
-      ghost: { model: "", length_words: 0, chunk_words: 0, style: "" }, version: 1, created_at: "", updated_at: "" } as ServerBook,
+      ghost: { model: "", length_words: 0, chunk_words: 0, style: "", limit_tokens: 0 }, version: 1, created_at: "", updated_at: "" } as ServerBook,
     structure: { version: 1, entities: [], parts: [{ id: "p", title: "Teil", chapters: [{ id: "c", title: "K", scenes: ["s1", "s2"] }] }] } as ServerStructure,
     scenes: { s1: scene("s1", "eins"), s2: scene("s2", "zwei") } as Record<string, ServerScene>,
     snapshots: [] as { sceneId: string; text: string }[],

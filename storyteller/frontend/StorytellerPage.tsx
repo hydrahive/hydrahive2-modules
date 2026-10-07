@@ -6,13 +6,13 @@ import type { Project } from "@/features/projects/types"
 import { storyApi } from "./api"
 import { BookList } from "./components/BookList"
 import type { Book } from "./model"
-import { fromServer, type Versions } from "./serverBook"
+import { openedFromServer, type ProposalMark, type Versions } from "./serverBook"
 
 const PROJECT_KEY = "storyteller.project"
 // Arbeitsplatz (mit Prosa-Editor) erst beim Öffnen eines Buchs laden – hält andere Seiten schlank.
 const Workspace = lazy(() => import("./components/Workspace").then((m) => ({ default: m.Workspace })))
 
-interface Opened { book: Book; versions: Versions; sceneId?: string }
+interface Opened { book: Book; versions: Versions; sceneId?: string; canWrite: boolean; proposals: Record<string, ProposalMark> }
 
 export function StorytellerPage() {
   const { t } = useTranslation("storyteller")
@@ -41,8 +41,7 @@ export function StorytellerPage() {
     setOpening(true)
     setError("")
     try {
-      const { book, versions } = fromServer(await storyApi.openBook(projectId, bookId))
-      setOpen({ book, versions, sceneId })
+      setOpen({ ...openedFromServer(await storyApi.openBook(projectId, bookId)), sceneId })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally { setOpening(false) }
@@ -54,7 +53,8 @@ export function StorytellerPage() {
     return (
       <Suspense fallback={<div className="p-8 text-sm text-zinc-500">…</div>}>
         <Workspace key={open.book.id} projectId={projectId} projectName={project.name} initial={open.book}
-          versions={open.versions} initialSceneId={open.sceneId} onClose={close} />
+          versions={open.versions} initialSceneId={open.sceneId} canWrite={open.canWrite} proposals={open.proposals}
+          onClose={close} />
       </Suspense>
     )
   }

@@ -20,9 +20,10 @@ interface Props {
   setEntityId: (id: string | null) => void
   editorRef: MutableRefObject<Editor | null>
   onSceneRemoved: (nextSceneId: string) => void
+  onOpenScene: (id: string) => void
 }
 
-export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId, editorRef, onSceneRemoved }: Props) {
+export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId, editorRef, onSceneRemoved, onOpenScene }: Props) {
   const { t } = useTranslation("storyteller")
   const open = (id: string) => { setEntityId(id); setTab("entity") }
   return (
@@ -38,7 +39,7 @@ export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId,
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {tab === "scene" && <ScenePanel state={state} scene={scene} onOpenEntity={open} onRemoved={onSceneRemoved} />}
         {tab === "entity" && <EntityPanel state={state} entityId={entityId} onDeleted={() => setEntityId(null)} />}
-        {tab === "ai" && <AiPanel state={state} scene={scene} editorRef={editorRef} onGoScene={() => setTab("scene")} />}
+        {tab === "ai" && <AiPanel state={state} scene={scene} editorRef={editorRef} onGoScene={() => setTab("scene")} onOpenScene={onOpenScene} />}
         {tab === "notes" && (
           <textarea value={state.book.notes} placeholder={t("notes_ph")}
             onChange={(e) => state.change((b) => ({ ...b, notes: e.target.value }))}

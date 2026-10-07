@@ -62,6 +62,13 @@ def add_chapter(project_id: str, book_id: str, body: NewChapter, auth: Auth):
     return _call(storage.add_chapter, project_id, book_id, body.part_id, body.title, body.scene_title)
 
 
+@router.get("/projects/{project_id}/books/{book_id}/scenes/{scene_id}")
+def get_scene(project_id: str, book_id: str, scene_id: str, auth: Auth):
+    """Eine Szene neu laden (z. B. nachdem ein Ghostwriter-Lauf sie geschrieben hat)."""
+    _guard(auth, project_id, "read")
+    return _call(storage.get_scene, project_id, book_id, scene_id)
+
+
 @router.put("/projects/{project_id}/books/{book_id}/scenes/{scene_id}")
 def put_scene(project_id: str, book_id: str, scene_id: str, body: SceneIn, auth: Auth):
     _guard(auth, project_id)

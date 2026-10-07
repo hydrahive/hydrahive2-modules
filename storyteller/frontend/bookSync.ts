@@ -5,7 +5,7 @@
 import { storyApi, StoryApiError, type ServerScene, type ServerStructure } from "./api"
 import { findScene, updateScene, type Book, type Scene } from "./model"
 import {
-  applyStructure, headPatch, sceneFromServer, scenePatches, structureChanged,
+  applyStructure, hasChanges, headPatch, sceneFromServer, scenePatches, structureChanged,
   structureProblem, toStructure, type Versions,
 } from "./serverBook"
 import { applyResolution, conflictSnapshot, sceneMap, toConflict, type Conflict } from "./syncConflict"
@@ -70,6 +70,13 @@ export class BookSync {
     if (!this.conflict && this.state !== "failed" && this.diff()) await this.flush()
   }
 
+  /** Versionen, auf denen gespeichert wird (z. B. für „Vorschlag übernehmen“, „Gliederung übernehmen“). */
+  sceneVersion(sceneId: string): number | undefined { return this.versions.scenes[sceneId] }
+  structureVersion(): number { return this.versions.structure }
+
+  /** Editor neu laden, ohne etwas zu speichern (Szene wurde vom Server übernommen). */
+  reloadText(): void { this.textRev += 1; this.emit() }
+
   /** Szenentext von außen ersetzen (Schnappschuss zurückholen): wie eine Änderung, Editor lädt neu. */
   replaceText(sceneId: string, text: string, origin?: Scene["origin"]): void {
     this.textRev += 1
@@ -94,13 +101,14 @@ export class BookSync {
     this.emit()
   }
 
-  /** Server hat die Struktur selbst geändert (Szene/Kapitel angelegt oder gelöscht). */
-  adoptStructure(st: ServerStructure, added?: ServerScene): void {
+  /** Server hat die Struktur selbst geändert (Szene/Kapitel angelegt oder gelöscht, Gliederung übernommen). */
+  adoptStructure(st: ServerStructure, added?: ServerScene | ServerScene[]): void {
+    const list = added === undefined ? [] : Array.isArray(added) ? added : [added]
     this.versions.structure = st.version
-    if (added) this.versions.scenes[added.id] = added.version
+    for (const s of list) this.versions.scenes[s.id] = s.version
     const merge = (b: Book) => {
       const known = sceneMap(b)
-      if (added) known.set(added.id, sceneFromServer(added))
+      for (const s of list) known.set(s.id, sceneFromServer(s))
       return { ...b, parts: applyStructure(st, (id) => known.get(id)), entities: st.entities }
     }
     this.saved = merge(this.saved)
@@ -129,11 +137,7 @@ export class BookSync {
 
   // ---- intern ----------------------------------------------------------------------------
 
-  private diff(): boolean {
-    return Object.keys(headPatch(this.local, this.saved)).length > 0
-      || scenePatches(this.local, this.saved).length > 0
-      || structureChanged(this.local, this.saved)
-  }
+  private diff(): boolean { return hasChanges(this.local, this.saved) }
 
   private schedule(): void {
     if (this.timer) clearTimeout(this.timer)
