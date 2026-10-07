@@ -1,9 +1,8 @@
 """T1d: Routen für Hinweise/Notizen (lesen: Projektmitglied; abhaken/löschen: Schreibrecht)."""
 from __future__ import annotations
 
-from conftest import MOD_PREFIX, PROJECT_ID
-
 from backend import storage, team_notes
+from conftest import MOD_PREFIX, PROJECT_ID
 
 P = f"{MOD_PREFIX}/projects/{PROJECT_ID}"
 

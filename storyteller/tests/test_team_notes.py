@@ -4,7 +4,6 @@ from __future__ import annotations
 import threading
 
 import pytest
-
 from backend import storage, team_notes
 from backend._files import StoryError
 from conftest import PROJECT_ID
@@ -26,7 +25,7 @@ def _add(bid, **kw):
 
 
 def test_add_hint_at_scene_and_list_open():
-    bid, cid, sid = _book()
+    bid, _cid, sid = _book()
     n = _add(bid, scene_id=sid)
     assert n["status"] == "open" and n["scene_id"] == sid and n["kind"] == "hint" and len(n["id"]) == 32
     assert n["author"] == "Plausibilität" and n["agent_id"] == "a1" and n["session_id"] == "s1" and n["at"]
@@ -35,7 +34,7 @@ def test_add_hint_at_scene_and_list_open():
 
 
 def test_note_with_sources_chapter_and_entity():
-    bid, cid, sid = _book()
+    bid, cid, _sid = _book()
     n = _add(bid, kind="note", chapter_id=cid, title="Lotsenwesen", text="Seit 1900 …",
              sources=[{"title": "Wiki", "url": "https://de.wikipedia.org/wiki/Lotse"}])
     assert n["kind"] == "note" and n["chapter_id"] == cid and n["sources"][0]["url"].startswith("https://")
@@ -56,7 +55,7 @@ def test_invalid_fields_are_refused(bad):
 
 
 def test_place_must_exist():
-    bid, cid, sid = _book()
+    bid, _cid, _sid = _book()
     for place in ({"scene_id": "f" * 32}, {"chapter_id": "f" * 32}, {"entity_id": "f" * 32}):
         with pytest.raises(StoryError) as exc:
             _add(bid, **place)
@@ -76,7 +75,7 @@ def test_limit_of_open_notes(monkeypatch):
 
 
 def test_status_filter_order_and_counts():
-    bid, cid, sid = _book()
+    bid, _cid, sid = _book()
     a = _add(bid, scene_id=sid, title="a")
     b = _add(bid, scene_id=sid, title="b")
     c = _add(bid, title="c")

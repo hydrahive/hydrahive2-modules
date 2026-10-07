@@ -6,18 +6,26 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from . import importer, proposals, proposals_entities, proposals_info, proposals_outline, storage, team_notes
+from . import (
+    importer,
+    proposals,
+    proposals_entities,
+    proposals_info,
+    proposals_outline,
+    storage,
+    team_notes,
+)
 from ._files import project_access
 from ._route_base import Auth, _call, _guard, _set
 from .chat_routes import router as chat_router
 from .ghost_routes import router as ghost_router
-from .proposal_routes import router as proposal_router
 from .interview_routes import router as interview_router
-from .run_routes import router as run_router
-from .routes_scenes import router as scenes_router
-from .team_routes import router as team_router
 from .note_routes import router as note_router
+from .proposal_routes import router as proposal_router
+from .routes_scenes import router as scenes_router
+from .run_routes import router as run_router
 from .team import upgrade as team_upgrade
+from .team_routes import router as team_router
 
 router = APIRouter()
 

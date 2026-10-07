@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from backend import team
 from backend.team import setup, upgrade
 
@@ -11,9 +10,8 @@ FIELDS = {"title": "Der Leuchtturm", "kind": "novel", "language": "de", "audienc
 
 @pytest.fixture(autouse=True)
 def _tools(monkeypatch):
-    from hydrahive.tools import REGISTRY
-
     from backend.agent_tools import TOOLS
+    from hydrahive.tools import REGISTRY
     for t in TOOLS:
         monkeypatch.setitem(REGISTRY, t.name, t)
 
@@ -58,9 +56,9 @@ def test_second_call_changes_nothing(old_team, monkeypatch):
 
 def test_agent_from_other_project_with_matching_name_is_untouched(old_team):
     """Steht ein fremder Agent (anderes Projekt) in allowed_specialists und heißt wie eine Rolle → nicht anfassen."""
+    from conftest import OTHER_PROJECT_ID
     from hydrahive.agents import config as ac
     from hydrahive.projects import config as pc
-    from conftest import OTHER_PROJECT_ID
     alien = ac.create(agent_type="specialist", name="Der Leuchtturm — Lektor", llm_model="claude-sonnet-4-6",
                       tools=["shell_exec"], owner="other", temperature=0.7, max_tokens=1000, thinking_budget=0,
                       project_id=OTHER_PROJECT_ID)
