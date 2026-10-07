@@ -20,3 +20,20 @@ export function readDock(raw: string | null, viewport: number): DockState {
     return { open: false, width: clampWidth(DOCK_DEFAULT, viewport) }
   }
 }
+
+/** Merker der Kern-Chatansicht: offene Sitzung je Projekt (sessionStorage, siehe Kern _storedSession.ts). */
+export const COCKPIT_SESSION_KEY = "hh.cockpit.activeSession"
+
+/** Merker des Projekts sichern; die zurückgegebene Funktion stellt ihn wieder her (fehlte er, wird er entfernt). */
+export function keepCockpitSession(projectId: string, store: Pick<Storage, "getItem" | "setItem"> = sessionStorage): () => void {
+  const read = (): Record<string, string> => {
+    try { return JSON.parse(store.getItem(COCKPIT_SESSION_KEY) ?? "{}") as Record<string, string> } catch { return {} }
+  }
+  const saved = read()[projectId]
+  return () => {
+    const map = read()
+    if (saved) map[projectId] = saved
+    else delete map[projectId]
+    try { store.setItem(COCKPIT_SESSION_KEY, JSON.stringify(map)) } catch { /* Speicher voll/privat: egal */ }
+  }
+}

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import { Loader2, MessagesSquare, Wrench, X } from "lucide-react"
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import { ChatPane } from "@/features/chat/ChatPane"
-import { clampWidth } from "../chatDock"
+import { clampWidth, keepCockpitSession } from "../chatDock"
 import type { BookState } from "../useBook"
 import { useChatMode } from "../useChatMode"
 
@@ -18,15 +18,18 @@ export function ChatDock({ state, sceneId, width, onWidth, onClose }: Props) {
   const chat = useChatMode(state, sceneId)
   const { info, error, busy } = chat
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [request, setRequest] = useState<string | null>(null)
   const opened = useRef(false)
 
   // Sitzung einmal je geöffnetem Fenster holen (wiederverwendet je Buch), sobald der Agent bekannt ist.
   useEffect(() => {
     if (opened.current || !info?.agent || !info.can_start) return
     opened.current = true
-    void chat.openHere().then((s) => { if (s) { setSessionId(s.session_id); setRequest(s.session_id) } })
+    void chat.openHere().then((s) => { if (s) setSessionId(s.session_id) })
   }, [info, chat])
+
+  // Die Kern-Chatansicht merkt sich die offene Sitzung je Projekt (Cockpit, nach F5). Das Fenster darf den Merker
+  // des Cockpits nicht auf die Storyteller-Sitzung umbiegen → beim Öffnen sichern, beim Schließen zurückschreiben.
+  useEffect(() => keepCockpitSession(state.projectId), [state.projectId])
 
   const drag = (e: React.PointerEvent<HTMLDivElement>) => {
     const startX = e.clientX, startW = width
@@ -62,8 +65,10 @@ export function ChatDock({ state, sceneId, width, onWidth, onClose }: Props) {
           Fenster darf die Kopfzeile umbrechen: Titel/Modell oben, Knöpfe darunter – statt den Titel zusammenzuquetschen. */}
       <div className="st-chat-dock-body min-h-0 flex-1 [&_h2]:whitespace-normal [&_div:has(>h2)]:min-w-[12rem] [&_div:has(>div>h2)]:flex-wrap [&_div:has(>div>h2)]:py-2 [&_div:has(>div>h2)>div:last-child]:shrink [&_div:has(>div>h2)>div:last-child]:flex-wrap">
         {sessionId && info?.agent ? (
-          <ChatPane key={sessionId} projectId={state.projectId} showSidePanels={false} preferredAgentId={info.agent.id}
-            agentSelectionExplicit openSessionRequest={request} onSessionRequestHandled={() => setRequest(null)} />
+          // deepLinkSid setzt die Sitzung fest: die Kern-Chatansicht wählt dann NIE selbst eine (sonst gewann die im
+          // Cockpit gemerkte bzw. neueste Sitzung desselben Projekt-Agenten – Fund 07.10. auf Prod).
+          <ChatPane key={sessionId} deepLinkSid={sessionId} projectId={state.projectId} showSidePanels={false}
+            preferredAgentId={info.agent.id} agentSelectionExplicit />
         ) : (info?.can_start !== false && !error) && (
           <div className="flex h-full items-center justify-center text-sm text-zinc-500"><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("chat_dock_loading")}</div>
         )}
