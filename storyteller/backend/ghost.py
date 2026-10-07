@@ -16,6 +16,7 @@ from . import storage
 from ._files import StoryError
 from ._ghost_settings import ghost_of
 from ._names import KIND_LABEL, LANGUAGE_LABEL
+from ._think import ThinkFilter
 from .ai import clean_proposal
 
 MAX_SECTIONS = 4
@@ -121,12 +122,15 @@ async def write_scene(material: Material, *, model: str | None, length_words: in
         messages = [{"role": "system", "content": material.system},
                     {"role": "user", "content": f"{material.prompt}{so_far}\n\nAUFGABE: {task}"}]
         head, sent = "", False   # Anfang puffern, bis Überschrift/Vorspann sicher erkannt ist
+        think = ThinkFilter()    # Denktext (<think>…) nie durchreichen, auch wenn er länger als der Puffer ist
         llm = stream(messages, model=model, temperature=0.8, max_tokens=max(1024, target * 3))
         try:
-            async for piece in llm:
+            async for raw in llm:
+                piece = think.feed(raw)
                 if sent:
-                    written += piece
-                    yield piece
+                    if piece:
+                        written += piece
+                        yield piece
                     continue
                 head += piece
                 if len(head) < _HEAD_BUFFER:
@@ -140,8 +144,12 @@ async def write_scene(material: Material, *, model: str | None, length_words: in
                     yield out
         finally:
             await llm.aclose()   # Abbruch durch den Nutzer: Verbindung zum Modell sofort schließen
+        rest = think.end()
+        if sent and rest:
+            written += rest
+            yield rest
         if not sent:                    # sehr kurze Antwort: alles war im Puffer
-            clean = clean_proposal(head)
+            clean = clean_proposal(head + rest)
             if not clean:
                 return
             out = ("\n\n" if written else "") + clean

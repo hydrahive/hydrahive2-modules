@@ -18,6 +18,7 @@ from ._book import MAX_SCENES, _existing, _now
 from ._files import StoryError, new_id, read_json, write_json, write_scene
 from ._ghost_settings import ghost_of
 from ._names import KIND_LABEL, LANGUAGE_LABEL, is_fiction
+from ._think import strip_think
 from .storage import Conflict
 
 MAX_CHAPTERS, MAX_SCENES_PER_CHAPTER = 40, 8
@@ -60,7 +61,7 @@ def validate(data: Any) -> dict:
 
 
 def _parse(raw: str) -> Any:
-    m = _JSON_RE.search(re.sub(r"<think>.*?</think>", "", raw or "", flags=re.DOTALL))
+    m = _JSON_RE.search(strip_think(raw or ""))
     if not m:
         raise ValueError("kein JSON")
     return json.loads(m.group(0))

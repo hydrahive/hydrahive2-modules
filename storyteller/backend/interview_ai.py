@@ -17,6 +17,7 @@ from . import interviews, storage
 from ._files import StoryError
 from ._ghost_settings import ghost_of
 from ._names import KIND_LABEL, LANGUAGE_LABEL
+from ._think import strip_think
 
 STYLE_SAMPLE = 1500     # Zeichen Originalwortlaut als Stilprobe
 MAX_ANSWERS = 12000     # Zeichen aller Antworten im Material (die neuesten zuerst gekürzt)
@@ -55,7 +56,7 @@ def material_parts(iv: InterviewMaterial) -> list[str]:
 
 
 def _parse(raw: str) -> list[str]:
-    m = _JSON.search(re.sub(r"<think>.*?</think>", "", raw or "", flags=re.DOTALL))
+    m = _JSON.search(strip_think(raw or ""))
     if not m:
         raise ValueError("kein JSON")
     data: Any = json.loads(m.group(0))

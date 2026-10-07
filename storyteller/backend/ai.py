@@ -9,6 +9,7 @@ from hydrahive.llm.client import complete
 
 from . import storage
 from ._names import KIND_LABEL, LANGUAGE_LABEL
+from ._think import strip_think
 
 ACTIONS = ("rewrite", "expand", "shorten", "continue")
 MAX_SELECTION = 8000
@@ -108,7 +109,7 @@ _LEAD_LABEL = re.compile(r"^\s*(?:\*\*)?(?:hier ist|here is|gekürzte|überarbei
 def clean_proposal(raw: str) -> str:
     """Denkblöcke und typischen Vorspann entfernen (Überschrift „# Gekürzte Fassung“, „Hier ist …:“).
     Der Vorschlag wird 1:1 in die Szene eingesetzt – so etwas darf dort nicht landen."""
-    text = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
+    text = strip_think(raw).strip()   # auch nicht geschlossene Denkblöcke (Abbruch bei max_tokens)
     for _ in range(2):
         text = _LEAD_LABEL.sub("", _LEAD_HEADING.sub("", text, count=1), count=1).strip()
     if len(text) > 1 and text[0] == text[-1] and text[0] in "\"'":
