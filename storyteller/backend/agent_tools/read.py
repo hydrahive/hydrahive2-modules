@@ -3,7 +3,14 @@ from __future__ import annotations
 
 from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
-from .. import interviews, proposals, proposals_entities, proposals_info, proposals_outline, storage
+from .. import (
+    interviews,
+    proposals,
+    proposals_entities,
+    proposals_info,
+    proposals_outline,
+    storage,
+)
 from .._files import StoryError
 from . import HINT, scope
 
