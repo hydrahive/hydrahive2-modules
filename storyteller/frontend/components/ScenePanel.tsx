@@ -1,9 +1,11 @@
-// Reiter „Szene“: Titel, Zusammenfassung, Perspektive, Stand, erkannte Steckbriefe, Schnappschüsse.
+// Reiter „Szene“: Titel, Zusammenfassung, Perspektive, Stand, erkannte Steckbriefe, Schnappschüsse;
+// oben ein offener Vorschlag des Agenten für diese Felder (G4b).
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { storyApi } from "../api"
 import { entitiesInText, findScene, type Scene, type SceneStatus } from "../model"
 import type { BookState } from "../useBook"
+import { InfoProposalBox } from "./InfoProposalBox"
 
 const STATUSES: SceneStatus[] = ["idea", "draft", "revised", "done"]
 const field = "w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
@@ -38,8 +40,10 @@ export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
     } catch (e) { setError(e instanceof Error ? e.message : String(e)) } finally { setBusy(false) }
   }
 
+  const info = state.infoProposals[scene.id]
   return (
     <div className="space-y-4">
+      {info && <InfoProposalBox key={`${scene.id}-${info.at}`} state={state} scene={scene} proposal={info} />}
       <label className={label}><span>{t("scene_title")}</span>
         <input className={field} value={scene.title} maxLength={200} onChange={(e) => set({ title: e.target.value })} />
       </label>

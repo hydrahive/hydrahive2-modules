@@ -2,6 +2,7 @@
 // mit Code und – bei 409 – dem aktuellen Stand auf dem Server (`current`).
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import type { BookKind, EntityKind, GhostSettings, SceneOrigin, SceneStatus } from "./model"
+import type { InfoProposal } from "./infoProposal"
 import type { SuggestAction } from "./suggest"
 
 const BASE = "/api/modules/storyteller"
@@ -46,6 +47,8 @@ export interface ServerFull {
   book: ServerBook; structure: ServerStructure; scenes: Record<string, ServerScene>
   /** Ab 0.4.0: Schreibrecht im Projekt (Oberfläche sperrt Knöpfe) und offene Vorschläge. */
   can_write?: boolean; proposals?: ProposalInfo[]
+  /** Ab 0.7.0: offene Vorschläge für Szenen-Infos (G4b). */
+  info_proposals?: InfoProposal[]
 }
 export interface SnapshotInfo { id: string; at: string; words: number; text?: string }
 export interface Created { scene: ServerScene; structure: ServerStructure }

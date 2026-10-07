@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
-from .. import interviews, proposals, storage
+from .. import interviews, proposals, proposals_info, storage
 from .._files import StoryError
 from . import HINT, scope
 
@@ -39,11 +39,13 @@ async def _outline(args: dict, ctx: ToolContext) -> ToolResult:
         return err
     st = storage.get_structure(pid, book["id"])
     open_props = {p["scene_id"] for p in proposals.list_for_book(pid, book["id"])}
+    open_infos = {p["scene_id"] for p in proposals_info.list_for_book(pid, book["id"])}
 
     def scene(sid: str) -> dict:
         s = storage.get_scene(pid, book["id"], sid)
         return {"id": sid, "title": s["title"], "summary": s["summary"], "pov": s["pov"], "status": s["status"],
-                "origin": s["origin"], "words": _words(s["text"]), "has_proposal": sid in open_props}
+                "origin": s["origin"], "words": _words(s["text"]), "has_proposal": sid in open_props,
+                "has_info_proposal": sid in open_infos}
 
     return ToolResult.ok({
         "book": {"id": book["id"], "title": book["title"], "kind": book["kind"], "language": book["language"],

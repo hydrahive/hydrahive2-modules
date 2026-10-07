@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useState } from "react"
 import { StoryApiError } from "./api"
 import { chatApi, proposalMarks, type ChatInfo, type ChatStart } from "./chatApi"
+import { infoMarks } from "./infoProposal"
 import type { BookState } from "./useBook"
 
 export const POLL_MS = 10_000
 
 export function useChatMode(state: BookState, sceneId: string) {
-  const { projectId, book, markProposals } = state
+  const { projectId, book, markProposals, setInfoProposals } = state
   const [info, setInfo] = useState<ChatInfo | null>(null)
   const [started, setStarted] = useState<ChatStart | null>(null)
   const [busy, setBusy] = useState(false)
@@ -20,7 +21,8 @@ export function useChatMode(state: BookState, sceneId: string) {
 
   const poll = useCallback(async () => {
     try { markProposals(proposalMarks(await chatApi.proposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
-  }, [projectId, book.id, markProposals])
+    try { setInfoProposals(infoMarks(await chatApi.infoProposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
+  }, [projectId, book.id, markProposals, setInfoProposals])
 
   useEffect(() => {
     let alive = true
