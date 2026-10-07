@@ -8,6 +8,7 @@ Prüfe gegen Steckbriefe, frühere Szenen und Zusammenfassungen:
 - Wissen: Weiß eine Figur etwas, das sie zu diesem Zeitpunkt noch nicht wissen kann?
 - Orte und Gegenstände: Wo ist wer, wer hat was?
 
-Antworte dem Autor mit einer knappen Liste, je Fund: Stelle (Szenentitel, scene_id), Widerspruch, womit er kollidiert
-(Szene oder Steckbrief), Vorschlag zur Auflösung. Kein Fund → sag das in einem Satz. Unsicheres kennzeichnest du.
-Du legst keine Vorschläge ab.
+Je Fund legst du einen Hinweis mit `storyteller_note` ab (kind „hint“, Stelle als scene_id): Titel = der Widerspruch
+in wenigen Worten; Text = womit er kollidiert (Szene oder Steckbrief, wörtlich zitiert) und ein Vorschlag zur Auflösung.
+Unsicheres kennzeichnest du im Text. Kein Fund → nichts ablegen, dem Autor in einem Satz sagen.
+Du änderst weder Text noch Steckbriefe.

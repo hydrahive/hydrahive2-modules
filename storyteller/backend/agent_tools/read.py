@@ -10,6 +10,7 @@ from .. import (
     proposals_info,
     proposals_outline,
     storage,
+    team_notes,
 )
 from .._files import StoryError
 from . import HINT, scope
@@ -70,12 +71,14 @@ async def _outline(args: dict, ctx: ToolContext) -> ToolResult:
     open_props = {p["scene_id"] for p in proposals.list_for_book(pid, book["id"])}
     open_infos = {p["scene_id"] for p in proposals_info.list_for_book(pid, book["id"])}
     ents = {e["id"]: e["name"] for e in st.get("entities", [])}
+    open_notes = team_notes.list_notes(pid, book["id"])
+    note_count = team_notes.open_counts(pid, book["id"])
 
     def scene(sid: str) -> dict:
         s = storage.get_scene(pid, book["id"], sid)
         return {"id": sid, "title": s["title"], "summary": s["summary"], "pov": s["pov"], "status": s["status"],
                 "origin": s["origin"], "words": _words(s["text"]), "has_proposal": sid in open_props,
-                "has_info_proposal": sid in open_infos}
+                "has_info_proposal": sid in open_infos, "open_notes": note_count.get(sid, 0)}
 
     return ToolResult.ok({
         "book": {"id": book["id"], "title": book["title"], "kind": book["kind"], "language": book["language"],
@@ -89,6 +92,8 @@ async def _outline(args: dict, ctx: ToolContext) -> ToolResult:
                               "name": p["changes"].get("name") or ents.get(p["entity_id"], ""), "fields": list(p["changes"])}
                              for p in proposals_entities.list_for_book(pid, book["id"])],
         "outline_proposal": _outline_info(proposals_outline.find(pid, book["id"])),
+        "open_notes": [{k: n[k] for k in ("id", "kind", "title", "author", "scene_id", "chapter_id", "entity_id") if k in n}
+                       for n in open_notes],
     })
 
 

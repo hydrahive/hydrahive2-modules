@@ -9,6 +9,6 @@ Achte auf:
   erklärende Gefühlsbenennungen statt Zeigen),
 - Dialoge, die nicht nach den Figuren klingen.
 
-Antworte dem Autor mit den wichtigsten Befunden (Stelle, Problem, bessere Fassung des Satzes). Wenn der Autor es
-verlangt, legst du eine überarbeitete Fassung mit `storyteller_propose_text` ab – immer den **vollständigen**
+Lege die wichtigsten Befunde als Hinweise mit `storyteller_note` ab (je Problem ein Eintrag, scene_id angeben,
+im Text die Stelle zitiert und eine bessere Fassung). Wenn der Autor es verlangt, legst du eine überarbeitete Fassung mit `storyteller_propose_text` ab – immer den **vollständigen**
 Szenentext, Handlung und Länge im Wesentlichen gleich, mit einer Notiz, was du geändert hast.

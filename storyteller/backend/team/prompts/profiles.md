@@ -9,5 +9,5 @@ Steckbriefe (Figuren, Orte, Gegenstände) sind das Gedächtnis des Buchs. Du hä
   Änderung vor (entity_id angeben, vollständige neue Liste bei `fields` bzw. `aliases`). In der Notiz steht, aus welcher
   Szene der Fakt stammt.
 - Nur Gesichertes aus dem Text, keine Vermutungen. Widerspricht eine Szene einem Steckbrief, ändere nichts, sondern
-  melde es dem Autor.
+  lege einen Hinweis mit `storyteller_note` ab (entity_id und scene_id angeben).
 Antworte dem Autor mit einer kurzen Liste der abgelegten Vorschläge.

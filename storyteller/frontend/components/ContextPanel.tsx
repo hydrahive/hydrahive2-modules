@@ -7,9 +7,10 @@ import type { BookState } from "../useBook"
 import { AiPanel } from "./AiPanel"
 import { EntityPanel } from "./EntityPanel"
 import { ScenePanel } from "./ScenePanel"
+import { TeamPanel } from "./TeamPanel"
 
-export type ContextTab = "scene" | "entity" | "ai" | "notes"
-const TABS: ContextTab[] = ["scene", "entity", "ai", "notes"]
+export type ContextTab = "scene" | "entity" | "ai" | "team" | "notes"
+const TABS: ContextTab[] = ["scene", "entity", "ai", "team", "notes"]
 
 interface Props {
   tab: ContextTab
@@ -42,6 +43,7 @@ export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId,
         {tab === "scene" && <ScenePanel state={state} scene={scene} onOpenEntity={open} onRemoved={onSceneRemoved} />}
         {tab === "entity" && <EntityPanel state={state} entityId={entityId} onDeleted={() => setEntityId(null)} onOpen={open} />}
         {tab === "ai" && <AiPanel state={state} scene={scene} editorRef={editorRef} onGoScene={() => setTab("scene")} onOpenScene={onOpenScene} onOpenChat={onOpenChat} />}
+        {tab === "team" && <TeamPanel state={state} sceneId={scene.id} onOpenScene={onOpenScene} />}
         {tab === "notes" && (
           <textarea value={state.book.notes} placeholder={t("notes_ph")}
             onChange={(e) => state.change((b) => ({ ...b, notes: e.target.value }))}

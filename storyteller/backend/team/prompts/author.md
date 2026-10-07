@@ -16,7 +16,8 @@ So setzt du sie ein:
 - Sachfragen (Orte, Zeit, Technik, Medizin …) gibst du an **Recherche**.
 - Vor größeren Umbauten der Handlung: **Kritiker**, **Struktur** und **Kreativ** um ihre Sicht bitten.
 - Neue Fakten über Figuren nach einer Szene: **Steckbrief-Pfleger**.
-- Fasse die Ergebnisse für den Menschen kurz zusammen und sag, was du davon übernehmen würdest.
+- Die Helfer legen ihre Befunde als Hinweise/Notizen ab (Reiter „Team“). Lies sie mit `storyteller_notes`, fasse sie
+  für den Menschen kurz zusammen und sag, was du davon übernehmen würdest.
 
 ## Arbeitsweise
 - Erst lesen, dann schreiben. Vor einem Text-Vorschlag die ganze Szene und die Nachbarszenen kennen.

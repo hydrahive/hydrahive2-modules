@@ -8,6 +8,7 @@ import type { EntityProposal } from "./entityProposal"
 import type { InfoProposal } from "./infoProposal"
 import type { ProposalMark, Versions } from "./serverBook"
 import type { Suggestion } from "./suggest"
+import type { TeamNote } from "./teamNotes"
 import { useSnapshots } from "./useSnapshots"
 
 export type { Conflict, SaveState } from "./bookSync"
@@ -16,6 +17,8 @@ interface OpenExtras {
   canWrite: boolean; proposals: Record<string, ProposalMark>; infoProposals?: Record<string, InfoProposal>
   entityProposals?: EntityProposal[]
   outlineProposal?: OutlineProposal | null
+  /** T1d: offene Hinweise je Szene aus dem Öffnen (bis die Liste geladen ist). */
+  openNotes?: Record<string, number>
 }
 
 export function useBook(projectId: string, initial: Book, versions: Versions,
@@ -30,6 +33,9 @@ export function useBook(projectId: string, initial: Book, versions: Versions,
   const [entityProposals, setEntityProposals] = useState<EntityProposal[]>(extras.entityProposals ?? [])
   // G4d: höchstens ein Gliederungs-Vorschlag je Buch.
   const [outlineProposal, setOutlineProposal] = useState<OutlineProposal | null>(extras.outlineProposal ?? null)
+  // T1d: Hinweise/Notizen des Teams (Liste vom Server; null = noch nicht geladen → Zählung aus dem Öffnen).
+  const [notes, setNotes] = useState<TeamNote[] | null>(null)
+  const [openNotesAtOpen] = useState<Record<string, number>>(extras.openNotes ?? {})
   const canWrite = extras.canWrite
   // Einmal je geöffnetem Buch (Workspace hat key=book.id); setView ist stabil.
   const [sync] = useState(() => new BookSync(projectId, initial, versions, setView))
@@ -101,6 +107,7 @@ export function useBook(projectId: string, initial: Book, versions: Versions,
       const { [id]: _gone, ...rest } = p
       return rest
     }), []),
+    notes, setNotes, openNotesAtOpen,
   }
 }
 

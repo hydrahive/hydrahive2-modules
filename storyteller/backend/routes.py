@@ -6,15 +6,25 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from . import importer, proposals, proposals_entities, proposals_info, proposals_outline, storage
+from . import (
+    importer,
+    proposals,
+    proposals_entities,
+    proposals_info,
+    proposals_outline,
+    storage,
+    team_notes,
+)
 from ._files import project_access
 from ._route_base import Auth, _call, _guard, _set
 from .chat_routes import router as chat_router
 from .ghost_routes import router as ghost_router
-from .proposal_routes import router as proposal_router
 from .interview_routes import router as interview_router
-from .run_routes import router as run_router
+from .note_routes import router as note_router
+from .proposal_routes import router as proposal_router
 from .routes_scenes import router as scenes_router
+from .run_routes import router as run_router
+from .team import upgrade as team_upgrade
 from .team_routes import router as team_router
 
 router = APIRouter()
@@ -74,6 +84,7 @@ def import_book(project_id: str, body: dict[str, Any], auth: Auth):
 def open_book(project_id: str, book_id: str, auth: Auth):
     """Alles zum Öffnen: Kopf, Struktur und alle Szenen (Text + Infos)."""
     _guard(auth, project_id, "read")
+    team_upgrade.ensure_current(project_id)   # T1d: Schreib-Team älterer Versionen nachziehen (nur Buch-Projekte)
 
     def _all():
         st = storage.get_structure(project_id, book_id)
@@ -85,7 +96,8 @@ def open_book(project_id: str, book_id: str, auth: Auth):
                 "proposals": proposals.list_for_book(project_id, book_id),
                 "info_proposals": proposals_info.list_for_book(project_id, book_id),
                 "entity_proposals": proposals_entities.list_for_book(project_id, book_id),
-                "outline_proposal": proposals_outline.find(project_id, book_id)}
+                "outline_proposal": proposals_outline.find(project_id, book_id),
+                "open_notes": team_notes.open_counts(project_id, book_id)}
     return _call(_all)
 
 
@@ -115,3 +127,4 @@ router.include_router(run_router)
 router.include_router(interview_router)
 router.include_router(chat_router)
 router.include_router(team_router)
+router.include_router(note_router)

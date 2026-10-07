@@ -13,11 +13,12 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-TEAM_VERSION = 1
+TEAM_VERSION = 2   # 2: Hinweise/Notizen (storyteller_note/_notes, T1d)
 _PROMPTS = Path(__file__).resolve().parent / "prompts"
 
-READ = ("storyteller_books", "storyteller_outline", "storyteller_read",
+READ = ("storyteller_books", "storyteller_outline", "storyteller_read", "storyteller_notes",
         "datamining_search", "datamining_semantic", "datamining_timeline", "read_memory", "search_memory")
+NOTE = ("storyteller_note",)
 PROPOSE_ALL = ("storyteller_propose_text", "storyteller_propose_scene_info", "storyteller_propose_entity",
                "storyteller_propose_outline")
 
@@ -31,22 +32,22 @@ class Role:
 
 
 AUTHOR = Role("author", "Autor", "Schreibt mit dir am Buch, plant und beauftragt die Helfer.",
-              READ + PROPOSE_ALL + ("write_memory", "todo_write", "ask_agent", "list_specialists"))
+              READ + NOTE + PROPOSE_ALL + ("write_memory", "todo_write", "ask_agent", "list_specialists"))
 
 HELPERS: tuple[Role, ...] = (
     Role("plausibility", "Plausibilität", "Findet Widersprüche zu Steckbriefen, Zeitlinie und Wissen der Figuren.",
-         READ),
+         READ + NOTE),
     Role("research", "Recherche", "Klärt Sachfragen und historische oder fachliche Details, mit Quellen.",
-         READ + ("web_search", "fetch_url", "research_report")),
+         READ + NOTE + ("web_search", "fetch_url", "research_report")),
     Role("editor", "Lektor", "Prüft Stil, Wiederholungen, Lesbarkeit und KI-Floskeln; schlägt Überarbeitungen vor.",
-         READ + ("storyteller_propose_text",)),
-    Role("critic", "Kritiker", "Sucht Lücken in Handlung und Logik und schwache Spannung.", READ),
+         READ + NOTE + ("storyteller_propose_text",)),
+    Role("critic", "Kritiker", "Sucht Lücken in Handlung und Logik und schwache Spannung.", READ + NOTE),
     Role("creative", "Kreativ", "Bringt Wendungen, Alternativen und neue Ideen ein.",
-         READ + ("storyteller_propose_outline",)),
+         READ + NOTE + ("storyteller_propose_outline",)),
     Role("structure", "Struktur", "Achtet auf Aufbau, Akte, Spannungsbogen und Tempo.",
-         READ + ("storyteller_propose_outline", "storyteller_propose_scene_info")),
+         READ + NOTE + ("storyteller_propose_outline", "storyteller_propose_scene_info")),
     Role("profiles", "Steckbrief-Pfleger", "Übernimmt neue Fakten über Figuren, Orte und Gegenstände in Steckbriefe.",
-         READ + ("storyteller_propose_entity",)),
+         READ + NOTE + ("storyteller_propose_entity",)),
 )
 
 

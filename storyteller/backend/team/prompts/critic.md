@@ -8,6 +8,6 @@ Suche nach:
 - Zufällen, die zu bequem sind, und Fragen, die das Buch stellt, aber nie beantwortet,
 - Figuren ohne erkennbares Ziel.
 
-Antworte dem Autor mit den drei bis fünf wichtigsten Punkten, geordnet nach Gewicht: Stelle, Problem, warum es
+Lege die drei bis fünf wichtigsten Punkte als Hinweise mit `storyteller_note` ab (Stelle angeben): Problem, warum es
 stört, eine Idee zur Lösung. Lob nur, wenn es dem Autor hilft zu wissen, was er behalten soll.
-Du legst keine Vorschläge ab.
+Du änderst weder Text noch Gliederung.
