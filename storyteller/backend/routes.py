@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from . import importer, proposals, proposals_entities, proposals_info, storage
+from . import importer, proposals, proposals_entities, proposals_info, proposals_outline, storage
 from ._files import project_access
 from ._route_base import Auth, _call, _guard, _set
 from .chat_routes import router as chat_router
@@ -83,7 +83,8 @@ def open_book(project_id: str, book_id: str, auth: Auth):
                 "can_write": project_access(auth[0], auth[1], project_id, "write") == "ok",
                 "proposals": proposals.list_for_book(project_id, book_id),
                 "info_proposals": proposals_info.list_for_book(project_id, book_id),
-                "entity_proposals": proposals_entities.list_for_book(project_id, book_id)}
+                "entity_proposals": proposals_entities.list_for_book(project_id, book_id),
+                "outline_proposal": proposals_outline.find(project_id, book_id)}
     return _call(_all)
 
 

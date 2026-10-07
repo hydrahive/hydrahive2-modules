@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
-from .. import interviews, proposals, proposals_entities, proposals_info, storage
+from .. import interviews, proposals, proposals_entities, proposals_info, proposals_outline, storage
 from .._files import StoryError
 from . import HINT, scope
 
@@ -28,6 +28,13 @@ async def _books(_args: dict, ctx: ToolContext) -> ToolResult:
         return err
     return ToolResult.ok({"books": [{"id": b["id"], "title": b["title"], "kind": b["kind"], "language": b["language"],
                                      "words": b.get("words", 0), "idea": b.get("idea", "")} for b in storage.list_books(pid)]})
+
+
+def _outline_info(p: dict | None) -> dict | None:
+    if not p:
+        return None
+    ch = p["outline"]["chapters"]
+    return {"chapters": len(ch), "scenes": sum(len(c["scenes"]) for c in ch), "titles": [c["title"] for c in ch]}
 
 
 async def _outline(args: dict, ctx: ToolContext) -> ToolResult:
@@ -59,6 +66,7 @@ async def _outline(args: dict, ctx: ToolContext) -> ToolResult:
         "entity_proposals": [{"id": p["id"], "entity_id": p["entity_id"], "kind": p["kind"],
                               "name": p["changes"].get("name") or ents.get(p["entity_id"], ""), "fields": list(p["changes"])}
                              for p in proposals_entities.list_for_book(pid, book["id"])],
+        "outline_proposal": _outline_info(proposals_outline.find(pid, book["id"])),
     })
 
 
