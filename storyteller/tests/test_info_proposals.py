@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import pytest
-from conftest import PROJECT_ID
-
 from backend import proposals, proposals_info, storage
 from backend._files import StoryError
 from backend.storage import Conflict
+from conftest import PROJECT_ID
 
 
 def _scene():
