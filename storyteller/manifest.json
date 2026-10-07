@@ -14,5 +14,6 @@
     }
   ],
   "has_service": false,
-  "min_core_version": "2.0.0"
+  "min_core_version": "2.0.0",
+  "default_agent_tools": true
 }
