@@ -28,6 +28,9 @@ class ChatIn(BaseModel):
 
 
 BOOK_KEY = "storyteller_book"   # Kennzeichen in session.metadata: zu welchem Buch die Sitzung gehört
+# Kern (Task 8fd82c02): Sitzungen mit metadata.embedded_in öffnet das Projekt-Cockpit nie von selbst und merkt sie
+# nicht – das Chat-Fenster im Storyteller verdrängt so nicht mehr den eigenen Chat im Cockpit.
+EMBED = {"embedded_in": "storyteller"}
 
 
 def _book_session(username: str, agent_id: str, project_id: str, book_id: str):
@@ -81,10 +84,12 @@ def chat_start(project_id: str, book_id: str, body: ChatIn, auth: Auth):
     reused = s is not None
     if reused:
         # nach vorn: die Kern-Chatansicht lädt nur die neuesten Sitzungen des Nutzers (GET /api/sessions, 50)
+        if s.metadata.get("embedded_in") != EMBED["embedded_in"]:     # Sitzung von vor 0.10.2 nachziehen
+            sessions_db.update(s.id, metadata={**s.metadata, **EMBED})
         sessions_db.touch(s.id)
     if s is None:
         s = sessions_db.create(agent_id=agent["id"], user_id=auth[0], project_id=project_id,
-                               title=f"Storyteller: {book['title']}"[:200], metadata={BOOK_KEY: book_id})
+                               title=f"Storyteller: {book['title']}"[:200], metadata={BOOK_KEY: book_id, **EMBED})
     return {"session_id": s.id, "url": f"/werkstatt/{s.id}", "intro": _intro(book, scene), "reused": reused,
             "agent": {"id": agent["id"], "name": agent["name"]}}
 

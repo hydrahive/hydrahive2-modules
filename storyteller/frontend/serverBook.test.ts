@@ -77,7 +77,7 @@ describe("serverBook – Schreibrecht und abgelegte Vorschläge (G2)", () => {
     const f = { ...full(), can_write: false, proposals: [{ scene_id: "s1", run_id: "r", model: "m", base_version: 2, words: 812, at: "" }] }
     const o = openedFromServer(f)
     expect(o.canWrite).toBe(false)
-    expect(o.proposals).toEqual({ s1: { words: 812, model: "m", at: "", source: "run", note: "" } })
+    expect(o.proposals).toEqual({ s1: { words: 812, model: "m", at: "", source: "run", note: "", sceneWords: 0 } })
     expect(o.book.id).toBe("b")
     const old = openedFromServer(full())
     expect(old.canWrite).toBe(true)

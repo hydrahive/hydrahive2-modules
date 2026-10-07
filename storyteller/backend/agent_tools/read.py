@@ -13,9 +13,24 @@ from .. import (
 )
 from .._files import StoryError
 from . import HINT, scope
+from ._chunk import chunk
 
 MAX_SCENES = 3
 MAX_TEXT = 12_000
+_CONTINUE = ("Mindestens eine Szene ist länger als ein Abschnitt (cut: true). Weiterlesen mit storyteller_read("
+             "book_id, scene_ids=[<id>], offset=<next_offset>), bis next_offset null ist. Vor storyteller_propose_text "
+             "die ganze Szene lesen – der Vorschlag ersetzt beim Übernehmen die komplette Szene.")
+
+
+def _offset(args: dict, ids: list) -> tuple[int, str | None]:
+    raw = args.get("offset")
+    if raw is None:
+        return 0, None
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0:
+        return 0, "offset muss eine Zahl ≥ 0 sein (next_offset aus dem letzten Aufruf)."
+    if len(ids) != 1:
+        return 0, "Mit offset genau eine Szene angeben (scene_ids mit einer ID)."
+    return raw, None
 
 
 def _words(text: str) -> int:
@@ -90,14 +105,23 @@ async def _read(args: dict, ctx: ToolContext) -> ToolResult:
         return ToolResult.fail("scene_ids (1–3 Szenen-IDs aus storyteller_outline) oder interview_chapter_id angeben.")
     if len(ids) > MAX_SCENES:
         return ToolResult.fail(f"Höchstens {MAX_SCENES} Szenen je Aufruf.")
+    offset, bad = _offset(args, ids)
+    if bad:
+        return ToolResult.fail(bad)
     out: dict = {"book_id": book["id"], "scenes": []}
     for sid in ids:
         try:
             s = storage.get_scene(pid, book["id"], str(sid))
         except StoryError:
             return ToolResult.fail(f"Szene '{sid}' gibt es in diesem Buch nicht.")
+        if offset and offset >= len(s["text"]):
+            return ToolResult.fail(f"offset {offset} liegt hinter dem Ende der Szene ({len(s['text'])} Zeichen).")
+        part, nxt = chunk(s["text"], offset, MAX_TEXT)
         out["scenes"].append({"id": s["id"], "title": s["title"], "summary": s["summary"], "version": s["version"],
-                              "words": _words(s["text"]), "text": s["text"][:MAX_TEXT], "cut": len(s["text"]) > MAX_TEXT})
+                              "words": _words(s["text"]), "text": part, "offset": offset, "next_offset": nxt,
+                              "total_chars": len(s["text"]), "cut": nxt is not None})
+    if any(s["cut"] for s in out["scenes"]):
+        out["hint"] = _CONTINUE
     if chapter:
         try:
             iv = interviews.get(pid, book["id"], str(chapter))
@@ -117,9 +141,12 @@ OUTLINE = Tool(name="storyteller_outline",
                            "offener Vorschlag) und Steckbriefe.",
                schema={"type": "object", "required": ["book_id"], "properties": _BOOK}, execute=_outline, category="storyteller")
 READ = Tool(name="storyteller_read",
-            description=f"Text von 1–{MAX_SCENES} Szenen lesen (mit Version) und/oder das Interview eines Kapitels.",
+            description=f"Text von 1–{MAX_SCENES} Szenen lesen (mit Version) und/oder das Interview eines Kapitels. "
+                        "Lange Szenen kommen in Abschnitten (cut, next_offset) – mit offset weiterlesen.",
             schema={"type": "object", "required": ["book_id"], "properties": {
                 **_BOOK,
                 "scene_ids": {"type": "array", "items": {"type": "string"}, "description": f"Bis zu {MAX_SCENES} Szenen-IDs."},
+                "offset": {"type": "integer", "description": "Optional, nur mit genau einer Szene: ab diesem Zeichen "
+                                                             "weiterlesen (Wert von next_offset aus dem letzten Aufruf)."},
                 "interview_chapter_id": {"type": "string", "description": "Optional: Kapitel-ID, dessen Interview gelesen wird."},
             }}, execute=_read, category="storyteller")

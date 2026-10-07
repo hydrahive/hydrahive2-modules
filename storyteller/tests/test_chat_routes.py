@@ -156,3 +156,23 @@ def test_reuse_moves_the_session_to_the_front(client, auth_headers, project_agen
     assert sessions_db.list_for_user("testuser")[0].id == newer.id
     r = client.post(f"{P}/books/{bid}/chat", json={"reuse": True}, headers=auth_headers).json()
     assert r["session_id"] == story and sessions_db.list_for_user("testuser")[0].id == story
+
+
+def test_book_session_is_marked_embedded_for_the_cockpit(client, auth_headers, project_agent):
+    """Task 8fd82c02: Kern-Cockpit öffnet Sitzungen mit metadata.embedded_in nie von selbst."""
+    from hydrahive.db import sessions as sessions_db
+    bid, _ = _book()
+    r = client.post(f"{P}/books/{bid}/chat", json={}, headers=auth_headers).json()
+    assert sessions_db.get(r["session_id"]).metadata.get("embedded_in") == "storyteller"
+
+
+def test_reused_old_session_gets_marked_and_keeps_other_metadata(client, auth_headers, project_agent):
+    """Sitzungen von vor 0.10.2 (nur storyteller_book) werden beim Wiederverwenden nachgezogen."""
+    from hydrahive.db import sessions as sessions_db
+    bid, _ = _book()
+    old = sessions_db.create(agent_id=project_agent["id"], user_id="testuser", project_id=PROJECT_ID,
+                             metadata={"storyteller_book": bid, "model_override": "irgendein-modell"})
+    r = client.post(f"{P}/books/{bid}/chat", json={"reuse": True}, headers=auth_headers).json()
+    assert r["reused"] is True and r["session_id"] == old.id
+    md = sessions_db.get(old.id).metadata
+    assert md == {"storyteller_book": bid, "model_override": "irgendein-modell", "embedded_in": "storyteller"}

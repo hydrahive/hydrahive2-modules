@@ -11,6 +11,12 @@ from .. import proposals, proposals_info, storage
 from .._files import StoryError
 from . import scope
 
+SHRINK = 0.5   # Vorschlag unter der Hälfte der Szene → Warnung (Task 29fb3911)
+
+
+def _words(text: str) -> int:
+    return sum(1 for w in text.split() if any(c.isalnum() for c in w))
+
 
 async def _propose_text(args: dict, ctx: ToolContext) -> ToolResult:
     pid, err = scope(ctx, "write")
@@ -25,14 +31,21 @@ async def _propose_text(args: dict, ctx: ToolContext) -> ToolResult:
     except StoryError:
         return ToolResult.fail("Buch oder Szene gibt es in diesem Projekt nicht (storyteller_outline zeigt die IDs).")
     replaced = any(p["scene_id"] == scene_id for p in proposals.list_for_book(pid, book_id))
+    scene_words = _words(scene["text"])
     try:
         info = proposals.store(pid, book_id, scene_id, text.strip(), run_id="", model="", base_version=scene["version"],
-                               source="agent", session_id=ctx.session_id or "", note=str(args.get("note") or "")[:500])
+                               source="agent", session_id=ctx.session_id or "", note=str(args.get("note") or "")[:500],
+                               scene_words=scene_words)
     except StoryError as exc:
         return ToolResult.fail("Text zu lang für eine Szene." if exc.code == "text_too_long" else f"Nicht abgelegt: {exc.code}")
-    return ToolResult.ok({"stored": True, "scene_id": scene_id, "words": info["words"], "replaced": replaced,
-                          "message": "Vorschlag liegt an der Szene bereit; der Autor übernimmt oder verwirft ihn im "
-                                     "Storyteller. Die Szene selbst ist unverändert."})
+    out = {"stored": True, "scene_id": scene_id, "words": info["words"], "replaced": replaced,
+           "message": "Vorschlag liegt an der Szene bereit; der Autor übernimmt oder verwirft ihn im "
+                      "Storyteller. Die Szene selbst ist unverändert."}
+    if info["words"] < scene_words * SHRINK:      # leere Szene (0 Wörter) warnt nie
+        out["warning"] = (f"Der Vorschlag ({info['words']} Wörter) ist deutlich kürzer als die Szene ({scene_words} "
+                          "Wörter). Beim Übernehmen ersetzt er die ganze Szene. Falls du die Szene nur teilweise gelesen "
+                          "hast: mit storyteller_read und offset zu Ende lesen und den vollständigen Text vorschlagen.")
+    return ToolResult.ok(out)
 
 
 PROPOSE_TEXT = Tool(

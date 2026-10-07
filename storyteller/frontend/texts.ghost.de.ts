@@ -137,6 +137,7 @@ export const ghostDe = {
   chat_proposals_hint: "Neue Vorschläge des Agenten erscheinen hier automatisch (alle 10 Sekunden geprüft).",
   proposal_from_agent: "Vorschlag vom Agenten im Chat ({{words}} Wörter). Dein Text bleibt, bis du übernimmst.",
   proposal_note: "Notiz des Agenten: {{note}}",
+  proposal_shrinks: "Achtung: Der Vorschlag hat nur {{words}} Wörter, die Szene {{scene}}. Beim Übernehmen wird die ganze Szene ersetzt – erst ansehen.",
   ai_err_project_agent_missing: "Dieses Projekt hat keinen Projekt-Agenten.",
   ai_err_agent_no_access: "Kein Zugriff auf den Projekt-Agenten.",
   info_proposal_title: "Vorschlag vom Agenten für diese Szene",

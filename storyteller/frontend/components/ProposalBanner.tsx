@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Check, Eye, EyeOff, Loader2, Sparkles, X } from "lucide-react"
 import { StoryApiError } from "../api"
 import { runApi } from "../runApi"
-import type { ProposalMark } from "../serverBook"
+import { shrinks, type ProposalMark } from "../proposalMark"
 import type { BookState } from "../useBook"
 
 interface Props { state: BookState; sceneId: string; mark: ProposalMark }
@@ -56,6 +56,7 @@ export function ProposalBanner({ state, sceneId, mark }: Props) {
           </button>
         </>}
       </div>
+      {shrinks(mark) && <p className="st-proposal-shrink text-xs text-amber-200" role="alert">{t("proposal_shrinks", { words: mark.words, scene: mark.sceneWords })}</p>}
       {mark.note && <p className="st-proposal-note text-xs text-violet-200/80">{t("proposal_note", { note: mark.note })}</p>}
       {text !== null && <div className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded bg-black/20 p-2 font-serif text-sm leading-relaxed text-zinc-200">{text}</div>}
       {error && <p className="text-xs text-red-200" role="alert">{error}</p>}
