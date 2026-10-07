@@ -77,7 +77,7 @@ export async function errorFrom(res: Response): Promise<StoryApiError> {
   return new StoryApiError(res.status, code, obj?.current, msg)
 }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+export async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: { "Content-Type": "application/json", ...authHeader() },

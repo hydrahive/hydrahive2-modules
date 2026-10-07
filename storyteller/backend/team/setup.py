@@ -39,7 +39,11 @@ def _precheck(fields: dict[str, Any]) -> None:
 
 def create_book_project(username: str, fields: dict[str, Any], *, model: str = "") -> dict[str, Any]:
     from hydrahive.agents import config as agent_config
-    from hydrahive.agents._defaults import DEFAULT_MAX_TOKENS, DEFAULT_TEMPERATURE, DEFAULT_THINKING_BUDGET
+    from hydrahive.agents._defaults import (
+        DEFAULT_MAX_TOKENS,
+        DEFAULT_TEMPERATURE,
+        DEFAULT_THINKING_BUDGET,
+    )
     from hydrahive.projects import config as project_config
 
     _precheck(fields)

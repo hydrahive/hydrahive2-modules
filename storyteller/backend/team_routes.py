@@ -9,11 +9,10 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel, Field
-
 from hydrahive.access import check
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 from hydrahive.api.middleware.errors import coded
+from pydantic import BaseModel, Field
 
 from ._route_base import _call
 from .team import setup

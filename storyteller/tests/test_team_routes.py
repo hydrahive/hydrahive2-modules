@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from conftest import MOD_PREFIX
 
 URL = f"{MOD_PREFIX}/book-projects"
@@ -104,9 +103,10 @@ def test_errors_are_coded(client, admin_headers, monkeypatch):
 
 
 def test_chat_in_book_project_talks_to_the_author_without_missing_tools(client, admin_headers, cleanup, monkeypatch):
-    from backend.agent_tools import TOOLS
     from hydrahive.db import sessions as sessions_db
     from hydrahive.tools import REGISTRY
+
+    from backend.agent_tools import TOOLS
     for t in TOOLS:
         monkeypatch.setitem(REGISTRY, t.name, t)
     out = client.post(URL, json=BODY, headers=admin_headers).json()

@@ -12,8 +12,9 @@ FIELDS = {"title": "Der Leuchtturm", "kind": "novel", "language": "de", "audienc
 @pytest.fixture(autouse=True)
 def _module_tools_registered(monkeypatch):
     """Wie im Betrieb: der Kern hat die Storyteller-Werkzeuge registriert (loader → register_tool)."""
-    from backend.agent_tools import TOOLS
     from hydrahive.tools import REGISTRY
+
+    from backend.agent_tools import TOOLS
     for t in TOOLS:
         monkeypatch.setitem(REGISTRY, t.name, t)
 

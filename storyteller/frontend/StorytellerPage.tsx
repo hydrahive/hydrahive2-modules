@@ -4,7 +4,9 @@ import { useTranslation } from "react-i18next"
 import { projectsApi } from "@/features/projects/api"
 import type { Project } from "@/features/projects/types"
 import { storyApi } from "./api"
+import { bookProjectApi, errorText, isBookProject } from "./bookProject"
 import { BookList } from "./components/BookList"
+import { NewBookDialog } from "./components/NewBookDialog"
 import type { Book } from "./model"
 import type { OutlineProposal } from "./chatApi"
 import type { EntityProposal } from "./entityProposal"
@@ -25,30 +27,55 @@ export function StorytellerPage() {
   const [opening, setOpening] = useState(false)
   const [error, setError] = useState("")
   const [tick, setTick] = useState(0)
+  const [canCreateProject, setCanCreateProject] = useState(false)
+  const [firstBook, setFirstBook] = useState(false)
   const project = projects?.find((p) => p.id === projectId)
 
-  useEffect(() => {
-    projectsApi.list().then((ps) => {
+  const loadProjects = useCallback(async (select?: string) => {
+    try {
+      const ps = await projectsApi.list()
       setProjects(ps)
-      const saved = localStorage.getItem(PROJECT_KEY)
-      setProjectId(ps.some((p) => p.id === saved) ? (saved as string) : (ps[0]?.id ?? ""))
-    }).catch(() => setProjects([]))
+      const want = select ?? localStorage.getItem(PROJECT_KEY)
+      const id = ps.some((p) => p.id === want) ? (want as string) : (ps[0]?.id ?? "")
+      setProjectId(id)
+      if (select) localStorage.setItem(PROJECT_KEY, id)
+    } catch { setProjects([]) }
   }, [])
+
+  useEffect(() => {
+    void Promise.resolve().then(() => loadProjects())
+    bookProjectApi.canCreate().then((r) => setCanCreateProject(r.can_create)).catch(() => setCanCreateProject(false))
+  }, [loadProjects])
 
   const pickProject = (id: string) => {
     setProjectId(id)
     localStorage.setItem(PROJECT_KEY, id)
   }
 
-  const openBook = useCallback(async (bookId: string, sceneId?: string) => {
+  const openBook = useCallback(async (bookId: string, sceneId?: string, inProject?: string) => {
     setOpening(true)
     setError("")
     try {
-      setOpen({ ...openedFromServer(await storyApi.openBook(projectId, bookId)), sceneId })
+      setOpen({ ...openedFromServer(await storyApi.openBook(inProject ?? projectId, bookId)), sceneId })
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(t, e))
     } finally { setOpening(false) }
-  }, [projectId])
+  }, [projectId, t])
+
+  // T1c: Buch als eigenes Projekt angelegt → Projektliste neu laden, Projekt wählen, Buch öffnen.
+  const projectCreated = useCallback(async (pid: string, bookId: string) => {
+    await loadProjects(pid)
+    await openBook(bookId, undefined, pid)
+  }, [loadProjects, openBook])
+
+  const createFirst = async (f: Parameters<typeof bookProjectApi.create>[0]) => {
+    setFirstBook(false)
+    setOpening(true)
+    try {
+      const out = await bookProjectApi.create(f)
+      await projectCreated(out.project_id, out.book.id)
+    } catch (e) { setError(errorText(t, e)) } finally { setOpening(false) }
+  }
 
   const close = useCallback(() => { setOpen(null); setTick((n) => n + 1) }, [])
 
@@ -83,9 +110,20 @@ export function StorytellerPage() {
       {error && <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200" role="alert">{error}</p>}
       {opening && <p className="text-sm text-zinc-500">{t("opening")}</p>}
       {projects === null ? null : projects.length === 0 ? (
-        <p className="text-sm text-zinc-400">{t("project_none")}</p>
+        <div className="space-y-3">
+          <p className="text-sm text-zinc-400">{t(canCreateProject ? "project_none_can_create" : "project_none")}</p>
+          {canCreateProject && (
+            <button onClick={() => setFirstBook(true)} className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-violet-500">
+              {t("new_book")}
+            </button>
+          )}
+          {firstBook && <NewBookDialog canCreateProject onCancel={() => setFirstBook(false)} onCreate={(f) => { void createFirst(f) }} />}
+        </div>
       ) : (
-        <BookList key={`${projectId}-${tick}`} projectId={projectId} onOpen={(id, sceneId) => { void openBook(id, sceneId) }} />
+        <BookList key={`${projectId}-${tick}`} projectId={projectId} projectName={project?.name ?? ""} canCreateProject={canCreateProject}
+          bookProject={project ? isBookProject(project as { metadata?: Record<string, unknown> }) : false}
+          onOpen={(id, sceneId) => { void openBook(id, sceneId) }}
+          onProjectCreated={(pid, bid) => { void projectCreated(pid, bid) }} />
       )}
     </div>
   )

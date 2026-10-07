@@ -23,6 +23,7 @@ export const textsDe = {
   open: "Öffnen",
   delete_book: "Löschen",
   delete_confirm: "„{{title}}“ löschen? Das Buch wandert in den Papierkorb des Projekts (storyteller/trash).",
+  delete_confirm_book_project: "„{{title}}“ löschen? Das Buch wandert in den Papierkorb. Das Projekt mit Autor und Helfern bleibt bestehen – löschen kannst du es im Projekt-Cockpit.",
   words_n: "{{n}} Wörter",
   edited_at: "bearbeitet {{when}}",
   // Neues Buch
@@ -38,6 +39,15 @@ export const textsDe = {
   nb_idea: "Idee (optional)",
   nb_idea_ph: "Worum geht es? 1–3 Sätze.",
   nb_create: "Buch anlegen",
+  nb_place: "Wohin?",
+  nb_place_own: "Eigenes Projekt mit Schreib-Team (empfohlen)",
+  nb_place_own_hint: "Legt ein neues Projekt nur für dieses Buch an – mit einem Autor für den Chat und sieben Helfern (Plausibilität, Recherche, Lektor, Kritiker, Kreativ, Struktur, Steckbriefe). Alle nutzen das Modell des Buchs.",
+  nb_place_current: "Im Projekt „{{name}}“",
+  nb_place_current_hint: "Das Buch kommt in das gewählte Projekt. Im Chat antwortet dessen Projekt-Agent.",
+  nb_creating: "Buch-Projekt mit Schreib-Team wird angelegt …",
+  project_none_can_create: "Du bist noch in keinem Projekt. Lege ein Buch an – es bekommt ein eigenes Projekt mit Schreib-Team.",
+  err_no_model: "Kein Modell gewählt und kein HydraHive-Standardmodell eingestellt (Einstellungen → LLM).",
+  err_capability_denied: "Dir fehlt die Freigabe, Bücher als eigenes Projekt anzulegen. Ein Admin kann sie erteilen.",
   cancel: "Abbrechen",
   // Arbeitsplatz
   back_books: "Bücher",

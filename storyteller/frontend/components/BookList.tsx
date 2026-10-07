@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { BookOpen, Feather, Plus, Trash2 } from "lucide-react"
 import { storyApi, type ServerBookInfo } from "../api"
+import { afterCreate, bookProjectApi, errorText, type BookPlace } from "../bookProject"
 import { lastPlace } from "../lastPlace"
 import type { BookKind } from "../model"
 import { loadSampleBook } from "../sample"
@@ -11,9 +12,18 @@ import { toImport } from "../serverBook"
 import { DraftImport } from "./DraftImport"
 import { NewBookDialog } from "./NewBookDialog"
 
-interface Props { projectId: string; onOpen: (bookId: string, sceneId?: string) => void }
+interface Props {
+  projectId: string
+  projectName: string
+  onOpen: (bookId: string, sceneId?: string) => void
+  /** T1c: Buch wurde als eigenes Projekt angelegt → Seite wechselt dorthin und öffnet es. */
+  onProjectCreated: (projectId: string, bookId: string) => void
+  canCreateProject: boolean
+  /** Projekt gehört genau zu einem Buch (eigenes Projekt mit Team) → Hinweis beim Löschen. */
+  bookProject?: boolean
+}
 
-export function BookList({ projectId, onOpen }: Props) {
+export function BookList({ projectId, projectName, onOpen, onProjectCreated, canCreateProject, bookProject = false }: Props) {
   const { t, i18n } = useTranslation("storyteller")
   const [books, setBooks] = useState<ServerBookInfo[] | null>(null)
   const [creating, setCreating] = useState(false)
@@ -22,10 +32,11 @@ export function BookList({ projectId, onOpen }: Props) {
   const last = lastPlace.get(projectId)
   const lastBook = last ? books?.find((b) => b.id === last.bookId) : undefined
   const fmt = (iso: string) => new Date(iso).toLocaleString(i18n.language, { dateStyle: "medium", timeStyle: "short" })
-  const fail = (e: unknown) => setError(e instanceof Error ? e.message : String(e))
+  const fail = (e: unknown) => setError(errorText(t, e))
 
   const load = useCallback(() => {
-    storyApi.listBooks(projectId).then((b) => { setBooks(b); setError("") }).catch((e) => { setBooks([]); fail(e) })
+    storyApi.listBooks(projectId).then((b) => { setBooks(b); setError("") })
+      .catch((e: unknown) => { setBooks([]); setError(e instanceof Error ? e.message : String(e)) })
   }, [projectId])
   useEffect(load, [load])
 
@@ -33,11 +44,17 @@ export function BookList({ projectId, onOpen }: Props) {
     setBusy(true)
     try { onOpen(await fn()) } catch (e) { fail(e) } finally { setBusy(false) }
   }
-  const create = (f: { title: string; kind: BookKind; language: string; audience: string; idea: string }) =>
-    run(async () => (await storyApi.createBook(projectId, f)).id)
+  const create = async (f: { title: string; kind: BookKind; language: string; audience: string; idea: string }, place: BookPlace) => {
+    if (place === "current") return run(async () => (await storyApi.createBook(projectId, f)).id)
+    setBusy(true)
+    try {
+      const made = afterCreate(await bookProjectApi.create(f))
+      onProjectCreated(made.projectId, made.bookId)
+    } catch (e) { fail(e) } finally { setBusy(false) }
+  }
   const sample = () => run(async () => (await storyApi.importBook(projectId, toImport(await loadSampleBook()))).id)
   const remove = async (b: ServerBookInfo) => {
-    if (!confirm(t("delete_confirm", { title: b.title }))) return
+    if (!confirm(t(bookProject ? "delete_confirm_book_project" : "delete_confirm", { title: b.title }))) return
     try {
       await storyApi.deleteBook(projectId, b.id)
       lastPlace.clear(projectId, b.id)
@@ -103,7 +120,9 @@ export function BookList({ projectId, onOpen }: Props) {
           ))}
         </ul>
       )}
-      {creating && <NewBookDialog onCancel={() => setCreating(false)} onCreate={(f) => { setCreating(false); void create(f) }} />}
+      {busy && <p className="text-sm text-zinc-500" role="status">{t("nb_creating")}</p>}
+      {creating && <NewBookDialog onCancel={() => setCreating(false)} canCreateProject={canCreateProject} currentProjectName={projectName}
+        onCreate={(f, place) => { setCreating(false); void create(f, place) }} />}
     </div>
   )
 }
