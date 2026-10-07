@@ -36,12 +36,14 @@ def test_save_increments_version_and_is_readable_file():
     assert iv2["version"] == 2
 
 
-def test_unchanged_answer_keeps_its_timestamp():
+def test_unchanged_answer_keeps_its_timestamp(monkeypatch):
     bid, cid = _book()
+    monkeypatch.setattr(interviews, "_now", lambda: "2026-10-07T10:00:00+00:00")
     iv = interviews.save(PROJECT_ID, bid, cid, [_q("a" * 32, answer="A"), _q("b" * 32, answer="B")], base_version=0)
-    t_a = iv["questions"][0]["updated_at"]
+    monkeypatch.setattr(interviews, "_now", lambda: "2026-10-07T11:00:00+00:00")
     iv2 = interviews.save(PROJECT_ID, bid, cid, [_q("a" * 32, answer="A"), _q("b" * 32, answer="B neu")], base_version=1)
-    assert iv2["questions"][0]["updated_at"] == t_a
+    assert iv2["questions"][0]["updated_at"] == iv["questions"][0]["updated_at"] == "2026-10-07T10:00:00+00:00"
+    assert iv2["questions"][1]["updated_at"] == "2026-10-07T11:00:00+00:00"
 
 
 def test_outdated_version_conflicts_and_keeps_data():
