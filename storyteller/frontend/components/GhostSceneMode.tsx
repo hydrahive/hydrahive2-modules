@@ -28,8 +28,10 @@ export function GhostSceneMode({ state, scene, onGoScene }: Props) {
   return (
     <div className="st-ghost space-y-3">
       <p className="text-xs text-zinc-400">{t("ghost_intro")}</p>
-      <ModelChooser value={g.model} onChange={(model) => setGhost({ model })} label={t("ghost_model_label")}
-        fallback={book.model} />
+      {state.canWrite && (
+        <ModelChooser value={g.model} onChange={(model) => setGhost({ model })} label={t("ghost_model_label")}
+          fallback={book.model} />
+      )}
       <fieldset className="space-y-1 text-xs text-zinc-400" disabled={running}>
         <legend>{t("ghost_length")}</legend>
         <div className="flex flex-wrap gap-1">
@@ -66,7 +68,7 @@ export function GhostSceneMode({ state, scene, onGoScene }: Props) {
 
       <div className="flex gap-2">
         {!running ? (
-          <button onClick={() => { void run.start() }} disabled={noSummary || length < 200 || run.phase === "ready"}
+          <button onClick={() => { void run.start() }} disabled={!state.canWrite || noSummary || length < 200 || run.phase === "ready"}
             className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-40">
             <Feather className="h-4 w-4" />{t("ghost_start")}
           </button>

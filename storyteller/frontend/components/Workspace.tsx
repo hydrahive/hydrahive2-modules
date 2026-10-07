@@ -5,11 +5,12 @@ import type { Editor } from "@tiptap/react"
 import { ArrowLeft, FolderOpen, Maximize2, Minimize2, PanelLeft, PanelRight } from "lucide-react"
 import { lastPlace } from "../lastPlace"
 import { allScenes, findScene, type Book } from "../model"
-import type { Versions } from "../serverBook"
+import type { ProposalMark, Versions } from "../serverBook"
 import { useBook } from "../useBook"
 import { ConflictDialog } from "./ConflictDialog"
 import { ContextPanel, type ContextTab } from "./ContextPanel"
 import { Navigator } from "./Navigator"
+import { ProposalBanner } from "./ProposalBanner"
 import { SceneEditor } from "./SceneEditor"
 import { StatusBar } from "./StatusBar"
 
@@ -20,12 +21,17 @@ const readLayout = (): Layout => {
 }
 
 interface Props {
-  projectId: string; projectName: string; initial: Book; versions: Versions; initialSceneId?: string; onClose: () => void
+  projectId: string; projectName: string; initial: Book; versions: Versions; initialSceneId?: string
+  /** Schreibrecht im Projekt (Leser: KI-Knöpfe gesperrt; der Server prüft trotzdem). */
+  canWrite: boolean
+  /** Offene Ghostwriter-Vorschläge je Szene beim Öffnen. */
+  proposals: Record<string, ProposalMark>
+  onClose: () => void
 }
 
-export function Workspace({ projectId, projectName, initial, versions, initialSceneId, onClose }: Props) {
+export function Workspace({ projectId, projectName, initial, versions, initialSceneId, canWrite, proposals, onClose }: Props) {
   const { t } = useTranslation("storyteller")
-  const state = useBook(projectId, initial, versions)
+  const state = useBook(projectId, initial, versions, { canWrite, proposals })
   const { book } = state
   const first = allScenes(book)[0]?.scene.id ?? ""
   const [wanted, setSceneId] = useState(initialSceneId ?? first)
@@ -100,6 +106,9 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
               <Minimize2 className="h-4 w-4" />
             </button>
           )}
+          {current && state.proposals[current.scene.id] && (
+            <div className="px-4 pt-4"><ProposalBanner key={current.scene.id} state={state} sceneId={current.scene.id} mark={state.proposals[current.scene.id]} /></div>
+          )}
           {current && (
             <SceneEditor key={current.scene.id} book={book} found={current} focus={focus} textRev={state.textRev}
               onText={(text) => state.typeText(current.scene.id, text)}
@@ -110,7 +119,8 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
         {showRight && current && (
           <aside className="st-context w-80 shrink-0 overflow-y-auto border-l border-white/10">
             <ContextPanel tab={tab} setTab={setTab} state={state} scene={current.scene}
-              entityId={entityId} setEntityId={setEntityId} editorRef={editorRef} onSceneRemoved={(next) => setSceneId(next || first)} />
+              entityId={entityId} setEntityId={setEntityId} editorRef={editorRef} onSceneRemoved={(next) => setSceneId(next || first)}
+              onOpenScene={openScene} />
           </aside>
         )}
       </div>

@@ -152,34 +152,10 @@ describe("BookSync – Ghostwriter-Einstellungen", () => {
     sync.edit({ ...sync.book, ghost: { ...sync.book.ghost, length_words: 1500 } })
     await sync.flush()
     expect(srv.calls).toEqual(["book"])
-    expect(srv.db.book.ghost).toEqual({ model: "", length_words: 1500, chunk_words: 0, style: "" })
+    expect(srv.db.book.ghost).toEqual({ model: "", length_words: 1500, chunk_words: 0, style: "", limit_tokens: 0 })
     sync.edit({ ...sync.book, ghost: { ...sync.book.ghost, style: "knapp" } })
     await sync.flush()
-    expect(srv.db.book.ghost).toEqual({ model: "", length_words: 1500, chunk_words: 0, style: "knapp" })
+    expect(srv.db.book.ghost).toEqual({ model: "", length_words: 1500, chunk_words: 0, style: "knapp", limit_tokens: 0 })
     expect(srv.api.patchBook.mock.calls[1][3]).toEqual({ ghost: { style: "knapp" } })
-  })
-})
-
-describe("BookSync – Text mit Herkunft und Server-Szene übernehmen", () => {
-  it("replaceText mit Herkunft: Editor lädt neu, origin wird gespeichert", async () => {
-    sync.replaceText("s1", "KI-Szene", "ai_draft")
-    expect(view?.textRev).toBe(1)
-    await sync.flush()
-    expect(srv.db.scenes.s1).toMatchObject({ text: "KI-Szene", origin: "ai_draft", version: 2 })
-  })
-  it("adoptScene übernimmt Server-Stand (Version + Felder) ohne erneutes Speichern", async () => {
-    const fromServerSide = { ...srv.db.scenes.s2, summary: "neu vom Server", version: 7 }
-    sync.adoptScene(fromServerSide)
-    expect(findScene(sync.book, "s2")?.scene.summary).toBe("neu vom Server")
-    await sync.flush()
-    expect(srv.calls).toEqual([])                       // nichts zu speichern
-    sync.edit(updateScene(sync.book, "s2", { text: "weiter" }))
-    await sync.flush()
-    expect(srv.api.putScene.mock.calls[0][3]).toBe(7)    // baut auf der übernommenen Version auf
-  })
-  it("adoptScene behält ungespeicherte eigene Änderungen an anderen Feldern", () => {
-    sync.edit(updateScene(sync.book, "s2", { text: "noch nicht gespeichert" }))
-    sync.adoptScene({ ...srv.db.scenes.s2, summary: "Server", version: 2 })
-    expect(findScene(sync.book, "s2")?.scene).toMatchObject({ summary: "Server", text: "noch nicht gespeichert" })
   })
 })

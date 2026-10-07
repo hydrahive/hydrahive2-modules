@@ -17,9 +17,10 @@ export interface Scene {
   text: string
 }
 
-/** Ghostwriter-Einstellungen je Buch (leer/0 = nicht gesetzt; kein festes Modell im Code). */
-export interface GhostSettings { model: string; length_words: number; chunk_words: number; style: string }
-export const GHOST_EMPTY: GhostSettings = { model: "", length_words: 0, chunk_words: 0, style: "" }
+/** Ghostwriter-Einstellungen je Buch (leer/0 = nicht gesetzt; kein festes Modell im Code).
+ *  limit_tokens: Kostengrenze je Lauf in Ausgabe-Tokens, 0 = keine. */
+export interface GhostSettings { model: string; length_words: number; chunk_words: number; style: string; limit_tokens: number }
+export const GHOST_EMPTY: GhostSettings = { model: "", length_words: 0, chunk_words: 0, style: "", limit_tokens: 0 }
 
 export interface Chapter { id: string; title: string; scenes: Scene[] }
 export interface Part { id: string; title: string; chapters: Chapter[] }

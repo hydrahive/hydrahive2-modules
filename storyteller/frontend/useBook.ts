@@ -3,15 +3,21 @@
 import { useCallback, useEffect, useState } from "react"
 import { BookSync, type SyncView } from "./bookSync"
 import { findScene, originAfterEdit, updateScene, type Book, type Scene } from "./model"
-import type { Versions } from "./serverBook"
+import type { ProposalMark, Versions } from "./serverBook"
 import type { Suggestion } from "./suggest"
 import { useSnapshots } from "./useSnapshots"
 
 export type { Conflict, SaveState } from "./bookSync"
 
-export function useBook(projectId: string, initial: Book, versions: Versions) {
+interface OpenExtras { canWrite: boolean; proposals: Record<string, ProposalMark> }
+
+export function useBook(projectId: string, initial: Book, versions: Versions,
+  extras: OpenExtras = { canWrite: true, proposals: {} }) {
   const [view, setView] = useState<SyncView>({ book: initial, saveState: "saved", saveError: "", conflict: null, textRev: 0 })
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  // Abgelegte Ghostwriter-Vorschläge je Szene (aus dem Öffnen, ergänzt durch Läufe, entfernt beim Übernehmen/Verwerfen).
+  const [proposals, setProposals] = useState<Record<string, ProposalMark>>(extras.proposals)
+  const canWrite = extras.canWrite
   // Einmal je geöffnetem Buch (Workspace hat key=book.id); setView ist stabil.
   const [sync] = useState(() => new BookSync(projectId, initial, versions, setView))
 
@@ -60,9 +66,18 @@ export function useBook(projectId: string, initial: Book, versions: Versions) {
     flush: useCallback(() => sync.flush(), [sync]),
     adoptStructure: useCallback((...a: Parameters<BookSync["adoptStructure"]>) => sync.adoptStructure(...a), [sync]),
     adoptScene: useCallback((s: Parameters<BookSync["adoptScene"]>[0]) => sync.adoptScene(s), [sync]),
+    sceneVersion: useCallback((id: string) => sync.sceneVersion(id), [sync]),
+    structureVersion: useCallback(() => sync.structureVersion(), [sync]),
+    reloadText: useCallback(() => sync.reloadText(), [sync]),
     replaceSceneText: useCallback((id: string, text: string, origin?: Scene["origin"]) => sync.replaceText(id, text, origin), [sync]),
     ...snaps,
     suggestions, addSuggestion, resolveSuggestion,
+    canWrite, proposals,
+    markProposals: useCallback((ids: Record<string, ProposalMark>) => setProposals((p) => ({ ...p, ...ids })), []),
+    clearProposal: useCallback((id: string) => setProposals((p) => {
+      const { [id]: _gone, ...rest } = p
+      return rest
+    }), []),
   }
 }
 

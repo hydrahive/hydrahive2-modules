@@ -24,12 +24,13 @@ def _first_scene(b):
 # ---------------------------------------------------------------- Einstellungen
 def test_new_book_has_empty_ghost_settings():
     b = _book()
-    assert b["ghost"] == {"model": "", "length_words": 0, "chunk_words": 0, "style": ""}
+    assert b["ghost"] == {"model": "", "length_words": 0, "chunk_words": 0, "style": "", "limit_tokens": 0}
 
 
 def test_update_ghost_settings_and_version():
     b = _book()
-    g = {"model": "irgendein/modell", "length_words": 1500, "chunk_words": 600, "style": "knapp, Präsens"}
+    g = {"model": "irgendein/modell", "length_words": 1500, "chunk_words": 600, "style": "knapp, Präsens",
+         "limit_tokens": 50_000}
     nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": g}, base_version=b["version"])
     assert nb["ghost"] == g and nb["version"] == b["version"] + 1
     # Teilweise ändern: nicht genannte Felder bleiben
@@ -40,7 +41,8 @@ def test_update_ghost_settings_and_version():
 @pytest.mark.parametrize("bad", [
     {"model": 3}, {"model": "x" * 201}, {"length_words": 100}, {"length_words": 6001}, {"length_words": "1500"},
     {"chunk_words": 199}, {"chunk_words": 2001}, {"style": "x" * 2001}, {"unbekannt": 1}, "kein dict",
-    {"length_words": True},
+    {"length_words": True}, {"limit_tokens": 999}, {"limit_tokens": 2_000_001}, {"limit_tokens": -1},
+    {"limit_tokens": True}, {"limit_tokens": 1.5},
 ])
 def test_ghost_settings_are_validated(bad):
     b = _book()
@@ -54,6 +56,15 @@ def test_zero_means_not_set():
     b = _book()
     nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": {"length_words": 0, "chunk_words": 0}}, base_version=b["version"])
     assert nb["ghost"]["length_words"] == 0
+
+
+def test_limit_tokens_zero_means_no_limit_and_range():
+    """Kostengrenze je Buch (Spec §9.4): 0 = keine Grenze, sonst 1.000–2.000.000 Ausgabe-Tokens je Lauf."""
+    b = _book()
+    nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": {"limit_tokens": 1000}}, base_version=b["version"])
+    nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": {"limit_tokens": 2_000_000}}, base_version=nb["version"])
+    nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": {"limit_tokens": 0}}, base_version=nb["version"])
+    assert nb["ghost"]["limit_tokens"] == 0
 
 
 def test_old_book_without_ghost_is_read_with_defaults():

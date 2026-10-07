@@ -6,7 +6,7 @@ import {
 
 const sc = (id: string, text = ""): Scene => ({ id, title: id, summary: "", pov: "", status: "draft", origin: "human", text })
 const book = (): Book => ({
-  id: "b", title: "T", kind: "novel", language: "de", audience: "", idea: "", notes: "", model: "", ghost: { model: "", length_words: 0, chunk_words: 0, style: "" }, updatedAt: "",
+  id: "b", title: "T", kind: "novel", language: "de", audience: "", idea: "", notes: "", model: "", ghost: { model: "", length_words: 0, chunk_words: 0, style: "", limit_tokens: 0 }, updatedAt: "",
   parts: [{
     id: "p1", title: "Teil 1", chapters: [
       { id: "c1", title: "Kap 1", scenes: [sc("a", "Eins zwei drei."), sc("b"), sc("c")] },

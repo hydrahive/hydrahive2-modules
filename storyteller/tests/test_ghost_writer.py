@@ -133,6 +133,22 @@ def test_writes_in_sections_until_length_reached(monkeypatch):
     assert "SO WEIT GESCHRIEBEN" in seen[1]["messages"][1]["content"]  # Folgeabschnitt kennt Text davor
 
 
+def test_later_sections_know_the_whole_scene_not_only_the_tail(monkeypatch):
+    """Befund hydratest 07.10. (2.500 Wörter): Modell sah nur die letzten 3.000 Zeichen und schrieb ein
+    Gespräch aus Abschnitt 2 in Abschnitt 4 noch einmal. Folgeabschnitte bekommen deshalb auch eine
+    Übersicht über ALLE bisherigen Abschnitte (Anfang jedes Abschnitts), mit der Bitte, nichts zu wiederholen."""
+    b, _, s2, _ = _book_with_scenes()
+    seen: list = []
+    sec = [f"Abschnitt{i}anfang. " + _words(400, f"w{i}") for i in range(1, 5)]
+    monkeypatch.setattr(ghost, "stream", _fake_stream(sec, seen))
+    m = ghost.build_material(PROJECT_ID, b["id"], s2)
+    _collect(ghost.write_scene(m, model="test/m", length_words=1600, chunk_words=400))
+    last = seen[-1]["messages"][1]["content"]
+    assert len(seen) == 4
+    assert "Abschnitt1anfang" in last and "Abschnitt2anfang" in last          # früher Abschnitt sichtbar, obwohl > 3.000 Zeichen zurück
+    assert "nicht wiederholen" in last.lower() or "nichts wiederholen" in last.lower()
+
+
 def test_stops_after_max_sections_even_if_short(monkeypatch):
     b, _, s2, _ = _book_with_scenes()
     seen: list = []

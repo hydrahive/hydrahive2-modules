@@ -10,8 +10,9 @@ from typing import Any
 
 from ._files import StoryError
 
-GHOST_DEFAULTS: dict[str, Any] = {"model": "", "length_words": 0, "chunk_words": 0, "style": ""}
-_RANGES = {"length_words": (200, 6000), "chunk_words": (200, 2000)}
+GHOST_DEFAULTS: dict[str, Any] = {"model": "", "length_words": 0, "chunk_words": 0, "style": "", "limit_tokens": 0}
+# limit_tokens: Kostengrenze je Lauf in Ausgabe-Tokens (Spec §9.4), 0 = keine Grenze.
+_RANGES = {"length_words": (200, 6000), "chunk_words": (200, 2000), "limit_tokens": (1000, 2_000_000)}
 _TEXT_LIMITS = {"model": 200, "style": 2000}
 
 ORIGINS = ("human", "ai_draft", "ai_edited")
