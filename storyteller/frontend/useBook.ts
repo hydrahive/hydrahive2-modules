@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from "react"
 import { BookSync, type SyncView } from "./bookSync"
 import { findScene, originAfterEdit, updateScene, type Book, type Scene } from "./model"
+import type { InfoProposal } from "./infoProposal"
 import type { ProposalMark, Versions } from "./serverBook"
 import type { Suggestion } from "./suggest"
 import { useSnapshots } from "./useSnapshots"
 
 export type { Conflict, SaveState } from "./bookSync"
 
-interface OpenExtras { canWrite: boolean; proposals: Record<string, ProposalMark> }
+interface OpenExtras { canWrite: boolean; proposals: Record<string, ProposalMark>; infoProposals?: Record<string, InfoProposal> }
 
 export function useBook(projectId: string, initial: Book, versions: Versions,
   extras: OpenExtras = { canWrite: true, proposals: {} }) {
@@ -17,6 +18,8 @@ export function useBook(projectId: string, initial: Book, versions: Versions,
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   // Abgelegte Ghostwriter-Vorschläge je Szene (aus dem Öffnen, ergänzt durch Läufe, entfernt beim Übernehmen/Verwerfen).
   const [proposals, setProposals] = useState<Record<string, ProposalMark>>(extras.proposals)
+  // G4b: Vorschläge für Szenen-Infos (Titel/Zusammenfassung/Perspektive) je Szene.
+  const [infoProposals, setInfoProposals] = useState<Record<string, InfoProposal>>(extras.infoProposals ?? {})
   const canWrite = extras.canWrite
   // Einmal je geöffnetem Buch (Workspace hat key=book.id); setView ist stabil.
   const [sync] = useState(() => new BookSync(projectId, initial, versions, setView))
@@ -75,6 +78,13 @@ export function useBook(projectId: string, initial: Book, versions: Versions,
     canWrite, proposals,
     markProposals: useCallback((ids: Record<string, ProposalMark>) => setProposals((p) => ({ ...p, ...ids })), []),
     clearProposal: useCallback((id: string) => setProposals((p) => {
+      const { [id]: _gone, ...rest } = p
+      return rest
+    }), []),
+    infoProposals,
+    /** Nachfragen: der Server-Stand ersetzt die Liste (verworfene/übernommene verschwinden). */
+    setInfoProposals,
+    clearInfoProposal: useCallback((id: string) => setInfoProposals((p) => {
       const { [id]: _gone, ...rest } = p
       return rest
     }), []),

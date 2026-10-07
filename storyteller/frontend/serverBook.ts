@@ -1,6 +1,7 @@
 // Umrechnung zwischen Server-Ablage (Kopf, Struktur mit Szenen-IDs, Szenen einzeln) und dem
 // verschachtelten Buchmodell der Oberfläche. Rein, ohne React → testbar.
 import type { ServerBook, ServerFull, ServerScene, ServerStructure } from "./api"
+import { infoMarks } from "./infoProposal"
 import { allScenes, GHOST_EMPTY, type Book, type GhostSettings, type Scene } from "./model"
 
 export interface Versions { book: number; structure: number; scenes: Record<string, number> }
@@ -122,5 +123,5 @@ export function openedFromServer(full: ServerFull) {
   for (const p of full.proposals ?? []) {
     proposals[p.scene_id] = { words: p.words, model: p.model, at: p.at, source: p.source ?? "run", note: p.note ?? "" }
   }
-  return { book, versions, canWrite: full.can_write ?? true, proposals }
+  return { book, versions, canWrite: full.can_write ?? true, proposals, infoProposals: infoMarks(full.info_proposals) }
 }

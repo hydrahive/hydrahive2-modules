@@ -123,7 +123,7 @@ export const ghostEn: GhostTexts = {
   ai_err_interview_invalid: "Questions or answers are invalid (too long or too many).",
   ai_err_stt_failed: "Speech recognition not reachable.",
   ai_share: "AI share {{n}} %",
-  chat_intro: "In chat, the project agent can read this book and propose scene text. It changes nothing directly: its proposals appear here above the editor, and you accept or discard them.",
+  chat_intro: "In chat, the project agent can read this book and propose scene text as well as a scene's title, summary and point of view. It changes nothing directly: text proposals appear above the editor, info proposals in the “Scene” tab – you accept or discard them.",
   chat_agent: "Project agent: {{name}}",
   chat_no_agent: "This project has no project agent. Create one in the project settings, then continue here.",
   chat_tools_missing: "The agent is missing Storyteller tools: {{tools}}. Without them it cannot read the book or propose text.",
@@ -139,4 +139,9 @@ export const ghostEn: GhostTexts = {
   proposal_note: "Agent's note: {{note}}",
   ai_err_project_agent_missing: "This project has no project agent.",
   ai_err_agent_no_access: "No access to the project agent.",
+  info_proposal_title: "Proposal from the agent for this scene",
+  info_proposal_same: "already set",
+  info_proposal_accept: "Accept selected",
+  ai_err_fields_invalid: "These fields are not (or no longer) in the proposal.",
+  ai_err_nothing_changed: "The proposal changes nothing.",
 }

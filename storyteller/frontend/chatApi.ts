@@ -1,6 +1,7 @@
 // Ghostwriter G4 – Chat mit dem Projekt-Agenten (Spec ghostwriter.md §11.3): Info, Sitzung anlegen,
 // offene Vorschläge nachfragen, fehlende Storyteller-Werkzeuge zuschalten (nur Admin, Kern-Route).
-import { authHeader, errorFrom, storyBase, StoryApiError, type ProposalInfo } from "./api"
+import { authHeader, errorFrom, storyBase, StoryApiError, type ProposalInfo, type ServerScene } from "./api"
+import type { InfoProposal } from "./infoProposal"
 import type { ProposalMark } from "./serverBook"
 
 export interface ChatInfo { agent: { id: string; name: string } | null; tools_missing: string[]; can_start: boolean }
@@ -34,6 +35,11 @@ export const chatApi = {
   info: (pid: string, bid: string) => call<ChatInfo>(`${storyBase(pid, bid)}/chat`, "GET"),
   start: (pid: string, bid: string, sceneId: string) => call<ChatStart>(`${storyBase(pid, bid)}/chat`, "POST", { scene_id: sceneId }),
   proposals: (pid: string, bid: string) => call<ProposalInfo[]>(`${storyBase(pid, bid)}/proposals`, "GET"),
+  infoProposals: (pid: string, bid: string) => call<InfoProposal[]>(`${storyBase(pid, bid)}/proposals/info`, "GET"),
+  acceptInfo: (pid: string, bid: string, sid: string, baseVersion: number, fields: string[]) =>
+    call<ServerScene>(`${storyBase(pid, bid)}/proposals/${encodeURIComponent(sid)}/info/accept`, "POST", { base_version: baseVersion, fields }),
+  discardInfo: (pid: string, bid: string, sid: string) =>
+    call<{ ok: boolean }>(`${storyBase(pid, bid)}/proposals/${encodeURIComponent(sid)}/info`, "DELETE"),
   /** Nur Admin: Kern GET/PATCH /api/agents/{id}. */
   addTools: async (agentId: string, missing: string[]) => {
     const agent = await call<{ tools?: string[] }>(`/api/agents/${encodeURIComponent(agentId)}`, "GET")
