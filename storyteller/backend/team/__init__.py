@@ -71,3 +71,24 @@ def prompt_for(role: Role, *, book_title: str, team_ids: Mapping[str, str] | Non
     common = (_PROMPTS / "_common.md").read_text(encoding="utf-8").strip()
     out = f"{text}\n\n{common}".replace("{team}", _team_list(team_ids))
     return out.replace("{book_title}", book_title)
+
+
+def role_of(project: Mapping, agent: Mapping | None) -> Role | None:
+    """Rolle eines Helfers dieses Projekts – über die Namensendung „— <Rolle>“, nur eigene Spezialisten."""
+    if not agent or agent.get("project_id") != project.get("id"):
+        return None
+    if agent.get("id") not in (project.get("allowed_specialists") or []):
+        return None
+    name = agent.get("name") or ""
+    return next((r for r in HELPERS if name.endswith(f"— {r.name}")), None)
+
+
+def helper_for(project: Mapping, role_key: str) -> dict | None:
+    """Der Helfer einer Rolle im Buch-Projekt (oder None, wenn es ihn nicht gibt)."""
+    from hydrahive.agents import config as agent_config
+    for hid in project.get("allowed_specialists") or []:
+        agent = agent_config.get(hid)
+        role = role_of(project, agent)
+        if role is not None and role.key == role_key:
+            return agent
+    return None
