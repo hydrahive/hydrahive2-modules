@@ -115,7 +115,7 @@ export const ghostEn: GhostTexts = {
   dictate_start: "Dictate",
   dictate_stop: "Stop recording",
   dictate_empty: "Nothing understood – please try again.",
-  dictate_failed: "Speech recognition not reachable {{message}} – typing always works.",
+  dictate_failed: "Speech recognition not reachable – typing always works.",
   dictate_no_mic: "No microphone (or not allowed).",
   ai_err_interview_empty: "No interview question has been answered yet.",
   ai_err_interview_needs_chapter: "The interview always writes one chapter.",

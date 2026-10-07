@@ -115,7 +115,7 @@ export const ghostDe = {
   dictate_start: "Diktieren",
   dictate_stop: "Aufnahme beenden",
   dictate_empty: "Nichts verstanden – bitte nochmal.",
-  dictate_failed: "Spracherkennung nicht erreichbar {{message}} – Tippen geht immer.",
+  dictate_failed: "Spracherkennung nicht erreichbar – Tippen geht immer.",
   dictate_no_mic: "Kein Mikrofon (oder nicht erlaubt).",
   ai_err_interview_empty: "Im Interview ist noch keine Frage beantwortet.",
   ai_err_interview_needs_chapter: "Aus dem Interview wird immer ein Kapitel geschrieben.",

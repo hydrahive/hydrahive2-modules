@@ -3,7 +3,6 @@
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Loader2, Mic, Square } from "lucide-react"
-import { StoryApiError } from "../api"
 import { transcribe } from "../interviewApi"
 
 const MIMES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]
@@ -35,8 +34,8 @@ export function DictateButton({ onText, disabled }: Props) {
           const text = await transcribe(new Blob(chunks.current, { type }), type)
           if (text.trim()) onText(text)
           else setError(t("dictate_empty"))
-        } catch (e) {
-          setError(e instanceof StoryApiError && e.message ? t("dictate_failed", { message: e.message }) : t("dictate_failed", { message: "" }))
+        } catch {
+          setError(t("dictate_failed"))   // Grund steht im Server-Log; für den Nutzer zählt: Tippen geht immer
         } finally { setState("idle") }
       }
       rec.current = r
