@@ -55,11 +55,16 @@ def _names_in(text: str, entities: list[dict]) -> list[dict]:
         n and re.search(rf"(?<!\w){re.escape(n.lower())}(?!\w)", low) for n in [e["name"], *e.get("aliases", [])])]
 
 
-def build_material(project_id: str, book_id: str, scene_id: str, memory_chars: int = _MEMORY) -> Material:
+def build_material(project_id: str, book_id: str, scene_id: str, memory_chars: int = _MEMORY,
+                   interview=None) -> Material:
+    """``interview`` (G3, interview_ai.InterviewMaterial): Antworten des Autors + Stilprobe als Grundlage; dann
+    darf die Zusammenfassung fehlen, und es gilt die Regel „nichts erfinden“."""
+    from .interview_ai import RULE, material_parts
     book = storage.get_book(project_id, book_id)
     st = storage.get_structure(project_id, book_id)
     scene = storage.get_scene(project_id, book_id, scene_id)
-    if not scene["summary"].strip():
+    use_iv = interview is not None and not interview.empty
+    if not scene["summary"].strip() and not use_iv:
         raise StoryError("summary_required")
     order = [s for p in st["parts"] for c in p["chapters"] for s in c["scenes"]]
     i = order.index(scene_id)
@@ -75,6 +80,7 @@ def build_material(project_id: str, book_id: str, scene_id: str, memory_chars: i
         f"auf {lang} für genau EINE Szene. Keine Überschrift, kein Vorspann, keine Erklärung, keine Zusammenfassung "
         "am Ende – nur der Szenentext. Halte dich an Steckbriefe und bisherige Handlung und erfinde nichts, was "
         "ihnen widerspricht. Formuliere eigenständig; bekannte Texte anderer Autoren nicht zitieren oder nachschreiben."
+        + (" " + RULE if use_iv else "")
     )
     parts = [
         f"BUCH: {book['title']}. Zielgruppe: {book.get('audience') or 'nicht angegeben'}. Idee: {book.get('idea') or '–'}",
@@ -84,7 +90,8 @@ def build_material(project_id: str, book_id: str, scene_id: str, memory_chars: i
             for e in relevant) if relevant else "",
         f"BISHER GESCHAH:\n{memory}" if memory else "Dies ist die erste Szene des Buchs.",
         f"ENDE DER VORIGEN SZENE (wörtlich, schließe nahtlos an):\n…{prev_end}" if prev_end.strip() else "",
-        f"DIESE SZENE: „{scene['title']}“. Inhalt: {scene['summary']}"
+        *(material_parts(interview) if use_iv else []),
+        f"DIESE SZENE: „{scene['title']}“. Inhalt: {scene['summary'] or 'aus dem Interview (passender Teil)'}"
         + (f" Perspektive: {scene['pov']}." if scene["pov"].strip() else ""),
     ]
     return Material(scene_id, "proposal" if scene["text"].strip() else "fill", system, "\n\n".join(p for p in parts if p))
