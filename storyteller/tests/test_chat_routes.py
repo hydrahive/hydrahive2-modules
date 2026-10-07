@@ -105,3 +105,40 @@ def test_foreign_user_sees_neither_chat_info_nor_proposals(client, other_headers
     assert client.get(f"{P}/books/{bid}/chat", headers=other_headers).status_code == 404
     assert client.get(f"{P}/books/{bid}/proposals", headers=other_headers).status_code == 404
     assert client.get(f"{P}/books/{'f' * 32}/proposals", headers=other_headers).status_code == 404
+
+
+def test_new_session_is_marked_with_book_and_reuse_returns_it(client, auth_headers, project_agent):
+    """G4e: Chat-Fenster im Storyteller nutzt je Buch dieselbe Sitzung (Verlauf bleibt)."""
+    from hydrahive.db import sessions as sessions_db
+    bid, sid = _book()
+    first = client.post(f"{P}/books/{bid}/chat", json={"scene_id": sid}, headers=auth_headers).json()
+    assert first["reused"] is False
+    assert sessions_db.get(first["session_id"]).metadata.get("storyteller_book") == bid
+    again = client.post(f"{P}/books/{bid}/chat", json={"reuse": True}, headers=auth_headers).json()
+    assert again["reused"] is True and again["session_id"] == first["session_id"]
+    fresh = client.post(f"{P}/books/{bid}/chat", json={}, headers=auth_headers).json()     # ohne reuse: neu
+    assert fresh["session_id"] != first["session_id"] and fresh["reused"] is False
+    newest = client.post(f"{P}/books/{bid}/chat", json={"reuse": True}, headers=auth_headers).json()
+    assert newest["session_id"] == fresh["session_id"]                                       # jüngste gewinnt
+
+
+def test_reuse_only_own_session_same_book_agent_and_project(client, auth_headers, project_agent):
+    from hydrahive.db import sessions as sessions_db
+    bid, _ = _book()
+    other_bid, _ = _book()
+    # fremde, falsche oder unmarkierte Sitzungen dürfen nicht gewählt werden
+    sessions_db.create(agent_id=project_agent["id"], user_id="other", project_id=PROJECT_ID, metadata={"storyteller_book": bid})
+    sessions_db.create(agent_id=project_agent["id"], user_id="testuser", project_id=PROJECT_ID, metadata={"storyteller_book": other_bid})
+    sessions_db.create(agent_id="anderer-agent", user_id="testuser", project_id=PROJECT_ID, metadata={"storyteller_book": bid})
+    sessions_db.create(agent_id=project_agent["id"], user_id="testuser", project_id=OTHER_PROJECT_ID, metadata={"storyteller_book": bid})
+    sessions_db.create(agent_id=project_agent["id"], user_id="testuser", project_id=PROJECT_ID)
+    r = client.post(f"{P}/books/{bid}/chat", json={"reuse": True}, headers=auth_headers).json()
+    assert r["reused"] is False
+    s = sessions_db.get(r["session_id"])
+    assert s.user_id == "testuser" and s.agent_id == project_agent["id"] and s.project_id == PROJECT_ID
+    assert s.metadata["storyteller_book"] == bid
+
+
+def test_reuse_respects_reader_rights(client, reader_headers, project_agent):
+    bid, _ = _book()
+    assert client.post(f"{P}/books/{bid}/chat", json={"reuse": True}, headers=reader_headers).status_code == 403

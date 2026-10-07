@@ -1,6 +1,7 @@
 """Storyteller — Chat mit dem Projekt-Agenten starten (Ghostwriter G4a, Spec §11.3).
 
-Legt eine Kern-Chat-Sitzung mit dem Projekt-Agenten im Projekt an. Die erste Nachricht wird nicht gesendet;
+Legt eine Kern-Chat-Sitzung mit dem Projekt-Agenten im Projekt an (mit Kennzeichen des Buchs); das Chat-Fenster
+im Storyteller (G4e, ``reuse``) nutzt die jüngste eigene Sitzung des Buchs weiter. Die erste Nachricht wird nicht gesendet;
 die Antwort enthält einen Einstiegstext (Buch, Szene, Werkzeuge), den der Nutzer in den Chat übernimmt.
 Rechte wie die Kern-Route POST /api/sessions: Schreibrecht im Projekt + Zugriff auf den Agenten.
 """
@@ -22,6 +23,17 @@ TOOL_NAMES = [t.name for t in TOOLS]
 
 class ChatIn(BaseModel):
     scene_id: str | None = Field(default=None, max_length=64)
+    # G4e: Chat-Fenster im Storyteller – jüngste eigene Sitzung dieses Buchs (mit dem Projekt-Agenten) weiternutzen.
+    reuse: bool = False
+
+
+BOOK_KEY = "storyteller_book"   # Kennzeichen in session.metadata: zu welchem Buch die Sitzung gehört
+
+
+def _book_session(username: str, agent_id: str, project_id: str, book_id: str):
+    from hydrahive.db import sessions as sessions_db
+    return next((s for s in sessions_db.list_for_user(username, limit=200)    # neueste zuerst
+                 if s.agent_id == agent_id and s.project_id == project_id and s.metadata.get(BOOK_KEY) == book_id), None)
 
 
 def _project_agent(project_id: str) -> tuple[dict | None, dict | None]:
@@ -65,9 +77,12 @@ def chat_start(project_id: str, book_id: str, body: ChatIn, auth: Auth):
     # Agent-Zugriff wie Kern assert_agent_access: Der Projekt-Agent gehört immer zum Team des Projekts,
     # Schreibrecht im Projekt (_guard oben) genügt also.
     from hydrahive.db import sessions as sessions_db
-    s = sessions_db.create(agent_id=agent["id"], user_id=auth[0], project_id=project_id,
-                           title=f"Storyteller: {book['title']}"[:200])
-    return {"session_id": s.id, "url": f"/werkstatt/{s.id}", "intro": _intro(book, scene),
+    s = _book_session(auth[0], agent["id"], project_id, book_id) if body.reuse else None
+    reused = s is not None
+    if s is None:
+        s = sessions_db.create(agent_id=agent["id"], user_id=auth[0], project_id=project_id,
+                               title=f"Storyteller: {book['title']}"[:200], metadata={BOOK_KEY: book_id})
+    return {"session_id": s.id, "url": f"/werkstatt/{s.id}", "intro": _intro(book, scene), "reused": reused,
             "agent": {"id": agent["id"], "name": agent["name"]}}
 
 
