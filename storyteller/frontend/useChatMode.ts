@@ -9,7 +9,7 @@ import type { BookState } from "./useBook"
 export const POLL_MS = 10_000
 
 export function useChatMode(state: BookState, sceneId: string) {
-  const { projectId, book, markProposals, setInfoProposals, setEntityProposals } = state
+  const { projectId, book, markProposals, setInfoProposals, setEntityProposals, setOutlineProposal } = state
   const [info, setInfo] = useState<ChatInfo | null>(null)
   const [started, setStarted] = useState<ChatStart | null>(null)
   const [busy, setBusy] = useState(false)
@@ -23,7 +23,8 @@ export function useChatMode(state: BookState, sceneId: string) {
     try { markProposals(proposalMarks(await chatApi.proposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
     try { setInfoProposals(infoMarks(await chatApi.infoProposals(projectId, book.id))) } catch { /* nächste Abfrage */ }
     try { setEntityProposals(await chatApi.entityProposals(projectId, book.id)) } catch { /* nächste Abfrage */ }
-  }, [projectId, book.id, markProposals, setInfoProposals, setEntityProposals])
+    try { setOutlineProposal(await chatApi.outlineProposal(projectId, book.id)) } catch { /* nächste Abfrage */ }
+  }, [projectId, book.id, markProposals, setInfoProposals, setEntityProposals, setOutlineProposal])
 
   useEffect(() => {
     let alive = true

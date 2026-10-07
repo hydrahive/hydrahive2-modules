@@ -2,11 +2,12 @@
 // (Titel, Zusammenfassungen, streichen) → übernehmen. Nichts wird gespeichert, bis „Übernehmen“.
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Check, ListTree, Loader2, Trash2, X } from "lucide-react"
+import { ListTree, Loader2, X } from "lucide-react"
 import { StoryApiError } from "../api"
-import { editScene, outlineProblem, outlineStats, removeChapter, removeScene, renameChapter, type Outline } from "../outlineModel"
+import type { Outline } from "../outlineModel"
 import { runApi } from "../runApi"
 import type { BookState } from "../useBook"
+import { OutlineEditor } from "./OutlineEditor"
 
 const field = "w-full rounded border border-white/10 bg-zinc-950 px-2 py-1 text-xs text-zinc-100"
 
@@ -39,7 +40,6 @@ export function OutlinePanel({ state }: { state: BookState }) {
       setDraft(null); setOpen(false)
     } catch (e) { fail(e) } finally { setBusy(false) }
   }
-  const problem = draft ? outlineProblem(draft) : null
 
   if (!open) {
     return (
@@ -74,37 +74,8 @@ export function OutlinePanel({ state }: { state: BookState }) {
         </div>
       )}
       {draft && (
-        <div className="space-y-2">
-          <p className="text-xs text-zinc-400">{t("outline_review", outlineStats(draft))}</p>
-          <ol className="max-h-96 space-y-2 overflow-y-auto pr-1">
-            {draft.chapters.map((c, ci) => (
-              <li key={ci} className="space-y-1 rounded border border-white/5 p-2">
-                <div className="flex gap-1">
-                  <input className={`${field} font-semibold`} value={c.title} aria-label={t("outline_chapter_title")} onChange={(e) => setDraft(renameChapter(draft, ci, e.target.value))} />
-                  <button title={t("outline_remove")} onClick={() => setDraft(removeChapter(draft, ci))} className="text-zinc-500 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button>
-                </div>
-                {c.scenes.map((s, si) => (
-                  <div key={si} className="ml-2 space-y-0.5 border-l border-white/10 pl-2">
-                    <div className="flex gap-1">
-                      <input className={field} value={s.title} aria-label={t("outline_scene_title")} onChange={(e) => setDraft(editScene(draft, ci, si, { title: e.target.value }))} />
-                      <button title={t("outline_remove")} onClick={() => setDraft(removeScene(draft, ci, si))} className="text-zinc-500 hover:text-red-300"><Trash2 className="h-3 w-3" /></button>
-                    </div>
-                    <textarea className={`${field} min-h-[44px]`} value={s.summary} aria-label={t("scene_summary")} onChange={(e) => setDraft(editScene(draft, ci, si, { summary: e.target.value }))} />
-                  </div>
-                ))}
-              </li>
-            ))}
-          </ol>
-          {draft.entities.length > 0 && <p className="text-[11px] text-zinc-500">{t("outline_entities", { names: draft.entities.map((e) => e.name).join(", ") })}</p>}
-          {problem && <p className="text-xs text-amber-200">{t(problem)}</p>}
-          <div className="flex gap-2">
-            <button onClick={() => { void apply() }} disabled={busy || !!problem}
-              className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}{t("outline_apply")}
-            </button>
-            <button onClick={() => setDraft(null)} className="rounded-lg border border-white/10 px-3 text-sm text-zinc-300">{t("ghost_reject")}</button>
-          </div>
-        </div>
+        <OutlineEditor draft={draft} setDraft={setDraft} busy={busy} canWrite={canWrite}
+          onApply={() => { void apply() }} onReject={() => setDraft(null)} />
       )}
       {error && <p className="st-ai-error rounded border border-red-400/30 bg-red-500/10 px-2 py-1 text-xs text-red-200" role="alert">{error}</p>}
     </section>

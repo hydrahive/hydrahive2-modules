@@ -8,9 +8,9 @@ import type { Scene } from "../model"
 import type { BookState } from "../useBook"
 import { useChatMode } from "../useChatMode"
 
-interface Props { state: BookState; scene: Scene }
+interface Props { state: BookState; scene: Scene; onGoOutline: () => void }
 
-export function ChatMode({ state, scene }: Props) {
+export function ChatMode({ state, scene, onGoOutline }: Props) {
   const { t } = useTranslation("storyteller")
   const isAdmin = useAuthStore((s) => s.role) === "admin"
   const chat = useChatMode(state, scene.id)
@@ -57,6 +57,12 @@ export function ChatMode({ state, scene }: Props) {
             </a>
           </div>
         </div>
+      )}
+      {state.outlineProposal && (
+        <p className="st-chat-outline-hint flex flex-wrap items-center gap-2 rounded border border-violet-400/30 bg-violet-500/10 px-2 py-1.5 text-xs text-violet-100">
+          <span className="flex-1">{t("outline_proposal_hint")}</span>
+          <button onClick={onGoOutline} className="rounded px-2 py-0.5 font-semibold hover:bg-white/10">{t("outline_proposal_go")}</button>
+        </p>
       )}
       <p className="text-xs text-zinc-500">{t("chat_proposals_hint")}</p>
       {error && <p className="text-xs text-red-200" role="alert">{t(`ai_err_${error.code}`, { defaultValue: error.message || error.code })}</p>}

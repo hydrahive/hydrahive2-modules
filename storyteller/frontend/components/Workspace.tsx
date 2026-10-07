@@ -5,6 +5,7 @@ import type { Editor } from "@tiptap/react"
 import { ArrowLeft, FolderOpen, Maximize2, Minimize2, PanelLeft, PanelRight } from "lucide-react"
 import { lastPlace } from "../lastPlace"
 import { allScenes, findScene, type Book } from "../model"
+import type { OutlineProposal } from "../chatApi"
 import type { EntityProposal } from "../entityProposal"
 import type { InfoProposal } from "../infoProposal"
 import type { ProposalMark, Versions } from "../serverBook"
@@ -30,12 +31,13 @@ interface Props {
   proposals: Record<string, ProposalMark>
   infoProposals?: Record<string, InfoProposal>
   entityProposals?: EntityProposal[]
+  outlineProposal?: OutlineProposal | null
   onClose: () => void
 }
 
-export function Workspace({ projectId, projectName, initial, versions, initialSceneId, canWrite, proposals, infoProposals, entityProposals, onClose }: Props) {
+export function Workspace({ projectId, projectName, initial, versions, initialSceneId, canWrite, proposals, infoProposals, entityProposals, outlineProposal, onClose }: Props) {
   const { t } = useTranslation("storyteller")
-  const state = useBook(projectId, initial, versions, { canWrite, proposals, infoProposals, entityProposals })
+  const state = useBook(projectId, initial, versions, { canWrite, proposals, infoProposals, entityProposals, outlineProposal })
   const { book } = state
   const first = allScenes(book)[0]?.scene.id ?? ""
   const [wanted, setSceneId] = useState(initialSceneId ?? first)

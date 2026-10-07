@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { BookSync, type SyncView } from "./bookSync"
 import { findScene, originAfterEdit, updateScene, type Book, type Scene } from "./model"
+import type { OutlineProposal } from "./chatApi"
 import type { EntityProposal } from "./entityProposal"
 import type { InfoProposal } from "./infoProposal"
 import type { ProposalMark, Versions } from "./serverBook"
@@ -14,6 +15,7 @@ export type { Conflict, SaveState } from "./bookSync"
 interface OpenExtras {
   canWrite: boolean; proposals: Record<string, ProposalMark>; infoProposals?: Record<string, InfoProposal>
   entityProposals?: EntityProposal[]
+  outlineProposal?: OutlineProposal | null
 }
 
 export function useBook(projectId: string, initial: Book, versions: Versions,
@@ -26,6 +28,8 @@ export function useBook(projectId: string, initial: Book, versions: Versions,
   const [infoProposals, setInfoProposals] = useState<Record<string, InfoProposal>>(extras.infoProposals ?? {})
   // G4c: Steckbrief-Vorschläge (neu/ändern) als Liste.
   const [entityProposals, setEntityProposals] = useState<EntityProposal[]>(extras.entityProposals ?? [])
+  // G4d: höchstens ein Gliederungs-Vorschlag je Buch.
+  const [outlineProposal, setOutlineProposal] = useState<OutlineProposal | null>(extras.outlineProposal ?? null)
   const canWrite = extras.canWrite
   // Einmal je geöffnetem Buch (Workspace hat key=book.id); setView ist stabil.
   const [sync] = useState(() => new BookSync(projectId, initial, versions, setView))
@@ -89,6 +93,7 @@ export function useBook(projectId: string, initial: Book, versions: Versions,
     }), []),
     infoProposals,
     entityProposals, setEntityProposals,
+    outlineProposal, setOutlineProposal,
     clearEntityProposal: useCallback((id: string) => setEntityProposals((l) => l.filter((p) => p.id !== id)), []),
     /** Nachfragen: der Server-Stand ersetzt die Liste (verworfene/übernommene verschwinden). */
     setInfoProposals,

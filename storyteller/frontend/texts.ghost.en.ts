@@ -123,7 +123,7 @@ export const ghostEn: GhostTexts = {
   ai_err_interview_invalid: "Questions or answers are invalid (too long or too many).",
   ai_err_stt_failed: "Speech recognition not reachable.",
   ai_share: "AI share {{n}} %",
-  chat_intro: "In chat, the project agent can read this book and propose scene text, a scene's title, summary and point of view, and profiles. It changes nothing directly: text proposals appear above the editor, info proposals in the “Scene” tab, profile proposals in the profile list – you accept or discard them.",
+  chat_intro: "In chat, the project agent can read this book and propose scene text, a scene's title, summary and point of view, profiles and new chapters. It changes nothing directly: text proposals appear above the editor, info proposals in the “Scene” tab, profile proposals in the profile list, new chapters under “Chapter/Book” – you accept or discard them.",
   chat_agent: "Project agent: {{name}}",
   chat_no_agent: "This project has no project agent. Create one in the project settings, then continue here.",
   chat_tools_missing: "The agent is missing Storyteller tools: {{tools}}. Without them it cannot read the book or propose text.",
@@ -152,4 +152,7 @@ export const ghostEn: GhostTexts = {
   ai_err_entity_not_found: "This profile no longer exists – please discard the proposal.",
   ai_err_entity_exists: "A profile with this name already exists.",
   ai_err_entity_invalid: "The profile proposal is invalid.",
+  outline_proposal_title: "Proposal from the agent: new chapters (appended at the end when accepted)",
+  outline_proposal_hint: "The agent proposed new chapters – review, edit and accept them under “Chapter/Book”.",
+  outline_proposal_go: "Review",
 }
