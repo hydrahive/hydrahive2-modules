@@ -2,6 +2,7 @@
 // mit Code und – bei 409 – dem aktuellen Stand auf dem Server (`current`).
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import type { BookKind, EntityKind, GhostSettings, SceneOrigin, SceneStatus } from "./model"
+import type { EntityProposal } from "./entityProposal"
 import type { InfoProposal } from "./infoProposal"
 import type { SuggestAction } from "./suggest"
 
@@ -49,6 +50,8 @@ export interface ServerFull {
   can_write?: boolean; proposals?: ProposalInfo[]
   /** Ab 0.7.0: offene Vorschläge für Szenen-Infos (G4b). */
   info_proposals?: InfoProposal[]
+  /** Ab 0.8.0: offene Steckbrief-Vorschläge (G4c). */
+  entity_proposals?: EntityProposal[]
 }
 export interface SnapshotInfo { id: string; at: string; words: number; text?: string }
 export interface Created { scene: ServerScene; structure: ServerStructure }

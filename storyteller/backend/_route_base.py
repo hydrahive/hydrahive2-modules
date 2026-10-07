@@ -31,7 +31,7 @@ def _call(fn, *args, **kw):
     except Conflict as exc:
         return JSONResponse(status_code=409, content={"detail": {"code": "version_conflict", "current": exc.current}})
     except StoryError as exc:
-        raise coded(exc.status, exc.code) from exc
+        raise coded(exc.status, exc.code, **exc.detail) from exc
 
 
 

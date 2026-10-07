@@ -5,6 +5,7 @@ import type { Editor } from "@tiptap/react"
 import { ArrowLeft, FolderOpen, Maximize2, Minimize2, PanelLeft, PanelRight } from "lucide-react"
 import { lastPlace } from "../lastPlace"
 import { allScenes, findScene, type Book } from "../model"
+import type { EntityProposal } from "../entityProposal"
 import type { InfoProposal } from "../infoProposal"
 import type { ProposalMark, Versions } from "../serverBook"
 import { useBook } from "../useBook"
@@ -28,12 +29,13 @@ interface Props {
   /** Offene Ghostwriter-Vorschläge je Szene beim Öffnen. */
   proposals: Record<string, ProposalMark>
   infoProposals?: Record<string, InfoProposal>
+  entityProposals?: EntityProposal[]
   onClose: () => void
 }
 
-export function Workspace({ projectId, projectName, initial, versions, initialSceneId, canWrite, proposals, infoProposals, onClose }: Props) {
+export function Workspace({ projectId, projectName, initial, versions, initialSceneId, canWrite, proposals, infoProposals, entityProposals, onClose }: Props) {
   const { t } = useTranslation("storyteller")
-  const state = useBook(projectId, initial, versions, { canWrite, proposals, infoProposals })
+  const state = useBook(projectId, initial, versions, { canWrite, proposals, infoProposals, entityProposals })
   const { book } = state
   const first = allScenes(book)[0]?.scene.id ?? ""
   const [wanted, setSceneId] = useState(initialSceneId ?? first)

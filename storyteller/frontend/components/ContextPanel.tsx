@@ -38,7 +38,7 @@ export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId,
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {tab === "scene" && <ScenePanel state={state} scene={scene} onOpenEntity={open} onRemoved={onSceneRemoved} />}
-        {tab === "entity" && <EntityPanel state={state} entityId={entityId} onDeleted={() => setEntityId(null)} />}
+        {tab === "entity" && <EntityPanel state={state} entityId={entityId} onDeleted={() => setEntityId(null)} onOpen={open} />}
         {tab === "ai" && <AiPanel state={state} scene={scene} editorRef={editorRef} onGoScene={() => setTab("scene")} onOpenScene={onOpenScene} />}
         {tab === "notes" && (
           <textarea value={state.book.notes} placeholder={t("notes_ph")}

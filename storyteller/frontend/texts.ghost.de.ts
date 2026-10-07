@@ -123,7 +123,7 @@ export const ghostDe = {
   ai_err_interview_invalid: "Fragen oder Antworten sind ungültig (zu lang oder zu viele).",
   ai_err_stt_failed: "Spracherkennung nicht erreichbar.",
   ai_share: "KI-Anteil {{n}} %",
-  chat_intro: "Der Projekt-Agent kann im Chat dieses Buch lesen und Szenentext sowie Titel, Zusammenfassung und Perspektive einer Szene vorschlagen. Er ändert nichts direkt: Textvorschläge erscheinen über dem Editor, Infos-Vorschläge im Reiter „Szene“ – du übernimmst oder verwirfst sie.",
+  chat_intro: "Der Projekt-Agent kann im Chat dieses Buch lesen und Szenentext, Titel, Zusammenfassung und Perspektive einer Szene sowie Steckbriefe vorschlagen. Er ändert nichts direkt: Textvorschläge erscheinen über dem Editor, Infos-Vorschläge im Reiter „Szene“, Steckbrief-Vorschläge in der Steckbrief-Liste – du übernimmst oder verwirfst sie.",
   chat_agent: "Projekt-Agent: {{name}}",
   chat_no_agent: "Dieses Projekt hat keinen Projekt-Agenten. Ihn in den Projekt-Einstellungen anlegen, dann geht es hier weiter.",
   chat_tools_missing: "Dem Agenten fehlen Storyteller-Werkzeuge: {{tools}}. Ohne sie kann er das Buch nicht lesen bzw. nichts vorschlagen.",
@@ -144,6 +144,14 @@ export const ghostDe = {
   info_proposal_accept: "Ausgewählte übernehmen",
   ai_err_fields_invalid: "Diese Felder sind nicht (mehr) im Vorschlag.",
   ai_err_nothing_changed: "Der Vorschlag ändert nichts.",
+  entity_proposal_new: "Vorschlag vom Agenten: neuer Eintrag ({{group}})",
+  entity_proposal_change: "Vorschlag vom Agenten: Änderung an diesem Steckbrief",
+  entity_proposal_apply: "Änderung übernehmen",
+  entity_proposal_create: "Anlegen",
+  entity_proposal_badge: "Vorschlag",
+  ai_err_entity_not_found: "Diesen Steckbrief gibt es nicht mehr – den Vorschlag bitte verwerfen.",
+  ai_err_entity_exists: "Einen Steckbrief mit diesem Namen gibt es schon.",
+  ai_err_entity_invalid: "Der Steckbrief-Vorschlag ist ungültig.",
 }
 
 export type GhostTexts = typeof ghostDe

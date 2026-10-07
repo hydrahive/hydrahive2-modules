@@ -1,18 +1,25 @@
-// Reiter „Steckbrief“: Name, Spitznamen, Beschreibung, freie Eigenschaften (Schlüssel/Wert).
+// Reiter „Steckbrief“: Name, Spitznamen, Beschreibung, freie Eigenschaften (Schlüssel/Wert);
+// G4c: Vorschlag des Agenten (Änderung oben im Steckbrief, neuer Eintrag als eigene Ansicht).
 import { useTranslation } from "react-i18next"
 import { Plus, X } from "lucide-react"
+import { changeFor, proposalIdOf } from "../entityProposal"
 import type { Entity } from "../model"
 import type { BookState } from "../useBook"
+import { EntityProposalBox } from "./EntityProposalBox"
 
 const field = "w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
 const label = "block space-y-1 text-xs text-zinc-400"
 
-interface Props { state: BookState; entityId: string | null; onDeleted: () => void }
+interface Props { state: BookState; entityId: string | null; onDeleted: () => void; onOpen: (id: string) => void }
 
-export function EntityPanel({ state, entityId, onDeleted }: Props) {
+export function EntityPanel({ state, entityId, onDeleted, onOpen }: Props) {
   const { t } = useTranslation("storyteller")
   const e = state.book.entities.find((x) => x.id === entityId)
+  const pending = proposalIdOf(entityId)
+  const newProp = pending ? state.entityProposals.find((p) => p.id === pending) : undefined
+  if (newProp) return <EntityProposalBox key={newProp.id} state={state} proposal={newProp} onDone={(id) => (id ? onOpen(id) : onDeleted())} />
   if (!e) return <p className="text-sm text-zinc-500">{t("entity_none")}</p>
+  const change = changeFor(state.entityProposals, e.id)
 
   const set = (patch: Partial<Entity>) =>
     state.change((b) => ({ ...b, entities: b.entities.map((x) => (x.id === e.id ? { ...x, ...patch, id: x.id } : x)) }))
@@ -21,6 +28,7 @@ export function EntityPanel({ state, entityId, onDeleted }: Props) {
 
   return (
     <div className="space-y-4">
+      {change && <EntityProposalBox key={change.id} state={state} proposal={change} current={e} onDone={() => undefined} />}
       <label className={label}><span>{t("entity_name")}</span>
         <input className={`${field} text-base font-semibold`} value={e.name} maxLength={200} onChange={(ev) => set({ name: ev.target.value })} />
       </label>
