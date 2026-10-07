@@ -15,6 +15,7 @@ from typing import Any
 
 from ._files import StoryError, check_id, inside, new_id, read_json, story_root, write_json, write_scene
 from ._ghost_settings import GHOST_DEFAULTS, ghost_of, merge_ghost
+from ._locks import locked
 from ._names import KINDS, LANGUAGES, default_names
 from ._structure import validate_structure
 
@@ -90,6 +91,7 @@ def get_book(project_id: str, book_id: str) -> dict:
     return {**book, "ghost": ghost_of(book)}
 
 
+@locked
 def update_book(project_id: str, book_id: str, data: dict[str, Any], base_version: int) -> dict:
     book = get_book(project_id, book_id)
     if book["version"] != base_version:
@@ -115,6 +117,7 @@ def list_books(project_id: str) -> list[dict]:
     return sorted(out, key=lambda b: b.get("updated_at", ""), reverse=True)
 
 
+@locked
 def delete_book(project_id: str, book_id: str) -> None:
     """Nicht löschen, sondern in den Papierkorb verschieben."""
     d = _existing(project_id, book_id)
@@ -133,6 +136,7 @@ def get_structure(project_id: str, book_id: str) -> dict:
     return read_json(_existing(project_id, book_id) / "structure.json")
 
 
+@locked
 def save_structure(project_id: str, book_id: str, structure: dict, base_version: int) -> dict:
     d = _existing(project_id, book_id)
     current = read_json(d / "structure.json")

@@ -11,6 +11,7 @@ from typing import Any
 
 from ._book import Conflict, _existing, _now
 from ._files import StoryError, check_id, inside, read_json, write_json
+from ._locks import locked
 
 MAX_QUESTIONS = 20
 MAX_QUESTION = 500
@@ -58,6 +59,7 @@ def _clean(questions: Any, previous: dict[str, dict]) -> list[dict]:
     return out
 
 
+@locked
 def save(project_id: str, book_id: str, chapter_id: str, questions: Any, base_version: int) -> dict:
     current = get(project_id, book_id, chapter_id)
     if current["version"] != base_version:

@@ -17,6 +17,7 @@ from . import storage
 from ._book import MAX_SCENES, _existing, _now
 from ._files import StoryError, new_id, read_json, write_json, write_scene
 from ._ghost_settings import ghost_of
+from ._locks import locked
 from ._names import KIND_LABEL, LANGUAGE_LABEL, is_fiction
 from ._think import strip_think
 from .storage import Conflict
@@ -99,6 +100,7 @@ async def generate(project_id: str, book_id: str, *, idea: str, chapters: int, s
     raise StoryError("outline_invalid", 502)   # nicht erreichbar
 
 
+@locked
 def apply(project_id: str, book_id: str, outline_data: dict, base_version: int) -> dict:
     data = validate(outline_data)
     d = _existing(project_id, book_id)

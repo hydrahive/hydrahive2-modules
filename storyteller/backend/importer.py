@@ -14,7 +14,7 @@ from typing import Any
 
 from . import storage
 from ._book import _now
-from ._files import StoryError, new_id, write_atomic, write_json
+from ._files import StoryError, new_id, write_json, write_scene
 from ._ghost_settings import GHOST_DEFAULTS, ORIGINS
 from ._names import KINDS, LANGUAGES
 from ._structure import validate_structure
@@ -84,8 +84,7 @@ def import_book(project_id: str, data: dict[str, Any]) -> dict:
     os.chmod(tmp, stat.S_IMODE(books.stat().st_mode))  # wie der Elternordner, nicht mkdtemps 0700
     try:
         for meta, text in scenes:
-            write_atomic(Path(tmp) / "scenes" / f"{meta['id']}.md", text)
-            write_json(Path(tmp) / "scenes" / f"{meta['id']}.json", meta)
+            write_scene(Path(tmp), meta["id"], meta, text)
         write_json(Path(tmp) / "structure.json", structure)
         write_json(Path(tmp) / "book.json", book)
         os.replace(tmp, storage.book_dir(project_id, book["id"]))
