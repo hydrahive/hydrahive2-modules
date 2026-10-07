@@ -131,15 +131,38 @@ def test_cancel_while_running_stops_the_task(helper, monkeypatch):
     assert team_jobs.get(PROJECT_ID, bid, job["id"])["status"] == "cancelled"
 
 
-def test_helper_gone_is_an_error(helper, monkeypatch):
+def test_helper_gone_is_an_error_without_session(helper, monkeypatch):
     from hydrahive.agents import config as ac
+    from hydrahive.db import sessions as sdb
     seen: list = []
     monkeypatch.setattr(team_job_run, "_runner", lambda: _fake([], seen=seen))
+    created: list = []
+    real_create = sdb.create
+    monkeypatch.setattr(sdb, "create", lambda **kw: created.append(kw) or real_create(**kw))
     bid, job = _job(helper)
     ac.delete(helper["id"])
     _run(bid, job)
     out = team_jobs.get(PROJECT_ID, bid, job["id"])
-    assert seen == [] and out["status"] == "error" and out["session_id"] == ""
+    assert seen == [] and created == [] and out["status"] == "error" and out["error"] == "Helfer nicht gefunden"
+
+
+def test_run_without_done_is_an_error(helper, monkeypatch):
+    from hydrahive.runner.events import TextDelta
+    monkeypatch.setattr(team_job_run, "_runner", lambda: _fake([TextDelta(text="halb")]))
+    bid, job = _job(helper)
+    _run(bid, job)
+    out = team_jobs.get(PROJECT_ID, bid, job["id"])
+    assert out["status"] == "error" and out["error"] == "Lauf ohne Ergebnis beendet"
+
+
+def test_summary_from_text_block_without_deltas(helper, monkeypatch):
+    """Ohne Streaming kommt der Text nur als TextBlock (Kern _call.py Fallback)."""
+    from hydrahive.runner.events import Done, TextBlock
+    monkeypatch.setattr(team_job_run, "_runner", lambda: _fake([TextBlock(text="Ein Befund."),
+                                                                 Done(message_id="m", iterations=1)]))
+    bid, job = _job(helper)
+    _run(bid, job)
+    assert team_jobs.get(PROJECT_ID, bid, job["id"])["summary"] == "Ein Befund."
 
 
 def test_live_ids_only_while_task_runs(helper, monkeypatch):

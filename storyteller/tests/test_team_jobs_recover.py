@@ -47,14 +47,16 @@ def test_recover_keeps_live_jobs(book_project, monkeypatch):
 
 
 def test_recover_ignores_projects_without_books_and_never_creates_folders(book_project):
+    import shutil
+
     from hydrahive.projects import config as pc
     from hydrahive.projects._paths import workspace_path
     plain = pc.create(name="ohne Buch", llm_model="m", created_by="testuser", members=["testuser"])
     try:
         ws = workspace_path(plain["id"])
-        existed = (ws / "storyteller").exists()
+        shutil.rmtree(ws, ignore_errors=True)        # wie ein Projekt, dessen Arbeitsordner (noch) nicht existiert
         asyncio.run(team_job_run.recover_stale_jobs())
-        assert (ws / "storyteller").exists() == existed
+        assert not ws.exists()
     finally:
         pc.delete(plain["id"])
 

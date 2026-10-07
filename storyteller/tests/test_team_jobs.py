@@ -122,6 +122,16 @@ def test_trimming_never_removes_active_jobs():
     assert sum(1 for j in jobs if j["status"] == "queued") == team_jobs.MAX_ACTIVE
 
 
+def test_trimming_keeps_old_active_jobs():
+    """Aktive Aufträge, die ganz am Anfang angelegt wurden, überleben viele spätere fertige."""
+    bid = _book()
+    early = _new(bid, agent_id="früh")
+    for i in range(team_jobs.KEEP + 3):
+        team_jobs.finish(PROJECT_ID, bid, _new(bid, agent_id=f"x{i}")["id"], status="done")
+    ids = {j["id"] for j in team_jobs.list_jobs(PROJECT_ID, bid)}
+    assert early["id"] in ids and len(ids) == team_jobs.KEEP
+
+
 def test_mark_stale_ends_active_jobs_without_live_task():
     bid = _book()
     live, dead = _new(bid, agent_id="a1"), _new(bid, agent_id="a2")

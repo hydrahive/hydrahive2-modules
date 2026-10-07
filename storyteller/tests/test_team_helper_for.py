@@ -51,6 +51,14 @@ def test_agent_of_other_project_with_matching_name_is_ignored(book_project):
         ac.delete(alien["id"])
 
 
+def test_role_of_needs_membership_in_allowed_specialists(book_project):
+    from hydrahive.agents import config as ac
+    plaus = team.helper_for(book_project, "plausibility")
+    assert team.role_of(book_project, plaus).key == "plausibility"
+    stranger = {**book_project, "allowed_specialists": []}
+    assert team.role_of(stranger, ac.get(plaus["id"])) is None
+
+
 def test_removed_helper_is_none(book_project):
     from hydrahive.projects import config as pc
     plaus = team.helper_for(book_project, "plausibility")
