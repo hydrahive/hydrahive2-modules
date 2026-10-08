@@ -26,6 +26,21 @@ Vorher die Szene lesen; Steckbriefe und Zusammenfassungen beachten.
 """
 
 
+def agent_name(ctx: ToolContext) -> str:
+    """Name des ablegenden Agenten (z. B. „Buch — Lektor“) – Herkunft für Vorschläge und Hinweise."""
+    from hydrahive.agents import config as agent_config
+    agent = agent_config.get(ctx.agent_id) if ctx.agent_id else None
+    return (agent or {}).get("name") or "Agent"
+
+
+def replaced_note(p: dict) -> dict:
+    """Für die Werkzeug-Antwort: ob und von wem ein älterer Vorschlag ersetzt wurde (er bleibt im Verlauf)."""
+    old = p.get("replaced_from")
+    return {"replaced": bool(old), "replaced_from": old["author"] if old else None,
+            **({"replaced_hint": f"Ein älterer Vorschlag von {old['author']} wurde ersetzt; er liegt im Verlauf und "
+                                 "der Autor kann ihn zurückholen."} if old else {})}
+
+
 def scope(ctx: ToolContext, need: str = "read") -> tuple[str | None, ToolResult | None]:
     """(project_id, None) wenn erlaubt, sonst (None, Fehler). ``need``: read | write."""
     pid = (ctx.project_id or "").strip()

@@ -54,30 +54,31 @@ async def _write(run_id: str, material, *, model, length: int, chunk: int) -> st
 
 
 def _store(project_id: str, book_id: str, scene_id: str, text: str, start_version: int, start_empty: bool,
-           run_id: str, model: str) -> str:
-    """Leer und unverändert → direkt; sonst Vorschlag. Gibt den Zustand für den Fortschritt zurück."""
+           run_id: str, model: str) -> tuple[str, dict]:
+    """Leer und unverändert → direkt; sonst Vorschlag. Gibt (Zustand, Zusatz für den Fortschritt) zurück –
+    ersetzt der Vorschlag einen offenen (A2), steht dessen Herkunft in ``replaced``."""
     if start_empty:
         try:
             storage.save_scene(project_id, book_id, scene_id, {"text": text, "origin": "ai_draft", "status": "draft"},
                                base_version=start_version)
-            return "written"
+            return "written", {}
         except Conflict:
             pass   # Autor hat die Szene inzwischen geändert → Vorschlag statt Überschreiben
-    proposals.store(project_id, book_id, scene_id, text, run_id=run_id, model=model, base_version=start_version)
-    return "proposal"
+    p = proposals.store(project_id, book_id, scene_id, text, run_id=run_id, model=model, base_version=start_version)
+    return "proposal", ({"replaced": p["replaced_from"]["author"]} if p["replaced_from"] else {})
 
 
 async def _scene(run_id: str, project_id: str, book_id: str, scene_id: str, opts: dict, model, limit: int,
-                 used: int) -> tuple[str, int, int]:
-    """Gibt (Zustand, verbrauchte Tokens Eingabe + Ausgabe, Wörter) zurück."""
+                 used: int) -> tuple[str, int, dict]:
+    """Gibt (Zustand, verbrauchte Tokens Eingabe + Ausgabe, Zusatz für den Fortschritt) zurück."""
     book = storage.get_book(project_id, book_id)
     scene = storage.get_scene(project_id, book_id, scene_id)
     iv = interview_material(project_id, book_id, opts["chapter_id"]) if opts.get("source") == "interview" else None
     if not scene["summary"].strip() and iv is None:
-        return "skipped_no_summary", 0, 0
+        return "skipped_no_summary", 0, {}
     start_empty = not scene["text"].strip()
     if not start_empty and opts.get("skip_filled", True):
-        return "skipped_filled", 0, 0
+        return "skipped_filled", 0, {}
     length, chunk = ghost.plan_lengths(book, opts.get("length_words") or None)
     material = ghost.build_material(project_id, book_id, scene_id, interview=iv)
     est = _cost.scene_estimate(material, length_words=length, chunk_words=chunk)
@@ -91,8 +92,8 @@ async def _scene(run_id: str, project_id: str, book_id: str, scene_id: str, opts
                                                                                          tokens_out=tout))
     if not text:
         raise StoryError("llm_empty", 502)
-    state = _store(project_id, book_id, scene_id, text, scene["version"], start_empty, run_id, model or "")
-    return state, tin + tout, len(text.split())
+    state, extra = _store(project_id, book_id, scene_id, text, scene["version"], start_empty, run_id, model or "")
+    return state, tin + tout, {"words": len(text.split()), **extra}
 
 
 async def execute(run_id: str, project_id: str, book_id: str, user: str, lock_key=None) -> None:
@@ -107,9 +108,9 @@ async def execute(run_id: str, project_id: str, book_id: str, user: str, lock_ke
             current = p["scene_id"]
             if run_id in _cancelled:
                 raise _Stop
-            state, spent, words = await _scene(run_id, project_id, book_id, current, opts, model, limit, used)
+            state, spent, extra = await _scene(run_id, project_id, book_id, current, opts, model, limit, used)
             used += spent
-            runs.set_scene_state(run_id, current, state, **({"words": words} if words else {}))
+            runs.set_scene_state(run_id, current, state, **extra)
             current = None
     except _Stop:
         status = "cancelled"
