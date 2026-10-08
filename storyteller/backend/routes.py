@@ -29,6 +29,7 @@ from .team import move as team_move
 from .team import upgrade as team_upgrade
 from .team_job_routes import router as team_job_router
 from .team_routes import router as team_router
+from .trash_routes import router as trash_router
 
 router = APIRouter()
 
@@ -134,3 +135,4 @@ router.include_router(team_router)
 router.include_router(note_router)
 router.include_router(proposal_history_router)
 router.include_router(team_job_router)
+router.include_router(trash_router)
