@@ -5,6 +5,7 @@ import { activeFor, isActive, needsPolling, placeFor, type TeamJob } from "./tea
 const job = (over: Partial<TeamJob>): TeamJob => ({
   id: "j", job: "check_scene", role: "plausibility", agent_name: "T — Plausibilität", place_id: "s1",
   place_title: "Am Hafen", status: "queued", summary: "", error: "", cost_micros: null, estimate_micros: null,
+  limit_tokens: 0, tokens_in: 0, tokens_out: 0,
   session_id: "", at: "2026-10-08T10:00:00+00:00", finished_at: "", ...over,
 })
 
@@ -19,7 +20,7 @@ describe("teamJobs", () => {
   it("aktiv = queued oder running", () => {
     expect(isActive(job({ status: "queued" }))).toBe(true)
     expect(isActive(job({ status: "running" }))).toBe(true)
-    for (const s of ["done", "error", "cancelled"] as const) expect(isActive(job({ status: s }))).toBe(false)
+    for (const s of ["done", "error", "cancelled", "limit"] as const) expect(isActive(job({ status: s }))).toBe(false)
   })
   it("laufender Auftrag eines Knopfs an dieser Stelle", () => {
     const jobs = [job({ id: "a", status: "done" }), job({ id: "b", status: "running" }),

@@ -3,7 +3,7 @@
 import { authHeader, errorFrom, storyBase, StoryApiError } from "./api"
 
 export interface GhostDone { words: number; model: string; mode: "fill" | "proposal" }
-export interface GhostSceneRequest { scene_id: string; length_words?: number; model?: string }
+export interface GhostSceneRequest { scene_id: string; length_words?: number; model?: string; confirm_over_limit?: boolean }
 interface SseEvent { event: string; data: Record<string, unknown> }
 
 /** Ereignisse aus einem Stück lesen; Unvollständiges bleibt im Puffer bis zum nächsten Stück. */

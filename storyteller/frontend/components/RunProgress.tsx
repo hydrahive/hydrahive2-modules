@@ -28,7 +28,7 @@ export function RunProgress({ run, book, canWrite, onCancel, onOpenScene }: Prop
       </p>
       {current && !finished && <p className="text-xs text-zinc-400">{t("run_current", { title: current })}</p>}
       <p className="text-[11px] text-zinc-500">
-        {t("run_tokens", { out: n(run.tokens_out), in: n(run.tokens_in) })}
+        {t("run_tokens", { total: n(run.tokens_in + run.tokens_out), out: n(run.tokens_out), in: n(run.tokens_in) })}
         {cost && <> · {t(cost.partial ? "run_cost_partial" : "run_cost", { cents: cost.cents })}</>}
       </p>
       {run.error && <p className="st-ai-error rounded border border-red-400/30 bg-red-500/10 px-2 py-1 text-xs text-red-200" role="alert">{run.error}</p>}
