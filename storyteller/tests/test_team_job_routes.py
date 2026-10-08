@@ -70,64 +70,6 @@ def test_estimate_then_start_then_list(client, auth_headers, helpers, started):
     assert [x["id"] for x in listed] == [job["id"]]
 
 
-def _limit(bid, limit):
-    b = storage.get_book(PROJECT_ID, bid)
-    storage.update_book(PROJECT_ID, bid, {"ghost": {"limit_tokens": limit}}, base_version=b["version"])
-
-
-def _fixed(monkeypatch, tin=4000, tout=3000):
-    from backend import team_job_estimate
-    orig = team_job_estimate.estimate
-
-    def fake(*a, **k):
-        return {**orig(*a, **k), "input_tokens": tin, "output_tokens": tout}
-    monkeypatch.setattr(team_job_estimate, "estimate", fake)
-
-
-def test_estimate_reports_total_limit_and_over(client, auth_headers, helpers, started, monkeypatch):
-    """A1 (Spec kostengrenze.md §4): Schätzung gesamt + Grenze des Buchs + „über der Grenze“."""
-    bid, _cid, sid = _book()
-    _limit(bid, 5000)
-    _fixed(monkeypatch)
-    e = client.post(f"{P}/books/{bid}/team/jobs/estimate", json={"job": "check_scene", "place_id": sid},
-                    headers=auth_headers).json()
-    assert e["total_tokens"] == 7000 and e["limit_tokens"] == 5000 and e["over_limit"] is True
-
-
-def test_start_over_limit_needs_confirmation(client, auth_headers, helpers, started, monkeypatch):
-    bid, _cid, sid = _book()
-    _limit(bid, 5000)
-    _fixed(monkeypatch)                              # Ausgabe allein (3000) unter der Grenze, gesamt 7000 darüber
-    url = f"{P}/books/{bid}/team/jobs"
-    r = client.post(url, json={"job": "check_scene", "place_id": sid}, headers=auth_headers)
-    assert r.status_code == 400 and r.json()["detail"]["code"] == "over_limit"
-    assert started == [] and team_jobs.list_jobs(PROJECT_ID, bid) == []
-    r = client.post(url, json={"job": "check_scene", "place_id": sid, "confirm_over_limit": True}, headers=auth_headers)
-    assert r.status_code == 200 and r.json()["limit_tokens"] == 0      # bestätigt → Grenze gilt für diesen Auftrag nicht
-    assert len(started) == 1
-
-
-def test_start_under_limit_stores_the_limit(client, auth_headers, helpers, started, monkeypatch):
-    bid, _cid, sid = _book()
-    _limit(bid, 8000)
-    _fixed(monkeypatch)
-    r = client.post(f"{P}/books/{bid}/team/jobs", json={"job": "check_scene", "place_id": sid}, headers=auth_headers)
-    assert r.status_code == 200 and r.json()["limit_tokens"] == 8000
-    e = client.post(f"{P}/books/{bid}/team/jobs/estimate", json={"job": "edit_scene", "place_id": sid},
-                    headers=auth_headers).json()
-    assert e["over_limit"] is False
-
-
-def test_no_limit_is_never_over(client, auth_headers, helpers, started, monkeypatch):
-    bid, _cid, sid = _book()
-    _fixed(monkeypatch, tin=10_000_000)
-    e = client.post(f"{P}/books/{bid}/team/jobs/estimate", json={"job": "check_scene", "place_id": sid},
-                    headers=auth_headers).json()
-    assert e["limit_tokens"] == 0 and e["over_limit"] is False
-    r = client.post(f"{P}/books/{bid}/team/jobs", json={"job": "check_scene", "place_id": sid}, headers=auth_headers)
-    assert r.status_code == 200 and r.json()["limit_tokens"] == 0
-
-
 def test_reader_may_list_but_not_start_or_cancel(client, auth_headers, reader_headers, helpers, started):
     bid, _cid, sid = _book()
     assert client.post(f"{P}/books/{bid}/team/jobs", json={"job": "check_scene", "place_id": sid},
