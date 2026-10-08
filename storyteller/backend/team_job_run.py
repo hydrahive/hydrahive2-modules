@@ -71,7 +71,8 @@ async def _drive(project_id: str, book_id: str, job: dict, agent: dict, task: st
         gen = _runner()(session.id, task)
         try:
             async for ev in gen:
-                if isinstance(ev, IterationStart) and limit and ev.iteration > 1 and _over_limit(session.id, limit):
+                # Vor jeder Runde (in Runde 1 gibt es noch keinen Verbrauch → nie darüber).
+                if isinstance(ev, IterationStart) and limit and _over_limit(session.id, limit):
                     limited = True
                     break
                 if isinstance(ev, MessageStart):

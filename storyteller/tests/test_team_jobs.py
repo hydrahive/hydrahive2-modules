@@ -88,7 +88,7 @@ def test_limit_is_stored_and_limit_is_an_end_status():
     _new(bid)                                          # derselbe Helfer darf wieder
 
 
-@pytest.mark.parametrize("bad", [-1, "50000", True, 1.5, 20_000_001])
+@pytest.mark.parametrize("bad", [-1, "50000", True, False, 1.5, 20_000_001])
 def test_limit_must_be_a_sane_number(bad):
     with pytest.raises(StoryError):
         _new(_book(), limit_tokens=bad)
