@@ -19,6 +19,14 @@ _TEXT_LIMITS = {"model": 200, "style": 2000}
 ORIGINS = ("human", "ai_draft", "ai_edited")
 
 
+def valid_limit(value: Any) -> int:
+    """Kostengrenze prüfen (0 = aus, sonst im Bereich) – auch für die Grenze am Team-Auftrag."""
+    low, high = _RANGES["limit_tokens"]
+    if isinstance(value, bool) or not isinstance(value, int) or (value != 0 and not low <= value <= high):
+        raise StoryError("limit_invalid")
+    return value
+
+
 def ghost_of(book: dict) -> dict:
     """Einstellungen mit Standardwerten (ältere Bücher haben das Feld nicht)."""
     return {**GHOST_DEFAULTS, **(book.get("ghost") or {})}
@@ -33,6 +41,11 @@ def merge_ghost(current: dict, patch: Any) -> dict:
         if key in _TEXT_LIMITS:
             if not isinstance(value, str) or len(value) > _TEXT_LIMITS[key]:
                 raise StoryError("ghost_invalid")
+        elif key == "limit_tokens":
+            try:
+                valid_limit(value)
+            except StoryError:
+                raise StoryError("ghost_invalid") from None
         else:
             low, high = _RANGES[key]
             if isinstance(value, bool) or not isinstance(value, int) or (value != 0 and not low <= value <= high):
