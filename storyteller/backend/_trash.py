@@ -5,6 +5,7 @@
         snapshots/*.md                Schnappschüsse
         proposal.md, proposal.json    offener KI-Vorschlag (falls vorhanden)
         proposal.info.json            offener Vorschlag für Szenen-Infos (G4b)
+        history/text, history/info    Verlauf ersetzter/verworfener Vorschläge (A2)
 Wiederherstellen gibt es (noch) nicht in der Oberfläche; die Dateien sind vollständig da.
 Aufrufer hält die Sperre des Buchs.
 """
@@ -15,6 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ._files import check_id, inside, story_root
+from ._replaced import scene_dirs
 
 
 def trash_scene(project_id: str, book_id: str, book_dir: Path, scene_id: str) -> Path:
@@ -27,7 +29,9 @@ def trash_scene(project_id: str, book_id: str, book_dir: Path, scene_id: str) ->
              (inside(book_dir, "snapshots", scene_id), target / "snapshots"),
              (inside(book_dir, "proposals", f"{scene_id}.md"), target / "proposal.md"),
              (inside(book_dir, "proposals", f"{scene_id}.json"), target / "proposal.json"),
-             (inside(book_dir, "proposals", f"{scene_id}.meta.json"), target / "proposal.info.json")]
+             (inside(book_dir, "proposals", f"{scene_id}.meta.json"), target / "proposal.info.json"),
+             *((d, target / "history" / kind) for kind, d in scene_dirs(book_dir, scene_id).items())]
+    (target / "history").mkdir()
     for src, dst in moves:
         if src.exists():
             shutil.move(str(src), str(dst))

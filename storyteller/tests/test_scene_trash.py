@@ -11,6 +11,7 @@ def _book_with_scene():
     sid = storage.add_scene(PROJECT_ID, b["id"], ch["id"], "Weg")["scene"]["id"]
     s = storage.save_scene(PROJECT_ID, b["id"], sid, {"text": "Wichtiger Text", "summary": "Z"}, base_version=1)
     snapshots.add_snapshot(PROJECT_ID, b["id"], sid, "Ältere Fassung")
+    proposals.store(PROJECT_ID, b["id"], sid, "Früherer Vorschlag", run_id="r0", model="m", base_version=s["version"])
     proposals.store(PROJECT_ID, b["id"], sid, "Vorschlag", run_id="r", model="m", base_version=s["version"])
     return b["id"], sid
 
@@ -31,6 +32,8 @@ def test_remove_scene_moves_text_infos_snapshots_and_proposal_to_trash():
     assert (t / f"{sid}.json").is_file()
     assert [p.read_text(encoding="utf-8") for p in (t / "snapshots").glob("*.md")] == ["Ältere Fassung"]
     assert (t / "proposal.md").read_text(encoding="utf-8") == "Vorschlag" and (t / "proposal.json").is_file()
+    hist = list((t / "history" / "text").glob("*.json"))                  # A2: Verlauf zieht mit
+    assert len(hist) == 1 and "Früherer Vorschlag" in hist[0].read_text(encoding="utf-8")
     assert proposals.list_for_book(PROJECT_ID, bid) == []
 
 
