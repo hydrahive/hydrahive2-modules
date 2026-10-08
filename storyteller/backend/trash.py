@@ -55,12 +55,13 @@ def list_scenes(project_id: str, book_id: str) -> list[dict]:
     root = _scenes_dir(project_id, book_id)
     st = read_json(_existing(project_id, book_id) / "structure.json")
     chapters = {c["id"] for p in st["parts"] for c in p["chapters"]}
-    out = []
-    for d in sorted(root.iterdir(), reverse=True) if root.is_dir() else []:
+    found = []
+    for d in root.iterdir() if root.is_dir() else []:
         m = _ENTRY_RE.match(d.name)
         if m and d.is_dir():
-            out.append(_info(d, m.group(1), m.group(2), chapters))
-    return out
+            found.append((m.group(2), d, m.group(1)))
+    # Neueste Löschung zuerst – nach dem Zeitstempel, nicht nach dem Ordnernamen (der beginnt mit der Szenen-ID).
+    return [_info(d, sid, stamp, chapters) for stamp, d, sid in sorted(found, key=lambda x: x[0], reverse=True)]
 
 
 def _move_back(src: Path, book: Path, scene_id: str) -> None:
