@@ -45,7 +45,7 @@ def test_view_and_restore(client, auth_headers):
     assert r.status_code == 200 and r.json()["text"] == "Fassung Lauf."
     assert proposals.get(PROJECT_ID, bid, sid)["text"] == "Fassung Lauf."
     rows = client.get(url, headers=auth_headers).json()
-    assert len(rows) == 1 and rows[0]["replaced_by"] == "zurückgeholt"
+    assert len(rows) == 1 and rows[0]["reason"] == "restored_over"
 
 
 def test_restore_info_route(client, auth_headers):

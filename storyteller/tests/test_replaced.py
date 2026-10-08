@@ -101,7 +101,7 @@ def test_restore_makes_it_open_again_and_keeps_the_current_one():
     assert proposals.get(PROJECT_ID, bid, sid)["text"] == "Alt."
     hist = _replaced.history(PROJECT_ID, bid, "text", sid)
     assert len(hist) == 1 and _replaced.get(PROJECT_ID, bid, "text", sid, hist[0]["id"])["text"] == "Neu."
-    assert hist[0]["reason"] == "replaced" and hist[0]["replaced_by"] == "zurückgeholt"
+    assert hist[0]["reason"] == "restored_over" and hist[0]["replaced_by"] == ""
 
 
 def test_restore_without_open_proposal():

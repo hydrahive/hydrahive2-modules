@@ -13,6 +13,7 @@ export const keepDe = {
   history_discarded: "verworfen",
   history_replaced_by: "ersetzt durch {{who}}",
   history_restore: "Zurückholen",
+  history_restored_over: "beiseitegelegt (ein älterer wurde zurückgeholt)",
   proposal_from_named: "Vorschlag von {{who}} ({{words}} Wörter). Dein Text bleibt, bis du übernimmst.",
   replaced_hint: "Ersetzt einen Vorschlag von {{who}} – der liegt unter „Frühere Vorschläge“ (Reiter „Szene“).",
   trash_title: "Papierkorb",

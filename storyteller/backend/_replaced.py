@@ -2,7 +2,7 @@
 
     proposals/_replaced/<art>/<schlüssel>/<zeit>.json
         {"proposal": {…Meta des alten Vorschlags…}, "text": "…" (nur Art text),
-         "reason": "replaced"|"discarded", "replaced_by": "<Herkunft des neuen>", "replaced_at": "…"}
+         "reason": "replaced"|"discarded"|"restored_over", "replaced_by": "<Herkunft des neuen>", "replaced_at": "…"}
 
 Arten und Schlüssel: ``text``/``info`` je Szene (Szenen-ID), ``outline`` (Schlüssel „outline“), ``entity`` je Steckbrief
 (Steckbrief-ID, neue Steckbriefe unter „new“). Je Schlüssel höchstens ``KEEP`` Einträge (älteste fallen weg).
@@ -18,7 +18,7 @@ from ._files import StoryError, check_id, inside, read_json, write_json
 
 KEEP = 10
 KINDS = ("text", "info", "outline", "entity")
-REASONS = ("replaced", "discarded")
+REASONS = ("replaced", "discarded", "restored_over")   # restored_over: ein älterer wurde zurückgeholt
 _ENTRY_RE = re.compile(r"^\d{8}T\d{12}$")
 _FMT = "%Y%m%dT%H%M%S%f"
 

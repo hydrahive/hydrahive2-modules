@@ -7,7 +7,7 @@ export type HistoryKind = "text" | "info"
 
 export interface HistoryEntry {
   id: string; kind: HistoryKind; at: string; source: "run" | "agent"; author: string; note: string; model: string
-  reason: "replaced" | "discarded"; replaced_by: string; replaced_at: string
+  reason: "replaced" | "discarded" | "restored_over"; replaced_by: string; replaced_at: string
   words?: number; fields?: Record<string, string>
 }
 

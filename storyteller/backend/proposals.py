@@ -110,7 +110,7 @@ def restore(project_id: str, book_id: str, scene_id: str, entry_id: str) -> dict
     """Eintrag aus dem Verlauf wieder zum offenen Vorschlag machen; ein gerade offener wandert in den Verlauf."""
     meta_path, text_path = _paths(project_id, book_id, scene_id)
     entry = _replaced.take(project_id, book_id, "text", scene_id, entry_id)
-    _to_history(project_id, book_id, scene_id, meta_path, text_path, reason="replaced", by="zurückgeholt")
+    _to_history(project_id, book_id, scene_id, meta_path, text_path, reason="restored_over", by="")
     write_atomic(text_path, entry["text"])
     write_json(meta_path, entry["proposal"])
     return {**_DEFAULTS, **entry["proposal"], "text": entry["text"]}

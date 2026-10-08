@@ -121,7 +121,7 @@ def restore(project_id: str, book_id: str, key: str, entry_id: str) -> dict:
             raise StoryError("entity_exists", 409, {"entity_id": taken["id"], "name": taken["name"]})
     _replaced.take(project_id, book_id, "entity", key, entry_id)
     for old in [p for p in list_for_book(project_id, book_id) if entry["entity_id"] and p["entity_id"] == entry["entity_id"]]:
-        _to_history(project_id, book_id, old, reason="replaced", by="zurückgeholt")
+        _to_history(project_id, book_id, old, reason="restored_over", by="")
     seq = max((p.get("seq", 0) for p in list_for_book(project_id, book_id)), default=0) + 1
     restored = {**entry, "seq": seq}
     write_json(_path(project_id, book_id, restored["id"]), restored)

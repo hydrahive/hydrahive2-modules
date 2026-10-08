@@ -66,7 +66,7 @@ def discard(project_id: str, book_id: str) -> None:
 @locked
 def restore(project_id: str, book_id: str, entry_id: str) -> dict:
     entry = _replaced.take(project_id, book_id, "outline", "outline", entry_id)
-    _to_history(project_id, book_id, reason="replaced", by="zurückgeholt")
+    _to_history(project_id, book_id, reason="restored_over", by="")
     write_json(_path(project_id, book_id), entry["proposal"])
     return entry["proposal"]
 

@@ -13,6 +13,7 @@ export const keepEn: typeof keepDe = {
   history_discarded: "discarded",
   history_replaced_by: "replaced by {{who}}",
   history_restore: "Bring back",
+  history_restored_over: "set aside (an older one was brought back)",
   proposal_from_named: "Proposal by {{who}} ({{words}} words). Your text stays until you accept.",
   replaced_hint: "Replaces a proposal by {{who}} – it is kept under “Earlier proposals” (tab “Scene”).",
   trash_title: "Trash",

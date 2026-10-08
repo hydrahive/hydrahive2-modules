@@ -66,6 +66,7 @@ export function ProposalHistory({ state, sceneId }: Props) {
                 <span className="text-zinc-500">{fmt(e.at)}</span>
                 {e.kind === "text" && <span className="text-zinc-500">{t("history_words", { n: e.words ?? 0 })}</span>}
                 <span className="text-zinc-500">· {e.reason === "discarded" ? t("history_discarded")
+                  : e.reason === "restored_over" ? t("history_restored_over")
                   : t("history_replaced_by", { who: originLabel({ author: e.replaced_by }, t) })}</span>
                 <span className="ml-auto flex gap-2">
                   <button onClick={() => { void view(e) }} className="text-violet-300 hover:underline">{t(shown?.id === e.id ? "proposal_hide" : "proposal_view")}</button>
