@@ -11,6 +11,7 @@ import { loadSampleBook } from "../sample"
 import { toImport } from "../serverBook"
 import { DraftImport } from "./DraftImport"
 import { NewBookDialog } from "./NewBookDialog"
+import { TrashBooks } from "./TrashBooks"
 
 interface Props {
   projectId: string
@@ -136,6 +137,8 @@ export function BookList({ projectId, projectName, onOpen, onProjectCreated, can
         </ul>
       )}
       {busy && <p className="text-sm text-zinc-500" role="status">{t("nb_creating")}</p>}
+      {/* A3: Papierkorb – Schreibrecht prüft der Server (Leser bekommen 403 und eine Meldung). */}
+      <TrashBooks key={books?.length ?? -1} projectId={projectId} canWrite onRestored={() => load()} />
       {creating && <NewBookDialog onCancel={() => setCreating(false)} canCreateProject={canCreateProject} currentProjectName={projectName}
         onCreate={(f, place) => { setCreating(false); void create(f, place) }} />}
     </div>

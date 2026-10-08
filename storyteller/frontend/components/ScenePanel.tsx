@@ -6,6 +6,7 @@ import { storyApi } from "../api"
 import { entitiesInText, findScene, type Scene, type SceneStatus } from "../model"
 import type { BookState } from "../useBook"
 import { InfoProposalBox } from "./InfoProposalBox"
+import { ProposalHistory } from "./ProposalHistory"
 
 const STATUSES: SceneStatus[] = ["idea", "draft", "revised", "done"]
 const field = "w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
@@ -93,6 +94,8 @@ export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
           </ul>
         )}
       </section>
+
+      <ProposalHistory state={state} sceneId={scene.id} />
 
       {state.snapError && <p className="text-xs text-red-300">{state.snapError}</p>}
       {error && <p className="text-xs text-red-300">{error}</p>}

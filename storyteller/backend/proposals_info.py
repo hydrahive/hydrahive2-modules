@@ -47,9 +47,9 @@ def store(project_id: str, book_id: str, scene_id: str, fields: dict, *, base_ve
     info = {"scene_id": scene_id, "kind": "info", "fields": changed, "base_version": base_version, "source": source,
             "session_id": session_id, "note": note, "at": _now(), "author": author[:200]}
     old = _to_history(project_id, book_id, scene_id, path, reason="replaced", by=origin_of(info))
+    info["replaced_from"] = {"source": old.get("source", "agent"), "author": origin_of(old), "at": old["at"]} if old else None
     write_json(path, info)
-    return {**info, "replaced_from": {"source": old.get("source", "agent"), "author": origin_of(old), "at": old["at"]}
-            if old else None}
+    return info
 
 
 def _to_history(project_id: str, book_id: str, scene_id: str, path, *, reason: str, by: str) -> dict | None:

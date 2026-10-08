@@ -3,13 +3,18 @@
 import type { ProposalInfo } from "./api"
 
 /** Kurzinfo eines abgelegten Vorschlags je Szene. */
-export interface ProposalMark { words: number; model: string; at: string; source?: "run" | "agent"; note?: string; sceneWords?: number }
+export interface ProposalMark {
+  words: number; model: string; at: string; source?: "run" | "agent"; note?: string; sceneWords?: number
+  /** A2: Agent-Name des Vorschlags und wessen Vorschlag er ersetzt hat. */
+  author?: string; replacedFrom?: string
+}
 
 /** Unter diesem Anteil der Szene gilt ein Vorschlag als „deutlich kürzer“ (wie der Server, agent_tools/propose.py). */
 export const SHRINK = 0.5
 
 export function markOf(p: ProposalInfo): ProposalMark {
-  return { words: p.words, model: p.model, at: p.at, source: p.source ?? "run", note: p.note ?? "", sceneWords: p.scene_words ?? 0 }
+  return { words: p.words, model: p.model, at: p.at, source: p.source ?? "run", note: p.note ?? "", sceneWords: p.scene_words ?? 0,
+    author: p.author ?? "", replacedFrom: p.replaced_from?.author ?? "" }
 }
 
 export function shrinks(m: ProposalMark): boolean {

@@ -29,7 +29,7 @@ def _words(text: str) -> int:
 
 
 SOURCES = ("run", "agent")
-_DEFAULTS = {"source": "run", "session_id": "", "note": "", "scene_words": 0, "author": ""}   # ältere ohne diese Felder
+_DEFAULTS = {"source": "run", "session_id": "", "note": "", "scene_words": 0, "author": "", "replaced_from": None}   # ältere ohne diese Felder
 RUN_AUTHOR = "Ghostwriter-Lauf"
 
 
@@ -72,9 +72,11 @@ def store(project_id: str, book_id: str, scene_id: str, text: str, *, run_id: st
             "words": _words(text), "at": _now(), "source": source, "session_id": session_id, "note": note,
             "scene_words": scene_words, "author": (author or (RUN_AUTHOR if source == "run" else ""))[:200]}
     old = _to_history(project_id, book_id, scene_id, meta_path, text_path, reason="replaced", by=origin_of(meta))
+    replaced_from = {"source": old["source"], "author": origin_of(old), "at": old["at"]} if old else None
+    meta["replaced_from"] = replaced_from       # Hinweis „ersetzt einen Vorschlag von …“ in der Oberfläche
     write_atomic(text_path, text)
     write_json(meta_path, meta)
-    return {**meta, "replaced_from": {"source": old["source"], "author": origin_of(old), "at": old["at"]} if old else None}
+    return meta
 
 
 def get(project_id: str, book_id: str, scene_id: str) -> dict:

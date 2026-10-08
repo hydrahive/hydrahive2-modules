@@ -8,6 +8,8 @@ export const INFO_FIELDS: InfoField[] = ["title", "summary", "pov"]
 export interface InfoProposal {
   scene_id: string; fields: Partial<Record<InfoField, string>>; base_version: number
   source: "run" | "agent"; session_id: string; note: string; at: string
+  /** A2 (ab 0.16.0): Agent-Name; wessen Vorschlag ersetzt wurde. */
+  author?: string; replaced_from?: { source: string; author: string; at: string } | null
 }
 
 export function infoMarks(list: InfoProposal[] | undefined): Record<string, InfoProposal> {

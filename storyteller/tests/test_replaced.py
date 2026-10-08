@@ -25,6 +25,8 @@ def test_replacing_keeps_the_old_proposal_and_says_from_whom():
     _store(bid, sid, s, "Fassung des Laufs.", run_id="r1")
     new = _store(bid, sid, s, "Fassung des Lektors.", source="agent", author="Buch — Lektor")
     assert new["replaced_from"]["source"] == "run" and new["replaced_from"]["at"]
+    assert proposals.get(PROJECT_ID, bid, sid)["replaced_from"]["author"] == "Ghostwriter-Lauf"       # für den Hinweis
+    assert proposals.list_for_book(PROJECT_ID, bid)[0]["replaced_from"]["author"] == "Ghostwriter-Lauf"
     assert proposals.get(PROJECT_ID, bid, sid)["text"] == "Fassung des Lektors."
     hist = _replaced.history(PROJECT_ID, bid, "text", sid)
     assert len(hist) == 1 and hist[0]["words"] == 3 and hist[0]["source"] == "run"

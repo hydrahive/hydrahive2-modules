@@ -8,6 +8,7 @@ import { moveScene, nudgeScene, renameNode } from "../model"
 import { countByScene } from "../teamNotes"
 import type { BookState } from "../useBook"
 import { EntityList } from "./EntityList"
+import { TrashScenes } from "./TrashScenes"
 
 interface Props {
   state: BookState
@@ -129,6 +130,7 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
         <p className="px-1 pt-1 text-[11px] text-zinc-600">{t("drag_hint")} F2 · Alt+↑/↓</p>
       </div>
       <EntityList book={book} activeId={entityId} onOpen={onOpenEntity} change={change} proposals={state.entityProposals} />
+      <TrashScenes state={state} onOpenScene={onOpenScene} />
     </div>
   )
 }
