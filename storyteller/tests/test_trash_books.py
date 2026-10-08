@@ -61,6 +61,7 @@ def test_moved_backup_is_shown_but_not_restorable():
     with pytest.raises(StoryError) as exc:
         trash_books.restore_book(PROJECT_ID, rows[0]["id"])
     assert exc.value.code == "trash_entry_not_found"
+    assert not storage.book_dir(PROJECT_ID, bid).exists()            # nicht doch zurückgeholt
 
 
 def test_scene_trash_folder_of_a_live_book_is_not_a_deleted_book():

@@ -43,6 +43,7 @@ def test_delete_remembers_place_and_list_shows_it():
 def test_restore_puts_scene_back_at_its_place_with_everything():
     bid, _cid, (a, bb, c) = _book()
     storage.remove_scene(PROJECT_ID, bid, bb)
+    v_before = storage.get_structure(PROJECT_ID, bid)["version"]
     out = trash.restore_scene(PROJECT_ID, bid, trash.list_scenes(PROJECT_ID, bid)[0]["id"])
     assert out["placed"] == "original" and out["scene"]["id"] == bb
     assert _order(bid) == [[a, bb, c]]
@@ -52,7 +53,10 @@ def test_restore_puts_scene_back_at_its_place_with_everything():
     assert proposals.get(PROJECT_ID, bid, bb)["text"] == "Offen"
     assert len(_replaced.history(PROJECT_ID, bid, "text", bb)) == 1
     assert trash.list_scenes(PROJECT_ID, bid) == []
-    assert out["structure"]["version"] == storage.get_structure(PROJECT_ID, bid)["version"]
+    assert out["structure"]["version"] == storage.get_structure(PROJECT_ID, bid)["version"] == v_before + 1
+    # Ein offener Editor mit alter Version muss den neuen Stand bemerken (Versionsprüfung):
+    with pytest.raises(storage.Conflict):
+        storage.save_structure(PROJECT_ID, bid, storage.get_structure(PROJECT_ID, bid), base_version=v_before)
 
 
 def test_restore_when_neighbour_is_gone_goes_to_chapter_start():
@@ -120,6 +124,27 @@ def test_bad_entry_ids_are_404(bad):
     with pytest.raises(StoryError) as exc:
         trash.restore_scene(PROJECT_ID, bid, bad)
     assert exc.value.status == 404
+
+
+def test_entry_name_must_match_exactly_even_if_folder_exists():
+    """Ordner mit fremdem Namen (z. B. von Hand angelegt) gelten nicht als Papierkorb-Eintrag."""
+    import shutil
+    bid, _cid, (_a, bb, _c) = _book()
+    storage.remove_scene(PROJECT_ID, bid, bb)
+    d = storage.story_root(PROJECT_ID) / "trash" / bid / "scenes"
+    entry = next(d.iterdir())
+    shutil.copytree(entry, d / f"{bb}-kopie")
+    assert [r["id"] for r in trash.list_scenes(PROJECT_ID, bid)] == [entry.name]
+    with pytest.raises(StoryError) as exc:
+        trash.restore_scene(PROJECT_ID, bid, f"{bb}-kopie")
+    assert exc.value.status == 404
+
+
+def test_list_is_newest_deletion_first():
+    bid, _cid, (a, _bb, c) = _book()
+    storage.remove_scene(PROJECT_ID, bid, a)
+    storage.remove_scene(PROJECT_ID, bid, c)
+    assert [r["scene_id"] for r in trash.list_scenes(PROJECT_ID, bid)] == [c, a]
 
 
 def test_routes_list_restore_and_rights(client, auth_headers, reader_headers):

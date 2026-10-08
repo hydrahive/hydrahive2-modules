@@ -29,9 +29,18 @@ def test_replacing_keeps_the_old_proposal_and_says_from_whom():
     assert proposals.list_for_book(PROJECT_ID, bid)[0]["replaced_from"]["author"] == "Ghostwriter-Lauf"
     assert proposals.get(PROJECT_ID, bid, sid)["text"] == "Fassung des Lektors."
     hist = _replaced.history(PROJECT_ID, bid, "text", sid)
-    assert len(hist) == 1 and hist[0]["words"] == 3 and hist[0]["source"] == "run"
+    assert len(hist) == 1 and hist[0]["words"] == 3 and hist[0]["source"] == "run" and hist[0]["author"] == "Ghostwriter-Lauf"
     assert hist[0]["reason"] == "replaced" and hist[0]["replaced_by"] == "Buch — Lektor"
     assert _replaced.get(PROJECT_ID, bid, "text", sid, hist[0]["id"])["text"] == "Fassung des Laufs."
+
+
+def test_old_proposal_without_author_is_named_by_its_source():
+    """Vorschläge vor 0.16.0 haben kein author-Feld: Lauf → „Ghostwriter-Lauf“, Agent → „Agent“."""
+    from backend.proposals import origin_of
+    assert origin_of({"source": "run"}) == "Ghostwriter-Lauf"
+    assert origin_of({}) == "Ghostwriter-Lauf"
+    assert origin_of({"source": "agent"}) == "Agent"
+    assert origin_of({"source": "agent", "author": "B — Lektor"}) == "B — Lektor"
 
 
 def test_first_proposal_replaces_nothing():
@@ -58,14 +67,28 @@ def test_accept_does_not_put_it_into_history():
     assert _replaced.history(PROJECT_ID, bid, "text", sid) == []
 
 
-def test_history_is_newest_first_and_bounded():
+def test_history_is_newest_first_and_bounded_to_ten():
+    """Spec §2: je Szene/Art höchstens 10 ersetzte Vorschläge, älteste fallen weg."""
     bid, sid, s = _book_with_text()
-    for i in range(_replaced.KEEP + 3):
+    for i in range(13):
         _store(bid, sid, s, f"Fassung {i}.")
     hist = _replaced.history(PROJECT_ID, bid, "text", sid)
-    assert len(hist) == _replaced.KEEP
+    assert len(hist) == 10
     texts = [_replaced.get(PROJECT_ID, bid, "text", sid, h["id"])["text"] for h in hist]
-    assert texts[0] == f"Fassung {_replaced.KEEP + 1}." and texts[-1] == "Fassung 2."
+    assert texts[0] == "Fassung 11." and texts[-1] == "Fassung 2."
+
+
+def test_only_well_formed_entry_names_are_read():
+    """Nur Einträge im Format <Zeitstempel> – eine fremde Datei im Verlaufsordner wird nie geliefert."""
+    bid, sid, s = _book_with_text()
+    _store(bid, sid, s, "Eins.")
+    _store(bid, sid, s, "Zwei.")
+    d = storage.book_dir(PROJECT_ID, bid) / "proposals" / "_replaced" / "text" / sid
+    real = next(d.glob("*.json"))
+    (d / "fremd.json").write_text(real.read_text())
+    with pytest.raises(StoryError) as e:
+        _replaced.get(PROJECT_ID, bid, "text", sid, "fremd")
+    assert e.value.status == 404
 
 
 def test_restore_makes_it_open_again_and_keeps_the_current_one():
