@@ -6,6 +6,7 @@ import { AlertTriangle, Check, ChevronDown, ChevronRight, ExternalLink, Lightbul
 import { filterNotes, notesApi, safeUrl, type NoteScope, type TeamNote } from "../teamNotes"
 import type { BookState } from "../useBook"
 import { NoteText } from "./NoteText"
+import { TeamJobs } from "./TeamJobs"
 
 interface Props { state: BookState; sceneId: string; onOpenScene: (id: string) => void }
 const SCOPES: NoteScope[] = ["scene", "chapter", "book"]
@@ -42,6 +43,7 @@ export function TeamPanel({ state, sceneId, onOpenScene }: Props) {
 
   return (
     <div className="st-team-panel space-y-3 text-sm">
+      <TeamJobs state={state} sceneId={sceneId} />
       <div role="radiogroup" aria-label={t("team_scope")} className="flex gap-1 rounded-lg bg-white/5 p-1 text-xs">
         {SCOPES.map((s) => (
           <button key={s} role="radio" aria-checked={scope === s} onClick={() => setScope(s)}

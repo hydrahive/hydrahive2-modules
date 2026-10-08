@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 
-from . import AUTHOR, HELPERS, TEAM_VERSION, available_tools, prompt_for
+from . import AUTHOR, TEAM_VERSION, available_tools, prompt_for, role_of
 from .setup import _installed_tools
 
 logger = logging.getLogger(__name__)
@@ -22,12 +22,10 @@ def _book_title(project: dict) -> str:
 def _apply(project: dict) -> None:
     from hydrahive.agents import config as agent_config
     title, installed = _book_title(project), _installed_tools()
-    by_suffix = {f"— {r.name}": r for r in HELPERS}
     ids: dict[str, str] = {}
     for hid in project.get("allowed_specialists") or []:
-        agent = agent_config.get(hid)
-        role = next((r for suffix, r in by_suffix.items() if (agent or {}).get("name", "").endswith(suffix)), None)
-        if agent is None or role is None or agent.get("project_id") != project["id"]:
+        role = role_of(project, agent_config.get(hid))
+        if role is None:
             continue
         agent_config.update(hid, tools=available_tools(role, installed))
         agent_config.set_system_prompt(hid, prompt_for(role, book_title=title))

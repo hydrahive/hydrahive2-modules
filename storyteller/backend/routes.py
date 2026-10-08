@@ -25,6 +25,7 @@ from .proposal_routes import router as proposal_router
 from .routes_scenes import router as scenes_router
 from .run_routes import router as run_router
 from .team import upgrade as team_upgrade
+from .team_job_routes import router as team_job_router
 from .team_routes import router as team_router
 
 router = APIRouter()
@@ -128,3 +129,4 @@ router.include_router(interview_router)
 router.include_router(chat_router)
 router.include_router(team_router)
 router.include_router(note_router)
+router.include_router(team_job_router)
