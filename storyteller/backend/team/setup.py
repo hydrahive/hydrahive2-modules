@@ -37,7 +37,11 @@ def _precheck(fields: dict[str, Any]) -> None:
         raise StoryError("kind_or_language_invalid")
 
 
-def create_book_project(username: str, fields: dict[str, Any], *, model: str = "") -> dict[str, Any]:
+def new_team_project(username: str, title: str, model: str) -> dict[str, Any]:
+    """Projekt mit Autor + 7 Helfern, noch ohne Buch. Ergebnis: {project_id, author, helpers}.
+
+    Scheitert ein Schritt, wird alles Angelegte wieder entfernt. Danach setzt der Aufrufer das Buch und mit
+    ``mark_book_project`` die Metadaten (erst dann gilt das Projekt als Buch-Projekt)."""
     from hydrahive.agents import config as agent_config
     from hydrahive.agents._defaults import (
         DEFAULT_MAX_TOKENS,
@@ -45,22 +49,14 @@ def create_book_project(username: str, fields: dict[str, Any], *, model: str = "
         DEFAULT_THINKING_BUDGET,
     )
     from hydrahive.projects import config as project_config
-
-    _precheck(fields)
-    use_model = (model or "").strip() or default_model()
-    if not use_model:
-        raise StoryError("no_model", 409)
-    title = str(fields["title"]).strip()
     installed = _installed_tools()
-
     project = project_config.create(title, description="Buch im Storyteller (eigenes Projekt mit Schreib-Team)",
-                                    members=[], llm_model=use_model, created_by=username)
+                                    members=[], llm_model=model, created_by=username)
     pid, helper_ids = project["id"], []
     try:
-        book = storage.create_book(pid, {**fields, "title": title, "model": use_model})
         for role in HELPERS:
             helper = agent_config.create(
-                agent_type="specialist", name=f"{title} — {role.name}"[:200], llm_model=use_model,
+                agent_type="specialist", name=f"{title} — {role.name}"[:200], llm_model=model,
                 tools=available_tools(role, installed), owner=username, created_by=project["agent_id"],
                 description=role.description, temperature=DEFAULT_TEMPERATURE, max_tokens=DEFAULT_MAX_TOKENS,
                 thinking_budget=DEFAULT_THINKING_BUDGET, project_id=pid,
@@ -70,14 +66,43 @@ def create_book_project(username: str, fields: dict[str, Any], *, model: str = "
         agent_config.update(project["agent_id"], name=f"{title} — {AUTHOR.name}"[:200],
                             tools=available_tools(AUTHOR, installed), description=AUTHOR.description)
         agent_config.set_system_prompt(project["agent_id"], prompt_for(AUTHOR, book_title=title, team_ids=ids))
-        project_config.update(pid, allowed_specialists=list(helper_ids),
-                              metadata={**(project.get("metadata") or {}),
-                                        "storyteller": {"book_id": book["id"], "team_version": TEAM_VERSION}})
+        project_config.update(pid, allowed_specialists=list(helper_ids))
+    except Exception:
+        drop_project(pid)
+        raise
+    return {"project_id": pid, "author": project["agent_id"], "helpers": ids}
+
+
+def mark_book_project(project_id: str, book_id: str) -> None:
+    from hydrahive.projects import config as project_config
+    project = project_config.get(project_id) or {}
+    project_config.update(project_id, metadata={**(project.get("metadata") or {}),
+                                                "storyteller": {"book_id": book_id, "team_version": TEAM_VERSION}})
+
+
+def drop_project(project_id: str) -> None:
+    """Halb angelegtes Projekt wieder entfernen – der Kern löscht Autor, Helfer (#527) und Arbeitsordner mit."""
+    from hydrahive.agents import config as agent_config
+    from hydrahive.projects import config as project_config
+    for hid in (project_config.get(project_id) or {}).get("allowed_specialists") or []:
+        agent_config.delete(hid)                  # falls der Kern noch ohne #527 läuft
+    project_config.delete(project_id)
+
+
+def create_book_project(username: str, fields: dict[str, Any], *, model: str = "") -> dict[str, Any]:
+    _precheck(fields)
+    use_model = (model or "").strip() or default_model()
+    if not use_model:
+        raise StoryError("no_model", 409)
+    title = str(fields["title"]).strip()
+    team = new_team_project(username, title, use_model)
+    pid = team["project_id"]
+    try:
+        book = storage.create_book(pid, {**fields, "title": title, "model": use_model})
+        mark_book_project(pid, book["id"])
     except Exception:
         logger.exception("Buch-Projekt '%s' konnte nicht vollständig angelegt werden – räume auf", title)
-        for hid in helper_ids:
-            agent_config.delete(hid)
-        project_config.delete(pid)
+        drop_project(pid)
         raise
-    logger.info("Buch-Projekt '%s' angelegt (projekt=%s, buch=%s, helfer=%d)", title, pid, book["id"], len(helper_ids))
-    return {"project_id": pid, "book": book, "team": {"author": project["agent_id"], "helpers": ids}}
+    logger.info("Buch-Projekt '%s' angelegt (projekt=%s, buch=%s)", title, pid, book["id"])
+    return {"project_id": pid, "book": book, "team": {"author": team["author"], "helpers": team["helpers"]}}
