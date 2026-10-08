@@ -4,13 +4,17 @@ Gleiches Muster wie die Zeitpläne des Kerns (``schedules/execution._run_direct_
 ``runner.run`` bis zum Ende iterieren – ohne Chat. Was der Helfer ablegt (Hinweise, Vorschläge), landet über seine
 Werkzeuge direkt am Buch; hier zählen nur Status, Zusammenfassung, Tokens und Kosten. Ein Task je Auftrag
 (Name ``TASK_PREFIX + job_id``) – darüber erkennt die Bereinigung nach einem Neustart, was noch lebt.
+
+Kostengrenze (A1, Spec kostengrenze.md §4): vor jeder weiteren Runde des Helfers verbraucht + Verbrauch der letzten
+Runde > Grenze des Auftrags → der Lauf wird zwischen zwei Runden beendet (Status ``limit``), nie mitten in einem
+Modellaufruf. Verbrauch aus ``llm_calls`` (team_job_usage) – auch bei Abbruch, Fehler und Zeitgrenze festgehalten.
 """
 from __future__ import annotations
 
 import asyncio
 import logging
 
-from . import team_jobs
+from . import team_job_usage, team_jobs
 from .team import jobs_catalog
 
 logger = logging.getLogger(__name__)
@@ -34,34 +38,66 @@ def _cost(model: str, done) -> int | None:
                        cache_creation_tokens=done.cache_creation_tokens)
 
 
+def _spent(project_id: str, book_id: str, job_id: str) -> dict:
+    """Bisher verbrauchte Tokens/Kosten des Auftrags (für Endzustände ohne ``Done``). Fehler → nichts eintragen."""
+    try:
+        u = team_job_usage.of_session(team_jobs.get(project_id, book_id, job_id)["session_id"])
+    except Exception:  # Endzustand setzen hat Vorrang vor der Kostenzeile
+        logger.exception("storyteller: Verbrauch für Team-Auftrag %s nicht lesbar", job_id)
+        return {}
+    return {"tokens_in": u.tokens_in, "tokens_out": u.tokens_out, "cost_micros": u.cost_micros}
+
+
+def _over_limit(session_id: str, limit: int) -> bool:
+    u = team_job_usage.of_session(session_id)
+    return u.total + u.last > limit
+
+
 async def _drive(project_id: str, book_id: str, job: dict, agent: dict, task: str) -> None:
     from hydrahive.db import sessions as sessions_db
     from hydrahive.runner.concurrency import session_run_guard
-    from hydrahive.runner.events import Done, Error, MessageStart, TextBlock, TextDelta
+    from hydrahive.runner.events import Done, Error, IterationStart, MessageStart, TextBlock, TextDelta
+    from hydrahive.tools._sessions import session_end
     label = jobs_catalog.get(job["job"]).label
+    limit = int(job.get("limit_tokens") or 0)
     session = sessions_db.create(agent_id=agent["id"], user_id=job["user"], project_id=project_id,
                                  title=f"Storyteller-Auftrag: {label} – {job['place_title']}"[:200],
                                  metadata={"storyteller_job": job["id"], "storyteller_book": book_id, **_EMBED})
     team_jobs.set_running(project_id, book_id, job["id"], session_id=session.id)
     # Zusammenfassung = Text der LETZTEN Antwortrunde mit Text (Zwischensätze wie „Ich lese zuerst …“ nicht).
     rounds: list[str] = [""]
-    done, error = None, ""
+    done, error, limited = None, "", False
     async with session_run_guard(session.id):     # wie der Chat: kein zweiter Lauf auf derselben Sitzung
-        async for ev in _runner()(session.id, task):
-            if isinstance(ev, MessageStart):
-                rounds.append("")
-            elif isinstance(ev, TextDelta):
-                rounds[-1] += ev.text
-            elif isinstance(ev, TextBlock):       # ohne Streaming: ganzer Text der Runde auf einmal
-                rounds[-1] = ev.text
-            elif isinstance(ev, Done):
-                done = ev
-            elif isinstance(ev, Error):
-                error = ev.message
-    if error or done is None:
-        team_jobs.finish(project_id, book_id, job["id"], status="error", error=error or "Lauf ohne Ergebnis beendet")
+        gen = _runner()(session.id, task)
+        try:
+            async for ev in gen:
+                if isinstance(ev, IterationStart) and limit and ev.iteration > 1 and _over_limit(session.id, limit):
+                    limited = True
+                    break
+                if isinstance(ev, MessageStart):
+                    rounds.append("")
+                elif isinstance(ev, TextDelta):
+                    rounds[-1] += ev.text
+                elif isinstance(ev, TextBlock):       # ohne Streaming: ganzer Text der Runde auf einmal
+                    rounds[-1] = ev.text
+                elif isinstance(ev, Done):
+                    done = ev
+                elif isinstance(ev, Error):
+                    error = ev.message
+        finally:
+            await gen.aclose()                        # an der Grenze: Lauf zwischen zwei Runden beenden
+            # Wie der Kern beim Abbruch: Sitzung „abandoned“ + Live-Anzeige weg. Schon beendet → bleibt unverändert.
+            session_end(agent["id"], session.id, status="abandoned")
+    summary = next((r for r in reversed(rounds) if r.strip()), "").strip()
+    if limited:
+        team_jobs.finish(project_id, book_id, job["id"], status="limit", summary=summary,
+                         **_spent(project_id, book_id, job["id"]))
         return
-    team_jobs.finish(project_id, book_id, job["id"], status="done", summary=next((r for r in reversed(rounds) if r.strip()), "").strip(),
+    if error or done is None:
+        team_jobs.finish(project_id, book_id, job["id"], status="error", error=error or "Lauf ohne Ergebnis beendet",
+                         **_spent(project_id, book_id, job["id"]))
+        return
+    team_jobs.finish(project_id, book_id, job["id"], status="done", summary=summary,
                      tokens_in=done.input_tokens + done.cache_read_tokens + done.cache_creation_tokens,
                      tokens_out=done.output_tokens, cost_micros=_cost(agent.get("llm_model") or "", done))
 
@@ -81,13 +117,15 @@ async def execute(project_id: str, book_id: str, job_id: str, *, task: str) -> N
         await asyncio.wait_for(_drive(project_id, book_id, job, agent, task), timeout=TIMEOUT_SECONDS)
     except TimeoutError:
         team_jobs.finish(project_id, book_id, job_id, status="error",
-                         error=f"Zeitgrenze ({round(TIMEOUT_SECONDS / 60)} min) überschritten")
+                         error=f"Zeitgrenze ({round(TIMEOUT_SECONDS / 60)} min) überschritten",
+                         **_spent(project_id, book_id, job_id))
     except asyncio.CancelledError:
-        team_jobs.finish(project_id, book_id, job_id, status="cancelled")
+        team_jobs.finish(project_id, book_id, job_id, status="cancelled", **_spent(project_id, book_id, job_id))
         raise
     except Exception as exc:  # noqa: BLE001 — Lauf-Grenze: Fehler lesbar speichern, Server läuft weiter
         logger.warning("storyteller: Team-Auftrag %s fehlgeschlagen: %s", job_id, exc)
-        team_jobs.finish(project_id, book_id, job_id, status="error", error=str(exc)[:300] or exc.__class__.__name__)
+        team_jobs.finish(project_id, book_id, job_id, status="error", error=str(exc)[:300] or exc.__class__.__name__,
+                         **_spent(project_id, book_id, job_id))
 
 
 def start(project_id: str, book_id: str, job_id: str, *, task: str) -> asyncio.Task:
