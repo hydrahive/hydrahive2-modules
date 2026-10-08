@@ -141,3 +141,50 @@ async def test_task_killed_mid_run_still_ends_the_run_and_frees_the_lock(monkeyp
     got = runs.get_run(PROJECT_ID, bid, run["id"])
     assert got["status"] == "error" and got["error"] == "Lauf wurde beendet" and got["current_scene"] is None
     assert ("testuser", bid) not in ai._busy
+    # Der Endstatus steht SOFORT da (nicht erst, wenn ein Hilfs-Thread irgendwann fertig wird).
+    from backend import runs as runs_mod
+    assert runs_mod.active_run(PROJECT_ID, bid) is None
+
+
+async def test_run_sees_summary_changes_of_scenes_it_wrote(monkeypatch):
+    """Nach jeder geschriebenen Szene wird das Gedächtnis nachgezogen: eine Zusammenfassung, die beim Ablegen
+    entsteht/sich ändert, erscheint bei der nächsten Szene."""
+    bid, _cid, sids = make_book(2)
+    real_store = run_engine._store
+
+    def store(project_id, book_id, scene_id, *a, **k):
+        out = real_store(project_id, book_id, scene_id, *a, **k)
+        s = storage.get_scene(project_id, book_id, scene_id)
+        storage.save_scene(project_id, book_id, scene_id, {"summary": f"NEU-{scene_id[:6]}"}, base_version=s["version"])
+        return out
+    monkeypatch.setattr(run_engine, "_store", store)
+    calls = fake_llm(monkeypatch)
+    run = _start(bid, sids)
+    await run_engine.execute(run["id"], PROJECT_ID, bid, "testuser")
+    assert f"NEU-{sids[0][:6]}" in calls[1]["messages"][-1]["content"]
+
+
+async def test_second_cancel_during_cleanup_still_leaves_a_final_status(monkeypatch):
+    """Beim Herunterfahren wird ein Task ggf. mehrfach abgebrochen – der Endstatus muss trotzdem stehen
+    (darum schreibt der Abbruch-Pfad ihn direkt, ohne await)."""
+    from backend import ai
+    bid, _cid, sids = make_book(2)
+
+    async def hook(n):
+        await asyncio.sleep(10)
+    fake_llm(monkeypatch, hook=hook)
+    run = _start(bid, sids)
+    key = ai.acquire("testuser", bid)
+    task = asyncio.create_task(run_engine.execute(run["id"], PROJECT_ID, bid, "testuser", lock_key=key))
+    for _ in range(200):
+        if runs.get_run(PROJECT_ID, bid, run["id"])["current_scene"]:
+            break
+        await asyncio.sleep(0.01)
+    task.cancel()
+    await asyncio.sleep(0)
+    task.cancel()                                     # zweiter Abbruch während des Aufräumens
+    import pytest
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert runs.get_run(PROJECT_ID, bid, run["id"])["status"] == "error"
+    assert ("testuser", bid) not in ai._busy

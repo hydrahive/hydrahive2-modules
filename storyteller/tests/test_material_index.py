@@ -13,7 +13,6 @@ from backend._files import StoryError
 
 def _reference(project_id, book_id, scene_id, memory_chars=ghost._MEMORY, interview=None):
     """Der bisherige Weg (bis 0.16.0) als Referenz: alle früheren Szenen komplett lesen."""
-    book = storage.get_book(project_id, book_id)
     st = storage.get_structure(project_id, book_id)
     scene = storage.get_scene(project_id, book_id, scene_id)
     order = [s for p in st["parts"] for c in p["chapters"] for s in c["scenes"]]
@@ -120,3 +119,31 @@ def test_plan_for_many_scenes_reads_each_text_at_most_once():
     bid, sids = _book(12)
     reads = _count_text_reads(lambda: run_plan.plan(PROJECT_ID, bid, scope="book", skip_filled=False))
     assert reads <= 2 * len(sids)        # heute: n² / 2 (≈ 78 bei 12 Szenen)
+
+
+def test_previous_end_is_the_end_and_first_scene_has_none():
+    bid, sids = _book(3)
+    s0 = storage.get_scene(PROJECT_ID, bid, sids[0])
+    long = "ANFANG " + "mitte " * 600 + "SCHLUSSWORT."
+    storage.save_scene(PROJECT_ID, bid, sids[0], {"text": long}, base_version=s0["version"])
+    m1 = ghost.build_material(PROJECT_ID, bid, sids[1])
+    assert "SCHLUSSWORT." in m1.prompt and "ANFANG" not in m1.prompt
+    m0 = ghost.build_material(PROJECT_ID, bid, sids[0])
+    assert "ENDE DER VORIGEN SZENE" not in m0.prompt
+
+
+def test_given_index_is_used_and_not_loaded_again(monkeypatch):
+    bid, sids = _book(4)
+    idx = ghost.MemoryIndex.load(PROJECT_ID, bid)
+    monkeypatch.setattr(ghost.MemoryIndex, "load", classmethod(lambda cls, p, b: (_ for _ in ()).throw(AssertionError("neu geladen"))))
+    ghost.build_material(PROJECT_ID, bid, sids[3], index=idx)
+
+
+def test_plan_counts_an_emptied_scene_as_empty():
+    """Text gelöscht → words = 0 → „ohne Text“ (wird geschrieben, nicht übersprungen)."""
+    from backend import run_plan
+    bid, sids = _book(3)
+    s = storage.get_scene(PROJECT_ID, bid, sids[1])
+    storage.save_scene(PROJECT_ID, bid, sids[1], {"text": ""}, base_version=s["version"])
+    p = run_plan.plan(PROJECT_ID, bid, scope="book", skip_filled=True)
+    assert p["scene_ids"] == [sids[1]] and p["skipped_filled"] == 2

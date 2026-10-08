@@ -55,8 +55,7 @@ def plan(project_id: str, book_id: str, *, scope: str, chapter_id: str | None = 
         if not info["summary"].strip() and iv is None:
             no_summary += 1
             continue
-        has_text = bool(info.get("words")) if "words" in info else bool(storage.get_scene(project_id, book_id, sid)["text"].strip())
-        if has_text and skip_filled:
+        if info["words"] and skip_filled:   # scene_info zählt auch bei Szenen vor 0.17.0
             filled += 1
             continue
         length, chunk = ghost.plan_lengths(book, length_words)

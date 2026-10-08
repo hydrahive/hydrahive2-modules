@@ -17,11 +17,12 @@ from ._files import StoryError
 from ._ghost_settings import ghost_of
 from ._names import KIND_LABEL, LANGUAGE_LABEL
 from ._think import ThinkFilter
+from ._memory import PREV_END, MemoryIndex
 from .ai import clean_proposal
 
 MAX_SECTIONS = 4
 REACHED = 0.85          # Länge gilt als erreicht ab 85 % des Ziels
-_PREV_END = 1500        # so viel vom Ende der vorigen Szene, für den nahtlosen Anschluss
+_PREV_END = PREV_END     # so viel vom Ende der vorigen Szene (eine Stelle: _memory.PREV_END)
 _SO_FAR = 3000          # so viel vom bereits Geschriebenen bei Folgeabschnitten
 _MEMORY = 4000          # Gedächtnis: höchstens so viele Zeichen Zusammenfassungen (die jüngsten)
 _HEAD_BUFFER = 400      # Anfang eines Abschnitts so lange zurückhalten (Überschrift/Vorspann erkennen)
@@ -54,37 +55,6 @@ def _names_in(text: str, entities: list[dict]) -> list[dict]:
     low = text.lower()
     return [e for e in entities if any(
         n and re.search(rf"(?<!\w){re.escape(n.lower())}(?!\w)", low) for n in [e["name"], *e.get("aliases", [])])]
-
-
-class MemoryIndex:
-    """Gedächtnis eines Buchs für viele Szenen (A4): Kopf, Gliederung und die Infos (Titel, Zusammenfassung) aller
-    Szenen einmal lesen – ohne Szenentexte. ``refresh(scene_id)`` zieht eine geänderte Szene nach (im Lauf nach jeder
-    geschriebenen Szene). Texte werden nur bei Bedarf gelesen (die Szene selbst, das Ende der vorigen)."""
-
-    def __init__(self, project_id: str, book_id: str, book: dict, structure: dict, infos: dict[str, dict]):
-        self.project_id, self.book_id, self.book, self.structure, self.infos = project_id, book_id, book, structure, infos
-        self.order = [s for p in structure["parts"] for c in p["chapters"] for s in c["scenes"]]
-
-    @classmethod
-    def load(cls, project_id: str, book_id: str) -> MemoryIndex:
-        st = storage.get_structure(project_id, book_id)
-        order = [s for p in st["parts"] for c in p["chapters"] for s in c["scenes"]]
-        return cls(project_id, book_id, storage.get_book(project_id, book_id), st,
-                   {s: storage.scene_info(project_id, book_id, s) for s in order})
-
-    def refresh(self, scene_id: str) -> None:
-        self.infos[scene_id] = storage.scene_info(self.project_id, self.book_id, scene_id)
-
-    def memory(self, scene_id: str, memory_chars: int) -> str:
-        earlier = self.order[:self.order.index(scene_id)]
-        memory = "\n".join(f"- {i['title']}: {i['summary']}" for i in (self.infos[s] for s in earlier) if i["summary"].strip())
-        return memory[-memory_chars:] if len(memory) > memory_chars else memory
-
-    def prev_end(self, scene_id: str) -> str:
-        i = self.order.index(scene_id)
-        if not i:
-            return ""
-        return storage.get_scene(self.project_id, self.book_id, self.order[i - 1])["text"][-_PREV_END:]
 
 
 def build_material(project_id: str, book_id: str, scene_id: str, memory_chars: int = _MEMORY,
