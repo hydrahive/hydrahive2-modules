@@ -66,6 +66,6 @@ def plan(project_id: str, book_id: str, *, scope: str, chapter_id: str | None = 
         raise StoryError("too_many_scenes")
     model = ghost.choose_model(book, None) or ""
     return {"scene_ids": todo, "scenes": len(todo), "skipped_filled": filled, "skipped_no_summary": no_summary,
-            "input_tokens": tin, "output_tokens": tout, "model": model,
+            "input_tokens": tin, "output_tokens": tout, "total_tokens": tin + tout, "model": model,
             "cost_micros": _cost.cost_micros(model, tokens_in=tin, tokens_out=tout),
             "limit_tokens": ghost_of(book)["limit_tokens"]}

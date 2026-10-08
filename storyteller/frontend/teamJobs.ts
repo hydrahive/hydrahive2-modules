@@ -2,19 +2,21 @@
 import { call } from "./api"
 
 export type JobScope = "scene" | "chapter"
-export type JobStatus = "queued" | "running" | "done" | "error" | "cancelled"
+export type JobStatus = "queued" | "running" | "done" | "error" | "cancelled" | "limit"
 
 export interface CatalogEntry { key: string; label: string; scope: JobScope; role: string; available: boolean }
 
 export interface TeamJob {
   id: string; job: string; role: string; agent_name: string; place_id: string; place_title: string
   status: JobStatus; summary: string; error: string; cost_micros: number | null; estimate_micros: number | null
+  limit_tokens: number; tokens_in: number; tokens_out: number
   session_id: string; at: string; finished_at: string
 }
 
 export interface JobEstimate {
   job: string; place_id: string; place_title: string; model: string
   input_tokens: number; output_tokens: number; cost_micros: number | null
+  total_tokens: number; limit_tokens: number; over_limit: boolean   // A1: Grenze je Auftrag (0 = aus)
 }
 
 /** Stelle eines Knopfs: die Szene selbst oder ihr Kapitel. */
@@ -42,8 +44,8 @@ export const jobsApi = {
   list: (pid: string, bid: string) => call<TeamJob[]>("GET", jobsPath(pid, bid)),
   estimate: (pid: string, bid: string, job: string, placeId: string) =>
     call<JobEstimate>("POST", `${jobsPath(pid, bid)}/estimate`, { job, place_id: placeId }),
-  start: (pid: string, bid: string, job: string, placeId: string) =>
-    call<TeamJob>("POST", jobsPath(pid, bid), { job, place_id: placeId }),
+  start: (pid: string, bid: string, job: string, placeId: string, overLimit = false) =>
+    call<TeamJob>("POST", jobsPath(pid, bid), { job, place_id: placeId, confirm_over_limit: overLimit }),
   cancel: (pid: string, bid: string, id: string) =>
     call<TeamJob>("POST", `${jobsPath(pid, bid)}/${encodeURIComponent(id)}/cancel`),
 }

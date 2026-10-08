@@ -4,6 +4,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Check, Feather, Loader2, RotateCcw, Square, X } from "lucide-react"
+import { totalTokens } from "../costLimit"
 import type { Scene } from "../model"
 import type { BookState } from "../useBook"
 import { useGhostScene } from "../useGhostScene"
@@ -61,16 +62,20 @@ export function GhostSceneMode({ state, scene, onGoScene }: Props) {
       {!noSummary && scene.text.trim() && (run.phase === "idle" || run.phase === "accepted") && <p className="text-xs text-zinc-500">{t("ghost_has_text")}</p>}
       {run.estimate && run.phase === "idle" && (
         <p className="st-ghost-estimate text-[11px] text-zinc-500">
-          {t("ghost_estimate", { sections: run.estimate.sections, out: n(run.estimate.output_tokens), in: n(run.estimate.input_tokens),
-            model: run.estimate.model || t("ghost_model_default") })}
+          {t("ghost_estimate", { sections: run.estimate.sections, total: n(totalTokens(run.estimate)), out: n(run.estimate.output_tokens),
+            in: n(run.estimate.input_tokens), model: run.estimate.model || t("ghost_model_default") })}
         </p>
+      )}
+      {run.over && run.estimate && run.phase === "idle" && (
+        <p className="st-ghost-over rounded border border-amber-400/30 bg-amber-400/5 px-2 py-1 text-xs text-amber-200">
+          {t("run_over_limit", { total: n(totalTokens(run.estimate)), limit: n(g.limit_tokens) })}</p>
       )}
 
       <div className="flex gap-2">
         {!running ? (
           <button onClick={() => { void run.start() }} disabled={!state.canWrite || noSummary || length < 200 || run.phase === "ready"}
             className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-40">
-            <Feather className="h-4 w-4" />{t("ghost_start")}
+            <Feather className="h-4 w-4" />{run.over ? t("ghost_start_over") : t("ghost_start")}
           </button>
         ) : (
           <button onClick={run.stop} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5">

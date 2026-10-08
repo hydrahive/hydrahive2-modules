@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { storyApi, StoryApiError, type GhostEstimate } from "./api"
 import { acceptGhostText } from "./ghostAccept"
 import { runGhost } from "./ghostRun"
+import { overLimit } from "./costLimit"
 import { streamGhostScene, type GhostDone } from "./ghostStream"
 import type { Scene } from "./model"
 import type { BookState } from "./useBook"
@@ -31,7 +32,10 @@ export function useGhostScene(state: BookState, scene: Scene, lengthWords: numbe
         .catch(() => { if (alive) setEstimate(null) })
     }, 400)
     return () => { alive = false; clearTimeout(timer) }
-  }, [projectId, book.id, scene.id, lengthWords, book.ghost.model, book.model, canEstimate])
+  }, [projectId, book.id, scene.id, lengthWords, book.ghost.model, book.model, book.ghost.limit_tokens, canEstimate])
+
+  // A1: Schätzung über der Kostengrenze → Start nur bewusst („Trotzdem schreiben“, dann ohne Grenze).
+  const over = canEstimate && overLimit(estimate, book.ghost.limit_tokens || 0)
 
   // Szene/Buch verlassen oder Komponente weg → laufenden Stream abbrechen.
   useEffect(() => () => abortRef.current?.abort(), [])
@@ -47,14 +51,15 @@ export function useGhostScene(state: BookState, scene: Scene, lengthWords: numbe
     setPhase("running")
     const r = await runGhost({
       flush: state.flush,
-      stream: (onText, signal) => streamGhostScene(projectId, book.id, { scene_id: scene.id, length_words: lengthWords }, onText, signal),
+      stream: (onText, signal) => streamGhostScene(projectId, book.id,
+        { scene_id: scene.id, length_words: lengthWords, confirm_over_limit: over }, onText, signal),
     }, ctrl, (all) => { textRef.current = all; setText(all) })
     if (abortRef.current === ctrl) abortRef.current = null
     if (r.kind === "done") { setDone(r.done); setPhase("ready"); return }
     if (r.kind === "error") setError(r.error)
     // Abgebrochen oder Fehler mit schon geschriebenem Text → bleibt als Vorschlag stehen.
     setPhase(r.kind === "aborted" && r.text.trim() ? "ready" : "idle")
-  }, [state, projectId, book.id, scene.id, lengthWords])
+  }, [state, projectId, book.id, scene.id, lengthWords, over])
 
   const stop = useCallback(() => abortRef.current?.abort(), [])
 
@@ -73,5 +78,5 @@ export function useGhostScene(state: BookState, scene: Scene, lengthWords: numbe
 
   const reject = useCallback(() => { setText(""); setDone(null); setPhase("idle") }, [])
 
-  return { phase, text, done, error, estimate: canEstimate ? estimate : null, start, stop, accept, reject }
+  return { phase, text, done, error, estimate: canEstimate ? estimate : null, over, start, stop, accept, reject }
 }

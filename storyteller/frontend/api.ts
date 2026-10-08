@@ -30,7 +30,10 @@ export interface ServerScene {
   id: string; title: string; summary: string; pov: string; status: SceneStatus; origin: SceneOrigin; text: string
   version: number; updated_at: string
 }
-export interface GhostEstimate { model: string; length_words: number; sections: number; input_tokens: number; output_tokens: number }
+export interface GhostEstimate {
+  model: string; length_words: number; sections: number; input_tokens: number; output_tokens: number
+  total_tokens: number; limit_tokens: number   // A1: Grenze je Auftrag, Eingabe + Ausgabe (0 = aus)
+}
 export interface ServerEntity {
   id: string; kind: EntityKind; name: string; aliases: string[]; description: string; fields: { key: string; value: string }[]
 }

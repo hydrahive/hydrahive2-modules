@@ -3,7 +3,8 @@
 Je Szene: Material (mit dem aktuellen Gedächtnis) → schreiben in Abschnitten (ghost.write_scene) →
 ablegen. Ablegen nie still überschreibend: leer UND unverändert seit dem Start → direkt in die Szene
 (ai_draft); sonst abgelegter Vorschlag (proposals.py). Abbrechen beendet den laufenden Modellaufruf.
-Vor jeder Szene wird die Kostengrenze geprüft. Die KI-Sperre des Buchs wird in jedem Fall freigegeben.
+Vor jeder Szene wird die Kostengrenze geprüft (Eingabe + Ausgabe, Spec kostengrenze.md §4). Die KI-Sperre des Buchs
+wird in jedem Fall freigegeben.
 """
 from __future__ import annotations
 
@@ -34,7 +35,7 @@ class _Stop(Exception):
 
 
 class _Limit(Exception):
-    """Nächste Szene würde die Kostengrenze überschreiten."""
+    """Nächste Szene würde die Kostengrenze überschreiten (bisher verbraucht + Schätzung, Eingabe + Ausgabe)."""
 
 
 async def _write(run_id: str, material, *, model, length: int, chunk: int) -> str:
@@ -67,7 +68,8 @@ def _store(project_id: str, book_id: str, scene_id: str, text: str, start_versio
 
 
 async def _scene(run_id: str, project_id: str, book_id: str, scene_id: str, opts: dict, model, limit: int,
-                 used_out: int) -> tuple[str, int, int]:
+                 used: int) -> tuple[str, int, int]:
+    """Gibt (Zustand, verbrauchte Tokens Eingabe + Ausgabe, Wörter) zurück."""
     book = storage.get_book(project_id, book_id)
     scene = storage.get_scene(project_id, book_id, scene_id)
     iv = interview_material(project_id, book_id, opts["chapter_id"]) if opts.get("source") == "interview" else None
@@ -79,7 +81,7 @@ async def _scene(run_id: str, project_id: str, book_id: str, scene_id: str, opts
     length, chunk = ghost.plan_lengths(book, opts.get("length_words") or None)
     material = ghost.build_material(project_id, book_id, scene_id, interview=iv)
     est = _cost.scene_estimate(material, length_words=length, chunk_words=chunk)
-    if limit and used_out + est["output_tokens"] > limit:
+    if limit and used + est["input_tokens"] + est["output_tokens"] > limit:
         raise _Limit
     runs.update_run(run_id, current_scene=scene_id)
     runs.set_scene_state(run_id, scene_id, "writing")
@@ -90,13 +92,13 @@ async def _scene(run_id: str, project_id: str, book_id: str, scene_id: str, opts
     if not text:
         raise StoryError("llm_empty", 502)
     state = _store(project_id, book_id, scene_id, text, scene["version"], start_empty, run_id, model or "")
-    return state, tout, len(text.split())
+    return state, tin + tout, len(text.split())
 
 
 async def execute(run_id: str, project_id: str, book_id: str, user: str, lock_key=None) -> None:
     run = runs.get_run(project_id, book_id, run_id)
     opts = run["options"]
-    status, error, used_out, current = "done", None, 0, None
+    status, error, used, current = "done", None, 0, None
     try:
         runs.update_run(run_id, status="running")
         limit = int(opts.get("limit_tokens") or ghost_of(storage.get_book(project_id, book_id))["limit_tokens"] or 0)
@@ -105,8 +107,8 @@ async def execute(run_id: str, project_id: str, book_id: str, user: str, lock_ke
             current = p["scene_id"]
             if run_id in _cancelled:
                 raise _Stop
-            state, out, words = await _scene(run_id, project_id, book_id, current, opts, model, limit, used_out)
-            used_out += out
+            state, spent, words = await _scene(run_id, project_id, book_id, current, opts, model, limit, used)
+            used += spent
             runs.set_scene_state(run_id, current, state, **({"words": words} if words else {}))
             current = None
     except _Stop:

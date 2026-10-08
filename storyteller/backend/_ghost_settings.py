@@ -11,11 +11,20 @@ from typing import Any
 from ._files import StoryError
 
 GHOST_DEFAULTS: dict[str, Any] = {"model": "", "length_words": 0, "chunk_words": 0, "style": "", "limit_tokens": 0}
-# limit_tokens: Kostengrenze je Lauf in Ausgabe-Tokens (Spec §9.4), 0 = keine Grenze.
-_RANGES = {"length_words": (200, 6000), "chunk_words": (200, 2000), "limit_tokens": (1000, 2_000_000)}
+# limit_tokens: Kostengrenze je Auftrag in Tokens, Eingabe + Ausgabe (Spec kostengrenze.md §3), 0 = aus.
+# Gilt für Ghostwriter-Läufe, „Szene schreiben“ und Team-Aufträge.
+_RANGES = {"length_words": (200, 6000), "chunk_words": (200, 2000), "limit_tokens": (1000, 20_000_000)}
 _TEXT_LIMITS = {"model": 200, "style": 2000}
 
 ORIGINS = ("human", "ai_draft", "ai_edited")
+
+
+def valid_limit(value: Any) -> int:
+    """Kostengrenze prüfen (0 = aus, sonst im Bereich) – auch für die Grenze am Team-Auftrag."""
+    low, high = _RANGES["limit_tokens"]
+    if isinstance(value, bool) or not isinstance(value, int) or (value != 0 and not low <= value <= high):
+        raise StoryError("limit_invalid")
+    return value
 
 
 def ghost_of(book: dict) -> dict:
@@ -32,6 +41,11 @@ def merge_ghost(current: dict, patch: Any) -> dict:
         if key in _TEXT_LIMITS:
             if not isinstance(value, str) or len(value) > _TEXT_LIMITS[key]:
                 raise StoryError("ghost_invalid")
+        elif key == "limit_tokens":
+            try:
+                valid_limit(value)
+            except StoryError:
+                raise StoryError("ghost_invalid") from None
         else:
             low, high = _RANGES[key]
             if isinstance(value, bool) or not isinstance(value, int) or (value != 0 and not low <= value <= high):

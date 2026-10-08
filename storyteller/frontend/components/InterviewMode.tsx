@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { BookOpenText, Loader2, MessageCircleQuestion, Trash2 } from "lucide-react"
 import { StoryApiError } from "../api"
+import { overLimit, totalTokens } from "../costLimit"
 import { interviewApi } from "../interviewApi"
 import type { RunEstimate } from "../runApi"
 import { addQuestions, answeredCount, appendDictation, editAnswer, editQuestion, MAX_QUESTIONS, removeQuestion } from "../interviewModel"
@@ -19,7 +20,7 @@ const field = "w-full rounded border border-white/10 bg-zinc-950 px-2 py-1 text-
 interface Props { state: BookState; scene: Scene; onOpenScene: (id: string) => void }
 
 export function InterviewMode({ state, scene, onOpenScene }: Props) {
-  const { t } = useTranslation("storyteller")
+  const { t, i18n } = useTranslation("storyteller")
   const { projectId, book, canWrite } = state
   const chapter = findScene(book, scene.id)?.chapter
   const cid = chapter?.id ?? ""
@@ -40,7 +41,7 @@ export function InterviewMode({ state, scene, onOpenScene }: Props) {
     } catch (e) { fail(e) } finally { setBusy(false) }
   }
   const req = { scope: "chapter" as const, chapter_id: cid, skip_filled: true, source: "interview" as const }
-  const over = !!est && !!est.limit_tokens && est.output_tokens > est.limit_tokens
+  const over = overLimit(est, est?.limit_tokens ?? 0)
   const prepare = async () => {
     setError("")
     await iv.flush()
@@ -98,9 +99,9 @@ export function InterviewMode({ state, scene, onOpenScene }: Props) {
       )}
       {!run.active && est && (
         <div className="st-interview-confirm space-y-2 rounded-lg border border-violet-400/30 bg-violet-500/5 p-2 text-xs text-zinc-300">
-          <p>{t("interview_confirm", { scenes: est.scenes, out: est.output_tokens.toLocaleString(), model: est.model || t("ghost_model_default") })}
+          <p>{t("interview_confirm", { scenes: est.scenes, total: totalTokens(est).toLocaleString(i18n.language), model: est.model || t("ghost_model_default") })}
             {est.cost_micros !== null && <> · {t("run_cost", { cents: (est.cost_micros / 1000).toFixed(2) })}</>}</p>
-          {over && <p className="text-amber-200">{t("run_over_limit")}</p>}
+          {over && <p className="text-amber-200">{t("run_over_limit", { total: totalTokens(est).toLocaleString(i18n.language), limit: est.limit_tokens.toLocaleString(i18n.language) })}</p>}
           <div className="flex gap-2">
             <button onClick={() => { void write() }} className="flex-1 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-violet-500">
               {over ? t("run_start_over", { scenes: est.scenes }) : t("run_start", { scenes: est.scenes })}

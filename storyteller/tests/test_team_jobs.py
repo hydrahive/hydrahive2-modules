@@ -76,6 +76,36 @@ def test_finish_requires_known_end_status():
         team_jobs.finish(PROJECT_ID, bid, j["id"], status="running")
 
 
+def test_limit_is_stored_and_limit_is_an_end_status():
+    """A1 (Spec kostengrenze.md §4): Grenze am Auftrag gespeichert (spätere Änderung am Buch wirkt nicht);
+    Endzustand „limit“ hält Tokens und Kosten fest und blockiert den Helfer nicht mehr."""
+    bid = _book()
+    j = _new(bid, limit_tokens=50_000)
+    assert j["limit_tokens"] == 50_000 and _new(bid, role="editor", job="edit_scene", agent_id="a2")["limit_tokens"] == 0
+    team_jobs.set_running(PROJECT_ID, bid, j["id"], session_id="s-1")
+    out = team_jobs.finish(PROJECT_ID, bid, j["id"], status="limit", tokens_in=48_000, tokens_out=900, cost_micros=7)
+    assert out["status"] == "limit" and out["tokens_in"] == 48_000 and out["cost_micros"] == 7 and out["finished_at"]
+    _new(bid)                                          # derselbe Helfer darf wieder
+
+
+@pytest.mark.parametrize("bad", [-1, "50000", True, False, 1.5, 20_000_001])
+def test_limit_must_be_a_sane_number(bad):
+    with pytest.raises(StoryError):
+        _new(_book(), limit_tokens=bad)
+
+
+def test_old_job_without_limit_reads_as_no_limit():
+    import json
+    bid = _book()
+    j = _new(bid)
+    path = storage.book_dir(PROJECT_ID, bid) / "jobs" / f"{j['id']}.json"
+    raw = json.loads(path.read_text())
+    raw.pop("limit_tokens")
+    path.write_text(json.dumps(raw))
+    assert team_jobs.get(PROJECT_ID, bid, j["id"])["limit_tokens"] == 0
+    assert team_jobs.list_jobs(PROJECT_ID, bid)[0]["limit_tokens"] == 0
+
+
 def test_cancel_request_is_recorded_only_while_active():
     bid = _book()
     j = _new(bid)

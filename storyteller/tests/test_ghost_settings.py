@@ -41,7 +41,7 @@ def test_update_ghost_settings_and_version():
 @pytest.mark.parametrize("bad", [
     {"model": 3}, {"model": "x" * 201}, {"length_words": 100}, {"length_words": 6001}, {"length_words": "1500"},
     {"chunk_words": 199}, {"chunk_words": 2001}, {"style": "x" * 2001}, {"unbekannt": 1}, "kein dict",
-    {"length_words": True}, {"limit_tokens": 999}, {"limit_tokens": 2_000_001}, {"limit_tokens": -1},
+    {"length_words": True}, {"limit_tokens": 999}, {"limit_tokens": 20_000_001}, {"limit_tokens": -1},
     {"limit_tokens": True}, {"limit_tokens": 1.5},
 ])
 def test_ghost_settings_are_validated(bad):
@@ -59,10 +59,11 @@ def test_zero_means_not_set():
 
 
 def test_limit_tokens_zero_means_no_limit_and_range():
-    """Kostengrenze je Buch (Spec §9.4): 0 = keine Grenze, sonst 1.000–2.000.000 Ausgabe-Tokens je Lauf."""
+    """Kostengrenze je Auftrag (Spec kostengrenze.md §3): 0 = aus, sonst 1.000–20.000.000 Tokens (Eingabe + Ausgabe)."""
     b = _book()
     nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": {"limit_tokens": 1000}}, base_version=b["version"])
-    nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": {"limit_tokens": 2_000_000}}, base_version=nb["version"])
+    nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": {"limit_tokens": 20_000_000}}, base_version=nb["version"])
+    assert nb["ghost"]["limit_tokens"] == 20_000_000
     nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": {"limit_tokens": 0}}, base_version=nb["version"])
     assert nb["ghost"]["limit_tokens"] == 0
 

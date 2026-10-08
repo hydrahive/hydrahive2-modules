@@ -1,7 +1,8 @@
 """Aufträge aus den Team-Knöpfen (T1e, Plan schreib-team-t1e.md) – Ablage am Buch.
 
 ``storyteller/books/<id>/jobs/<job-id>.json``, eine Datei je Auftrag. Status nur vorwärts:
-``queued → running → done | error | cancelled`` (aus ``queued`` auch direkt in einen Endzustand). Ein Helfer hat je Buch
+``queued → running → done | error | cancelled | limit`` (aus ``queued`` auch direkt in einen Endzustand).
+``limit_tokens``: Kostengrenze dieses Auftrags (Eingabe + Ausgabe, 0 = aus), beim Start festgelegt (A1). Ein Helfer hat je Buch
 höchstens einen aktiven Auftrag, je Buch laufen höchstens ``MAX_ACTIVE``. Ältere Endzustände werden auf ``KEEP``
 gekürzt. Alles Ändernde unter der Sperre des Buchs.
 """
@@ -11,10 +12,11 @@ from typing import Any
 
 from ._book import _existing, _now
 from ._files import StoryError, check_id, inside, new_id, read_json, write_json
+from ._ghost_settings import valid_limit
 from ._locks import locked
 
 ACTIVE = ("queued", "running")
-ENDS = ("done", "error", "cancelled")
+ENDS = ("done", "error", "cancelled", "limit")
 MAX_ACTIVE = 3
 KEEP = 30
 RESTART_ERROR = "Server neu gestartet – Auftrag abgebrochen"
@@ -29,9 +31,13 @@ def _path(project_id: str, book_id: str, job_id: str):
     return inside(_dir(project_id, book_id), f"{check_id(job_id, 'job')}.json")
 
 
+def _read(path) -> dict:
+    return {"limit_tokens": 0, **read_json(path)}   # Aufträge vor A1 ohne Grenze
+
+
 def _all(project_id: str, book_id: str) -> list[dict]:
     d = _dir(project_id, book_id)
-    return sorted((read_json(p) for p in d.glob("*.json")), key=lambda j: j["seq"], reverse=True) if d.is_dir() else []
+    return sorted((_read(p) for p in d.glob("*.json")), key=lambda j: j["seq"], reverse=True) if d.is_dir() else []
 
 
 def _trim(project_id: str, book_id: str, jobs: list[dict]) -> None:
@@ -42,6 +48,7 @@ def _trim(project_id: str, book_id: str, jobs: list[dict]) -> None:
 
 @locked
 def create(project_id: str, book_id: str, data: dict[str, Any]) -> dict:
+    limit = valid_limit(data.get("limit_tokens", 0))
     jobs = _all(project_id, book_id)
     active = [j for j in jobs if j["status"] in ACTIVE]
     if any(j["agent_id"] == data.get("agent_id") for j in active):
@@ -51,7 +58,7 @@ def create(project_id: str, book_id: str, data: dict[str, Any]) -> dict:
     now = _now()
     job = {"id": new_id(), "seq": max((j["seq"] for j in jobs), default=0) + 1,
            **{k: str(data.get(k) or "")[:n] for k, n in _FIELDS.items()},
-           "estimate_micros": data.get("estimate_micros"), "status": "queued", "session_id": "",
+           "estimate_micros": data.get("estimate_micros"), "limit_tokens": limit, "status": "queued", "session_id": "",
            "cancel_requested": False, "summary": "", "error": "", "tokens_in": 0, "tokens_out": 0,
            "cost_micros": None, "at": now, "updated_at": now, "finished_at": ""}
     write_json(inside(_dir(project_id, book_id), f"{job['id']}.json"), job)
@@ -63,7 +70,7 @@ def get(project_id: str, book_id: str, job_id: str) -> dict:
     path = _path(project_id, book_id, job_id)
     if not path.is_file():
         raise StoryError("job_not_found", 404)
-    return read_json(path)
+    return _read(path)
 
 
 def list_jobs(project_id: str, book_id: str) -> list[dict]:
