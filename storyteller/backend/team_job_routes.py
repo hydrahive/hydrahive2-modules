@@ -3,6 +3,8 @@
 Rechte wie beim Chat mit dem Team: Lesen (Katalog, Liste) jedes Projektmitglied; Schätzen, Starten, Abbrechen nur mit
 Schreibrecht (kostet Geld). Beauftragt wird nur ein Helfer DIESES Projekts (``team.helper_for``) – keine freie
 Agent-ID von außen. Kosten werden mit dem Modell des Helfers geschätzt (mit dem läuft er).
+Kostengrenze (A1, Spec kostengrenze.md §4): Grenze des Buchs je Auftrag, Eingabe + Ausgabe. Liegt die Schätzung darüber,
+startet der Auftrag nur mit ``confirm_over_limit`` – dann ohne Grenze. Sonst wird die Grenze am Auftrag gespeichert.
 """
 from __future__ import annotations
 
@@ -11,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from . import storage, team, team_job_estimate, team_job_run, team_jobs
 from ._files import StoryError
+from ._ghost_settings import ghost_of
 from ._route_base import Auth, _call, _guard
 from .team import jobs_catalog
 
@@ -21,6 +24,7 @@ B = "/projects/{project_id}/books/{book_id}/team/jobs"
 class JobIn(BaseModel):
     job: str = Field(max_length=40)
     place_id: str = Field(max_length=64)
+    confirm_over_limit: bool = False
 
 
 def _project(project_id: str) -> dict:
@@ -40,7 +44,9 @@ def _estimate(project_id: str, book_id: str, body: JobIn) -> tuple[jobs_catalog.
     job = jobs_catalog.get(body.job)
     agent = _helper(project_id, job)
     est = team_job_estimate.estimate(project_id, book_id, job, body.place_id, model=agent.get("llm_model") or "")
-    return job, agent, est
+    limit = ghost_of(storage.get_book(project_id, book_id))["limit_tokens"]
+    total = est["input_tokens"] + est["output_tokens"]
+    return job, agent, {**est, "total_tokens": total, "limit_tokens": limit, "over_limit": bool(limit) and total > limit}
 
 
 @router.get(B + "/catalog")
@@ -66,11 +72,13 @@ def estimate(project_id: str, book_id: str, body: JobIn, auth: Auth):
 
 def _start(project_id: str, book_id: str, body: JobIn, user: str) -> dict:
     job, agent, est = _estimate(project_id, book_id, body)
+    if est["over_limit"] and not body.confirm_over_limit:
+        raise StoryError("over_limit")
     book = storage.get_book(project_id, book_id)
     row = team_jobs.create(project_id, book_id, {
         "job": job.key, "role": job.role, "agent_id": agent["id"], "agent_name": agent.get("name") or "",
         "place_id": body.place_id, "place_title": est["place_title"], "estimate_micros": est["cost_micros"],
-        "user": user})
+        "limit_tokens": 0 if body.confirm_over_limit else est["limit_tokens"], "user": user})
     task = jobs_catalog.task_text(job, book_id=book_id, book_title=book["title"], place_id=body.place_id,
                                   place_title=est["place_title"])
     team_job_run.start(project_id, book_id, row["id"], task=task)
