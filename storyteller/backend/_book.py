@@ -112,7 +112,7 @@ def list_books(project_id: str) -> list[dict]:
     for d in sorted(root.iterdir()) if root.is_dir() else []:
         if (d / "book.json").is_file():
             b = read_json(d / "book.json")
-            b["words"] = sum(_words(p.read_text(encoding="utf-8")) for p in (d / "scenes").glob("*.md"))
+            b["words"] = sum(_scene_words(p) for p in (d / "scenes").glob("*.json"))   # A4: aus den Infos
             out.append(b)
     return sorted(out, key=lambda b: b.get("updated_at", ""), reverse=True)
 
@@ -124,6 +124,15 @@ def delete_book(project_id: str, book_id: str) -> None:
     trash = story_root(project_id) / "trash"
     trash.mkdir(parents=True, exist_ok=True)
     shutil.move(str(d), str(trash / f"{book_id}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%f')}"))
+
+
+def _scene_words(meta_path: Path) -> int:
+    """Wortzahl aus den Infos; ältere Szenen ohne „words“ einmal aus dem Text zählen."""
+    meta = read_json(meta_path)
+    if "words" in meta:
+        return int(meta["words"])
+    text = meta_path.with_suffix(".md")
+    return _words(text.read_text(encoding="utf-8")) if text.exists() else 0
 
 
 def _words(text: str) -> int:

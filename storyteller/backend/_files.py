@@ -107,13 +107,19 @@ def scene_paths(d: Path, scene_id: str) -> tuple[Path, Path]:
     return inside(d, "scenes", f"{scene_id}.json"), inside(d, "scenes", f"{scene_id}.md")
 
 
+def count_words(text: str) -> int:
+    """Wörter wie überall im Storyteller: Teile mit mindestens einem Buchstaben/Ziffer („–“ zählt nicht)."""
+    return sum(1 for w in text.split() if any(c.isalnum() for c in w))
+
+
 def text_sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def write_scene(d: Path, scene_id: str, meta: dict, text: str) -> None:
     """Text, dann Infos – zwei Dateien, also kein gemeinsamer atomarer Schritt. Die Infos tragen den Hash des
-    Texts; passt er beim Lesen nicht (Absturz dazwischen), meldet get_scene das (siehe scenes.get_scene)."""
+    Texts; passt er beim Lesen nicht (Absturz dazwischen), meldet get_scene das (siehe scenes.get_scene).
+    Dazu die Wortzahl (A4): Listen und Schätzung brauchen dann keinen Volltext."""
     meta_path, text_path = scene_paths(d, scene_id)
     write_atomic(text_path, text)
-    write_json(meta_path, {**meta, "text_sha": text_sha(text)})
+    write_json(meta_path, {**meta, "words": count_words(text), "text_sha": text_sha(text)})
