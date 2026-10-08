@@ -116,11 +116,11 @@ async def _scene(run_id: str, project_id: str, book_id: str, scene_id: str, opts
 
 
 async def execute(run_id: str, project_id: str, book_id: str, user: str, lock_key=None) -> None:
-    run = runs.get_run(project_id, book_id, run_id)
+    run = await asyncio.to_thread(runs.get_run, project_id, book_id, run_id)
     opts = run["options"]
-    status, error, used, current = "done", None, 0, None
+    status, error, used, current, killed = "done", None, 0, None, False
     try:
-        runs.update_run(run_id, status="running")
+        await asyncio.to_thread(runs.update_run, run_id, status="running")
         index = await asyncio.to_thread(ghost.MemoryIndex.load, project_id, book_id)   # Gedächtnis einmal je Lauf
         limit = int(opts.get("limit_tokens") or ghost_of(index.book)["limit_tokens"] or 0)
         model = run["model"] or None
@@ -135,22 +135,28 @@ async def execute(run_id: str, project_id: str, book_id: str, user: str, lock_ke
     except _Stop:
         status = "cancelled"
         if current:
-            runs.set_scene_state(run_id, current, "waiting")
+            await asyncio.to_thread(runs.set_scene_state, run_id, current, "waiting")
     except _Limit:
         status = "limit"
     except asyncio.CancelledError:
-        status, error = "error", "Lauf wurde beendet"
+        status, error, killed = "error", "Lauf wurde beendet", True
         raise
     except Exception as exc:  # Lauf-Grenze: Fehler lesbar speichern, Prozess läuft weiter
         logger.warning("storyteller: Lauf %s fehlgeschlagen: %s", run_id, exc)
         status, error = "error", (str(exc)[:300] or exc.__class__.__name__)
         if current:
-            runs.set_scene_state(run_id, current, "error")
+            await asyncio.to_thread(runs.set_scene_state, run_id, current, "error")
     finally:
-        runs.update_run(run_id, status=status, error=error, current_scene=None)
-        _cancelled.discard(run_id)
-        if lock_key is not None:
-            ai.release(lock_key)
+        try:
+            # Endstatus unbedingt schreiben. Wurde der Task selbst abgebrochen, kein await mehr (direkt schreiben).
+            if killed:
+                runs.update_run(run_id, status=status, error=error, current_scene=None)
+            else:
+                await asyncio.to_thread(runs.update_run, run_id, status=status, error=error, current_scene=None)
+        finally:
+            _cancelled.discard(run_id)
+            if lock_key is not None:
+                ai.release(lock_key)
 
 
 def start_background(run_id: str, project_id: str, book_id: str, user: str, lock_key) -> asyncio.Task:

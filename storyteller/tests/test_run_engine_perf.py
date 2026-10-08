@@ -117,3 +117,27 @@ async def test_suggest_unknown_scene_stays_a_404_and_frees_the_lock():
     with pytest.raises(StoryError) as exc:
         await ai.suggest("testuser", PROJECT_ID, bid, "f" * 32, "rewrite", "x", None)
     assert exc.value.status == 404 and ("testuser", bid) not in ai._busy
+
+
+async def test_task_killed_mid_run_still_ends_the_run_and_frees_the_lock(monkeypatch):
+    """Dienst fährt herunter / Task wird abgebrochen: Endstatus „error“ und die KI-Sperre ist frei."""
+    from backend import ai
+    bid, _cid, sids = make_book(2)
+
+    async def hook(n):
+        await asyncio.sleep(10)
+    fake_llm(monkeypatch, hook=hook)
+    run = _start(bid, sids)
+    key = ai.acquire("testuser", bid)
+    task = asyncio.create_task(run_engine.execute(run["id"], PROJECT_ID, bid, "testuser", lock_key=key))
+    for _ in range(200):
+        if runs.get_run(PROJECT_ID, bid, run["id"])["status"] == "running" and runs.get_run(PROJECT_ID, bid, run["id"])["current_scene"]:
+            break
+        await asyncio.sleep(0.01)
+    task.cancel()
+    import pytest
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    got = runs.get_run(PROJECT_ID, bid, run["id"])
+    assert got["status"] == "error" and got["error"] == "Lauf wurde beendet" and got["current_scene"] is None
+    assert ("testuser", bid) not in ai._busy
