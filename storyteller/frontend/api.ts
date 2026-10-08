@@ -25,7 +25,7 @@ export interface ServerBook {
   id: string; title: string; kind: BookKind; language: string; audience: string; idea: string
   notes: string; model: string; ghost: GhostSettings; version: number; created_at: string; updated_at: string
 }
-export interface ServerBookInfo extends ServerBook { words: number }
+export interface ServerBookInfo extends ServerBook { words: number; is_book_project?: boolean }
 export interface ServerScene {
   id: string; title: string; summary: string; pov: string; status: SceneStatus; origin: SceneOrigin; text: string
   version: number; updated_at: string

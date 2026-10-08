@@ -48,6 +48,13 @@ export const textsDe = {
   nb_creating: "Buch-Projekt mit Schreib-Team wird angelegt …",
   project_none_can_create: "Du bist noch in keinem Projekt. Lege ein Buch an – es bekommt ein eigenes Projekt mit Schreib-Team.",
   err_no_model: "Kein Modell gewählt und kein HydraHive-Standardmodell eingestellt (Einstellungen → LLM).",
+  move_book: "In eigenes Projekt umziehen",
+  move_hint: "Das Buch bekommt ein eigenes Projekt mit Schreib-Team (Autor und Helfer).",
+  move_confirm: "„{{title}}“ in ein eigenes Projekt mit Schreib-Team umziehen?\n\nSzenen, Schnappschüsse, Vorschläge, Interviews und Hinweise ziehen mit. Hier im Projekt bleibt eine Sicherung im Papierkorb. Alte Chats mit dem Projekt-Agenten bleiben hier.",
+  err_already_book_project: "Das Buch hat schon ein eigenes Projekt.",
+  err_run_active: "Für dieses Buch läuft gerade ein Ghostwriter-Lauf – bitte warten, bis er fertig ist.",
+  err_job_active: "Ein Helfer arbeitet gerade an diesem Buch – bitte warten, bis er fertig ist.",
+  err_move_check_failed: "Die Kopie war nicht vollständig – das Buch bleibt, wo es ist. Bitte nochmal versuchen.",
   err_capability_denied: "Dir fehlt die Freigabe, Bücher als eigenes Projekt anzulegen. Ein Admin kann sie erteilen.",
   cancel: "Abbrechen",
   // Arbeitsplatz

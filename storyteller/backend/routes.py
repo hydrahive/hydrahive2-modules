@@ -24,6 +24,7 @@ from .note_routes import router as note_router
 from .proposal_routes import router as proposal_router
 from .routes_scenes import router as scenes_router
 from .run_routes import router as run_router
+from .team import move as team_move
 from .team import upgrade as team_upgrade
 from .team_job_routes import router as team_job_router
 from .team_routes import router as team_router
@@ -65,7 +66,8 @@ class StructureIn(BaseModel):
 @router.get("/projects/{project_id}/books")
 def list_books(project_id: str, auth: Auth):
     _guard(auth, project_id, "read")
-    return _call(storage.list_books, project_id)
+    is_book_project = team_move.is_book_project(project_id)   # T1f: „In eigenes Projekt umziehen“ nur in normalen
+    return [{**b, "is_book_project": is_book_project} for b in _call(storage.list_books, project_id)]
 
 
 @router.post("/projects/{project_id}/books")
