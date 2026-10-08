@@ -75,11 +75,11 @@ def test_unknown_model_has_no_cost(client, auth_headers):
 def test_start_requires_confirm_and_respects_limit(client, auth_headers, monkeypatch):
     _fake(monkeypatch)
     _run_now(monkeypatch)
-    bid, _, _ = _book(2, limit=1000)
+    bid, _, _ = _book(2, limit=5000)
     url = f"{P}/books/{bid}/ghost/run"
     r = client.post(url, json={"scope": "book"}, headers=auth_headers)
     assert r.status_code == 400 and r.json()["detail"]["code"] == "confirm_required"
-    # 2 Szenen ≈ 960 Ausgabe-Tokens → unter 1000 → Bestätigung reicht
+    # 2 Szenen ≈ 1.200 Tokens gesamt (Eingabe + Ausgabe) → unter 5000 → Bestätigung reicht
     r = client.post(url, json={"scope": "book", "confirm": True}, headers=auth_headers)
     assert r.status_code == 200, r.text
     assert r.json()["status"] in ("queued", "running", "done")
@@ -103,6 +103,32 @@ def test_over_limit_needs_extra_confirmation(client, auth_headers, monkeypatch):
     assert r.status_code == 400 and r.json()["detail"]["code"] == "over_limit"
     r = client.post(url, json={"scope": "book", "confirm": True, "confirm_over_limit": True}, headers=auth_headers)
     assert r.status_code == 200
+
+
+def _fixed_estimate(monkeypatch, tin=400, tout=100):
+    from backend import _cost
+    monkeypatch.setattr(_cost, "scene_estimate", lambda *a, **k: {"sections": 1, "input_tokens": tin, "output_tokens": tout})
+
+
+def test_over_limit_counts_input_and_output(client, auth_headers, monkeypatch):
+    """Spec kostengrenze.md §4: 3 Szenen × (400 + 100) = 1500 gesamt. Ausgabe allein (300) läge unter 1000."""
+    _fake(monkeypatch)
+    _run_now(monkeypatch)
+    _fixed_estimate(monkeypatch)
+    bid, _, _ = _book(3, limit=1000)
+    e = client.get(f"{P}/books/{bid}/ghost/run/estimate", params={"scope": "book"}, headers=auth_headers).json()
+    assert e["total_tokens"] == 1500 and e["limit_tokens"] == 1000
+    r = client.post(f"{P}/books/{bid}/ghost/run", json={"scope": "book", "confirm": True}, headers=auth_headers)
+    assert r.status_code == 400 and r.json()["detail"]["code"] == "over_limit"
+
+
+def test_limit_equal_to_estimate_is_not_over(client, auth_headers, monkeypatch):
+    _fake(monkeypatch)
+    _run_now(monkeypatch)
+    _fixed_estimate(monkeypatch)
+    bid, _, _ = _book(3, limit=1500)
+    r = client.post(f"{P}/books/{bid}/ghost/run", json={"scope": "book", "confirm": True}, headers=auth_headers)
+    assert r.status_code == 200, r.text
 
 
 def test_no_scenes_to_write(client, auth_headers):

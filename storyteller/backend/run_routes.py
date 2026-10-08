@@ -81,7 +81,8 @@ async def run_start(project_id: str, book_id: str, body: RunIn, auth: Auth):
         return _err(400, "nothing_to_write")
     if not body.confirm:
         return _err(400, "confirm_required")
-    if p["limit_tokens"] and p["output_tokens"] > p["limit_tokens"] and not body.confirm_over_limit:
+    # Grenze je Auftrag: Eingabe + Ausgabe (Spec kostengrenze.md §4). Bestätigt → gilt für diesen Lauf nicht.
+    if p["limit_tokens"] and p["total_tokens"] > p["limit_tokens"] and not body.confirm_over_limit:
         return _err(400, "over_limit")
     try:
         key = ai.acquire(auth[0], book_id)

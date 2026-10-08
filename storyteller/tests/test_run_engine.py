@@ -91,9 +91,33 @@ async def test_scene_without_summary_is_skipped(monkeypatch):
     assert len(calls) == 1
 
 
-async def test_limit_stops_before_scene_that_would_exceed(monkeypatch):
-    # Länge 300 Wörter → Schätzung ca. 480 Ausgabe-Tokens je Szene; Grenze 1000 → 2 Szenen ok, die dritte nicht.
+def _fixed_estimate(monkeypatch, tin=400, tout=100):
+    """Schätzung je Szene und gezählte Ausgabe fest: so ist eindeutig prüfbar, dass Eingabe UND Ausgabe zählen."""
+    from backend import _cost
+    monkeypatch.setattr(_cost, "scene_estimate", lambda *a, **k: {"sections": 1, "input_tokens": tin, "output_tokens": tout})
+    monkeypatch.setattr(_cost, "tokens", lambda text: tout)
+
+
+async def test_limit_counts_input_and_output(monkeypatch):
+    """Spec kostengrenze.md §4: vor jeder Szene verbraucht (Eingabe + Ausgabe) + Schätzung gesamt > Grenze → Ende.
+    Je Szene 600 + 100 (Schätzung und gezählte Ausgabe fest). Grenze 1000: Szene 1 (0 + 700) ja, Szene 2 (700 + 700) nein.
+    Zählte nur die Ausgabe, liefen alle drei Szenen."""
     bid, sids = _book(3, length=300, limit=1000)
+    _fixed_estimate(monkeypatch, tin=600)
+    calls = _fake(monkeypatch, words=300)
+    run = _start(bid, sids)
+    await run_engine.execute(run["id"], PROJECT_ID, bid, "testuser")
+    got = runs.get_run(PROJECT_ID, bid, run["id"])
+    assert got["status"] == "limit"
+    assert [p["state"] for p in got["progress"]] == ["written", "waiting", "waiting"]
+    assert len(calls) == 1
+    assert got["tokens_in"] == 600 and got["tokens_out"] == 100
+
+
+async def test_limit_exactly_reached_still_writes(monkeypatch):
+    """Je Szene 600 + 100. Grenze 1400: Szene 2 braucht gesamt genau 1400 → erlaubt; Szene 3 (1400 + 700) nicht."""
+    bid, sids = _book(3, length=300, limit=1400)
+    _fixed_estimate(monkeypatch, tin=600)
     calls = _fake(monkeypatch, words=300)
     run = _start(bid, sids)
     await run_engine.execute(run["id"], PROJECT_ID, bid, "testuser")
@@ -101,6 +125,15 @@ async def test_limit_stops_before_scene_that_would_exceed(monkeypatch):
     assert got["status"] == "limit"
     assert [p["state"] for p in got["progress"]] == ["written", "written", "waiting"]
     assert len(calls) == 2
+
+
+async def test_no_limit_writes_everything(monkeypatch):
+    bid, sids = _book(3, length=300, limit=0)
+    _fixed_estimate(monkeypatch, tin=5_000_000)
+    _fake(monkeypatch, words=300)
+    run = _start(bid, sids)
+    await run_engine.execute(run["id"], PROJECT_ID, bid, "testuser")
+    assert runs.get_run(PROJECT_ID, bid, run["id"])["status"] == "done"
 
 
 async def test_model_error_marks_scene_and_run(monkeypatch):
