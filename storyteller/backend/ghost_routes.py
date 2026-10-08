@@ -13,6 +13,7 @@ from hydrahive.api.middleware.errors import coded
 
 from . import _cost, ai, ghost, storage
 from ._files import StoryError
+from ._ghost_settings import ghost_of
 from ._route_base import Auth, _guard
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class GhostSceneIn(BaseModel):
     scene_id: str = Field(max_length=64)
     length_words: int | None = Field(default=None, ge=200, le=6000)
     model: str | None = Field(default=None, max_length=200)
+    confirm_over_limit: bool = False   # Schätzung über der Kostengrenze bewusst bestätigt (Spec kostengrenze.md §4)
 
 
 class SceneRef(BaseModel):
@@ -31,6 +33,12 @@ class SceneRef(BaseModel):
 
 def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+def _over_limit(book: dict, est: dict) -> bool:
+    """Grenze je Auftrag: Eingabe + Ausgabe; 0 = aus."""
+    limit = ghost_of(book)["limit_tokens"]
+    return bool(limit) and est["input_tokens"] + est["output_tokens"] > limit
 
 
 def _ai_error(exc: ai.AiError) -> JSONResponse:
@@ -45,6 +53,9 @@ async def ghost_scene(project_id: str, book_id: str, body: GhostSceneIn, auth: A
         material = ghost.build_material(project_id, book_id, body.scene_id)
         length, chunk = ghost.plan_lengths(book, body.length_words)
         model = ghost.choose_model(book, body.model)
+        est = _cost.scene_estimate(material, length_words=length, chunk_words=chunk)
+        if _over_limit(book, est) and not body.confirm_over_limit:
+            return JSONResponse(status_code=400, content={"detail": {"code": "over_limit", "message": ""}})
         key = ai.acquire(auth[0], book_id)
     except ai.AiError as exc:
         return _ai_error(exc)
@@ -83,7 +94,8 @@ def ghost_estimate(project_id: str, book_id: str, scene_id: str, auth: Auth, len
     except StoryError as exc:
         raise coded(exc.status, exc.code) from exc
     e = _cost.scene_estimate(material, length_words=length, chunk_words=chunk)
-    return {"model": ghost.choose_model(book, None) or "", "length_words": length, **e}
+    return {"model": ghost.choose_model(book, None) or "", "length_words": length, **e,
+            "total_tokens": e["input_tokens"] + e["output_tokens"], "limit_tokens": ghost_of(book)["limit_tokens"]}
 
 
 @router.post("/projects/{project_id}/books/{book_id}/ghost/summarize")

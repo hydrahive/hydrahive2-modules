@@ -144,6 +144,48 @@ def test_estimate_uses_settings_no_fixed_values(client, auth_headers):
     assert e["output_tokens"] >= 1500 and e["input_tokens"] > 0 and e["sections"] >= 1
 
 
+def _limit(b, limit):
+    return storage.update_book(PROJECT_ID, b["id"], {"ghost": {"limit_tokens": limit}}, base_version=b["version"])
+
+
+def test_estimate_reports_total_and_limit(client, auth_headers):
+    """Spec kostengrenze.md §4: Schätzung gesamt = Eingabe + Ausgabe, dazu die Grenze des Buchs."""
+    b, sid = _setup(length=1500)
+    _limit(b, 1000)
+    e = client.get(f"{P}/books/{b['id']}/ghost/estimate", params={"scene_id": sid}, headers=auth_headers).json()
+    assert e["total_tokens"] == e["input_tokens"] + e["output_tokens"] and e["limit_tokens"] == 1000
+
+
+def test_scene_over_limit_needs_confirmation_and_starts_nothing(client, auth_headers, monkeypatch):
+    b, sid = _setup(length=1500)
+    _limit(b, 1000)                                   # Ausgabe allein schon ≈ 2.400 > 1000
+    calls = _fake(monkeypatch)
+    r = client.post(f"{P}/books/{b['id']}/ghost/scene", json={"scene_id": sid}, headers=auth_headers)
+    assert r.status_code == 400 and r.json()["detail"]["code"] == "over_limit"
+    assert calls == [] and ("testuser", b["id"]) not in ai._busy
+    r = client.post(f"{P}/books/{b['id']}/ghost/scene", json={"scene_id": sid, "confirm_over_limit": True},
+                    headers=auth_headers)
+    assert r.status_code == 200 and len(calls) >= 1
+
+
+def test_scene_limit_counts_input_too(client, auth_headers, monkeypatch):
+    """Ausgabe unter der Grenze, aber Eingabe + Ausgabe darüber → over_limit."""
+    from backend import _cost
+    monkeypatch.setattr(_cost, "scene_estimate", lambda *a, **k: {"sections": 1, "input_tokens": 900, "output_tokens": 500})
+    b, sid = _setup()
+    _limit(b, 1000)
+    _fake(monkeypatch)
+    r = client.post(f"{P}/books/{b['id']}/ghost/scene", json={"scene_id": sid}, headers=auth_headers)
+    assert r.status_code == 400 and r.json()["detail"]["code"] == "over_limit"
+
+
+def test_scene_without_limit_needs_no_confirmation(client, auth_headers, monkeypatch):
+    b, sid = _setup(length=1500)
+    _fake(monkeypatch)
+    r = client.post(f"{P}/books/{b['id']}/ghost/scene", json={"scene_id": sid}, headers=auth_headers)
+    assert r.status_code == 200
+
+
 def test_summarize_writes_only_empty_summary(client, auth_headers, monkeypatch):
     b, sid = _setup()
 
