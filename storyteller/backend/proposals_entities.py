@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from . import _structure
+from . import _replaced, _structure
 from ._book import Conflict, _existing, _now, save_structure
 from ._files import StoryError, check_id, inside, new_id, read_json, write_json
 from ._locks import locked
-from .proposals import SOURCES
+from .proposals import SOURCES, origin_of
 
 MAX_NEW = 50
 _CHANGE_KEYS = ("name", "aliases", "description", "fields")
@@ -58,7 +58,7 @@ def get(project_id: str, book_id: str, proposal_id: str) -> dict:
 
 @locked
 def store(project_id: str, book_id: str, entity_id: str | None, changes: dict[str, Any], *, source: str = "agent",
-          session_id: str = "", note: str = "") -> dict:
+          session_id: str = "", note: str = "", author: str = "") -> dict:
     if source not in SOURCES:
         raise StoryError("source_invalid")
     st = read_json(_existing(project_id, book_id) / "structure.json")
@@ -85,16 +85,47 @@ def store(project_id: str, book_id: str, entity_id: str | None, changes: dict[st
     seq = max((p.get("seq", 0) for p in open_props), default=0) + 1   # unter der Sperre: eindeutig je Buch
     proposal = {"id": new_id(), "seq": seq, "entity_id": entity_id or "", "kind": kind, "changes": diff,
                 "base_structure_version": st["version"], "source": source, "session_id": session_id, "note": note,
-                "at": _now()}
+                "at": _now(), "author": author[:200]}
     write_json(_path(project_id, book_id, proposal["id"]), proposal)
-    for old in replaced:   # höchstens ein offener Änderungsvorschlag je Steckbrief
-        _path(project_id, book_id, old["id"]).unlink(missing_ok=True)
-    return proposal
+    for old in replaced:   # höchstens ein offener Änderungsvorschlag je Steckbrief – der alte in den Verlauf (A2)
+        _to_history(project_id, book_id, old, reason="replaced", by=origin_of(proposal))
+    last = replaced[-1] if replaced else None
+    return {**proposal, "replaced_from": {"source": last.get("source", "agent"), "author": origin_of(last), "at": last["at"]}
+            if last else None}
+
+
+def _to_history(project_id: str, book_id: str, p: dict, *, reason: str, by: str) -> None:
+    _replaced.keep(project_id, book_id, "entity", p["entity_id"] or "new", p, reason=reason, by=by)
+    _path(project_id, book_id, p["id"]).unlink(missing_ok=True)
 
 
 @locked
 def discard(project_id: str, book_id: str, proposal_id: str) -> None:
-    _path(project_id, book_id, proposal_id).unlink(missing_ok=True)
+    """Verwerfen = in den Verlauf (zurückholbar). Unbekannte ID: nichts zu tun."""
+    path = _path(project_id, book_id, proposal_id)
+    if path.is_file():
+        _to_history(project_id, book_id, read_json(path), reason="discarded", by="")
+
+
+@locked
+def restore(project_id: str, book_id: str, key: str, entry_id: str) -> dict:
+    """Eintrag wieder öffnen (``key`` = Steckbrief-ID oder „new“). Wie beim Ablegen: höchstens ein offener
+    Änderungsvorschlag je Steckbrief (der offene wandert in den Verlauf); ein neuer Steckbrief, dessen Name es
+    inzwischen gibt, bleibt im Verlauf (entity_exists)."""
+    entry = _replaced.get(project_id, book_id, "entity", key, entry_id)["proposal"]
+    st = read_json(_existing(project_id, book_id) / "structure.json")
+    if not entry["entity_id"]:
+        names = _names({"name": entry["changes"].get("name", ""), "aliases": entry["changes"].get("aliases", [])})
+        taken = next((e for e in st.get("entities", []) if _names(e) & names), None)
+        if taken:
+            raise StoryError("entity_exists", 409, {"entity_id": taken["id"], "name": taken["name"]})
+    _replaced.take(project_id, book_id, "entity", key, entry_id)
+    for old in [p for p in list_for_book(project_id, book_id) if entry["entity_id"] and p["entity_id"] == entry["entity_id"]]:
+        _to_history(project_id, book_id, old, reason="restored_over", by="")
+    seq = max((p.get("seq", 0) for p in list_for_book(project_id, book_id)), default=0) + 1
+    restored = {**entry, "seq": seq}
+    write_json(_path(project_id, book_id, restored["id"]), restored)
+    return restored
 
 
 @locked

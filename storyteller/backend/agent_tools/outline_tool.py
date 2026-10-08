@@ -5,7 +5,7 @@ from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
 from .. import outline, proposals_outline, storage
 from .._files import StoryError
-from . import scope
+from . import agent_name, replaced_note, scope
 
 
 async def _propose_outline(args: dict, ctx: ToolContext) -> ToolResult:
@@ -16,9 +16,8 @@ async def _propose_outline(args: dict, ctx: ToolContext) -> ToolResult:
     data = {"chapters": args.get("chapters"), "entities": args.get("entities") or []}
     try:
         storage.get_book(pid, book_id)
-        replaced = proposals_outline.find(pid, book_id) is not None
         p = proposals_outline.store(pid, book_id, data, source="agent", session_id=ctx.session_id or "",
-                                    note=str(args.get("note") or "")[:500])
+                                    note=str(args.get("note") or "")[:500], author=agent_name(ctx))
     except StoryError as exc:
         if exc.code == "outline_invalid":
             return ToolResult.fail(f"Ungültige Gliederung: 1–{outline.MAX_CHAPTERS} Kapitel mit Titel, je 1–"
@@ -26,7 +25,7 @@ async def _propose_outline(args: dict, ctx: ToolContext) -> ToolResult:
         return ToolResult.fail("Buch gibt es in diesem Projekt nicht (storyteller_books).")
     chapters = p["outline"]["chapters"]
     return ToolResult.ok({"stored": True, "chapters": len(chapters), "scenes": sum(len(c["scenes"]) for c in chapters),
-                          "replaced": replaced,
+                          **replaced_note(p),
                           "message": "Gliederungs-Vorschlag liegt bereit; der Autor sieht ihn im Storyteller (KI → "
                                      "„Kapitel/Buch“), kann ihn bearbeiten und übernehmen – dann werden die Kapitel am "
                                      "Ende angehängt. Das Buch selbst ist unverändert."})

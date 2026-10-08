@@ -5,7 +5,7 @@ from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
 from .. import proposals_entities, storage
 from .._files import StoryError
-from . import scope
+from . import agent_name, replaced_note, scope
 
 _FAIL = {
     "entity_invalid": "Ungültig: Art (character/place/item) und Name sind für neue Steckbriefe Pflicht; Name/Spitznamen "
@@ -24,16 +24,16 @@ async def _propose_entity(args: dict, ctx: ToolContext) -> ToolResult:
     changes = {k: args[k] for k in ("kind", "name", "aliases", "description", "fields") if k in args}
     try:
         storage.get_book(pid, book_id)
-        replaced = bool(entity_id) and any(p["entity_id"] == entity_id for p in proposals_entities.list_for_book(pid, book_id))
         p = proposals_entities.store(pid, book_id, entity_id or None, changes, source="agent",
-                                     session_id=ctx.session_id or "", note=str(args.get("note") or "")[:500])
+                                     session_id=ctx.session_id or "", note=str(args.get("note") or "")[:500],
+                                     author=agent_name(ctx))
     except StoryError as exc:
         if exc.code == "entity_exists":
             return ToolResult.fail(f"Den Steckbrief „{exc.detail['name']}“ gibt es schon (entity_id {exc.detail['entity_id']}). "
                                    "Für Änderungen diese entity_id angeben.")
         return ToolResult.fail(_FAIL.get(exc.code, "Buch gibt es in diesem Projekt nicht (storyteller_books)."))
     return ToolResult.ok({"stored": True, "proposal_id": p["id"], "new": not p["entity_id"], "fields": list(p["changes"]),
-                          "replaced": replaced,
+                          **replaced_note(p),
                           "message": "Steckbrief-Vorschlag liegt bereit; der Autor übernimmt oder verwirft ihn im Storyteller. "
                                      "Die Steckbriefe selbst sind unverändert."})
 

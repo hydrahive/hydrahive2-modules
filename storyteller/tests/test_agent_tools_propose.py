@@ -93,3 +93,20 @@ def test_store_rejects_unknown_source():
     with pytest.raises(StoryError) as exc:
         proposals.store(PROJECT_ID, bid, sid, "x", run_id="", model="", base_version=s["version"], source="hacker")
     assert exc.value.code == "source_invalid" and proposals.list_for_book(PROJECT_ID, bid) == []
+
+
+async def test_author_is_the_agent_name_and_replacing_names_the_old_author(monkeypatch):
+    """A2: Vorschläge merken sich den Agenten („Buch — Lektor“); das Ersetzen sagt, von wem der alte war."""
+    from hydrahive.agents import config as agent_config
+    names = {"lek": "Buch — Lektor", "aut": "Buch — Autor"}
+    monkeypatch.setattr(agent_config, "get", lambda aid: {"id": aid, "name": names[aid]} if aid in names else None)
+    bid, sid, s = _book()
+    proposals.store(PROJECT_ID, bid, sid, "Vom Lauf.", run_id="r1", model="m", base_version=s["version"])
+    ctx = _ctx(); ctx.agent_id = "lek"
+    res = await PROPOSE.execute({"book_id": bid, "scene_id": sid, "text": "Vom Lektor."}, ctx)
+    assert res.output["replaced"] is True and res.output["replaced_from"] == "Ghostwriter-Lauf"
+    assert "Verlauf" in res.output["replaced_hint"]
+    assert proposals.get(PROJECT_ID, bid, sid)["author"] == "Buch — Lektor"
+    ctx2 = _ctx(); ctx2.agent_id = "aut"
+    res = await PROPOSE.execute({"book_id": bid, "scene_id": sid, "text": "Vom Autor."}, ctx2)
+    assert res.output["replaced_from"] == "Buch — Lektor"

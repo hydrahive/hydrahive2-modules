@@ -7,6 +7,7 @@ import { Check, Loader2, Sparkles, X } from "lucide-react"
 import { StoryApiError } from "../api"
 import { chatApi } from "../chatApi"
 import { chosenFields, infoRows, type InfoField, type InfoProposal } from "../infoProposal"
+import { originLabel } from "../proposalHistory"
 import type { Scene } from "../model"
 import type { BookState } from "../useBook"
 
@@ -41,7 +42,10 @@ export function InfoProposalBox({ state, scene, proposal }: Props) {
   return (
     <section className="st-info-proposal space-y-2 rounded-lg border border-violet-400/40 bg-violet-500/10 p-2.5 text-sm text-violet-100">
       <p className="flex items-center gap-1.5 text-xs font-semibold"><Sparkles className="h-3.5 w-3.5 text-violet-300" />{t("info_proposal_title")}</p>
+      {proposal.author && <p className="text-xs text-violet-200/80">{t("history_from", { who: originLabel(proposal, t) })}</p>}
       {proposal.note && <p className="text-xs text-violet-200/80">{t("proposal_note", { note: proposal.note })}</p>}
+      {proposal.replaced_from && <p className="st-proposal-replaced text-xs text-violet-200/80">
+        {t("replaced_hint", { who: originLabel({ author: proposal.replaced_from.author }, t) })}</p>}
       <ul className="space-y-2">
         {rows.map((r) => (
           <li key={r.field} className="space-y-0.5">

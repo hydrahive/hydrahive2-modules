@@ -21,6 +21,7 @@ from .chat_routes import router as chat_router
 from .ghost_routes import router as ghost_router
 from .interview_routes import router as interview_router
 from .note_routes import router as note_router
+from .proposal_history_routes import router as proposal_history_router
 from .proposal_routes import router as proposal_router
 from .routes_scenes import router as scenes_router
 from .run_routes import router as run_router
@@ -28,6 +29,7 @@ from .team import move as team_move
 from .team import upgrade as team_upgrade
 from .team_job_routes import router as team_job_router
 from .team_routes import router as team_router
+from .trash_routes import router as trash_router
 
 router = APIRouter()
 
@@ -131,4 +133,6 @@ router.include_router(interview_router)
 router.include_router(chat_router)
 router.include_router(team_router)
 router.include_router(note_router)
+router.include_router(proposal_history_router)
 router.include_router(team_job_router)
+router.include_router(trash_router)

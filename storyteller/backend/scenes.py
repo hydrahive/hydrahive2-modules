@@ -7,7 +7,7 @@ from typing import Any
 from ._files import StoryError, new_id, read_json, scene_paths, text_sha, write_json, write_scene
 from ._ghost_settings import next_origin
 from ._locks import locked
-from ._trash import trash_scene
+from ._trash import place_of, trash_scene
 from ._book import MAX_SCENE_BYTES, MAX_SCENES, Conflict, _clip, _existing, _now, book_dir
 
 logger = logging.getLogger(__name__)
@@ -105,10 +105,11 @@ def remove_scene(project_id: str, book_id: str, scene_id: str) -> dict:
         raise StoryError("scene_not_found", 404)
     if len(chapter["scenes"]) <= 1:
         raise StoryError("last_scene")
+    place = place_of(st, scene_id)   # A3: alte Stelle merken, damit Wiederherstellen dorthin zurückfindet
     chapter["scenes"].remove(scene_id)
     st["version"] += 1
     write_json(d / "structure.json", st)
-    trash_scene(project_id, book_id, d, scene_id)   # Papierkorb statt endgültig löschen
+    trash_scene(project_id, book_id, d, scene_id, place)   # Papierkorb statt endgültig löschen
     return st
 
 

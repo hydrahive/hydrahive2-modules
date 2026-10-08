@@ -9,7 +9,7 @@ from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
 from .. import proposals, proposals_info, storage
 from .._files import StoryError
-from . import scope
+from . import agent_name, replaced_note, scope
 
 SHRINK = 0.5   # Vorschlag unter der Hälfte der Szene → Warnung (Task 29fb3911)
 
@@ -30,15 +30,14 @@ async def _propose_text(args: dict, ctx: ToolContext) -> ToolResult:
         scene = storage.get_scene(pid, book_id, scene_id)
     except StoryError:
         return ToolResult.fail("Buch oder Szene gibt es in diesem Projekt nicht (storyteller_outline zeigt die IDs).")
-    replaced = any(p["scene_id"] == scene_id for p in proposals.list_for_book(pid, book_id))
     scene_words = _words(scene["text"])
     try:
         info = proposals.store(pid, book_id, scene_id, text.strip(), run_id="", model="", base_version=scene["version"],
                                source="agent", session_id=ctx.session_id or "", note=str(args.get("note") or "")[:500],
-                               scene_words=scene_words)
+                               scene_words=scene_words, author=agent_name(ctx))
     except StoryError as exc:
         return ToolResult.fail("Text zu lang für eine Szene." if exc.code == "text_too_long" else f"Nicht abgelegt: {exc.code}")
-    out = {"stored": True, "scene_id": scene_id, "words": info["words"], "replaced": replaced,
+    out = {"stored": True, "scene_id": scene_id, "words": info["words"], **replaced_note(info),
            "message": "Vorschlag liegt an der Szene bereit; der Autor übernimmt oder verwirft ihn im "
                       "Storyteller. Die Szene selbst ist unverändert."}
     if info["words"] < scene_words * SHRINK:      # leere Szene (0 Wörter) warnt nie
@@ -51,7 +50,8 @@ async def _propose_text(args: dict, ctx: ToolContext) -> ToolResult:
 PROPOSE_TEXT = Tool(
     name="storyteller_propose_text",
     description="Neuen oder überarbeiteten Text für eine Szene als VORSCHLAG ablegen. Ändert die Szene nicht; der Autor "
-                "übernimmt oder verwirft im Storyteller. Ersetzt einen älteren offenen Vorschlag derselben Szene.",
+                "übernimmt oder verwirft im Storyteller. Ersetzt einen älteren offenen Vorschlag derselben Szene (der bleibt im "
+                "Verlauf und ist zurückholbar).",
     schema={"type": "object", "required": ["book_id", "scene_id", "text"], "properties": {
         "book_id": {"type": "string", "description": "ID des Buchs."},
         "scene_id": {"type": "string", "description": "ID der Szene (aus storyteller_outline)."},
@@ -71,16 +71,16 @@ async def _propose_info(args: dict, ctx: ToolContext) -> ToolResult:
     fields = {k: args[k] for k in proposals_info.FIELDS if isinstance(args.get(k), str)}
     try:
         scene = storage.get_scene(pid, book_id, scene_id)
-        replaced = any(p["scene_id"] == scene_id for p in proposals_info.list_for_book(pid, book_id))
         info = proposals_info.store(pid, book_id, scene_id, fields, base_version=scene["version"], source="agent",
-                                    session_id=ctx.session_id or "", note=str(args.get("note") or "")[:500])
+                                    session_id=ctx.session_id or "", note=str(args.get("note") or "")[:500],
+                                    author=agent_name(ctx))
     except StoryError as exc:
         if exc.code == "nothing_changed":
             return ToolResult.fail("Nichts vorgeschlagen: alle Felder fehlen oder sind unverändert (title, summary, pov).")
         if exc.code.endswith("_invalid"):
             return ToolResult.fail(f"Ungültig: {exc.code} (Titel/Perspektive ≤ 200, Zusammenfassung ≤ 2000 Zeichen).")
         return ToolResult.fail("Buch oder Szene gibt es in diesem Projekt nicht (storyteller_outline zeigt die IDs).")
-    return ToolResult.ok({"stored": True, "scene_id": scene_id, "fields": list(info["fields"]), "replaced": replaced,
+    return ToolResult.ok({"stored": True, "scene_id": scene_id, "fields": list(info["fields"]), **replaced_note(info),
                           "message": "Vorschlag für die Szenen-Infos liegt bereit; der Autor übernimmt ihn im Reiter "
                                      "„Szene“ ganz oder teilweise. Die Szene selbst ist unverändert."})
 
