@@ -3,13 +3,15 @@
 Ablage ``proposals/<szene>.meta.json`` – getrennt vom Text-Vorschlag (``<szene>.md/.json``), beide können
 gleichzeitig offen sein. Die Szene wird erst beim Übernehmen geändert (Versionsprüfung, Feldauswahl); die
 Herkunft des Szenentexts bleibt dabei unverändert. Alle Änderungen unter der Sperre des Buchs.
+Ersetzen/Verwerfen → Verlauf (``_replaced``, A2), zurückholbar.
 """
 from __future__ import annotations
 
+from . import _replaced
 from ._book import _existing, _now
 from ._files import StoryError, check_id, inside, read_json, write_json
 from ._locks import locked
-from .proposals import SOURCES
+from .proposals import SOURCES, origin_of
 from .scenes import get_scene, save_scene
 
 FIELDS = {"title": 200, "summary": 2000, "pov": 200}
@@ -25,8 +27,8 @@ def _path(project_id: str, book_id: str, scene_id: str):
 
 @locked
 def store(project_id: str, book_id: str, scene_id: str, fields: dict, *, base_version: int, source: str = "agent",
-          session_id: str = "", note: str = "") -> dict:
-    """Vorschlag ablegen (ersetzt einen älteren). Nur Felder, die sich vom aktuellen Stand unterscheiden."""
+          session_id: str = "", note: str = "", author: str = "") -> dict:
+    """Vorschlag ablegen; ein älterer wandert in den Verlauf. Nur Felder, die sich vom aktuellen Stand unterscheiden."""
     path = _path(project_id, book_id, scene_id)
     if source not in SOURCES:
         raise StoryError("source_invalid")
@@ -43,9 +45,20 @@ def store(project_id: str, book_id: str, scene_id: str, fields: dict, *, base_ve
     if not changed:
         raise StoryError("nothing_changed")
     info = {"scene_id": scene_id, "kind": "info", "fields": changed, "base_version": base_version, "source": source,
-            "session_id": session_id, "note": note, "at": _now()}
+            "session_id": session_id, "note": note, "at": _now(), "author": author[:200]}
+    old = _to_history(project_id, book_id, scene_id, path, reason="replaced", by=origin_of(info))
     write_json(path, info)
-    return info
+    return {**info, "replaced_from": {"source": old.get("source", "agent"), "author": origin_of(old), "at": old["at"]}
+            if old else None}
+
+
+def _to_history(project_id: str, book_id: str, scene_id: str, path, *, reason: str, by: str) -> dict | None:
+    if not path.is_file():
+        return None
+    old = read_json(path)
+    _replaced.keep(project_id, book_id, "info", scene_id, old, reason=reason, by=by)
+    path.unlink()
+    return old
 
 
 def get(project_id: str, book_id: str, scene_id: str) -> dict:
@@ -62,7 +75,18 @@ def list_for_book(project_id: str, book_id: str) -> list[dict]:
 
 @locked
 def discard(project_id: str, book_id: str, scene_id: str) -> None:
-    _path(project_id, book_id, scene_id).unlink(missing_ok=True)
+    """Verwerfen = in den Verlauf (zurückholbar)."""
+    _to_history(project_id, book_id, scene_id, _path(project_id, book_id, scene_id), reason="discarded", by="")
+
+
+@locked
+def restore(project_id: str, book_id: str, scene_id: str, entry_id: str) -> dict:
+    """Eintrag aus dem Verlauf wieder öffnen; ein gerade offener Infos-Vorschlag wandert in den Verlauf."""
+    path = _path(project_id, book_id, scene_id)
+    entry = _replaced.take(project_id, book_id, "info", scene_id, entry_id)
+    _to_history(project_id, book_id, scene_id, path, reason="replaced", by="zurückgeholt")
+    write_json(path, entry["proposal"])
+    return entry["proposal"]
 
 
 @locked
