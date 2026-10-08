@@ -1,7 +1,7 @@
 // T1c: „Neues Buch“ – Ort wählen (eigenes Projekt mit Team / aktuelles Projekt) und danach dorthin wechseln.
 import { describe, expect, it } from "vitest"
 import { StoryApiError } from "./api"
-import { afterCreate, defaultPlace, errorText, isBookProject, placesFor } from "./bookProject"
+import { afterCreate, afterMove, canMove, defaultPlace, errorText, isBookProject, placesFor } from "./bookProject"
 
 describe("bookProject", () => {
   it("bietet „eigenes Projekt“ nur mit Recht an und wählt es dann vor", () => {
@@ -30,5 +30,14 @@ describe("bookProject", () => {
     expect(isBookProject({ metadata: {} })).toBe(false)
     expect(isBookProject({})).toBe(false)
     expect(isBookProject({ metadata: { storyteller: "x" } })).toBe(false)
+  })
+  it("T1f: Umziehen nur mit Recht und nur aus einem normalen Projekt", () => {
+    expect(canMove(true, { is_book_project: false })).toBe(true)
+    expect(canMove(true, { is_book_project: true })).toBe(false)
+    expect(canMove(false, { is_book_project: false })).toBe(false)
+    expect(canMove(true, {})).toBe(false)                     // alter Server ohne Feld: kein Knopf
+  })
+  it("T1f: nach dem Umzug ins neue Projekt wechseln und das Buch öffnen", () => {
+    expect(afterMove({ project_id: "p-neu", book_id: "b1", backup: "trash/moved/b1-x" })).toEqual({ projectId: "p-neu", bookId: "b1" })
   })
 })

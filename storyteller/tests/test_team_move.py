@@ -2,18 +2,16 @@
 from __future__ import annotations
 
 import pytest
-from conftest import PROJECT_ID
-
 from backend import runs, scenes, storage, team, team_jobs, team_notes
 from backend._files import StoryError, story_root
 from backend.team import move, setup
+from conftest import PROJECT_ID
 
 
 @pytest.fixture(autouse=True)
 def _tools(monkeypatch):
-    from hydrahive.tools import REGISTRY
-
     from backend.agent_tools import TOOLS
+    from hydrahive.tools import REGISTRY
     for t in TOOLS:
         monkeypatch.setitem(REGISTRY, t.name, t)
 

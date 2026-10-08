@@ -40,7 +40,21 @@ export function errorText(t: T, e: unknown): string {
 
 export interface BookProjectFields { title: string; kind: BookKind; language: string; audience: string; idea: string; model?: string }
 
+/** T1f: „In eigenes Projekt umziehen“ – nur mit Recht zum Anlegen und nur, wenn das Buch noch in einem normalen
+ *  Projekt liegt (Server meldet is_book_project; fehlt das Feld, ist der Server zu alt → kein Knopf). */
+export function canMove(canCreate: boolean, book: { is_book_project?: boolean }): boolean {
+  return canCreate && book.is_book_project === false
+}
+
+export interface BookMoved { project_id: string; book_id: string; backup: string }
+
+export function afterMove(out: BookMoved): { projectId: string; bookId: string } {
+  return { projectId: out.project_id, bookId: out.book_id }
+}
+
 export const bookProjectApi = {
   canCreate: () => call<{ can_create: boolean }>("GET", "/book-projects/can-create"),
   create: (f: BookProjectFields) => call<BookProjectCreated>("POST", "/book-projects", f),
+  move: (projectId: string, bookId: string) => call<BookMoved>(
+    "POST", `/projects/${encodeURIComponent(projectId)}/books/${encodeURIComponent(bookId)}/move-to-own-project`),
 }

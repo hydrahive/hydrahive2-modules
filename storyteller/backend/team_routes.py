@@ -14,8 +14,8 @@ from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, Field
 
-from ._route_base import _call
-from .team import setup
+from ._route_base import _call, _guard
+from .team import move, setup
 
 CREATE_CAP = "storyteller.create_project"
 Principal = Annotated[AuthPrincipal, Depends(require_principal)]
@@ -47,3 +47,15 @@ def create_book_project(body: BookProjectIn, principal: Principal):
         raise coded(status.HTTP_403_FORBIDDEN, "capability_denied", capability=CREATE_CAP)
     fields = body.model_dump(exclude={"model"})
     return _call(setup.create_book_project, principal.username, fields, model=body.model)
+
+
+@router.post("/projects/{project_id}/books/{book_id}/move-to-own-project")
+def move_to_own_project(project_id: str, book_id: str, principal: Principal):
+    """T1f: Buch aus einem normalen Projekt in ein eigenes Buch-Projekt mit Team umziehen.
+
+    Braucht dieselben Freigaben wie „Neues Buch als Projekt“ UND Schreibrecht im alten Projekt (dort verschwindet das
+    Buch – eine Sicherung bleibt im Papierkorb des alten Projekts)."""
+    _guard((principal.username, principal.role), project_id)
+    if not _may_create(principal):
+        raise coded(status.HTTP_403_FORBIDDEN, "capability_denied", capability=CREATE_CAP)
+    return _call(move.move_book, principal.username, project_id, book_id)

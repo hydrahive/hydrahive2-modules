@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 _SKIP = ("jobs",)
 
 
-def _is_book_project(project_id: str) -> bool:
+def is_book_project(project_id: str) -> bool:
     from hydrahive.projects import config as project_config
     meta = ((project_config.get(project_id) or {}).get("metadata") or {}).get("storyteller")
     return isinstance(meta, dict)
@@ -45,7 +45,7 @@ def _copy_book(src: Path, dst: Path) -> None:
 
 
 def _check(project_id: str, book_id: str) -> dict:
-    if _is_book_project(project_id):
+    if is_book_project(project_id):
         raise StoryError("already_book_project", 409)
     book = storage.get_book(project_id, book_id)
     if runs.active_run(project_id, book_id):

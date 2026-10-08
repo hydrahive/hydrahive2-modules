@@ -2,9 +2,9 @@
 // Übernahme der Bücher aus dem Entwurf 0.1.0.
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { BookOpen, Feather, Plus, Trash2 } from "lucide-react"
+import { BookOpen, Feather, FolderInput, Plus, Trash2 } from "lucide-react"
 import { storyApi, type ServerBookInfo } from "../api"
-import { afterCreate, bookProjectApi, errorText, type BookPlace } from "../bookProject"
+import { afterCreate, afterMove, bookProjectApi, canMove, errorText, type BookPlace } from "../bookProject"
 import { lastPlace } from "../lastPlace"
 import type { BookKind } from "../model"
 import { loadSampleBook } from "../sample"
@@ -53,6 +53,15 @@ export function BookList({ projectId, projectName, onOpen, onProjectCreated, can
     } catch (e) { fail(e) } finally { setBusy(false) }
   }
   const sample = () => run(async () => (await storyApi.importBook(projectId, toImport(await loadSampleBook()))).id)
+  const moveOut = async (b: ServerBookInfo) => {
+    if (!confirm(t("move_confirm", { title: b.title }))) return
+    setBusy(true)
+    try {
+      const moved = afterMove(await bookProjectApi.move(projectId, b.id))
+      lastPlace.clear(projectId, b.id)
+      onProjectCreated(moved.projectId, moved.bookId)
+    } catch (e) { fail(e) } finally { setBusy(false) }
+  }
   const remove = async (b: ServerBookInfo) => {
     if (!confirm(t(bookProject ? "delete_confirm_book_project" : "delete_confirm", { title: b.title }))) return
     try {
@@ -109,6 +118,12 @@ export function BookList({ projectId, projectName, onOpen, onProjectCreated, can
                 </div>
               </div>
               <div className="mt-3 flex justify-end gap-2">
+                {canMove(canCreateProject, b) && (
+                  <button onClick={() => { void moveOut(b) }} disabled={busy} title={t("move_hint")}
+                    className="st-move-book mr-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-zinc-400 hover:bg-white/5 hover:text-zinc-200 disabled:opacity-50">
+                    <FolderInput className="h-3.5 w-3.5" />{t("move_book")}
+                  </button>
+                )}
                 <button onClick={() => { void remove(b) }} title={t("delete_book")} aria-label={t("delete_book")}
                   className="rounded-lg p-1.5 text-zinc-500 opacity-60 hover:bg-red-500/10 hover:text-red-300 group-hover:opacity-100">
                   <Trash2 className="h-4 w-4" />
