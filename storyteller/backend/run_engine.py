@@ -4,7 +4,7 @@ Je Szene: Material (mit dem aktuellen Gedächtnis) → schreiben in Abschnitten 
 ablegen. Ablegen nie still überschreibend: leer UND unverändert seit dem Start → direkt in die Szene
 (ai_draft); sonst abgelegter Vorschlag (proposals.py). Abbrechen beendet den laufenden Modellaufruf.
 Vor jeder Szene wird die Kostengrenze geprüft (Eingabe + Ausgabe, Spec kostengrenze.md §4). Die KI-Sperre des Buchs
-wird in jedem Fall freigegeben.
+wird in jedem Fall freigegeben. A4: Gedächtnis einmal je Lauf (ghost.MemoryIndex), Dateiarbeit im Hilfs-Thread.
 """
 from __future__ import annotations
 
@@ -68,32 +68,51 @@ def _store(project_id: str, book_id: str, scene_id: str, text: str, start_versio
     return "proposal", ({"replaced": p["replaced_from"]["author"]} if p["replaced_from"] else {})
 
 
-async def _scene(run_id: str, project_id: str, book_id: str, scene_id: str, opts: dict, model, limit: int,
-                 used: int) -> tuple[str, int, dict]:
-    """Gibt (Zustand, verbrauchte Tokens Eingabe + Ausgabe, Zusatz für den Fortschritt) zurück."""
-    book = storage.get_book(project_id, book_id)
+def _prepare(run_id: str, project_id: str, book_id: str, scene_id: str, opts: dict, limit: int, used: int,
+             index: ghost.MemoryIndex):
+    """Dateiarbeit vor dem Schreiben (im Hilfs-Thread, A4). Gibt einen Zustand zum Überspringen zurück oder das
+    vorbereitete Material."""
+    book = index.book
     scene = storage.get_scene(project_id, book_id, scene_id)
     iv = interview_material(project_id, book_id, opts["chapter_id"]) if opts.get("source") == "interview" else None
     if not scene["summary"].strip() and iv is None:
-        return "skipped_no_summary", 0, {}
+        return "skipped_no_summary"
     start_empty = not scene["text"].strip()
     if not start_empty and opts.get("skip_filled", True):
-        return "skipped_filled", 0, {}
+        return "skipped_filled"
     length, chunk = ghost.plan_lengths(book, opts.get("length_words") or None)
-    material = ghost.build_material(project_id, book_id, scene_id, interview=iv)
+    material = ghost.build_material(project_id, book_id, scene_id, interview=iv, index=index)
     est = _cost.scene_estimate(material, length_words=length, chunk_words=chunk)
     if limit and used + est["input_tokens"] + est["output_tokens"] > limit:
         raise _Limit
     runs.update_run(run_id, current_scene=scene_id)
     runs.set_scene_state(run_id, scene_id, "writing")
-    text = await _write(run_id, material, model=model, length=length, chunk=chunk)
-    tin, tout = est["input_tokens"], _cost.tokens(text)
+    return {"scene": scene, "start_empty": start_empty, "length": length, "chunk": chunk, "material": material, "est": est}
+
+
+def _finish(run_id: str, project_id: str, book_id: str, scene_id: str, prep: dict, text: str, model,
+            index: ghost.MemoryIndex) -> tuple[str, int, dict]:
+    """Dateiarbeit nach dem Schreiben (im Hilfs-Thread): Kosten, Ablegen, Gedächtnis nachziehen."""
+    tin, tout = prep["est"]["input_tokens"], _cost.tokens(text)
     runs.add_usage(run_id, tokens_in=tin, tokens_out=tout, cost_micros=_cost.cost_micros(model or "", tokens_in=tin,
                                                                                          tokens_out=tout))
     if not text:
         raise StoryError("llm_empty", 502)
-    state, extra = _store(project_id, book_id, scene_id, text, scene["version"], start_empty, run_id, model or "")
+    state, extra = _store(project_id, book_id, scene_id, text, prep["scene"]["version"], prep["start_empty"], run_id,
+                          model or "")
+    index.refresh(scene_id)   # die nächste Szene sieht Ende und Stand dieser (A4)
     return state, tin + tout, {"words": len(text.split()), **extra}
+
+
+async def _scene(run_id: str, project_id: str, book_id: str, scene_id: str, opts: dict, model, limit: int,
+                 used: int, index: ghost.MemoryIndex) -> tuple[str, int, dict]:
+    """Gibt (Zustand, verbrauchte Tokens Eingabe + Ausgabe, Zusatz für den Fortschritt) zurück. Dateiarbeit läuft im
+    Hilfs-Thread (der Server bleibt ansprechbar), nur das Schreiben mit dem Modell in der Ereignisschleife."""
+    prep = await asyncio.to_thread(_prepare, run_id, project_id, book_id, scene_id, opts, limit, used, index)
+    if isinstance(prep, str):
+        return prep, 0, {}
+    text = await _write(run_id, prep["material"], model=model, length=prep["length"], chunk=prep["chunk"])
+    return await asyncio.to_thread(_finish, run_id, project_id, book_id, scene_id, prep, text, model, index)
 
 
 async def execute(run_id: str, project_id: str, book_id: str, user: str, lock_key=None) -> None:
@@ -102,15 +121,16 @@ async def execute(run_id: str, project_id: str, book_id: str, user: str, lock_ke
     status, error, used, current = "done", None, 0, None
     try:
         runs.update_run(run_id, status="running")
-        limit = int(opts.get("limit_tokens") or ghost_of(storage.get_book(project_id, book_id))["limit_tokens"] or 0)
+        index = await asyncio.to_thread(ghost.MemoryIndex.load, project_id, book_id)   # Gedächtnis einmal je Lauf
+        limit = int(opts.get("limit_tokens") or ghost_of(index.book)["limit_tokens"] or 0)
         model = run["model"] or None
         for p in run["progress"]:
             current = p["scene_id"]
             if run_id in _cancelled:
                 raise _Stop
-            state, spent, extra = await _scene(run_id, project_id, book_id, current, opts, model, limit, used)
+            state, spent, extra = await _scene(run_id, project_id, book_id, current, opts, model, limit, used, index)
             used += spent
-            runs.set_scene_state(run_id, current, state, **extra)
+            await asyncio.to_thread(runs.set_scene_state, run_id, current, state, **extra)
             current = None
     except _Stop:
         status = "cancelled"

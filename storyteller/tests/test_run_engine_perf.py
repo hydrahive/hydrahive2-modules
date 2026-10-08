@@ -1,0 +1,119 @@
+"""A4: Ghostwriter-Lauf – Gedächtnis einmal laden und nachziehen; Dateiarbeit nicht in der Ereignisschleife."""
+from __future__ import annotations
+
+import asyncio
+import threading
+
+from _ghost_helpers import fake_llm, make_book
+from conftest import PROJECT_ID
+
+from backend import ghost, run_engine, runs, storage
+
+
+def _start(bid, sids):
+    return runs.create_run(user="testuser", project_id=PROJECT_ID, book_id=bid, scope="book", scene_ids=sids,
+                           model="claude-sonnet-4-6", options={"skip_filled": True, "length_words": 300})
+
+
+async def test_memory_is_loaded_once_and_sees_the_scenes_written_in_this_run(monkeypatch):
+    """Szene 2 muss das Ende der in DIESEM Lauf geschriebenen Szene 1 sehen (Index nachgezogen)."""
+    bid, _cid, sids = make_book(3)
+    loads = []
+    real = ghost.MemoryIndex.load
+    monkeypatch.setattr(ghost.MemoryIndex, "load", classmethod(lambda cls, p, b: loads.append(1) or real(p, b)))
+    calls = fake_llm(monkeypatch, words=300)
+    run = _start(bid, sids)
+    await run_engine.execute(run["id"], PROJECT_ID, bid, "testuser")
+    assert runs.get_run(PROJECT_ID, bid, run["id"])["status"] == "done"
+    assert len(loads) == 1
+    second_prompt = calls[1]["messages"][-1]["content"]
+    assert "Text1 wort" in second_prompt                   # Ende der eben geschriebenen Szene 1
+    third_prompt = calls[2]["messages"][-1]["content"]
+    assert "Text2 wort" in third_prompt
+
+
+async def test_file_work_runs_outside_the_event_loop_thread(monkeypatch):
+    """Material bauen und Ablegen dürfen den Server nicht anhalten: sie laufen in einem Hilfs-Thread."""
+    bid, _cid, sids = make_book(2)
+    loop_thread = threading.get_ident()
+    seen: dict[str, set] = {"material": set(), "store": set()}
+    real_mat, real_store = ghost.build_material, run_engine._store
+
+    def mat(*a, **k):
+        seen["material"].add(threading.get_ident())
+        return real_mat(*a, **k)
+
+    def store(*a, **k):
+        seen["store"].add(threading.get_ident())
+        return real_store(*a, **k)
+    monkeypatch.setattr(ghost, "build_material", mat)
+    monkeypatch.setattr(run_engine, "_store", store)
+    fake_llm(monkeypatch)
+    run = _start(bid, sids)
+    await run_engine.execute(run["id"], PROJECT_ID, bid, "testuser")
+    assert runs.get_run(PROJECT_ID, bid, run["id"])["status"] == "done"
+    assert seen["material"] and loop_thread not in seen["material"]
+    assert seen["store"] and loop_thread not in seen["store"]
+
+
+async def test_loop_stays_responsive_while_preparing_a_scene(monkeypatch):
+    """Eine langsame Vorbereitung (großes Buch) blockiert andere Aufgaben nicht."""
+    import time
+    bid, _cid, sids = make_book(1)
+    real_mat = ghost.build_material
+
+    def slow(*a, **k):
+        time.sleep(0.3)
+        return real_mat(*a, **k)
+    monkeypatch.setattr(ghost, "build_material", slow)
+    fake_llm(monkeypatch)
+    run = _start(bid, sids)
+    ticks = 0
+
+    async def ticker():
+        nonlocal ticks
+        while True:
+            await asyncio.sleep(0.02)
+            ticks += 1
+    t = asyncio.create_task(ticker())
+    await run_engine.execute(run["id"], PROJECT_ID, bid, "testuser")
+    t.cancel()
+    assert ticks >= 8                                     # bei blockierender Vorbereitung: ~0–2
+
+
+async def test_written_scene_is_in_the_book(monkeypatch):
+    bid, _cid, sids = make_book(1)
+    fake_llm(monkeypatch)
+    run = _start(bid, sids)
+    await run_engine.execute(run["id"], PROJECT_ID, bid, "testuser")
+    assert storage.get_scene(PROJECT_ID, bid, sids[0])["text"].startswith("Text1")
+
+
+async def test_suggest_prepares_context_outside_the_event_loop(monkeypatch):
+    """Umschreiben (ai.suggest): Kontext aus den Dateien im Hilfs-Thread."""
+    from backend import ai
+    bid, _cid, sids = make_book(1, texts={0: "Mia stand am Hafen."})
+    loop_thread = threading.get_ident()
+    seen = set()
+    real = ai._context
+
+    def ctx(*a, **k):
+        seen.add(threading.get_ident())
+        return real(*a, **k)
+    monkeypatch.setattr(ai, "_context", ctx)
+
+    async def fake_complete(messages, model=None, temperature=0.7, max_tokens=4096):
+        return "Mia stand am Kai."
+    monkeypatch.setattr(ai, "complete", fake_complete)
+    out = await ai.suggest("testuser", PROJECT_ID, bid, sids[0], "rewrite", "am Hafen", None)
+    assert out["proposal"] == "Mia stand am Kai." and seen and loop_thread not in seen
+
+
+async def test_suggest_unknown_scene_stays_a_404_and_frees_the_lock():
+    from backend import ai
+    from backend._files import StoryError
+    bid, _cid, _sids = make_book(1)
+    import pytest
+    with pytest.raises(StoryError) as exc:
+        await ai.suggest("testuser", PROJECT_ID, bid, "f" * 32, "rewrite", "x", None)
+    assert exc.value.status == 404 and ("testuser", bid) not in ai._busy

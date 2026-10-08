@@ -1,6 +1,7 @@
 """Storyteller — KI-Vorschlag (Spec 1b §4). Ändert NICHTS am Buch; liefert nur Text zurück."""
 from __future__ import annotations
 
+import asyncio
 import re
 import time
 from collections import defaultdict, deque
@@ -119,14 +120,18 @@ def clean_proposal(raw: str) -> str:
 
 async def suggest(user: str, project_id: str, book_id: str, scene_id: str, action: str,
                   selection: str, model: str | None) -> dict:
-    system, prompt = _context(project_id, book_id, scene_id, selection, action)
-    use_model = model or storage.get_book(project_id, book_id).get("model") or None
-    messages = [{"role": "system", "content": system}, {"role": "user", "content": f"{prompt}\n\nAUFGABE: {_INSTRUCTION[action]}"}]
-    key = acquire(user, book_id)
+    key = acquire(user, book_id)   # Sperre zuerst – sonst käme eine zweite Anfrage während des Lesens durch
     try:
-        out = await complete(messages, model=use_model, temperature=0.7, max_tokens=MAX_TOKENS)
-    except Exception as exc:  # Modell-/Schlüssel-/Netzfehler lesbar an die Oberfläche geben
-        raise AiError("llm_failed", str(exc)[:300] or exc.__class__.__name__, 502) from exc
+        # Dateien lesen im Hilfs-Thread (A4) – die Ereignisschleife bedient derweil andere Anfragen. Fehler beim
+        # Lesen (Szene/Buch weg) gehen unverändert weiter (404 usw.), nur Modellfehler werden zu llm_failed.
+        system, prompt = await asyncio.to_thread(_context, project_id, book_id, scene_id, selection, action)
+        use_model = model or (await asyncio.to_thread(storage.get_book, project_id, book_id)).get("model") or None
+        messages = [{"role": "system", "content": system},
+                    {"role": "user", "content": f"{prompt}\n\nAUFGABE: {_INSTRUCTION[action]}"}]
+        try:
+            out = await complete(messages, model=use_model, temperature=0.7, max_tokens=MAX_TOKENS)
+        except Exception as exc:  # Modell-/Schlüssel-/Netzfehler lesbar an die Oberfläche geben
+            raise AiError("llm_failed", str(exc)[:300] or exc.__class__.__name__, 502) from exc
     finally:
         release(key)
     proposal = clean_proposal(out or "")

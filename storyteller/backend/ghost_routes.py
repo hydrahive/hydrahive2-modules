@@ -2,6 +2,7 @@
 Schätzung vorab, Gedächtnis-Zusammenfassung nach dem Annehmen."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 
@@ -41,6 +42,10 @@ def _over_limit(book: dict, est: dict) -> bool:
     return bool(limit) and est["input_tokens"] + est["output_tokens"] > limit
 
 
+def _prepare(project_id: str, book_id: str, scene_id: str):
+    return storage.get_book(project_id, book_id), ghost.build_material(project_id, book_id, scene_id)
+
+
 def _ai_error(exc: ai.AiError) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content={"detail": {"code": exc.code, "message": exc.message}})
 
@@ -49,8 +54,7 @@ def _ai_error(exc: ai.AiError) -> JSONResponse:
 async def ghost_scene(project_id: str, book_id: str, body: GhostSceneIn, auth: Auth):
     _guard(auth, project_id)
     try:
-        book = storage.get_book(project_id, book_id)
-        material = ghost.build_material(project_id, book_id, body.scene_id)
+        book, material = await asyncio.to_thread(_prepare, project_id, book_id, body.scene_id)   # A4: Dateien im Thread
         length, chunk = ghost.plan_lengths(book, body.length_words)
         model = ghost.choose_model(book, body.model)
         est = _cost.scene_estimate(material, length_words=length, chunk_words=chunk)
