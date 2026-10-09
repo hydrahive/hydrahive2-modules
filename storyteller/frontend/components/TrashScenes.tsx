@@ -66,16 +66,14 @@ export function TrashScenes({ state, onOpenScene }: Props) {
         <ul className="mt-1 space-y-1">
           {rows.map((s) => (
             <li key={s.id} className="st-trash-scene rounded border border-white/5 px-2 py-1 text-xs text-zinc-400">
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-zinc-300" title={s.summary}>{s.title || "…"}</span>
-                {canWrite && <button onClick={() => { void restore(s) }} title={t("trash_restore")}
-                  className="st-trash-restore inline-flex items-center gap-1 text-violet-300 hover:underline">
-                  <RotateCcw className="h-3 w-3" />{t("trash_restore")}</button>}
-              </div>
+              <p className="break-words text-zinc-300" title={s.summary}>{s.title || "…"}</p>
               <p className="text-[11px] text-zinc-500">
                 {t("trash_deleted_at", { when: fmt(s.deleted_at) })} · {t("words_n", { n: s.words })} ·{" "}
                 {whereBack(s) === "original" ? t("trash_back_original", { chapter: s.chapter_title }) : t("trash_back_end")}
               </p>
+              {canWrite && <button onClick={() => { void restore(s) }} title={t("trash_restore")}
+                className="st-trash-restore mt-0.5 inline-flex items-center gap-1 text-violet-300 hover:underline">
+                <RotateCcw className="h-3 w-3" />{t("trash_restore")}</button>}
             </li>
           ))}
         </ul>
