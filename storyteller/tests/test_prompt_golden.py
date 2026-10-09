@@ -12,6 +12,7 @@ import pytest
 from conftest import PROJECT_ID
 
 from backend import ai, ghost, interview_ai, interviews, outline, storage
+from backend._files import StoryError
 
 GOLDEN = Path(__file__).parent / "golden" / "prompts_de_novel.json"
 
@@ -78,7 +79,7 @@ async def _collect(monkeypatch, kind="novel"):
     await interview_ai.suggest_questions(PROJECT_ID, bid, cid, count=2)
     out["interview"] = seen["complete"]
     seen["complete"] = []
-    with pytest.raises(Exception):          # die Antwort „Kurz.“ ist kein JSON – hier zählt nur der Prompt
+    with pytest.raises(StoryError):         # die Antwort „Kurz.“ ist kein JSON – hier zählt nur der Prompt
         await outline.generate(PROJECT_ID, bid, idea="Mia", chapters=1, scenes_per_chapter=2)
     out["outline"] = seen["complete"][:1]
     iv_mat = interview_ai.interview_material(PROJECT_ID, bid, cid)

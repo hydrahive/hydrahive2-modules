@@ -123,7 +123,7 @@ export const storyApi = {
     call<SnapshotInfo>("POST", `${b(pid, bid)}/scenes/${encodeURIComponent(sid)}/snapshots`, text === undefined ? {} : { text }),
   getSnapshot: (pid: string, bid: string, sid: string, snapId: string) =>
     call<SnapshotInfo>("GET", `${b(pid, bid)}/scenes/${encodeURIComponent(sid)}/snapshots/${encodeURIComponent(snapId)}`),
-  suggest: (pid: string, bid: string, body: { scene_id: string; action: SuggestAction; selection: string; model?: string }) =>
+  suggest: (pid: string, bid: string, body: { scene_id: string; action: SuggestAction; selection: string; occurrence?: number; model?: string }) =>
     call<{ proposal: string; model: string }>("POST", `${b(pid, bid)}/ai/suggest`, body),
   ghostEstimate: (pid: string, bid: string, sid: string, lengthWords?: number) =>
     call<GhostEstimate>("GET", `${b(pid, bid)}/ghost/estimate?scene_id=${encodeURIComponent(sid)}${lengthWords ? `&length_words=${lengthWords}` : ""}`),

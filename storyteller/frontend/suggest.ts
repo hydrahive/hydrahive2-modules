@@ -51,3 +51,12 @@ export function wordDiff(a: string, b: string): DiffPart[] {
   while (j < y.length) push("add", y[j++])
   return out
 }
+
+/** A5: Wie oft ``selection`` im Text VOR der Markierung schon vorkommt (überlappend, wie der Server mit find(at + 1)) –
+ *  so findet der Server das richtige Vorkommen statt immer das letzte. */
+export function occurrenceBefore(textBefore: string, selection: string): number {
+  if (!selection) return 0
+  let n = 0
+  for (let at = textBefore.indexOf(selection); at >= 0; at = textBefore.indexOf(selection, at + 1)) n++
+  return n
+}

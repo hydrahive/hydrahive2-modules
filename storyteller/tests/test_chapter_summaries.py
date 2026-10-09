@@ -129,7 +129,7 @@ async def test_generate_empty_answer_is_an_error(monkeypatch):
 # --- Gedächtnis --------------------------------------------------------------------------------------------------
 
 def test_without_chapter_summaries_memory_stays_scene_by_scene():
-    bid, cids, sids = _book(chapters=5, per=2)
+    bid, _cids, sids = _book(chapters=5, per=2)
     mem = MemoryIndex.load(PROJECT_ID, bid).memory(sids[4][1], 10_000)
     assert mem.split("\n") == [f"- S{c}{j}: K{c}S{j}." for c in range(5) for j in range(2)][:9]
 

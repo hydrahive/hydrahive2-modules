@@ -106,7 +106,7 @@ def test_memory_keeps_last_line_even_if_longer_than_limit():
 
 @pytest.mark.parametrize("text, sel, occ, want", [
     ("a X b X c", "X", 0, 2), ("a X b X c", "X", 1, 6), ("a X b X c", "X", None, 6),
-    ("a X b X c", "X", 5, 6), ("a X b", "Y", 0, -1), ("abc", "", 0, -1), ("XX", "X", 1, 1),
+    ("a X b X c", "X", 5, 6), ("a X b", "Y", 0, -1), ("abc", "", 0, -1), ("XX", "X", 1, 1), ("XXX", "X", 1, 1),
 ])
 def test_find_selection(text, sel, occ, want):
     assert ai.find_selection(text, sel, occ) == want
