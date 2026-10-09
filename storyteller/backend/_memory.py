@@ -24,6 +24,10 @@ def fit_lines(lines: list[str], limit: int) -> str:
     return "\n".join(reversed(kept))
 
 
+def _size(blocks: list[list[str]]) -> int:
+    return len("\n".join(line for b in blocks for line in b))
+
+
 class MemoryIndex:
     """Gedächtnis eines Buchs für viele Szenen (A4): Kopf, Gliederung und die Infos (Titel, Zusammenfassung) aller
     Szenen einmal lesen – ohne Szenentexte. ``refresh(scene_id)`` zieht eine geänderte Szene nach (im Lauf nach jeder
@@ -64,9 +68,8 @@ class MemoryIndex:
             summary = " ".join(self.chapter_summaries.get(ch["id"], "").split())
             if summary and not blocks[n]:       # Kapitel ohne Szenen-Zusammenfassungen: die Kapitel-Zeile ist alles, was es gibt
                 blocks[n] = [t("chapter_line", title=ch["title"], summary=summary)]
-        size = lambda: len("\n".join(line for b in blocks for line in b))   # noqa: E731
         for n, ch in enumerate(self.chapters[:here]):
-            if size() <= memory_chars:
+            if _size(blocks) <= memory_chars:
                 break
             summary = " ".join(self.chapter_summaries.get(ch["id"], "").split())
             line = t("chapter_line", title=ch["title"], summary=summary) if summary else ""
