@@ -75,6 +75,8 @@ export const textsDe = {
   move_up: "Nach oben (Alt+↑)",
   move_down: "Nach unten (Alt+↓)",
   drag_hint: "Szenen lassen sich mit der Maus ziehen.",
+  drag_hint_section: "Abschnitte lassen sich mit der Maus ziehen.",
+  add_section: "Abschnitt hinzufügen",
   read_chapter: "Ganzes Kapitel lesen",
   back_to_scene: "Zurück zur Szene",
   placeholder: "Schreib los …",

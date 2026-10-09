@@ -87,7 +87,7 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
                   </button>
                   <Title id={c.id} title={c.title} cls="flex-1 truncate font-semibold text-zinc-200" />
                   {can && <button disabled={busy} onClick={() => { void create(() => storyApi.addScene(state.projectId, book.id, c.id, names.scene(c.scenes.length + 1))) }}
-                    title={t("add_scene")} aria-label={t("add_scene")} className="text-zinc-600 opacity-0 hover:text-zinc-200 focus:opacity-100 group-hover:opacity-100">
+                    title={t(del.unit === "scene" ? "add_scene" : "add_section")} aria-label={t(del.unit === "scene" ? "add_scene" : "add_section")} className="text-zinc-600 opacity-0 hover:text-zinc-200 focus:opacity-100 group-hover:opacity-100">
                     <FilePlus2 className="h-3.5 w-3.5" />
                   </button>}
                   {can && !del.chapterBlocked && <button disabled={del.busy} onClick={() => { void del.deleteChapter(c) }}
@@ -140,7 +140,7 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
           </div>
         ))}
         {(error || del.error) && <p className="px-1 pt-1 text-xs text-red-300" role="alert">{error || del.error}</p>}
-        <p className="px-1 pt-1 text-[11px] text-zinc-600">{t("drag_hint")} F2 · Alt+↑/↓</p>
+        <p className="px-1 pt-1 text-[11px] text-zinc-600">{t(del.unit === "scene" ? "drag_hint" : "drag_hint_section")} F2 · Alt+↑/↓</p>
       </div>
       <EntityList book={book} activeId={entityId} onOpen={onOpenEntity} change={change} proposals={state.entityProposals} />
       <TrashScenes state={state} onOpenScene={onOpenScene} />

@@ -73,6 +73,8 @@ export const textsEn: Texts = {
   move_up: "Move up (Alt+↑)",
   move_down: "Move down (Alt+↓)",
   drag_hint: "Scenes can be dragged with the mouse.",
+  drag_hint_section: "Sections can be dragged with the mouse.",
+  add_section: "Add section",
   read_chapter: "Read whole chapter",
   back_to_scene: "Back to scene",
   placeholder: "Start writing …",
