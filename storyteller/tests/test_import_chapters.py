@@ -140,7 +140,7 @@ def test_http_import_chapter_and_snapshot(client, auth_headers):
     got = client.get(f"{P}/books/{bid}/scenes/{sid}/snapshots/{snap}", headers=auth_headers)
     assert got.status_code == 200 and got.json()["text"] == "gerettet"
     r = client.delete(f"{P}/books/{bid}/scenes/{sid}", headers=auth_headers)
-    assert r.status_code == 400  # letzte Szene des neuen Kapitels bleibt
+    assert r.status_code == 200 and len(r.json()["parts"][0]["chapters"]) == 2  # C1: letzte Szene nimmt ihr Kapitel mit
 
 
 def test_snapshot_with_same_text_as_newest_is_not_duplicated():

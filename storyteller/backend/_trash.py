@@ -33,10 +33,12 @@ def place_of(structure: dict, scene_id: str) -> dict[str, Any]:
     return {"chapter_id": "", "chapter_title": "", "after": ""}
 
 
-def trash_scene(project_id: str, book_id: str, book_dir: Path, scene_id: str, place: dict | None = None) -> Path:
+def trash_scene(project_id: str, book_id: str, book_dir: Path, scene_id: str, place: dict | None = None,
+                into: Path | None = None) -> Path:
+    """``into`` (C1): Ordner eines gelöschten Kapitels – dann erscheint die Szene nicht einzeln im Papierkorb."""
     check_id(scene_id, "scene")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
-    target = story_root(project_id) / "trash" / book_id / "scenes" / f"{scene_id}-{stamp}"
+    target = (into or story_root(project_id) / "trash" / book_id / "scenes") / f"{scene_id}-{stamp}"
     target.mkdir(parents=True, exist_ok=False)
     meta_path, text_path = inside(book_dir, "scenes", f"{scene_id}.json"), inside(book_dir, "scenes", f"{scene_id}.md")
     meta = read_json(meta_path) if meta_path.is_file() else {}

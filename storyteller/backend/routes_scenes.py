@@ -63,6 +63,13 @@ def add_chapter(project_id: str, book_id: str, body: NewChapter, auth: Auth):
     return _call(storage.add_chapter, project_id, book_id, body.part_id, body.title, body.scene_title)
 
 
+@router.delete("/projects/{project_id}/books/{book_id}/chapters/{chapter_id}")
+def delete_chapter(project_id: str, book_id: str, chapter_id: str, auth: Auth):
+    """C1: Kapitel mit allen Szenen in den Papierkorb; Antwort = neue Gliederung."""
+    _guard(auth, project_id)
+    return _call(storage.remove_chapter, project_id, book_id, chapter_id)
+
+
 @router.get("/projects/{project_id}/books/{book_id}/scenes/{scene_id}")
 def get_scene(project_id: str, book_id: str, scene_id: str, auth: Auth):
     """Eine Szene neu laden (z. B. nachdem ein Ghostwriter-Lauf sie geschrieben hat)."""
