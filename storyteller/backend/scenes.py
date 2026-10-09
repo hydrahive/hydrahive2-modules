@@ -4,10 +4,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ._files import StoryError, count_words, new_id, read_json, scene_paths, text_sha, write_json, write_scene
+from ._files import StoryError, check_id, count_words, new_id, read_json, scene_paths, text_sha, write_json, write_scene
 from ._ghost_settings import next_origin
 from ._locks import locked
 from ._trash import place_of, trash_scene
+from ._trash_chapter import chapter_place, trash_chapter
 from ._book import MAX_SCENE_BYTES, MAX_SCENES, Conflict, _clip, _existing, _now, book_dir
 
 logger = logging.getLogger(__name__)
@@ -109,18 +110,49 @@ def add_chapter(project_id: str, book_id: str, part_id: str, title: str, scene_t
 
 @locked
 def remove_scene(project_id: str, book_id: str, scene_id: str) -> dict:
+    """Szene in den Papierkorb. Ist es die letzte ihres Kapitels, geht das Kapitel mit (C1)."""
     d = _existing(project_id, book_id)
     st = read_json(d / "structure.json")
     chapter = next((c for p in st["parts"] for c in p["chapters"] if scene_id in c["scenes"]), None)
     if chapter is None:
         raise StoryError("scene_not_found", 404)
     if len(chapter["scenes"]) <= 1:
-        raise StoryError("last_scene")
+        return _remove_chapter(project_id, book_id, d, st, chapter)
     place = place_of(st, scene_id)   # A3: alte Stelle merken, damit Wiederherstellen dorthin zurückfindet
     chapter["scenes"].remove(scene_id)
     st["version"] += 1
     write_json(d / "structure.json", st)
     trash_scene(project_id, book_id, d, scene_id, place)   # Papierkorb statt endgültig löschen
+    return st
+
+
+@locked
+def remove_chapter(project_id: str, book_id: str, chapter_id: str) -> dict:
+    """Kapitel mit allen Szenen, Interview und Kapitel-Zusammenfassung in den Papierkorb (C1). Gibt die Gliederung zurück."""
+    d = _existing(project_id, book_id)
+    check_id(chapter_id, "chapter")
+    st = read_json(d / "structure.json")
+    chapter = next((c for p in st["parts"] for c in p["chapters"] if c["id"] == chapter_id), None)
+    if chapter is None:
+        raise StoryError("chapter_not_found", 404)
+    return _remove_chapter(project_id, book_id, d, st, chapter)
+
+
+def _remove_chapter(project_id: str, book_id: str, d, st: dict, chapter: dict) -> dict:
+    from . import runs, team_jobs
+    if sum(len(p["chapters"]) for p in st["parts"]) <= 1:
+        raise StoryError("last_chapter", 409)
+    if runs.active_run(project_id, book_id):
+        raise StoryError("run_active", 409)   # der Lauf schriebe sonst in gelöschte Szenen
+    if any(j["status"] in team_jobs.ACTIVE for j in team_jobs.list_jobs(project_id, book_id)):
+        raise StoryError("job_active", 409)
+    place = chapter_place(st, chapter["id"])
+    for p in st["parts"]:
+        p["chapters"] = [c for c in p["chapters"] if c["id"] != chapter["id"]]
+    st["parts"] = [p for p in st["parts"] if p["chapters"]]   # ein Teil ohne Kapitel ist ungültig
+    st["version"] += 1
+    write_json(d / "structure.json", st)                       # erst die Gliederung, dann die Dateien
+    trash_chapter(project_id, book_id, d, chapter, place)
     return st
 
 

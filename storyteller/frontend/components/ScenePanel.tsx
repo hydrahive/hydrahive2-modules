@@ -1,13 +1,13 @@
 // Reiter „Szene“: Titel, Zusammenfassung, Perspektive, Stand, erkannte Steckbriefe, Schnappschüsse;
 // oben ein offener Vorschlag des Agenten für diese Felder (G4b).
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { storyApi } from "../api"
 import { entitiesInText, findScene, type Scene, type SceneStatus } from "../model"
 import type { BookState } from "../useBook"
 import { ChapterSummaryBox } from "./ChapterSummaryBox"
 import { InfoProposalBox } from "./InfoProposalBox"
 import { ProposalHistory } from "./ProposalHistory"
+import { useDeleteNode } from "../useDeleteNode"
 
 const STATUSES: SceneStatus[] = ["idea", "draft", "revised", "done"]
 const field = "w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
@@ -18,8 +18,6 @@ interface Props { state: BookState; scene: Scene; onOpenEntity: (id: string) => 
 export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
   const { t, i18n } = useTranslation("storyteller")
   const { book, refresh } = state
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState("")
   useEffect(() => { void refresh(scene.id) }, [refresh, scene.id])
   const set = (patch: Partial<Scene>) => state.setScene(scene.id, patch)
   const found = entitiesInText(book.entities, scene.text)
@@ -27,20 +25,14 @@ export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
   const snaps = state.snapshots[scene.id] ?? []
   const fmt = (iso: string) => new Date(iso).toLocaleString(i18n.language, { dateStyle: "short", timeStyle: "medium" })
   const chapter = findScene(book, scene.id)?.chapter
-  const lastInChapter = (chapter?.scenes.length ?? 0) <= 1
 
+  const del = useDeleteNode(state)   // C1: derselbe Weg wie im Navigator (letzte Szene nimmt ihr Kapitel mit)
   const remove = async () => {
-    if (!confirm(t("remove_scene_confirm", { title: scene.title }))) return
     const found = findScene(book, scene.id)
-    const siblings = found?.chapter.scenes ?? []
-    const next = siblings[found!.path.scene + 1]?.id ?? siblings[found!.path.scene - 1]?.id ?? ""
-    setBusy(true)
-    try {
-      await state.flush()
-      const st = await storyApi.deleteScene(state.projectId, book.id, scene.id)
-      state.adoptStructure(st)
-      onRemoved(next)
-    } catch (e) { setError(e instanceof Error ? e.message : String(e)) } finally { setBusy(false) }
+    if (!found) return
+    const siblings = found.chapter.scenes
+    const next = siblings[found.path.scene + 1]?.id ?? siblings[found.path.scene - 1]?.id ?? ""
+    if (await del.deleteScene(scene, found.chapter)) onRemoved(next)   // nur wenn wirklich gelöscht (nicht bei „Abbrechen“)
   }
 
   const info = state.infoProposals[scene.id]
@@ -102,9 +94,10 @@ export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
       <ProposalHistory state={state} sceneId={scene.id} />
 
       {state.snapError && <p className="text-xs text-red-300">{state.snapError}</p>}
-      {error && <p className="text-xs text-red-300">{error}</p>}
-      <button onClick={() => { void remove() }} disabled={busy || lastInChapter} title={lastInChapter ? t("remove_scene_last") : undefined}
-        className="text-xs text-zinc-600 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-zinc-600">{t("remove_scene")}</button>
+      {del.error && <p className="text-xs text-red-300" role="alert">{del.error}</p>}
+      {state.canWrite && chapter && <button onClick={() => { void remove() }} disabled={del.busy || del.sceneBlocked(chapter)}
+        title={del.sceneBlocked(chapter) ? t(`delete_last_${del.unit}`) : undefined}
+        className="text-xs text-zinc-600 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-zinc-600">{t(`delete_${del.unit}`)}</button>}
     </div>
   )
 }

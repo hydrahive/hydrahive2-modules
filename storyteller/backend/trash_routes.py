@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from . import trash, trash_books
+from . import trash, trash_books, trash_chapters
 from ._route_base import Auth, _call, _guard
 
 router = APIRouter()
 BK = "/projects/{project_id}/books/{book_id}/trash/scenes"
 PJ = "/projects/{project_id}/trash/books"
+CH = "/projects/{project_id}/books/{book_id}/trash/chapters"
 
 
 @router.get(BK)
@@ -33,3 +34,15 @@ def books(project_id: str, auth: Auth):
 def restore_book(project_id: str, entry_id: str, auth: Auth):
     _guard(auth, project_id)
     return _call(trash_books.restore_book, project_id, entry_id)
+
+
+@router.get(CH)
+def chapters(project_id: str, book_id: str, auth: Auth):
+    _guard(auth, project_id, "read")
+    return _call(trash_chapters.list_chapters, project_id, book_id)
+
+
+@router.post(CH + "/{entry_id}/restore")
+def restore_chapter(project_id: str, book_id: str, entry_id: str, auth: Auth):
+    _guard(auth, project_id)
+    return _call(trash_chapters.restore_chapter, project_id, book_id, entry_id)

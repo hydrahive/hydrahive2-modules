@@ -1,12 +1,13 @@
 // Linke Spalte: Gliederung (Teil → Kapitel → Szene) mit Ziehen, Alt+↑/↓, Umbenennen; darunter Steckbriefe.
 import { useRef, useState, type DragEvent } from "react"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, ChevronRight, FilePlus2, FolderPlus, Sparkles } from "lucide-react"
+import { ChevronDown, ChevronRight, FilePlus2, FolderPlus, Sparkles, Trash2 } from "lucide-react"
 import { storyApi, type Created } from "../api"
 import { defaultNames } from "../bookFactory"
 import { moveScene, nudgeScene, renameNode } from "../model"
 import { countByScene } from "../teamNotes"
 import type { BookState } from "../useBook"
+import { useDeleteNode } from "../useDeleteNode"
 import { EntityList } from "./EntityList"
 import { TrashScenes } from "./TrashScenes"
 
@@ -25,6 +26,8 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
   const noteCounts = state.notes ? countByScene(state.notes) : state.openNotesAtOpen
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const del = useDeleteNode(state)   // C1: Kapitel und Szenen löschen (→ Papierkorb)
+  const can = state.canWrite
   /** Szene/Kapitel legt der Server an (er vergibt IDs und Version); danach die neue Szene öffnen. */
   const create = async (make: () => Promise<Created>) => {
     setBusy(true)
@@ -83,10 +86,15 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
                     {closed[c.id] ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
                   <Title id={c.id} title={c.title} cls="flex-1 truncate font-semibold text-zinc-200" />
-                  <button disabled={busy} onClick={() => { void create(() => storyApi.addScene(state.projectId, book.id, c.id, names.scene(c.scenes.length + 1))) }}
-                    title={t("add_scene")} aria-label={t("add_scene")} className="text-zinc-600 opacity-0 hover:text-zinc-200 focus:opacity-100 group-hover:opacity-100">
+                  {can && <button disabled={busy} onClick={() => { void create(() => storyApi.addScene(state.projectId, book.id, c.id, names.scene(c.scenes.length + 1))) }}
+                    title={t(del.unit === "scene" ? "add_scene" : "add_section")} aria-label={t(del.unit === "scene" ? "add_scene" : "add_section")} className="text-zinc-600 opacity-0 hover:text-zinc-200 focus:opacity-100 group-hover:opacity-100">
                     <FilePlus2 className="h-3.5 w-3.5" />
-                  </button>
+                  </button>}
+                  {can && !del.chapterBlocked && <button disabled={del.busy} onClick={() => { void del.deleteChapter(c) }}
+                    title={t("delete_chapter")} aria-label={`${t("delete_chapter")}: ${c.title}`}
+                    className="st-delete-chapter text-zinc-600 opacity-0 hover:text-red-300 focus:opacity-100 group-hover:opacity-100">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>}
                 </div>
                 {!closed[c.id] && c.scenes.map((s) => (
                   <div key={s.id} draggable
@@ -95,7 +103,7 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
                       if (dragRef.current && dragRef.current !== s.id) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; setOver(`s:${s.id}`) }
                     }}
                     onDrop={(e) => { e.preventDefault(); e.stopPropagation(); dropOn(c.id, s.id) }}
-                    className={`ml-4 border-t-2 ${over === `s:${s.id}` ? "border-violet-400" : "border-transparent"}`}>
+                    className={`group/s relative ml-4 border-t-2 ${over === `s:${s.id}` ? "border-violet-400" : "border-transparent"}`}>
                     <button onClick={() => onOpenScene(s.id)} aria-current={s.id === sceneId}
                       onKeyDown={(e) => {
                         if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) { e.preventDefault(); change((b) => nudgeScene(b, s.id, e.key === "ArrowUp" ? -1 : 1)) }
@@ -116,18 +124,23 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
                           aria-label={t(`origin_${s.origin}`)}><title>{t(`origin_${s.origin}`)}</title></Sparkles>
                       )}
                     </button>
+                    {can && !del.sceneBlocked(c) && <button disabled={del.busy} onClick={() => { void del.deleteScene(s, c) }}
+                      title={t(`delete_${del.unit}`)} aria-label={`${t(`delete_${del.unit}`)}: ${s.title}`}
+                      className="st-delete-scene absolute right-1 top-1 rounded bg-zinc-900 p-0.5 text-zinc-600 opacity-0 hover:text-red-300 focus:opacity-100 group-hover/s:opacity-100">
+                      <Trash2 className="h-3 w-3" />
+                    </button>}
                   </div>
                 ))}
               </div>
             ))}
-            <button disabled={busy} onClick={() => { void create(() => storyApi.addChapter(state.projectId, book.id, p.id, names.chapter(chapterCount + 1), names.scene(1))) }}
+            {can && <button disabled={busy} onClick={() => { void create(() => storyApi.addChapter(state.projectId, book.id, p.id, names.chapter(chapterCount + 1), names.scene(1))) }}
               className="ml-1 mt-1 flex items-center gap-1.5 rounded px-1 py-1 text-xs text-zinc-500 hover:bg-white/5 hover:text-zinc-200">
               <FolderPlus className="h-3.5 w-3.5" />{t("add_chapter")}
-            </button>
+            </button>}
           </div>
         ))}
-        {error && <p className="px-1 pt-1 text-xs text-red-300">{error}</p>}
-        <p className="px-1 pt-1 text-[11px] text-zinc-600">{t("drag_hint")} F2 · Alt+↑/↓</p>
+        {(error || del.error) && <p className="px-1 pt-1 text-xs text-red-300" role="alert">{error || del.error}</p>}
+        <p className="px-1 pt-1 text-[11px] text-zinc-600">{t(del.unit === "scene" ? "drag_hint" : "drag_hint_section")} F2 · Alt+↑/↓</p>
       </div>
       <EntityList book={book} activeId={entityId} onOpen={onOpenEntity} change={change} proposals={state.entityProposals} />
       <TrashScenes state={state} onOpenScene={onOpenScene} />

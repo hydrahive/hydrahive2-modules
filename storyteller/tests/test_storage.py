@@ -110,11 +110,13 @@ def test_add_scene_and_remove_scene():
     assert not (storage.book_dir(PROJECT_ID, b["id"]) / "scenes" / f"{s['id']}.md").exists()
 
 
-def test_last_scene_of_chapter_cannot_be_removed():
+def test_last_scene_of_the_book_cannot_be_removed():
+    """C1: die letzte Szene eines Kapitels nimmt das Kapitel mit – nur die letzte des Buchs bleibt."""
     b = _new()
     sid = storage.get_structure(PROJECT_ID, b["id"])["parts"][0]["chapters"][0]["scenes"][0]
-    with pytest.raises(StoryError):
+    with pytest.raises(StoryError) as e:
         storage.remove_scene(PROJECT_ID, b["id"], sid)
+    assert e.value.code == "last_chapter"
 
 
 def test_delete_moves_book_to_trash():
