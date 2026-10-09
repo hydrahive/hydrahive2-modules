@@ -89,11 +89,22 @@ def drop_project(project_id: str) -> None:
     project_config.delete(project_id)
 
 
+def check_model(model: str) -> None:
+    """Vorab wie der Kern beim Anlegen der Agenten prüfen: ist das Modell nicht (mehr) in der Live-Liste, gäbe es sonst
+    mitten im Anlegen einen AgentValidationError (HTTP 500). Leere Liste = Erst-Setup → durchwinken wie der Kern."""
+    from hydrahive.agents._validation import AgentValidationError, validate_model
+    try:
+        validate_model(model)
+    except AgentValidationError:
+        raise StoryError("model_unavailable", 400, {"model": model}) from None
+
+
 def create_book_project(username: str, fields: dict[str, Any], *, model: str = "") -> dict[str, Any]:
     _precheck(fields)
     use_model = (model or "").strip() or default_model()
     if not use_model:
         raise StoryError("no_model", 409)
+    check_model(use_model)
     title = str(fields["title"]).strip()
     team = new_team_project(username, title, use_model)
     pid = team["project_id"]

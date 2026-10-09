@@ -199,3 +199,19 @@ def test_drop_project_removes_helpers_even_on_core_without_527(monkeypatch):
     setup.drop_project(team["project_id"])
     assert pc.get(team["project_id"]) is None
     assert all(ac.get(h) is None for h in helpers)
+
+
+def test_book_with_unavailable_model_is_refused_before_anything_happens(moved, monkeypatch):
+    """10.10.: Modell des Buchs nicht mehr in der Live-Liste → vorher HTTP 500 mitten im Anlegen. Jetzt vorab
+    model_unavailable; kein neues Projekt, Buch bleibt."""
+    from hydrahive.agents import config as ac
+    from hydrahive.llm import registry
+    from hydrahive.projects import config as pc
+    bid, sid = _book()
+    monkeypatch.setattr(registry, "known_ids", lambda: {"claude-opus-5"})
+    before_p, before_a = {p["id"] for p in pc.list_all()}, {a["id"] for a in ac.list_all()}
+    with pytest.raises(StoryError) as e:
+        move.move_book("testuser", PROJECT_ID, bid)
+    assert e.value.code == "model_unavailable" and e.value.detail == {"model": "claude-sonnet-4-6"}
+    assert {p["id"] for p in pc.list_all()} == before_p and {a["id"] for a in ac.list_all()} == before_a
+    assert scenes.get_scene(PROJECT_ID, bid, sid)["text"].startswith("Gregor ")

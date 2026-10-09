@@ -113,3 +113,18 @@ def _inventory(root):
     data = root / "data"
     return tuple(sorted(str(p.relative_to(data)) for sub in ("projects", "agents", "workspaces/projects")
                         for p in (data / sub).glob("*") if (data / sub).is_dir()))
+
+
+def test_unknown_model_gives_readable_error_and_creates_nothing(monkeypatch, setup_test_env):
+    """10.10.: Modell nicht in der Live-Liste → bisher HTTP 500 (AgentValidationError). Jetzt: model_unavailable, nichts
+    angelegt – die Oberfläche kann es verständlich anzeigen."""
+    from hydrahive.llm import registry
+
+    from backend._files import StoryError
+    monkeypatch.setattr(registry, "known_ids", lambda: {"claude-sonnet-4-6"})
+    before = _inventory(setup_test_env)
+    with pytest.raises(StoryError) as exc:
+        setup.create_book_project("testuser", FIELDS, model="gibt-es-nicht-1")
+    assert exc.value.code == "model_unavailable" and exc.value.status == 400
+    assert exc.value.detail == {"model": "gibt-es-nicht-1"}
+    assert _inventory(setup_test_env) == before
