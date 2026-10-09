@@ -18,6 +18,7 @@ from ._ghost_settings import ghost_of
 from ._names import KIND_LABEL, LANGUAGE_LABEL
 from ._think import ThinkFilter
 from ._memory import PREV_END, MemoryIndex
+from ._texts import Texts, texts
 from .ai import clean_proposal
 
 MAX_SECTIONS = 4
@@ -35,6 +36,7 @@ class Material:
     mode: str           # "fill" = leere Szene, "proposal" = Szene hat schon Text
     system: str
     prompt: str
+    task: Texts | None = None   # Texte des Buchs (Sprache/Buchart) für die Aufgaben je Abschnitt
 
 
 def choose_model(book: dict, requested: str | None) -> str | None:
@@ -62,9 +64,10 @@ def build_material(project_id: str, book_id: str, scene_id: str, memory_chars: i
     """``interview`` (G3, interview_ai.InterviewMaterial): Antworten des Autors + Stilprobe als Grundlage; dann
     darf die Zusammenfassung fehlen, und es gilt die Regel „nichts erfinden“.
     ``index`` (A4): für viele Szenen hintereinander einmal laden (Schätzung, Lauf) – sonst wird er hier gebaut."""
-    from .interview_ai import RULE, material_parts
+    from .interview_ai import material_parts
     idx = index or MemoryIndex.load(project_id, book_id)
     book, st = idx.book, idx.structure
+    t = texts(book)
     scene = storage.get_scene(project_id, book_id, scene_id)
     use_iv = interview is not None and not interview.empty
     if not scene["summary"].strip() and not use_iv:
@@ -74,26 +77,22 @@ def build_material(project_id: str, book_id: str, scene_id: str, memory_chars: i
     lang = LANGUAGE_LABEL.get(book["language"], book["language"])
     style = ghost_of(book)["style"]
     relevant = _names_in(" ".join([memory, scene["summary"], scene["pov"], scene["title"], prev_end]), st.get("entities", []))
-    system = (
-        f"Du bist Ghostwriter für ein Buch ({KIND_LABEL.get(book['kind'], book['kind'])}). Du schreibst Romantext "
-        f"auf {lang} für genau EINE Szene. Keine Überschrift, kein Vorspann, keine Erklärung, keine Zusammenfassung "
-        "am Ende – nur der Szenentext. Halte dich an Steckbriefe und bisherige Handlung und erfinde nichts, was "
-        "ihnen widerspricht. Formuliere eigenständig; bekannte Texte anderer Autoren nicht zitieren oder nachschreiben."
-        + (" " + RULE if use_iv else "")
-    )
+    system = (t("ghost_system", kind=KIND_LABEL.get(book["kind"], book["kind"]), lang=lang)
+              + (" " + t("interview_rule") if use_iv else ""))
     parts = [
-        f"BUCH: {book['title']}. Zielgruppe: {book.get('audience') or 'nicht angegeben'}. Idee: {book.get('idea') or '–'}",
-        f"STIL: {style}" if style.strip() else "",
-        "STECKBRIEFE:\n" + "\n".join(
+        t("book", title=book["title"], audience=book.get("audience") or t("audience_none"), idea=book.get("idea") or "–"),
+        t("style", style=style) if style.strip() else "",
+        t("profiles") + "\n" + "\n".join(
             f"- {e['name']}: {e.get('description', '')} " + "; ".join(f"{f['key']}: {f['value']}" for f in e.get("fields", []))
             for e in relevant) if relevant else "",
-        f"BISHER GESCHAH:\n{memory}" if memory else "Dies ist die erste Szene des Buchs.",
-        f"ENDE DER VORIGEN SZENE (wörtlich, schließe nahtlos an):\n…{prev_end}" if prev_end.strip() else "",
-        *(material_parts(interview) if use_iv else []),
-        f"DIESE SZENE: „{scene['title']}“. Inhalt: {scene['summary'] or 'aus dem Interview (passender Teil)'}"
-        + (f" Perspektive: {scene['pov']}." if scene["pov"].strip() else ""),
+        t("memory", memory=memory) if memory else t("first"),
+        t("prev_end", text=prev_end) if prev_end.strip() else "",
+        *(material_parts(interview, t) if use_iv else []),
+        t("this", title=scene["title"], summary=scene["summary"] or t("from_interview"))
+        + (t("pov", pov=scene["pov"]) if scene["pov"].strip() else ""),
     ]
-    return Material(scene_id, "proposal" if scene["text"].strip() else "fill", system, "\n\n".join(p for p in parts if p))
+    return Material(scene_id, "proposal" if scene["text"].strip() else "fill", system, "\n\n".join(p for p in parts if p),
+                    task=t)
 
 
 def _trailing_ws(text: str) -> str:
@@ -104,6 +103,7 @@ def _trailing_ws(text: str) -> str:
 async def write_scene(material: Material, *, model: str | None, length_words: int, chunk_words: int) -> AsyncIterator[str]:
     """Schreibt Abschnitt für Abschnitt, bis die Länge ungefähr erreicht ist (max. MAX_SECTIONS).
     Liefert Textstücke; Überschrift/Vorspann je Abschnitt entfernt. Schließen des Generators bricht ab."""
+    t = material.task or Texts("de", "novel")
     written = ""
     starts: list[str] = []   # Anfang jedes geschriebenen Abschnitts – Übersicht für spätere Abschnitte
     for section in range(MAX_SECTIONS):
@@ -111,14 +111,13 @@ async def write_scene(material: Material, *, model: str | None, length_words: in
         if left <= length_words * (1 - REACHED):
             return
         target = min(chunk_words, max(left, 150))
-        task = (f"Schreibe den {'Anfang' if section == 0 else 'nächsten Abschnitt'} dieser Szene, etwa {target} Wörter."
-                + (" Setze genau dort fort, wo der Text aufhört. Nichts wiederholen: keine Gespräche, Fragen oder "
-                   "Ereignisse, die oben schon vorkommen – die Handlung geht weiter." if written else ""))
-        overview = ("\n\nBISHERIGE ABSCHNITTE DIESER SZENE (jeweils der Anfang):\n"
+        task = (t("task_first" if section == 0 else "task_next", words=target)
+                + (t("task_continue") if written else ""))
+        overview = (f"\n\n{t('pieces')}\n"
                     + "\n".join(f"{i + 1}. {h}…" for i, h in enumerate(starts))) if len(starts) > 1 else ""
-        so_far = f"{overview}\n\nSO WEIT GESCHRIEBEN (Ende):\n…{written[-_SO_FAR:]}" if written else ""
+        so_far = f"{overview}\n\n{t('so_far')}\n…{written[-_SO_FAR:]}" if written else ""
         messages = [{"role": "system", "content": material.system},
-                    {"role": "user", "content": f"{material.prompt}{so_far}\n\nAUFGABE: {task}"}]
+                    {"role": "user", "content": f"{material.prompt}{so_far}\n\n{t('task', task=task)}"}]
         head, sent = "", False   # Anfang puffern, bis Überschrift/Vorspann sicher erkannt ist
         think = ThinkFilter()    # Denktext (<think>…) nie durchreichen, auch wenn er länger als der Puffer ist
         llm = stream(messages, model=model, temperature=0.8, max_tokens=max(1024, target * 3))
@@ -164,8 +163,7 @@ async def summarize_scene(project_id: str, book_id: str, scene_id: str) -> dict:
         return {"kept": True, "scene": scene}
     lang = LANGUAGE_LABEL.get(book["language"], book["language"])
     raw = await complete([
-        {"role": "system", "content": f"Fasse die Szene in 2–3 Sätzen auf {lang} zusammen: was passiert und welche "
-                                      "Fakten über Figuren neu sind. Nur die Zusammenfassung, keine Überschrift."},
+        {"role": "system", "content": texts(book)("summarize", lang=lang)},
         {"role": "user", "content": scene["text"][-12000:]},
     ], model=choose_model(book, None), temperature=0.2, max_tokens=400)
     summary = clean_proposal(raw or "")[:2000]

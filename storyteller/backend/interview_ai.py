@@ -17,16 +17,12 @@ from . import interviews, storage
 from ._files import StoryError
 from ._ghost_settings import ghost_of
 from ._names import KIND_LABEL, LANGUAGE_LABEL
+from ._texts import Texts
 from ._think import strip_think
 
 STYLE_SAMPLE = 1500     # Zeichen Originalwortlaut als Stilprobe
 MAX_ANSWERS = 12000     # Zeichen aller Antworten im Material (die neuesten zuerst gekürzt)
 _JSON = re.compile(r"(\{.*\}|\[.*\])", re.DOTALL)
-
-RULE = ("Schreibe ausschließlich aus dem, was der Autor im Interview erzählt hat, und aus den Zusammenfassungen. "
-        "Erfinde nichts dazu: keine Namen, Orte, Jahreszahlen oder Ereignisse, die dort nicht stehen – eine Lücke "
-        "bleibt eine Lücke. Schreibe in der Stimme des Autors (Wortwahl, Satzlänge, Ich-Form, wenn er so erzählt).")
-
 
 @dataclass(frozen=True)
 class InterviewMaterial:
@@ -49,10 +45,9 @@ def interview_material(project_id: str, book_id: str, chapter_id: str) -> Interv
     return InterviewMaterial(answers, sample[:STYLE_SAMPLE])
 
 
-def material_parts(iv: InterviewMaterial) -> list[str]:
-    """Zusätzliche Abschnitte für den Prompt des Szenen-Schreibers."""
-    return [f"INTERVIEW MIT DEM AUTOR (Grundlage des Textes):\n{iv.answers}",
-            f"STIMME DES AUTORS (Originalwortlaut, so klingt er):\n{iv.style_sample}"]
+def material_parts(iv: InterviewMaterial, t: Texts) -> list[str]:
+    """Zusätzliche Abschnitte für den Prompt des Szenen-Schreibers (Texte: _texts.py)."""
+    return [t("interview_answers", answers=iv.answers), t("interview_voice", sample=iv.style_sample)]
 
 
 def _parse(raw: str) -> list[str]:
