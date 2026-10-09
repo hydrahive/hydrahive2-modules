@@ -17,6 +17,7 @@ from . import (
 )
 from ._files import project_access
 from ._route_base import Auth, _call, _guard, _set
+from .chapter_summary_routes import router as chapter_summary_router
 from .chat_routes import router as chat_router
 from .ghost_routes import router as ghost_router
 from .interview_routes import router as interview_router
@@ -136,3 +137,4 @@ router.include_router(note_router)
 router.include_router(proposal_history_router)
 router.include_router(team_job_router)
 router.include_router(trash_router)
+router.include_router(chapter_summary_router)
