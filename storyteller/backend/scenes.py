@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ._files import StoryError, new_id, read_json, scene_paths, text_sha, write_json, write_scene
+from ._files import StoryError, count_words, new_id, read_json, scene_paths, text_sha, write_json, write_scene
 from ._ghost_settings import next_origin
 from ._locks import locked
 from ._trash import place_of, trash_scene
@@ -29,6 +29,17 @@ def get_scene(project_id: str, book_id: str, scene_id: str) -> dict:
     return {"origin": "human", **meta, "text": text}
 
 
+def scene_info(project_id: str, book_id: str, scene_id: str) -> dict:
+    """Infos einer Szene ohne Text (Titel, Zusammenfassung, Perspektive, Stand, Version, Wörter) – für das Gedächtnis
+    und Listen, die keinen Volltext brauchen (A4)."""
+    meta_path, text_path = scene_paths(_existing(project_id, book_id), scene_id)
+    meta = read_json(meta_path)
+    meta.pop("text_sha", None)
+    if "words" not in meta:   # Szene vor 0.17.0: einmal aus dem Text zählen
+        meta["words"] = count_words(text_path.read_text(encoding="utf-8")) if text_path.exists() else 0
+    return {"origin": "human", **meta}
+
+
 @locked
 def save_scene(project_id: str, book_id: str, scene_id: str, data: dict[str, Any], base_version: int) -> dict:
     current = get_scene(project_id, book_id, scene_id)
@@ -44,7 +55,7 @@ def save_scene(project_id: str, book_id: str, scene_id: str, data: dict[str, Any
         raise StoryError("text_too_long")
     meta = {k: v for k, v in current.items() if k != "text"}
     meta.update(patch, origin=next_origin(current["origin"], data, text != current["text"]),
-                version=current["version"] + 1, updated_at=_now())
+                version=current["version"] + 1, updated_at=_now(), words=count_words(text))
     write_scene(_existing(project_id, book_id), scene_id, meta, text)
     _touch(project_id, book_id)
     return {**meta, "text": text}

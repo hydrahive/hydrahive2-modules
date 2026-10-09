@@ -17,11 +17,12 @@ from ._files import StoryError
 from ._ghost_settings import ghost_of
 from ._names import KIND_LABEL, LANGUAGE_LABEL
 from ._think import ThinkFilter
+from ._memory import PREV_END, MemoryIndex
 from .ai import clean_proposal
 
 MAX_SECTIONS = 4
 REACHED = 0.85          # Länge gilt als erreicht ab 85 % des Ziels
-_PREV_END = 1500        # so viel vom Ende der vorigen Szene, für den nahtlosen Anschluss
+_PREV_END = PREV_END     # so viel vom Ende der vorigen Szene (eine Stelle: _memory.PREV_END)
 _SO_FAR = 3000          # so viel vom bereits Geschriebenen bei Folgeabschnitten
 _MEMORY = 4000          # Gedächtnis: höchstens so viele Zeichen Zusammenfassungen (die jüngsten)
 _HEAD_BUFFER = 400      # Anfang eines Abschnitts so lange zurückhalten (Überschrift/Vorspann erkennen)
@@ -57,22 +58,19 @@ def _names_in(text: str, entities: list[dict]) -> list[dict]:
 
 
 def build_material(project_id: str, book_id: str, scene_id: str, memory_chars: int = _MEMORY,
-                   interview=None) -> Material:
+                   interview=None, index: MemoryIndex | None = None) -> Material:
     """``interview`` (G3, interview_ai.InterviewMaterial): Antworten des Autors + Stilprobe als Grundlage; dann
-    darf die Zusammenfassung fehlen, und es gilt die Regel „nichts erfinden“."""
+    darf die Zusammenfassung fehlen, und es gilt die Regel „nichts erfinden“.
+    ``index`` (A4): für viele Szenen hintereinander einmal laden (Schätzung, Lauf) – sonst wird er hier gebaut."""
     from .interview_ai import RULE, material_parts
-    book = storage.get_book(project_id, book_id)
-    st = storage.get_structure(project_id, book_id)
+    idx = index or MemoryIndex.load(project_id, book_id)
+    book, st = idx.book, idx.structure
     scene = storage.get_scene(project_id, book_id, scene_id)
     use_iv = interview is not None and not interview.empty
     if not scene["summary"].strip() and not use_iv:
         raise StoryError("summary_required")
-    order = [s for p in st["parts"] for c in p["chapters"] for s in c["scenes"]]
-    i = order.index(scene_id)
-    earlier = [storage.get_scene(project_id, book_id, s) for s in order[:i]]
-    memory = "\n".join(f"- {s['title']}: {s['summary']}" for s in earlier if s["summary"].strip())
-    memory = memory[-memory_chars:] if len(memory) > memory_chars else memory
-    prev_end = earlier[-1]["text"][-_PREV_END:] if earlier else ""
+    memory = idx.memory(scene_id, memory_chars)
+    prev_end = idx.prev_end(scene_id)
     lang = LANGUAGE_LABEL.get(book["language"], book["language"])
     style = ghost_of(book)["style"]
     relevant = _names_in(" ".join([memory, scene["summary"], scene["pov"], scene["title"], prev_end]), st.get("entities", []))
