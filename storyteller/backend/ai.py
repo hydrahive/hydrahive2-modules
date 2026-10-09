@@ -10,6 +10,7 @@ from hydrahive.llm.client import complete
 
 from . import storage
 from ._names import KIND_LABEL, LANGUAGE_LABEL
+from ._texts import texts
 from ._think import strip_think
 
 ACTIONS = ("rewrite", "expand", "shorten", "continue")
@@ -17,13 +18,6 @@ MAX_SELECTION = 8000
 MAX_TOKENS = 2000
 RATE_PER_MINUTE = 20
 _BEFORE, _AFTER = 2000, 500
-
-_INSTRUCTION = {
-    "rewrite": "Formuliere den markierten Text neu: gleicher Inhalt, besserer Fluss, gleiche Länge.",
-    "expand": "Baue den markierten Text aus: mehr Details, Sinneseindrücke, etwa doppelt so lang. Nichts Neues erfinden, was der Geschichte widerspricht.",
-    "shorten": "Kürze den markierten Text auf etwa die Hälfte. Inhalt und Ton bleiben.",
-    "continue": "Schreibe ab der markierten Stelle 1–3 Absätze weiter, passend zu Handlung, Figuren und Ton.",
-}
 
 _rate: dict[str, deque] = defaultdict(deque)
 _busy: set[tuple[str, str]] = set()  # (Nutzer, Buch) mit laufender Anfrage
@@ -60,7 +54,24 @@ def _check_rate(user: str) -> None:
     q.append(now)
 
 
-def _context(project_id: str, book_id: str, scene_id: str, selection: str, action: str = "rewrite") -> tuple[str, str]:
+def find_selection(text: str, selection: str, occurrence: int | None) -> int:
+    """Stelle der Markierung (A5a3): das ``occurrence``-te Vorkommen (0 = erstes), das die Oberfläche mitschickt.
+    Ohne Angabe oder wenn es das Vorkommen nicht gibt (z. B. andere Formatierung im Markdown): das letzte wie bisher."""
+    if not selection:
+        return -1
+    if occurrence is not None and occurrence >= 0:
+        at = -1
+        for _ in range(occurrence + 1):
+            at = text.find(selection, at + 1)
+            if at < 0:
+                break
+        if at >= 0:
+            return at
+    return text.rfind(selection)
+
+
+def _context(project_id: str, book_id: str, scene_id: str, selection: str, action: str = "rewrite",
+             occurrence: int | None = None) -> tuple[str, str]:
     """Bei „continue“ ist ``selection`` der Text direkt vor dem Cursor (Anker): weitergeschrieben
     wird hinter ihm; ohne Anker oder wenn er nicht (mehr) vorkommt, am Ende der Szene."""
     book = storage.get_book(project_id, book_id)
@@ -70,7 +81,7 @@ def _context(project_id: str, book_id: str, scene_id: str, selection: str, actio
     i = order.index(scene_id) if scene_id in order else 0
     prev = [storage.get_scene(project_id, book_id, s) for s in order[max(0, i - 2):i]]
     text = scene["text"]
-    found = text.rfind(selection) if selection else -1
+    found = find_selection(text, selection, occurrence)
     if action == "continue":
         cut = found + len(selection) if found >= 0 else len(text)
         before, after, selection = text[max(0, cut - _BEFORE):cut], text[cut:cut + _AFTER], ""
@@ -81,25 +92,24 @@ def _context(project_id: str, book_id: str, scene_id: str, selection: str, actio
     people = [e for e in st.get("entities", []) if any(
         n and re.search(rf"(?<!\w){re.escape(n.lower())}(?!\w)", lower) for n in [e["name"], *e.get("aliases", [])])]
     lang = LANGUAGE_LABEL.get(book["language"], book["language"])
-    system = (f"Du bist Lektor und Co-Autor für ein Buch. Art: {KIND_LABEL.get(book['kind'], book['kind'])}. "
-              f"Sprache: {lang}. Zielgruppe: {book.get('audience') or 'nicht angegeben'}. "
-              f"Antworte ausschließlich mit dem neuen Text auf {lang}: keine Überschrift, kein Vorspann wie "
-              f"„Hier ist …“, keine Erklärung, keine Anführungszeichen drumherum. Dein Text wird unverändert eingesetzt.")
+    t = texts(book)
+    system = t("editor_system", kind=KIND_LABEL.get(book["kind"], book["kind"]), lang=lang,
+               audience=book.get("audience") or t("audience_none"))
     parts = []
     if book.get("idea"):
-        parts.append(f"Worum es im Buch geht: {book['idea']}")
+        parts.append(t("about", idea=book["idea"]))
     earlier = [f"- {p['title']}: {p['summary']}" for p in prev if p.get("summary")]
     if earlier:  # ohne Zusammenfassungen keine leere Überschrift
-        parts.append("Was vorher geschah:\n" + "\n".join(earlier))
+        parts.append(t("before_scenes") + "\n" + "\n".join(earlier))
     if people:
-        parts.append("Steckbriefe:\n" + "\n".join(
+        parts.append(t("profiles_lower") + "\n" + "\n".join(
             f"- {e['name']}: {e.get('description', '')} " + "; ".join(f"{f['key']}: {f['value']}" for f in e.get("fields", []))
             for e in people))
-    parts.append(f"Text davor:\n{before}" if before else "Die Szene beginnt hier.")
-    parts.append(f"MARKIERTER TEXT:\n{selection}" if selection else "Weiterschreiben ab hier.")
+    parts.append(t("text_before", text=before) if before else t.unit["begins"])
+    parts.append(t("selected", text=selection) if selection else t("continue_here"))
     if after:
-        parts.append(f"Text danach:\n{after}")
-    return system, "\n\n".join(parts)
+        parts.append(t("text_after", text=after))
+    return system, "\n\n".join(parts) + "\n\n" + t("task", task=t(action))
 
 
 _LEAD_HEADING = re.compile(r"^\s*#{1,6}[^\n]*\n+")
@@ -119,15 +129,15 @@ def clean_proposal(raw: str) -> str:
 
 
 async def suggest(user: str, project_id: str, book_id: str, scene_id: str, action: str,
-                  selection: str, model: str | None) -> dict:
+                  selection: str, model: str | None, occurrence: int | None = None) -> dict:
     key = acquire(user, book_id)   # Sperre zuerst – sonst käme eine zweite Anfrage während des Lesens durch
     try:
         # Dateien lesen im Hilfs-Thread (A4) – die Ereignisschleife bedient derweil andere Anfragen. Fehler beim
         # Lesen (Szene/Buch weg) gehen unverändert weiter (404 usw.), nur Modellfehler werden zu llm_failed.
-        system, prompt = await asyncio.to_thread(_context, project_id, book_id, scene_id, selection, action)
+        system, prompt = await asyncio.to_thread(_context, project_id, book_id, scene_id, selection, action, occurrence)
         use_model = model or (await asyncio.to_thread(storage.get_book, project_id, book_id)).get("model") or None
         messages = [{"role": "system", "content": system},
-                    {"role": "user", "content": f"{prompt}\n\nAUFGABE: {_INSTRUCTION[action]}"}]
+                    {"role": "user", "content": prompt}]
         try:
             out = await complete(messages, model=use_model, temperature=0.7, max_tokens=MAX_TOKENS)
         except Exception as exc:  # Modell-/Schlüssel-/Netzfehler lesbar an die Oberfläche geben

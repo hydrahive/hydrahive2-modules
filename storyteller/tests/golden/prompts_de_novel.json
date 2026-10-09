@@ -1,0 +1,142 @@
+{
+ "material_s2": {
+  "system": "Du bist Ghostwriter für ein Buch (Roman). Du schreibst Romantext auf Deutsch für genau EINE Szene. Keine Überschrift, kein Vorspann, keine Erklärung, keine Zusammenfassung am Ende – nur der Szenentext. Halte dich an Steckbriefe und bisherige Handlung und erfinde nichts, was ihnen widerspricht. Formuliere eigenständig; bekannte Texte anderer Autoren nicht zitieren oder nachschreiben.",
+  "prompt": "BUCH: Der Leuchtturm. Zielgruppe: Erwachsene. Idee: Mia, Lotsentochter auf Helgoland.\n\nSTIL: Präteritum, ruhig.\n\nSTECKBRIEFE:\n- Mia: Zwölf. Augen: blau\n\nBISHER GESCHAH:\n- Am Hafen: Mia sieht das Boot ablegen.\n\nENDE DER VORIGEN SZENE (wörtlich, schließe nahtlos an):\n…Mia stand am Hafen. Der Wind war kalt. Es regnete lange.\n\nDIESE SZENE: „Der Brief“. Inhalt: Mia findet einen Brief. Perspektive: Mia."
+ },
+ "material_s1": {
+  "system": "Du bist Ghostwriter für ein Buch (Roman). Du schreibst Romantext auf Deutsch für genau EINE Szene. Keine Überschrift, kein Vorspann, keine Erklärung, keine Zusammenfassung am Ende – nur der Szenentext. Halte dich an Steckbriefe und bisherige Handlung und erfinde nichts, was ihnen widerspricht. Formuliere eigenständig; bekannte Texte anderer Autoren nicht zitieren oder nachschreiben.",
+  "prompt": "BUCH: Der Leuchtturm. Zielgruppe: Erwachsene. Idee: Mia, Lotsentochter auf Helgoland.\n\nSTIL: Präteritum, ruhig.\n\nSTECKBRIEFE:\n- Mia: Zwölf. Augen: blau\n\nDies ist die erste Szene des Buchs.\n\nDIESE SZENE: „Am Hafen“. Inhalt: Mia sieht das Boot ablegen."
+ },
+ "ghost_sections": [
+  [
+   {
+    "role": "system",
+    "content": "Du bist Ghostwriter für ein Buch (Roman). Du schreibst Romantext auf Deutsch für genau EINE Szene. Keine Überschrift, kein Vorspann, keine Erklärung, keine Zusammenfassung am Ende – nur der Szenentext. Halte dich an Steckbriefe und bisherige Handlung und erfinde nichts, was ihnen widerspricht. Formuliere eigenständig; bekannte Texte anderer Autoren nicht zitieren oder nachschreiben."
+   },
+   {
+    "role": "user",
+    "content": "BUCH: Der Leuchtturm. Zielgruppe: Erwachsene. Idee: Mia, Lotsentochter auf Helgoland.\n\nSTIL: Präteritum, ruhig.\n\nSTECKBRIEFE:\n- Mia: Zwölf. Augen: blau\n\nBISHER GESCHAH:\n- Am Hafen: Mia sieht das Boot ablegen.\n\nENDE DER VORIGEN SZENE (wörtlich, schließe nahtlos an):\n…Mia stand am Hafen. Der Wind war kalt. Es regnete lange.\n\nDIESE SZENE: „Der Brief“. Inhalt: Mia findet einen Brief. Perspektive: Mia.\n\nAUFGABE: Schreibe den Anfang dieser Szene, etwa 300 Wörter."
+   }
+  ],
+  [
+   {
+    "role": "system",
+    "content": "Du bist Ghostwriter für ein Buch (Roman). Du schreibst Romantext auf Deutsch für genau EINE Szene. Keine Überschrift, kein Vorspann, keine Erklärung, keine Zusammenfassung am Ende – nur der Szenentext. Halte dich an Steckbriefe und bisherige Handlung und erfinde nichts, was ihnen widerspricht. Formuliere eigenständig; bekannte Texte anderer Autoren nicht zitieren oder nachschreiben."
+   },
+   {
+    "role": "user",
+    "content": "BUCH: Der Leuchtturm. Zielgruppe: Erwachsene. Idee: Mia, Lotsentochter auf Helgoland.\n\nSTIL: Präteritum, ruhig.\n\nSTECKBRIEFE:\n- Mia: Zwölf. Augen: blau\n\nBISHER GESCHAH:\n- Am Hafen: Mia sieht das Boot ablegen.\n\nENDE DER VORIGEN SZENE (wörtlich, schließe nahtlos an):\n…Mia stand am Hafen. Der Wind war kalt. Es regnete lange.\n\nDIESE SZENE: „Der Brief“. Inhalt: Mia findet einen Brief. Perspektive: Mia.\n\nSO WEIT GESCHRIEBEN (Ende):\n…Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text \n\nAUFGABE: Schreibe den nächsten Abschnitt dieser Szene, etwa 300 Wörter. Setze genau dort fort, wo der Text aufhört. Nichts wiederholen: keine Gespräche, Fragen oder Ereignisse, die oben schon vorkommen – die Handlung geht weiter."
+   }
+  ],
+  [
+   {
+    "role": "system",
+    "content": "Du bist Ghostwriter für ein Buch (Roman). Du schreibst Romantext auf Deutsch für genau EINE Szene. Keine Überschrift, kein Vorspann, keine Erklärung, keine Zusammenfassung am Ende – nur der Szenentext. Halte dich an Steckbriefe und bisherige Handlung und erfinde nichts, was ihnen widerspricht. Formuliere eigenständig; bekannte Texte anderer Autoren nicht zitieren oder nachschreiben."
+   },
+   {
+    "role": "user",
+    "content": "BUCH: Der Leuchtturm. Zielgruppe: Erwachsene. Idee: Mia, Lotsentochter auf Helgoland.\n\nSTIL: Präteritum, ruhig.\n\nSTECKBRIEFE:\n- Mia: Zwölf. Augen: blau\n\nBISHER GESCHAH:\n- Am Hafen: Mia sieht das Boot ablegen.\n\nENDE DER VORIGEN SZENE (wörtlich, schließe nahtlos an):\n…Mia stand am Hafen. Der Wind war kalt. Es regnete lange.\n\nDIESE SZENE: „Der Brief“. Inhalt: Mia findet einen Brief. Perspektive: Mia.\n\nBISHERIGE ABSCHNITTE DIESER SZENE (jeweils der Anfang):\n1. Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text…\n2. Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text…\n\nSO WEIT GESCHRIEBEN (Ende):\n…Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text \n\nText Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text \n\nAUFGABE: Schreibe den nächsten Abschnitt dieser Szene, etwa 300 Wörter. Setze genau dort fort, wo der Text aufhört. Nichts wiederholen: keine Gespräche, Fragen oder Ereignisse, die oben schon vorkommen – die Handlung geht weiter."
+   }
+  ],
+  [
+   {
+    "role": "system",
+    "content": "Du bist Ghostwriter für ein Buch (Roman). Du schreibst Romantext auf Deutsch für genau EINE Szene. Keine Überschrift, kein Vorspann, keine Erklärung, keine Zusammenfassung am Ende – nur der Szenentext. Halte dich an Steckbriefe und bisherige Handlung und erfinde nichts, was ihnen widerspricht. Formuliere eigenständig; bekannte Texte anderer Autoren nicht zitieren oder nachschreiben."
+   },
+   {
+    "role": "user",
+    "content": "BUCH: Der Leuchtturm. Zielgruppe: Erwachsene. Idee: Mia, Lotsentochter auf Helgoland.\n\nSTIL: Präteritum, ruhig.\n\nSTECKBRIEFE:\n- Mia: Zwölf. Augen: blau\n\nBISHER GESCHAH:\n- Am Hafen: Mia sieht das Boot ablegen.\n\nENDE DER VORIGEN SZENE (wörtlich, schließe nahtlos an):\n…Mia stand am Hafen. Der Wind war kalt. Es regnete lange.\n\nDIESE SZENE: „Der Brief“. Inhalt: Mia findet einen Brief. Perspektive: Mia.\n\nBISHERIGE ABSCHNITTE DIESER SZENE (jeweils der Anfang):\n1. Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text…\n2. Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text…\n3. Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text…\n\nSO WEIT GESCHRIEBEN (Ende):\n…Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text \n\nText Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text \n\nText Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text Text \n\nAUFGABE: Schreibe den nächsten Abschnitt dieser Szene, etwa 150 Wörter. Setze genau dort fort, wo der Text aufhört. Nichts wiederholen: keine Gespräche, Fragen oder Ereignisse, die oben schon vorkommen – die Handlung geht weiter."
+   }
+  ]
+ ],
+ "suggest": [
+  [
+   {
+    "role": "system",
+    "content": "Du bist Lektor und Co-Autor für ein Buch. Art: Roman. Sprache: Deutsch. Zielgruppe: Erwachsene. Antworte ausschließlich mit dem neuen Text auf Deutsch: keine Überschrift, kein Vorspann wie „Hier ist …“, keine Erklärung, keine Anführungszeichen drumherum. Dein Text wird unverändert eingesetzt."
+   },
+   {
+    "role": "user",
+    "content": "Worum es im Buch geht: Mia, Lotsentochter auf Helgoland.\n\nSteckbriefe:\n- Mia: Zwölf. Augen: blau\n\nText davor:\nMia stand am Hafen. \n\nMARKIERTER TEXT:\nDer Wind war kalt.\n\nText danach:\n Es regnete lange.\n\nAUFGABE: Formuliere den markierten Text neu: gleicher Inhalt, besserer Fluss, gleiche Länge."
+   }
+  ],
+  [
+   {
+    "role": "system",
+    "content": "Du bist Lektor und Co-Autor für ein Buch. Art: Roman. Sprache: Deutsch. Zielgruppe: Erwachsene. Antworte ausschließlich mit dem neuen Text auf Deutsch: keine Überschrift, kein Vorspann wie „Hier ist …“, keine Erklärung, keine Anführungszeichen drumherum. Dein Text wird unverändert eingesetzt."
+   },
+   {
+    "role": "user",
+    "content": "Worum es im Buch geht: Mia, Lotsentochter auf Helgoland.\n\nSteckbriefe:\n- Mia: Zwölf. Augen: blau\n\nText davor:\nMia stand am Hafen. \n\nMARKIERTER TEXT:\nDer Wind war kalt.\n\nText danach:\n Es regnete lange.\n\nAUFGABE: Baue den markierten Text aus: mehr Details, Sinneseindrücke, etwa doppelt so lang. Nichts Neues erfinden, was der Geschichte widerspricht."
+   }
+  ],
+  [
+   {
+    "role": "system",
+    "content": "Du bist Lektor und Co-Autor für ein Buch. Art: Roman. Sprache: Deutsch. Zielgruppe: Erwachsene. Antworte ausschließlich mit dem neuen Text auf Deutsch: keine Überschrift, kein Vorspann wie „Hier ist …“, keine Erklärung, keine Anführungszeichen drumherum. Dein Text wird unverändert eingesetzt."
+   },
+   {
+    "role": "user",
+    "content": "Worum es im Buch geht: Mia, Lotsentochter auf Helgoland.\n\nSteckbriefe:\n- Mia: Zwölf. Augen: blau\n\nText davor:\nMia stand am Hafen. \n\nMARKIERTER TEXT:\nDer Wind war kalt.\n\nText danach:\n Es regnete lange.\n\nAUFGABE: Kürze den markierten Text auf etwa die Hälfte. Inhalt und Ton bleiben."
+   }
+  ],
+  [
+   {
+    "role": "system",
+    "content": "Du bist Lektor und Co-Autor für ein Buch. Art: Roman. Sprache: Deutsch. Zielgruppe: Erwachsene. Antworte ausschließlich mit dem neuen Text auf Deutsch: keine Überschrift, kein Vorspann wie „Hier ist …“, keine Erklärung, keine Anführungszeichen drumherum. Dein Text wird unverändert eingesetzt."
+   },
+   {
+    "role": "user",
+    "content": "Worum es im Buch geht: Mia, Lotsentochter auf Helgoland.\n\nSteckbriefe:\n- Mia: Zwölf. Augen: blau\n\nText davor:\nMia stand am Hafen. Der Wind war kalt. Es regnete\n\nWeiterschreiben ab hier.\n\nText danach:\n lange.\n\nAUFGABE: Schreibe ab der markierten Stelle 1–3 Absätze weiter, passend zu Handlung, Figuren und Ton."
+   }
+  ]
+ ],
+ "summarize": [
+  [
+   {
+    "role": "system",
+    "content": "Fasse die Szene in 2–3 Sätzen auf Deutsch zusammen: was passiert und welche Fakten über Figuren neu sind. Nur die Zusammenfassung, keine Überschrift."
+   },
+   {
+    "role": "user",
+    "content": "Mia stand am Hafen. Der Wind war kalt. Es regnete lange."
+   }
+  ]
+ ],
+ "interview": [
+  [
+   {
+    "role": "system",
+    "content": "Du bist Ghostwriter und interviewst den Autor eines Buchs (Roman) auf Deutsch. Stelle offene, konkrete Fragen, die Erinnerungen, Erlebnisse, Fakten und Gefühle hervorlocken – je eine Sache pro Frage. Antworte NUR mit JSON: {\"questions\": [\"…\", \"…\"]}."
+   },
+   {
+    "role": "user",
+    "content": "BUCH: Der Leuchtturm. Idee: Mia, Lotsentochter auf Helgoland.. Zielgruppe: Erwachsene\nKAPITEL: Kapitel 1\nINHALT DES KAPITELS:\n- Am Hafen: Kurz.\n- Der Brief: Mia findet einen Brief.\nSCHON GESTELLT (nicht wiederholen):\n- Wie war der Hafen?\n\nAUFGABE: 2 neue Fragen zu diesem Kapitel."
+   }
+  ]
+ ],
+ "outline": [
+  [
+   {
+    "role": "system",
+    "content": "Du planst ein Buch (Roman) auf Deutsch. Antworte NUR mit JSON, ohne Erklärung: {\"chapters\": [{\"title\": \"...\", \"scenes\": [{\"title\": \"...\", \"summary\": \"2–4 Sätze, was passiert\", \"pov\": \"Perspektive oder leer\"}]}], \"entities\": [{\"name\": \"...\", \"kind\": \"character|place|item\", \"description\": \"1–2 Sätze\"}]}. Die Zusammenfassungen bauen aufeinander auf und erzählen die ganze Handlung."
+   },
+   {
+    "role": "user",
+    "content": "TITEL: Der Leuchtturm\nZIELGRUPPE: Erwachsene\nIDEE: Mia\nSTIL: Präteritum, ruhig.\n\nUMFANG: 1 Kapitel mit je 2 Szenen."
+   },
+   {
+    "role": "assistant",
+    "content": "Kurz."
+   },
+   {
+    "role": "user",
+    "content": "Das war kein gültiges JSON in der verlangten Form. Bitte nur das JSON."
+   }
+  ]
+ ],
+ "material_interview": {
+  "system": "Du bist Ghostwriter für ein Buch (Roman). Du schreibst Romantext auf Deutsch für genau EINE Szene. Keine Überschrift, kein Vorspann, keine Erklärung, keine Zusammenfassung am Ende – nur der Szenentext. Halte dich an Steckbriefe und bisherige Handlung und erfinde nichts, was ihnen widerspricht. Formuliere eigenständig; bekannte Texte anderer Autoren nicht zitieren oder nachschreiben. Schreibe ausschließlich aus dem, was der Autor im Interview erzählt hat, und aus den Zusammenfassungen. Erfinde nichts dazu: keine Namen, Orte, Jahreszahlen oder Ereignisse, die dort nicht stehen – eine Lücke bleibt eine Lücke. Schreibe in der Stimme des Autors (Wortwahl, Satzlänge, Ich-Form, wenn er so erzählt).",
+  "prompt": "BUCH: Der Leuchtturm. Zielgruppe: Erwachsene. Idee: Mia, Lotsentochter auf Helgoland.\n\nSTIL: Präteritum, ruhig.\n\nSTECKBRIEFE:\n- Mia: Zwölf. Augen: blau\n\nBISHER GESCHAH:\n- Am Hafen: Kurz.\n\nENDE DER VORIGEN SZENE (wörtlich, schließe nahtlos an):\n…Mia stand am Hafen. Der Wind war kalt. Es regnete lange.\n\nINTERVIEW MIT DEM AUTOR (Grundlage des Textes):\nF: Wie war der Hafen?\nA: Laut und nass.\n\nSTIMME DES AUTORS (Originalwortlaut, so klingt er):\nLaut und nass.\n\nDIESE SZENE: „Der Brief“. Inhalt: Mia findet einen Brief. Perspektive: Mia."
+ }
+}

@@ -7,7 +7,7 @@ import type { Editor } from "@tiptap/react"
 import { Loader2, Sparkles } from "lucide-react"
 import { storyApi, StoryApiError } from "../api"
 import { newId, type Scene } from "../model"
-import type { SuggestAction, Suggestion } from "../suggest"
+import { occurrenceBefore, type SuggestAction, type Suggestion } from "../suggest"
 import { isStale } from "../staleCheck"
 import type { BookState } from "../useBook"
 import { ModelChooser } from "./ModelChooser"
@@ -37,11 +37,13 @@ export function EditMode({ state, scene, editorRef }: Props) {
     if (action !== "continue" && !original.trim()) { setError(t("ai_err_selection_required")); return }
     // Weiterschreiben: Text vor dem Cursor mitschicken, damit der Server die Stelle findet.
     const anchor = action === "continue" ? ed.state.doc.textBetween($f.start(), to, "\n").slice(-CONTEXT_CHARS) : original
+    // A5: das wievielte Vorkommen – sonst bekäme das Modell bei doppeltem Text den Zusammenhang der letzten Stelle.
+    const occurrence = action === "continue" ? undefined : occurrenceBefore(ed.state.doc.textBetween(0, from, "\n"), anchor)
     setBusy(action)
     setError("")
     try {
       await state.flush()  // Server braucht den aktuellen Text als Zusammenhang
-      const r = await storyApi.suggest(state.projectId, book.id, { scene_id: scene.id, action, selection: anchor, ...(book.model ? { model: book.model } : {}) })
+      const r = await storyApi.suggest(state.projectId, book.id, { scene_id: scene.id, action, selection: anchor, occurrence, ...(book.model ? { model: book.model } : {}) })
       state.addSuggestion({
         id: newId(), sceneId: scene.id, action, original, from, to, model: r.model,
         proposal: r.proposal, createdAt: new Date().toISOString(), state: "open",

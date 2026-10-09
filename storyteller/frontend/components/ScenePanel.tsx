@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { storyApi } from "../api"
 import { entitiesInText, findScene, type Scene, type SceneStatus } from "../model"
 import type { BookState } from "../useBook"
+import { ChapterSummaryBox } from "./ChapterSummaryBox"
 import { InfoProposalBox } from "./InfoProposalBox"
 import { ProposalHistory } from "./ProposalHistory"
 
@@ -25,7 +26,8 @@ export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
   const chars = book.entities.filter((e) => e.kind === "character")
   const snaps = state.snapshots[scene.id] ?? []
   const fmt = (iso: string) => new Date(iso).toLocaleString(i18n.language, { dateStyle: "short", timeStyle: "medium" })
-  const lastInChapter = (findScene(book, scene.id)?.chapter.scenes.length ?? 0) <= 1
+  const chapter = findScene(book, scene.id)?.chapter
+  const lastInChapter = (chapter?.scenes.length ?? 0) <= 1
 
   const remove = async () => {
     if (!confirm(t("remove_scene_confirm", { title: scene.title }))) return
@@ -64,6 +66,8 @@ export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
           </select>
         </label>
       </div>
+
+      {chapter && <ChapterSummaryBox key={chapter.id} state={state} chapterId={chapter.id} chapterTitle={chapter.title} />}
 
       <section>
         <h3 className="mb-1 text-xs font-semibold text-zinc-400">{t("in_scene")}</h3>

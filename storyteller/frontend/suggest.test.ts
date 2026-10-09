@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { wordDiff } from "./suggest"
+import { occurrenceBefore, wordDiff } from "./suggest"
 
 const join = (parts: { kind: string; text: string }[], keep: string[]) =>
   parts.filter((p) => keep.includes(p.kind)).map((p) => p.text).join("")
@@ -23,5 +23,21 @@ describe("wordDiff", () => {
     const a = Array.from({ length: 600 }, (_, i) => `w${i}`).join(" ")
     const b = Array.from({ length: 600 }, (_, i) => `v${i}`).join(" ")
     expect(wordDiff(a, b)).toEqual([{ kind: "del", text: a }, { kind: "add", text: b }])
+  })
+})
+
+describe("occurrenceBefore (A5: richtige Stelle beim Umschreiben)", () => {
+  it("zählt, wie oft die Markierung VOR der markierten Stelle schon vorkommt", () => {
+    const text = "A. Es regnete. B. Es regnete. C."
+    expect(occurrenceBefore(text.slice(0, 3), "Es regnete.")).toBe(0)
+    expect(occurrenceBefore(text.slice(0, 18), "Es regnete.")).toBe(1)
+  })
+  it("überlappende Vorkommen zählen einzeln (gleich wie der Server mit find(at + 1))", () => {
+    expect(occurrenceBefore("XX", "X")).toBe(2)
+    expect(occurrenceBefore("XXX", "XX")).toBe(2)
+  })
+  it("leere Markierung oder nichts davor → 0", () => {
+    expect(occurrenceBefore("abc", "")).toBe(0)
+    expect(occurrenceBefore("", "x")).toBe(0)
   })
 })

@@ -4,6 +4,7 @@ from __future__ import annotations
 from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
 from .. import (
+    chapter_summaries,
     interviews,
     proposals,
     proposals_entities,
@@ -73,6 +74,7 @@ async def _outline(args: dict, ctx: ToolContext) -> ToolResult:
     ents = {e["id"]: e["name"] for e in st.get("entities", [])}
     open_notes = team_notes.list_notes(pid, book["id"])
     note_count = team_notes.open_counts(pid, book["id"])
+    chapter_sums = chapter_summaries.from_structure(pid, book["id"], st)
 
     def scene(sid: str) -> dict:
         s = storage.get_scene(pid, book["id"], sid)
@@ -84,7 +86,8 @@ async def _outline(args: dict, ctx: ToolContext) -> ToolResult:
         "book": {"id": book["id"], "title": book["title"], "kind": book["kind"], "language": book["language"],
                  "audience": book.get("audience", ""), "idea": book.get("idea", ""), "style": book["ghost"].get("style", "")},
         "parts": [{"id": p["id"], "title": p["title"], "chapters": [
-            {"id": c["id"], "title": c["title"], "scenes": [scene(s) for s in c["scenes"]]} for c in p["chapters"]]}
+            {"id": c["id"], "title": c["title"], "summary": chapter_sums.get(c["id"], ""),
+             "scenes": [scene(s) for s in c["scenes"]]} for c in p["chapters"]]}
             for p in st["parts"]],
         "entities": [{"id": e["id"], "kind": e["kind"], "name": e["name"], "aliases": e.get("aliases", []),
                       "description": e.get("description", ""), "fields": e.get("fields", [])} for e in st.get("entities", [])],
@@ -142,8 +145,8 @@ _BOOK = {"book_id": {"type": "string", "description": "ID des Buchs (aus storyte
 BOOKS = Tool(name="storyteller_books", description="Bücher im Storyteller dieses Projekts auflisten (ID, Titel, Art, Wörter).",
              schema={"type": "object", "properties": {}}, execute=_books, category="storyteller", prompt_hint=HINT)
 OUTLINE = Tool(name="storyteller_outline",
-               description="Gliederung eines Buchs: Teile, Kapitel, Szenen (Zusammenfassung, Perspektive, Wörter, Herkunft, "
-                           "offener Vorschlag) und Steckbriefe.",
+               description="Gliederung eines Buchs: Teile, Kapitel (mit Kapitel-Zusammenfassung), Szenen (Zusammenfassung, "
+                           "Perspektive, Wörter, Herkunft, offener Vorschlag) und Steckbriefe.",
                schema={"type": "object", "required": ["book_id"], "properties": _BOOK}, execute=_outline, category="storyteller")
 READ = Tool(name="storyteller_read",
             description=f"Text von 1–{MAX_SCENES} Szenen lesen (mit Version) und/oder das Interview eines Kapitels. "

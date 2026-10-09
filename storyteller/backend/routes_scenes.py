@@ -48,6 +48,7 @@ class SuggestIn(BaseModel):
     action: Literal["rewrite", "expand", "shorten", "continue"]
     selection: str = Field(default="", max_length=ai.MAX_SELECTION)
     model: str | None = Field(default=None, max_length=200)
+    occurrence: int | None = Field(default=None, ge=0, le=100_000)   # A5: das wievielte Vorkommen der Markierung
 
 
 @router.post("/projects/{project_id}/books/{book_id}/scenes")
@@ -105,7 +106,8 @@ async def ai_suggest(project_id: str, book_id: str, body: SuggestIn, auth: Auth)
     if body.action != "continue" and not body.selection.strip():
         raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "selection_required")
     try:
-        return await ai.suggest(auth[0], project_id, book_id, body.scene_id, body.action, body.selection, body.model)
+        return await ai.suggest(auth[0], project_id, book_id, body.scene_id, body.action, body.selection, body.model,
+                                body.occurrence)
     except ai.AiError as exc:
         return JSONResponse(status_code=exc.status, content={"detail": {"code": exc.code, "message": exc.message}})
     except StoryError as exc:
