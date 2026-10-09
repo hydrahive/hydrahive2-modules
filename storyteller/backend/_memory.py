@@ -8,7 +8,6 @@ from __future__ import annotations
 from . import storage
 
 PREV_END = 1500         # so viel vom Ende der vorigen Szene, für den nahtlosen Anschluss
-RECENT_CHAPTERS = 2     # A5c: so viele Kapitel vor dem aktuellen bleiben Szene für Szene (Spec ki-qualitaet-a5.md §2c)
 
 
 def fit_lines(lines: list[str], limit: int) -> str:
@@ -50,20 +49,30 @@ class MemoryIndex:
         self.infos[scene_id] = storage.scene_info(self.project_id, self.book_id, scene_id)
 
     def memory(self, scene_id: str, memory_chars: int) -> str:
-        """Was bisher geschah (A5c): ältere Kapitel mit Kapitel-Zusammenfassung als eine Zeile, die letzten
-        RECENT_CHAPTERS Kapitel und das aktuelle Szene für Szene; dann an Zeilengrenzen gekürzt."""
+        """Was bisher geschah (A5c, ohne feste Kapitelzahl – Till 10.10.): jedes frühere Kapitel Szene für Szene, solange
+        alles in ``memory_chars`` passt. Sonst werden die ältesten Kapitel mit Kapitel-Zusammenfassung nacheinander zu
+        einer Zeile, bis es passt – nur wenn das Platz spart. Das aktuelle Kapitel nie (seine Zusammenfassung kann
+        Späteres verraten). Was dann noch zu lang ist, kürzt fit_lines an Zeilengrenzen."""
         from ._texts import texts
         t = texts(self.book)
         here = next(n for n, c in enumerate(self.chapters) if scene_id in c["scenes"])
-        lines: list[str] = []
+        blocks: list[list[str]] = []           # je Kapitel bis zum aktuellen: seine Szenen-Zeilen
         for n, ch in enumerate(self.chapters[:here + 1]):
-            summary = self.chapter_summaries.get(ch["id"], "")
-            if n < here - RECENT_CHAPTERS and summary.strip():
-                lines.append(t("chapter_line", title=ch["title"], summary=" ".join(summary.split())))
-                continue
             scenes = ch["scenes"][:ch["scenes"].index(scene_id)] if n == here else ch["scenes"]
-            lines += [f"- {i['title']}: {i['summary']}" for i in (self.infos[s] for s in scenes) if i["summary"].strip()]
-        return fit_lines(lines, memory_chars)
+            blocks.append([f"- {i['title']}: {i['summary']}" for i in (self.infos[s] for s in scenes) if i["summary"].strip()])
+        for n, ch in enumerate(self.chapters[:here]):
+            summary = " ".join(self.chapter_summaries.get(ch["id"], "").split())
+            if summary and not blocks[n]:       # Kapitel ohne Szenen-Zusammenfassungen: die Kapitel-Zeile ist alles, was es gibt
+                blocks[n] = [t("chapter_line", title=ch["title"], summary=summary)]
+        size = lambda: len("\n".join(line for b in blocks for line in b))   # noqa: E731
+        for n, ch in enumerate(self.chapters[:here]):
+            if size() <= memory_chars:
+                break
+            summary = " ".join(self.chapter_summaries.get(ch["id"], "").split())
+            line = t("chapter_line", title=ch["title"], summary=summary) if summary else ""
+            if line and len(line) < len("\n".join(blocks[n])):
+                blocks[n] = [line]
+        return fit_lines([line for b in blocks for line in b], memory_chars)
 
     def prev_end(self, scene_id: str) -> str:
         i = self.order.index(scene_id)
