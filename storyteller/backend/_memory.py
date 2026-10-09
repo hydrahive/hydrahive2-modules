@@ -10,6 +10,20 @@ from . import storage
 PREV_END = 1500         # so viel vom Ende der vorigen Szene, für den nahtlosen Anschluss
 
 
+def fit_lines(lines: list[str], limit: int) -> str:
+    """Die jüngsten Zeilen, die zusammen in ``limit`` Zeichen passen – nie eine halbe Zeile (A5a2). Passt nicht einmal
+    die letzte, wird sie von vorn gekürzt und beginnt mit „…“ (sonst wäre das Gedächtnis leer)."""
+    kept, size = [], -1
+    for line in reversed(lines):
+        if size + 1 + len(line) > limit:
+            break
+        kept.append(line)
+        size += 1 + len(line)
+    if not kept and lines and limit > 1:
+        return "…" + lines[-1][-(limit - 1):]
+    return "\n".join(reversed(kept))
+
+
 class MemoryIndex:
     """Gedächtnis eines Buchs für viele Szenen (A4): Kopf, Gliederung und die Infos (Titel, Zusammenfassung) aller
     Szenen einmal lesen – ohne Szenentexte. ``refresh(scene_id)`` zieht eine geänderte Szene nach (im Lauf nach jeder
@@ -31,8 +45,8 @@ class MemoryIndex:
 
     def memory(self, scene_id: str, memory_chars: int) -> str:
         earlier = self.order[:self.order.index(scene_id)]
-        memory = "\n".join(f"- {i['title']}: {i['summary']}" for i in (self.infos[s] for s in earlier) if i["summary"].strip())
-        return memory[-memory_chars:] if len(memory) > memory_chars else memory
+        lines = [f"- {i['title']}: {i['summary']}" for i in (self.infos[s] for s in earlier) if i["summary"].strip()]
+        return fit_lines(lines, memory_chars)
 
     def prev_end(self, scene_id: str) -> str:
         i = self.order.index(scene_id)

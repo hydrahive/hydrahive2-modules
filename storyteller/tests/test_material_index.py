@@ -18,8 +18,11 @@ def _reference(project_id, book_id, scene_id, memory_chars=ghost._MEMORY, interv
     order = [s for p in st["parts"] for c in p["chapters"] for s in c["scenes"]]
     i = order.index(scene_id)
     earlier = [storage.get_scene(project_id, book_id, s) for s in order[:i]]
-    memory = "\n".join(f"- {s['title']}: {s['summary']}" for s in earlier if s["summary"].strip())
-    memory = memory[-memory_chars:] if len(memory) > memory_chars else memory
+    lines = [f"- {s['title']}: {s['summary']}" for s in earlier if s["summary"].strip()]
+    last = lines[-1] if lines else ""
+    while lines and len("\n".join(lines)) > memory_chars:   # A5: ganze Zeilen vorn weg, nie eine halbe
+        lines = lines[1:]
+    memory = "\n".join(lines) if lines or not last else "…" + last[len(last) - memory_chars + 1:]
     prev_end = earlier[-1]["text"][-ghost._PREV_END:] if earlier else ""
     return memory, prev_end, scene
 
