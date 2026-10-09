@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { ChevronDown, ChevronRight, RotateCcw, Trash2 } from "lucide-react"
 import { StoryApiError } from "../api"
-import { trashApi, whereBack, type TrashScene } from "../trashApi"
+import { trashApi, whereBack, type TrashChapter, type TrashScene } from "../trashApi"
 import type { BookState } from "../useBook"
+import { TrashChapters } from "./TrashChapters"
 
 interface Props { state: BookState; onOpenScene: (id: string) => void }
 
@@ -14,12 +15,14 @@ export function TrashScenes({ state, onOpenScene }: Props) {
   const { projectId, book, canWrite } = state
   const [open, setOpen] = useState(false)
   const [rows, setRows] = useState<TrashScene[] | null>(null)
+  const [chapters, setChapters] = useState<TrashChapter[]>([])   // C1: gelöschte Kapitel
   const [msg, setMsg] = useState("")
   const [error, setError] = useState("")
   const fmt = (iso: string) => new Date(iso).toLocaleString(i18n.language, { dateStyle: "short", timeStyle: "short" })
   const sceneCount = book.parts.reduce((n, p) => n + p.chapters.reduce((m, c) => m + c.scenes.length, 0), 0)
 
-  const load = useCallback(() => trashApi.scenes(projectId, book.id).then(setRows), [projectId, book.id])
+  const load = useCallback(() => Promise.all([trashApi.scenes(projectId, book.id), trashApi.chapters(projectId, book.id)])
+    .then(([s, c]) => { setRows(s); setChapters(c) }), [projectId, book.id])
   // Neu laden, wenn aufgeklappt und sich die Zahl der Szenen ändert (z. B. gerade eine gelöscht).
   useEffect(() => {
     if (!open) return
@@ -38,13 +41,27 @@ export function TrashScenes({ state, onOpenScene }: Props) {
     } catch (e) { setError(e instanceof StoryApiError ? t(`ai_err_${e.code}`, { defaultValue: e.message || e.code }) : String(e)) }
   }
 
+  const restoreChapter = async (c: TrashChapter) => {
+    setError(""); setMsg("")
+    try {
+      await state.flush()
+      const r = await trashApi.restoreChapter(projectId, book.id, c.id)
+      state.adoptStructure(r.structure, r.scenes)
+      setMsg(t(r.placed === "original" ? "trash_chapter_restored_original" : "trash_chapter_restored_end", { title: c.title }))
+      if (r.scenes[0]) onOpenScene(r.scenes[0].id)
+      await load()
+    } catch (e) { setError(e instanceof StoryApiError ? t(`ai_err_${e.code}`, { defaultValue: e.message || e.code }) : String(e)) }
+  }
+  const total = rows ? rows.length + chapters.length : null
+
   return (
     <section className="st-trash-scenes px-1">
       <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-300">
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-        <Trash2 className="h-3.5 w-3.5" />{t("trash_title")}{rows ? ` (${rows.length})` : ""}
+        <Trash2 className="h-3.5 w-3.5" />{t("trash_title")}{total !== null ? ` (${total})` : ""}
       </button>
-      {open && rows && rows.length === 0 && <p className="pl-5 text-xs text-zinc-600">{t("trash_scenes_none")}</p>}
+      {open && <TrashChapters rows={chapters} kind={book.kind} canWrite={canWrite} onRestore={(c) => { void restoreChapter(c) }} />}
+      {open && rows && rows.length === 0 && chapters.length === 0 && <p className="pl-5 text-xs text-zinc-600">{t("trash_scenes_none")}</p>}
       {open && rows && rows.length > 0 && (
         <ul className="mt-1 space-y-1">
           {rows.map((s) => (
