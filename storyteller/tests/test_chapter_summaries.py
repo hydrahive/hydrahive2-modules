@@ -134,22 +134,70 @@ def test_without_chapter_summaries_memory_stays_scene_by_scene():
     assert mem.split("\n") == [f"- S{c}{j}: K{c}S{j}." for c in range(5) for j in range(2)][:9]
 
 
-def test_older_chapters_appear_as_one_line_recent_ones_scene_by_scene():
+def _titles(bid):
+    return [ch["title"] for ch in storage.get_structure(PROJECT_ID, bid)["parts"][0]["chapters"]]
+
+
+def test_with_enough_room_everything_stays_scene_by_scene_even_with_chapter_summaries():
+    """Keine feste Kapitelzahl (Till 10.10.): Platz entscheidet. Passt alles, bleibt jede Szene drin."""
     bid, cids, sids = _book(chapters=5, per=2)
     for c in range(5):
         cs.save(PROJECT_ID, bid, cids[c], f"Kapitel {c} kurz.", base_version=0)
-    st = storage.get_structure(PROJECT_ID, bid)
-    titles = [ch["title"] for ch in st["parts"][0]["chapters"]]
-    mem = MemoryIndex.load(PROJECT_ID, bid).memory(sids[4][1], 10_000).split("\n")
-    assert mem == [f"- Kapitel „{titles[0]}“: Kapitel 0 kurz.", f"- Kapitel „{titles[1]}“: Kapitel 1 kurz.",
-                   "- S20: K2S0.", "- S21: K2S1.", "- S30: K3S0.", "- S31: K3S1.", "- S40: K4S0."]
+    mem = MemoryIndex.load(PROJECT_ID, bid).memory(sids[4][1], 10_000)
+    assert mem.split("\n") == [f"- S{c}{j}: K{c}S{j}." for c in range(5) for j in range(2)][:9]
+
+
+def test_when_tight_oldest_chapters_collapse_first_until_it_fits():
+    bid, cids, sids = _book(chapters=5, per=4)
+    for c in range(5):
+        cs.save(PROJECT_ID, bid, cids[c], f"K{c} kurz.", base_version=0)
+    t = _titles(bid)
+    idx = MemoryIndex.load(PROJECT_ID, bid)
+    full = idx.memory(sids[4][3], 10_000)
+    one = f"- Kapitel „{t[0]}“: K0 kurz."
+    first_collapsed = "\n".join([one] + full.split("\n")[4:])
+    assert idx.memory(sids[4][3], len(full)) == full                                 # passt genau: nichts zusammengefasst
+    assert idx.memory(sids[4][3], len(first_collapsed)) == first_collapsed          # genau Kapitel 1 zusammengefasst
+    assert idx.memory(sids[4][3], len(first_collapsed) - 1).split("\n")[:2] == [one, f"- Kapitel „{t[1]}“: K1 kurz."]
+
+
+def test_current_chapter_is_never_collapsed():
+    """Die Kapitel-Zusammenfassung des aktuellen Kapitels kann Späteres verraten – sie kommt nie ins Gedächtnis."""
+    bid, cids, sids = _book(chapters=2, per=6)
+    cs.save(PROJECT_ID, bid, cids[1], "Kapitän tot.", base_version=0)   # kurz: Zusammenfassen würde Platz sparen
+    idx = MemoryIndex.load(PROJECT_ID, bid)
+    for sid in (sids[1][0], sids[1][5]):                                 # erste Szene (noch nichts davor) und letzte
+        for limit in (10, 30, 60, 10_000):
+            assert "Kapitän" not in idx.memory(sid, limit), (sid, limit)
+
+
+def test_collapse_only_when_it_saves_room():
+    """Ist die Kapitel-Zeile länger als die Szenen, bleiben die Szenen (Zusammenfassen würde nur Platz kosten)."""
+    bid, cids, sids = _book(chapters=2, per=3)
+    cs.save(PROJECT_ID, bid, cids[0], "Sehr lang. " * 2, base_version=0)  # Kapitel-Zeile 45 Zeichen > 3 Szenen (38)
+    idx = MemoryIndex.load(PROJECT_ID, bid)
+    full = idx.memory(sids[1][2], 10_000)
+    assert idx.memory(sids[1][2], len(full) - 1) == full.split("\n", 1)[1]           # vorn eine Zeile weg, nicht länger
+
+
+def test_chapter_with_summary_but_without_scene_summaries_shows_its_summary():
+    bid, cids, sids = _book(chapters=3, per=2)
+    for sid in sids[0]:
+        s = storage.get_scene(PROJECT_ID, bid, sid)
+        storage.save_scene(PROJECT_ID, bid, sid, {"summary": ""}, base_version=s["version"])
+    cs.save(PROJECT_ID, bid, cids[0], "Nur hier steht es.", base_version=0)
+    mem = MemoryIndex.load(PROJECT_ID, bid).memory(sids[2][0], 10_000).split("\n")
+    assert mem[0] == f"- Kapitel „{_titles(bid)[0]}“: Nur hier steht es." and mem[1] == "- S10: K1S0."
 
 
 def test_chapter_without_summary_stays_scene_by_scene_even_when_old():
-    bid, cids, sids = _book(chapters=5, per=2)
+    """Kapitel 1 hat keine Kapitel-Zusammenfassung: es bleibt Szene für Szene, zusammengefasst wird Kapitel 2."""
+    bid, cids, sids = _book(chapters=5, per=4)
     cs.save(PROJECT_ID, bid, cids[1], "Eins.", base_version=0)
-    mem = MemoryIndex.load(PROJECT_ID, bid).memory(sids[4][0], 10_000).split("\n")
-    assert mem[:3] == ["- S00: K0S0.", "- S01: K0S1.", f"- Kapitel „{storage.get_structure(PROJECT_ID, bid)['parts'][0]['chapters'][1]['title']}“: Eins."]
+    idx = MemoryIndex.load(PROJECT_ID, bid)
+    full = idx.memory(sids[4][0], 10_000)
+    mem = idx.memory(sids[4][0], len(full) - 1).split("\n")
+    assert mem[:5] == [f"- S0{j}: K0S{j}." for j in range(4)] + [f"- Kapitel „{_titles(bid)[1]}“: Eins."]
 
 
 def test_early_book_survives_in_memory_thanks_to_chapter_summaries():
@@ -160,14 +208,17 @@ def test_early_book_survives_in_memory_thanks_to_chapter_summaries():
     for c in range(10):
         cs.save(PROJECT_ID, bid, cids[c], f"Anfang {c}.", base_version=0)
     after = MemoryIndex.load(PROJECT_ID, bid).memory(sids[9][3], 450)
-    assert "Anfang 0." in after and "K8S3." in after and "K6S0." not in after and len(after) <= 450
+    assert "Anfang 0." in after and "K8S3." in after and "K0S0." not in after and len(after) <= 450
+    assert after.count("- Kapitel „") < 9                                         # nur so viele wie nötig
 
 
 def test_ghost_material_uses_the_hierarchical_memory():
-    bid, cids, sids = _book(chapters=4, per=1)
+    bid, cids, sids = _book(chapters=4, per=3)
     cs.save(PROJECT_ID, bid, cids[0], "Der Anfang.", base_version=0)
-    m = ghost.build_material(PROJECT_ID, bid, sids[3][0])
+    full = MemoryIndex.load(PROJECT_ID, bid).memory(sids[3][0], 10_000)
+    m = ghost.build_material(PROJECT_ID, bid, sids[3][0], memory_chars=len(full) - 1)
     assert "“: Der Anfang." in m.prompt and "K0S0." not in m.prompt
+    assert "K0S0." in ghost.build_material(PROJECT_ID, bid, sids[3][0]).prompt   # genug Platz: Szenen bleiben
 
 
 # --- Routen + Agent ----------------------------------------------------------------------------------------------

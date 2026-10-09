@@ -48,6 +48,7 @@ export const textsEn: Texts = {
   nb_creating: "Creating book project with writing team …",
   project_none_can_create: "You are not in any project yet. Create a book – it gets its own project with a writing team.",
   err_no_model: "No model chosen and no HydraHive default model set (Settings → LLM).",
+  err_model_unavailable: "The chosen model is currently not available on this server (not in the model list). Please choose another model – when moving, in the book's settings.",
   move_book: "Move to own project",
   move_hint: "The book gets a project of its own with a writing team (author and helpers).",
   move_confirm: "Move “{{title}}” to a project of its own with a writing team?\n\nScenes, snapshots, proposals, interviews and notes come along. A backup stays in this project's trash. Old chats with the project agent stay here.",

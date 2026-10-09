@@ -49,6 +49,7 @@ export const textsDe = {
   nb_creating: "Buch-Projekt mit Schreib-Team wird angelegt …",
   project_none_can_create: "Du bist noch in keinem Projekt. Lege ein Buch an – es bekommt ein eigenes Projekt mit Schreib-Team.",
   err_no_model: "Kein Modell gewählt und kein HydraHive-Standardmodell eingestellt (Einstellungen → LLM).",
+  err_model_unavailable: "Das gewählte Modell ist auf diesem Server gerade nicht verfügbar (nicht in der Modell-Liste). Bitte ein anderes Modell wählen – beim Umziehen im Buch unter „Einstellungen“.",
   move_book: "In eigenes Projekt umziehen",
   move_hint: "Das Buch bekommt ein eigenes Projekt mit Schreib-Team (Autor und Helfer).",
   move_confirm: "„{{title}}“ in ein eigenes Projekt mit Schreib-Team umziehen?\n\nSzenen, Schnappschüsse, Vorschläge, Interviews und Hinweise ziehen mit. Hier im Projekt bleibt eine Sicherung im Papierkorb. Alte Chats mit dem Projekt-Agenten bleiben hier.",

@@ -54,6 +54,7 @@ def _check(project_id: str, book_id: str) -> dict:
         raise StoryError("job_active", 409)
     if not book.get("model") and not setup.default_model():
         raise StoryError("no_model", 409)
+    setup.check_model(book.get("model") or setup.default_model())   # sonst HTTP 500 mitten im Anlegen
     return book
 
 

@@ -117,3 +117,10 @@ def test_chat_in_book_project_talks_to_the_author_without_missing_tools(client, 
     assert info["tools_missing"] == []
     started = client.post(base, json={}, headers=admin_headers).json()
     assert sessions_db.get(started["session_id"]).agent_id == out["team"]["author"]
+
+
+def test_unknown_model_is_400_not_500(client, admin_headers, monkeypatch):
+    from hydrahive.llm import registry
+    monkeypatch.setattr(registry, "known_ids", lambda: {"claude-sonnet-4-6"})
+    r = client.post(URL, json={**BODY, "model": "gibt-es-nicht-1"}, headers=admin_headers)
+    assert r.status_code == 400 and r.json()["detail"]["code"] == "model_unavailable"

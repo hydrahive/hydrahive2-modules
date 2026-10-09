@@ -21,6 +21,8 @@ describe("bookProject", () => {
   it("Fehlertexte: bekannter Code → Text, sonst Meldung", () => {
     const t = (k: string, o?: { defaultValue?: string }) => (k === "err_no_model" ? "Kein Modell" : (o?.defaultValue ?? k))
     expect(errorText(t, new StoryApiError(409, "no_model"))).toBe("Kein Modell")
+    const t2 = (k: string, o?: { defaultValue?: string }) => (k === "err_model_unavailable" ? "Modell weg" : (o?.defaultValue ?? k))
+    expect(errorText(t2, new StoryApiError(400, "model_unavailable"))).toBe("Modell weg")
     expect(errorText(t, new StoryApiError(500, "boom", undefined, "Serverfehler"))).toBe("Serverfehler")
     expect(errorText(t, new Error("x"))).toBe("x")
     expect(errorText(t, "y")).toBe("y")
