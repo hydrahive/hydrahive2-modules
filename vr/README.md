@@ -1,6 +1,17 @@
 # VR-Modul (HydraVR)
 
 Verbindet die HydraVR-App auf der Meta Quest 3 mit HydraHive.
+
+## Koppeln per QR (Cockpit → „VR-Brillen“)
+1. „Brille koppeln“ → QR erscheint (10 min gültig, einmalig, kein API-Key enthalten).
+2. In HydraVR „📷 QR-Code scannen“ → Brille löst den Code ein und bekommt ihren eigenen
+   API-Key (Rolle des Nutzers, der den QR erzeugt hat).
+3. Gekoppelte Brillen stehen in der Liste; „Entfernen“ widerruft den Key sofort.
+
+QR-Inhalt: `hydravr://pair?s=<server>&c=<code>&p=<sha256//SPKI-Pin oder leer>`. Der Pin wird nur
+für lokale Adressen gesetzt (wie im Mining-Modul, `tls_pin.py`). Einlösen: `POST /api/module-device/vr/redeem`
+mit Header `X-VR-Pair` (Geräte-Router des Kerns, Rate-Limit). Der QR-Encoder ist eigen (`qr.py`,
+`qr_matrix.py`, keine Laufzeit-Abhängigkeit) und wird in den Tests Bit für Bit gegen `qrcode` geprüft.
 Agenten können auf der Brille **des eigenen Nutzers**:
 
 | Werkzeug | Wirkung |

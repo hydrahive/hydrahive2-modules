@@ -27,6 +27,8 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 MOD_PREFIX = "/api/modules/vr"
+DEV_PREFIX = "/api/module-device/vr"
+TABLES = ("module_vr_pairing", "module_vr_headsets")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -49,9 +51,46 @@ def setup_test_env():
         }, indent=2))
 
         from hydrahive.api import main
+        from backend.pair_routes import device_auth, device_router
+        from backend.pair_routes import router as pair_router
         from backend.routes import router
         main.app.include_router(router, prefix=MOD_PREFIX)
+        main.app.include_router(pair_router, prefix=MOD_PREFIX)
+        _mount_device(main.app, device_router, device_auth)
         yield tmp_path
+
+
+def _mount_device(app, router, auth) -> None:
+    """Wie der Kern (api/module_devices.py): Rate-Limit + auth als Pflicht-Dependencies."""
+    from fastapi import Depends
+    try:
+        from hydrahive.api.module_devices import DEVICE_PREFIX, _rate_limit_for
+        deps = [Depends(_rate_limit_for("vr")), Depends(auth)]
+        prefix = f"{DEVICE_PREFIX}/vr"
+    except ImportError:
+        deps, prefix = [Depends(auth)], DEV_PREFIX
+    app.include_router(router, prefix=prefix, dependencies=deps)
+
+
+@pytest.fixture(autouse=True)
+def _vr_db(setup_test_env):
+    """Migrierte Tabellen; nach jedem Test nur die eigenen Zeilen weg."""
+    from hydrahive.db import init_db
+    from hydrahive.modules.migrations import apply_module_migrations
+    init_db()
+    apply_module_migrations("vr", MODULE_DIR / "migrations")
+    with only_own_rows(*TABLES):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limit():
+    try:
+        from hydrahive.api.middleware import inbound_ratelimit
+        inbound_ratelimit.reset()
+    except ImportError:
+        pass
+    yield
 
 
 @pytest.fixture
