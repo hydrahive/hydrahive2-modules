@@ -5,7 +5,7 @@ import { fromServer, headPatch, openedFromServer, scenePatches, structureChanged
 
 const full = (): ServerFull => ({
   book: { id: "b", title: "T", kind: "novel", language: "de", audience: "A", idea: "I", notes: "N", model: "m/x",
-    ghost: { model: "g/m", length_words: 1500, chunk_words: 0, style: "", limit_tokens: 0 }, version: 3, created_at: "", updated_at: "2026-10-06" },
+    ghost: { model: "g/m", length_words: 1500, chunk_words: 0, style: "", limit_tokens: 0, agent_structure: "propose" }, version: 3, created_at: "", updated_at: "2026-10-06" },
   structure: {
     version: 7,
     entities: [{ id: "e", kind: "character", name: "Gregor", aliases: ["Samsa"], description: "", fields: [{ key: "Beruf", value: "Reisender" }] }],
@@ -54,19 +54,25 @@ describe("serverBook", () => {
 describe("serverBook – Ghostwriter-Einstellungen und Herkunft", () => {
   it("übernimmt ghost und origin; ältere Antworten ohne Felder bekommen Standardwerte", () => {
     const { book } = fromServer(full())
-    expect(book.ghost).toEqual({ model: "g/m", length_words: 1500, chunk_words: 0, style: "", limit_tokens: 0 })
+    expect(book.ghost).toEqual({ model: "g/m", length_words: 1500, chunk_words: 0, style: "", limit_tokens: 0, agent_structure: "propose" })
     expect(allScenes(book).find((x) => x.scene.id === "s3")?.scene.origin).toBe("ai_draft")
     const f = full()
     delete (f.book as Partial<typeof f.book>).ghost
     delete (f.scenes.s1 as Partial<typeof f.scenes.s1>).origin
     const old = fromServer(f).book
     expect(old.ghost.model).toBe("")
+    expect(old.ghost.agent_structure).toBe("propose")          // C2: Server vor 0.20.0 kennt den Schalter nicht
+    const g = full()
+    delete (g.book.ghost as Partial<typeof g.book.ghost>).agent_structure
+    expect(fromServer(g).book.ghost.agent_structure).toBe("propose")
     expect(allScenes(old).find((x) => x.scene.id === "s1")?.scene.origin).toBe("human")
   })
   it("ghost-Änderung geht als Teil-Patch in den Kopf, origin als Szenenfeld", () => {
     const { book } = fromServer(full())
     const edited = { ...book, ghost: { ...book.ghost, style: "knapp" } }
     expect(headPatch(edited, book)).toEqual({ ghost: { style: "knapp" } })
+    const switched = { ...book, ghost: { ...book.ghost, agent_structure: "direct" as const } }   // C2: Schalter
+    expect(headPatch(switched, book)).toEqual({ ghost: { agent_structure: "direct" } })
     const s = updateScene(book, "s1", { text: "neu", origin: "ai_draft" })
     expect(scenePatches(s, book)).toEqual([{ id: "s1", patch: { origin: "ai_draft", text: "neu" } }])
   })
@@ -82,6 +88,12 @@ describe("serverBook – Schreibrecht und abgelegte Vorschläge (G2)", () => {
     const old = openedFromServer(full())
     expect(old.canWrite).toBe(true)
     expect(old.proposals).toEqual({})
+  })
+  it("C2: offener Umbau-Vorschlag kommt beim Öffnen mit; älterer Server ohne Feld → keiner", () => {
+    const rp = { steps: [], lines: ["x"], before: ["A"], after: ["B"], base_structure_version: 7, source: "agent" as const,
+                 author: "Autor", note: "", session_id: "", at: "t" }
+    expect(openedFromServer({ ...full(), restructure_proposal: rp }).restructureProposal).toEqual(rp)
+    expect(openedFromServer(full()).restructureProposal).toBeNull()
   })
   it("ältere Antwort ohne limit_tokens bekommt 0", () => {
     const f = full()

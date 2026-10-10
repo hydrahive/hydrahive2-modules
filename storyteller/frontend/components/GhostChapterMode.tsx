@@ -1,6 +1,7 @@
 // KI-Modus „Kapitel/Buch“ (Ghostwriter G2, Spec §9): Umfang wählen (dieses Kapitel / ab hier / ganzes
 // Buch), Schätzung ansehen, bestätigen, Lauf im Hintergrund verfolgen. Darunter: Gliederung aus Idee.
 // Kostengrenze je Auftrag (A1, LimitField): Eingabe + Ausgabe; liegt die Schätzung darüber → „Trotzdem“.
+// C2: Schalter „Autor darf die Gliederung direkt ändern“ und Kasten mit dem Umbau-Vorschlag des Autors.
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { BookOpenText } from "lucide-react"
@@ -13,7 +14,9 @@ import { useGhostRun } from "../useGhostRun"
 import { LimitField } from "./LimitField"
 import { OutlinePanel } from "./OutlinePanel"
 import { OutlineProposalBox } from "./OutlineProposalBox"
+import { RestructureProposalBox } from "./RestructureProposalBox"
 import { RunProgress } from "./RunProgress"
+import { StructureSwitch } from "./StructureSwitch"
 
 
 interface Props { state: BookState; scene: Scene; onOpenScene: (id: string) => void }
@@ -84,8 +87,10 @@ export function GhostChapterMode({ state, scene, onOpenScene }: Props) {
         </fieldset>
       )}
       {!run.active && <LimitField state={state} price={est} />}
+      {!run.active && <StructureSwitch state={state} />}
       {run.error && <p className="st-ai-error rounded border border-red-400/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-200" role="alert">
         {t(`ai_err_${run.error.code}`, { defaultValue: run.error.message || run.error.code })}</p>}
+      {!run.active && state.restructureProposal && <RestructureProposalBox key={state.restructureProposal.at} state={state} proposal={state.restructureProposal} />}
       {!run.active && state.outlineProposal && <OutlineProposalBox key={state.outlineProposal.at} state={state} proposal={state.outlineProposal} />}
       {!run.active && <OutlinePanel state={state} />}
     </div>

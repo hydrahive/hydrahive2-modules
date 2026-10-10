@@ -17,10 +17,15 @@ export interface Scene {
   text: string
 }
 
+/** C2: Gliederungs-Umbau des Autor-Agenten als Vorschlag (Standard) oder direkt (Schalter je Buch). */
+export type AgentStructure = "propose" | "direct"
 /** Ghostwriter-Einstellungen je Buch (leer/0 = nicht gesetzt; kein festes Modell im Code).
  *  limit_tokens: Kostengrenze je Lauf in Ausgabe-Tokens, 0 = keine. */
-export interface GhostSettings { model: string; length_words: number; chunk_words: number; style: string; limit_tokens: number }
-export const GHOST_EMPTY: GhostSettings = { model: "", length_words: 0, chunk_words: 0, style: "", limit_tokens: 0 }
+export interface GhostSettings {
+  model: string; length_words: number; chunk_words: number; style: string; limit_tokens: number
+  agent_structure: AgentStructure
+}
+export const GHOST_EMPTY: GhostSettings = { model: "", length_words: 0, chunk_words: 0, style: "", limit_tokens: 0, agent_structure: "propose" }
 
 export interface Chapter { id: string; title: string; scenes: Scene[] }
 export interface Part { id: string; title: string; chapters: Chapter[] }

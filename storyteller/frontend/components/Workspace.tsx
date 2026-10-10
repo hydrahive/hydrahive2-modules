@@ -6,6 +6,7 @@ import { ArrowLeft, FolderOpen, Maximize2, MessagesSquare, Minimize2, PanelLeft,
 import { lastPlace } from "../lastPlace"
 import { allScenes, findScene, type Book } from "../model"
 import type { OutlineProposal } from "../chatApi"
+import type { RestructureProposal } from "../restructure"
 import type { EntityProposal } from "../entityProposal"
 import type { InfoProposal } from "../infoProposal"
 import type { ProposalMark, Versions } from "../serverBook"
@@ -34,13 +35,14 @@ interface Props {
   infoProposals?: Record<string, InfoProposal>
   entityProposals?: EntityProposal[]
   outlineProposal?: OutlineProposal | null
+  restructureProposal?: RestructureProposal | null
   openNotes?: Record<string, number>
   onClose: () => void
 }
 
-export function Workspace({ projectId, projectName, initial, versions, initialSceneId, canWrite, proposals, infoProposals, entityProposals, outlineProposal, openNotes, onClose }: Props) {
+export function Workspace({ projectId, projectName, initial, versions, initialSceneId, canWrite, proposals, infoProposals, entityProposals, outlineProposal, restructureProposal, openNotes, onClose }: Props) {
   const { t } = useTranslation("storyteller")
-  const state = useBook(projectId, initial, versions, { canWrite, proposals, infoProposals, entityProposals, outlineProposal, openNotes })
+  const state = useBook(projectId, initial, versions, { canWrite, proposals, infoProposals, entityProposals, outlineProposal, restructureProposal, openNotes })
   const { book } = state
   const first = allScenes(book)[0]?.scene.id ?? ""
   const [wanted, setSceneId] = useState(initialSceneId ?? first)
