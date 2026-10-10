@@ -5,7 +5,7 @@ MAX_TEXT = 2000
 MAX_TITLE = 120
 MAX_WINDOW = 8
 # Muss zur App-Liste in HydraVR (office/AppCatalog.kt) passen.
-APPS = ("chat", "monitor", "film", "storyboard", "music", "tasks", "desktop", "browser", "code")
+APPS = ("chat", "monitor", "film", "storyboard", "music", "book", "tasks", "desktop", "browser", "code")
 
 
 class EventError(ValueError):

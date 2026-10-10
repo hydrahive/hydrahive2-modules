@@ -1,7 +1,7 @@
 {
   "id": "vr",
   "name": "VR (HydraVR)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Verbindet die HydraVR-App auf der Meta Quest mit HydraHive. Agenten können auf der Brille des eigenen Nutzers etwas sagen, Benachrichtigungen zeigen und Apps in Büro-Fenstern öffnen. Kein Zugriff auf Kamera, Mikrofon oder Dateien der Brille.",
   "icon": "Glasses",
   "nav_group": "working",
