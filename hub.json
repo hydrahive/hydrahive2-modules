@@ -119,6 +119,11 @@
       "id": "mining",
       "name": "Mining",
       "path": "mining"
+    },
+    {
+      "id": "vr",
+      "name": "VR (HydraVR)",
+      "path": "vr"
     }
   ]
 }
