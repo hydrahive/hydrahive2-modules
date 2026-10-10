@@ -218,3 +218,14 @@ def test_routes(client, auth_headers, reader_headers):
     assert client.delete(url, headers=auth_headers).status_code == 200 and restructure.find(PROJECT_ID, bid) is None
     full = client.get(f"{P}/books/{bid}", headers=auth_headers).json()
     assert full["restructure_proposal"] is None
+
+
+def test_structure_route_is_light_and_needs_read(client, auth_headers, reader_headers, other_headers):
+    """C2: Die Oberfläche bemerkt direkte Änderungen des Autors über die Version der Gliederung – nur structure.json."""
+    bid, a, *_ = _book()
+    r = client.get(f"{P}/books/{bid}/structure", headers=reader_headers)
+    assert r.status_code == 200 and r.json() == storage.get_structure(PROJECT_ID, bid)
+    v = r.json()["version"]
+    restructure.execute(PROJECT_ID, bid, [{"op": "rename_chapter", "chapter_id": a, "title": "Neu"}])
+    assert client.get(f"{P}/books/{bid}/structure", headers=auth_headers).json()["version"] == v + 1
+    assert client.get(f"{P}/books/{bid}/structure", headers=other_headers).status_code == 404

@@ -122,6 +122,13 @@ def delete_book(project_id: str, book_id: str, auth: Auth):
     return {"ok": True}
 
 
+@router.get("/projects/{project_id}/books/{book_id}/structure")
+def get_structure(project_id: str, book_id: str, auth: Auth):
+    """Nur die Gliederung (C2: offene Oberfläche bemerkt direkte Änderungen des Autors an der Version)."""
+    _guard(auth, project_id, "read")
+    return _call(storage.get_structure, project_id, book_id)
+
+
 @router.put("/projects/{project_id}/books/{book_id}/structure")
 def put_structure(project_id: str, book_id: str, body: StructureIn, auth: Auth):
     _guard(auth, project_id)
