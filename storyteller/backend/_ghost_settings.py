@@ -10,9 +10,13 @@ from typing import Any
 
 from ._files import StoryError
 
-GHOST_DEFAULTS: dict[str, Any] = {"model": "", "length_words": 0, "chunk_words": 0, "style": "", "limit_tokens": 0}
+GHOST_DEFAULTS: dict[str, Any] = {"model": "", "length_words": 0, "chunk_words": 0, "style": "", "limit_tokens": 0,
+                                  "agent_structure": "propose"}
 # limit_tokens: Kostengrenze je Auftrag in Tokens, Eingabe + Ausgabe (Spec kostengrenze.md §3), 0 = aus.
 # Gilt für Ghostwriter-Läufe, „Szene schreiben“ und Team-Aufträge.
+# agent_structure (C2, Till 10.10.: Schalter je Buch): Gliederungs-Umbau des Autor-Agenten als Vorschlag („propose“)
+# oder direkt („direct“). Helfer legen immer Vorschläge ab.
+AGENT_STRUCTURE = ("propose", "direct")
 _RANGES = {"length_words": (200, 6000), "chunk_words": (200, 2000), "limit_tokens": (1000, 20_000_000)}
 _TEXT_LIMITS = {"model": 200, "style": 2000}
 
@@ -38,7 +42,10 @@ def merge_ghost(current: dict, patch: Any) -> dict:
         raise StoryError("ghost_invalid")
     out = dict(current)
     for key, value in patch.items():
-        if key in _TEXT_LIMITS:
+        if key == "agent_structure":
+            if value not in AGENT_STRUCTURE:
+                raise StoryError("ghost_invalid")
+        elif key in _TEXT_LIMITS:
             if not isinstance(value, str) or len(value) > _TEXT_LIMITS[key]:
                 raise StoryError("ghost_invalid")
         elif key == "limit_tokens":

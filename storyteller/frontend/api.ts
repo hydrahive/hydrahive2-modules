@@ -2,6 +2,7 @@
 // mit Code und – bei 409 – dem aktuellen Stand auf dem Server (`current`).
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import type { BookKind, EntityKind, GhostSettings, SceneOrigin, SceneStatus } from "./model"
+import type { RestructureProposal } from "./restructure"
 import type { OutlineProposal } from "./chatApi"
 import type { EntityProposal } from "./entityProposal"
 import type { InfoProposal } from "./infoProposal"
@@ -64,6 +65,8 @@ export interface ServerFull {
   outline_proposal?: OutlineProposal | null
   /** Ab 0.12.0: offene Hinweise/Notizen des Teams je Szene (T1d). */
   open_notes?: Record<string, number>
+  /** Ab 0.20.0: offener Umbau-Vorschlag des Autors (C2), sonst null. */
+  restructure_proposal?: RestructureProposal | null
 }
 export interface SnapshotInfo { id: string; at: string; words: number; text?: string }
 export interface Created { scene: ServerScene; structure: ServerStructure }
@@ -107,6 +110,8 @@ export const storyApi = {
   patchBook: (pid: string, bid: string, baseVersion: number, patch: Partial<Omit<ServerBook, "ghost">> & { ghost?: Partial<GhostSettings> }) =>
     call<ServerBook>("PATCH", b(pid, bid), { ...patch, base_version: baseVersion }),
   deleteBook: (pid: string, bid: string) => call<{ ok: boolean }>("DELETE", b(pid, bid)),
+  /** C2: nur die Gliederung (Version prüfen, ob der Autor direkt umgebaut hat). */
+  getStructure: (pid: string, bid: string) => call<ServerStructure>("GET", `${b(pid, bid)}/structure`),
   putStructure: (pid: string, bid: string, baseVersion: number, structure: Omit<ServerStructure, "version">) =>
     call<ServerStructure>("PUT", `${b(pid, bid)}/structure`, { base_version: baseVersion, structure }),
   addScene: (pid: string, bid: string, chapterId: string, title: string, after?: string) =>

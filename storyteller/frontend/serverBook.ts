@@ -125,5 +125,5 @@ export function openedFromServer(full: ServerFull) {
   }
   return { book, versions, canWrite: full.can_write ?? true, proposals, infoProposals: infoMarks(full.info_proposals),
     entityProposals: full.entity_proposals ?? [], outlineProposal: full.outline_proposal ?? null,
-    openNotes: full.open_notes ?? {} }
+    restructureProposal: full.restructure_proposal ?? null, openNotes: full.open_notes ?? {} }
 }

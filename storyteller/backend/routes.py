@@ -12,6 +12,7 @@ from . import (
     proposals_entities,
     proposals_info,
     proposals_outline,
+    restructure,
     storage,
     team_notes,
 )
@@ -103,6 +104,7 @@ def open_book(project_id: str, book_id: str, auth: Auth):
                 "info_proposals": proposals_info.list_for_book(project_id, book_id),
                 "entity_proposals": proposals_entities.list_for_book(project_id, book_id),
                 "outline_proposal": proposals_outline.find(project_id, book_id),
+                "restructure_proposal": restructure.find(project_id, book_id),   # C2
                 "open_notes": team_notes.open_counts(project_id, book_id)}
     return _call(_all)
 
@@ -118,6 +120,13 @@ def delete_book(project_id: str, book_id: str, auth: Auth):
     _guard(auth, project_id)
     _call(storage.delete_book, project_id, book_id)
     return {"ok": True}
+
+
+@router.get("/projects/{project_id}/books/{book_id}/structure")
+def get_structure(project_id: str, book_id: str, auth: Auth):
+    """Nur die Gliederung (C2: offene Oberfläche bemerkt direkte Änderungen des Autors an der Version)."""
+    _guard(auth, project_id, "read")
+    return _call(storage.get_structure, project_id, book_id)
 
 
 @router.put("/projects/{project_id}/books/{book_id}/structure")

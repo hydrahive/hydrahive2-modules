@@ -2,6 +2,7 @@
 import type { Texts } from "./texts.de"
 import { ghostEn } from "./texts.ghost.en"
 import { keepEn } from "./texts.keep.en"
+import { structEn } from "./texts.struct.en"
 import { teamEn } from "./texts.team.en"
 
 export const textsEn: Texts = {
@@ -190,4 +191,5 @@ export const textsEn: Texts = {
   ...ghostEn,
   ...teamEn,
   ...keepEn,
+  ...structEn,
 }

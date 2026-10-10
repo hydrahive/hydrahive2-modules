@@ -2,6 +2,7 @@
 
 import { ghostDe } from "./texts.ghost.de"
 import { keepDe } from "./texts.keep.de"
+import { structDe } from "./texts.struct.de"
 import { teamDe } from "./texts.team.de"
 
 export const textsDe = {
@@ -196,6 +197,7 @@ export const textsDe = {
   ...ghostDe,
   ...teamDe,
   ...keepDe,
+  ...structDe,
 }
 
 export type Texts = typeof textsDe

@@ -1,0 +1,27 @@
+// C2 – Autor darf die Gliederung umbauen (Spec autor-gliederung-c2.md §2b).
+export const structDe = {
+  struct_switch: "Autor darf die Gliederung direkt ändern (sonst als Vorschlag)",
+  struct_switch_help: "Aus: Kapitel/Szenen anlegen, löschen, verschieben und umbenennen kommen vom Autor als Umbau-Vorschlag, den du übernimmst. An: der Autor ändert direkt – Gelöschtes landet im Papierkorb. Helfer machen immer nur Vorschläge.",
+  struct_proposal_title: "Vorschlag vom Autor: Gliederung umbauen",
+  struct_proposal_steps: "Schritte",
+  struct_proposal_before: "Vorher",
+  struct_proposal_after: "Nachher",
+  struct_proposal_new: "neu",
+  struct_proposal_gone: "fällt weg",
+  struct_proposal_replaced: "Ersetzt einen früheren Umbau-Vorschlag von {{who}}.",
+  struct_apply: "Übernehmen",
+  struct_reject: "Verwerfen",
+  struct_proposal_hint: "Der Autor hat einen Umbau der Gliederung vorgeschlagen – unter „Kapitel/Buch“ ansehen und übernehmen.",
+  struct_reloaded: "Der Autor hat die Gliederung geändert – neu geladen.",
+  ai_err_chapter_empty: "Ein Kapitel bliebe leer – der Vorschlag passt nicht mehr zur Gliederung.",
+  ai_err_after_invalid: "Eine Einfügestelle gibt es nicht mehr – der Vorschlag passt nicht mehr zur Gliederung.",
+  ai_err_steps_invalid: "Der Vorschlag ist unvollständig.",
+  ai_err_op_invalid: "Der Vorschlag enthält einen unbekannten Schritt.",
+  ai_err_title_invalid: "Ein Titel im Vorschlag ist leer oder zu lang.",
+  ai_err_scenes_invalid: "Ein neues Kapitel im Vorschlag hat keine Szene.",
+  ai_err_job_active: "Gerade arbeitet ein Team-Auftrag an diesem Buch – bitte warten oder ihn abbrechen.",
+  ai_err_scene_not_found: "Eine Szene aus dem Vorschlag gibt es nicht mehr – der Vorschlag passt nicht mehr zur Gliederung.",
+  ai_err_chapter_not_found: "Ein Kapitel aus dem Vorschlag gibt es nicht mehr – der Vorschlag passt nicht mehr zur Gliederung.",
+  ai_err_last_chapter: "Das letzte Kapitel eines Buchs bleibt.",
+}
+export type StructTexts = typeof structDe

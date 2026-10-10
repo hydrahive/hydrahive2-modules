@@ -10,7 +10,7 @@ from typing import Literal
 
 from fastapi import APIRouter
 
-from . import _replaced, proposals, proposals_entities, proposals_info, proposals_outline, storage
+from . import _replaced, proposals, proposals_entities, proposals_info, proposals_outline, restructure, storage
 from ._files import check_id
 from ._route_base import Auth, _call, _guard
 
@@ -75,3 +75,15 @@ def entity_history_restore(project_id: str, book_id: str, key: str, entry_id: st
     _guard(auth, project_id)
     return _call(proposals_entities.restore, project_id, book_id, key, entry_id)
 
+
+
+@router.get(B + "/proposal-history/restructure")
+def restructure_history(project_id: str, book_id: str, auth: Auth):
+    _guard(auth, project_id, "read")
+    return _call(_book_history, project_id, book_id, "restructure", "restructure")
+
+
+@router.post(B + "/proposal-history/restructure/{entry_id}/restore")
+def restructure_history_restore(project_id: str, book_id: str, entry_id: str, auth: Auth):
+    _guard(auth, project_id)
+    return _call(restructure.restore, project_id, book_id, entry_id)

@@ -6,6 +6,7 @@ import { findScene, originAfterEdit, updateScene, type Book, type Scene } from "
 import type { OutlineProposal } from "./chatApi"
 import type { EntityProposal } from "./entityProposal"
 import type { InfoProposal } from "./infoProposal"
+import type { RestructureProposal } from "./restructure"
 import type { ProposalMark, Versions } from "./serverBook"
 import type { Suggestion } from "./suggest"
 import type { TeamNote } from "./teamNotes"
@@ -17,6 +18,8 @@ interface OpenExtras {
   canWrite: boolean; proposals: Record<string, ProposalMark>; infoProposals?: Record<string, InfoProposal>
   entityProposals?: EntityProposal[]
   outlineProposal?: OutlineProposal | null
+  /** C2: offener Umbau-Vorschlag des Autors. */
+  restructureProposal?: RestructureProposal | null
   /** T1d: offene Hinweise je Szene aus dem Öffnen (bis die Liste geladen ist). */
   openNotes?: Record<string, number>
 }
@@ -33,6 +36,8 @@ export function useBook(projectId: string, initial: Book, versions: Versions,
   const [entityProposals, setEntityProposals] = useState<EntityProposal[]>(extras.entityProposals ?? [])
   // G4d: höchstens ein Gliederungs-Vorschlag je Buch.
   const [outlineProposal, setOutlineProposal] = useState<OutlineProposal | null>(extras.outlineProposal ?? null)
+  // C2: höchstens ein Umbau-Vorschlag des Autors je Buch.
+  const [restructureProposal, setRestructureProposal] = useState<RestructureProposal | null>(extras.restructureProposal ?? null)
   // T1d: Hinweise/Notizen des Teams (Liste vom Server; null = noch nicht geladen → Zählung aus dem Öffnen).
   const [notes, setNotes] = useState<TeamNote[] | null>(null)
   const [openNotesAtOpen] = useState<Record<string, number>>(extras.openNotes ?? {})
@@ -100,6 +105,9 @@ export function useBook(projectId: string, initial: Book, versions: Versions,
     infoProposals,
     entityProposals, setEntityProposals,
     outlineProposal, setOutlineProposal,
+    restructureProposal, setRestructureProposal,
+    /** Ungespeicherte Änderungen? (C2: nur ohne neu laden, wenn der Autor die Gliederung direkt geändert hat.) */
+    isDirty: useCallback(() => sync.dirty, [sync]),
     clearEntityProposal: useCallback((id: string) => setEntityProposals((l) => l.filter((p) => p.id !== id)), []),
     /** Nachfragen: der Server-Stand ersetzt die Liste (verworfene/übernommene verschwinden). */
     setInfoProposals,

@@ -57,8 +57,8 @@ def test_tools_available_drops_missing_optional_tools():
     assert "research_report" not in tools and "web_search" in tools
 
 
-def test_version_2_gives_note_tools():
-    assert team.TEAM_VERSION == 2
+def test_note_tools_since_version_2():
+    assert team.TEAM_VERSION >= 2
     by = {r.key: set(r.tools) for r in (team.AUTHOR, *team.HELPERS)}
     for key, tools in by.items():
         assert "storyteller_notes" in tools, key

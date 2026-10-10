@@ -41,7 +41,8 @@ def test_register_adds_router_migrations_and_recovery_job():
                             ("recover_stale_team_jobs", team_job_run.recover_stale_jobs, 0)]
     assert seen["tools"] == ["storyteller_books", "storyteller_outline", "storyteller_read", "storyteller_propose_text",
                              "storyteller_propose_scene_info", "storyteller_propose_entity",
-                             "storyteller_propose_outline", "storyteller_note", "storyteller_notes"]
+                             "storyteller_propose_outline", "storyteller_restructure", "storyteller_note",
+                             "storyteller_notes"]
 
 
 def test_manifest_gives_agents_the_tools_and_capability_covers_them():
