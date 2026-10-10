@@ -4,7 +4,8 @@ Grundsätze:
 - Nur das **Projekt der Chat-Sitzung** (``ToolContext.project_id``) – kein frei wählbares Projekt.
 - Rechte wie die Oberfläche: Projektrolle des Nutzers (``ToolContext.user_id``), System-Admin darf alles.
   Lesen: ``read``. Vorschläge: ``write``.
-- Der Agent ändert das Buch nie direkt; Text landet als abgelegter Vorschlag (proposals.py).
+- Der Agent ändert das Buch nie direkt; Text landet als abgelegter Vorschlag (proposals.py). Einzige Ausnahme
+  (C2): der Autor baut die Gliederung direkt um, wenn das Buch es erlaubt (Schalter je Buch, storyteller_restructure).
 Erweiterungen (Spec §11.5) kommen als weitere ``storyteller_propose_*``-Werkzeuge dazu (G4b: Szenen-Infos, G4c: Steckbriefe, G4d: Gliederung).
 """
 from __future__ import annotations
@@ -20,6 +21,8 @@ immer mit storyteller_propose_text: Das legt einen Vorschlag an der Szene ab, de
 ansieht und übernimmt oder verwirft. Titel, Zusammenfassung oder Perspektive einer Szene schlägst du mit
 storyteller_propose_scene_info vor, neue oder geänderte Steckbriefe (Figuren, Orte, Gegenstände) mit
 storyteller_propose_entity, neue Kapitel mit Szenen (Gliederung) mit storyteller_propose_outline.
+Die Gliederung umbauen (Kapitel umbenennen, löschen, verschieben, Szenen anlegen/löschen/verschieben,
+Kapitel-Zusammenfassung) mit storyteller_restructure – je nach Einstellung des Buchs direkt oder als Vorschlag.
 Befunde und Wissen (Widerspruch, Stilproblem, Recherche mit Quellen) legst du mit storyteller_note ab,
 lesen mit storyteller_notes.
 Vorher die Szene lesen; Steckbriefe und Zusammenfassungen beachten.
@@ -62,5 +65,6 @@ from .note import NOTE, NOTES
 from .outline_tool import PROPOSE_OUTLINE
 from .propose import PROPOSE_INFO, PROPOSE_TEXT
 from .read import BOOKS, OUTLINE, READ
+from .restructure_tool import RESTRUCTURE
 
-TOOLS = [BOOKS, OUTLINE, READ, PROPOSE_TEXT, PROPOSE_INFO, PROPOSE_ENTITY, PROPOSE_OUTLINE, NOTE, NOTES]
+TOOLS = [BOOKS, OUTLINE, READ, PROPOSE_TEXT, PROPOSE_INFO, PROPOSE_ENTITY, PROPOSE_OUTLINE, RESTRUCTURE, NOTE, NOTES]

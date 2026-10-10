@@ -13,14 +13,14 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-TEAM_VERSION = 2   # 2: Hinweise/Notizen (storyteller_note/_notes, T1d)
+TEAM_VERSION = 3   # 2: Hinweise/Notizen (storyteller_note/_notes, T1d); 3: Gliederung umbauen (storyteller_restructure, C2)
 _PROMPTS = Path(__file__).resolve().parent / "prompts"
 
 READ = ("storyteller_books", "storyteller_outline", "storyteller_read", "storyteller_notes",
         "datamining_search", "datamining_semantic", "datamining_timeline", "read_memory", "search_memory")
 NOTE = ("storyteller_note",)
 PROPOSE_ALL = ("storyteller_propose_text", "storyteller_propose_scene_info", "storyteller_propose_entity",
-               "storyteller_propose_outline")
+               "storyteller_propose_outline", "storyteller_restructure")
 
 
 @dataclass(frozen=True)
@@ -45,7 +45,7 @@ HELPERS: tuple[Role, ...] = (
     Role("creative", "Kreativ", "Bringt Wendungen, Alternativen und neue Ideen ein.",
          READ + NOTE + ("storyteller_propose_outline",)),
     Role("structure", "Struktur", "Achtet auf Aufbau, Akte, Spannungsbogen und Tempo.",
-         READ + NOTE + ("storyteller_propose_outline", "storyteller_propose_scene_info")),
+         READ + NOTE + ("storyteller_propose_outline", "storyteller_propose_scene_info", "storyteller_restructure")),
     Role("profiles", "Steckbrief-Pfleger", "Übernimmt neue Fakten über Figuren, Orte und Gegenstände in Steckbriefe.",
          READ + NOTE + ("storyteller_propose_entity",)),
 )

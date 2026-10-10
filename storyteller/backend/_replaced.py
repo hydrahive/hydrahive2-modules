@@ -17,7 +17,7 @@ from ._book import _existing, _now
 from ._files import StoryError, check_id, inside, read_json, write_json
 
 KEEP = 10
-KINDS = ("text", "info", "outline", "entity")
+KINDS = ("text", "info", "outline", "entity", "restructure")   # restructure: C2-Umbau-Vorschlag
 REASONS = ("replaced", "discarded", "restored_over")   # restored_over: ein älterer wurde zurückgeholt
 _ENTRY_RE = re.compile(r"^\d{8}T\d{12}$")
 _FMT = "%Y%m%dT%H%M%S%f"
@@ -26,8 +26,8 @@ _FMT = "%Y%m%dT%H%M%S%f"
 def _key(kind: str, key: str) -> str:
     if kind not in KINDS:
         raise StoryError("kind_invalid")
-    if kind == "outline":
-        if key != "outline":
+    if kind in ("outline", "restructure"):
+        if key != kind:
             raise StoryError("proposal_not_found", 404)
         return key
     if kind == "entity" and key == "new":
@@ -74,6 +74,8 @@ def _summary(kind: str, entry_id: str, e: dict) -> dict:
         out["fields"] = p.get("fields", {})
     elif kind == "outline":
         out["chapters"] = len((p.get("outline") or {}).get("chapters", []))
+    elif kind == "restructure":
+        out["lines"] = p.get("lines", [])
     else:
         out.update(entity_id=p.get("entity_id", ""), name=(p.get("changes") or {}).get("name", ""))
     return out

@@ -24,13 +24,14 @@ def _first_scene(b):
 # ---------------------------------------------------------------- Einstellungen
 def test_new_book_has_empty_ghost_settings():
     b = _book()
-    assert b["ghost"] == {"model": "", "length_words": 0, "chunk_words": 0, "style": "", "limit_tokens": 0}
+    assert b["ghost"] == {"model": "", "length_words": 0, "chunk_words": 0, "style": "", "limit_tokens": 0,
+                          "agent_structure": "propose"}
 
 
 def test_update_ghost_settings_and_version():
     b = _book()
     g = {"model": "irgendein/modell", "length_words": 1500, "chunk_words": 600, "style": "knapp, Präsens",
-         "limit_tokens": 50_000}
+         "limit_tokens": 50_000, "agent_structure": "direct"}
     nb = storage.update_book(PROJECT_ID, b["id"], {"ghost": g}, base_version=b["version"])
     assert nb["ghost"] == g and nb["version"] == b["version"] + 1
     # Teilweise ändern: nicht genannte Felder bleiben
@@ -43,6 +44,7 @@ def test_update_ghost_settings_and_version():
     {"chunk_words": 199}, {"chunk_words": 2001}, {"style": "x" * 2001}, {"unbekannt": 1}, "kein dict",
     {"length_words": True}, {"limit_tokens": 999}, {"limit_tokens": 20_000_001}, {"limit_tokens": -1},
     {"limit_tokens": True}, {"limit_tokens": 1.5},
+    {"agent_structure": "immer"}, {"agent_structure": ""}, {"agent_structure": 1}, {"agent_structure": None},
 ])
 def test_ghost_settings_are_validated(bad):
     b = _book()

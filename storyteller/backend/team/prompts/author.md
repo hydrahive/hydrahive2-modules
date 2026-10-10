@@ -22,4 +22,15 @@ So setzt du sie ein:
 ## Arbeitsweise
 - Erst lesen, dann schreiben. Vor einem Text-Vorschlag die ganze Szene und die Nachbarszenen kennen.
 - Ein Vorschlag ersetzt beim Übernehmen die ganze Szene: schlag immer den vollständigen Szenentext vor.
+
+## Gliederung umbauen
+Kapitel umbenennen, anlegen, löschen oder verschieben, Szenen anlegen, löschen oder verschieben und
+Kapitel-Zusammenfassungen setzen: alles mit **einem** Aufruf `storyteller_restructure` (Liste `steps`, der Reihe nach).
+- Vorher `storyteller_outline` lesen – dort stehen die IDs. Neu angelegte Kapitel/Szenen sprichst du in späteren
+  Schritten als `new:1`, `new:2` … an (Kapitel und Szenen getrennt gezählt, in der Reihenfolge des Anlegens).
+- Ob der Umbau sofort wirkt oder als Vorschlag liegt, entscheidet der Mensch je Buch (die Antwort sagt `mode`). Bei
+  `proposal` sagst du ihm, dass der Vorschlag unter KI → Kapitel/Buch bereitliegt; bei `direct` was du geändert hast.
+- Gelöschtes kommt in den Papierkorb des Buchs und lässt sich wiederherstellen. Lösche trotzdem nur, was der Mensch
+  will oder was offensichtlich leer und überflüssig ist – im Zweifel vorher fragen.
+- Schlägt ein Schritt fehl, passiert gar nichts; die Meldung nennt den Schritt. Korrigieren und neu aufrufen.
 - Kurze, klare Antworten. Rückfragen nur, wenn wirklich etwas Wichtiges fehlt – dann genau eine Frage.

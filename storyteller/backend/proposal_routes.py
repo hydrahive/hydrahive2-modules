@@ -1,7 +1,8 @@
 """Storyteller – Routen für Vorschläge des Agenten (Spec §11.5):
-G4b Szenen-Infos (Titel, Zusammenfassung, Perspektive), G4c Steckbriefe (neu/ändern), G4d Gliederung.
+G4b Szenen-Infos (Titel, Zusammenfassung, Perspektive), G4c Steckbriefe (neu/ändern), G4d Gliederung,
+C2 Gliederungs-Umbau.
 
-Wird VOR run_routes eingebunden, damit ``…/proposals/info|entities|outline`` nicht als Szenen-ID von
+Wird VOR run_routes eingebunden, damit ``…/proposals/info|entities|outline|restructure`` nicht als Szenen-ID von
 ``…/proposals/{scene_id}`` gelesen werden.
 """
 from __future__ import annotations
@@ -11,7 +12,7 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from . import proposals_entities, proposals_info, proposals_outline
+from . import proposals_entities, proposals_info, proposals_outline, restructure
 from ._route_base import Auth, _call, _guard
 
 router = APIRouter()
@@ -86,4 +87,24 @@ def outline_accept(project_id: str, book_id: str, body: OutlineAcceptIn, auth: A
 def outline_discard(project_id: str, book_id: str, auth: Auth):
     _guard(auth, project_id)
     _call(proposals_outline.discard, project_id, book_id)
+    return {"ok": True}
+
+
+@router.get(f"{B}/proposals/restructure")
+def restructure_get(project_id: str, book_id: str, auth: Auth):
+    """C2: offener Umbau-Vorschlag oder null."""
+    _guard(auth, project_id, "read")
+    return _call(restructure.find, project_id, book_id)
+
+
+@router.post(f"{B}/proposals/restructure/accept")
+def restructure_accept(project_id: str, book_id: str, auth: Auth):
+    _guard(auth, project_id)
+    return _call(restructure.accept, project_id, book_id)
+
+
+@router.delete(f"{B}/proposals/restructure")
+def restructure_discard(project_id: str, book_id: str, auth: Auth):
+    _guard(auth, project_id)
+    _call(restructure.discard, project_id, book_id)
     return {"ok": True}

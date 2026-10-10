@@ -98,3 +98,22 @@ def test_upgrade_error_does_not_block_opening(client, admin_headers, old_team, m
     monkeypatch.setattr(upgrade, "_apply", lambda *a: (_ for _ in ()).throw(RuntimeError("kaputt")))
     bid = old_team["metadata"]["storyteller"]["book_id"]
     assert client.get(f"{MOD_PREFIX}/projects/{old_team['id']}/books/{bid}", headers=admin_headers).status_code == 200
+
+
+def test_team_of_version_2_gets_restructure_tool(old_team):
+    """C2 (TEAM_VERSION 3): Team von 0.19.0 (Version 2, ohne storyteller_restructure) – beim Öffnen bekommen Autor
+    und Struktur-Helfer das Werkzeug, die anderen Helfer nicht."""
+    from hydrahive.agents import config as ac
+    from hydrahive.projects import config as pc
+    p = old_team
+    for aid in [p["agent_id"], *p["allowed_specialists"]]:
+        ac.update(aid, tools=[t for t in ac.get(aid)["tools"] if t != "storyteller_restructure"])
+    pc.update(p["id"], metadata={**p["metadata"], "storyteller": {**p["metadata"]["storyteller"], "team_version": 2}})
+    assert upgrade.ensure_current(p["id"]) is True
+    p = pc.get(p["id"])
+    assert p["metadata"]["storyteller"]["team_version"] == 3
+    assert "storyteller_restructure" in ac.get(p["agent_id"])["tools"]
+    assert "storyteller_restructure" in ac.get_system_prompt(p["agent_id"])
+    for hid, role in zip(p["allowed_specialists"], team.HELPERS):
+        has = "storyteller_restructure" in ac.get(hid)["tools"]
+        assert has is (role.key == "structure"), role.key
