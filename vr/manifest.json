@@ -1,8 +1,8 @@
 {
   "id": "vr",
   "name": "VR (HydraVR)",
-  "version": "0.1.1",
-  "description": "Verbindet die HydraVR-App auf der Meta Quest mit HydraHive. Agenten können auf der Brille des eigenen Nutzers etwas sagen, Benachrichtigungen zeigen und Apps in Büro-Fenstern öffnen. Kein Zugriff auf Kamera, Mikrofon oder Dateien der Brille.",
+  "version": "0.2.0",
+  "description": "Verbindet die HydraVR-App auf der Meta Quest mit HydraHive. Agenten können auf der Brille des eigenen Nutzers etwas sagen, Benachrichtigungen zeigen, Apps öffnen und schließen, Layouts einrichten und Film/Musik steuern. Kein Zugriff auf Kamera, Mikrofon oder Dateien der Brille.",
   "icon": "Glasses",
   "nav_group": "working",
   "permissions": [],
@@ -11,7 +11,7 @@
       "id": "module.vr",
       "label": "Eigene VR-Brille ansprechen",
       "default": "everyone",
-      "tools": ["vr_say", "vr_notify", "vr_open_app", "vr_status"]
+      "tools": ["vr_say", "vr_notify", "vr_open_app", "vr_status", "vr_close_window", "vr_windows", "vr_layout", "vr_media"]
     }
   ],
   "has_service": false,

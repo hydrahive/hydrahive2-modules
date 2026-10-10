@@ -89,7 +89,10 @@ def login(client):
 @pytest.fixture(autouse=True)
 def fresh_hub():
     """Jeder Test startet mit leerem Verteiler."""
+    from backend import state
     from backend.hub import hub
     hub._subs.clear()
+    state.clear()
     yield
     hub._subs.clear()
+    state.clear()
