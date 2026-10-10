@@ -9,6 +9,10 @@ from fastapi.responses import StreamingResponse
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
+from pydantic import BaseModel
+
+from . import state
+from .events import EventError
 from .hub import TooManyConnections, hub
 
 router = APIRouter()
@@ -47,3 +51,16 @@ async def events_stream(auth: Auth) -> StreamingResponse:
 @router.get("/status")
 def connection_status(auth: Auth) -> dict:
     return {"headsets": hub.connected(auth[0])}
+
+
+class StateIn(BaseModel):
+    windows: list
+
+
+@router.put("/state")
+def put_state(body: StateIn, auth: Auth) -> dict:
+    """Die Brille meldet ihren Fensterstand (nur für den eigenen Nutzer)."""
+    try:
+        return state.report(auth[0], body.windows)
+    except EventError as exc:
+        raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "invalid_state", message=str(exc))
