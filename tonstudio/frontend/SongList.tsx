@@ -39,7 +39,6 @@ export function SongList({ projectId, songs, trash, onChanged }: Props) {
 
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold text-slate-200">🎼 {t("songs")}</h3>
       <form
         className="flex gap-2"
         onSubmit={(e) => {
@@ -52,26 +51,26 @@ export function SongList({ projectId, songs, trash, onChanged }: Props) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder={t("song_title_placeholder")}
           maxLength={200}
-          className="flex-1 rounded bg-slate-900 border border-slate-700 px-2 py-1 text-sm text-slate-200"
+          className="flex-1 rounded bg-[#0d1420] border border-[#2a364b] px-2 py-1 text-sm text-[#e8eef8]"
         />
-        <button type="submit" disabled={!title.trim()} className="rounded bg-violet-600 px-3 py-1 text-sm text-white disabled:opacity-40">
+        <button type="submit" disabled={!title.trim()} className="rounded-[4px] bg-[#69d7ff]/15 border border-[#69d7ff]/40 text-[#69d7ff] px-3 py-1 text-sm disabled:opacity-40">
           {t("song_new")}
         </button>
       </form>
       {error && <p className="text-xs text-red-400">{error}</p>}
-      {songs.length === 0 && <p className="text-xs text-slate-500">{t("songs_empty")}</p>}
+      {songs.length === 0 && <p className="text-xs text-[#8d9ab0]">{t("songs_empty")}</p>}
       <ul className="flex flex-col gap-1">
         {songs.map((s) => (
-          <li key={s.id} className="group flex items-center gap-2 rounded border border-slate-700 bg-slate-800/50 px-2 py-1.5">
-            <span className="flex-1 truncate text-sm text-slate-200">{s.title}</span>
-            <span className="text-[11px] text-slate-500">
+          <li key={s.id} className="group flex items-center gap-2 rounded border border-[#2a364b] bg-[#111827] px-2 py-1.5">
+            <span className="flex-1 truncate text-sm text-[#e8eef8]">{s.title}</span>
+            <span className="text-[11px] text-[#8d9ab0]">
               {[s.bpm ? `${s.bpm} BPM` : "", s.key ?? "", t("song_tracks", { count: s.tracks })].filter(Boolean).join(" · ")}
             </span>
-            <button onClick={() => rename(s.id, s.title)} title={t("song_rename")} className="text-xs text-slate-500 hover:text-slate-200">✏️</button>
+            <button onClick={() => rename(s.id, s.title)} title={t("song_rename")} className="text-xs text-[#8d9ab0] hover:text-[#e8eef8]">✏️</button>
             <button
               onClick={() => confirm(t("song_trash_confirm", { title: s.title })) && run(() => tonstudioApi.trashSong(projectId, s.id))}
               title={t("song_trash")}
-              className="text-xs text-slate-500 hover:text-red-400"
+              className="text-xs text-[#8d9ab0] hover:text-red-400"
             >
               🗑️
             </button>
@@ -79,16 +78,16 @@ export function SongList({ projectId, songs, trash, onChanged }: Props) {
         ))}
       </ul>
       {trash.length > 0 && (
-        <button onClick={() => setShowTrash((v) => !v)} className="self-start text-xs text-slate-400 hover:text-slate-200">
+        <button onClick={() => setShowTrash((v) => !v)} className="self-start text-xs text-slate-400 hover:text-[#e8eef8]">
           {t("trash_toggle", { count: trash.length })}
         </button>
       )}
       {showTrash && (
         <ul className="flex flex-col gap-1">
           {trash.map((s) => (
-            <li key={s.id} className="flex items-center gap-2 rounded border border-dashed border-slate-700 px-2 py-1 text-xs text-slate-400">
+            <li key={s.id} className="flex items-center gap-2 rounded border border-dashed border-[#2a364b] px-2 py-1 text-xs text-slate-400">
               <span className="flex-1 truncate">{s.title}</span>
-              <button onClick={() => run(() => tonstudioApi.restoreSong(projectId, s.id))} className="hover:text-slate-200">
+              <button onClick={() => run(() => tonstudioApi.restoreSong(projectId, s.id))} className="hover:text-[#e8eef8]">
                 ↩️ {t("song_restore")}
               </button>
             </li>

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { CockpitPanel } from "@/features/cockpit/CockpitPanel"
+import { CockpitShell } from "@/features/cockpit/CockpitShell"
+import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { projectsApi } from "@/features/projects/api"
 import type { Project } from "@/features/projects/types"
 import { tonstudioApi } from "./api"
@@ -9,7 +12,8 @@ import { Library } from "./Library"
 import { SongList } from "./SongList"
 import type { LibraryItem, SongSummary } from "./types"
 
-/** Tonstudio M1: Projektwahl, Songs, Bibliothek, Clips erzeugen (SPEC.md). Zeitachse/Mixdown folgen in M2. */
+/** Tonstudio M1 als Cockpit-Seite (nav cockpit:true → der Kern rendert ohne Theme-Rahmen, das Gerüst kommt von hier:
+ *  CockpitShell + CockpitTopbar + Raster links/Mitte/rechts wie Projekt-Cockpit). Zeitachse/Mixdown folgen in M2. */
 export function TonstudioPage() {
   const { t } = useTranslation("tonstudio")
   const [projects, setProjects] = useState<Project[]>([])
@@ -44,31 +48,54 @@ export function TonstudioPage() {
     reload(projectId)
   }, [projectId, reload])
 
+  const project = projects.find((p) => p.id === projectId)
+  const changed = () => reload(projectId)
+
   return (
-    <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
-      <header className="flex flex-wrap items-center gap-3">
-        <h1 className="text-lg font-semibold text-slate-100">🎚️ {t("title")}</h1>
-        <select
-          value={projectId}
-          onChange={(e) => setProjectId(e.target.value)}
-          aria-label={t("select_project")}
-          className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-200"
-        >
-          {projects.length === 0 && <option value="">{t("no_projects")}</option>}
-          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
-        <span className="text-xs text-slate-500">{t("m1_hint")}</span>
-      </header>
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      {projectId && (
-        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-          <div className="flex flex-col gap-4">
-            <SongList projectId={projectId} songs={songs} trash={trash} onChanged={() => reload(projectId)} />
-            <GenerateDialog projectId={projectId} onDone={() => reload(projectId)} />
-          </div>
-          <Library projectId={projectId} items={library} onChanged={() => reload(projectId)} />
+    <CockpitShell title={t("title")} hideHeader className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]">
+      <CockpitTopbar active="/tonstudio" context={project ? `${t("title")} · ${project.name}` : t("title")} />
+      {error && (
+        <div className="mx-[10px] mt-[10px] shrink-0 rounded-[4px] border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+          {error}
         </div>
       )}
-    </div>
+      <div className="grid min-h-0 flex-1 gap-[10px] overflow-y-auto p-[10px] xl:grid-cols-[280px_minmax(420px,1fr)_380px] xl:overflow-hidden">
+        <aside className="min-h-0 space-y-[10px] overflow-y-auto pr-1">
+          <CockpitPanel eyebrow={t("project")}>
+            <select
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              aria-label={t("select_project")}
+              className="w-full rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-3 py-2 text-sm text-[#e8eef8]"
+            >
+              {projects.length === 0 && <option value="">{t("no_projects")}</option>}
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <p className="mt-2 text-xs text-[#8d9ab0]">{t("m1_hint")}</p>
+          </CockpitPanel>
+          {projectId && (
+            <CockpitPanel eyebrow={t("songs")}>
+              <SongList projectId={projectId} songs={songs} trash={trash} onChanged={changed} />
+            </CockpitPanel>
+          )}
+        </aside>
+
+        <main className="min-h-0 overflow-y-auto">
+          {projectId && (
+            <CockpitPanel eyebrow={t("library")} className="min-h-full">
+              <Library projectId={projectId} items={library} onChanged={changed} />
+            </CockpitPanel>
+          )}
+        </main>
+
+        <aside className="min-h-0 overflow-y-auto pl-1">
+          {projectId && (
+            <CockpitPanel eyebrow={t("generate")}>
+              <GenerateDialog projectId={projectId} onDone={changed} />
+            </CockpitPanel>
+          )}
+        </aside>
+      </div>
+    </CockpitShell>
   )
 }

@@ -10,7 +10,7 @@ interface Props {
 }
 
 const EMPTY: MusicRequest = { style: "", description: "", bpm: null, key: null, duration_s: null, instrumental: false, lyrics: "" }
-const input = "rounded bg-slate-900 border border-slate-700 px-2 py-1 text-sm text-slate-200"
+const input = "rounded bg-[#0d1420] border border-[#2a364b] px-2 py-1 text-sm text-[#e8eef8]"
 
 /** Clip erzeugen: Modell aus der Adapter-Liste, anbieterneutraler Auftrag (SPEC.md §6). */
 export function GenerateDialog({ projectId, onDone }: Props) {
@@ -49,14 +49,13 @@ export function GenerateDialog({ projectId, onDone }: Props) {
   }
 
   return (
-    <section className="flex flex-col gap-2 rounded border border-slate-700 bg-slate-800/40 p-3">
-      <h3 className="text-sm font-semibold text-slate-200">✨ {t("generate")}</h3>
+    <section className="flex flex-col gap-2">
       <select value={model} onChange={(e) => setModel(e.target.value)} className={input}>
         {models.length === 0 && <option value="">{t("models_none")}</option>}
         {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
       </select>
       {current && (
-        <p className="text-[11px] text-slate-500">
+        <p className="text-[11px] text-[#8d9ab0]">
           {[current.lyrics && t("cap_lyrics"), current.image_ref && t("cap_image"), current.audio_ref && t("cap_audio"), current.local && t("cap_local")]
             .filter(Boolean).join(" · ")}
           {current.price_note && ` — ${current.price_note}`}
@@ -76,15 +75,15 @@ export function GenerateDialog({ projectId, onDone }: Props) {
       {!req.instrumental && current?.lyrics && (
         <textarea value={req.lyrics} onChange={(e) => set("lyrics", e.target.value)} placeholder={t("lyrics_placeholder")} maxLength={5000} rows={4} className={input} />
       )}
-      <p className="text-[11px] text-slate-500">{t("duration_hint")}</p>
-      <button onClick={submit} disabled={busy || !model || empty} className="rounded bg-violet-600 px-3 py-1.5 text-sm text-white disabled:opacity-40">
+      <p className="text-[11px] text-[#8d9ab0]">{t("duration_hint")}</p>
+      <button onClick={submit} disabled={busy || !model || empty} className="rounded-[4px] bg-[#69d7ff]/15 border border-[#69d7ff]/40 text-[#69d7ff] px-3 py-1.5 text-sm disabled:opacity-40">
         {busy ? t("generating") : t("generate_start")}
       </button>
       {error && <p className="text-xs text-red-400">{error}</p>}
       {last && (
         <p className="text-xs text-emerald-400">
           {t("generated_ok", { name: last.name })}
-          {last.price_note && <span className="text-slate-500"> — {last.price_note}</span>}
+          {last.price_note && <span className="text-[#8d9ab0]"> — {last.price_note}</span>}
         </p>
       )}
     </section>
