@@ -124,6 +124,11 @@
       "id": "vr",
       "name": "VR (HydraVR)",
       "path": "vr"
+    },
+    {
+      "id": "tonstudio",
+      "name": "Tonstudio",
+      "path": "tonstudio"
     }
   ]
 }
