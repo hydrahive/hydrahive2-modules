@@ -1,8 +1,9 @@
 """Bibliothek: Quellen eines Projekts (SPEC.md §4).
 
 - Eigene Clips unter ``tonstudio/clips/`` (erzeugt oder hochgeladen), mit Sidecar.
-- Projekt-Audio überall sonst im Workspace (z. B. ``generated/``, ``atelier/audio/``). Es wird nur referenziert,
-  nie kopiert oder verändert (kein Silo, wie im Video-Editor).
+- Projekt-Audio NUR aus festen Quellordnern (wie der Musicplayer): ``generated/`` mit Unterordnern (Agenten-Werkzeuge),
+  ``atelier/audio/`` und ``media/audio/`` (Musicplayer-Upload). Nicht der ganze Workspace – der enthält Repos,
+  Backups und Temp-Dateien (live 11.10.). Symlinks werden nicht verfolgt. Nur referenziert, nie kopiert/verändert.
 - Hochladen: Endung, Größe UND Inhalt (ffprobe) prüfen. Gespeichert unter einer neuen ID, Originalname im Sidecar.
 - Löschen: nur eigene Clips, nie Projektdateien.
 """
@@ -15,7 +16,8 @@ from pathlib import Path
 from . import storage
 from ._ffprobe import probe_audio
 
-_SKIP_DIRS = {"tonstudio", ".git", "node_modules", "__pycache__", ".venv", "videoeditor"}
+# (Ordner relativ zum Workspace, Unterordner einbeziehen)
+_SOURCE_DIRS: tuple[tuple[str, bool], ...] = (("generated", True), ("atelier/audio", False), ("media/audio", False))
 
 
 class UploadError(ValueError):
@@ -53,18 +55,38 @@ def _own_clips(project_id: str) -> list[dict]:
     return out
 
 
+def _files_in(root: Path, rel_dir: str, nested: bool) -> list[Path]:
+    """Dateien in einem Quellordner. Kein Teil des Pfads darf ein Symlink sein (sonst ginge es aus dem Projekt)."""
+    base = root
+    for part in rel_dir.split("/"):
+        base = base / part
+        if base.is_symlink() or not base.is_dir():
+            return []
+    out: list[Path] = []
+    stack = [base]
+    while stack:
+        d = stack.pop()
+        for p in d.iterdir():
+            if p.is_symlink() or p.name.startswith("."):
+                continue
+            if p.is_dir():
+                if nested:
+                    stack.append(p)
+            elif p.is_file() and storage.audio_ext(p.name):
+                out.append(p)
+    return out
+
+
 def _project_audio(project_id: str) -> list[dict]:
     root = storage.workspace_root(project_id)
     out = []
-    for p in root.rglob("*"):
-        rel = p.relative_to(root)
-        if not p.is_file() or rel.parts[0] in _SKIP_DIRS or any(x.startswith(".") for x in rel.parts):
-            continue
-        if storage.audio_ext(p.name):
-            out.append({"source_rel": str(rel), "origin": "project", "name": p.name, "duration": None,
+    for rel_dir, nested in _SOURCE_DIRS:
+        for p in _files_in(root, rel_dir, nested):
+            st = p.stat()
+            out.append({"source_rel": str(p.relative_to(root)), "origin": "project", "name": p.name, "duration": None,
                         "model": None, "backend": None, "prompt": None,
-                        "created_at": datetime.fromtimestamp(p.stat().st_mtime, timezone.utc)
-                        .strftime("%Y-%m-%dT%H:%M:%SZ"), "size_bytes": p.stat().st_size})
+                        "created_at": datetime.fromtimestamp(st.st_mtime, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "size_bytes": st.st_size})
     return out
 
 
