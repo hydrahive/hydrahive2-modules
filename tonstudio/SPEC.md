@@ -1,6 +1,6 @@
 # Tonstudio – Spec
 
-Status: **ENTWURF**, wartet auf Freigabe durch Till.
+Status: **FREIGEGEBEN** durch Till (11.10.2026), Umsetzung ab M1.
 Stand: 11.10.2026. Bezug: Tasks `ae837ea0` (Konzept Musikstudio) und `b7b6139a` (Media-Studio, Dach).
 
 ---
@@ -248,9 +248,16 @@ offiziellen ComfyUI-Weg, das passt zur vorhandenen ComfyUI-Anbindung (`llm/video
 Zugänge über Dritte widersprechen meist den Bedingungen. Wieder prüfen, wenn es eine offizielle API gibt.
 MusicGen (Meta): `facebook/musicgen-large` ist CC-BY-NC-4.0, also **nicht kommerziell**, und ohne Gesang.
 
+**Entscheidung Till (11.10.):** Externe Anbieter **nur über OpenRouter** (ein Schlüssel, eine Abrechnung).
+**Lokale Modelle** (ACE-Step) **auf jeden Fall**. Damit gilt heute:
+- **Drin:** Lyria 3 Pro und Clip (OpenRouter), ACE-Step 1.5 (lokal).
+- **Zurückgestellt:** ElevenLabs, Stable Audio, MiniMax und Lyria 3.5 direkt. Sie sind (Stand 11.10.) nicht über
+  OpenRouter erreichbar. Sobald OpenRouter sie anbietet, erscheinen sie über den OpenRouter-Adapter automatisch
+  in der Auswahl (Liste aus `/api/v1/models`, `output_modalities: audio`), ohne neuen Code. Ihre Fähigkeiten
+  trägt eine kleine Tabelle im Adapter nach.
+
 **Einbau in HydraHive:**
-- Schlüssel: OpenRouter wie heute; ElevenLabs, Stability, Google und MiniMax über den Credential-Store
-  (Agenten sehen den Schlüssel nie).
+- Schlüssel: nur OpenRouter (wie heute). Lokale Adapter brauchen keinen Schlüssel, nur eine Adresse im Netz.
 - Auswahl: Standard-Musikmodell zentral (`media_models.music`, gibt es schon), im Song änderbar. Jeder Clip
   merkt sich Anbieter, Modell und Kosten (Sidecar).
 - Lokale Modelle über die vorhandene Local-Media-/ComfyUI-Schiene oder einen eigenen lokalen Adapter
@@ -262,7 +269,7 @@ MusicGen (Meta): `facebook/musicgen-large` ist CC-BY-NC-4.0, also **nicht kommer
 | Etappe | Inhalt | Abnahme |
 |---|---|---|
 | **M1** Grundgerüst + Bibliothek | Modul, Song anlegen/listen/löschen (Papierkorb), Song-Format v1 mit Versionen und 409, Bibliothek: Quellen aus `generated/`, Atelier-Audio und Upload, Clip erzeugen über die Adapter-Schnittstelle (§5.6) mit **Lyria/OpenRouter** als erstem Adapter (Stil, Prompt, Modell, BPM und Tonart als Text), Kosten vorher anzeigen, Sidecar mit Herkunft | Song mit 3 erzeugten Clips in der Bibliothek, Neustart, alles noch da |
-| **M1b** Weitere Anbieter | Adapter **ElevenLabs Music** (eigener Text, Composition Plan, Audio-Referenz, 0,15 USD/min) und **ACE-Step lokal** (nach Messung auf .2 bzw. WKS197); Fähigkeiten-Anzeige, Lizenzhinweis | Derselbe Song-Auftrag läuft mit Lyria, ElevenLabs und ACE-Step. Die Oberfläche zeigt je Modell nur, was es kann. Kosten stehen im Sidecar. |
+| **M1b** Lokale Musik-KI | Adapter **ACE-Step 1.5 lokal** (REST `acestep-api` bzw. ComfyUI, nach Messung auf .2 oder WKS197): eigener Text, Audio-Referenz, Cover, Länge bis 10 min, keine Kosten je Track; Fähigkeiten-Anzeige, Lizenzhinweis | Derselbe Song-Auftrag läuft mit Lyria (OpenRouter) und ACE-Step (lokal). Die Oberfläche zeigt je Modell nur, was es kann. |
 | **M2** Arrangement + Mischpult + Mixdown | Zeitachse mit Spuren, Tempo/Takt aus Audiodateien messen (librosa), Clips verschieben/trimmen/teilen, Fades, Gain, Panorama, Mute/Solo, Abschnitte, Raster in Takten, Wellenform, Vorschau im Browser (Web Audio), Mixdown mit ffmpeg (Ansatz und Code aus `videoeditor/_audio_mix.py` übernehmen, plus Panorama), Export-Paket | Song aus 4 Clips auf 3 Spuren, Mixdown klingt wie die Vorschau, Lautheit wie eingestellt |
 | **M3** Liedtext | Editor mit Abschnitt-Markern, Text beim Erzeugen an Lyria (`Lyrics:`), zurückgelieferten Text speichern, Abschnitte ↔ Text verknüpfen, Abschnitt neu erzeugen | Eigener Text mit 2 Strophen und Refrain wird gesungen, Clip kennt die Textversion |
 | **M3b** Noten | MusicXML/MIDI hochladen und prüfen, Eckdaten mit `music21` auslesen, Noten anzeigen (OSMD bzw. Klavierrolle), Eckdaten in den Lyria-Prompt, Proben-Marken ↔ Abschnitte, Liedtext aus MusicXML übernehmen, Vorlage-Spur mit FluidSynth. Dazu ein **Kern-PR** für die Systempakete im Installer (§5.4) | Eine MusicXML-Datei mit Melodie, Akkorden und Text: Noten werden angezeigt, Tempo und Tonart stehen im Prompt, die Vorlage-Spur klingt notengetreu, der Text ist übernommen. Ohne FluidSynth läuft alles außer der Vorlage-Spur. |
@@ -319,7 +326,7 @@ Keine Werkzeuge für Löschen.
    Kostenanzeige nicht stimmen.
 3. **M5 Stems:** lokal auf der GPU oder Cloud? Erst messen.
 4. **Lokale Musik-KI (ACE-Step):** .2 (P2200, 5 GB) oder WKS197 (ComfyUI)? Erst messen: Laufzeit je Song, Qualität, VRAM.
-5. **Welche Anbieter zuerst** nach Lyria? Vorschlag: ElevenLabs (bester Funktionsumfang, klare kommerzielle Lizenz) und ACE-Step (lokal, MIT, ohne Kosten je Track).
+5. ~~Welche Anbieter zuerst?~~ Entschieden 11.10.: nur über OpenRouter + lokal (ACE-Step).
 
 ## 11. Akzeptanz (gesamt, bis M3c)
 
