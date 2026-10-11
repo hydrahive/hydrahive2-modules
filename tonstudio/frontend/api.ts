@@ -25,6 +25,8 @@ export const tonstudioApi = {
     form.append("file", file)
     return api.postForm<LibraryItem>(`${P(pid)}/library/upload`, form)
   },
+  setLabel: (pid: string, source_rel: string, name: string): Promise<{ ok: boolean }> =>
+    api.post<{ ok: boolean }>(`${P(pid)}/library/label`, { source_rel, name }),
   deleteClip: (pid: string, source_rel: string): Promise<{ ok: boolean }> =>
     api.post<{ ok: boolean }>(`${P(pid)}/library/delete`, { source_rel }),
 

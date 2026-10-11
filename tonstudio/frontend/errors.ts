@@ -15,6 +15,7 @@ const de = {
   invalid_request: "Ungültiger Auftrag: {{message}}",
   unknown_model: "Unbekanntes Modell: {{model}}",
   generation_failed: "Erzeugen fehlgeschlagen: {{message}}",
+  label_rejected: "Umbenennen nicht möglich: {{message}}",
 }
 const en = {
   song_not_found: "Song not found",
@@ -28,6 +29,7 @@ const en = {
   invalid_request: "Invalid request: {{message}}",
   unknown_model: "Unknown model: {{model}}",
   generation_failed: "Generation failed: {{message}}",
+  label_rejected: "Rename not possible: {{message}}",
 }
 
 let done = false

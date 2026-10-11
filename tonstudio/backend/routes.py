@@ -117,9 +117,9 @@ def restore_song(project_id: str, song_id: str, auth: Auth) -> dict:
 # ── Bibliothek ─────────────────────────────────────────────────────────────────
 
 @router.get("/projects/{project_id}/library")
-def list_library(project_id: str, auth: Auth) -> list[dict]:
+async def list_library(project_id: str, auth: Auth) -> list[dict]:
     _guard(auth[0], project_id)
-    return library.list_sources(project_id)
+    return await library.list_sources(project_id)
 
 
 @router.post("/projects/{project_id}/library/upload")
@@ -141,6 +141,22 @@ def delete_clip(project_id: str, body: DeleteIn, auth: Auth) -> dict:
     _guard(auth[0], project_id)
     if not library.delete_clip(project_id, body.source_rel):
         raise coded(status.HTTP_404_NOT_FOUND, "clip_not_found")
+    return {"ok": True}
+
+
+class LabelIn(BaseModel):
+    source_rel: str = Field(min_length=1, max_length=500)
+    name: str = Field(default="", max_length=300)
+
+
+@router.post("/projects/{project_id}/library/label")
+def set_label(project_id: str, body: LabelIn, auth: Auth) -> dict:
+    """Eigener Anzeigename für eine Bibliotheks-Datei (leer = zurücksetzen). Die Datei selbst bleibt unverändert."""
+    _guard(auth[0], project_id)
+    try:
+        library.set_label(project_id, body.source_rel, body.name)
+    except library.LabelError as e:
+        raise coded(status.HTTP_400_BAD_REQUEST, "label_rejected", message=str(e)) from e
     return {"ok": True}
 
 

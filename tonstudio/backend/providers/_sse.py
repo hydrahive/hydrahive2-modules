@@ -21,6 +21,7 @@ class StreamResult:
     native_finish: str = ""
     errors: list[str] = field(default_factory=list)
     lines: int = 0
+    attempts: int = 1
 
     def summary(self) -> str:
         """Kurzer Befund für Meldung und Protokoll (ohne Audio-Daten)."""

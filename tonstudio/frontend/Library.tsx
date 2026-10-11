@@ -1,7 +1,10 @@
-import { useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { audioUrl, fmtDuration, tonstudioApi } from "./api"
+import { tonstudioApi } from "./api"
 import { errText } from "./errors"
+import { LibraryCard } from "./LibraryCard"
+import { groupLibrary, type Sort } from "./libraryView"
+import { useSinglePlayer } from "./useSinglePlayer"
 import type { LibraryItem } from "./types"
 
 interface Props {
@@ -10,14 +13,17 @@ interface Props {
   onChanged: () => void
 }
 
-const ORIGIN_ICON: Record<LibraryItem["origin"], string> = { generated: "✨", upload: "⬆️", project: "📁" }
-
-/** Bibliothek: eigene Clips (erzeugt/hochgeladen) und Audio aus dem Projekt, mit Player. */
+/** Bibliothek als kompakte Kacheln, gegliedert nach Herkunft, sortier- und filterbar. Ein Player für alle. */
 export function Library({ projectId, items, onChanged }: Props) {
   const { t } = useTranslation("tonstudio")
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const [sort, setSort] = useState<Sort>("new")
+  const [query, setQuery] = useState("")
+  const player = useSinglePlayer(projectId)
+
+  const grouped = useMemo(() => groupLibrary(items, sort, query), [items, sort, query])
 
   async function upload(file: File | undefined) {
     if (!file) return
@@ -37,6 +43,7 @@ export function Library({ projectId, items, onChanged }: Props) {
   async function remove(rel: string) {
     if (!confirm(t("clip_delete_confirm"))) return
     try {
+      if (player.current === rel) player.stop()
       await tonstudioApi.deleteClip(projectId, rel)
       onChanged()
     } catch (e) {
@@ -44,37 +51,50 @@ export function Library({ projectId, items, onChanged }: Props) {
     }
   }
 
+  async function rename(it: LibraryItem) {
+    const next = prompt(t("rename"), it.named === false ? "" : it.name)
+    if (next === null) return
+    try {
+      await tonstudioApi.setLabel(projectId, it.source_rel, next.trim())
+      onChanged()
+    } catch (e) {
+      setError(errText(e))
+    }
+  }
+
+  const ctl = "rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1 text-xs text-[#e8eef8]"
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <span className="flex-1 text-xs text-[#8d9ab0]">{t("library_count", { count: items.length })}</span>
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("library_search")} className={`${ctl} min-w-[140px] flex-1`} />
+        <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label={t("sort")} className={ctl}>
+          <option value="new">{t("sort_new")}</option>
+          <option value="name">{t("sort_name")}</option>
+          <option value="length">{t("sort_length")}</option>
+        </select>
         <input ref={fileRef} type="file" accept="audio/*,.mp3,.wav,.flac,.ogg,.m4a" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
-        <button onClick={() => fileRef.current?.click()} disabled={busy} className="rounded border border-[#2a364b] px-2 py-1 text-xs text-slate-300 hover:bg-[#1c2940] disabled:opacity-40">
+        <button onClick={() => fileRef.current?.click()} disabled={busy} className={`${ctl} hover:bg-[#1c2940] disabled:opacity-40`}>
           {busy ? t("uploading") : `⬆️ ${t("upload")}`}
         </button>
       </div>
       {error && <p className="text-xs text-red-400">{error}</p>}
       {items.length === 0 && <p className="text-xs text-[#8d9ab0]">{t("library_empty")}</p>}
-      <ul className="flex flex-col gap-2">
-        {items.map((it) => (
-          <li key={it.source_rel} className="group flex flex-col gap-1 rounded border border-[#2a364b] bg-[#111827] p-2">
-            <div className="flex items-center gap-2">
-              <span title={t(`origin_${it.origin}`)}>{ORIGIN_ICON[it.origin]}</span>
-              <span className="flex-1 truncate text-xs text-[#e8eef8]" title={it.prompt || it.source_rel}>
-                {it.prompt || it.name}
-              </span>
-              <span className="text-[11px] text-[#8d9ab0]">{fmtDuration(it.duration)}</span>
-              {it.origin !== "project" && (
-                <button onClick={() => remove(it.source_rel)} title={t("clip_delete")} className="text-xs text-[#8d9ab0] opacity-0 hover:text-red-400 group-hover:opacity-100">
-                  🗑️
-                </button>
-              )}
-            </div>
-            {it.model && <span className="text-[11px] text-[#8d9ab0]">{it.model}</span>}
-            <audio src={audioUrl(projectId, it.source_rel)} controls preload="none" className="h-8 w-full" />
-          </li>
-        ))}
-      </ul>
+      {grouped.map(({ g, list }) => (
+        <div key={g} className="flex flex-col gap-1.5">
+          <h4 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8d9ab0]">
+            {t(`group_${g}`)} <span className="font-normal text-[#68758a]">· {list.length}</span>
+          </h4>
+          <ul className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]">
+            {list.map((it) => (
+              <LibraryCard key={it.source_rel} item={it} playing={player.current === it.source_rel && player.playing}
+                progress={player.current === it.source_rel ? player.progress : 0}
+                onToggle={() => player.toggle(it.source_rel)} onSeek={(f) => player.seek(it.source_rel, f)}
+                onDelete={it.origin !== "project" ? () => remove(it.source_rel) : undefined} onRename={() => rename(it)} />
+            ))}
+          </ul>
+        </div>
+      ))}
+      {player.element}
     </section>
   )
 }

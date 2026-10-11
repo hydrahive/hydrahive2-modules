@@ -54,7 +54,13 @@ export interface Song {
 export interface LibraryItem {
   source_rel: string
   origin: "generated" | "upload" | "project"
+  /** Herkunft für die Gliederung: eigene Tonstudio-Clips, Atelier, Agenten (generated/), Musicplayer-Upload */
+  group: "tonstudio" | "atelier" | "generated" | "media"
   name: string
+  /** false = nur der (nichtssagende) Dateiname bekannt */
+  named?: boolean
+  /** weitere Fundorte mit identischem Inhalt */
+  copies?: string[]
   duration: number | null
   model: string | null
   backend: string | null

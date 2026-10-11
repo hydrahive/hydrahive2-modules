@@ -278,3 +278,66 @@ def test_erfolg_wird_mit_generierungs_id_protokolliert(fake_http, caplog):
     with caplog.at_level(logging.INFO):
         asyncio.run(OpenRouterBackend().generate("google/lyria-3-pro-preview", _req()))
     assert "gen-ok1" in caplog.text
+
+
+_LEER_OTHER = ('data: {"id":"gen-leer","choices":[{"delta":{"content":"[[A0]]"},"finish_reason":"stop",'
+               '"native_finish_reason":"OTHER"}]}\n\ndata: [DONE]\n\n').encode()
+
+
+class _Seq:
+    """Mehrere Antworten nacheinander (je Aufruf von AsyncClient eine)."""
+    def __init__(self, bodies):
+        self.bodies, self.calls = list(bodies), 0
+
+
+def _install_seq(monkeypatch, seq):
+    from backend.providers import openrouter
+
+    def make(**kw):
+        body = seq.bodies[min(seq.calls, len(seq.bodies) - 1)]
+        seq.calls += 1
+        return _FakeClient(_FakeResp(200, body), {})
+    monkeypatch.setattr(openrouter.httpx, "AsyncClient", make)
+    monkeypatch.setattr(openrouter, "openrouter_key", lambda: "sk-test")
+
+
+def test_leerer_track_mit_other_wird_einmal_wiederholt(monkeypatch):
+    """Till 11.10.: Lyria liefert manchmal ohne Grund keinen Track (finish=stop, native=OTHER) → EINMAL selbst
+    neu versuchen. Klappt der zweite, ist alles gut."""
+    from backend.providers.openrouter import OpenRouterBackend
+    b64 = base64.b64encode(MP3).decode()
+    ok = ('data: {"id":"gen-ok","choices":[{"delta":{"audio":{"data":"' + b64 + '"}}}]}\n\ndata: [DONE]\n\n').encode()
+    seq = _Seq([_LEER_OTHER, ok])
+    _install_seq(monkeypatch, seq)
+    res = asyncio.run(OpenRouterBackend().generate("google/lyria-3-pro-preview", _req()))
+    assert res.audio == MP3 and seq.calls == 2
+
+
+def test_wiederholung_hoechstens_einmal(monkeypatch):
+    from backend.providers.openrouter import OpenRouterBackend, ProviderError
+    seq = _Seq([_LEER_OTHER, _LEER_OTHER, _LEER_OTHER])
+    _install_seq(monkeypatch, seq)
+    with pytest.raises(ProviderError, match="Keine Audio") as e:
+        asyncio.run(OpenRouterBackend().generate("google/lyria-3-pro-preview", _req()))
+    assert seq.calls == 2 and "2 Versuche" in str(e.value)
+
+
+def test_gesperrter_prompt_wird_nicht_wiederholt(monkeypatch):
+    """Ausdrücklicher Block (error im Stream) ist kein Zufall – nicht wiederholen, das kostet nur."""
+    from backend.providers.openrouter import OpenRouterBackend, ProviderError
+    block = ('data: {"id":"gen-b","error":{"code":502,"message":"Gemini blocked the response: OTHER"}}\n\n').encode()
+    seq = _Seq([block, block])
+    _install_seq(monkeypatch, seq)
+    with pytest.raises(ProviderError, match="blocked"):
+        asyncio.run(OpenRouterBackend().generate("google/lyria-3-pro-preview", _req()))
+    assert seq.calls == 1
+
+
+def test_leer_ohne_other_wird_nicht_wiederholt(monkeypatch):
+    """Nur der belegte Fall (native=OTHER) wird wiederholt, kein pauschales Retry."""
+    from backend.providers.openrouter import OpenRouterBackend, ProviderError
+    seq = _Seq([_sse([]), _sse([])])
+    _install_seq(monkeypatch, seq)
+    with pytest.raises(ProviderError):
+        asyncio.run(OpenRouterBackend().generate("google/lyria-3-pro-preview", _req()))
+    assert seq.calls == 1
