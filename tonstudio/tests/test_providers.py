@@ -235,3 +235,46 @@ def test_ohne_netz_bleiben_bekannte_modelle_sichtbar(monkeypatch):
     monkeypatch.setattr(openrouter, "_live_audio_models", boom)
     ids = {m.id for m in asyncio.run(providers.list_models())}
     assert {"google/lyria-3-pro-preview", "google/lyria-3-clip-preview"} <= ids
+
+
+def test_ohne_audio_meldet_was_stattdessen_kam(fake_http, caplog):
+    """Live gesehen (11.10.): Lyria liefert manchmal keinen Track. Die Meldung muss sagen, was kam (Generierungs-ID,
+    finish_reason, Text-Anfang), und es wird protokolliert – sonst ist es nicht nachvollziehbar."""
+    import logging
+
+    from backend.providers.openrouter import OpenRouterBackend, ProviderError
+    body = ('data: {"id":"gen-123abc","choices":[{"delta":{"content":"[[A0]]\\n[:] Die Sonne"}}]}\n\n'
+            ': OPENROUTER PROCESSING\n\n'
+            'data: {"id":"gen-123abc","choices":[{"delta":{"content":""},"finish_reason":"stop",'
+            '"native_finish_reason":"STOP"}]}\n\ndata: [DONE]\n\n').encode()
+    fake_http(body=body)
+    with caplog.at_level(logging.WARNING), pytest.raises(ProviderError) as e:
+        asyncio.run(OpenRouterBackend().generate("google/lyria-3-pro-preview", _req()))
+    msg = str(e.value)
+    assert "Keine Audio" in msg and "gen-123abc" in msg and "stop" in msg
+    assert "gen-123abc" in caplog.text and "Die Sonne" in caplog.text
+    assert "sk-test" not in caplog.text
+
+
+def test_fehler_im_stream_wird_gemeldet(fake_http):
+    """OpenRouter meldet Anbieter-Fehler nach dem 200 als SSE-Objekt mit "error" – das muss in der Meldung stehen."""
+    from backend.providers.openrouter import OpenRouterBackend, ProviderError
+    body = ('data: {"id":"gen-9","error":{"code":502,"message":"Provider returned error"},'
+            '"choices":[{"delta":{"content":""},"finish_reason":"error"}]}\n\ndata: [DONE]\n\n').encode()
+    fake_http(body=body)
+    with pytest.raises(ProviderError) as e:
+        asyncio.run(OpenRouterBackend().generate("google/lyria-3-pro-preview", _req()))
+    assert "Provider returned error" in str(e.value) and "502" in str(e.value)
+
+
+def test_erfolg_wird_mit_generierungs_id_protokolliert(fake_http, caplog):
+    import logging
+
+    from backend.providers.openrouter import OpenRouterBackend
+    b64 = base64.b64encode(MP3).decode()
+    body = ('data: {"id":"gen-ok1","choices":[{"delta":{"audio":{"data":"' + b64 + '"}}}]}\n\n'
+            'data: [DONE]\n\n').encode()
+    fake_http(body=body)
+    with caplog.at_level(logging.INFO):
+        asyncio.run(OpenRouterBackend().generate("google/lyria-3-pro-preview", _req()))
+    assert "gen-ok1" in caplog.text
