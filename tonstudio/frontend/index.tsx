@@ -5,7 +5,7 @@ export const nav = [{ path: "/tonstudio", icon: "AudioLines", labelKey: "tonstud
 
 export const i18n = {
   de: { tonstudio: {
-    tonstudio: "Tonstudio", title: "Tonstudio", select_project: "Projekt wählen", no_projects: "Keine Projekte",
+    tonstudio: "Tonstudio", title: "Tonstudio", project: "Projekt", library_count_one: "{{count}} Clip", library_count_other: "{{count}} Clips", select_project: "Projekt wählen", no_projects: "Keine Projekte",
     m1_hint: "Etappe 1: Songs, Bibliothek, Clips erzeugen. Zeitachse und Mischen folgen.",
     songs: "Songs", songs_empty: "Noch keine Songs.", song_new: "Neuer Song", song_title_placeholder: "Titel des Songs",
     song_rename: "Umbenennen", song_trash: "In den Papierkorb", song_trash_confirm: "„{{title}}“ in den Papierkorb legen?",
@@ -23,7 +23,7 @@ export const i18n = {
     generated_ok: "Fertig: {{name}}",
   } },
   en: { tonstudio: {
-    tonstudio: "Sound studio", title: "Sound studio", select_project: "Select a project", no_projects: "No projects",
+    tonstudio: "Sound studio", title: "Sound studio", project: "Project", library_count_one: "{{count}} clip", library_count_other: "{{count}} clips", select_project: "Select a project", no_projects: "No projects",
     m1_hint: "Stage 1: songs, library, generate clips. Timeline and mixing follow.",
     songs: "Songs", songs_empty: "No songs yet.", song_new: "New song", song_title_placeholder: "Song title",
     song_rename: "Rename", song_trash: "Move to trash", song_trash_confirm: "Move “{{title}}” to the trash?",
