@@ -67,6 +67,16 @@ class OpenRouterBackend:
         prompt = build_prompt(req)
         payload = {"model": model_id, "messages": [{"role": "user", "content": prompt}],
                    "modalities": ["text", "audio"], "audio": {"format": "mp3"}, "stream": True}
+        res = await self._call(key, model_id, payload)
+        if _empty_other(res):
+            # Till 11.10.: Lyria liefert manchmal ohne Grund keinen Track (finish=stop, native=OTHER) → EINMAL neu.
+            logger.info("tonstudio openrouter %s leer mit OTHER (%s) – zweiter Versuch", model_id, res.summary())
+            res = await self._call(key, model_id, payload)
+            if _empty_other(res):
+                res.attempts = 2
+        return _finish(model_id, prompt, res)
+
+    async def _call(self, key: str, model_id: str, payload: dict) -> StreamResult:
         try:
             async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
                 async with client.stream("POST", _URL, json=payload,
@@ -76,11 +86,16 @@ class OpenRouterBackend:
                         body = (await resp.aread()).decode("utf-8", "replace")[:300]
                         logger.warning("tonstudio openrouter %s HTTP %s: %s", model_id, resp.status_code, body)
                         raise ProviderError(f"OpenRouter antwortete {resp.status_code}: {body}")
-                    res = await read_stream(resp)
+                    return await read_stream(resp)
         except httpx.HTTPError as e:
             logger.warning("tonstudio openrouter %s Netzwerkfehler: %s", model_id, type(e).__name__)
             raise ProviderError(f"Netzwerkfehler bei OpenRouter: {type(e).__name__}") from e
-        return _finish(model_id, prompt, res)
+
+
+def _empty_other(res: StreamResult) -> bool:
+    """Nur der belegte Zufallsfall: sauber beendet, kein Fehler, kein Audio, Grund OTHER. Gesperrte Prompts
+    (error im Stream) und andere Leer-Antworten werden NICHT wiederholt."""
+    return not res.audio and not res.errors and res.done and res.native_finish.upper() == "OTHER"
 
 
 def _finish(model_id: str, prompt: str, res: StreamResult) -> MusicResult:
@@ -92,7 +107,8 @@ def _finish(model_id: str, prompt: str, res: StreamResult) -> MusicResult:
         raise ProviderError(f"OpenRouter meldet einen Fehler: {'; '.join(res.errors)[:300]} ({info})")
     if not res.audio:
         logger.warning("tonstudio openrouter %s ohne Audio (%s), Text: %r", model_id, info, res.text_head())
-        raise ProviderError(f"Keine Audio-Daten erhalten – bitte noch einmal versuchen. ({info})")
+        tries = f"{res.attempts} Versuche, " if res.attempts > 1 else ""
+        raise ProviderError(f"Keine Audio-Daten erhalten – bitte noch einmal versuchen. ({tries}{info})")
     if not res.done:
         logger.warning("tonstudio openrouter %s Stream abgebrochen (%s)", model_id, info)
         raise ProviderError(f"Antwort vorzeitig abgebrochen – bitte noch einmal versuchen. ({info})")

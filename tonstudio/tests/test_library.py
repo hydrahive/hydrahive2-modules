@@ -14,10 +14,13 @@ needs_ffmpeg = pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which
                                   reason="ffmpeg/ffprobe fehlt")
 
 
+_FREQ = iter(range(300, 3000, 7))
+
+
 def _tone(path, seconds: float = 1.0, fmt: str = "mp3") -> bytes:
-    """Echte kleine Audiodatei (Sinuston) erzeugen."""
+    """Echte kleine Audiodatei (Sinuston). Jede mit eigener Frequenz → verschiedener Inhalt (Duplikat-Erkennung)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"sine=frequency=440:duration={seconds}",
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"sine=frequency={next(_FREQ)}:duration={seconds}",
                     "-f", fmt, str(path)], check=True)
     return path.read_bytes()
 
@@ -85,7 +88,7 @@ def test_bibliothek_zeigt_eigene_clips_und_projekt_audio(fake_backend, ws):
     _tone(ws / "generated" / "lied.mp3")
     _tone(ws / "atelier" / "audio" / "score.wav", fmt="wav")
     (ws / "notizen.txt").write_text("kein audio")
-    items = library.list_sources(PROJECT_ID)
+    items = asyncio.run(library.list_sources(PROJECT_ID))
     origins = sorted((i["origin"], i["source_rel"].split("/")[0]) for i in items)
     assert origins == [("generated", "tonstudio"), ("project", "atelier"), ("project", "generated")]
     own = next(i for i in items if i["origin"] == "generated")
@@ -105,7 +108,7 @@ def test_bibliothek_nur_aus_festen_quellordnern(fake_backend, ws):
         _tone(ws / fremd)
     (ws / "generated" / "bild.png").write_bytes(b"PNG")      # kein Audio im Quellordner
     (ws / "media" / "audio" / "liste.txt").write_text("x")
-    rels = sorted(i["source_rel"] for i in library.list_sources(PROJECT_ID))
+    rels = sorted(i["source_rel"] for i in asyncio.run(library.list_sources(PROJECT_ID)))
     assert rels == ["atelier/audio/c.mp3", "generated/sub/a.mp3", "media/audio/b.mp3"]
 
 
@@ -118,7 +121,7 @@ def test_bibliothek_folgt_keinem_symlink_nach_draussen(fake_backend, ws, tmp_pat
     (ws / "generated" / "link").symlink_to(draussen, target_is_directory=True)
     (ws / "generated" / "link.mp3").symlink_to(draussen / "geheim.mp3")
     try:
-        assert library.list_sources(PROJECT_ID) == []
+        assert asyncio.run(library.list_sources(PROJECT_ID)) == []
     finally:
         (ws / "generated" / "link").unlink()
         (ws / "generated" / "link.mp3").unlink()
@@ -133,10 +136,103 @@ def test_quellordner_selbst_als_symlink_wird_ignoriert(tmp_path):
     (draussen / "audio" / "x.mp3").write_bytes(b"ID3")
     root.mkdir()
     (root / "atelier").symlink_to(draussen, target_is_directory=True)
-    assert library._files_in(root, "atelier/audio", False) == []
+    assert library.files_in(root, "atelier/audio", False) == []
     (root / "echt" / "audio").mkdir(parents=True)
     (root / "echt" / "audio" / "y.mp3").write_bytes(b"ID3")
-    assert [p.name for p in library._files_in(root, "echt/audio", False)] == ["y.mp3"]
+    assert [p.name for p in library.files_in(root, "echt/audio", False)] == ["y.mp3"]
+
+
+@needs_ffmpeg
+def test_bibliothek_zeigt_aussagekraeftige_namen_und_gruppe(fake_backend, ws):
+    """Till 11.10.: UUID-Dateinamen sagen nichts. Name kommt aus Atelier-Sidecar (<datei>.json, prompt), sonst aus
+    dem Titel-Tag, sonst Dateiname. Jede Quelle trägt eine Gruppe (zum Sortieren/Gliedern im Frontend)."""
+    import json as _json
+    import subprocess as _sp
+
+    from backend import library
+    _tone(ws / "atelier" / "audio" / "5aa6.mp3")
+    (ws / "atelier" / "audio" / "5aa6.mp3.json").write_text(_json.dumps({"prompt": "Kleiner Technosong",
+                                                                      "model": "google/lyria-3-pro-preview"}))
+    src = ws / "media" / "audio" / "roh.mp3"
+    _tone(src)
+    tagged = ws / "media" / "audio" / "0e53.mp3"
+    _sp.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-metadata", "title=Taverne am Fluss", "-c", "copy",
+             str(tagged)], check=True)
+    _tone(ws / "generated" / "abc123.wav", fmt="wav")
+    by = {i["source_rel"]: i for i in asyncio.run(library.list_sources(PROJECT_ID))}
+    a = by["atelier/audio/5aa6.mp3"]
+    assert a["name"] == "Kleiner Technosong" and a["model"] == "google/lyria-3-pro-preview" and a["group"] == "atelier"
+    assert by["media/audio/0e53.mp3"]["name"] == "Taverne am Fluss" and by["media/audio/0e53.mp3"]["group"] == "media"
+    assert by["media/audio/roh.mp3"]["name"] == "roh.mp3"
+    g = by["generated/abc123.wav"]
+    assert g["group"] == "generated" and g["duration"] and g["duration"] > 0
+    assert "5aa6.mp3.json" not in str(list(by))
+
+
+@needs_ffmpeg
+def test_eigene_clips_haben_gruppe_tonstudio(fake_backend, ws):
+    from backend import generate, library
+    asyncio.run(generate.generate_clip(PROJECT_ID, "fake/musik", {"description": "Lied über Ratten"}, user="u"))
+    own = [i for i in asyncio.run(library.list_sources(PROJECT_ID)) if i["origin"] == "generated"]
+    assert own[0]["group"] == "tonstudio" and own[0]["name"] == "Lied über Ratten"
+
+
+@needs_ffmpeg
+def test_doppelte_dateien_nur_einmal_mit_kopien(fake_backend, ws):
+    """Live 11.10.: media/audio enthält Kopien von generated/ (Musicplayer-Import). Gleicher Inhalt = ein Eintrag,
+    die Kopien werden mitgeführt. Vorrang hat die frühere Gruppe (tonstudio, atelier, generated, media)."""
+    import shutil
+
+    from backend import library
+    _tone(ws / "generated" / "orig.mp3")
+    (ws / "media" / "audio").mkdir(parents=True, exist_ok=True)
+    shutil.copy(ws / "generated" / "orig.mp3", ws / "media" / "audio" / "kopie.mp3")
+    _tone(ws / "media" / "audio" / "anders.mp3", seconds=2.0)
+    items = asyncio.run(library.list_sources(PROJECT_ID))
+    by = {i["source_rel"]: i for i in items}
+    assert sorted(by) == ["generated/orig.mp3", "media/audio/anders.mp3"]
+    assert by["generated/orig.mp3"]["copies"] == ["media/audio/kopie.mp3"]
+    assert by["media/audio/anders.mp3"]["copies"] == []
+
+
+@needs_ffmpeg
+def test_ohne_namen_wird_das_markiert(fake_backend, ws):
+    """Ohne Sidecar/Titel-Tag ist der Dateiname (UUID) nichtssagend → named=False, das Frontend zeigt Datum statt UUID."""
+    from backend import library
+    _tone(ws / "generated" / "3927ba7597cd4438b8af0fe2283085ac.mp3")
+    item = asyncio.run(library.list_sources(PROJECT_ID))[0]
+    assert item["named"] is False and item["name"].endswith(".mp3")
+
+
+@needs_ffmpeg
+def test_umbenennen_ohne_datei_anzufassen(fake_backend, ws):
+    from backend import generate, library
+    _tone(ws / "generated" / "abc.mp3")
+    before = (ws / "generated" / "abc.mp3").read_bytes()
+    library.set_label(PROJECT_ID, "generated/abc.mp3", "Taverne am Fluss")
+    item = next(i for i in asyncio.run(library.list_sources(PROJECT_ID)) if i["source_rel"] == "generated/abc.mp3")
+    assert item["name"] == "Taverne am Fluss" and item["named"] is True
+    assert (ws / "generated" / "abc.mp3").read_bytes() == before
+    library.set_label(PROJECT_ID, "generated/abc.mp3", "")            # leer = Name zurücksetzen
+    item = next(i for i in asyncio.run(library.list_sources(PROJECT_ID)) if i["source_rel"] == "generated/abc.mp3")
+    assert item["name"] == "abc.mp3"
+    asyncio.run(generate.generate_clip(PROJECT_ID, "fake/musik", {"description": "alt"}, user="u"))
+    own = next(i for i in asyncio.run(library.list_sources(PROJECT_ID)) if i["group"] == "tonstudio")
+    library.set_label(PROJECT_ID, own["source_rel"], "Neu")
+    own = next(i for i in asyncio.run(library.list_sources(PROJECT_ID)) if i["group"] == "tonstudio")
+    assert own["name"] == "Neu"
+
+
+def test_umbenennen_nur_fuer_bibliotheks_dateien(ws):
+    from backend import library
+    (ws / "geheim.mp3").write_bytes(b"ID3")
+    for rel in ("geheim.mp3", "../x.mp3", "generated/gibtsnicht.mp3"):
+        with pytest.raises(library.LabelError):
+            library.set_label(PROJECT_ID, rel, "x")
+    (ws / "generated").mkdir(exist_ok=True)
+    (ws / "generated" / "ok.mp3").write_bytes(b"ID3")
+    with pytest.raises(library.LabelError):
+        library.set_label(PROJECT_ID, "generated/ok.mp3", "x" * 201)
 
 
 @needs_ffmpeg

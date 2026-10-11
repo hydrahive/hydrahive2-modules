@@ -51,6 +51,10 @@ def _sub(project_id: str, *parts: str) -> Path:
     return d
 
 
+def tonstudio_root(project_id: str) -> Path:
+    return _sub(project_id)
+
+
 def songs_dir(project_id: str) -> Path:
     return _sub(project_id, "songs")
 

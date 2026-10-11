@@ -1,9 +1,7 @@
 """Bibliothek: Quellen eines Projekts (SPEC.md §4).
 
 - Eigene Clips unter ``tonstudio/clips/`` (erzeugt oder hochgeladen), mit Sidecar.
-- Projekt-Audio NUR aus festen Quellordnern (wie der Musicplayer): ``generated/`` mit Unterordnern (Agenten-Werkzeuge),
-  ``atelier/audio/`` und ``media/audio/`` (Musicplayer-Upload). Nicht der ganze Workspace – der enthält Repos,
-  Backups und Temp-Dateien (live 11.10.). Symlinks werden nicht verfolgt. Nur referenziert, nie kopiert/verändert.
+- Projekt-Audio aus festen Quellordnern: siehe ``sources.py`` (Namen, Duplikate, Umbenennen).
 - Hochladen: Endung, Größe UND Inhalt (ffprobe) prüfen. Gespeichert unter einer neuen ID, Originalname im Sidecar.
 - Löschen: nur eigene Clips, nie Projektdateien.
 """
@@ -15,10 +13,10 @@ from pathlib import Path
 
 from . import storage
 from ._ffprobe import probe_audio
+from .sources import LabelError, dedupe, files_in, load_labels, project_audio, set_label
 
-# (Ordner relativ zum Workspace, Unterordner einbeziehen)
-_SOURCE_DIRS: tuple[tuple[str, bool], ...] = (("generated", True), ("atelier/audio", False), ("media/audio", False))
-
+__all__ = ["LabelError", "UploadError", "add_upload", "delete_clip", "files_in", "list_sources", "set_label",
+           "write_sidecar"]
 
 class UploadError(ValueError):
     pass
@@ -50,48 +48,22 @@ def _own_clips(project_id: str) -> list[dict]:
                 "source_rel": storage.rel_to_workspace(project_id, p), "origin": meta.get("origin", "upload"),
                 "name": meta.get("name") or p.name, "duration": meta.get("duration"),
                 "model": meta.get("model"), "backend": meta.get("backend"), "prompt": meta.get("prompt"),
-                "created_at": meta.get("created_at"), "size_bytes": p.stat().st_size,
+                "created_at": meta.get("created_at"), "size_bytes": p.stat().st_size, "group": "tonstudio",
             })
     return out
 
 
-def _files_in(root: Path, rel_dir: str, nested: bool) -> list[Path]:
-    """Dateien in einem Quellordner. Kein Teil des Pfads darf ein Symlink sein (sonst ginge es aus dem Projekt)."""
-    base = root
-    for part in rel_dir.split("/"):
-        base = base / part
-        if base.is_symlink() or not base.is_dir():
-            return []
-    out: list[Path] = []
-    stack = [base]
-    while stack:
-        d = stack.pop()
-        for p in d.iterdir():
-            if p.is_symlink() or p.name.startswith("."):
-                continue
-            if p.is_dir():
-                if nested:
-                    stack.append(p)
-            elif p.is_file() and storage.audio_ext(p.name):
-                out.append(p)
-    return out
-
-
-def _project_audio(project_id: str) -> list[dict]:
-    root = storage.workspace_root(project_id)
-    out = []
-    for rel_dir, nested in _SOURCE_DIRS:
-        for p in _files_in(root, rel_dir, nested):
-            st = p.stat()
-            out.append({"source_rel": str(p.relative_to(root)), "origin": "project", "name": p.name, "duration": None,
-                        "model": None, "backend": None, "prompt": None,
-                        "created_at": datetime.fromtimestamp(st.st_mtime, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                        "size_bytes": st.st_size})
-    return out
-
-
-def list_sources(project_id: str) -> list[dict]:
-    items = _own_clips(project_id) + _project_audio(project_id)
+async def list_sources(project_id: str) -> list[dict]:
+    own = _own_clips(project_id)
+    proj, paths = await project_audio(project_id)
+    paths.update({i["source_rel"]: storage.workspace_root(project_id) / i["source_rel"] for i in own})
+    items = dedupe(own + proj, paths)
+    labels = load_labels(project_id)
+    for it in items:
+        it.setdefault("copies", [])
+        if labels.get(it["source_rel"]):
+            it["name"] = labels[it["source_rel"]]
+        it["named"] = bool(labels.get(it["source_rel"])) or it.get("named", it["name"] != Path(it["source_rel"]).name)
     items.sort(key=lambda i: i.get("created_at") or "", reverse=True)
     return items
 

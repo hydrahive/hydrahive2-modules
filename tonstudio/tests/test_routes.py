@@ -127,3 +127,13 @@ def test_erzeugen_fehler_wird_als_422_gemeldet(client, auth_headers, monkeypatch
 def test_erzeugen_leerer_auftrag_422(client, auth_headers):
     r = client.post(f"{P}/generate", json={"model": "google/lyria-3-pro-preview", "request": {}}, headers=auth_headers)
     assert r.status_code == 422
+
+
+def test_umbenennen_route(client, auth_headers, other_headers, ws):
+    (ws / "generated").mkdir(exist_ok=True)
+    (ws / "generated" / "a.mp3").write_bytes(b"ID3")
+    body = {"source_rel": "generated/a.mp3", "name": "Mein Lied"}
+    assert client.post(f"{P}/library/label", json=body, headers=other_headers).status_code == 404
+    assert client.post(f"{P}/library/label", json=body, headers=auth_headers).status_code == 200
+    r = client.post(f"{P}/library/label", json={"source_rel": "geheim.mp3", "name": "x"}, headers=auth_headers)
+    assert r.status_code == 400 and r.json()["detail"]["code"] == "label_rejected"
