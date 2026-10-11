@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import base64
 import binascii
-import json
+import logging
 
 import httpx
 
@@ -20,6 +20,9 @@ from hydrahive.tools._openrouter_media import openrouter_key
 
 from ..prompt import MusicRequest, build_prompt
 from ._base import MusicModel, MusicResult, ProviderError
+from ._sse import StreamResult, read_stream
+
+logger = logging.getLogger(__name__)
 
 _URL = "https://openrouter.ai/api/v1/chat/completions"
 _TIMEOUT = 300.0
@@ -47,24 +50,6 @@ def _model(entry: dict) -> MusicModel:
                       license_note="Bedingungen des Modell-Anbieters (über OpenRouter)", **known)
 
 
-def _parse_line(line: str, audio: list[str], text: list[str]) -> bool:
-    """Eine SSE-Zeile auswerten. True bei ``[DONE]``."""
-    if not line.startswith("data:"):
-        return False
-    payload = line[5:].strip()
-    if payload == "[DONE]":
-        return True
-    try:
-        delta = (json.loads(payload).get("choices") or [{}])[0].get("delta") or {}
-    except (ValueError, AttributeError):
-        return False
-    if isinstance(delta.get("audio"), dict) and delta["audio"].get("data"):
-        audio.append(delta["audio"]["data"])
-    if isinstance(delta.get("content"), str):
-        text.append(delta["content"])
-    return False
-
-
 class OpenRouterBackend:
     name = "openrouter"
 
@@ -82,9 +67,6 @@ class OpenRouterBackend:
         prompt = build_prompt(req)
         payload = {"model": model_id, "messages": [{"role": "user", "content": prompt}],
                    "modalities": ["text", "audio"], "audio": {"format": "mp3"}, "stream": True}
-        audio: list[str] = []
-        text: list[str] = []
-        done = False
         try:
             async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
                 async with client.stream("POST", _URL, json=payload,
@@ -92,23 +74,32 @@ class OpenRouterBackend:
                                                   "Content-Type": "application/json"}) as resp:
                     if resp.status_code >= 400:
                         body = (await resp.aread()).decode("utf-8", "replace")[:300]
+                        logger.warning("tonstudio openrouter %s HTTP %s: %s", model_id, resp.status_code, body)
                         raise ProviderError(f"OpenRouter antwortete {resp.status_code}: {body}")
-                    buf = b""
-                    async for chunk in resp.aiter_bytes():
-                        buf += chunk
-                        while b"\n" in buf:
-                            line, buf = buf.split(b"\n", 1)
-                            done = _parse_line(line.decode("utf-8", "replace").rstrip("\r"), audio, text) or done
-                    if buf:
-                        done = _parse_line(buf.decode("utf-8", "replace"), audio, text) or done
+                    res = await read_stream(resp)
         except httpx.HTTPError as e:
+            logger.warning("tonstudio openrouter %s Netzwerkfehler: %s", model_id, type(e).__name__)
             raise ProviderError(f"Netzwerkfehler bei OpenRouter: {type(e).__name__}") from e
-        if not audio:
-            raise ProviderError("Keine Audio-Daten erhalten – bitte noch einmal versuchen.")
-        if not done:
-            raise ProviderError("Antwort vorzeitig abgebrochen – bitte noch einmal versuchen.")
-        try:
-            raw = base64.b64decode("".join(audio), validate=True)
-        except (ValueError, binascii.Error) as e:
-            raise ProviderError("Audio-Daten nicht lesbar.") from e
-        return MusicResult(audio=raw, ext="mp3", text="".join(text).strip(), prompt=prompt)
+        return _finish(model_id, prompt, res)
+
+
+def _finish(model_id: str, prompt: str, res: StreamResult) -> MusicResult:
+    """Stream-Ergebnis prüfen. Jeder Fehlschlag wird mit Generierungs-ID protokolliert (nachvollziehbar bei
+    OpenRouter) und nennt in der Meldung, was statt Audio kam."""
+    info = res.summary()
+    if res.errors:
+        logger.warning("tonstudio openrouter %s Fehler im Stream (%s): %s", model_id, info, res.errors)
+        raise ProviderError(f"OpenRouter meldet einen Fehler: {'; '.join(res.errors)[:300]} ({info})")
+    if not res.audio:
+        logger.warning("tonstudio openrouter %s ohne Audio (%s), Text: %r", model_id, info, res.text_head())
+        raise ProviderError(f"Keine Audio-Daten erhalten – bitte noch einmal versuchen. ({info})")
+    if not res.done:
+        logger.warning("tonstudio openrouter %s Stream abgebrochen (%s)", model_id, info)
+        raise ProviderError(f"Antwort vorzeitig abgebrochen – bitte noch einmal versuchen. ({info})")
+    try:
+        raw = base64.b64decode("".join(res.audio), validate=True)
+    except (ValueError, binascii.Error) as e:
+        logger.warning("tonstudio openrouter %s Audio nicht lesbar (%s)", model_id, info)
+        raise ProviderError(f"Audio-Daten nicht lesbar. ({info})") from e
+    logger.info("tonstudio openrouter %s ok (%s), %d Bytes", model_id, info, len(raw))
+    return MusicResult(audio=raw, ext="mp3", text="".join(res.text).strip(), prompt=prompt)
