@@ -93,6 +93,53 @@ def test_bibliothek_zeigt_eigene_clips_und_projekt_audio(fake_backend, ws):
 
 
 @needs_ffmpeg
+def test_bibliothek_nur_aus_festen_quellordnern(fake_backend, ws):
+    """Live 11.10.: Die Bibliothek zeigte jede Audiodatei im Workspace (Repos, Backups, Arbeitsordner, Temp-WAVs).
+    SPEC §4/M1: nur generated/ (mit Unterordnern), atelier/audio/, media/audio/ – wie der Musicplayer."""
+    from backend import library
+    _tone(ws / "generated" / "sub" / "a.mp3")
+    _tone(ws / "media" / "audio" / "b.mp3")
+    _tone(ws / "atelier" / "audio" / "c.mp3")
+    for fremd in ("voice-pe/build/beep.mp3", "research/x/t.wav", "_db-backup/m/d.mp3", "media/video/v.mp3",
+                  "atelier/videos/e.mp3", "atelier/audio/tief/f.mp3", "irgendwas.mp3"):
+        _tone(ws / fremd)
+    (ws / "generated" / "bild.png").write_bytes(b"PNG")      # kein Audio im Quellordner
+    (ws / "media" / "audio" / "liste.txt").write_text("x")
+    rels = sorted(i["source_rel"] for i in library.list_sources(PROJECT_ID))
+    assert rels == ["atelier/audio/c.mp3", "generated/sub/a.mp3", "media/audio/b.mp3"]
+
+
+@needs_ffmpeg
+def test_bibliothek_folgt_keinem_symlink_nach_draussen(fake_backend, ws, tmp_path):
+    from backend import library
+    draussen = tmp_path / "draussen"
+    _tone(draussen / "geheim.mp3")
+    (ws / "generated").mkdir(exist_ok=True)
+    (ws / "generated" / "link").symlink_to(draussen, target_is_directory=True)
+    (ws / "generated" / "link.mp3").symlink_to(draussen / "geheim.mp3")
+    try:
+        assert library.list_sources(PROJECT_ID) == []
+    finally:
+        (ws / "generated" / "link").unlink()
+        (ws / "generated" / "link.mp3").unlink()
+
+
+def test_quellordner_selbst_als_symlink_wird_ignoriert(tmp_path):
+    """Ganzer Quellordner (z. B. atelier) als Symlink nach draußen → nichts davon listen."""
+    from backend import library
+    root = tmp_path / "ws"
+    draussen = tmp_path / "anderswo"
+    (draussen / "audio").mkdir(parents=True)
+    (draussen / "audio" / "x.mp3").write_bytes(b"ID3")
+    root.mkdir()
+    (root / "atelier").symlink_to(draussen, target_is_directory=True)
+    assert library._files_in(root, "atelier/audio", False) == []
+    (root / "echt" / "audio").mkdir(parents=True)
+    (root / "echt" / "audio" / "y.mp3").write_bytes(b"ID3")
+    assert [p.name for p in library._files_in(root, "echt/audio", False)] == ["y.mp3"]
+
+
+@needs_ffmpeg
 def test_upload_prueft_inhalt_nicht_nur_endung(ws):
     from backend import library
     good = _tone(ws / "tmp" / "a.mp3")
