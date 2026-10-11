@@ -42,7 +42,7 @@ anderen Module zu verbiegen.
 | E2 | **Drei feste Übergaben** von Anfang an (§5): Song-Format, Liedtext-Verweis, Export-Paket | Das Media-Studio und der Storyteller hängen sich später an diese Übergaben, ohne dass das Studio umgebaut werden muss. |
 | E3 | **Spur- und Clip-Felder gleich wie im Video-Editor** (`t_start`, `src_start`, `src_end`, `gain_db`, `fade_in`, `fade_out`, `mute`, `solo`) | Gleiche Sprache für Zeitachsen. Das Media-Studio kann eine Song-Timeline direkt als Audiospuren übernehmen. |
 | E4 | **Dateibasiert im Projektordner** (`<workspace>/tonstudio/`), wie Atelier und Storyteller | Sichtbar über Samba und Git, Sicherung inklusive, kein Datenbank-Silo. |
-| E5 | **Erzeugen über die HydraHive-Modelle** (OpenRouter, `hydrahive.tools._openrouter_media`), kein eigener Anbieter-Code | Ein Schlüssel, eine Kostenstelle. Neue Modelle kommen über `media_models` dazu. |
+| E5 | **Musik-Anbieter austauschbar** (Adapter je Anbieter, §5.6). Lyria über OpenRouter ist nur der Start. | Till 11.10.: „in den Modellen flexibel sein“. Kein Anbieter ist in allem vorn (eigener Text, Audio-Referenz, Länge, Lizenz, lokal). |
 | E6 | **Nicht-destruktiv:** Quellen werden nie verändert. Schnitt, Gain und Fades stehen nur im Song. Gerendert wird erst beim Mixdown. | Jede Version bleibt wiederherstellbar, Agenten können nichts kaputt rendern. |
 | E7 | **Agenten arbeiten über Vorschläge**, wie im Storyteller | Ein Agent ändert den Song nicht still. Der Mensch übernimmt oder verwirft. Kosten werden vor dem Erzeugen angezeigt. |
 
@@ -210,11 +210,59 @@ Regeln:
   Stil, sie kopiert nichts. Für Veröffentlichungen gilt das Recht des Nutzers.
 - Upload-Grenze für Audio wie §8 (100 MB), Prüfung mit `ffprobe`.
 
+### 5.6 Musik-Anbieter (austauschbar)
+
+**Prinzip:** Das Tonstudio kennt **keinen festen Anbieter**. Jeder Anbieter ist ein Adapter mit derselben
+Schnittstelle (Muster wie `llm/video_backends`: `list_models`, `submit`, `poll`, `fetch_output`). Er meldet,
+was er kann. Die Oberfläche zeigt nur die Möglichkeiten, die das gewählte Modell hat.
+
+```jsonc
+// was ein Adapter je Modell meldet (Beispiel)
+{ "id": "elevenlabs:music_v2_5", "name": "Eleven Music v2.5", "backend": "elevenlabs",
+  "lyrics": true, "instrumental_switch": true, "image_ref": false, "audio_ref": true,
+  "sections": true, "inpaint": true, "max_seconds": 300, "price": { "per_minute_usd": 0.15 },
+  "license_note": "kommerziell ab Starter-Plan (Anbieter-Bedingungen)", "local": false }
+```
+
+Der Auftrag ist anbieterneutral: Stil-Prompt, Liedtext mit Abschnitt-Markern, Länge, BPM, Tonart, Referenzen
+(Bilder, Audio, Noten-Eckdaten). Kann ein Modell etwas nicht, wird es **nicht still weggelassen**: Es steht als
+Hinweis am Auftrag („Audio-Referenz wird bei Lyria als Beschreibung übergeben“, §5.5).
+
+**Kandidaten** (geprüft 11.10.2026 auf den offiziellen Seiten; Preise und Bedingungen vor dem Einbau erneut prüfen):
+
+| Anbieter / Modell | Zugang | Eigener Text | Audio-Referenz | Länge | Lizenz / Preis | Bemerkung |
+|---|---|---|---|---|---|---|
+| **Google Lyria 3 Pro / Clip** | OpenRouter (heute schon in HydraHive) | ja (`Lyrics:` + Marker) | nein (nur Text + Bild) | Pro ~2–3 min, Clip 30 s | OpenRouter meldet Preis 0, **unklar** (§10) | Start-Anbieter, Bild-Referenz |
+| **Google Lyria 3.5** | Gemini API (eigener Google-Schlüssel), bei OpenRouter noch nicht | ja | nein (Text + bis 10 Bilder) | „a couple of minutes“, über Prompt steuerbar | Google-Preisliste | gibt Text und Song-Struktur zurück |
+| **ElevenLabs Eleven Music v2 / v2.5** | eigene API (`model_id=music_v2_5`), Schlüssel im Credential-Store | ja, auch **Composition Plan** (Abschnitte einzeln) | **ja** („Audio Reference“) | 3 s – 5 min (Doku), API-Feld bis 600.000 ms | **0,15 USD/min** (API-Preisliste); „cleared for nearly all commercial uses“, kommerziell ab Starter-Plan | Abschnitte einzeln neu erzeugen (Inpainting), `force_instrumental` |
+| **Stability Stable Audio 2.5** | Stability-API, fal, Replicate, ComfyUI | Gesang **nicht** belegt (eher Instrumental, Sound) | **ja** (Audio-zu-Audio, Inpainting: „input their own audio … generate the rest“) | bis 3 min | Bedingungen von Stability | gut für Instrumental, Loops, Fortsetzen |
+| **MiniMax Music 3.0** | MiniMax-API | ja (`lyrics`, Marker `[Verse]`, `[Chorus]`) | **ja** (Cover einer Vorlage) | – | Laut Doku für **neue** Nutzer derzeit gesperrt, freie Varianten werden eingestellt | Offene Gewichte auf Hugging Face (`MiniMaxAI/MiniMax-Music3`, Lizenz nicht angegeben → prüfen) |
+| **ACE-Step 1.5** (offen) | **lokal**, eigener REST-Server (`acestep-api`), ComfyUI-Knoten | ja, 50+ Sprachen | **ja** (Referenz, Cover, Repaint) | 10 s – 10 min | **MIT** (Repo, Hugging Face) | Kein Cloud-Aufruf, keine Kosten je Track, LoRA mit eigenen Songs. VRAM laut README: ≤ 6 GB → 2B-Turbo ohne LM, INT8 + CPU-Offload. |
+
+**Lokal auf .2:** GPU Quadro P2200, 5 GB, Pascal (Compute 6.1). Das ist die unterste Stufe der ACE-Step-Tabelle
+(nur DiT, ohne Sprachmodell-Planer). Ob es dort läuft und wie lange ein Song dauert, ist **nicht gemessen** →
+Messung vor der Etappe. Der Server WKS197 mit Local Media (ComfyUI) ist ein zweiter Kandidat. ACE-Step hat einen
+offiziellen ComfyUI-Weg, das passt zur vorhandenen ComfyUI-Anbindung (`llm/video_backends/_comfyui.py`).
+
+**Nicht aufgenommen:** Suno und Udio. Für beide konnte ich keine offizielle öffentliche Entwickler-API belegen.
+Zugänge über Dritte widersprechen meist den Bedingungen. Wieder prüfen, wenn es eine offizielle API gibt.
+MusicGen (Meta): `facebook/musicgen-large` ist CC-BY-NC-4.0, also **nicht kommerziell**, und ohne Gesang.
+
+**Einbau in HydraHive:**
+- Schlüssel: OpenRouter wie heute; ElevenLabs, Stability, Google und MiniMax über den Credential-Store
+  (Agenten sehen den Schlüssel nie).
+- Auswahl: Standard-Musikmodell zentral (`media_models.music`, gibt es schon), im Song änderbar. Jeder Clip
+  merkt sich Anbieter, Modell und Kosten (Sidecar).
+- Lokale Modelle über die vorhandene Local-Media-/ComfyUI-Schiene oder einen eigenen lokalen Adapter
+  (ACE-Step-REST). Entscheidung nach der Messung.
+- Lizenzhinweis je Modell in der Auswahl (aus der Adapter-Meldung). Wer veröffentlicht, sieht vorher, was gilt.
+
 ## 6. Etappen
 
 | Etappe | Inhalt | Abnahme |
 |---|---|---|
-| **M1** Grundgerüst + Bibliothek | Modul, Song anlegen/listen/löschen (Papierkorb), Song-Format v1 mit Versionen und 409, Bibliothek: Quellen aus `generated/`, Atelier-Audio und Upload, Clip erzeugen mit Lyria (Stil, Prompt, Modell, BPM und Tonart als Text), Kosten vorher anzeigen, Sidecar mit Herkunft | Song mit 3 erzeugten Clips in der Bibliothek, Neustart, alles noch da |
+| **M1** Grundgerüst + Bibliothek | Modul, Song anlegen/listen/löschen (Papierkorb), Song-Format v1 mit Versionen und 409, Bibliothek: Quellen aus `generated/`, Atelier-Audio und Upload, Clip erzeugen über die Adapter-Schnittstelle (§5.6) mit **Lyria/OpenRouter** als erstem Adapter (Stil, Prompt, Modell, BPM und Tonart als Text), Kosten vorher anzeigen, Sidecar mit Herkunft | Song mit 3 erzeugten Clips in der Bibliothek, Neustart, alles noch da |
+| **M1b** Weitere Anbieter | Adapter **ElevenLabs Music** (eigener Text, Composition Plan, Audio-Referenz, 0,15 USD/min) und **ACE-Step lokal** (nach Messung auf .2 bzw. WKS197); Fähigkeiten-Anzeige, Lizenzhinweis | Derselbe Song-Auftrag läuft mit Lyria, ElevenLabs und ACE-Step. Die Oberfläche zeigt je Modell nur, was es kann. Kosten stehen im Sidecar. |
 | **M2** Arrangement + Mischpult + Mixdown | Zeitachse mit Spuren, Tempo/Takt aus Audiodateien messen (librosa), Clips verschieben/trimmen/teilen, Fades, Gain, Panorama, Mute/Solo, Abschnitte, Raster in Takten, Wellenform, Vorschau im Browser (Web Audio), Mixdown mit ffmpeg (Ansatz und Code aus `videoeditor/_audio_mix.py` übernehmen, plus Panorama), Export-Paket | Song aus 4 Clips auf 3 Spuren, Mixdown klingt wie die Vorschau, Lautheit wie eingestellt |
 | **M3** Liedtext | Editor mit Abschnitt-Markern, Text beim Erzeugen an Lyria (`Lyrics:`), zurückgelieferten Text speichern, Abschnitte ↔ Text verknüpfen, Abschnitt neu erzeugen | Eigener Text mit 2 Strophen und Refrain wird gesungen, Clip kennt die Textversion |
 | **M3b** Noten | MusicXML/MIDI hochladen und prüfen, Eckdaten mit `music21` auslesen, Noten anzeigen (OSMD bzw. Klavierrolle), Eckdaten in den Lyria-Prompt, Proben-Marken ↔ Abschnitte, Liedtext aus MusicXML übernehmen, Vorlage-Spur mit FluidSynth. Dazu ein **Kern-PR** für die Systempakete im Installer (§5.4) | Eine MusicXML-Datei mit Melodie, Akkorden und Text: Noten werden angezeigt, Tempo und Tonart stehen im Prompt, die Vorlage-Spur klingt notengetreu, der Text ist übernommen. Ohne FluidSynth läuft alles außer der Vorlage-Spur. |
@@ -262,7 +310,7 @@ Keine Werkzeuge für Löschen.
 
 ## 10. Offene Fragen (vor dem jeweiligen Schritt klären)
 
-1. **Modell:** OpenRouter führt heute `google/lyria-3-pro-preview` und `google/lyria-3-clip-preview`.
+1. **Modelle:** siehe §5.6. OpenRouter führt heute `google/lyria-3-pro-preview` und `google/lyria-3-clip-preview`.
    Google dokumentiert inzwischen **Lyria 3.5** (Songs mit Strophen und Refrains, Länge über den Prompt
    steuerbar). Vor M1 prüfen, ob und unter welcher ID 3.5 über OpenRouter verfügbar ist und ob der
    zurückgelieferte Liedtext im Stream ankommt (heute wertet `read_audio_sse` nur Audio aus).
@@ -270,6 +318,8 @@ Keine Werkzeuge für Löschen.
    Das ist vermutlich unvollständig. Vor M1 die echten Kosten pro Track klären, sonst kann die
    Kostenanzeige nicht stimmen.
 3. **M5 Stems:** lokal auf der GPU oder Cloud? Erst messen.
+4. **Lokale Musik-KI (ACE-Step):** .2 (P2200, 5 GB) oder WKS197 (ComfyUI)? Erst messen: Laufzeit je Song, Qualität, VRAM.
+5. **Welche Anbieter zuerst** nach Lyria? Vorschlag: ElevenLabs (bester Funktionsumfang, klare kommerzielle Lizenz) und ACE-Step (lokal, MIT, ohne Kosten je Track).
 
 ## 11. Akzeptanz (gesamt, bis M3c)
 
