@@ -1,0 +1,43 @@
+import { TonstudioPage } from "./TonstudioPage"
+
+export const routes = [{ path: "/tonstudio", element: <TonstudioPage /> }]
+export const nav = [{ path: "/tonstudio", icon: "AudioLines", labelKey: "tonstudio", group: "working", roles: [], cockpit: true }]
+
+export const i18n = {
+  de: { tonstudio: {
+    tonstudio: "Tonstudio", title: "Tonstudio", select_project: "Projekt wählen", no_projects: "Keine Projekte",
+    m1_hint: "Etappe 1: Songs, Bibliothek, Clips erzeugen. Zeitachse und Mischen folgen.",
+    songs: "Songs", songs_empty: "Noch keine Songs.", song_new: "Neuer Song", song_title_placeholder: "Titel des Songs",
+    song_rename: "Umbenennen", song_trash: "In den Papierkorb", song_trash_confirm: "„{{title}}“ in den Papierkorb legen?",
+    song_restore: "Wiederherstellen", song_tracks_one: "{{count}} Spur", song_tracks_other: "{{count}} Spuren",
+    trash_toggle: "Papierkorb ({{count}})",
+    library: "Bibliothek", library_empty: "Noch keine Clips. Erzeuge einen oder lade eine Audiodatei hoch.",
+    upload: "Hochladen", uploading: "Lädt hoch…", clip_delete: "Clip löschen", clip_delete_confirm: "Diesen Clip löschen?",
+    origin_generated: "Erzeugt", origin_upload: "Hochgeladen", origin_project: "Aus dem Projekt",
+    generate: "Clip erzeugen", models_none: "Keine Modelle verfügbar", generate_start: "Erzeugen", generating: "Wird erzeugt…",
+    style_placeholder: "Stil, z. B. Epic Orchestral, Folk Rock", description_placeholder: "Was soll passieren? Stimmung, Instrumente, Aufbau…",
+    key_placeholder: "Tonart, z. B. D-Moll", duration_placeholder: "Länge (s)", instrumental: "Instrumental (ohne Gesang)",
+    lyrics_placeholder: "Liedtext (optional)",
+    duration_hint: "BPM, Tonart und Länge gehen als Wunsch in den Auftrag. Ob das Modell sie genau trifft, kann ich nicht garantieren.",
+    cap_lyrics: "eigener Liedtext", cap_image: "Bild-Referenz", cap_audio: "Audio-Referenz", cap_local: "lokal",
+    generated_ok: "Fertig: {{name}}",
+  } },
+  en: { tonstudio: {
+    tonstudio: "Sound studio", title: "Sound studio", select_project: "Select a project", no_projects: "No projects",
+    m1_hint: "Stage 1: songs, library, generate clips. Timeline and mixing follow.",
+    songs: "Songs", songs_empty: "No songs yet.", song_new: "New song", song_title_placeholder: "Song title",
+    song_rename: "Rename", song_trash: "Move to trash", song_trash_confirm: "Move “{{title}}” to the trash?",
+    song_restore: "Restore", song_tracks_one: "{{count}} track", song_tracks_other: "{{count}} tracks",
+    trash_toggle: "Trash ({{count}})",
+    library: "Library", library_empty: "No clips yet. Generate one or upload an audio file.",
+    upload: "Upload", uploading: "Uploading…", clip_delete: "Delete clip", clip_delete_confirm: "Delete this clip?",
+    origin_generated: "Generated", origin_upload: "Uploaded", origin_project: "From the project",
+    generate: "Generate clip", models_none: "No models available", generate_start: "Generate", generating: "Generating…",
+    style_placeholder: "Style, e.g. Epic Orchestral, Folk Rock", description_placeholder: "What should happen? Mood, instruments, structure…",
+    key_placeholder: "Key, e.g. D minor", duration_placeholder: "Length (s)", instrumental: "Instrumental (no vocals)",
+    lyrics_placeholder: "Lyrics (optional)",
+    duration_hint: "BPM, key and length are passed as wishes. Whether the model hits them exactly is not guaranteed.",
+    cap_lyrics: "own lyrics", cap_image: "image reference", cap_audio: "audio reference", cap_local: "local",
+    generated_ok: "Done: {{name}}",
+  } },
+}
