@@ -19,9 +19,22 @@ fi
 git -C "${UPSTREAM}" fetch --quiet --depth 1 origin "${PIN}"
 git -C "${UPSTREAM}" checkout --quiet --detach "${PIN}"
 
-if [[ ! -x "${VENV}/bin/python" ]]; then
-  python3 -m venv "${VENV}"
+# --- Python-venv ---
+# Gleiches Python wie HydraHive (Standard: der Interpreter, mit dem der Kern
+# läuft), aufgelöst auf die versionierte Datei. NICHT `python3 -m venv`: dann
+# folgt bin/python dem System-Link und findet nach einem Python-Wechsel seine
+# Pakete nicht mehr. Passt die Version nicht oder zeigt bin/python ins Leere
+# (Ubuntu 26.04: 3.12 entfernt), wird mit --clear neu gebaut.
+# Kern-Spec docs/specs/python-314-umstieg.md.
+_base_python="${HYDRAHIVE_OPENTOR_BASE_PYTHON:-$(command -v python3)}"
+_base_python="$(readlink -f -- "${_base_python}")"
+_want="$("${_base_python}" -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+_have="$("${VENV}/bin/python" -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || true)"
+if [[ "${_want}" != "${_have}" ]]; then
+  echo "OpenTor: Python-venv neu bauen (${_have:-keins} -> ${_want})"
+  "${_base_python}" -m venv --clear "${VENV}"
 fi
+# --- Ende Python-venv ---
 "${VENV}/bin/python" -m pip install --disable-pip-version-check --no-input -q -r "${MODULE_ROOT}/requirements.txt"
 
 TOR_BIN="$(command -v tor || true)"
