@@ -26,7 +26,7 @@ def read(data_dir: Path, *, now: float | None = None) -> dict:
     frames = int(raw.get("frames") or 0)
     key = str(data_dir)
     fps = None
-    if key in _last and updated > _last[key][0]:
+    if key in _last and updated > _last[key][0] and frames >= _last[key][1]:
         t0, f0 = _last[key]
         fps = round((frames - f0) / (updated - t0), 1)
     _last[key] = (updated, frames)
