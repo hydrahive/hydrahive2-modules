@@ -74,7 +74,13 @@ class Runner:
         self.data.mkdir(parents=True, exist_ok=True)
         waits = 0
         while max_frames is None or self.state["frames"] < max_frames:
-            disp = self.connect()
+            try:
+                disp = self.connect()
+            except (usb.core.USBError, aic.DisplayError) as e:
+                # direkt nach dem Wiederanstecken meldet libusb kurz „Entity not found“ – einfach erneut versuchen
+                log.info("Display noch nicht bereit: %s", e)
+                self.state.update(error=str(e))
+                disp = None
             if disp is None:
                 self.state.update(connected=False)
                 self._write_state()

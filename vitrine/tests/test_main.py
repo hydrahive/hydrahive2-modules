@@ -96,3 +96,37 @@ def test_standard_bildrate_24():
     import inspect
     assert inspect.signature(main.Runner).parameters["fps"].default == 24
     assert main.DEFAULT_FPS == 24
+
+
+def test_fehler_beim_verbinden_wartet_statt_abzustuerzen(tmp_path):
+    """Direkt nach dem Wiederanstecken scheitert claim_interface ("Entity not found") – gemessen am 15.10. auf hhmaster."""
+    versuche, waits = [], []
+
+    def connect():
+        versuche.append(1)
+        if len(versuche) < 3:
+            raise usb.core.USBError("Entity not found", errno=2)
+        return FakeDisplay()
+
+    r = main.Runner(data_dir=tmp_path, connect=connect, frames=lambda *a: FakeFrames(1080, 1920),
+                    status=lambda: "", sleep=waits.append, fps=30)
+    r.run(max_frames=2)
+    assert len(versuche) == 3 and waits.count(main.RETRY_SECONDS) == 2
+    st = json.loads((tmp_path / "state.json").read_text())
+    assert st["connected"] is True and st["frames"] == 2
+
+
+def test_auth_fehler_beim_verbinden_wartet(tmp_path):
+    from renderer import aic
+    calls, waits = [], []
+
+    def connect():
+        calls.append(1)
+        if len(calls) == 1:
+            raise aic.DisplayError("Display hat die Challenge nicht bestätigt")
+        return FakeDisplay()
+
+    r = main.Runner(data_dir=tmp_path, connect=connect, frames=lambda *a: FakeFrames(1080, 1920),
+                    status=lambda: "", sleep=waits.append, fps=30)
+    r.run(max_frames=1)
+    assert len(calls) == 2 and main.RETRY_SECONDS in waits
