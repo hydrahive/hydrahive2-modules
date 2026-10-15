@@ -16,13 +16,12 @@ from typing import Callable, Iterable
 import usb.core
 from PIL import Image
 
-from . import aic, cards, config, hydra_state, inbox, night, program, scene, sysinfo, video
-from .frames import _connect_real, encode, fallback_frame  # noqa: F401 - auch von Tests genutzt
+from . import aic, cached_play, cards, config, hydra_state, inbox, night, program, scene, sysinfo, video, warmer as warmer_mod
+from .frames import _connect_real, encode, fallback_frame, write_preview  # noqa: F401 - auch von Tests genutzt
 
 RETRY_SECONDS = 2.0
 STATUS_EVERY = 5.0
 DEFAULT_FPS = 24          # Atelier-Videos haben 24 fps; mehr kostet nur CPU
-PREVIEW_SIZE = (270, 480)
 log = logging.getLogger("vitrine")
 
 
@@ -36,7 +35,7 @@ class Runner:
                  status: Callable[[], str] = sysinfo.current, sleep: Callable[[float], None] = time.sleep,
                  fps: int = DEFAULT_FPS, quality: int = 80,
                  program: Callable[[dt.datetime], program.Program] | None = None,
-                 now: Callable[[], dt.datetime] = dt.datetime.now, check_every: float = 1.0):
+                 now: Callable[[], dt.datetime] = dt.datetime.now, check_every: float = 1.0, warmer=None):
         self.data = data_dir
         self.connect, self.status, self.sleep, self.now = connect, status, sleep, now
         self.fps, self.quality, self.check_every = fps, quality, check_every
@@ -47,10 +46,11 @@ class Runner:
         self.preview_every = 10.0
         self._preview_t = 0.0
         self.inbox_every = 1.0
+        self.cache_check_every = 2.0
+        self._warmer = warmer
         self.state = {"connected": False, "frames": 0, "reconnects": 0, "size": None, "video": None,
-                      "rule": None, "holiday": None, "night": None, "error": None}
+                      "rule": None, "holiday": None, "night": None, "error": None, "cache": None}
 
-    # --- Programm ----------------------------------------------------------------------------------
     def _program_from_config(self, now: dt.datetime) -> program.Program:
         fresh = self._watch.poll()
         if fresh is not None:
@@ -69,23 +69,24 @@ class Runner:
         while True:
             yield from video.frames(prepared, w, h, fps)
 
-    # --- Ausgabe -----------------------------------------------------------------------------------
     def _write_state(self) -> None:
+        if self._warmer is not None:
+            self.state["cache"] = self._warmer.status()
         tmp = self.data / "state.json.tmp"
         tmp.write_text(json.dumps({**self.state, "updated": time.time()}))
         tmp.replace(self.data / "state.json")
 
     def _send(self, disp, img: Image.Image) -> None:
-        disp.send_jpeg(encode(img, self.quality))
+        self._send_jpeg(disp, encode(img, self.quality), img)
+
+    def _send_jpeg(self, disp, jpeg: bytes, img: Image.Image | None = None) -> None:
+        disp.send_jpeg(jpeg)
         self.state["frames"] += 1
         t = time.monotonic()
         if t - self._preview_t >= self.preview_every:
             self._preview_t = t
-            tmp = self.data / "preview.jpg.tmp"
-            img.resize(PREVIEW_SIZE).save(tmp, "JPEG", quality=80)
-            tmp.replace(self.data / "preview.jpg")
+            write_preview(self.data, jpeg, img)
 
-    # --- Schleifen ---------------------------------------------------------------------------------
     def run(self, *, max_frames: int | None = None, max_waits: int | None = None) -> None:
         self.data.mkdir(parents=True, exist_ok=True)
         waits = 0
@@ -133,27 +134,39 @@ class Runner:
         st, alert = self._status_line()
         st_t, chk_t, in_t, period = time.monotonic(), time.monotonic(), -1e9, 1.0 / self.fps
         msgs: list[dict] = []
-        for frame in self._frames(prog.video, w, h, self.fps):
-            t0 = time.monotonic()
-            if t0 - st_t >= STATUS_EVERY:
-                (st, alert), st_t = self._status_line(), t0
-                self._write_state()
-            if t0 - in_t >= self.inbox_every:
-                msgs, in_t = inbox.visible(self.data), t0
-            img = scene.compose(frame, overlay.render(time.localtime(), st, prog.holiday, alert))
-            if msgs:
-                img = scene.compose(img, card_layer.render(msgs, time.time()))
-            self._send(disp, img)
-            if max_frames is not None and self.state["frames"] >= max_frames:
-                self._write_state()
-                return
-            if t0 - chk_t >= self.check_every:
-                chk_t = t0
-                if self._program(self.now()).key() != key:
-                    raise _Switch
-            dt_ = time.monotonic() - t0
-            if dt_ < period:
-                self.sleep(period - dt_)
+        src = cached_play.Source(prog.video, w, h, self.fps, self.quality, frames=self._frames,
+                                 warmer=self._warmer, check_every=self.cache_check_every)
+        try:
+            while True:
+                t0 = time.monotonic()
+                if t0 - st_t >= STATUS_EVERY:
+                    (st, alert), st_t = self._status_line(), t0
+                    self._write_state()
+                if t0 - in_t >= self.inbox_every:
+                    msgs, in_t = inbox.visible(self.data), t0
+                layers = [overlay.render(time.localtime(), st, prog.holiday, alert)]
+                if msgs:
+                    layers.append(card_layer.render(msgs, time.time()))
+                try:
+                    jpeg = src.next(layers)
+                except StopIteration:
+                    return
+                if src.broken and self.state.get("error") != src.broken:
+                    self.state["error"] = src.broken
+                    self._write_state()
+                self._send_jpeg(disp, jpeg, src.last_frame)
+                if max_frames is not None and self.state["frames"] >= max_frames:
+                    self._write_state()
+                    return
+                if t0 - chk_t >= self.check_every:
+                    chk_t = t0
+                    if self._program(self.now()).key() != key:
+                        raise _Switch
+                dt_ = time.monotonic() - t0
+                if dt_ < period:
+                    self.sleep(period - dt_)
+        finally:
+            src.close()
 
     def _status_line(self) -> tuple[str, bool]:
         base = self.status()
@@ -173,8 +186,10 @@ class Runner:
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     data = Path(os.environ.get("VITRINE_DATA", "/var/lib/hydrahive2/vitrine"))
+    warm = warmer_mod.Warmer(data / "cache", frames=lambda src, w, h, fps: video.frames(
+        video.prepare(Path(src), data / "cache", w, h, fps), w, h, fps, loop=False))
     Runner(data_dir=data, fps=int(os.environ.get("VITRINE_FPS", str(DEFAULT_FPS))),
-           quality=int(os.environ.get("VITRINE_QUALITY", "80"))).run()
+           quality=int(os.environ.get("VITRINE_QUALITY", "80")), warmer=warm).run()
 
 
 if __name__ == "__main__":

@@ -60,11 +60,12 @@ def prepare(src: Path, cache_dir: Path, w: int, h: int, fps: int) -> Path:
     return out
 
 
-def frames(src: Path, w: int, h: int, fps: int) -> Iterator[Image.Image]:
-    """Bilder der vorbereiteten Datei in Endlosschleife (ffmpeg -stream_loop)."""
+def frames(src: Path, w: int, h: int, fps: int, loop: bool = True) -> Iterator[Image.Image]:
+    """Bilder der vorbereiteten Datei – in Endlosschleife (ffmpeg -stream_loop) oder genau einmal (Bildcache)."""
     size = w * h * 3
     # -threads 1: auf vielen Kernen verteilt ffmpeg sonst teuer (gemessen 6,0 s statt 2,3 s CPU je 300 Bilder)
-    proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-threads", "1", "-stream_loop", "-1", "-i", str(src),
+    looping = ["-stream_loop", "-1"] if loop else []
+    proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-threads", "1", *looping, "-i", str(src),
                              "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE, bufsize=size)
     try:
         while True:

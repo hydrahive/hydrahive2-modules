@@ -92,3 +92,41 @@ def test_dekodieren_mit_einem_thread(monkeypatch):
     list(video.frames(__import__("pathlib").Path("x.mp4"), 4, 4, 24))
     cmd = seen["cmd"]
     assert cmd[cmd.index("-threads") + 1] == "1" and cmd.index("-threads") < cmd.index("-i")
+
+
+def _capture_cmd(monkeypatch):
+    seen = {}
+
+    class P:
+        stdout = __import__("io").BytesIO(b"")
+        def kill(self): pass
+        def wait(self, timeout=None): pass
+
+    monkeypatch.setattr(video.subprocess, "Popen", lambda cmd, **kw: (seen.setdefault("cmd", cmd), P())[1])
+    return seen
+
+
+def test_bildcache_dekodiert_genau_einmal(monkeypatch):
+    """Für den Bildcache genau ein Durchlauf – sonst wird der Bau nie fertig."""
+    seen = _capture_cmd(monkeypatch)
+    list(video.frames(__import__("pathlib").Path("x.mp4"), 4, 4, 24, loop=False))
+    assert "-stream_loop" not in seen["cmd"]
+    seen.clear()
+    list(video.frames(__import__("pathlib").Path("x.mp4"), 4, 4, 24))
+    assert "-stream_loop" in seen["cmd"], "Standard bleibt die Endlosschleife"
+
+
+def test_bildcache_bau_im_dienst_ohne_schleife(tmp_path, monkeypatch):
+    """main() verdrahtet den Warmer mit loop=False (echter Aufbau, ffmpeg ersetzt)."""
+    from renderer import main, warmer
+    calls = []
+    monkeypatch.setattr(video, "prepare", lambda src, cache, w, h, fps: src)
+    monkeypatch.setattr(video, "frames", lambda src, w, h, fps, loop=True: calls.append(loop) or iter([]))
+    built = {}
+    monkeypatch.setattr(main.Runner, "run", lambda self: built.setdefault("w", self._warmer))
+    monkeypatch.setenv("VITRINE_DATA", str(tmp_path))
+    main.main()
+    w = built["w"]
+    assert isinstance(w, warmer.Warmer)
+    list(w._frames(tmp_path / "x.mp4", 4, 4, 24))
+    assert calls == [False]

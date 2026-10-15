@@ -1,7 +1,8 @@
-"""Bild-Helfer für den Dienst: JPEG kodieren, Ersatzbild ohne Video, echte Display-Verbindung."""
+"""Bild-Helfer für den Dienst: JPEG kodieren, Vorschau schreiben, Ersatzbild ohne Video, echte Display-Verbindung."""
 from __future__ import annotations
 
 import io
+from pathlib import Path
 
 from PIL import Image
 
@@ -12,6 +13,19 @@ def encode(img: Image.Image, quality: int) -> bytes:
     buf = io.BytesIO()
     img.save(buf, "JPEG", quality=quality)
     return buf.getvalue()
+
+
+PREVIEW_SIZE = (270, 480)
+
+
+def write_preview(data: Path, jpeg: bytes, img: Image.Image | None = None) -> None:
+    """<data>/preview.jpg (270×480). Ohne fertiges Bild (Cache-Weg) wird das JPEG verkleinert dekodiert."""
+    if img is None:
+        img = Image.open(io.BytesIO(jpeg))
+        img.draft("RGB", (PREVIEW_SIZE[0] * 2, PREVIEW_SIZE[1] * 2))
+    tmp = data / "preview.jpg.tmp"
+    img.convert("RGB").resize(PREVIEW_SIZE).save(tmp, "JPEG", quality=80)
+    tmp.replace(data / "preview.jpg")
 
 
 def fallback_frame(w: int, h: int) -> Image.Image:
