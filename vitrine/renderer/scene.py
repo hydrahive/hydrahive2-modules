@@ -45,6 +45,18 @@ class Overlay:
         self._key: tuple | None = None
         self._img: Image.Image | None = None
 
+    def fit_status(self, status: str):
+        """Schrift verkleinern (bis 26 px bei 1080 breit), dann hinten mit … kürzen – nie über den Leistenrand."""
+        room = self.w - 2 * int(40 * self.u) - 2 * int(24 * self.u)
+        for size in range(int(38 * self.u), int(26 * self.u) - 1, -1):
+            font = _font("DejaVuSans.ttf", size)
+            if font.getlength(status) <= room:
+                return font, status
+        text = status
+        while text and font.getlength(text + "…") > room:
+            text = text[:-1]
+        return font, text.rstrip(" ·") + "…"
+
     def render(self, t: time.struct_time, status: str, holiday: str | None = None, alert: bool = False) -> Image.Image:
         key = (clock_text(t), date_text(t), status, holiday, alert)
         if key == self._key and self._img is not None:
@@ -59,8 +71,10 @@ class Overlay:
             m = int(40 * self.u)
             dr.rounded_rectangle([m, self.h - int(120 * self.u), self.w - m, self.h - m], int(28 * self.u),
                                  fill=ALERT_BAR if alert else BAR)
-            tw = dr.textlength(status, font=self.small_font)
-            dr.text(((self.w - tw) / 2, self.h - int(103 * self.u)), status, font=self.small_font, fill=CYAN)
+            font, text = self.fit_status(status)
+            tw = dr.textlength(text, font=font)
+            mid = self.h - int(120 * self.u) + (int(120 * self.u) - m) / 2
+            dr.text(((self.w - tw) / 2, mid), text, font=font, fill=CYAN, anchor="lm")
         self._key, self._img = key, img
         return img
 
