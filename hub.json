@@ -129,6 +129,11 @@
       "id": "tonstudio",
       "name": "Tonstudio",
       "path": "tonstudio"
+    },
+    {
+      "id": "vitrine",
+      "name": "Vitrine",
+      "path": "vitrine"
     }
   ]
 }
