@@ -127,11 +127,15 @@ Dekodieren auf der Grafikkarte (VAAPI) senkt es nur auf ~44 % (Overlay + JPEG bl
 und nur dort neu kodiert, wo etwas darüber liegt (Uhr, Datum, Feiertag, Status-Leiste, Karten):
 
 - Die Bilder werden mit **Restart-Markern je MCU-Zeile** (16 px bei 4:2:0) kodiert. Dadurch lässt sich jede Zeile einzeln austauschen.
-- Laufzeit: Bänder mit Overlay bestimmen → nur diese Zeilen aus dem Original-Videobild + Overlay neu kodieren → Segmente
-  in das gespeicherte JPEG einsetzen. Ergebnis ist **byteidentisch** zur vollständigen Neukodierung (Prototyp: 48/48).
+- Laufzeit: Bänder mit Overlay bestimmen → nur diese Zeilen dekodieren, Overlay darüberlegen, neu kodieren → Segmente
+  in das gespeicherte JPEG einsetzen. Zum Dekodieren wird aus Kopf + den Segmenten der Zeilen ein kleines JPEG nur dieses
+  Streifens gebaut (Restart-Marker setzen die DC-Vorhersage zurück, jede Zeile ist eigenständig).
+- **Qualität:** In den Overlay-Zeilen wird das Bild ein zweites Mal kodiert (JPEG → Pixel → JPEG). Außerhalb davon ist das
+  Bild unverändert. Prüfbare Eigenschaft (Test): Das zusammengesetzte JPEG ist **byteidentisch** zur vollständigen Kodierung
+  von „dekodiertes Cache-Bild + Overlay“ (Prototyp mit Original-Bildern: 48/48 identisch).
 - Prototyp auf .226 (ohne USB): **~4 % eines Kerns** statt ~10 % (Python-Teil) bzw. 57 % (ganze Kette).
-- Für das Neukodieren der Bänder wird pro Bild das Videobild an diesen Stellen gebraucht: Die Bänder werden beim Vorberechnen
-  nicht vorgehalten, sondern aus dem JPEG-Bild dekodiert (nur die betroffenen Zeilen).
+- **Risiko:** Ob die Display-Firmware JPEGs mit Restart-Markern anzeigt, ist ungeprüft → erster Schritt in E4 ist ein Test
+  am Gerät. Zeigt es sie nicht an, ist der Bildcache in dieser Form nicht machbar und E4 wird neu bewertet.
 
 **Ablage:** `<daten>/cache/<video>-<hash>.frames/` mit einer Datei pro Bild bzw. einem Paket; Schlüssel wie der heutige Cache
 (Name, Größe, Änderungszeit, Auflösung, fps, Qualität). Bis die Vorberechnung fertig ist, läuft der heutige Weg weiter.
