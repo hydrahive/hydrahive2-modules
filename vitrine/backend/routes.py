@@ -8,10 +8,10 @@ from fastapi import APIRouter, File, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
 from hydrahive.settings import settings
-from renderer import calendar, config, program
+from renderer import calendar, config, inbox, program
 
 from . import state, videos
-from .schemas import Config, SimulateIn
+from .schemas import Config, MessageIn, SimulateIn
 
 router = APIRouter()
 
@@ -76,6 +76,26 @@ def delete_video(name: str) -> Response:
         videos.safe_existing(data_dir() / "videos", name).unlink()
     except videos.VideoError as e:
         _fail(e)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/messages")
+def list_messages() -> list[dict]:
+    return inbox.active(data_dir())
+
+
+@router.post("/messages", status_code=status.HTTP_201_CREATED)
+def post_message(body: MessageIn) -> dict:
+    try:
+        return inbox.post(data_dir(), body.text, kind=body.kind, title=body.title, seconds=body.seconds, source="cockpit")
+    except inbox.InboxError as e:
+        raise HTTPException(status_code=422, detail={"code": "invalid", "msg": str(e)}) from e
+
+
+@router.delete("/messages/{msg_id}", status_code=status.HTTP_204_NO_CONTENT)
+def dismiss_message(msg_id: str) -> Response:
+    if not inbox.dismiss(data_dir(), msg_id):
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

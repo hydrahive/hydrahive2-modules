@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from renderer import calendar
 
@@ -70,3 +70,11 @@ class Config(BaseModel):
 
 class SimulateIn(BaseModel):
     at: str
+
+
+class MessageIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    text: str = Field(min_length=1, max_length=280)
+    title: str = Field(default="", max_length=60)
+    kind: Literal["info", "success", "warning", "error"] = "info"
+    seconds: int | None = Field(default=None, ge=3, le=600)

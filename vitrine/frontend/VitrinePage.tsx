@@ -9,6 +9,7 @@ import { StatusCard } from "./StatusCard"
 import { VideoList } from "./VideoList"
 import { RuleList } from "./RuleList"
 import { SettingsCard } from "./SettingsCard"
+import { MessagesCard } from "./MessagesCard"
 
 export function VitrinePage() {
   const { t } = useTranslation("vitrine")
@@ -62,6 +63,7 @@ export function VitrinePage() {
           </header>
 
           <StatusCard />
+          <MessagesCard />
 
           {loadErr && <p className="rounded-[4px] border border-rose-400/40 bg-rose-400/10 p-3 text-sm text-rose-100">{t("load_error")}</p>}
           {config && <>

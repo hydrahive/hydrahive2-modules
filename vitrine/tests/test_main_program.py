@@ -87,9 +87,9 @@ def test_feiertag_landet_im_gesendeten_bild(tmp_path, monkeypatch):
     seen = []
     orig = scene.Overlay.render
 
-    def spy(self, t, status, holiday=None):
+    def spy(self, t, status, holiday=None, alert=False):
         seen.append(holiday)
-        return orig(self, t, status, holiday)
+        return orig(self, t, status, holiday, alert)
 
     monkeypatch.setattr(scene.Overlay, "render", spy)
     p = Program(video=tmp_path / "videos" / "w.mp4", rule="Weihnachten", holiday="Weihnachten")

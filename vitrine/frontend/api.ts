@@ -44,6 +44,19 @@ export interface Simulation {
   night: string | null
 }
 
+export type MessageKind = "info" | "success" | "warning" | "error"
+
+export interface VitrineMessage {
+  id: string
+  text: string
+  title: string
+  kind: MessageKind
+  count: number
+  created: number
+  expires: number
+  source: string
+}
+
 export const vitrineApi = {
   status: () => api.get<VitrineStatus>(`${BASE}/status`),
   config: () => api.get<VitrineConfig>(`${BASE}/config`),
@@ -56,6 +69,10 @@ export const vitrineApi = {
     return api.postForm<{ name: string }>(`${BASE}/videos`, form)
   },
   remove: (name: string) => api.delete<void>(`${BASE}/videos/${encodeURIComponent(name)}`),
+  messages: () => api.get<VitrineMessage[]>(`${BASE}/messages`),
+  sendMessage: (m: { text: string; title?: string; kind: MessageKind; seconds?: number }) =>
+    api.post<VitrineMessage>(`${BASE}/messages`, m),
+  dismiss: (id: string) => api.delete<void>(`${BASE}/messages/${encodeURIComponent(id)}`),
   simulate: (at: string) => api.post<Simulation>(`${BASE}/simulate`, { at }),
   /** <img> kann keinen Header setzen → ?token= (wie Mediaplayer-Stream); &t= gegen den Browser-Cache. */
   previewUrl: (t: number) => {

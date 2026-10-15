@@ -30,6 +30,10 @@ export const i18n = {
       simulate: "Datum testen", simulate_hint: "Was würde zu diesem Zeitpunkt laufen?", simulate_go: "Testen",
       simulate_result: "{{video}} – Regel: {{rule}}", simulate_nothing: "Kein Video (Farbverlauf).",
       simulate_saved_only: "Testet die gespeicherten Einstellungen.",
+      messages: "Einblendungen", messages_hint: "Kurze Karten über der Status-Leiste. Fehler aus HydraHive und Butler-Flows erscheinen hier automatisch.",
+      message_text: "Text", message_send: "Einblenden", message_default: "Hallo vom Cockpit 👋",
+      no_messages: "Gerade wird nichts eingeblendet.", dismiss: "Entfernen", seconds_left: "noch {{s}} s",
+      msg_kind: { info: "Info", success: "Erledigt", warning: "Warnung", error: "Fehler" },
     },
   },
   en: {
@@ -56,6 +60,10 @@ export const i18n = {
       simulate: "Test a date", simulate_hint: "What would be shown at this time?", simulate_go: "Test",
       simulate_result: "{{video}} – rule: {{rule}}", simulate_nothing: "No video (gradient).",
       simulate_saved_only: "Tests the saved settings.",
+      messages: "Notifications", messages_hint: "Short cards above the status bar. HydraHive errors and Butler flows show up here automatically.",
+      message_text: "Text", message_send: "Show", message_default: "Hello from the cockpit 👋",
+      no_messages: "Nothing is shown right now.", dismiss: "Remove", seconds_left: "{{s}} s left",
+      msg_kind: { info: "Info", success: "Done", warning: "Warning", error: "Error" },
     },
   },
 }

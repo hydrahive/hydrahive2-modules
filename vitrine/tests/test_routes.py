@@ -88,7 +88,9 @@ def data(env):
     from hydrahive.settings import settings
     d = settings.data_dir / "vitrine"
     (d / "videos").mkdir(parents=True, exist_ok=True)
-    with only_own_files(d / "videos"), only_own_files(d, "*.json"), only_own_files(d, "*.jpg"):
+    (d / "inbox").mkdir(parents=True, exist_ok=True)
+    with only_own_files(d / "videos"), only_own_files(d, "*.json"), only_own_files(d, "*.jpg"), \
+            only_own_files(d / "inbox"):
         yield d
 
 
@@ -184,3 +186,25 @@ def test_vorschau(client, admin, data):
     (data / "preview.jpg").write_bytes(b"\xff\xd8jpeg")
     r = client.get(f"{B}/preview.jpg", headers=admin)
     assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg" and r.headers["cache-control"] == "no-store"
+
+
+def test_nachrichten_senden_liste_bestaetigen(client, admin, data):
+    assert client.post(f"{B}/messages", json={"text": "x"}, headers=_h(client, "nutzer")).status_code == 403
+    r = client.post(f"{B}/messages", json={"text": "Testnachricht", "kind": "success", "seconds": 30}, headers=admin)
+    assert r.status_code == 201, r.text
+    mid = r.json()["id"]
+    lst = client.get(f"{B}/messages", headers=admin).json()
+    assert [(m["id"], m["text"], m["kind"], m["source"]) for m in lst] == [(mid, "Testnachricht", "success", "cockpit")]
+    assert client.delete(f"{B}/messages/{mid}", headers=admin).status_code == 204
+    assert client.get(f"{B}/messages", headers=admin).json() == []
+    assert client.delete(f"{B}/messages/{mid}", headers=admin).status_code == 404
+
+
+@pytest.mark.parametrize("body", [{"text": ""}, {"text": "x", "kind": "laser"}, {"text": "x", "seconds": 1}, {"text": "x" * 281}])
+def test_nachricht_ungueltig_422(client, admin, data, body):
+    assert client.post(f"{B}/messages", json=body, headers=admin).status_code == 422
+
+
+@pytest.mark.parametrize("mid", ["../etwas", "ZZZ", "abc"])
+def test_bestaetigen_nur_gueltige_ids(client, admin, data, mid):
+    assert client.delete(f"{B}/messages/{mid}", headers=admin).status_code in (404, 422)

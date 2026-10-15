@@ -6,7 +6,6 @@ Für das Backend: <data>/state.json (Status) und <data>/preview.jpg (Vorschau, 2
 from __future__ import annotations
 
 import datetime as dt
-import io
 import json
 import logging
 import os
@@ -17,31 +16,14 @@ from typing import Callable, Iterable
 import usb.core
 from PIL import Image
 
-from . import aic, config, night, program, scene, sysinfo, video
+from . import aic, cards, config, hydra_state, inbox, night, program, scene, sysinfo, video
+from .frames import _connect_real, encode, fallback_frame  # noqa: F401 - auch von Tests genutzt
 
 RETRY_SECONDS = 2.0
 STATUS_EVERY = 5.0
 DEFAULT_FPS = 24          # Atelier-Videos haben 24 fps; mehr kostet nur CPU
 PREVIEW_SIZE = (270, 480)
 log = logging.getLogger("vitrine")
-
-
-def encode(img: Image.Image, quality: int) -> bytes:
-    buf = io.BytesIO()
-    img.save(buf, "JPEG", quality=quality)
-    return buf.getvalue()
-
-
-def fallback_frame(w: int, h: int) -> Image.Image:
-    """Ohne Video: ruhiger dunkler Verlauf (Uhr/Status liegen darüber)."""
-    top, bottom = (12, 18, 32), (24, 40, 64)
-    grad = Image.linear_gradient("L").resize((w, h))
-    return Image.composite(Image.new("RGB", (w, h), bottom), Image.new("RGB", (w, h), top), grad)
-
-
-def _connect_real():
-    dev = aic.find()
-    return aic.Display.open(dev) if dev is not None else None
 
 
 class _Switch(Exception):
@@ -64,6 +46,7 @@ class Runner:
         self._program = program or self._program_from_config
         self.preview_every = 10.0
         self._preview_t = 0.0
+        self.inbox_every = 1.0
         self.state = {"connected": False, "frames": 0, "reconnects": 0, "size": None, "video": None,
                       "rule": None, "holiday": None, "night": None, "error": None}
 
@@ -146,14 +129,21 @@ class Runner:
         self._write_state()
         if prog.night:
             return self._play_night(disp, prog, key, max_frames)
-        overlay = scene.Overlay(w, h)
-        st, st_t, chk_t, period = self.status(), time.monotonic(), time.monotonic(), 1.0 / self.fps
+        overlay, card_layer = scene.Overlay(w, h), cards.Cards(w, h)
+        st, alert = self._status_line()
+        st_t, chk_t, in_t, period = time.monotonic(), time.monotonic(), -1e9, 1.0 / self.fps
+        msgs: list[dict] = []
         for frame in self._frames(prog.video, w, h, self.fps):
             t0 = time.monotonic()
             if t0 - st_t >= STATUS_EVERY:
-                st, st_t = self.status(), t0
+                (st, alert), st_t = self._status_line(), t0
                 self._write_state()
-            self._send(disp, scene.compose(frame, overlay.render(time.localtime(), st, prog.holiday)))
+            if t0 - in_t >= self.inbox_every:
+                msgs, in_t = inbox.visible(self.data), t0
+            img = scene.compose(frame, overlay.render(time.localtime(), st, prog.holiday, alert))
+            if msgs:
+                img = scene.compose(img, card_layer.render(msgs, time.time()))
+            self._send(disp, img)
             if max_frames is not None and self.state["frames"] >= max_frames:
                 self._write_state()
                 return
@@ -164,6 +154,11 @@ class Runner:
             dt_ = time.monotonic() - t0
             if dt_ < period:
                 self.sleep(period - dt_)
+
+    def _status_line(self) -> tuple[str, bool]:
+        base = self.status()
+        more, alert = hydra_state.extra(self.data)
+        return (f"{base}  ·  {more}" if more and base else base or more), alert
 
     def _play_night(self, disp, prog, key, max_frames) -> None:
         while max_frames is None or self.state["frames"] < max_frames:
