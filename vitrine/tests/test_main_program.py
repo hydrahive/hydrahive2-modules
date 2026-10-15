@@ -79,3 +79,20 @@ def test_feiertagsname_im_overlay():
     a, b = ohne.getchannel("A"), mit.getchannel("A")
     assert a.crop((0, 430, 1080, 560)).getbbox() is None
     assert b.crop((0, 430, 1080, 560)).getbbox() is not None, "Feiertagsname steht unter dem Datum"
+
+
+def test_feiertag_landet_im_gesendeten_bild(tmp_path, monkeypatch):
+    """Der Dienst gibt den Feiertagsnamen an das Overlay weiter (nicht nur die Szene kann ihn zeichnen)."""
+    from renderer import scene
+    seen = []
+    orig = scene.Overlay.render
+
+    def spy(self, t, status, holiday=None):
+        seen.append(holiday)
+        return orig(self, t, status, holiday)
+
+    monkeypatch.setattr(scene.Overlay, "render", spy)
+    p = Program(video=tmp_path / "videos" / "w.mp4", rule="Weihnachten", holiday="Weihnachten")
+    r = _runner(tmp_path, [p], Uhr(dt.datetime(2026, 12, 24, 12)), [], [])
+    r.run(max_frames=2)
+    assert seen and set(seen) == {"Weihnachten"}

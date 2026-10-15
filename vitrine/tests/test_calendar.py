@@ -145,3 +145,9 @@ def test_vorlagen_sind_gueltig():
 def test_validierung(rule, fehler):
     errs = cal.validate_rule({"id": "x", "name": "n", "enabled": True, "priority": 10, "videos": [], **rule})
     assert errs and any(fehler in e for e in errs)
+
+
+def test_29_februar_ist_gueltig():
+    r = {"id": "x", "name": "Schalttag", "enabled": True, "priority": 10, "videos": [], "kind": "range", "from": "02-29", "to": "02-29"}
+    assert cal.validate_rule(r) == []
+    assert cal.matches(r, dt.datetime(2028, 2, 29))

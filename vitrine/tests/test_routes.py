@@ -11,7 +11,7 @@ import pytest
 pytest.importorskip("hydrahive")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from _hh_isolation import isolated_root  # noqa: E402
+from _hh_isolation import isolated_root, only_own_files  # noqa: E402
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 B = "/api/modules/vitrine"
@@ -88,10 +88,8 @@ def data(env):
     from hydrahive.settings import settings
     d = settings.data_dir / "vitrine"
     (d / "videos").mkdir(parents=True, exist_ok=True)
-    yield d
-    for p in (d / "videos").iterdir():
-        p.unlink()
-    (d / "config.json").unlink(missing_ok=True)
+    with only_own_files(d / "videos"), only_own_files(d, "*.json"), only_own_files(d, "*.jpg"):
+        yield d
 
 
 @pytest.fixture(autouse=True)
