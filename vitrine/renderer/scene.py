@@ -15,6 +15,7 @@ MONATE = ("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August"
           "September", "Oktober", "November", "Dezember")
 _FONTS = Path("/usr/share/fonts/truetype/dejavu")
 WHITE, SHADOW, CYAN, BAR = (255, 255, 255, 235), (0, 0, 0, 120), (150, 225, 255, 240), (10, 14, 24, 150)
+GOLD = (255, 214, 120, 240)
 
 
 def clock_text(t: time.struct_time) -> str:
@@ -43,14 +44,16 @@ class Overlay:
         self._key: tuple | None = None
         self._img: Image.Image | None = None
 
-    def render(self, t: time.struct_time, status: str) -> Image.Image:
-        key = (clock_text(t), date_text(t), status)
+    def render(self, t: time.struct_time, status: str, holiday: str | None = None) -> Image.Image:
+        key = (clock_text(t), date_text(t), status, holiday)
         if key == self._key and self._img is not None:
             return self._img
         img = Image.new("RGBA", (self.w, self.h), (0, 0, 0, 0))
         dr = ImageDraw.Draw(img)
         self._centered(dr, key[0], self.clock_font, int(120 * self.u), WHITE)
         self._centered(dr, key[1], self.date_font, int(360 * self.u), WHITE)
+        if holiday:
+            self._centered(dr, holiday, self.date_font, int(450 * self.u), GOLD)
         if status:
             m = int(40 * self.u)
             dr.rounded_rectangle([m, self.h - int(120 * self.u), self.w - m, self.h - m], int(28 * self.u), fill=BAR)

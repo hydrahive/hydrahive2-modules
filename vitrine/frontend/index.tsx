@@ -1,0 +1,61 @@
+import { VitrinePage } from "./VitrinePage"
+
+export const routes = [{ path: "/vitrine", element: <VitrinePage /> }]
+export const nav = [
+  { path: "/vitrine", icon: "MonitorPlay", labelKey: "vitrine", group: "working", roles: ["admin"] as ("admin" | "user")[], cockpit: true },
+]
+
+export const i18n = {
+  de: {
+    vitrine: {
+      vitrine: "Vitrine", title: "Vitrine", eyebrow: "Gehäuse-Display",
+      save: "Speichern", saving: "Speichert…", saved: "Gespeichert – das Display übernimmt es in wenigen Sekunden.",
+      load_error: "Die Einstellungen der Vitrine konnten nicht geladen werden.",
+      preview: "Vorschau", video: "Video", rule: "Regel", rule_none: "keine (Standard)", holiday: "Feiertag", fps: "Bilder/s", panel: "Display",
+      state_running: "Läuft", state_stopped: "Dienst läuft nicht", state_no_display: "Display nicht verbunden",
+      night_dim: "Nachtmodus (gedimmte Uhr)", night_off: "Nachtmodus (aus)",
+      videos: "Videos", upload: "Video hochladen", uploading: "Lädt hoch…",
+      videos_hint: "Hochformat 9:16 (1080×1920) sieht am besten aus. MP4, WebM, MKV oder MOV, bis 500 MB.",
+      no_videos: "Noch keine Videos. Lade eins hoch oder erzeuge eins im Atelier (9:16).",
+      delete: "Löschen", delete_yes: "Wirklich löschen", cancel: "Abbrechen",
+      calendar: "Kalender", rule_new: "Neue Regel", no_rules: "Noch keine Regeln – dann laufen alle Videos im Wechsel. Tipp: Vorlagen oben anklicken.",
+      edit: "Bearbeiten", enabled: "Aktiv", unnamed: "(ohne Namen)", video_count_one: "{{count}} Video", video_count_other: "{{count}} Videos",
+      prio_short: "Prio {{p}}", name: "Name", kind_label: "Art", from_md: "Von (MM-TT)", to_md: "Bis (MM-TT)", from_hm: "Von", to_hm: "Bis",
+      offset_from: "Tage ab Ostersonntag (von)", offset_to: "Tage ab Ostersonntag (bis)", season_label: "Jahreszeit", priority: "Priorität (höher gewinnt)",
+      rule_videos: "Videos dieser Regel", rule_invalid: "Bitte die rot markierten Felder prüfen.",
+      easter_range: "Ostern {{from}} bis {{to}} Tage",
+      kind: { range: "Zeitraum im Jahr", easter: "Rund um Ostern", advent: "Advent", season: "Jahreszeit", time: "Tageszeit" },
+      season: { spring: "Frühling", summer: "Sommer", autumn: "Herbst", winter: "Winter" },
+      night: "Nachtmodus", night_enabled: "Nachts dunkel schalten", rotate: "Mehrere Videos: wechseln alle (Minuten, 0 = nie)",
+      simulate: "Datum testen", simulate_hint: "Was würde zu diesem Zeitpunkt laufen?", simulate_go: "Testen",
+      simulate_result: "{{video}} – Regel: {{rule}}", simulate_nothing: "Kein Video (Farbverlauf).",
+      simulate_saved_only: "Testet die gespeicherten Einstellungen.",
+    },
+  },
+  en: {
+    vitrine: {
+      vitrine: "Vitrine", title: "Vitrine", eyebrow: "Case display",
+      save: "Save", saving: "Saving…", saved: "Saved – the display picks it up within a few seconds.",
+      load_error: "Vitrine settings could not be loaded.",
+      preview: "Preview", video: "Video", rule: "Rule", rule_none: "none (default)", holiday: "Holiday", fps: "Frames/s", panel: "Display",
+      state_running: "Running", state_stopped: "Service not running", state_no_display: "Display not connected",
+      night_dim: "Night mode (dimmed clock)", night_off: "Night mode (off)",
+      videos: "Videos", upload: "Upload video", uploading: "Uploading…",
+      videos_hint: "Portrait 9:16 (1080×1920) looks best. MP4, WebM, MKV or MOV, up to 500 MB.",
+      no_videos: "No videos yet. Upload one or create one in the Atelier (9:16).",
+      delete: "Delete", delete_yes: "Really delete", cancel: "Cancel",
+      calendar: "Calendar", rule_new: "New rule", no_rules: "No rules yet – all videos rotate. Tip: click a template above.",
+      edit: "Edit", enabled: "Active", unnamed: "(unnamed)", video_count_one: "{{count}} video", video_count_other: "{{count}} videos",
+      prio_short: "Prio {{p}}", name: "Name", kind_label: "Type", from_md: "From (MM-DD)", to_md: "To (MM-DD)", from_hm: "From", to_hm: "To",
+      offset_from: "Days from Easter Sunday (from)", offset_to: "Days from Easter Sunday (to)", season_label: "Season", priority: "Priority (higher wins)",
+      rule_videos: "Videos of this rule", rule_invalid: "Please check the fields marked red.",
+      easter_range: "Easter {{from}} to {{to}} days",
+      kind: { range: "Date range", easter: "Around Easter", advent: "Advent", season: "Season", time: "Time of day" },
+      season: { spring: "Spring", summer: "Summer", autumn: "Autumn", winter: "Winter" },
+      night: "Night mode", night_enabled: "Go dark at night", rotate: "Several videos: switch every (minutes, 0 = never)",
+      simulate: "Test a date", simulate_hint: "What would be shown at this time?", simulate_go: "Test",
+      simulate_result: "{{video}} – rule: {{rule}}", simulate_nothing: "No video (gradient).",
+      simulate_saved_only: "Tests the saved settings.",
+    },
+  },
+}

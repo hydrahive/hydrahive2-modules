@@ -26,9 +26,18 @@ def read(data_dir: Path, *, now: float | None = None) -> dict:
     frames = int(raw.get("frames") or 0)
     key = str(data_dir)
     fps = None
-    if key in _last and updated > _last[key][0]:
+    if key in _last and updated > _last[key][0] and frames >= _last[key][1]:
         t0, f0 = _last[key]
         fps = round((frames - f0) / (updated - t0), 1)
     _last[key] = (updated, frames)
     return {"running": True, "connected": bool(raw.get("connected")), "frames": frames, "fps": fps,
             "video": raw.get("video"), "error": raw.get("error"), "size": raw.get("size")}
+
+
+def program_info(data_dir: Path) -> dict:
+    """Programm-Felder aus state.json (rule, holiday, night) – schreibt der Dienst."""
+    try:
+        raw = json.loads((data_dir / "state.json").read_text())
+    except (OSError, ValueError):
+        return {"rule": None, "holiday": None, "night": None}
+    return {k: raw.get(k) for k in ("rule", "holiday", "night")}

@@ -1,0 +1,65 @@
+import { api } from "@/shared/api-client"
+import { useAuthStore } from "@/features/auth/useAuthStore"
+import type { Rule, Template } from "./rules"
+
+const BASE = "/modules/vitrine"
+
+export interface VitrineStatus {
+  running: boolean
+  connected: boolean
+  frames: number
+  fps: number | null
+  video: string | null
+  error: string | null
+  size: [number, number] | null
+  rule: string | null
+  holiday: string | null
+  night: "dim" | "off" | null
+}
+
+export interface Night {
+  enabled: boolean
+  from: string
+  to: string
+  mode: "dim" | "off"
+}
+
+export interface VitrineConfig {
+  rules: Rule[]
+  default_videos: string[]
+  night: Night
+  rotate_minutes: number
+}
+
+export interface VideoFile {
+  name: string
+  size: number
+  modified: number
+}
+
+export interface Simulation {
+  video: string | null
+  rule: string | null
+  holiday: string | null
+  night: string | null
+}
+
+export const vitrineApi = {
+  status: () => api.get<VitrineStatus>(`${BASE}/status`),
+  config: () => api.get<VitrineConfig>(`${BASE}/config`),
+  saveConfig: (c: VitrineConfig) => api.put<VitrineConfig>(`${BASE}/config`, c),
+  templates: () => api.get<Template[]>(`${BASE}/templates`),
+  videos: () => api.get<VideoFile[]>(`${BASE}/videos`),
+  upload: (file: File) => {
+    const form = new FormData()
+    form.append("file", file)
+    return api.postForm<{ name: string }>(`${BASE}/videos`, form)
+  },
+  remove: (name: string) => api.delete<void>(`${BASE}/videos/${encodeURIComponent(name)}`),
+  simulate: (at: string) => api.post<Simulation>(`${BASE}/simulate`, { at }),
+  /** <img> kann keinen Header setzen → ?token= (wie Mediaplayer-Stream); &t= gegen den Browser-Cache. */
+  previewUrl: (t: number) => {
+    const token = useAuthStore.getState().token ?? ""
+    return `/api${BASE}/preview.jpg?token=${encodeURIComponent(token)}&t=${t}`
+  },
+}

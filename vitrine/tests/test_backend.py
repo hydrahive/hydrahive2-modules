@@ -59,3 +59,29 @@ def test_fps_aus_zwei_messungen(tmp_path):
     state.read(tmp_path, now=10.0)
     (tmp_path / "state.json").write_text(json.dumps({"connected": True, "frames": 400, "updated": 20.0}))
     assert state.read(tmp_path, now=20.0)["fps"] == 30.0
+
+
+@pytest.mark.parametrize("name", ["../config.json", "/etc/passwd", "sub/datei.mp4", ".versteckt.mp4", "A.MP4X", "x.mp4/"])
+def test_safe_existing_lehnt_pfade_ab(tmp_path, name):
+    from backend import videos
+    (tmp_path / "v").mkdir()
+    (tmp_path / "config.json").write_text("{}")
+    with pytest.raises(videos.VideoError) as e:
+        videos.safe_existing(tmp_path / "v", name)
+    assert e.value.status == 400
+
+
+def test_safe_existing_findet_eigene_datei(tmp_path):
+    from backend import videos
+    (tmp_path / "herbst-hydra.mp4").write_bytes(b"x")
+    assert videos.safe_existing(tmp_path, "herbst-hydra.mp4").name == "herbst-hydra.mp4"
+
+
+def test_fps_nie_negativ_nach_neustart(tmp_path):
+    """Dienst neu gestartet → Zähler fängt bei 0 an; die Rate darf nicht negativ werden (live: -26.5)."""
+    from backend import state
+    state.reset_rate()
+    (tmp_path / "state.json").write_text(json.dumps({"connected": True, "frames": 5000, "updated": 10.0}))
+    state.read(tmp_path, now=10.0)
+    (tmp_path / "state.json").write_text(json.dumps({"connected": True, "frames": 120, "updated": 15.0}))
+    assert state.read(tmp_path, now=15.0)["fps"] is None
