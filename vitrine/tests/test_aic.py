@@ -16,8 +16,8 @@ _PUB_PEM = _KEY.public_key().public_bytes(serialization.Encoding.PEM, serializat
 class FakeDev:
     """Spielt das Display: GET_PARAMS, AUTH_DEV (entschlüsselt Challenge), AUTH_HOST (signierter Blob), Frames."""
 
-    def __init__(self, w=1080, h=1920, *, wrong_echo=False):
-        self.w, self.h, self.wrong_echo = w, h, wrong_echo
+    def __init__(self, w=1080, h=1920, *, wrong_echo=False, fmt=16):
+        self.w, self.h, self.wrong_echo, self.fmt = w, h, wrong_echo, fmt
         self.writes: list[bytes] = []
         self._pending: list[bytes] = []
         self.host_plain = b"vitrine-host-check-0123456789abcdef"
@@ -32,7 +32,7 @@ class FakeDev:
 
     def ctrl_transfer(self, bm, req, val, idx, length, timeout=0):
         assert (bm, req) == (0xC0, 0)
-        return bytearray(struct.pack("<8H", 5, 0x80, 16, 0, 1, self.w, self.h, 60) + bytes(length - 16))
+        return bytearray(struct.pack("<8H", 5, 0x80, self.fmt, 0, 1, self.w, self.h, 60) + bytes(length - 16))
 
     def write(self, ep, data, timeout=0):
         data = bytes(data)
@@ -87,9 +87,18 @@ def test_frame_kopf_und_stuecke():
     jpeg = bytes(range(256)) * 2100                   # 537 600 Bytes → 3 Stücke à max. 256 KiB
     d.send_jpeg(jpeg)
     head, *parts = dev.writes[n:]
-    assert struct.unpack("<IIHHII", head) == (aic.FRAME, len(jpeg), 0, 0, 0, aic.FRAME)
+    assert struct.unpack("<IIHHII", head) == (aic.FRAME, len(jpeg), 0, 16, 0, aic.FRAME), "Format wie vom Display gemeldet"
     assert [len(p) for p in parts] == [262144, 262144, len(jpeg) - 2 * 262144]
     assert b"".join(parts) == jpeg
+
+
+@pytest.mark.parametrize(("fmt", "erwartet"), [(16, 16), (0, aic.FMT_JPEG), (7, 7)])
+def test_bildformat_aus_get_params(fmt, erwartet):
+    """Kopf trägt das gemeldete Format (wie die Herstellersoftware); meldet das Display 0, gilt JPEG (0x10)."""
+    dev = FakeDev(fmt=fmt)
+    d = aic.Display.open(dev)
+    d.send_jpeg(b"x")
+    assert struct.unpack("<IIHHII", dev.writes[-2])[3] == erwartet
 
 
 def test_frame_id_zaehlt_und_laeuft_ueber():
