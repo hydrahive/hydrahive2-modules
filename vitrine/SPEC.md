@@ -1,6 +1,6 @@
 # Vitrine — Gehäuse-Display als Wohnzimmer-Bühne
 
-**Stand:** 15.10.2026 · **Status:** Entwurf, wartet auf Freigabe durch Till · **Ziel-Host:** hhmaster (192.168.178.226)
+**Stand:** 15.10.2026 · **Status:** freigegeben (Till, 15.10.2026) · **Ziel-Host:** hhmaster (192.168.178.226)
 
 ## Was
 
@@ -42,7 +42,7 @@ Vitrine-Code wird **neu geschrieben** (keine Übernahme von GPL-Code), Quellen i
    - Videos per `ffmpeg` dekodieren (rawvideo-Pipe), Overlay mit Pillow, JPEG, USB
    - Ziel 30 fps (60 möglich, 30 reicht für Deko und spart CPU/USB)
    - verbindet sich selbst neu, wenn das Display neu anmeldet (Reset, Firmware-Wechsel)
-   - Nachtmodus: dunkler Hintergrund / Display aus zu festen Zeiten (Firmware kann Helligkeit nur über die Knöpfe)
+   - Nachtmodus: Zeitfenster und Verhalten (dunkel = nur Uhr gedimmt auf Schwarz, oder aus = schwarzes Bild) in den Modul-Einstellungen; Firmware-Helligkeit bleibt bei den Knöpfen
    - spricht nur lokal: Unix-Socket `/run/hydrahive2-vitrine.sock` (nur `hydrahive`), kein Netz-Port
 2. **Modul-Backend** (im HydraHive-Prozess)
    - Routen fürs Cockpit: Status, Vorschau-Bild, Videos (Upload/Liste/Löschen), Kalender, Einstellungen, „Nachricht senden“
@@ -50,7 +50,8 @@ Vitrine-Code wird **neu geschrieben** (keine Übernahme von GPL-Code), Quellen i
    - Job: alle 30 s Hydra-Status sammeln (Kern-intern, kein Token nötig) und an den Dienst schicken
    - Butler-Aktion **„Auf Vitrine anzeigen“**, damit Flows Ereignisse einblenden können
 3. **Cockpit-Seite „Vitrine“** (nur Admin)
-   - Live-Vorschau (zuletzt gerendertes Bild), Videos verwalten, Kalender-Regeln, Testnachricht, Nachtmodus
+   - Live-Vorschau (zuletzt gerendertes Bild), Videos verwalten, Kalender-Regeln, Testnachricht
+   - Einstellungen: Nachtmodus (an/aus, von–bis, „dunkel“ oder „aus“), Bildrate, Dauer der Einblendungen
 
 ### Kalender-Regeln
 
@@ -82,7 +83,7 @@ Eine Regel = Zeitraum + Video(s) + Priorität. Höchste passende Priorität gewi
 - kein Zweitmonitor für den KDE-Desktop (EVDI) — eigenes Thema
 - keine Steuerung über die Display-Knöpfe (Firmware behält sie)
 - keine Firmware-Updates des Displays
-- kein Ton
+- kein Ton, keine Lampen/Home-Assistant-Aktionen bei Nachrichten (nur Bild; später ausbaubar)
 
 ## Sicherheit
 
@@ -106,8 +107,8 @@ Eine Regel = Zeitraum + Video(s) + Priorität. Höchste passende Priorität gewi
 - `display_message` von einem Agenten erscheint binnen 2 s und verschwindet nach der Dauer
 - CPU-Last des Dienstes bei 30 fps < 10 % eines Kerns (gemessen)
 
-## Offene Fragen an Till
+## Entscheidungen (Till, 15.10.2026)
 
-1. Name „Vitrine“ ok?
-2. Nachtmodus: ab wann aus/dunkel?
-3. Sollen Nachrichten einen Ton/eine Lampe auslösen (Home Assistant), oder nur Bild?
+1. Name: **Vitrine**.
+2. Nachtmodus: **einstellbar** in den Modul-Einstellungen (Zeitfenster + dunkel/aus), kein fester Standard außer „aus“ bis Till es setzt.
+3. Nachrichten: **nur Bild**; Ton/Lampe (Home Assistant) ist ein möglicher Ausbau nach V1.
