@@ -66,3 +66,12 @@ def test_ohne_feiertagsvideo_faellt_auf_vorhandene_zurueck(tmp_path):
     data = _vids(tmp_path, "herbst.mp4")
     p = program.current(data, CFG, dt.datetime(2026, 12, 24, 12))
     assert p.video.name == "herbst.mp4" and p.holiday is None and p.rule is None
+
+
+def test_regelwechsel_bei_gleichem_video_aendert_den_schluessel(tmp_path):
+    """Gleiches Video, aber jetzt über eine Regel gewählt → Status muss die Regel zeigen (live gefunden 15.10.)."""
+    data = _vids(tmp_path, "herbst.mp4")
+    ohne = program.current(data, {"rules": []}, dt.datetime(2026, 10, 15, 12))
+    mit = program.current(data, CFG, dt.datetime(2026, 10, 15, 12))
+    assert ohne.video == mit.video and ohne.rule is None and mit.rule == "Herbst"
+    assert ohne.key() != mit.key()

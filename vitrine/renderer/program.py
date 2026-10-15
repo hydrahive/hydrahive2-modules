@@ -17,8 +17,8 @@ class Program:
     night: str | None = None          # None | "dim" | "off"
 
     def key(self) -> tuple:
-        """Ändert sich der Schlüssel, muss der Dienst umschalten (Uhr/Status ändern ihn nicht)."""
-        return (str(self.video) if self.video else None, self.holiday, self.night)
+        """Ändert sich der Schlüssel, schaltet der Dienst um und meldet den neuen Stand (Uhr/Status ändern ihn nicht)."""
+        return (str(self.video) if self.video else None, self.rule, self.holiday, self.night)
 
 
 def available(data_dir: Path) -> set[str]:
