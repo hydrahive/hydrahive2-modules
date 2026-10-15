@@ -1,6 +1,6 @@
 # Vitrine — Gehäuse-Display als Wohnzimmer-Bühne
 
-**Stand:** 15.10.2026 · **Status:** freigegeben (Till, 15.10.2026) · **Ziel-Host:** hhmaster (192.168.178.226)
+**Stand:** 16.10.2026 · **Status:** freigegeben (Till, 15.10.2026; E4 freigegeben 16.10.2026) · **Ziel-Host:** hhmaster (192.168.178.226)
 
 ## Was
 
@@ -43,11 +43,13 @@ Vitrine-Code wird **neu geschrieben** (keine Übernahme von GPL-Code), Quellen i
    - Ziel 30 fps (60 möglich, 30 reicht für Deko und spart CPU/USB)
    - verbindet sich selbst neu, wenn das Display neu anmeldet (Reset, Firmware-Wechsel)
    - Nachtmodus: Zeitfenster und Verhalten (dunkel = nur Uhr gedimmt auf Schwarz, oder aus = schwarzes Bild) in den Modul-Einstellungen; Firmware-Helligkeit bleibt bei den Knöpfen
-   - spricht nur lokal: Unix-Socket `/run/hydrahive2-vitrine.sock` (nur `hydrahive`), kein Netz-Port
+   - spricht nur lokal über Dateien im Modul-Datenverzeichnis (kein Socket, kein Netz-Port): `config.json` (Backend → Dienst),
+     `inbox/` (Einblendungen), `hydra.json` (Hydra-Status), `state.json` + `preview.jpg` (Dienst → Backend)
+     *(geändert in E3: Dateien statt Unix-Socket – der Dienst läuft weiter, auch wenn HydraHive gerade neu startet)*
 2. **Modul-Backend** (im HydraHive-Prozess)
    - Routen fürs Cockpit: Status, Vorschau-Bild, Videos (Upload/Liste/Löschen), Kalender, Einstellungen, „Nachricht senden“
    - Agenten-Werkzeug **`display_message`** (Text, Dauer, Stil info/erfolg/warnung/fehler) — standardmäßig aus, pro Agent freischaltbar
-   - Job: alle 30 s Hydra-Status sammeln (Kern-intern, kein Token nötig) und an den Dienst schicken
+   - Job: alle 30 s Hydra-Status sammeln (Kern-intern, kein Token nötig) und als `hydra.json` ablegen
    - Butler-Aktion **„Auf Vitrine anzeigen“**, damit Flows Ereignisse einblenden können
 3. **Cockpit-Seite „Vitrine“** (nur Admin)
    - Live-Vorschau (zuletzt gerendertes Bild), Videos verwalten, Kalender-Regeln, Testnachricht
@@ -90,13 +92,15 @@ Eine Regel = Zeitraum + Video(s) + Priorität. Höchste passende Priorität gewi
 - Cockpit-Routen und Werkzeug nur mit Freigabe `module.vitrine` (Standard `admin_only`)
 - `display_message`: Text wird gekürzt (≤ 280 Zeichen), keine Bilder/URLs aus Agenten in V1; Secrets-Schwärzung wie bei anderen Ausgaben
 - Upload: nur Video-Containerformate, Größenlimit, Dateiname neu vergeben, Prüfung mit `ffprobe`
-- Dienst ohne Netz-Port, Socket nur für `hydrahive`; USB-Zugriff per udev-Regel nur für Gruppe `hydrahive` auf `33c3:0e02`
+- Dienst ohne Netz-Port und ohne Socket; Datenverzeichnis gehört `hydrahive`; USB-Zugriff per udev-Regel nur für Gruppe `hydrahive` auf `33c3:0e02`
 
 ## Etappen
 
 1. **E1 Dienst:** udev, Dienst, Wiederverbinden, Video in Schleife, Uhr/Datum, Status-Leiste (Daten zunächst lokal: CPU/RAM/GPU) — Abnahme am Gehäuse
 2. **E2 Kalender + Cockpit:** Regeln, Feiertage, Video-Verwaltung, Vorschau, Nachtmodus
 3. **E3 Einblendungen:** Hydra-Status aus dem Kern, `display_message`, Butler-Aktion, Fehler-Ereignisse
+4. **E4 Abschluss V1:** CPU-Last unter das Ziel bringen (JPEG-Bildcache, siehe unten), Bildrate und Einblendungsdauer im Cockpit,
+   offene Akzeptanztests am Gerät (Rechner-Neustart, USB ab/an, HydraHive-Neustart, CPU)
 
 ## Akzeptanzkriterien
 
@@ -112,3 +116,29 @@ Eine Regel = Zeitraum + Video(s) + Priorität. Höchste passende Priorität gewi
 1. Name: **Vitrine**.
 2. Nachtmodus: **einstellbar** in den Modul-Einstellungen (Zeitfenster + dunkel/aus), kein fester Standard außer „aus“ bis Till es setzt.
 3. Nachrichten: **nur Bild**; Ton/Lampe (Home Assistant) ist ein möglicher Ausbau nach V1.
+
+## E4: JPEG-Bildcache (freigegeben 16.10.2026)
+
+**Problem (gemessen 16.10.2026 auf .226, 24 fps):** Der Dienst braucht ~52 % eines Kerns statt < 10 %.
+ffmpeg-Dekodieren ~28 %, Python ~21 % (JPEG-Kodieren, Umwandeln/Kopieren der Bilder, Overlay); USB-Versand vernachlässigbar.
+Dekodieren auf der Grafikkarte (VAAPI) senkt es nur auf ~44 % (Overlay + JPEG bleiben) – verworfen.
+
+**Lösung:** Jedes Video wird **einmal** in fertige JPEG-Bilder umgerechnet und abgelegt. Zur Laufzeit wird nichts mehr dekodiert
+und nur dort neu kodiert, wo etwas darüber liegt (Uhr, Datum, Feiertag, Status-Leiste, Karten):
+
+- Die Bilder werden mit **Restart-Markern je MCU-Zeile** (16 px bei 4:2:0) kodiert. Dadurch lässt sich jede Zeile einzeln austauschen.
+- Laufzeit: Bänder mit Overlay bestimmen → nur diese Zeilen aus dem Original-Videobild + Overlay neu kodieren → Segmente
+  in das gespeicherte JPEG einsetzen. Ergebnis ist **byteidentisch** zur vollständigen Neukodierung (Prototyp: 48/48).
+- Prototyp auf .226 (ohne USB): **~4 % eines Kerns** statt ~10 % (Python-Teil) bzw. 57 % (ganze Kette).
+- Für das Neukodieren der Bänder wird pro Bild das Videobild an diesen Stellen gebraucht: Die Bänder werden beim Vorberechnen
+  nicht vorgehalten, sondern aus dem JPEG-Bild dekodiert (nur die betroffenen Zeilen).
+
+**Ablage:** `<daten>/cache/<video>-<hash>.frames/` mit einer Datei pro Bild bzw. einem Paket; Schlüssel wie der heutige Cache
+(Name, Größe, Änderungszeit, Auflösung, fps, Qualität). Bis die Vorberechnung fertig ist, läuft der heutige Weg weiter.
+Speicher ~100 MB pro Video (Till: ok). Alte Fassungen derselben Quelle werden gelöscht, wie beim Video-Cache.
+
+**Einstellungen im Cockpit (neu):** Bildrate (12–30 fps, Standard 24) und Standard-Dauer der Einblendungen (5–120 s, Standard 15).
+
+**Akzeptanz E4:** Dienst-CPU (Python + Kindprozesse) bei 24 fps im Tagbetrieb ohne Einblendung **< 10 % eines Kerns**, gemessen über 60 s
+mit `perf stat`/`/proc`; mit sichtbarer Einblendung gemessen und im PR genannt. Byte-Gleichheit zur vollen Kodierung als Test.
+
