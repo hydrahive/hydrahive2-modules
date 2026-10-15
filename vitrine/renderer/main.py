@@ -19,6 +19,7 @@ from PIL import Image
 from . import aic, scene, sysinfo, video
 
 RETRY_SECONDS = 2.0
+DEFAULT_FPS = 24          # Atelier-Videos haben 24 fps; mehr kostet nur CPU
 STATUS_EVERY = 5.0
 log = logging.getLogger("vitrine")
 
@@ -45,7 +46,7 @@ class Runner:
     def __init__(self, *, data_dir: Path, connect: Callable = _connect_real,
                  frames: Callable[..., Iterable[Image.Image]] | None = None,
                  status: Callable[[], str] = sysinfo.current, sleep: Callable[[float], None] = time.sleep,
-                 fps: int = 30, quality: int = 80):
+                 fps: int = DEFAULT_FPS, quality: int = 80):
         self.data = data_dir
         self.connect, self.status, self.sleep = connect, status, sleep
         self.fps, self.quality = fps, quality
@@ -118,7 +119,7 @@ class Runner:
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     data = Path(os.environ.get("VITRINE_DATA", "/var/lib/hydrahive2/vitrine"))
-    Runner(data_dir=data, fps=int(os.environ.get("VITRINE_FPS", "30")),
+    Runner(data_dir=data, fps=int(os.environ.get("VITRINE_FPS", str(DEFAULT_FPS))),
            quality=int(os.environ.get("VITRINE_QUALITY", "80"))).run()
 
 

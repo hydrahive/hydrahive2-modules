@@ -66,5 +66,28 @@ class Overlay:
         dr.text((x, y), text, font=font, fill=fill)
 
 
+def _bands(overlay: Image.Image) -> list[tuple[int, int, int, int]]:
+    """Waagrechte Streifen, in denen das Overlay etwas zeichnet (oben Uhr/Datum, unten Leiste)."""
+    a = overlay.getchannel("A")
+    w, h = overlay.size
+    top = a.crop((0, 0, w, h // 2)).getbbox()
+    bot = a.crop((0, h // 2, w, h)).getbbox()
+    out = []
+    if top:
+        out.append((0, top[1], w, top[3]))
+    if bot:
+        out.append((0, h // 2 + bot[1], w, h // 2 + bot[3]))
+    return out
+
+
 def compose(frame: Image.Image, overlay: Image.Image) -> Image.Image:
-    return Image.alpha_composite(frame.convert("RGBA"), overlay).convert("RGB")
+    """Overlay auflegen – nur in den Streifen, wo es etwas zeichnet (spart ~2/3 der Rechenzeit)."""
+    out = frame.copy() if frame.mode == "RGB" else frame.convert("RGB")
+    bands = getattr(overlay, "_vitrine_bands", None)
+    if bands is None:
+        bands = _bands(overlay)
+        overlay._vitrine_bands = bands
+    for box in bands:
+        part = Image.alpha_composite(out.crop(box).convert("RGBA"), overlay.crop(box))
+        out.paste(part.convert("RGB"), box[:2])
+    return out

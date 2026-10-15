@@ -77,3 +77,18 @@ def test_kurzes_video_ohne_ueberblendung(tmp_path, monkeypatch):
     monkeypatch.setattr(video, "duration", lambda p: 1.5)
     video.prepare(src, tmp_path / "c", 1080, 1920, 30)
     assert "xfade" not in " ".join(calls[0])
+
+
+def test_dekodieren_mit_einem_thread(monkeypatch):
+    """Gemessen auf hhmaster (24 Threads): -threads 0 kostet 6,0 s CPU je 300 Bilder, -threads 1 nur 2,3 s."""
+    seen = {}
+
+    class P:
+        stdout = __import__("io").BytesIO(b"")
+        def kill(self): pass
+        def wait(self, timeout=None): pass
+
+    monkeypatch.setattr(video.subprocess, "Popen", lambda cmd, **kw: (seen.setdefault("cmd", cmd), P())[1])
+    list(video.frames(__import__("pathlib").Path("x.mp4"), 4, 4, 24))
+    cmd = seen["cmd"]
+    assert cmd[cmd.index("-threads") + 1] == "1" and cmd.index("-threads") < cmd.index("-i")

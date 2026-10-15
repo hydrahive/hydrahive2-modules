@@ -61,3 +61,21 @@ def test_compose_legt_overlay_auf_video():
     assert out.mode == "RGB" and out.size == (1080, 1920)
     assert out.getpixel((540, 1000)) == (0, 120, 0)             # Mitte unverändert
     assert out.getpixel((540, 1000)) != out.getpixel((540, 230))  # oben liegt die Uhr drüber
+
+
+def test_compose_identisch_zum_vollen_alpha_composite():
+    """Die schnelle Variante (nur Bereiche mit Overlay) muss pixelgleich zur vollen Verrechnung sein."""
+    from PIL import Image
+    o = scene.Overlay(1080, 1920)
+    ov = o.render(DO_15_OKT, "Hydra läuft  ·  Last 0.4")
+    frame = Image.effect_noise((1080, 1920), 50).convert("RGB")
+    voll = Image.alpha_composite(frame.convert("RGBA"), ov).convert("RGB")
+    assert scene.compose(frame, ov).tobytes() == voll.tobytes()
+
+
+def test_compose_veraendert_das_videobild_nicht():
+    from PIL import Image
+    o = scene.Overlay(1080, 1920)
+    frame = Image.new("RGB", (1080, 1920), (1, 2, 3))
+    scene.compose(frame, o.render(DO_15_OKT, "x"))
+    assert frame.getpixel((540, 200)) == (1, 2, 3)

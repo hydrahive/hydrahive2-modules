@@ -89,3 +89,10 @@ def test_jpeg_qualitaet_einstellbar(tmp_path):
     a = main.encode(Image.new("RGB", (1080, 1920), (200, 100, 50)), 90)
     b = main.encode(Image.effect_noise((1080, 1920), 60).convert("RGB"), 60)
     assert a[:2] == b[:2] == b"\xff\xd8"
+
+
+def test_standard_bildrate_24():
+    """Atelier-Videos kommen mit 24 fps – hochrechnen auf 30 kostet nur CPU."""
+    import inspect
+    assert inspect.signature(main.Runner).parameters["fps"].default == 24
+    assert main.DEFAULT_FPS == 24
