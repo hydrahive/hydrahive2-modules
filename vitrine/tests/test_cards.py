@@ -80,3 +80,31 @@ def test_status_leiste_rot_bei_fehler():
     y = H - 60
     assert normal.getpixel((60, y)) != fehler.getpixel((60, y))
     assert fehler.getpixel((60, y))[0] > fehler.getpixel((60, y))[2], "rötlich"
+
+
+@pytest.mark.parametrize("status", [
+    "Hydra läuft  ·  Last 0.5  ·  RAM 6%  ·  GPU 53°C  ·  1 Fehler/h",
+    "Hydra läuft  ·  Last 0.5  ·  RAM 6%  ·  GPU 53°C  ·  12 Agenten aktiv  ·  14 Fehler/h",
+    "x" * 300,
+])
+@pytest.mark.parametrize(("w", "h"), [(1080, 1920), (480, 854)])
+def test_status_text_bleibt_in_der_leiste(status, w, h):
+    from renderer import scene
+    import time
+    o = scene.Overlay(w, h)
+    img = o.render(time.localtime(), status, alert=True)
+    m = int(40 * w / 1080)
+    band = img.crop((0, h - int(120 * w / 1080), w, h - m))
+    a = band.getchannel("A")
+    assert a.crop((0, 0, m, band.height)).getbbox() is None, "links über den Rand"
+    assert a.crop((w - m + 1, 0, w, band.height)).getbbox() is None, "rechts über den Rand (Leiste endet bei w-m inklusive)"
+    font, text = o.fit_status(status)
+    assert font.getlength(text) <= w - 2 * m - 2 * int(24 * w / 1080)
+    assert font.size >= int(26 * w / 1080), "nicht unlesbar klein"
+
+
+def test_kurzer_status_bleibt_unveraendert():
+    from renderer import scene
+    o = scene.Overlay(W, H)
+    font, text = o.fit_status("Hydra läuft  ·  Last 0.5")
+    assert text == "Hydra läuft  ·  Last 0.5" and font.size == int(38 * W / 1080)
