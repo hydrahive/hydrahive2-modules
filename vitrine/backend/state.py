@@ -32,3 +32,12 @@ def read(data_dir: Path, *, now: float | None = None) -> dict:
     _last[key] = (updated, frames)
     return {"running": True, "connected": bool(raw.get("connected")), "frames": frames, "fps": fps,
             "video": raw.get("video"), "error": raw.get("error"), "size": raw.get("size")}
+
+
+def program_info(data_dir: Path) -> dict:
+    """Programm-Felder aus state.json (rule, holiday, night) – schreibt der Dienst."""
+    try:
+        raw = json.loads((data_dir / "state.json").read_text())
+    except (OSError, ValueError):
+        return {"rule": None, "holiday": None, "night": None}
+    return {k: raw.get(k) for k in ("rule", "holiday", "night")}
