@@ -103,3 +103,14 @@ export function sizeLabel(bytes: number): string {
 export function clamp(v: number, lo: number, hi: number): number {
   return Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : lo
 }
+
+
+/** Zustand der Vitrine für die Statuskarte. `no_display`: Dienst läuft, Display meldet sich nicht am USB. */
+export type DisplayState = "loading" | "stopped" | "no_display" | "night" | "running"
+
+export function displayState(st: { running: boolean; connected: boolean; night: string | null } | null): DisplayState {
+  if (!st) return "loading"
+  if (!st.running) return "stopped"
+  if (!st.connected) return "no_display"
+  return st.night ? "night" : "running"
+}

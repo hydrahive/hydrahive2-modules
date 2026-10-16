@@ -1,7 +1,7 @@
 {
   "id": "vitrine",
   "name": "Vitrine",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Gehäuse-Display als Wohnzimmer-Bühne: Filmchen in Schleife, davor Uhr, Datum und Hydra-Status. Für das ArtInChip-USB-Display (33c3:0e02) z. B. im Cooler Master MasterFrame 360 Stage LCD.",
   "icon": "MonitorPlay",
   "nav_group": "working",

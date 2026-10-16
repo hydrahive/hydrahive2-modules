@@ -149,6 +149,12 @@ mit `perf stat`/`/proc`; mit sichtbarer Einblendung gemessen und im PR genannt. 
 **Gemessen 16.10.2026 am Gerät (.226, 24 fps, mit USB):** ohne Einblendung **9,0 %**, mit sichtbarer Einblendung 20,8 % eines Kerns
 (Karte wird je Bild neu gezeichnet). Till: auf dem neuen Server kein Grund, das weiter zu drücken.
 
-**Display-Hinweis:** Nach dem Kaltstart blieb das Panel einmal schwarz, obwohl der Dienst Bilder schickte. Mit dem linken
-Knopf am Display (mehrmals) kam das Bild zurück – die Firmware hat mehrere Anzeigemodi. Ursache des Wechsels ungeklärt.
+**Display nach dem Einschalten (beobachtet 16.10.2026, 4 Starts):** Meist zeigt das Display seine eigene Anzeige und meldet
+sich **gar nicht** am USB an, bis der linke Knopf gedrückt wird (2 von 4 Starts meldete es sich von selbst, nach 37 s bzw.
+3,5 min). Ohne Host bleibt jede Anmeldung nur 0,6–2 s. Der Dienst sucht deshalb alle 0,2 s (0.4.1) und übernimmt sofort;
+manchmal braucht es einen zweiten Druck. Anschluss per Software stromlos schalten geht nicht (Controller ohne Port-Power-
+Switching). Das Cockpit zeigt bei „Display nicht verbunden“ einen Hinweis auf den Knopf (0.4.2).
+Das Schwestergerät MSI P13 wird über eine HID-Schnittstelle (`POST extendedDisplay`) in den Host-Modus geschaltet – diese
+Schnittstelle hat unser Display nicht. Ob der Windows-Treiber das Display ohne Knopf weckt, ist ungeklärt (USB-Mitschnitt
+unter Windows wäre der Weg, das zu prüfen).
 
