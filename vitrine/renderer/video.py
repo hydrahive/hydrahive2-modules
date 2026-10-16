@@ -52,8 +52,9 @@ def prepare(src: Path, cache_dir: Path, w: int, h: int, fps: int) -> Path:
 
 def _convert(src: Path, cache_dir: Path, out: Path, w: int, h: int, fps: int) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
-    for old in cache_dir.glob(f"{src.stem}-*.mp4"):          # alte Fassungen derselben Quelle
-        old.unlink(missing_ok=True)
+    for old in cache_dir.glob(f"{src.stem}-*.mp4"):          # alte fertige Fassungen derselben Quelle
+        if not old.name.endswith(".tmp.mp4"):                # Zwischendateien anderer Prozesse nicht anfassen
+            old.unlink(missing_ok=True)
     base = f"scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{h},fps={fps},setsar=1"
     dur = duration(src)
     if dur > 2 * FADE + 0.5:

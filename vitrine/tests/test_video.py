@@ -183,3 +183,25 @@ def test_prepare_fehler_hinterlaesst_keine_reste(tmp_path, monkeypatch):
     with _pt.raises(video.subprocess.CalledProcessError):
         video.prepare(src, tmp_path / "c", 1080, 1920, 24)
     assert list((tmp_path / "c").iterdir()) == []
+
+
+def test_zwischendatei_gehoert_dem_prozess(tmp_path, monkeypatch):
+    """Zwei Prozesse (z. B. alter und neuer Dienst beim Update) teilen sich keine Sperre – darum trägt die
+    Zwischendatei die Prozessnummer und die fremde bleibt unangetastet."""
+    src = _f(tmp_path / "v" / "herbst.mp4")
+    out = video.cache_path(src, tmp_path / "c", 1080, 1920, 24)
+    fremd = _f(out.with_name(f"{out.stem}.99999.tmp.mp4"))       # Zwischendatei eines anderen Prozesses
+    seen = {}
+
+    def run(cmd, **kw):
+        seen["tmp"] = cmd[-1]
+        _f(__import__("pathlib").Path(cmd[-1]))
+        class R: returncode = 0
+        return R()
+
+    monkeypatch.setattr(video.subprocess, "run", run)
+    monkeypatch.setattr(video, "duration", lambda p: 10.0)
+    monkeypatch.setattr(video.os, "getpid", lambda: 4242)
+    video.prepare(src, tmp_path / "c", 1080, 1920, 24)
+    assert seen["tmp"].endswith(".4242.tmp.mp4")
+    assert fremd.exists(), "Zwischendatei des anderen Prozesses nicht überschrieben/gelöscht"
