@@ -33,6 +33,8 @@ class Config(BaseModel):
     default_videos: list[str] = Field(default_factory=list, max_length=50)
     night: Night = Field(default_factory=Night)
     rotate_minutes: int = Field(10, ge=0, le=1440)
+    fps: int = Field(24, ge=12, le=30)                       # Bildrate; Grenzen wie renderer.config.FPS_RANGE
+    message_seconds: int = Field(15, ge=5, le=120)           # Standard-Dauer einer Einblendung
 
     @field_validator("rules")
     @classmethod

@@ -2,10 +2,11 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CalendarSearch, MoonStar } from "lucide-react"
 import { vitrineApi, type Simulation, type VitrineConfig } from "./api"
+import { clamp } from "./rules"
 
 const field = "rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1.5 text-sm text-[#e8eef8]"
 
-/** Nachtmodus, Wechselintervall und „Datum testen“ (was läuft an Heiligabend?). */
+/** Nachtmodus, Wechselintervall, Bildrate, Einblendungsdauer und „Datum testen“ (was läuft an Heiligabend?). */
 export function SettingsCard({ config, onChange }: { config: VitrineConfig; onChange: (c: VitrineConfig) => void }) {
   const { t } = useTranslation("vitrine")
   const n = config.night
@@ -36,6 +37,15 @@ export function SettingsCard({ config, onChange }: { config: VitrineConfig; onCh
         <label className="block text-xs text-[#8d9ab0]">{t("rotate")}
           <input type="number" min={0} max={1440} className={`${field} ml-2 w-20`} value={config.rotate_minutes}
             onChange={(e) => onChange({ ...config, rotate_minutes: Math.max(0, Number(e.target.value)) })} />
+        </label>
+        <label className="block text-xs text-[#8d9ab0]">{t("fps_label")}
+          <input type="number" min={12} max={30} className={`${field} ml-2 w-20`} value={config.fps}
+            onChange={(e) => onChange({ ...config, fps: clamp(Number(e.target.value), 12, 30) })} />
+          <span className="ml-2 text-[#5b6b82]">{t("fps_hint")}</span>
+        </label>
+        <label className="block text-xs text-[#8d9ab0]">{t("message_seconds_label")}
+          <input type="number" min={5} max={120} className={`${field} ml-2 w-20`} value={config.message_seconds}
+            onChange={(e) => onChange({ ...config, message_seconds: clamp(Number(e.target.value), 5, 120) })} />
         </label>
       </div>
 

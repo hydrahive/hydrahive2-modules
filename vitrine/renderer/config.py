@@ -11,7 +11,14 @@ DEFAULTS: dict = {
     "default_videos": [],
     "night": {"enabled": False, "from": "23:00", "to": "07:00", "mode": "dim"},
     "rotate_minutes": 10,
+    "fps": 24,                  # Bildrate (12–30); Atelier-Videos haben 24
+    "message_seconds": 15,      # Standard-Dauer einer Einblendung (5–120); Fehler bleiben länger
 }
+FPS_RANGE, MESSAGE_RANGE = (12, 30), (5, 120)
+
+
+def _int_in(v, lo: int, hi: int) -> bool:
+    return isinstance(v, int) and lo <= v <= hi             # bool ist int, liegt aber immer außerhalb (0/1)
 
 
 def load(data_dir: Path) -> dict:
@@ -30,6 +37,10 @@ def load(data_dir: Path) -> dict:
         out["night"].update({k: v for k, v in raw["night"].items() if k in out["night"]})
     if isinstance(raw.get("rotate_minutes"), int) and raw["rotate_minutes"] >= 0:
         out["rotate_minutes"] = raw["rotate_minutes"]
+    if _int_in(raw.get("fps"), *FPS_RANGE):
+        out["fps"] = raw["fps"]
+    if _int_in(raw.get("message_seconds"), *MESSAGE_RANGE):
+        out["message_seconds"] = raw["message_seconds"]
     return out
 
 

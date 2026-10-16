@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { describeRule, fromTemplate, newRule, ruleErrors, sizeLabel, type Rule } from "./rules"
+import { clamp, describeRule, fromTemplate, newRule, ruleErrors, sizeLabel, type Rule } from "./rules"
 
 const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k)
 
@@ -32,5 +32,16 @@ describe("Vitrine-Regeln", () => {
     expect(sizeLabel(512)).toBe("512 B")
     expect(sizeLabel(9_135_259)).toBe("8.7 MB")
     expect(sizeLabel(1536)).toBe("1.5 KB")
+  })
+})
+
+describe("Einstellungen begrenzen", () => {
+  it("hält Bildrate und Einblendungsdauer im erlaubten Bereich", () => {
+    expect(clamp(24, 12, 30)).toBe(24)
+    expect(clamp(5, 12, 30)).toBe(12)
+    expect(clamp(99, 12, 30)).toBe(30)
+    expect(clamp(17.6, 12, 30)).toBe(18)
+    expect(clamp(Number(""), 5, 120)).toBe(5)
+    expect(clamp(Number.NaN, 5, 120)).toBe(5)
   })
 })

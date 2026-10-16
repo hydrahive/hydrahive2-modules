@@ -6,7 +6,9 @@ Panelgröße, Ziel-fps, ohne Ton und mit 1 s Überblendung vom Ende zum Anfang (
 from __future__ import annotations
 
 import hashlib
+import os
 import subprocess
+import threading
 from pathlib import Path
 from typing import Iterator
 
@@ -14,6 +16,7 @@ from PIL import Image
 
 EXTS = {".mp4", ".webm", ".mkv", ".mov"}
 FADE = 1.0
+_prepare_lock = threading.Lock()      # Dienst und Bildcache-Bau rechnen sonst dieselbe Datei doppelt um
 
 
 def pick(folder: Path) -> Path | None:
@@ -41,9 +44,17 @@ def prepare(src: Path, cache_dir: Path, w: int, h: int, fps: int) -> Path:
     out = cache_path(src, cache_dir, w, h, fps)
     if out.exists():
         return out
+    with _prepare_lock:
+        if out.exists():                                     # während des Wartens vom anderen Thread fertig
+            return out
+        return _convert(src, cache_dir, out, w, h, fps)
+
+
+def _convert(src: Path, cache_dir: Path, out: Path, w: int, h: int, fps: int) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
-    for old in cache_dir.glob(f"{src.stem}-*.mp4"):          # alte Fassungen derselben Quelle
-        old.unlink(missing_ok=True)
+    for old in cache_dir.glob(f"{src.stem}-*.mp4"):          # alte fertige Fassungen derselben Quelle
+        if not old.name.endswith(".tmp.mp4"):                # Zwischendateien anderer Prozesse nicht anfassen
+            old.unlink(missing_ok=True)
     base = f"scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{h},fps={fps},setsar=1"
     dur = duration(src)
     if dur > 2 * FADE + 0.5:
@@ -53,18 +64,22 @@ def prepare(src: Path, cache_dir: Path, w: int, h: int, fps: int) -> Path:
         cmd = ["ffmpeg", "-loglevel", "error", "-y", "-i", str(src), "-i", str(src), "-filter_complex", graph]
     else:
         cmd = ["ffmpeg", "-loglevel", "error", "-y", "-i", str(src), "-vf", base]
-    tmp = out.with_suffix(".tmp.mp4")
-    subprocess.run([*cmd, "-an", "-c:v", "libx264", "-crf", "18", "-preset", "veryfast", "-pix_fmt", "yuv420p", str(tmp)],
-                   check=True, timeout=900)
-    tmp.replace(out)
+    tmp = out.with_name(f"{out.stem}.{os.getpid()}.tmp.mp4")    # eigener Name je Prozess
+    try:
+        subprocess.run([*cmd, "-an", "-c:v", "libx264", "-crf", "18", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+                        str(tmp)], check=True, timeout=900)
+        tmp.replace(out)
+    finally:
+        tmp.unlink(missing_ok=True)
     return out
 
 
-def frames(src: Path, w: int, h: int, fps: int) -> Iterator[Image.Image]:
-    """Bilder der vorbereiteten Datei in Endlosschleife (ffmpeg -stream_loop)."""
+def frames(src: Path, w: int, h: int, fps: int, loop: bool = True) -> Iterator[Image.Image]:
+    """Bilder der vorbereiteten Datei – in Endlosschleife (ffmpeg -stream_loop) oder genau einmal (Bildcache)."""
     size = w * h * 3
     # -threads 1: auf vielen Kernen verteilt ffmpeg sonst teuer (gemessen 6,0 s statt 2,3 s CPU je 300 Bilder)
-    proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-threads", "1", "-stream_loop", "-1", "-i", str(src),
+    looping = ["-stream_loop", "-1"] if loop else []
+    proc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-threads", "1", *looping, "-i", str(src),
                              "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE, bufsize=size)
     try:
         while True:

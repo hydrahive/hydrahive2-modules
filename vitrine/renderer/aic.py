@@ -5,7 +5,7 @@ Eigene Umsetzung nach der öffentlichen Protokollbeschreibung (Quellen: vitrine/
 2. AUTH_DEV:  Kopf + zufällige Challenge, mit dem Public Key verschlüsselt → Gerät schickt sie im Klartext zurück
 3. AUTH_HOST: Kopf → Gerät schickt einen mit seinem privaten Schlüssel signierten Block → Host „entschlüsselt“ ihn
               mit dem Public Key (RSA-Rohoperation, PKCS#1 Typ 1) und schickt den Inhalt zurück
-4. FRAME:     Kopf (Magic, Länge, frame_id, Format, 0, Magic) + JPEG in Stücken von höchstens 256 KiB
+4. FRAME:     Kopf (Magic, Länge, frame_id, Format aus GET_PARAMS, 0, Magic) + JPEG in Stücken von höchstens 256 KiB
 """
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 VENDOR, PRODUCT = 0x33C3, 0x0E02
 IFACE, EP_OUT, EP_IN = 0, 0x01, 0x81
 FRAME, AUTH_DEV, AUTH_HOST = 0xA1C62B01, 0xA1C62B10, 0xA1C62B11
+FMT_JPEG = 0x10             # Bildformat im Frame-Kopf; das Display meldet es in GET_PARAMS (fmt=16)
 CHUNK = 4096 * 64
 _HEAD = "<IIHHII"
 
@@ -52,8 +53,8 @@ def find():
 
 
 class Display:
-    def __init__(self, dev, width: int, height: int, fps: int):
-        self.dev, self.width, self.height, self.fps = dev, width, height, fps
+    def __init__(self, dev, width: int, height: int, fps: int, fmt: int = FMT_JPEG):
+        self.dev, self.width, self.height, self.fps, self.fmt = dev, width, height, fps, fmt or FMT_JPEG
         self.frame_id = 0
 
     @classmethod
@@ -65,10 +66,10 @@ class Display:
             pass
         usb.util.claim_interface(dev, IFACE)
         raw = bytes(dev.ctrl_transfer(0xC0, 0, 0, 0, 256, timeout=3000))
-        w, h, fps = struct.unpack_from("<8H", raw, 0)[5:8]
+        _, _, fmt, _, _, w, h, fps = struct.unpack_from("<8H", raw, 0)
         if not (w and h):
             raise DisplayError(f"Display meldet keine Größe ({w}x{h})")
-        d = cls(dev, w, h, fps)
+        d = cls(dev, w, h, fps, fmt)
         d._authenticate()
         return d
 
@@ -84,7 +85,7 @@ class Display:
         self.dev.write(EP_OUT, rsa_public_decrypt(pub, signed), timeout=3000)
 
     def send_jpeg(self, jpeg: bytes) -> None:
-        self.dev.write(EP_OUT, struct.pack(_HEAD, FRAME, len(jpeg), self.frame_id & 0xFFFF, 0, 0, FRAME), timeout=5000)
+        self.dev.write(EP_OUT, struct.pack(_HEAD, FRAME, len(jpeg), self.frame_id & 0xFFFF, self.fmt, 0, FRAME), timeout=5000)
         for pos in range(0, len(jpeg), CHUNK):
             self.dev.write(EP_OUT, jpeg[pos:pos + CHUNK], timeout=10000)
         self.frame_id = (self.frame_id + 1) & 0xFFFF

@@ -58,6 +58,11 @@ def _write(path: Path, m: dict) -> None:
     tmp.replace(path)
 
 
+def _default_seconds(data: Path) -> int:
+    from . import config                                    # spät: config braucht inbox nicht
+    return int(config.load(data).get("message_seconds") or DEFAULT_SECONDS)
+
+
 def post(data: Path, text: str, *, kind: str = "info", title: str = "", seconds: int | None = None,
          source: str = "", now: float | None = None) -> dict:
     now = time.time() if now is None else now
@@ -67,7 +72,7 @@ def post(data: Path, text: str, *, kind: str = "info", title: str = "", seconds:
     if kind not in KINDS:
         raise InboxError(f"kind: eine von {', '.join(KINDS)}")
     if seconds is None:
-        seconds = ERROR_SECONDS if kind == "error" else DEFAULT_SECONDS
+        seconds = ERROR_SECONDS if kind == "error" else _default_seconds(data)
     if not 3 <= int(seconds) <= 600:
         raise InboxError("seconds: 3 bis 600")
     d = _dir(data)
