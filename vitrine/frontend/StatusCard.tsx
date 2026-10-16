@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { MonitorPlay, MoonStar, PlugZap, Sparkles } from "lucide-react"
+import { Hand, MonitorPlay, MoonStar, PlugZap, Sparkles } from "lucide-react"
 import { vitrineApi, type VitrineStatus } from "./api"
+import { displayState } from "./rules"
 
 const POLL_MS = 5000
 
@@ -23,7 +24,9 @@ export function StatusCard() {
     return () => { alive = false; window.clearInterval(id) }
   }, [])
 
-  const state = !st ? "…" : !st.running ? t("state_stopped") : !st.connected ? t("state_no_display") : st.night ? t(`night_${st.night}`) : t("state_running")
+  const ds = displayState(st)
+  const state = ds === "loading" ? "…" : ds === "stopped" ? t("state_stopped") : ds === "no_display" ? t("state_no_display")
+    : ds === "night" ? t(`night_${st?.night}`) : t("state_running")
   const tone = st?.running && st.connected ? "text-emerald-300" : "text-amber-300"
   return (
     <section className="grid gap-4 rounded-[6px] border border-[#2a364b] bg-[#111827] p-4 md:grid-cols-[180px_1fr]">
@@ -41,6 +44,11 @@ export function StatusCard() {
           <dt className="text-[#718097]">{t("fps")}</dt><dd>{st?.fps ?? "—"}</dd>
           <dt className="text-[#718097]">{t("panel")}</dt><dd>{st?.size ? `${st.size[0]}×${st.size[1]}` : "—"}</dd>
         </dl>
+        {ds === "no_display" && (
+          <p className="flex items-start gap-2 rounded-[4px] border border-amber-300/40 bg-amber-300/10 p-2 text-xs text-amber-100">
+            <Hand size={14} className="mt-0.5 shrink-0" />{t("hint_button")}
+          </p>
+        )}
         {st?.error && <p className="text-xs text-rose-300">{st.error}</p>}
       </div>
     </section>

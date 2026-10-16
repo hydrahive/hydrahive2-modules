@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { clamp, describeRule, fromTemplate, newRule, ruleErrors, sizeLabel, type Rule } from "./rules"
+import { clamp, describeRule, displayState, fromTemplate, newRule, ruleErrors, sizeLabel, type Rule } from "./rules"
 
 const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k)
 
@@ -43,5 +43,16 @@ describe("Einstellungen begrenzen", () => {
     expect(clamp(17.6, 12, 30)).toBe(18)
     expect(clamp(Number(""), 5, 120)).toBe(5)
     expect(clamp(Number.NaN, 5, 120)).toBe(5)
+  })
+})
+
+describe("Statuskarte", () => {
+  it("unterscheidet Dienst aus, Display fehlt, Nacht und läuft", () => {
+    expect(displayState(null)).toBe("loading")
+    expect(displayState({ running: false, connected: false, night: null })).toBe("stopped")
+    expect(displayState({ running: true, connected: false, night: null })).toBe("no_display")
+    expect(displayState({ running: true, connected: false, night: "dim" })).toBe("no_display")
+    expect(displayState({ running: true, connected: true, night: "dim" })).toBe("night")
+    expect(displayState({ running: true, connected: true, night: null })).toBe("running")
   })
 })
