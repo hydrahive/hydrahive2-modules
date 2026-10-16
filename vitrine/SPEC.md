@@ -146,3 +146,9 @@ Speicher ~100 MB pro Video (Till: ok). Alte Fassungen derselben Quelle werden ge
 **Akzeptanz E4:** Dienst-CPU (Python + Kindprozesse) bei 24 fps im Tagbetrieb ohne Einblendung **< 10 % eines Kerns**, gemessen über 60 s
 mit `perf stat`/`/proc`; mit sichtbarer Einblendung gemessen und im PR genannt. Byte-Gleichheit zur vollen Kodierung als Test.
 
+**Gemessen 16.10.2026 am Gerät (.226, 24 fps, mit USB):** ohne Einblendung **9,0 %**, mit sichtbarer Einblendung 20,8 % eines Kerns
+(Karte wird je Bild neu gezeichnet). Till: auf dem neuen Server kein Grund, das weiter zu drücken.
+
+**Display-Hinweis:** Nach dem Kaltstart blieb das Panel einmal schwarz, obwohl der Dienst Bilder schickte. Mit dem linken
+Knopf am Display (mehrmals) kam das Bild zurück – die Firmware hat mehrere Anzeigemodi. Ursache des Wechsels ungeklärt.
+
