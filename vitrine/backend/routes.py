@@ -9,9 +9,10 @@ from fastapi.responses import FileResponse
 
 from hydrahive.settings import settings
 from renderer import calendar, config, inbox, program
+from renderer import preview as display_preview
 
 from . import state, videos
-from .schemas import Config, MessageIn, SimulateIn
+from .schemas import Config, MessageIn, PreviewIn, SimulateIn
 
 router = APIRouter()
 
@@ -54,6 +55,19 @@ def simulate(body: SimulateIn) -> dict:
         raise HTTPException(status_code=422, detail={"code": "vitrine_bad_datetime"}) from None
     p = program.current(data_dir(), config.load(data_dir()), at)
     return {"video": p.video.name if p.video else None, "rule": p.rule, "holiday": p.holiday, "night": p.night}
+
+
+@router.post("/preview")
+def start_preview(body: PreviewIn) -> dict:
+    """Display zeigt 30 s das Programm dieses Zeitpunkts (Video, Feiertag, Nacht); Uhr und Status bleiben echt."""
+    raw = display_preview.start(data_dir(), dt.datetime.fromisoformat(body.at))
+    return {"at": raw["at"], "seconds": display_preview.SECONDS}
+
+
+@router.delete("/preview", status_code=status.HTTP_204_NO_CONTENT)
+def stop_preview() -> Response:
+    display_preview.stop(data_dir())
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/videos")
