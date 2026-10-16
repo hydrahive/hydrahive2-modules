@@ -51,6 +51,9 @@ class Warmer:
         except OSError:
             return None
         if c is not None:
+            with self._lock:
+                if self._status.get("state") != "building":
+                    self._status = {"state": "ready", "video": src.name, "done": len(c), "error": None}
             return c
         self._maybe_start(src, w, h, fps, quality)
         return None
