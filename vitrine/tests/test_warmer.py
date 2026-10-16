@@ -120,3 +120,16 @@ def test_niedrige_prioritaet_im_bau_thread(src, tmp_path, monkeypatch):
     w.get(src, W, H, 24, 80)
     _wait(w)
     assert seen and seen[0] != threading.get_ident(), "nur der Bau-Thread, nicht der Dienst"
+
+
+def test_vorhandener_cache_meldet_ready(src, tmp_path):
+    """Nach einem Neustart liegt der Cache schon auf der Platte – Status muss 'ready' zeigen, nicht None.
+    (Live auf .226: state.json zeigte cache=None, obwohl aus dem Cache gespielt wurde.)"""
+    fc.build(src, tmp_path / "cache", W, H, 24, 80, frames=lambda: iter([Image.new("RGB", (W, H))] * 3))
+    w = wm.Warmer(tmp_path / "cache", frames=_frames())
+    assert w.status()["state"] is None
+    c = w.get(src, W, H, 24, 80)
+    assert c is not None
+    c.close()
+    assert w.status() == {"state": "ready", "video": "herbst.mp4", "done": 3, "error": None}
+    assert not w.busy(), "nichts neu gebaut"

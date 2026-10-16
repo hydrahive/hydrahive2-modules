@@ -19,7 +19,9 @@ from PIL import Image
 from . import aic, cached_play, cards, config, hydra_state, inbox, night, program, scene, sysinfo, video, warmer as warmer_mod
 from .frames import _connect_real, encode, fallback_frame, write_preview  # noqa: F401 - auch von Tests genutzt
 
-RETRY_SECONDS = 2.0
+SEARCH_SECONDS = 0.2      # ohne Host meldet sich das Display nur 1–2 s am USB an (gemessen 16.10.) – oft genug nachsehen
+RETRY_SECONDS = SEARCH_SECONDS
+STATE_EVERY = 1.0         # beim Suchen state.json höchstens etwa einmal pro Sekunde schreiben
 STATUS_EVERY = 5.0
 DEFAULT_FPS = 24          # Atelier-Videos haben 24 fps; mehr kostet nur CPU
 log = logging.getLogger("vitrine")
@@ -101,7 +103,8 @@ class Runner:
                 disp = None
             if disp is None:
                 self.state.update(connected=False)
-                self._write_state()
+                if waits % max(1, round(STATE_EVERY / SEARCH_SECONDS)) == 0:
+                    self._write_state()
                 waits += 1
                 if max_waits is not None and waits > max_waits:
                     return
