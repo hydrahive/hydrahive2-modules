@@ -6,7 +6,9 @@ Panelgröße, Ziel-fps, ohne Ton und mit 1 s Überblendung vom Ende zum Anfang (
 from __future__ import annotations
 
 import hashlib
+import os
 import subprocess
+import threading
 from pathlib import Path
 from typing import Iterator
 
@@ -14,6 +16,7 @@ from PIL import Image
 
 EXTS = {".mp4", ".webm", ".mkv", ".mov"}
 FADE = 1.0
+_prepare_lock = threading.Lock()      # Dienst und Bildcache-Bau rechnen sonst dieselbe Datei doppelt um
 
 
 def pick(folder: Path) -> Path | None:
@@ -41,6 +44,13 @@ def prepare(src: Path, cache_dir: Path, w: int, h: int, fps: int) -> Path:
     out = cache_path(src, cache_dir, w, h, fps)
     if out.exists():
         return out
+    with _prepare_lock:
+        if out.exists():                                     # während des Wartens vom anderen Thread fertig
+            return out
+        return _convert(src, cache_dir, out, w, h, fps)
+
+
+def _convert(src: Path, cache_dir: Path, out: Path, w: int, h: int, fps: int) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     for old in cache_dir.glob(f"{src.stem}-*.mp4"):          # alte Fassungen derselben Quelle
         old.unlink(missing_ok=True)
@@ -53,10 +63,13 @@ def prepare(src: Path, cache_dir: Path, w: int, h: int, fps: int) -> Path:
         cmd = ["ffmpeg", "-loglevel", "error", "-y", "-i", str(src), "-i", str(src), "-filter_complex", graph]
     else:
         cmd = ["ffmpeg", "-loglevel", "error", "-y", "-i", str(src), "-vf", base]
-    tmp = out.with_suffix(".tmp.mp4")
-    subprocess.run([*cmd, "-an", "-c:v", "libx264", "-crf", "18", "-preset", "veryfast", "-pix_fmt", "yuv420p", str(tmp)],
-                   check=True, timeout=900)
-    tmp.replace(out)
+    tmp = out.with_name(f"{out.stem}.{os.getpid()}.tmp.mp4")    # eigener Name je Prozess
+    try:
+        subprocess.run([*cmd, "-an", "-c:v", "libx264", "-crf", "18", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+                        str(tmp)], check=True, timeout=900)
+        tmp.replace(out)
+    finally:
+        tmp.unlink(missing_ok=True)
     return out
 
 
