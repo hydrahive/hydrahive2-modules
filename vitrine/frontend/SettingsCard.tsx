@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { CalendarSearch, MoonStar } from "lucide-react"
+import { CalendarSearch, MonitorPlay, MoonStar, Square } from "lucide-react"
 import { vitrineApi, type Simulation, type VitrineConfig } from "./api"
 import { clamp } from "./rules"
 
@@ -15,9 +15,23 @@ export function SettingsCard({ config, onChange }: { config: VitrineConfig; onCh
   const [sim, setSim] = useState<Simulation | null>(null)
   const [simErr, setSimErr] = useState<string | null>(null)
 
+  const [shown, setShown] = useState<string | null>(null)
+
   async function test() {
     setSimErr(null)
     try { setSim(await vitrineApi.simulate(at)) } catch (e) { setSim(null); setSimErr(e instanceof Error ? e.message : String(e)) }
+  }
+
+  async function showOnDisplay() {
+    setSimErr(null)
+    try {
+      const [s, p] = await Promise.all([vitrineApi.simulate(at), vitrineApi.startPreview(at)])
+      setSim(s); setShown(t("preview_running", { s: p.seconds }))
+    } catch (e) { setShown(null); setSimErr(e instanceof Error ? e.message : String(e)) }
+  }
+
+  async function stopPreview() {
+    try { await vitrineApi.stopPreview(); setShown(null) } catch (e) { setSimErr(e instanceof Error ? e.message : String(e)) }
   }
 
   return (
@@ -55,7 +69,16 @@ export function SettingsCard({ config, onChange }: { config: VitrineConfig; onCh
         <div className="flex flex-wrap gap-2">
           <input type="datetime-local" className={field} value={at} onChange={(e) => setAt(e.target.value)} />
           <button type="button" onClick={() => void test()} className="rounded-[4px] border border-[#69d7ff]/40 bg-[#69d7ff]/10 px-3 py-1 text-xs font-bold text-[#69d7ff]">{t("simulate_go")}</button>
+          <button type="button" onClick={() => void showOnDisplay()} className="flex items-center gap-1 rounded-[4px] border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-xs font-bold text-amber-200">
+            <MonitorPlay size={13} />{t("preview_show")}
+          </button>
+          {shown && (
+            <button type="button" onClick={() => void stopPreview()} className="flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-3 py-1 text-xs text-[#c8d2df]">
+              <Square size={12} />{t("preview_stop")}
+            </button>
+          )}
         </div>
+        {shown && <p className="text-xs text-amber-200">{shown}</p>}
         {simErr && <p className="text-xs text-rose-300">{simErr}</p>}
         {sim && <p className="text-sm text-[#c8d2df]">
           {sim.night ? t(`night_${sim.night}`) : sim.video ? t("simulate_result", { video: sim.video, rule: sim.rule ?? t("rule_none") }) : t("simulate_nothing")}

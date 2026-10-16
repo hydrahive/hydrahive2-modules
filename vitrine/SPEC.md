@@ -158,3 +158,22 @@ Das Schwestergerät MSI P13 wird über eine HID-Schnittstelle (`POST extendedDis
 Schnittstelle hat unser Display nicht. Ob der Windows-Treiber das Display ohne Knopf weckt, ist ungeklärt (USB-Mitschnitt
 unter Windows wäre der Weg, das zu prüfen).
 
+## Nachtrag 16.10.2026: Vorschau auf dem Display (freigegeben von Till)
+
+**Was:** Im Cockpit neben „Testen“ ein Knopf **„Auf dem Display zeigen“**. Das Display spielt **30 Sekunden** lang das Programm
+für den gewählten Zeitpunkt (Video, Regel, Feiertag, ggf. Nachtmodus) und kehrt dann von selbst zurück. „Vorschau beenden“
+kehrt sofort zurück. Uhr, Datum und Status-Leiste zeigen weiter die **echten** Werte; unter dem Datum steht
+„Vorschau 24.12. 19:00“ (plus Feiertagsname, wenn vorhanden).
+
+**Wie:** Wie bei den Einblendungen über eine Datei im Datenverzeichnis, kein Socket:
+- Backend `POST /preview {"at": "JJJJ-MM-TTTHH:MM"}` schreibt `<daten>/preview.json` `{"at", "until"}` (until = jetzt + 30 s),
+  `DELETE /preview` löscht sie. Nur mit Freigabe `module.vitrine` (wie alle Routen). Ungültiger Zeitpunkt → 422.
+- Dienst: Ist `preview.json` gültig und nicht abgelaufen, rechnet die Programmwahl mit `at` statt mit „jetzt“. Die Vorschau gehört
+  zum Programmschlüssel, also schaltet der Dienst beim Start und beim Ablauf um (wird ohnehin jede Sekunde geprüft).
+- Kaputte oder abgelaufene Datei → normales Programm. Eine neue Vorschau ersetzt die alte.
+- Nachtmodus in der Vorschau zeigt das Nachtbild ohne Vorschau-Hinweis (das Nachtbild hat keine Textzeile).
+- Für ein Video ohne fertigen Bildcache läuft während der 30 s der bisherige Weg; der Cache wird im Hintergrund gebaut.
+
+**Umsetzung:** `renderer/preview.py` (lesen/schreiben/Programm für die Vorschau), zwei Zeilen im Dienst, Routen + Cockpit-Knopf,
+Tests für Datei, Ablauf, Dienst und Routen. Version 0.5.0.
+

@@ -15,6 +15,8 @@ export interface VitrineStatus {
   rule: string | null
   holiday: string | null
   night: "dim" | "off" | null
+  /** Hinweistext während einer Vorschau auf dem Display, sonst null. */
+  preview: string | null
 }
 
 export interface Night {
@@ -78,6 +80,9 @@ export const vitrineApi = {
     api.post<VitrineMessage>(`${BASE}/messages`, m),
   dismiss: (id: string) => api.delete<void>(`${BASE}/messages/${encodeURIComponent(id)}`),
   simulate: (at: string) => api.post<Simulation>(`${BASE}/simulate`, { at }),
+  /** Display zeigt 30 s das Programm dieses Zeitpunkts. */
+  startPreview: (at: string) => api.post<{ at: string; seconds: number }>(`${BASE}/preview`, { at }),
+  stopPreview: () => api.delete<void>(`${BASE}/preview`),
   /** <img> kann keinen Header setzen → ?token= (wie Mediaplayer-Stream); &t= gegen den Browser-Cache. */
   previewUrl: (t: number) => {
     const token = useAuthStore.getState().token ?? ""

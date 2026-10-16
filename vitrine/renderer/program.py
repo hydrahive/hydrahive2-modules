@@ -16,11 +16,13 @@ class Program:
     holiday: str | None = None
     night: str | None = None          # None | "dim" | "off"
     fps: int = 24
+    preview: str | None = None        # Hinweistext während einer Vorschau („Vorschau 24.12. 19:00“)
 
     def key(self) -> tuple:
         """Ändert sich der Schlüssel, schaltet der Dienst um und meldet den neuen Stand (Uhr/Status ändern ihn nicht)."""
         return (str(self.video) if self.video else None, self.rule, self.holiday, self.night,
-                None if self.night else self.fps)       # nachts läuft 1 Bild/s – Bildrate egal
+                None if self.night else self.fps,       # nachts läuft 1 Bild/s – Bildrate egal
+                self.preview)
 
 
 def available(data_dir: Path) -> set[str]:

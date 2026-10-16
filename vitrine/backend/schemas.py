@@ -74,6 +74,23 @@ class SimulateIn(BaseModel):
     at: str
 
 
+class PreviewIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    at: str = Field(min_length=10, max_length=25)
+
+    @field_validator("at")
+    @classmethod
+    def _at(cls, v: str) -> str:
+        import datetime as _dt
+        try:
+            d = _dt.datetime.fromisoformat(v)
+        except ValueError:
+            raise ValueError("Zeitpunkt als JJJJ-MM-TTTHH:MM") from None
+        if not 1900 <= d.year <= 2100:
+            raise ValueError("Jahr 1900–2100")
+        return v
+
+
 class MessageIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     text: str = Field(min_length=1, max_length=280)

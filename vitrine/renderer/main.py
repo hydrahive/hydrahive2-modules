@@ -16,7 +16,7 @@ from typing import Callable, Iterable
 import usb.core
 from PIL import Image
 
-from . import aic, cached_play, cards, config, hydra_state, inbox, night, program, scene, sysinfo, video, warmer as warmer_mod
+from . import aic, cached_play, cards, config, hydra_state, inbox, night, preview, program, scene, sysinfo, video, warmer
 from .frames import _connect_real, encode, fallback_frame, write_preview  # noqa: F401 - auch von Tests genutzt
 
 SEARCH_SECONDS = 0.2      # ohne Host meldet sich das Display nur 1–2 s am USB an (gemessen 16.10.) – oft genug nachsehen
@@ -52,13 +52,13 @@ class Runner:
         self.cache_check_every = 2.0
         self._warmer = warmer
         self.state = {"connected": False, "frames": 0, "reconnects": 0, "size": None, "video": None,
-                      "rule": None, "holiday": None, "night": None, "error": None, "cache": None}
+                      "rule": None, "holiday": None, "night": None, "error": None, "cache": None, "preview": None}
 
     def _program_from_config(self, now: dt.datetime) -> program.Program:
         fresh = self._watch.poll()
         if fresh is not None:
             self._config = fresh
-        return program.current(self.data, self._config, now)
+        return preview.current(self.data, self._config, now)
 
     def source(self) -> Path | None:
         return program.current(self.data, self._config, self.now()).video
@@ -130,7 +130,7 @@ class Runner:
         prog = self._program(self.now())
         key = prog.key()
         self.state.update(video=prog.video.name if prog.video else None, rule=prog.rule,
-                          holiday=prog.holiday, night=prog.night)
+                          holiday=prog.holiday, night=prog.night, preview=prog.preview)
         self._write_state()
         if prog.night:
             return self._play_night(disp, prog, key, max_frames)
@@ -149,7 +149,7 @@ class Runner:
                     self._write_state()
                 if t0 - in_t >= self.inbox_every:
                     msgs, in_t = inbox.visible(self.data), t0
-                layers = [overlay.render(time.localtime(), st, prog.holiday, alert)]
+                layers = [overlay.render(time.localtime(), st, preview.headline(prog), alert)]
                 if msgs:
                     layers.append(card_layer.render(msgs, time.time()))
                 try:
@@ -191,7 +191,7 @@ class Runner:
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     data = Path(os.environ.get("VITRINE_DATA", "/var/lib/hydrahive2/vitrine"))
-    warm = warmer_mod.Warmer(data / "cache", frames=lambda src, w, h, fps: video.frames(
+    warm = warmer.Warmer(data / "cache", frames=lambda src, w, h, fps: video.frames(
         video.prepare(Path(src), data / "cache", w, h, fps), w, h, fps, loop=False))
     Runner(data_dir=data, quality=int(os.environ.get("VITRINE_QUALITY", "80")), warmer=warm).run()
 
