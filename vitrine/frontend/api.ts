@@ -29,6 +29,10 @@ export interface VitrineConfig {
   default_videos: string[]
   night: Night
   rotate_minutes: number
+  /** Bildrate 12–30 (Standard 24). */
+  fps: number
+  /** Standard-Dauer einer Einblendung in Sekunden, 5–120 (Fehler bleiben länger). */
+  message_seconds: number
 }
 
 export interface VideoFile {

@@ -1,103 +1,14 @@
 """Backend-Routen über den echten Kern-Weg (Modul-Tor module.vitrine). Braucht den Kern; ohne → übersprungen."""
+# ruff: noqa: F811 - pytest-Fixtures aus _routes_fixtures werden als gleichnamige Parameter genutzt
 from __future__ import annotations
 
 import io
 import json
-import os
-from pathlib import Path
 
 import pytest
 
 pytest.importorskip("hydrahive")
-from fastapi.testclient import TestClient  # noqa: E402
-
-from _hh_isolation import isolated_root, only_own_files  # noqa: E402
-
-MODULE_DIR = Path(__file__).resolve().parents[1]
-B = "/api/modules/vitrine"
-
-
-@pytest.fixture(scope="module")
-def env():
-    with isolated_root() as tmp:
-        root = Path(tmp)
-        os.environ.update(HH_SECRET_KEY="test-secret-key-for-jwt-signing-at-least-32-bytes", HH_DISCORD_ENABLED="0",
-                          HH_WA_ENABLED="0", HH_AGENTLINK_URL="", HH_PG_MIRROR_DSN="")
-        (root / "data" / "agents").mkdir(parents=True, exist_ok=True)
-        (root / "config").mkdir(parents=True, exist_ok=True)
-        import bcrypt
-        pw = bcrypt.hashpw(b"testpass123", bcrypt.gensalt()).decode()
-        (root / "config" / "users.json").write_text(json.dumps(
-            {"admin": {"password_hash": pw, "role": "admin"}, "nutzer": {"password_hash": pw, "role": "user"}}))
-        import backend
-        from hydrahive.api import main
-        from hydrahive.modules.context import ModuleContext
-        from hydrahive.modules.manifest import ModuleManifest
-        from hydrahive.modules.registry import REGISTRY, LoadedModule
-        from hydrahive.access.capabilities import catalog
-        manifest = ModuleManifest.load(MODULE_DIR / "manifest.json")
-        catalog().register_module(manifest)          # wie lifespan.register_module_capabilities beim echten Start
-        ctx = ModuleContext("vitrine")
-        backend.register(ctx)
-        saved = dict(REGISTRY)
-        REGISTRY.clear()
-        REGISTRY["vitrine"] = LoadedModule(name="vitrine", manifest=manifest,
-                                           path=MODULE_DIR, ctx=ctx, loaded=True)
-        try:
-            main.mount_module_routers(main.app)
-        finally:
-            REGISTRY.clear()
-            REGISTRY.update(saved)
-        yield root
-        catalog().unregister_module("vitrine")
-
-
-@pytest.fixture
-def client(env):
-    from contextlib import asynccontextmanager
-
-    from hydrahive.api import main
-    from hydrahive.db import init_db
-    init_db()
-
-    @asynccontextmanager
-    async def life(app):
-        from hydrahive.settings import settings
-        settings.ensure_dirs()
-        yield
-
-    orig = main.app.router.lifespan_context
-    main.app.router.lifespan_context = life
-    with TestClient(main.app) as c:
-        yield c
-    main.app.router.lifespan_context = orig
-
-
-def _h(client, user):
-    r = client.post("/api/auth/login", json={"username": user, "password": "testpass123"})
-    return {"Authorization": f"Bearer {r.json()['access_token']}"}
-
-
-@pytest.fixture
-def admin(client):
-    return _h(client, "admin")
-
-
-@pytest.fixture
-def data(env):
-    from hydrahive.settings import settings
-    d = settings.data_dir / "vitrine"
-    (d / "videos").mkdir(parents=True, exist_ok=True)
-    (d / "inbox").mkdir(parents=True, exist_ok=True)
-    with only_own_files(d / "videos"), only_own_files(d, "*.json"), only_own_files(d, "*.jpg"), \
-            only_own_files(d / "inbox"):
-        yield d
-
-
-@pytest.fixture(autouse=True)
-def _ffprobe(monkeypatch):
-    from backend import videos
-    monkeypatch.setattr(videos, "probe", lambda p: {"ok": b"VIDEO" in p.read_bytes()[:16], "duration": 10.0, "width": 720, "height": 1280})
+from _routes_fixtures import B, _ffprobe, _h, admin, client, data, env  # noqa: E402, F401 - pytest-Fixtures
 
 
 def test_nur_admin(client, admin):
@@ -112,9 +23,21 @@ def test_config_lesen_und_schreiben(client, admin, data):
     c["rules"] = [{"id": "a", "name": "Herbst", "kind": "season", "season": "autumn", "priority": 10,
                    "enabled": True, "videos": ["herbst.mp4"]}]
     c["night"] = {"enabled": True, "from": "23:00", "to": "07:00", "mode": "off"}
+    c["fps"], c["message_seconds"] = 12, 45
     r = client.put(f"{B}/config", json=c, headers=admin)
     assert r.status_code == 200, r.text
-    assert json.loads((data / "config.json").read_text())["night"]["mode"] == "off"
+    saved = json.loads((data / "config.json").read_text())
+    assert saved["night"]["mode"] == "off" and saved["fps"] == 12 and saved["message_seconds"] == 45
+
+
+def test_config_standardwerte_fuer_neue_felder(client, admin, data):
+    c = client.get(f"{B}/config", headers=admin).json()
+    assert c["fps"] == 24 and c["message_seconds"] == 15
+    c.pop("fps")
+    c.pop("message_seconds")                       # altes Cockpit ohne die Felder
+    assert client.put(f"{B}/config", json=c, headers=admin).status_code == 200
+    saved = json.loads((data / "config.json").read_text())
+    assert saved["fps"] == 24 and saved["message_seconds"] == 15
 
 
 @pytest.mark.parametrize("bad", [
@@ -124,6 +47,8 @@ def test_config_lesen_und_schreiben(client, admin, data):
     {"night": {"enabled": True, "from": "99:00", "to": "07:00", "mode": "dim"}},
     {"night": {"enabled": True, "from": "23:00", "to": "07:00", "mode": "disco"}},
     {"rotate_minutes": -1},
+    {"fps": 11}, {"fps": 31}, {"fps": "schnell"},
+    {"message_seconds": 4}, {"message_seconds": 121},
 ])
 def test_config_ungueltig_422(client, admin, data, bad):
     base = client.get(f"{B}/config", headers=admin).json()
@@ -186,25 +111,3 @@ def test_vorschau(client, admin, data):
     (data / "preview.jpg").write_bytes(b"\xff\xd8jpeg")
     r = client.get(f"{B}/preview.jpg", headers=admin)
     assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg" and r.headers["cache-control"] == "no-store"
-
-
-def test_nachrichten_senden_liste_bestaetigen(client, admin, data):
-    assert client.post(f"{B}/messages", json={"text": "x"}, headers=_h(client, "nutzer")).status_code == 403
-    r = client.post(f"{B}/messages", json={"text": "Testnachricht", "kind": "success", "seconds": 30}, headers=admin)
-    assert r.status_code == 201, r.text
-    mid = r.json()["id"]
-    lst = client.get(f"{B}/messages", headers=admin).json()
-    assert [(m["id"], m["text"], m["kind"], m["source"]) for m in lst] == [(mid, "Testnachricht", "success", "cockpit")]
-    assert client.delete(f"{B}/messages/{mid}", headers=admin).status_code == 204
-    assert client.get(f"{B}/messages", headers=admin).json() == []
-    assert client.delete(f"{B}/messages/{mid}", headers=admin).status_code == 404
-
-
-@pytest.mark.parametrize("body", [{"text": ""}, {"text": "x", "kind": "laser"}, {"text": "x", "seconds": 1}, {"text": "x" * 281}])
-def test_nachricht_ungueltig_422(client, admin, data, body):
-    assert client.post(f"{B}/messages", json=body, headers=admin).status_code == 422
-
-
-@pytest.mark.parametrize("mid", ["../etwas", "ZZZ", "abc"])
-def test_bestaetigen_nur_gueltige_ids(client, admin, data, mid):
-    assert client.delete(f"{B}/messages/{mid}", headers=admin).status_code in (404, 422)

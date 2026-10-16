@@ -43,6 +43,7 @@ class Runner:
         self._watch = config.Watcher(data_dir)
         self._config = config.load(data_dir)
         self._program = program or self._program_from_config
+        self._uses_config = program is None          # Bildrate aus config.json (Cockpit); sonst fester Wert (Tests)
         self.preview_every = 10.0
         self._preview_t = 0.0
         self.inbox_every = 1.0
@@ -132,9 +133,10 @@ class Runner:
             return self._play_night(disp, prog, key, max_frames)
         overlay, card_layer = scene.Overlay(w, h), cards.Cards(w, h)
         st, alert = self._status_line()
-        st_t, chk_t, in_t, period = time.monotonic(), time.monotonic(), -1e9, 1.0 / self.fps
+        fps = prog.fps if self._uses_config else self.fps
+        st_t, chk_t, in_t, period = time.monotonic(), time.monotonic(), -1e9, 1.0 / fps
         msgs: list[dict] = []
-        src = cached_play.Source(prog.video, w, h, self.fps, self.quality, frames=self._frames,
+        src = cached_play.Source(prog.video, w, h, fps, self.quality, frames=self._frames,
                                  warmer=self._warmer, check_every=self.cache_check_every)
         try:
             while True:
@@ -188,8 +190,7 @@ def main() -> None:
     data = Path(os.environ.get("VITRINE_DATA", "/var/lib/hydrahive2/vitrine"))
     warm = warmer_mod.Warmer(data / "cache", frames=lambda src, w, h, fps: video.frames(
         video.prepare(Path(src), data / "cache", w, h, fps), w, h, fps, loop=False))
-    Runner(data_dir=data, fps=int(os.environ.get("VITRINE_FPS", str(DEFAULT_FPS))),
-           quality=int(os.environ.get("VITRINE_QUALITY", "80")), warmer=warm).run()
+    Runner(data_dir=data, quality=int(os.environ.get("VITRINE_QUALITY", "80")), warmer=warm).run()
 
 
 if __name__ == "__main__":

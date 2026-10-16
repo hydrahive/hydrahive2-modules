@@ -97,3 +97,9 @@ export function sizeLabel(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
+
+
+/** Zahleneingabe auf den erlaubten Bereich begrenzen, ganzzahlig (leeres/ungültiges Feld → Minimum). */
+export function clamp(v: number, lo: number, hi: number): number {
+  return Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : lo
+}
