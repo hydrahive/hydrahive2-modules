@@ -16,7 +16,12 @@ export function PlanInspector({ p, shots, images, jobs = [] }: { p: PlanState; s
   const { t } = useTranslation("studio")
   const { plan, selection: sel } = p
   const catalogs = useModelCatalogs(sel?.kind === "head")          // erst laden, wenn das Drehbuch-Formular offen ist
-  let body: React.ReactNode = <p className="mt-3 text-xs text-[#68758a]">{t("nothing_selected")}</p>
+  let body: React.ReactNode = (
+    <div className="mt-3 space-y-2 text-xs leading-relaxed text-[#8d9ab0]" data-plan-inspector-empty>
+      <p>{t("plan_inspector_empty")}</p>
+      {plan && <button type="button" onClick={() => p.select({ kind: "head" })} className="rounded-[4px] border border-[#46617f] px-2.5 py-1 font-bold text-[#69d7ff] hover:bg-[#1c2940]">{t("plan_edit_head")}</button>}
+    </div>
+  )
   if (plan && sel?.kind === "head") {
     body = <HeadForm key={`head-${p.rev}`} head={plan.screenplay} busy={p.busy} onSave={(h) => void p.saveHead(h)} catalogs={catalogs} />
   } else if (plan && sel?.kind === "scene") {

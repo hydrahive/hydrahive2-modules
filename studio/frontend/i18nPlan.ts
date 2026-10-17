@@ -1,6 +1,7 @@
-/** Texte für „Planen“ (Etappe 2a). Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
+/** Texte für „Planen“. Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
 import { cam_de, cam_en } from "./i18nCamera"
 import { cut_de, cut_en } from "./i18nCut"
+import { guide_de, guide_en } from "./i18nGuide"
 import { jobs_de, jobs_en } from "./i18nJobs"
 import { models_de, models_en } from "./i18nModels"
 
@@ -8,6 +9,7 @@ export const plan_de = {
   ...cam_de,
   ...jobs_de,
   ...cut_de,
+  ...guide_de,
   ...models_de,
   screenplay: "Drehbuch",
   scenes: "Szenen",
@@ -34,7 +36,6 @@ export const plan_de = {
   element_kind: { character: "Figur", place: "Ort", object: "Gegenstand" },
   plan_pick: "Wähle links das Drehbuch, eine Szene oder einen Baustein.",
   storyboard_pick_scene: "Wähle links eine Szene, um ihre Shots zu sehen.",
-  storyboard_no_shots: "Diese Szene hat noch keine Shots. Lege mit + einen an oder lass die KI die Szene mit „In Shots zerlegen“ aufteilen.",
   scene_duration: "{{seconds}} s gesamt",
   add_shot: "Shot hinzufügen",
   move_left: "Nach links",
@@ -100,6 +101,7 @@ export const plan_en: typeof plan_de = {
   ...cam_en,
   ...jobs_en,
   ...cut_en,
+  ...guide_en,
   ...models_en,
   screenplay: "Screenplay",
   scenes: "Scenes",
@@ -126,7 +128,6 @@ export const plan_en: typeof plan_de = {
   element_kind: { character: "Character", place: "Place", object: "Object" },
   plan_pick: "Pick the screenplay, a scene or an element on the left.",
   storyboard_pick_scene: "Pick a scene on the left to see its shots.",
-  storyboard_no_shots: "This scene has no shots yet. Add one with + or let the AI split the scene with “Split into shots”.",
   scene_duration: "{{seconds}} s total",
   add_shot: "Add shot",
   move_left: "Move left",

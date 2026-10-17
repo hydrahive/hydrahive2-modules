@@ -1,4 +1,4 @@
-/** Texte für Erzeugen und Aufträge (Etappe 3). Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
+/** Texte für Erzeugen und Aufträge. Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
 
 export const jobs_de = {
   image: "Bild",

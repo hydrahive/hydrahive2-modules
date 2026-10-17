@@ -6,6 +6,7 @@ import { importAmounts, showImport } from "./planLogic"
 const ICON: Record<ElementKind, typeof User> = { character: User, place: MapPin, object: Package }
 const row = (active: boolean) => `flex w-full min-w-0 items-center gap-1.5 rounded-[4px] px-1.5 py-1 text-left text-xs ${active ? "bg-[#1c2940] text-[#69d7ff]" : "text-[#e8eef8] hover:bg-[#111827]"}`
 const heading = "flex items-center justify-between px-1 pb-1 text-[10px] font-bold uppercase tracking-wide text-[#68758a]"
+const addBtn = "flex items-center gap-0.5 rounded-[4px] border border-[#2a364b] px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940]"
 
 interface Props {
   plan: Plan
@@ -40,7 +41,7 @@ export function PlanOutline({ plan, preview, selection, onSelect, onMove, onAddS
       <div>
         <p className={heading}>
           <span>{t("scenes")}</span>
-          <button type="button" onClick={onAddScene} data-plan-add="scene" title={t("add_scene")} aria-label={t("add_scene")} className="hover:text-[#e8eef8]"><Plus size={13} /></button>
+          <button type="button" onClick={onAddScene} data-plan-add="scene" title={t("add_scene")} className={addBtn}><Plus size={11} /> {t("add_scene_short")}</button>
         </p>
         <ol className="space-y-0.5">
           {plan.scenes.map((s, i) => (
@@ -63,14 +64,14 @@ export function PlanOutline({ plan, preview, selection, onSelect, onMove, onAddS
       <div>
         <p className={heading}>
           <span>{t("elements")}</span>
-          <span className="flex gap-1">
-            {ELEMENT_KINDS.map((k) => {
-              const Icon = ICON[k]
-              return <button key={k} type="button" onClick={() => onAddElement(k)} data-plan-add={k} title={t(`add_${k}`)} aria-label={t(`add_${k}`)}
-                className="hover:text-[#e8eef8]"><Icon size={12} /></button>
-            })}
-          </span>
         </p>
+        <span className="flex flex-wrap gap-1 px-1 pb-1.5">
+          {ELEMENT_KINDS.map((k) => {
+            const Icon = ICON[k]
+            return <button key={k} type="button" onClick={() => onAddElement(k)} data-plan-add={k} title={t(`add_${k}`)} className={addBtn}>
+              <Plus size={10} /><Icon size={11} /> {t(`add_${k}_short`)}</button>
+          })}
+        </span>
         <ul className="space-y-0.5">
           {elements.map((e) => {
             const Icon = ICON[e.kind]

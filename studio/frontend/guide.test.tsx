@@ -58,7 +58,7 @@ describe("B1 – Startfeld und beschriftete Knöpfe", () => {
 
   it("Storyboard: Szene ohne Shots zeigt zwei große Knöpfe; Leiste hat „+ Shot“ mit Text", () => {
     const out = html(<StoryboardPanel scene={scene({})} base="/w" selected={null} busy={null} onSelect={noop} onAdd={noop} onMove={noop} onDecompose={noop} />)
-    expect(buttons(out)).toEqual(expect.arrayContaining(["shots_ai", "shots_self", "add_shot_short"]))
+    expect(buttons(out)).toEqual(["shots_ai", "shots_self"])                          // leere Szene: zwei große Wege, keine Doppelung
     const some = html(<StoryboardPanel scene={scene({ shots: [{ id: "x", order: 0, shot: "", prompt: "p", element_ids: [], duration: 3, status: "planned",
       image_rel: null, video_rel: null, variants: [] }] })} base="/w" selected={null} busy={null} onSelect={noop} onAdd={noop} onMove={noop} onDecompose={noop} />)
     expect(buttons(some)).not.toContain("shots_ai")
@@ -98,7 +98,7 @@ describe("B1 – Kurzhilfe, Fortschritt, So geht’s", () => {
     for (const lang of ["de", "en"] as const) {
       const s = studioI18n[lang].studio as Record<string, unknown>
       for (const k of ["start_title", "start_self", "start_atelier", "add_scene_short", "add_shot_short", "shots_ai", "shots_self",
-        "intro_hide", "intro_show", "progress_shots", "progress_images", "progress_videos", "howto_title"]) expect(s[k], `${lang}:${k}`).toBeTruthy()
+        "intro_hide", "intro_show", "progress_shots_one", "progress_shots_other", "progress_images", "progress_videos", "howto_title"]) expect(s[k], `${lang}:${k}`).toBeTruthy()
       expect(Object.keys(s.intro as object).sort()).toEqual(["audio", "deliver", "edit", "generate", "plan", "subtitles"])
       expect(Object.keys(s.next as object).sort()).toEqual(["cut", "images", "plan", "shots", "videos"])
       const all = JSON.stringify(s)

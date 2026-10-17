@@ -1,4 +1,4 @@
-/** Texte für „Schneiden“ (Etappe 4). Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
+/** Texte für „Schneiden“. Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
 
 export const cut_de = {
   cut_from_plan: "Aus dem Drehbuch übernehmen",

@@ -1,7 +1,7 @@
 {
   "id": "studio",
   "name": "Studio",
-  "version": "0.8.3",
+  "version": "0.9.0",
   "description": "Ein Ort für Bild, Video, Ton und Schnitt: planen, erzeugen, schneiden, vertonen, untertiteln, ausgeben. Im Aufbau – zeigt schon alle Medien aus Atelier, Video-Editor und Tonstudio, Planen mit Drehbuch, Szenen, Bausteinen und Shots (KI-Regie), Bilder und Videos je Shot oder für alle auf einmal erzeugen, Zeitleiste aus dem Drehbuch, schneiden (teilen, kürzen, umsortieren, rückgängig) und den Film am Stück abspielen. Löst diese später ab.",
   "icon": "Clapperboard",
   "nav_group": "working",

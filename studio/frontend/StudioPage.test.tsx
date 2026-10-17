@@ -35,7 +35,7 @@ const ITEMS = [
 describe("Studio Etappe 1", () => {
   it("Gerüst mit Hauptmenü oben, vier Bereiche, sechs Arbeitsbereiche", () => {
     const out = html(<StudioPage />)
-    expect(attr(out, "data-studio-panel")).toEqual(["library", "preview", "inspector", "timeline"])
+    expect(attr(out, "data-studio-panel")).toEqual(["sidebar", "preview", "inspector", "storyboard"])   // Start in „Planen“ (Etappe B)
     expect(attr(out, "data-studio-workspace")).toEqual(["plan", "generate", "edit", "audio", "subtitles", "deliver"])
     expect(attr(out, "data-studio-splitter")).toEqual(["x", "x", "y"])
     const top = out.search(/href="\/buddy"|Buddy|Projekte/)

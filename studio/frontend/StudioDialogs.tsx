@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { HowTo } from "./HowTo"
 import { SHORTCUTS, keyLabel, type ShortcutAction } from "./shortcuts"
+import type { Workspace } from "./workspaces"
 
 export function Backdrop({ onClose, children, label }: { onClose: () => void; children: React.ReactNode; label: string }) {
   useEffect(() => {
@@ -16,12 +18,21 @@ export function Backdrop({ onClose, children, label }: { onClose: () => void; ch
   )
 }
 
-/** Alle Tastenkürzel (Taste „?“). */
-export function ShortcutHelp({ onClose }: { onClose: () => void }) {
+/** Hilfe (Knopf „?“ bzw. Taste „?“): „So geht’s“ und alle Tastenkürzel. */
+export function ShortcutHelp({ onClose, onGo }: { onClose: () => void; onGo?: (w: Workspace) => void }) {
   const { t } = useTranslation("studio")
+  const [tab, setTab] = useState<"howto" | "keys">("howto")
   return (
-    <Backdrop onClose={onClose} label={t("help_title")}>
-      <div className="border-b border-[#2a364b] px-4 py-3 text-sm font-black text-[#e8eef8]">{t("help_title")}</div>
+    <Backdrop onClose={onClose} label={t("howto_title")}>
+      <div className="flex gap-1 border-b border-[#2a364b] px-3 pt-2" role="tablist">
+        {(["howto", "keys"] as const).map((k) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+            className={`rounded-t-[4px] px-3 py-1.5 text-xs font-black ${tab === k ? "bg-[#1c2940] text-[#69d7ff]" : "text-[#8d9ab0] hover:text-[#e8eef8]"}`}>
+            {k === "howto" ? t("howto_title") : t("howto_tab_shortcuts")}
+          </button>
+        ))}
+      </div>
+      {tab === "howto" ? <HowTo onGo={(w) => { onClose(); onGo?.(w) }} /> : (
       <ul className="max-h-[60vh] divide-y divide-[#1e2738] overflow-y-auto px-4 py-1 text-xs" data-studio-help>
         {SHORTCUTS.map((s) => (
           <li key={s.action} className="flex items-center justify-between gap-3 py-1.5">
@@ -30,6 +41,7 @@ export function ShortcutHelp({ onClose }: { onClose: () => void }) {
           </li>
         ))}
       </ul>
+      )}
     </Backdrop>
   )
 }
