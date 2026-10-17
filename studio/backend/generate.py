@@ -40,7 +40,8 @@ def build_prompt(pid: str, scene: dict, shot: dict) -> str:
         parts.append(presets.phrase_for("shot", shot["shot"]) or "")
     cam = scene.get("camera") or {}
     parts += [presets.phrase_for(k, cam[k]) or "" for k in CAMERA_KEYS if k != "shot" and cam.get(k)]
-    return ". ".join(p for p in parts if p)
+    # Teile enden oft schon mit einem Satzzeichen (z. B. Beschreibungen aus der KI) – nicht doppelt setzen.
+    return ". ".join(t for t in (p.strip().rstrip(".").strip() for p in parts) if t)
 
 
 def reference_urls(pid: str, shot: dict) -> list[str]:
