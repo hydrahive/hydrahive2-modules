@@ -101,12 +101,14 @@ def test_each_rule_rejects_the_whole_timeline(client, auth_headers, ws, tmp_path
         "in negativ": _clip(kind="video", media_rel=vid, **{"in": -1}),
         "in = out": _clip(media_rel=img, **{"in": 2, "out": 2}),
         "Text statt Zahl": _clip(media_rel=img, start="1"),
-        "unendlich": _clip(media_rel=img, out=float("inf")),
         "über 4 Stunden": _clip(media_rel=img, start=4 * 3600 - 1, out=2),
     }
     for name, clip in bad.items():
         r = _put(client, auth_headers, [clip])
         assert _code(r) == "400 studio_timeline_invalid", name
+    raw = json.dumps({"revision": 0, "tracks": [{"clips": [_clip(media_rel=img, out=12345)]}]}).replace("12345", "1e999")
+    r = client.put(T, headers={**auth_headers, "Content-Type": "application/json"}, content=raw)   # „unendlich“ als rohes JSON
+    assert _code(r) == "400 studio_timeline_invalid"
     too_many = [_clip(id=f"{i:032x}", media_rel=img, start=i, out=1) for i in range(2001)]
     assert _code(_put(client, auth_headers, too_many)) == "400 studio_timeline_invalid"
     assert _code(client.put(T, headers=auth_headers, json={"revision": 0, "tracks": "x"})) == "400 studio_timeline_invalid"
