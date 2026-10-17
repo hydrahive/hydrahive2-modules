@@ -111,6 +111,7 @@ export const planApi = {
   decompose: (pid: string, sid: string, replace: boolean) =>
     api.post<{ shots: Shot[]; count: number }>(`${base(pid)}/scenes/${one(sid)}/decompose`, replace ? { replace: true } : {}),
   generateImage: (pid: string, sid: string, id: string) => api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/image`, {}),
+  generateVideo: (pid: string, sid: string, id: string) => api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/video`, {}),
   chooseVariant: (pid: string, sid: string, id: string, image_rel: string) =>
     api.put<Shot>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/variant`, { image_rel }),
   jobs: (pid: string) => api.get<{ jobs: Job[] }>(`${base(pid)}/jobs`),

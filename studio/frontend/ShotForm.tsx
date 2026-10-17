@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { Job, PlanElement, Shot } from "./planApi"
 import { ShotImage } from "./ShotImage"
+import { ShotVideo } from "./ShotVideo"
 import { Field, FormActions, Label, fieldCls } from "./formParts"
 
 interface Props {
@@ -17,10 +18,12 @@ interface Props {
   job?: Job | null
   onGenerate?: () => void
   onChoose?: (rel: string) => void
+  videoJob?: Job | null
+  onVideo?: () => void
 }
 
 /** Planen, rechts: ein Shot (Kamera, Beschreibung, Bausteine der Szene, Dauer). Status und Medien ändert das Erzeugen. */
-export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy, onSave, onDelete, base = "", job = null, onGenerate, onChoose }: Props) {
+export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy, onSave, onDelete, base = "", job = null, onGenerate, onChoose, videoJob = null, onVideo }: Props) {
   const { t } = useTranslation("studio")
   const [s, setS] = useState(shot)
   const dirty = JSON.stringify(s) !== JSON.stringify(shot)
@@ -30,6 +33,7 @@ export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy
     <div className="mt-3 space-y-3 text-xs" data-plan-form="shot">
       <p className="font-bold text-[#e8eef8]">{t("shot", { n: index + 1 })}</p>
       {onGenerate && onChoose && <ShotImage shot={shot} base={base} job={job} onGenerate={onGenerate} onChoose={onChoose} />}
+      {onVideo && <ShotVideo shot={shot} base={base} job={videoJob} onGenerate={onVideo} />}
       <div className="grid grid-cols-2 gap-2">
         <label className="block"><Label>{t("f.camera")}</Label>
           <select value={s.shot} onChange={(e) => setS({ ...s, shot: e.target.value })} className={fieldCls}>

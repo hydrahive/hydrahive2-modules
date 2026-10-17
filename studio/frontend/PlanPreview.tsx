@@ -38,9 +38,12 @@ export function PlanPreview({ plan, selection }: { plan: Plan | null; selection:
   const scene = sceneOf(plan, selection)
   const shot = selection.kind === "shot" ? scene?.shots.find((s) => s.id === selection.id) : scene?.shots.find((s) => s.image_rel)
   const img = fileOf(plan.base, shot?.image_rel)
+  const vid = selection.kind === "shot" ? fileOf(plan.base, shot?.video_rel) : ""
   return (
     <div className={frame} data-plan-preview={selection.kind}>
-      {img ? <Picture src={img} alt={scene?.title ?? ""} /> : <Clapperboard size={34} className="text-[#46617f]" />}
+      {vid ? <video key={vid} src={fileUrl(vid)} poster={img ? fileUrl(img) : undefined} controls preload="metadata"
+        className="min-h-0 max-w-full flex-1 object-contain" data-plan-preview-video />
+        : img ? <Picture src={img} alt={scene?.title ?? ""} /> : <Clapperboard size={34} className="text-[#46617f]" />}
       <span className="text-sm font-bold text-[#e8eef8]">{scene?.title || t("untitled")}</span>
       {selection.kind === "shot" && shot?.prompt && <span className="max-w-[80%] text-xs text-[#c3ccdd]">{shot.prompt}</span>}
       {selection.kind === "scene" && scene?.description && <span className="line-clamp-3 max-w-[80%] text-xs text-[#c3ccdd]">{scene.description}</span>}
