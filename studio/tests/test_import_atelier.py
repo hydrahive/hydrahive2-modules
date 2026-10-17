@@ -93,4 +93,4 @@ def test_broken_atelier_files_are_skipped(client, auth_headers, ws) -> None:
     (ws / f"atelier/screenplay/shots/{SC2}.json").write_text("kaputt")
     r = client.post(f"{P}/import/atelier", headers=auth_headers)
     assert r.status_code == 200 and r.json()["scenes"] == 2
-    assert [s["shots"] for s in client.get(P, headers=auth_headers).json()["scenes"]][0] == []
+    assert client.get(P, headers=auth_headers).json()["scenes"][0]["shots"] == []

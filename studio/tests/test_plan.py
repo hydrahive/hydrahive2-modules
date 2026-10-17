@@ -99,3 +99,21 @@ def test_broken_files_do_not_break_the_plan(client, auth_headers, ws) -> None:
     plan = client.get(P, headers=auth_headers).json()
     assert [s["title"] for s in plan["scenes"]] == ["gut"] and plan["screenplay"]["title"] == ""
     assert good["id"] in [s["id"] for s in plan["scenes"]]           # Szene ohne gültige Reihenfolge erscheint trotzdem
+
+
+def test_edge_cases_found_by_mutants(client, auth_headers, ws) -> None:
+    unknown = "a" * 32                                                  # gültige Form, gibt es aber nicht
+    a = client.post(f"{P}/scenes", headers=auth_headers, json={"title": "A", "camera": {"shot": "erfunden", "lens": "normal_50"}}).json()
+    assert a["camera"] == {"lens": "normal_50"}                           # unbekannter Wert für bekannten Schlüssel fällt weg
+    assert client.get(P, headers=auth_headers).json()["screenplay"]["scene_order"] == [a["id"]]   # neue Szene steht in der Reihenfolge
+    r = client.put(f"{P}/order", headers=auth_headers, json={"scene_order": [unknown, a["id"]]})
+    assert r.json()["scene_order"] == [a["id"]]                         # nur vorhandene Szenen
+    assert client.delete(f"{P}/scenes/{unknown}", headers=auth_headers).status_code == 404
+    assert client.delete(f"{P}/elements/{unknown}", headers=auth_headers).status_code == 404
+
+    (ws / "bilder").mkdir(exist_ok=True)
+    (ws / "bilder/echt.png").write_bytes(b"png")
+    (ws / "bilder/innen-link.png").symlink_to(ws / "bilder/echt.png")  # Symlink auch innerhalb des Projekts nicht
+    el = client.post(f"{P}/elements", headers=auth_headers, json={"kind": "object", "name": "Lampe",
+                     "references": ["bilder/innen-link.png", "bilder/echt.png"]}).json()
+    assert el["references"] == ["bilder/echt.png"]
