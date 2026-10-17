@@ -546,6 +546,102 @@ den späteren Etappen.
   - Konflikt mit zweitem Tab
   - jeweils bei 1600 und 1280 px
 
+## Etappe B – Bedienbar machen (17.10., vor 4d)
+
+**Anlass (Till, 17.10.):** „Ich habe keine Ahnung, wo ich Bilder erstellen oder Shots hinzufügen kann. Es ist auf das
+Sehen ausgelegt, nicht auf das Bedienen. Keine Beschreibungstexte oder Anleitungen.“ Ein Rundgang mit einem leeren
+Projekt bestätigt das:
+- Das Studio startet in „Schneiden“.
+- Leere Flächen sagen „Wähle links …“, obwohl es nichts zu wählen gibt.
+- „Szene/Figur/Ort anlegen“ sind nur Symbole ohne Text.
+- „Erzeugen“ kann nichts anlegen.
+- Die Hilfe ist nur eine Liste der Tastenkürzel, die Kern-Hilfe zur Seite ist leer.
+
+Die E2E-Tests haben über unsichtbare Kennungen geklickt und nie geprüft, ob ein Mensch den Weg findet.
+
+**Grundsätze ab jetzt:**
+1. Jede leere Fläche sagt, **was man hier tut**, und bietet den **ersten Schritt als Knopf** an.
+2. Wichtige Handlungen sind **beschriftete Knöpfe**, nicht nur Symbole.
+3. Jeder Reiter hat oben eine Zeile „Worum es hier geht“, die sich einklappen lässt und gemerkt wird.
+4. E2E-Tests für die Bedienung klicken **nur über sichtbare Beschriftungen** (Rolle + Text), nicht über `data-*`.
+
+**Schritte:**
+
+| Schritt | Inhalt |
+|---|---|
+| **B1** | Geführter Einstieg, beschriftete Knöpfe, Kurzhilfe je Reiter, Fortschrittsleiste, Start im passenden Reiter, Hilfe-Thema „Studio“ |
+| **B2** | Drehbuch aus einer Idee (KI) und aus dem **Storyteller** übernehmen |
+| **B3** | „Erzeugen“ eigenständig: Shots dort anlegen, **freies Bild** ohne Shot (Prompt, Modell, Format, Galerie) |
+
+**B1 im Detail**
+- **Start-Reiter:** Ein Projekt ohne Planung öffnet in „Planen“. Mit Shots, aber ohne Schnittfassung öffnet es in
+  „Erzeugen“, sonst in „Schneiden“. Der zuletzt gewählte Reiter je Projekt wird im Browser gemerkt und hat Vorrang.
+- **Startfeld in „Planen“**, solange es keine Szene gibt: große Karte „So fängst du an“ mit drei Wegen:
+  - **„Aus einer Idee“** (B2): ein bis drei Sätze, die KI schreibt Szenen und Shots.
+  - **„Aus dem Storyteller“** (B2): nur wenn das Projekt Bücher hat.
+  - **„Selbst anfangen“:** legt die erste Szene an und öffnet sie.
+
+  Dazu kommt, wie bisher, „Aus dem Atelier übernehmen“, falls es dort Daten gibt. Bis B2 fertig ist, sind „Idee“ und
+  „Storyteller“ in B1 noch nicht sichtbar. Es gibt keine gesperrten Attrappen (Grundsatz aus dem Reiter-Nachtrag).
+- **Beschriftete Knöpfe:**
+  - In der Gliederung „+ Szene“, „+ Figur“, „+ Ort“, „+ Gegenstand“ mit Text. Bei 1280 px darf der Text umbrechen.
+  - Im Storyboard „+ Shot“ als Knopf in der Leiste, zusätzlich zur Karte.
+  - Ist eine Szene ohne Shots gewählt, gibt es zwei große Knöpfe: „Von der KI in Shots zerlegen“ und
+    „Shot selbst anlegen“.
+- **Kurzhilfe je Reiter** (eine Zeile unter der Kopfzeile, „×“ klappt sie ein, gemerkt im Browser, „?“ holt sie zurück):
+  - Planen: „Hier schreibst du dein Drehbuch: Szenen, Figuren und Orte. Zerlege jede Szene in Shots – das sind die
+    einzelnen Einstellungen deines Films.“
+  - Erzeugen: „Hier entstehen Bilder und Videos. Wähle links einen Shot, erzeuge ein Bild und mach daraus ein Video.
+    ‚Für alle …‘ macht das für viele Shots auf einmal.“
+  - Schneiden: „Hier setzt du den Film zusammen. ‚Aus dem Drehbuch übernehmen‘ legt alle Shots hintereinander. Ziehen
+    sortiert um, die Ränder kürzen, S teilt.“
+  - Ton, Untertitel, Ausgabe: der vorhandene „kommt noch“-Text.
+- **Fortschrittsleiste** in der Kopfzeile, sobald es Shots gibt:
+  - „Shots N · Bilder a/N · Videos b/N · Schnitt ✓/–“.
+  - Daneben „Weiter: …“ als Knopf zum nächsten offenen Schritt (Bilder fehlen → Erzeugen, Videos fehlen → Erzeugen,
+    kein Schnitt → Schneiden).
+- **Leere Flächen:**
+  - Mitte in „Planen“ ohne Auswahl, aber mit Szenen: „Klicke links auf eine Szene, um sie zu bearbeiten.“
+  - Rechts ohne Auswahl, mit Knopf: „Drehbuch-Kopf bearbeiten“ (Titel, Format, Modelle).
+  - Die Texte unterscheiden „noch nichts da“ von „nichts gewählt“.
+- **Hilfe:**
+  - Das „?“ im Studio öffnet einen Dialog mit zwei Reitern: **„So geht’s“** (kurzer Ablauf in 5 Schritten mit
+    Knöpfen, die direkt in den jeweiligen Reiter springen) und „Tastenkürzel“ (wie bisher).
+  - Hilfe-Text für die Kern-„Hilfe zur Seite“ nur, wenn der Kern Modul-Themen erlaubt (wird geprüft). Sonst steht er
+    im Studio-Dialog, damit es keinen Kern-PR braucht.
+- **Prüfung B1:** Ein neuer E2E-Test `studio-erstnutzer.cjs` beginnt mit einem leeren Projekt und klickt nur über
+  sichtbare Texte (`getByRole(..., { name })`):
+  - Start in „Planen“, Startfeld sichtbar
+  - „Selbst anfangen“, Szene benennen, speichern
+  - „+ Shot“, Beschreibung eintippen, speichern
+  - nach „Erzeugen“, Shot anklicken, „Bild erzeugen“ (1 Bild ≈ 1,5 ct)
+  - Fortschritt „Bilder 1/1“, „Weiter: Schneiden“
+  - „Aus dem Drehbuch übernehmen“, 1 Clip
+  - Kurzhilfe ein- und ausklappen, Hilfe „So geht’s“
+  - bei 1600 und 1280 px
+
+**B2 im Detail (kurz, eigener Spec-Nachtrag vor dem Bau)**
+- **Aus einer Idee:**
+  - Eingabe: Idee (bis 2.000 Zeichen), ungefähre Länge (30 s / 1 min / 2 min), Stil (optional).
+  - Ein KI-Aufruf mit dem Text-Modell des Drehbuchs erzeugt Titel, Logline, 2–8 Szenen mit Beschreibung, Ort und
+    Tageszeit, Figuren mit Aussehen und je Szene 2–5 Shots.
+  - Danach eine **Vorschau** mit „Übernehmen“ und „Verwerfen“, nichts wird direkt geschrieben. Übernehmen geht nur in
+    ein leeres Drehbuch. Bei vorhandenen Szenen kommt eine Rückfrage „Anhängen“.
+- **Aus dem Storyteller:**
+  - Die Bücher des Projekts werden aufgelistet (`storyteller/books/*`, nur lesend, eigene Lese-Hilfe mit
+    Herkunftsangabe, kein Import über Modulgrenzen).
+  - Ein Buch wählen, dann wählen, ob ein oder alle Kapitel übernommen werden.
+  - Zuordnung: Kapitel → Szenen-Gruppe, Szene → Szene (Titel, Zusammenfassung → Beschreibung, Perspektive), Steckbriefe
+    → Bausteine (Figur/Ort/Gegenstand mit Beschreibung).
+  - Optional „gleich in Shots zerlegen“ (Sammelauftrag aus 3c). Auch hier gibt es erst eine Vorschau und dann
+    „Übernehmen“.
+
+**B3 im Detail (kurz, eigener Spec-Nachtrag vor dem Bau)**
+- In „Erzeugen“ links über der Shot-Liste die Knöpfe „+ Shot“ (Szene wählen) und „Freies Bild“.
+- **Freies Bild:** Prompt, Modell (Katalog), Format, Anzahl 1–4, optional Referenzbilder aus der Bibliothek. Die
+  Ergebnisse landen in der Bibliothek unter „Studio · frei“ und lassen sich per Knopf einem Shot zuweisen oder auf die
+  Zeitleiste legen.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
@@ -557,6 +653,9 @@ den späteren Etappen.
   falls Code oder Prompts übernommen werden.
 
 ## Offene Punkte (Till)
+
+- ~~Bedienbarkeit~~ → **Etappe B vor 4d** (Till, 17.10.). Drehbuch aus einer Idee: ja. Drehbuch aus dem
+  **Storyteller** übernehmen: ja („das ideale Drehbuch-Werkzeug, und der ist schon fertig“).
 
 - ~~Etappe 4~~ → **freigegeben (Till, 17.10.): „wie es technisch am besten ist“.**
   - Aufteilung 4a/4b/4c wie oben.
