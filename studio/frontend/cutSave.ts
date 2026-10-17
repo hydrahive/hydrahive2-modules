@@ -13,7 +13,13 @@ export class AutoSaver {
   private stopped = false
   private failed = false
 
-  constructor(private save: (t: Timeline) => Promise<Timeline>, private onState: (s: SaveState) => void) {}
+  private save: (t: Timeline) => Promise<Timeline>
+  private onState: (s: SaveState) => void
+
+  constructor(save: (t: Timeline) => Promise<Timeline>, onState: (s: SaveState) => void) {
+    this.save = save
+    this.onState = onState
+  }
 
   /** Frisch vom Server geladen: Ausgangs-revision, nichts offen. */
   loaded(tl: Timeline): void {

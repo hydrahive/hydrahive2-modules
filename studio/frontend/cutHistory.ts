@@ -4,8 +4,11 @@ export const MAX_STEPS = 100
 export class History<T> {
   private past: T[] = []
   private future: T[] = []
+  private now: T
 
-  constructor(private now: T) {}
+  constructor(start: T) {
+    this.now = start
+  }
 
   get current(): T { return this.now }
   get canUndo(): boolean { return this.past.length > 0 }

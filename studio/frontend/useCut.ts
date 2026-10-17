@@ -45,7 +45,7 @@ export function useCut(projectId: string, active: boolean) {
 
   const clips = clipsOf(timeline)
   return {
-    timeline, clips, busy, notice, confirm, selected, select: setSelected, reload: load, view, setView,
+    timeline, setTimeline, clips, busy, notice, setNotice, confirm, selected, select: setSelected, reload: load, view, setView,
     clip: clips.find((c) => c.id === selected) ?? null,
     fromPlan: () => (clips.length ? setConfirm(true) : void fromPlan(false)),
     confirmReplace: () => void fromPlan(true),

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { AudioLines, Film, Image, Loader2, Music, Search, User } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { MEDIA_MIME } from "./cutDnd"
 import { fileUrl } from "@/shared/files"
 import type { LibraryItem, MediaKind } from "./api"
 import { FILTERS, grouped, visible, type Filter } from "./libraryView"
@@ -76,6 +77,8 @@ function Item({ m, active, onSelect }: { m: LibraryItem; active: boolean; onSele
   return (
     <li>
       <button type="button" data-library-item={m.id} data-library-kind={m.kind} onClick={() => onSelect(m.id)} title={m.prompt ?? m.name}
+        draggable={m.kind === "image" || m.kind === "video"}
+        onDragStart={(e) => { e.dataTransfer.setData(MEDIA_MIME, m.id); e.dataTransfer.effectAllowed = "copy" }}
         className={`flex w-full items-center gap-2 rounded-[4px] px-1.5 py-1 text-left ${active ? "bg-[#1c2940]" : "hover:bg-[#111827]"}`}>
         <Thumb m={m} />
         <span className="min-w-0 flex-1">
