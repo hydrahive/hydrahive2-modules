@@ -1,17 +1,4 @@
-/** Beispieldaten der Attrappe (Etappe 0). Ab Etappe 1 kommen sie aus dem Backend. */
-
-export type MediaKind = "video" | "image" | "audio" | "music" | "element"
-export type Origin = "ai" | "upload" | "legacy"
-
-export interface DemoMedia {
-  id: string
-  kind: MediaKind
-  name: string
-  origin: Origin
-  duration?: number
-  /** Farbe des Vorschaubilds (Attrappe statt echter Thumbnails). */
-  hue: number
-}
+/** Beispieldaten für Zeitleiste und Storyboard, bis Etappe 2 (Planen) und 4 (Schneiden) sie echt machen. */
 
 export type TrackKind = "text" | "video" | "voice" | "music" | "subtitle"
 
@@ -33,18 +20,6 @@ export interface DemoTrack {
 }
 
 export const DEMO_DURATION = 90
-
-export const DEMO_MEDIA: DemoMedia[] = [
-  { id: "m1", kind: "video", name: "Shot 1 – Morgen am Hafen", origin: "ai", duration: 6, hue: 200 },
-  { id: "m2", kind: "video", name: "Shot 2 – Mira am Steg", origin: "ai", duration: 8, hue: 190 },
-  { id: "m3", kind: "video", name: "Drohnenflug.mp4", origin: "upload", duration: 24, hue: 140 },
-  { id: "m4", kind: "image", name: "Titelbild Variante 2", origin: "ai", hue: 30 },
-  { id: "m5", kind: "image", name: "Leuchtturm (Atelier)", origin: "legacy", hue: 280 },
-  { id: "m6", kind: "audio", name: "Dialog Mira – Szene 1", origin: "ai", duration: 12, hue: 330 },
-  { id: "m7", kind: "music", name: "Nordwind (Musik)", origin: "ai", duration: 60, hue: 260 },
-  { id: "m8", kind: "element", name: "Mira (Figur)", origin: "ai", hue: 10 },
-  { id: "m9", kind: "element", name: "Hafen (Ort)", origin: "ai", hue: 210 },
-]
 
 export const DEMO_TRACKS: DemoTrack[] = [
   { id: "t-text", kind: "text", label: "V2 Text", clips: [{ id: "c1", start: 1, length: 5, label: "Titel: Nordwind" }] },

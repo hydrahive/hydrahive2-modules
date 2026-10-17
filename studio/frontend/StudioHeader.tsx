@@ -1,23 +1,33 @@
-import { Command, HelpCircle, Loader2 } from "lucide-react"
+import { Command, HelpCircle, Loader2, RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import type { StudioProject } from "./api"
 import { DEMO_JOBS } from "./demoData"
 import { WORKSPACES, type Workspace } from "./workspaces"
 
 interface Props {
+  projects: StudioProject[]
+  projectId: string
+  onProject: (id: string) => void
+  onReload: () => void
   workspace: Workspace
   onWorkspace: (w: Workspace) => void
   onCommand: () => void
   onHelp: () => void
 }
 
-/** Kopfzeile: Projekt, Arbeitsbereiche als Reiter, laufende Aufträge, Befehlssuche, Hilfe. */
-export function StudioHeader({ workspace, onWorkspace, onCommand, onHelp }: Props) {
+/** Studio-Leiste: Projekt, Arbeitsbereiche als Reiter, laufende Aufträge, Befehlssuche, Hilfe. */
+export function StudioHeader({ projects, projectId, onProject, onReload, workspace, onWorkspace, onCommand, onHelp }: Props) {
   const { t } = useTranslation("studio")
   return (
     <header className="flex h-11 shrink-0 items-center gap-3 border-b border-[#2a364b] bg-[#0d1420] px-3">
-      <select className="rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1 text-xs text-[#c3ccdd]" aria-label={t("project")}>
-        <option>Nordwind (Beispiel)</option>
+      <select value={projectId} onChange={(e) => onProject(e.target.value)} data-studio-project aria-label={t("project")}
+        className="max-w-[16rem] rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1 text-xs text-[#c3ccdd]">
+        {!projects.length && <option value="">{t("no_projects")}</option>}
+        {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
       </select>
+      <button type="button" onClick={onReload} title={t("reload")} aria-label={t("reload")} className="rounded-[4px] p-1 text-[#8d9ab0] hover:text-[#e8eef8]">
+        <RefreshCw size={13} />
+      </button>
       <nav className="mx-auto flex items-center gap-0.5" aria-label={t("workspaces")}>
         {WORKSPACES.map((w) => (
           <button key={w} type="button" data-studio-workspace={w} aria-pressed={w === workspace}

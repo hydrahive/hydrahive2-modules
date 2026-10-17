@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from "react"
+import type { LibraryItem } from "./api"
 import { DEMO_DURATION } from "./demoData"
 import { loadLayout, saveLayout, dragLayout, type StudioLayout } from "./layout"
 import { actionFor, type ShortcutAction } from "./shortcuts"
-import type { Workspace } from "./workspaces"
 import { clampViewport, type Viewport } from "./timeline"
+import { usePlayer } from "./usePlayer"
+import type { Workspace } from "./workspaces"
 
 const FPS = 25
 
-/** Zustand der Attrappe: Abspielkopf, Wiedergabe, Ausschnitt, Auswahl, Layout, Dialoge, Tastenkürzel. */
-export function useStudioState() {
+/** Zustand des Studios: Auswahl, echtes Medium in der Vorschau (Etappe 1), Demo-Zeitleiste, Layout, Dialoge, Tasten. */
+export function useStudioState(items: LibraryItem[]) {
   const [workspace, setWorkspace] = useState<Workspace>("edit")
-  const [time, setTimeRaw] = useState(8)
-  const [playing, setPlaying] = useState(false)
-  const [rate, setRate] = useState(1)
+  const [demoTime, setDemoTime] = useState(8)
   const [manualView, setView] = useState<Viewport>({ start: 0, span: 40 })
   const [snap, setSnap] = useState(true)
   const [clipId, setClipId] = useState<string | null>(null)
@@ -21,42 +21,36 @@ export function useStudioState() {
   const [dialog, setDialog] = useState<"help" | "command" | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
-  const setTime = useCallback((t: number) => setTimeRaw(Math.min(DEMO_DURATION, Math.max(0, t))), [])
-
-  useEffect(() => {
-    if (!playing) return
-    const id = window.setInterval(() => setTimeRaw((t) => {
-      const next = t + rate / FPS
-      if (next >= DEMO_DURATION || next <= 0) { setPlaying(false); return Math.min(DEMO_DURATION, Math.max(0, next)) }
-      return next
-    }), 1000 / FPS)
-    return () => window.clearInterval(id)
-  }, [playing, rate])
+  const item = items.find((i) => i.id === mediaId) ?? null
+  const player = usePlayer(item?.id ?? null)
 
   useEffect(() => { saveLayout(layout) }, [layout])
 
-  // Abspielkopf bleibt im Ausschnitt sichtbar: läuft er hinaus, rückt der Ausschnitt mit (ohne extra Render).
+  // Demo-Zeitleiste: Abspielkopf folgt dem Medium, solange eines läuft; sonst bleibt er stehen.
+  const time = item ? player.time : demoTime
   const outside = time < manualView.start || time > manualView.start + manualView.span
   const view = outside ? clampViewport({ start: time - manualView.span * 0.2, span: manualView.span }, DEMO_DURATION) : manualView
 
+  const seek = useCallback((t: number) => {
+    if (item) player.seek(t)
+    else setDemoTime(Math.min(DEMO_DURATION, Math.max(0, t)))
+  }, [item, player])
+
   const run = useCallback((a: ShortcutAction) => {
-    const shuttle = (dir: 1 | -1) => {
-      setRate((r) => (Math.sign(r) === dir && playing ? Math.min(Math.abs(r) * 2, 8) * dir : dir))
-      setPlaying(true)
-    }
+    const end = item ? player.duration : DEMO_DURATION
     const map: Partial<Record<ShortcutAction, () => void>> = {
-      "toggle-play": () => { setRate(1); setPlaying((p) => !p) },
-      "seek-back": () => shuttle(-1), "seek-forward": () => shuttle(1),
-      "frame-back": () => { setPlaying(false); setTime(time - 1 / FPS) }, "frame-forward": () => { setPlaying(false); setTime(time + 1 / FPS) },
-      "jump-back": () => setTime(time - 5), "jump-forward": () => setTime(time + 5),
-      "goto-start": () => setTime(0), "goto-end": () => setTime(DEMO_DURATION),
+      "toggle-play": () => player.toggle(),
+      "seek-back": () => player.shuttle(-1), "seek-forward": () => player.shuttle(1),
+      "frame-back": () => seek(time - 1 / FPS), "frame-forward": () => seek(time + 1 / FPS),
+      "jump-back": () => seek(time - 5), "jump-forward": () => seek(time + 5),
+      "goto-start": () => seek(0), "goto-end": () => seek(end),
       "toggle-snap": () => setSnap((s) => !s),
       help: () => setDialog("help"), command: () => setDialog("command"),
     }
     const fn = map[a]
     if (fn) fn()
-    else setToast(a)                                  // Attrappe: Bearbeiten kommt ab Etappe 2
-  }, [playing, setTime, time])
+    else setToast(a)                                  // Bearbeiten kommt mit dem Schnitt (Etappe 4)
+  }, [item, player, seek, time])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -77,7 +71,7 @@ export function useStudioState() {
   }, [toast])
 
   return {
-    workspace, setWorkspace, time, setTime, playing, togglePlay: () => run("toggle-play"), view, setView, snap,
+    workspace, setWorkspace, item, player, time, seek, view, setView, snap,
     toggleSnap: () => setSnap((s) => !s), clipId, selectClip: (id: string) => { setClipId(id); setMediaId(null) },
     mediaId, selectMedia: (id: string) => { setMediaId(id); setClipId(null) }, layout,
     drag: (key: keyof StudioLayout, d: number) => setLayout((l) => dragLayout(l, key, d)),

@@ -1,16 +1,20 @@
 import { Pause, Play, SkipBack, SkipForward, StepBack, StepForward } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { DEMO_DURATION } from "./demoData"
+import type { LibraryItem } from "./api"
+import { MediaView } from "./MediaView"
 import { timecode } from "./timeline"
 
 interface Props {
+  item: LibraryItem | null
+  bind: (el: HTMLMediaElement | null) => void
   time: number
+  duration: number
   playing: boolean
   onPlay: () => void
   onSeek: (t: number) => void
 }
 
-/** Pegelanzeige links/rechts (Attrappe: bewegt sich nur beim Abspielen). */
+/** Pegelanzeige links/rechts (Andeutung: bewegt sich beim Abspielen; echte Pegel kommen mit dem Ton, Etappe 5). */
 function Meter({ playing }: { playing: boolean }) {
   const { t } = useTranslation("studio")
   return (
@@ -25,32 +29,31 @@ function Meter({ playing }: { playing: boolean }) {
   )
 }
 
-/** Vorschau: Bild, Transportleiste, Zeitcode, Format und Proxy-Schalter (Attrappe: farbige Fläche statt Video). */
-export function PreviewPanel({ time, playing, onPlay, onSeek }: Props) {
+/** Vorschau: echtes Medium aus der Bibliothek, Transportleiste, Zeitcode, Bildformat, Vorschau-Kopie-Hinweis. */
+export function PreviewPanel({ item, bind, time, duration, playing, onPlay, onSeek }: Props) {
   const { t } = useTranslation("studio")
-  const hue = 190 + Math.round((time / DEMO_DURATION) * 120)
-  const btn = "rounded-[4px] p-1.5 text-[#c3ccdd] hover:bg-[#111827] hover:text-white"
+  const playable = item?.kind === "video" || item?.kind === "music" || item?.kind === "audio"
+  const btn = "rounded-[4px] p-1.5 text-[#c3ccdd] hover:bg-[#111827] hover:text-white disabled:opacity-30"
   return (
     <section className="flex h-full min-h-0 flex-col items-center justify-center gap-2 p-3" data-studio-panel="preview">
       <div className="relative flex min-h-0 w-full flex-1 items-center justify-center gap-2">
-        <div className="aspect-video max-h-full w-full max-w-full rounded-[4px] border border-[#223048]"
-          style={{ background: `radial-gradient(circle at 30% 40%, hsl(${hue} 50% 38%), hsl(${hue + 40} 45% 10%))` }}>
-          <div className="flex h-full items-end justify-center pb-[8%]">
-            {time > 6.5 && time < 10 && <span className="rounded bg-black/50 px-2 py-0.5 text-sm text-white">Wo bist du gewesen?</span>}
-          </div>
-        </div>
+        <MediaView item={item} bind={bind} />
         <Meter playing={playing} />
       </div>
+      {playable && duration > 0 && (
+        <input type="range" min={0} max={duration} step={0.04} value={time} aria-label={t("position")} data-studio-scrub
+          onChange={(e) => onSeek(Number(e.target.value))} className="w-full accent-[#ff6b8a]" />
+      )}
       <div className="flex w-full items-center gap-1">
-        <button type="button" className={btn} title={t("goto_start")} onClick={() => onSeek(0)}><SkipBack size={14} /></button>
-        <button type="button" className={btn} title={t("frame_back")} onClick={() => onSeek(time - 1 / 25)}><StepBack size={14} /></button>
-        <button type="button" className={`${btn} bg-[#1c2940]`} title={t("play")} data-studio-action="play" onClick={onPlay}>
+        <button type="button" className={btn} disabled={!playable} title={t("goto_start")} onClick={() => onSeek(0)}><SkipBack size={14} /></button>
+        <button type="button" className={btn} disabled={!playable} title={t("frame_back")} onClick={() => onSeek(time - 1 / 25)}><StepBack size={14} /></button>
+        <button type="button" className={`${btn} bg-[#1c2940]`} disabled={!playable} title={t("play")} data-studio-action="play" onClick={onPlay}>
           {playing ? <Pause size={15} /> : <Play size={15} />}
         </button>
-        <button type="button" className={btn} title={t("frame_forward")} onClick={() => onSeek(time + 1 / 25)}><StepForward size={14} /></button>
-        <button type="button" className={btn} title={t("goto_end")} onClick={() => onSeek(DEMO_DURATION)}><SkipForward size={14} /></button>
+        <button type="button" className={btn} disabled={!playable} title={t("frame_forward")} onClick={() => onSeek(time + 1 / 25)}><StepForward size={14} /></button>
+        <button type="button" className={btn} disabled={!playable} title={t("goto_end")} onClick={() => onSeek(duration)}><SkipForward size={14} /></button>
         <span className="ml-2 font-mono text-xs text-[#e8eef8]" data-studio-timecode>{timecode(time)}</span>
-        <span className="font-mono text-xs text-[#68758a]">/ {timecode(DEMO_DURATION)}</span>
+        <span className="font-mono text-xs text-[#68758a]">/ {timecode(duration)}</span>
         <span className="ml-auto flex items-center gap-2 text-[11px] text-[#8d9ab0]">
           <select className="rounded-[4px] border border-[#2a364b] bg-[#111827] px-1.5 py-0.5" aria-label={t("format")}>
             <option>16:9</option><option>9:16</option><option>1:1</option>
