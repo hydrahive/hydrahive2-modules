@@ -378,6 +378,7 @@ Wie in Etappe 3 gibt es Schritte. Nach jedem ist etwas Sichtbares fertig:
 | **4a** | Schnittfassung als Projektdaten, „Aus dem Drehbuch übernehmen“, echte Zeitleiste im Reiter „Schneiden“, Abspielen des ganzen Films in der Vorschau | den Film zum ersten Mal am Stück ansehen |
 | **4b** | Bearbeiten: verschieben, trimmen, teilen (S/Q/W), löschen, verdoppeln, Einrasten, Rückgängig/Wiederholen, Clips aus der Bibliothek auf die Zeitleiste ziehen, automatisch speichern | den Film wirklich schneiden |
 | **4c** | Proxies für große Videos (z. B. Uploads aus dem Video-Editor) und Filmstreifen-Vorschau in den Clips | auch lange Videos flüssig schneiden |
+| **4d** | Schlichte Filmausgabe: MP4 im Format des Drehbuchs (16:9 → 1280×720, 9:16 → 720×1280, 1:1 → 1080×1080, 25 fps), Originalton der Videos, Stille bei Bildern und Platzhaltern (Platzhalter als schwarze Karte mit Shot-Text), im Hintergrund als Auftrag mit Fortschritt, Ergebnis unter `studio/renders/` und in der Bibliothek | das erste Filmchen als Datei herunterladen |
 
 **4a im Detail**
 
@@ -466,11 +467,11 @@ hydratest-E2E im Testprojekt:
 
 ## Offene Punkte (Till)
 
-- **Etappe 4 (17.10.), offen:** (1) Aufteilung 4a/4b/4c so? (2) Eine schlichte Filmausgabe als MP4 (Format aus dem
-  Drehbuch, Originalton, im Hintergrund, Ergebnis in der Bibliothek) als **4d** vorziehen, damit das erste Filmchen
-  schon nach Etappe 4 als Datei da ist? Die volle Ausgabe mit Vorlagen und Warteschlange bliebe Etappe 7.
-  (3) Shots, die nur ein Bild haben, als Standbild auf die Zeitleiste (Vorschlag) oder als Platzhalter? (4) Zunächst
-  eine Schnittfassung je Projekt?
+- ~~Etappe 4~~ → **freigegeben (Till, 17.10.): „wie es technisch am besten ist“.**
+  - Aufteilung 4a/4b/4c wie oben.
+  - **4d** (schlichte MP4-Ausgabe) wird vorgezogen. Die volle Ausgabe mit Vorlagen und Warteschlange bleibt Etappe 7.
+  - Bild-Shots kommen als **Standbild** auf die Zeitleiste.
+  - Zunächst **eine** Schnittfassung je Projekt (`timelines/main.json`).
 
 - ~~Name im Menü~~ → **„Studio“** (Till, 15.10.).
 - ~~Reihenfolge~~ → **Ablauf einer Produktion** (Till, 15.10.): Entwicklung/Vorproduktion → Produktion → Postproduktion →
