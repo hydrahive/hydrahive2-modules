@@ -9,9 +9,18 @@ import type { Workspace } from "./workspaces"
 
 const FPS = 25
 
+/** Abspielsteuerung, die die Tasten übernimmt (z. B. der Film im Reiter „Schneiden“). */
+export interface Transport {
+  time: number
+  total: number
+  seek: (t: number) => void
+  toggle: () => void
+  shuttle: (dir: 1 | -1) => void
+}
+
 /** Zustand des Studios: Auswahl, echtes Medium in der Vorschau (Etappe 1), Demo-Zeitleiste, Layout, Dialoge, Tasten. */
-export function useStudioState(items: LibraryItem[]) {
-  const [workspace, setWorkspace] = useState<Workspace>("edit")
+export function useStudioState(items: LibraryItem[], workspace: Workspace, setWorkspace: (w: Workspace) => void,
+  transport: (item: LibraryItem | null) => Transport | null) {
   const [demoTime, setDemoTime] = useState(8)
   const [manualView, setView] = useState<Viewport>({ start: 0, span: 40 })
   const [snap, setSnap] = useState(true)
@@ -23,6 +32,7 @@ export function useStudioState(items: LibraryItem[]) {
 
   const item = items.find((i) => i.id === mediaId) ?? null
   const player = usePlayer(item?.id ?? null)
+  const tr = transport(item)                          // Film im Reiter „Schneiden“ hat Vorrang vor der Demo
 
   useEffect(() => { saveLayout(layout) }, [layout])
 
@@ -37,20 +47,22 @@ export function useStudioState(items: LibraryItem[]) {
   }, [item, player])
 
   const run = useCallback((a: ShortcutAction) => {
-    const end = item ? player.duration : DEMO_DURATION
+    const end = tr ? tr.total : item ? player.duration : DEMO_DURATION
+    const now = tr ? tr.time : time
+    const go = tr ? tr.seek : seek
     const map: Partial<Record<ShortcutAction, () => void>> = {
-      "toggle-play": () => player.toggle(),
-      "seek-back": () => player.shuttle(-1), "seek-forward": () => player.shuttle(1),
-      "frame-back": () => seek(time - 1 / FPS), "frame-forward": () => seek(time + 1 / FPS),
-      "jump-back": () => seek(time - 5), "jump-forward": () => seek(time + 5),
-      "goto-start": () => seek(0), "goto-end": () => seek(end),
+      "toggle-play": () => (tr ? tr.toggle() : player.toggle()),
+      "seek-back": () => (tr ? tr.shuttle(-1) : player.shuttle(-1)), "seek-forward": () => (tr ? tr.shuttle(1) : player.shuttle(1)),
+      "frame-back": () => go(now - 1 / FPS), "frame-forward": () => go(now + 1 / FPS),
+      "jump-back": () => go(now - 5), "jump-forward": () => go(now + 5),
+      "goto-start": () => go(0), "goto-end": () => go(end),
       "toggle-snap": () => setSnap((s) => !s),
       help: () => setDialog("help"), command: () => setDialog("command"),
     }
     const fn = map[a]
     if (fn) fn()
     else setToast(a)                                  // Bearbeiten kommt mit dem Schnitt (Etappe 4)
-  }, [item, player, seek, time])
+  }, [item, player, seek, time, tr])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

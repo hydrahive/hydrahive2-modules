@@ -25,7 +25,9 @@ export function usePlan(projectId: string, active: boolean) {
     try {
       const [p, pre] = await Promise.all([planApi.get(pid), planApi.importPreview(pid)])
       setPlan(p); setPreview(pre); setRev((r) => r + 1)
-      if (loadedFor.current !== pid) { setSelection(null); loadedFor.current = pid }   // anderes Projekt → Auswahl weg
+      // anderes Projekt → Auswahl weg; beim ersten Laden bleibt eine schon gesetzte Auswahl (Sprung aus „Schneiden“)
+      if (loadedFor.current && loadedFor.current !== pid) setSelection(null)
+      loadedFor.current = pid
     } catch (e) { setPlan(null); setError(errorText(t, e)) }
   }, [t])
 

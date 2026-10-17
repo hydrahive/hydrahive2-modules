@@ -6,7 +6,7 @@ vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() =
 import { CutInspector } from "./CutInspector"
 import { CutTimeline } from "./CutTimeline"
 import { FromPlanDialog } from "./FromPlanDialog"
-import { activeAt, clipLength, filmLength, nextMediaClip, sourceTime } from "./cutLogic"
+import { activeAt, clipLength, filmLength, followView, nextMediaClip, sourceTime } from "./cutLogic"
 import type { Timeline, TimelineClip } from "./timelineApi"
 
 const noop = () => {}
@@ -44,6 +44,13 @@ describe("Studio 4a – Abspiel-Logik", () => {
     expect(sourceTime(CLIPS[0], 0)).toBe(1)
     expect(sourceTime(CLIPS[0], 2.5)).toBe(3.5)
     expect(sourceTime(CLIPS[3], 12)).toBe(1)
+  })
+
+  it("Ausschnitt passt sich der Filmlänge an und folgt dem Abspielkopf", () => {
+    expect(followView({ start: 0, span: 30 }, 2, 15)).toEqual({ start: 0, span: 15 })     // ganzer Film passt hinein
+    expect(followView({ start: 0, span: 10 }, 5, 60)).toEqual({ start: 0, span: 10 })     // Kopf sichtbar → bleibt
+    expect(followView({ start: 0, span: 10 }, 30, 60)).toEqual({ start: 28, span: 10 })   // Kopf draußen → folgt
+    expect(followView({ start: 50, span: 10 }, 0, 0)).toEqual({ start: 0, span: 1 })      // leerer Film, keine Division durch 0
   })
 
   it("nächster Videoclip zum Vorladen (Bilder/Platzhalter übersprungen)", () => {
