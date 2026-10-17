@@ -1,7 +1,6 @@
 import { Command, HelpCircle, Loader2, RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { StudioProject } from "./api"
-import { DEMO_JOBS } from "./demoData"
 import { WORKSPACES, type Workspace } from "./workspaces"
 
 interface Props {
@@ -13,10 +12,11 @@ interface Props {
   onWorkspace: (w: Workspace) => void
   onCommand: () => void
   onHelp: () => void
+  running?: number
 }
 
 /** Studio-Leiste: Projekt, Arbeitsbereiche als Reiter, laufende Aufträge, Befehlssuche, Hilfe. */
-export function StudioHeader({ projects, projectId, onProject, onReload, workspace, onWorkspace, onCommand, onHelp }: Props) {
+export function StudioHeader({ projects, projectId, onProject, onReload, workspace, onWorkspace, onCommand, onHelp, running = 0 }: Props) {
   const { t } = useTranslation("studio")
   return (
     <header className="flex h-11 shrink-0 items-center gap-3 border-b border-[#2a364b] bg-[#0d1420] px-3">
@@ -38,10 +38,11 @@ export function StudioHeader({ projects, projectId, onProject, onReload, workspa
           </button>
         ))}
       </nav>
-      <button type="button" data-studio-jobs className="flex items-center gap-1.5 rounded-[4px] px-2 py-1 text-[11px] text-[#8d9ab0] hover:bg-[#111827]"
-        title={DEMO_JOBS.map((j) => `${j.label} · ${j.percent}%`).join("\n")}>
-        <Loader2 size={12} className="animate-spin text-[#ffb86b]" /> {t("jobs", { count: DEMO_JOBS.length })}
-      </button>
+      {running > 0 && (
+        <span data-studio-jobs className="flex items-center gap-1.5 rounded-[4px] px-2 py-1 text-[11px] text-[#8d9ab0]">
+          <Loader2 size={12} className="animate-spin text-[#ffb86b]" /> {t("jobs", { count: running })}
+        </span>
+      )}
       <button type="button" onClick={onCommand} data-studio-action="command"
         className="flex items-center gap-1.5 rounded-[4px] border border-[#2a364b] px-2 py-1 text-[11px] text-[#8d9ab0] hover:text-[#e8eef8]">
         <Command size={12} /> {t("command_hint")}

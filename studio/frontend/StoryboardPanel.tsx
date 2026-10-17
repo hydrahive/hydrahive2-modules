@@ -9,6 +9,7 @@ interface Props {
   base: string
   selected: string | null
   busy: "decompose" | null
+  runningShots?: string[]
   onSelect: (id: string) => void
   onAdd: () => void
   onMove: (id: string, dir: -1 | 1) => void
@@ -18,7 +19,7 @@ interface Props {
 const arrow = "rounded p-0.5 text-[#68758a] hover:bg-[#1c2940] hover:text-[#e8eef8] disabled:opacity-30 disabled:hover:bg-transparent"
 
 /** Planen, unten: Shots der gewählten Szene – anklicken, sortieren, hinzufügen, per Regie-Agent zerlegen. */
-export function StoryboardPanel({ scene, base, selected, busy, onSelect, onAdd, onMove, onDecompose }: Props) {
+export function StoryboardPanel({ scene, base, selected, busy, runningShots = [], onSelect, onAdd, onMove, onDecompose }: Props) {
   const { t } = useTranslation("studio")
   const running = busy === "decompose"
   return (
@@ -43,9 +44,14 @@ export function StoryboardPanel({ scene, base, selected, busy, onSelect, onAdd, 
             return (
               <div key={s.id} className={`flex w-44 shrink-0 flex-col overflow-hidden rounded-[4px] border ${s.id === selected ? "border-[#69d7ff]" : "border-[#2a364b]"} bg-[#111827]`}>
                 <button type="button" onClick={() => onSelect(s.id)} data-storyboard-shot={s.id} title={s.prompt} className="flex flex-col text-left">
-                  <span className="grid aspect-video place-items-center overflow-hidden bg-[#0d1420]">
+                  <span className="relative grid aspect-video place-items-center overflow-hidden bg-[#0d1420]">
                     {img ? <img src={fileUrl(img)} alt="" loading="lazy" className="h-full w-full object-cover" />
                       : <Clapperboard size={18} className="text-[#46617f]" />}
+                    {runningShots.includes(s.id) && (
+                      <span className="absolute inset-0 grid place-items-center bg-black/55" data-storyboard-running={s.id} title={t("image_running")}>
+                        <Loader2 size={18} className="animate-spin text-[#69d7ff]" />
+                      </span>
+                    )}
                   </span>
                   <span className="px-2 pt-1.5 text-[11px]">
                     <span className="block font-bold text-[#e8eef8]">{t("shot", { n: i + 1 })} · {s.duration} s</span>

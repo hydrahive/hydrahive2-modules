@@ -1,8 +1,10 @@
 /** Texte für „Planen“ (Etappe 2a). Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
 import { cam_de, cam_en } from "./i18nCamera"
+import { jobs_de, jobs_en } from "./i18nJobs"
 
 export const plan_de = {
   ...cam_de,
+  ...jobs_de,
   screenplay: "Drehbuch",
   scenes: "Szenen",
   elements: "Bausteine",
@@ -71,6 +73,8 @@ export const plan_de = {
     studio_decompose_failed: "Die KI konnte die Szene nicht zerlegen. Die bisherigen Shots sind unverändert. Bitte später noch einmal versuchen oder im Drehbuch unter „Modelle“ ein anderes Text-Modell eintragen.",
     studio_decompose_has_media: "Diese Szene hat schon Shots mit Bild oder Video.",
     studio_decompose_busy: "Die KI zerlegt in diesem Projekt gerade schon eine Szene. Bitte kurz warten.",
+    studio_job_running: "Für diesen Shot läuft schon ein Auftrag.",
+    studio_variant_unknown: "Dieses Bild gehört nicht zu diesem Shot.",
   },
   f: {
     title: "Titel", logline: "Kurzbeschreibung", description: "Beschreibung", aspect: "Bildformat", duration: "Standard-Dauer (s)",
@@ -86,6 +90,7 @@ export const plan_de = {
 
 export const plan_en: typeof plan_de = {
   ...cam_en,
+  ...jobs_en,
   screenplay: "Screenplay",
   scenes: "Scenes",
   elements: "Elements",
@@ -154,6 +159,8 @@ export const plan_en: typeof plan_de = {
     studio_decompose_failed: "The AI could not split the scene. The current shots are unchanged. Please try again later or enter another text model in the screenplay under “Models”.",
     studio_decompose_has_media: "This scene already has shots with images or videos.",
     studio_decompose_busy: "The AI is already splitting a scene in this project. Please wait a moment.",
+    studio_job_running: "A job is already running for this shot.",
+    studio_variant_unknown: "This image does not belong to this shot.",
   },
   f: {
     title: "Title", logline: "Logline", description: "Description", aspect: "Aspect ratio", duration: "Default duration (s)",

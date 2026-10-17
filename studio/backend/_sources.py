@@ -99,4 +99,8 @@ def tonstudio(root: Path, make) -> list[dict]:
     return out
 
 
-READERS = (atelier, videoeditor, tonstudio)
+def studio(root: Path, make) -> list[dict]:
+    return [make(p, "image", "ai", "studio", sidecar(p)) for p in files(root, "studio/media/images", IMAGE_EXT)]
+
+
+READERS = (atelier, videoeditor, tonstudio, studio)

@@ -72,6 +72,8 @@ def shot(v: Any, order: int, elements: set[str]) -> dict:
         "duration": num(v.get("duration"), 1, 60, 5), "status": status,
         "image_rel": v["image_rel"] if isinstance(v.get("image_rel"), str) else None,
         "video_rel": v["video_rel"] if isinstance(v.get("video_rel"), str) else None,
+        "variants": [x for x in (v.get("variants") if isinstance(v.get("variants"), list) else [])
+                     if isinstance(x, str) and x.startswith("studio/media/images/") and ".." not in x][-8:],
     }
 
 

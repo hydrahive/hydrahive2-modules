@@ -105,6 +105,15 @@ def other_headers(client):
     return _login(client, "other")
 
 
+def _wait_for_jobs(timeout: float = 10.0) -> None:
+    import threading
+    import time
+    end = time.time() + timeout
+    for t in threading.enumerate():
+        if t.name.startswith("studio-") and t.is_alive():
+            t.join(max(0.0, end - time.time()))
+
+
 @pytest.fixture(autouse=True)
 def _clean_project_dirs(setup_test_env):
     """Räumt nach jedem Test nur auf, was der Test selbst angelegt hat, und nur unter TEST_ROOT.
@@ -116,6 +125,7 @@ def _clean_project_dirs(setup_test_env):
     before = {d for r in roots for d in r.rglob("*") if d.is_dir()}
     with only_own_files(roots[0], "**/*"), only_own_files(roots[1], "**/*"):
         yield
+        _wait_for_jobs()                      # Auftrags-Threads zu Ende kommen lassen, bevor aufgeräumt wird
     for r in roots:
         for d in sorted((d for d in r.rglob("*") if d.is_dir() and not d.is_symlink()), key=lambda x: -len(x.parts)):
             if d not in before and not any(d.iterdir()) and d.resolve().is_relative_to(setup_test_env.resolve()):

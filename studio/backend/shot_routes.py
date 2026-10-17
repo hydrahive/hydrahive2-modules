@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, Depends
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import director, plan, shots
+from . import director, generate, plan, shots
 from ._guard import guard
 
 router = APIRouter(prefix="/projects/{project_id}/plan/scenes/{scene_id}")
@@ -56,3 +56,15 @@ async def decompose(project_id: str, scene_id: str, data: Data, auth: Auth) -> d
     except plan.PlanError as e:
         raise coded(e.status, e.code)
     return {"shots": result, "count": len(result)}
+
+
+@router.post("/shots/{shot_id}/image", status_code=202)
+def generate_image(project_id: str, scene_id: str, shot_id: str, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    return _run(generate.start_image, project_id, scene_id, shot_id)
+
+
+@router.put("/shots/{shot_id}/variant")
+def choose_variant(project_id: str, scene_id: str, shot_id: str, data: Data, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    return _run(generate.choose_variant, project_id, scene_id, shot_id, data.get("image_rel"))

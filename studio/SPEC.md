@@ -160,7 +160,7 @@ Am Ende gibt es für Medien **nur noch „Studio“**, damit die Leiste oben lee
 | **0** | **Klickbare Attrappe** auf hydratest: Layout, Reiter, Panels ziehbar, Tastenkürzel-Hilfe, Beispieldaten. Kein Backend. ✅ | Till beurteilt Aufbau und Gefühl im Browser |
 | 1 | Gerüst echt: Projektwahl, Bibliothek liest alle vorhandenen Medien (Atelier, Video-Editor, Tonstudio, Uploads – nur lesend), Vorschau spielt ab, Panelgrößen gespeichert | Medien aller Module an einem Ort ansehen |
 | 2 | **Planen:** Drehbuch (Akte, Szenen, Shots), Bausteine (Figuren, Orte, Objekte), Look, Storyboard-Leiste, Regie-Agent | Film im Studio planen |
-| 3 | **Erzeugen:** Bild, Video, Sprache, Musik im Panel, Platzhalter aus dem Drehbuch füllen, Varianten, Ergebnis direkt in der Bibliothek | Vom Drehbuch zu fertigen Shots |
+| 3 | **Erzeugen:** Bild und Video je Shot (3a, 3b), mehrere auf einmal als Auftrag (3c), Varianten, Ergebnis direkt in der Bibliothek. Sprache/Musik → Etappe 5 | Vom Drehbuch zu fertigen Shots |
 | 4 | Schneiden: Zeitleiste mit Spuren, ziehen, trimmen, teilen, Einrasten, Rückgängig, Übersichtsleiste, Proxies | Schnitt im Studio |
 | 5 | Ton: Tonspuren, Mixer, Wellenform, Pegel, Musik und Sprache auf der Zeitleiste | Vertonen im Studio |
 | 6 | Untertitel: Transkribieren, Spur, Stil, Übersetzen, zweisprachig, SRT, Einbrennen | Untertitel und Übersetzung |
@@ -293,6 +293,58 @@ sie sich noch nicht. Der Regie-Agent des Ateliers (`atelier/backend/director.py`
 **Prüfung wie immer:** Tests rot/grün, Mutanten, Gegenprobe `main`, hydratest-E2E mit echtem Klick auf „In Shots
 zerlegen“ (echtes Modell des Testservers; schlägt das fehl, zählt auch die saubere Fehlermeldung), 1600/1280 px,
 Bilder direkt im Chat.
+
+## Bauplan Etappe 3 – Erzeugen (17.10.)
+
+**Ist-Stand:** Das Atelier erzeugt Bilder über die Bild-Schnittstelle von OpenRouter (`/api/v1/images`). Seine Stärken
+für gleichbleibende Figuren sind Referenzbilder und, bei manchen Modellen, ein Seed. Lokale Workflows laufen über die
+Kern-Registry (`local:`). Videos entstehen über `/api/v1/videos` als Image-to-Video aus einem Startbild
+(`frame_images`, `first_frame`); das ist ein Hintergrundauftrag mit Abfrage alle 5 s und höchstens 2 Videos
+gleichzeitig. Der Kern hat dafür schon Bausteine (`tools/_openrouter_video`: Abfrage + Download;
+`llm/media_models.get_media_model`: zentrales Standardmodell je Art; `llm/video_backends`: lokale Workflows).
+
+**Grundsatz:** Das Studio nutzt die **Kern-Bausteine**, nicht Code aus dem Atelier (das Atelier fällt in Etappe 8 weg).
+Was im Atelier gut gelöst ist, wird als eigene Kopie übernommen und gekennzeichnet: der Bild-Aufruf mit Referenzen und
+die Abfrage-Schleife für Videos. Modell je Art: `models.image` bzw. `models.video` aus dem Drehbuch, sonst das zentrale
+Standardmodell des Servers (`get_media_model`). Es stehen keine festen Modelle im Code.
+
+**Aufteilung** (je ein PR, wie bei Etappe 2):
+- **3a – Bild für einen Shot:** Im Shot-Formular „Bild erzeugen“. Der Prompt entsteht aus der Beschreibung des Shots,
+  den Kamera-Vorgaben der Szene, dem Look des Drehbuchs und dem Aussehen der Bausteine. Die Referenzbilder der Bausteine
+  gehen als Referenzen mit. Das Ergebnis landet in `studio/media/images/` mit Begleitdatei (Prompt, Modell,
+  Referenzen) und erscheint in der Bibliothek (neue Quelle „Studio“). `image_rel` des Shots wird gesetzt, der Status
+  wird `image_ready`.
+  - **Varianten:** Jedes neue Bild wird zusätzlich in `shots[].variants[]` (höchstens 8) gemerkt. Im Formular kann man
+    zwischen den Varianten wählen; „übernehmen“ setzt `image_rel`.
+  - Läuft als **Auftrag im Hintergrund** (ein Bild dauert 10–60 s). Die Anfrage kommt sofort zurück, das Storyboard zeigt
+    „läuft“ und fragt alle 3 s nach.
+- **3b – Video für einen Shot:** „Video erzeugen“ aus dem gewählten Bild (Image-to-Video), Dauer aus dem Shot und an
+  die erlaubten Dauern des Modells angepasst. Ablage in `studio/media/videos/`, `video_rel` wird gesetzt, der Status
+  läuft `video_processing` → `done` bzw. `failed`. Höchstens 2 Videos je Server gleichzeitig. Ein Video, das beim
+  Neustart des Dienstes mitten im Lauf war, wird beim nächsten Start als `failed` mit verständlichem Hinweis markiert,
+  nicht stillschweigend `video_processing` gelassen.
+- **3c – Mehrere auf einmal:** Aufträge „Alle Szenen zerlegen“, „Bilder für alle Shots ohne Bild“ und „Videos für alle
+  Shots mit Bild“. Sie laufen nacheinander im Hintergrund, mit Fortschritt in der Kopfzeile (die
+  „laufen“-Anzeige wird echt), sind abbrechbar und überspringen Fertiges. Vor dem Start nennt ein Dialog die Anzahl und
+  die Kosten-Art („N Bilder mit Modell X“). Es gibt keine automatische Kostenschätzung, weil die Preise je Anbieter
+  wechseln.
+- **3d – Sprache und Musik** (zum Shot bzw. zur Szene): erst nach Etappe 5 „Ton“ sinnvoll, weil es vorher keinen
+  Platz dafür auf der Zeitleiste gibt. Verschoben nach Etappe 5.
+
+**Aufträge (gemeinsam für 3a–3c):** Datei je Auftrag unter `studio/jobs/<id>.json` (Art, Ziel, Status, Fehler,
+Zeitstempel), atomar geschrieben. Ein Auftrag je Shot gleichzeitig; ein zweiter Klick ergibt 409
+`studio_job_running`. Fehler der Anbieter erscheinen als klare Meldung am Shot (z. B. kein Schlüssel für OpenRouter →
+„Für Bilder ist kein Anbieter eingerichtet. Das geht in der Admin-Konsole unter KI-Modelle.“). Der Text kommt aus den
+Übersetzungen, nicht vom Anbieter.
+
+**Sicherheit:** Referenzbilder nur aus dem Projekt (Prüfung wie in 2a). Antworten der Anbieter werden auf Bildart und
+Größe geprüft (höchstens 30 MB Bild, 500 MB Video), bevor sie gespeichert werden. Downloads gibt es nur von der Adresse,
+die der Anbieter für den Auftrag nennt.
+
+**Prüfung:** wie immer. Für die E2E auf hydratest braucht es einen funktionierenden Bild- bzw. Video-Anbieter
+(OpenRouter-Schlüssel). Ohne ihn wird der Fehlerfall geprüft und der Erfolgsfall mit einem lokalen Test-Server, der
+eine OpenRouter-kompatible Bild- bzw. Video-Schnittstelle nachstellt (Adresse über die Kern-Einstellung, falls es sie
+gibt; sonst nur Tests).
 
 ## Grundregeln (wie immer)
 
