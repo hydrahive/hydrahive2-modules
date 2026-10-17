@@ -207,7 +207,7 @@ def test_too_big_is_not_an_image(monkeypatch) -> None:
 
 def test_variants_only_from_studio_media(client, auth_headers, ws) -> None:
     from backend import shots as shots_mod
-    _, sc, shot = _shot(client, auth_headers, ws, with_ref=False)
+    _, sc, _shot_unused = _shot(client, auth_headers, ws, with_ref=False)
     scene = shots_mod.load_scene(PROJECT_ID, sc["id"])
     scene["shots"][0]["variants"] = ["studio/media/images/ok.png", "../../etc/passwd", "atelier/images/x.png",
                                      "studio/media/images/../../x.png", 5]
