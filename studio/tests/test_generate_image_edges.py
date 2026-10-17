@@ -138,14 +138,27 @@ def test_prompt_has_no_double_punctuation(client, auth_headers, ws) -> None:
     assert ".." not in prompt and ". ." not in prompt and "Boot läuft ein. wide establishing shot" in prompt
 
 
-def test_jobs_in_the_same_second_keep_their_order(ws) -> None:
+def test_jobs_in_the_same_second_keep_their_order(ws, monkeypatch) -> None:
     """Aufträge kurz hintereinander: der neueste steht vorn (sonst zeigt die Oberfläche den alten Stand)."""
+    from datetime import datetime as real
+    from datetime import timedelta, timezone
+
     from backend import jobs
+    tick = iter(range(1000))
+
+    class SameSecond(real):  # alle Aufträge in derselben Sekunde, nur die Mikrosekunden laufen weiter
+        @classmethod
+        def now(cls, tz=None):
+            return real(2026, 10, 17, 10, 0, 0, tzinfo=timezone.utc) + timedelta(microseconds=next(tick))
+
+    monkeypatch.setattr(jobs, "datetime", SameSecond)
     ids = []
     for i in range(3):
         ids.append(jobs.start(PROJECT_ID, "image", f"{i}" * 32, "", dict)["id"])
     for t in __import__("threading").enumerate():
         if t.name.startswith("studio-"):
             t.join(5)
-    order = [j["id"] for j in jobs.list_jobs(PROJECT_ID) if j["id"] in ids]
-    assert order == list(reversed(ids))
+    mine = [j for j in jobs.list_jobs(PROJECT_ID) if j["id"] in ids]
+    stamps = [j["created_at"] for j in reversed(mine)]
+    assert stamps == sorted(set(stamps)), stamps  # streng aufsteigend, keine zwei gleich
+    assert [j["id"] for j in mine] == list(reversed(ids))
