@@ -116,7 +116,7 @@ describe("Studio Etappe 2a – Planen", () => {
     expect(out).toContain("%2Fdata%2Fw%2Fatelier%2Fimages%2Fa.png")
     expect(out).not.toContain("data-studio-demo-badge")
     expect(html(<StoryboardPanel scene={null} base="/data/w" selected={null} busy={null} {...SB} />)).toContain("storyboard_pick_scene")
-    expect(html(<StoryboardPanel scene={PLAN.scenes[1]} base="/data/w" selected={null} busy={null} {...SB} />)).toContain("storyboard_no_shots")
+    expect(html(<StoryboardPanel scene={PLAN.scenes[1]} base="/data/w" selected={null} busy={null} {...SB} />)).toContain("data-storyboard-empty")
   })
 
   it("Löschen über eigenen Dialog mit Namen", () => {

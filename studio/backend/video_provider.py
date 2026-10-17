@@ -7,6 +7,7 @@ Läuft synchron im Auftrags-Thread. Fehler tragen nur einen Code; den Text liefe
 from __future__ import annotations
 
 import logging
+import math
 import time
 from pathlib import Path
 from urllib.parse import urlparse
@@ -22,6 +23,7 @@ POLL_BASE, POLL_PER_SEC, POLL_CAP = 900.0, 45.0, 2700.0     # 15 min + 45 s je S
 MAX_BYTES = 500 * 1024 * 1024
 _KEY_HOSTS = {"openrouter.ai"}                               # nur hierhin geht der Schlüssel
 _durations_cache: dict[str, list[int] | None] = {}
+_aspects_cache: dict[str, list[str] | None] = {}
 
 
 class ProviderError(RuntimeError):
@@ -133,21 +135,49 @@ def download_video(url: str, dest: Path) -> None:
         tmp.unlink(missing_ok=True)
 
 
+def _load_models(model: str) -> bool:
+    """Modellliste des Anbieters einmal lesen: erlaubte Dauern und Formate je Modell (zwischengespeichert)."""
+    if model in _durations_cache:
+        return True
+    try:
+        with httpx.Client(timeout=30.0) as c:
+            data = c.get(MODELS_URL, headers={"Authorization": f"Bearer {_key()}"}).json().get("data") or []
+        for m in data:
+            d, a = m.get("supported_durations"), m.get("supported_aspect_ratios")
+            values = sorted({int(x) for x in d if isinstance(x, int)}) if isinstance(d, list) else []
+            _durations_cache[m.get("id")] = values or None
+            _aspects_cache[m.get("id")] = [x for x in a if isinstance(x, str)] or None if isinstance(a, list) else None
+        _durations_cache.setdefault(model, None)                     # unbekanntes Modell nicht jedes Mal neu fragen
+        _aspects_cache.setdefault(model, None)
+        return True
+    except (httpx.HTTPError, ValueError, ProviderError, AttributeError) as e:
+        logger.info("Studio-Video: Modellliste nicht lesbar (%s) – Dauer und Format bleiben unverändert", e)
+        return False
+
+
 def allowed_durations(model: str) -> list[int] | None:
-    """Erlaubte Dauern laut Modellliste des Anbieters (zwischengespeichert). None = unbekannt, dann keine Anpassung."""
-    if model not in _durations_cache:
+    """Erlaubte Dauern laut Modellliste des Anbieters. None = unbekannt, dann keine Anpassung."""
+    return _durations_cache.get(model) if _load_models(model) else None
+
+
+def fit_aspect(model: str, wanted: str) -> str:
+    """Format, das das Modell kann und dem gewünschten am nächsten kommt (bei Gleichstand das breitere). Unbekannt →
+    unverändert."""
+    allowed = _aspects_cache.get(model) if _load_models(model) else None
+    if not allowed or wanted in allowed:
+        return wanted
+
+    def ratio(v: str) -> float:
+        a, _, b = v.partition(":")
         try:
-            with httpx.Client(timeout=30.0) as c:
-                data = c.get(MODELS_URL, headers={"Authorization": f"Bearer {_key()}"}).json().get("data") or []
-            for m in data:
-                d = m.get("supported_durations")
-                values = sorted({int(x) for x in d if isinstance(x, int)}) if isinstance(d, list) else []
-                _durations_cache[m.get("id")] = values or None
-            _durations_cache.setdefault(model, None)                 # unbekanntes Modell nicht jedes Mal neu fragen
-        except (httpx.HTTPError, ValueError, ProviderError, AttributeError) as e:
-            logger.info("Studio-Video: Modellliste nicht lesbar (%s) – Dauer bleibt unverändert", e)
-            return None
-    return _durations_cache.get(model)
+            return float(a) / float(b)
+        except (ValueError, ZeroDivisionError):
+            return 0.0
+    w = ratio(wanted)
+    fit = [x for x in allowed if ratio(x) > 0]
+    if not w or not fit:
+        return wanted
+    return min(fit, key=lambda x: (abs(math.log(ratio(x) / w)), -ratio(x)))
 
 
 def nearest(duration: int, allowed: list[int] | None) -> int:

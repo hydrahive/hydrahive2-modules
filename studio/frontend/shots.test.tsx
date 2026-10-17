@@ -46,7 +46,7 @@ describe("Studio 2b – Shots", () => {
     expect(out.match(/<button[^>]*data-storyboard-decompose[^>]*>/)?.[0]).toContain(' disabled=""')
     expect(out).toContain("decompose_running")
     const empty = html(<StoryboardPanel scene={{ ...SCENE, shots: [] }} base="/w" selected={null} busy={null} {...SB} />)
-    expect(empty).toContain("storyboard_no_shots")
+    expect(empty).toContain("data-storyboard-empty")
     expect(empty).toContain("data-storyboard-decompose")
     expect(html(<StoryboardPanel scene={null} base="/w" selected={null} busy={null} {...SB} />)).not.toContain("data-storyboard-decompose")
   })

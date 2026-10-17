@@ -31,7 +31,13 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
         {scene && scene.shots.length > 0 && <span className="shrink-0 text-[#68758a]" data-storyboard-duration>{t("scene_duration", { seconds: sceneDuration(scene) })}</span>}
         <span className="ml-auto" />
         {batchMenu}
-        {scene && (
+        {scene && scene.shots.length > 0 && (
+          <button type="button" onClick={onAdd} disabled={running} data-storyboard-add-bar title={t("add_shot")}
+            className="flex shrink-0 items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-0.5 font-bold text-[#c3ccdd] hover:bg-[#1c2940] disabled:opacity-50">
+            <Plus size={12} /> {t("add_shot_short")}
+          </button>
+        )}
+        {scene && scene.shots.length > 0 && (
           <button type="button" onClick={onDecompose} disabled={running} data-storyboard-decompose title={t("decompose_hint")}
             className="flex shrink-0 items-center gap-1.5 rounded-[4px] border border-[#46617f] px-2 py-0.5 font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
             {running ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} {running ? t("decompose_running") : t("decompose")}
@@ -40,7 +46,12 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
       </div>
       {!scene ? <p className="p-3 text-xs text-[#68758a]">{t("storyboard_pick_scene")}</p> : (
         <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-3">
-          {!scene.shots.length && <p className="max-w-sm self-center text-xs leading-relaxed text-[#68758a]">{t("storyboard_no_shots")}</p>}
+          {!scene.shots.length && (
+            <div className="flex flex-wrap items-stretch gap-3 self-center" data-storyboard-empty>
+              <EmptyWay icon={<Sparkles size={14} />} label={t("shots_ai")} hint={t("shots_ai_hint")} onClick={onDecompose} disabled={running} primary busy={running} marker="decompose" />
+              <EmptyWay icon={<Plus size={14} />} label={t("shots_self")} hint={t("shots_self_hint")} onClick={onAdd} disabled={running} marker="add" />
+            </div>
+          )}
           {scene.shots.map((s, i) => {
             const img = fileOf(base, s.image_rel)
             return (
@@ -72,12 +83,30 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
               </div>
             )
           })}
-          <button type="button" onClick={onAdd} disabled={running} data-storyboard-add title={t("add_shot")} aria-label={t("add_shot")}
-            className="grid w-24 shrink-0 place-items-center rounded-[4px] border border-dashed border-[#2a364b] text-[#68758a] hover:text-[#e8eef8] disabled:opacity-40">
-            <Plus size={18} />
-          </button>
+          {scene.shots.length > 0 && (
+            <button type="button" onClick={onAdd} disabled={running} data-storyboard-add title={t("add_shot")} aria-label={t("add_shot")}
+              className="grid w-24 shrink-0 place-items-center rounded-[4px] border border-dashed border-[#2a364b] text-[#68758a] hover:text-[#e8eef8] disabled:opacity-40">
+              <Plus size={18} />
+            </button>
+          )}
         </div>
       )}
     </section>
+  )
+}
+
+function EmptyWay({ icon, label, hint, onClick, disabled, primary = false, busy = false, marker }: {
+  icon: React.ReactNode; label: string; hint: string; onClick: () => void; disabled: boolean; primary?: boolean; busy?: boolean
+  /** gleiche Kennung wie der kleine Knopf (alte Tests, Befehle) */
+  marker: "add" | "decompose"
+}) {
+  return (
+    <div className={`flex w-60 flex-col gap-1.5 rounded-[6px] border p-3 ${primary ? "border-[#69d7ff]/50 bg-[#69d7ff]/5" : "border-[#2a364b]"}`}>
+      <button type="button" onClick={onClick} disabled={disabled} {...(marker === "add" ? { "data-storyboard-add": true } : { "data-storyboard-decompose": true })}
+        className={`flex items-center justify-center gap-1.5 rounded-[4px] px-3 py-1.5 text-xs font-black disabled:opacity-50 ${primary ? "bg-[#69d7ff] text-[#08111c]" : "border border-[#69d7ff] text-[#69d7ff] hover:bg-[#1c2940]"}`}>
+        {busy ? <Loader2 size={14} className="animate-spin" /> : icon} {label}
+      </button>
+      <span className="text-[11px] leading-relaxed text-[#8d9ab0]">{hint}</span>
+    </div>
   )
 }

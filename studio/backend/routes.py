@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.projects._config_io import list_for_user
 
-from . import library
+from . import library, overview
 from ._guard import guard
 from .plan_routes import router as plan_router
 from .shot_routes import router as shot_router
@@ -31,6 +31,12 @@ def list_projects(auth: Auth) -> dict:
 async def get_library(project_id: str, auth: Auth) -> dict:
     guard(auth[0], project_id)
     return await asyncio.to_thread(library.list_items, project_id)
+
+
+@router.get("/projects/{project_id}/overview")
+def get_overview(project_id: str, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    return overview.overview(project_id)
 
 
 router.include_router(plan_router)

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { studioApi, type LibraryItem, type StudioProject } from "./api"
+import { latestOnly } from "./latestOnly"
 import { PROJECT_KEY, pickProject } from "./libraryView"
 
 function remembered(): string | null {
@@ -16,6 +17,7 @@ export function useLibrary() {
   const [truncated, setTruncated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [guard] = useState(latestOnly)
 
   useEffect(() => {
     let alive = true
@@ -30,12 +32,13 @@ export function useLibrary() {
     if (!pid) { setItems([]); return }
     setLoading(true); setError(null)
     try {
-      const r = await studioApi.library(pid)
-      setItems(r.items); setTruncated(r.truncated)
+      const r = await guard.run(pid, () => studioApi.library(pid))
+      if (!r.current) return
+      setItems(r.value.items); setTruncated(r.value.truncated); setLoading(false)
     } catch (e) {
-      setItems([]); setError(e instanceof Error ? e.message : t("load_failed"))
-    } finally { setLoading(false) }
-  }, [t])
+      setItems([]); setError(e instanceof Error ? e.message : t("load_failed")); setLoading(false)
+    }
+  }, [t, guard])
 
   useEffect(() => {
     const first = window.setTimeout(() => { void load(projectId) }, 0)

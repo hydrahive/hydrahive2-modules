@@ -21,7 +21,8 @@ import { MediaInfo } from "./MediaInfo"
 import { ShotList } from "./ShotList"
 import { LibraryPanel } from "./LibraryPanel"
 import { PlanInspector } from "./PlanInspector"
-import { PlanPreview } from "./PlanPreview"
+import { PlanCenter } from "./PlanCenter"
+import { ProgressBar } from "./ProgressBar"
 import { PlanSidebar } from "./PlanSidebar"
 import { PreviewPanel } from "./PreviewPanel"
 import { Splitter } from "./Splitter"
@@ -34,6 +35,8 @@ import { useBatch } from "./useBatch"
 import { useCut } from "./useCut"
 import { useCutEdit } from "./useCutEdit"
 import { useCutPlayer } from "./useCutPlayer"
+import { useGuide } from "./useGuide"
+import { WorkspaceIntro } from "./WorkspaceIntro"
 import { useJobs } from "./useJobs"
 import { useShots } from "./useShots"
 import { useStudioState } from "./useStudioState"
@@ -45,7 +48,9 @@ const toastCls = "pointer-events-none fixed bottom-6 left-1/2 z-[80] -translate-
 export function StudioPage() {
   const { t } = useTranslation("studio")
   const lib = useLibrary()
-  const [workspace, setWorkspace] = useState<Workspace>("edit")
+  const [workspace, setWorkspace] = useState<Workspace>("plan")
+  const [stamp, setStamp] = useState("")                        // Drehbuch/Schnitt geändert → Fortschritt neu
+  const guide = useGuide(lib.projectId, workspace, setWorkspace, stamp)
   const cut = useCut(lib.projectId, workspace === "edit")
   const cp = useCutPlayer(cut.clips)
   const ed = useCutEdit(lib.projectId, cut.timeline, cut.setTimeline, cut.selected, cut.select, cp.time)
@@ -61,9 +66,11 @@ export function StudioPage() {
   const cutting = s.workspace === "edit" && !s.item
   const soon = s.workspace === "audio" || s.workspace === "subtitles" || s.workspace === "deliver" ? s.workspace : null
   const p = usePlan(lib.projectId, shotsWs)
+  const nextStamp = `${p.rev}:${cut.timeline?.revision ?? ""}:${cut.clips.length}`
+  if (nextStamp !== stamp) setStamp(nextStamp)                   // beim Rendern abgeglichen, kein Effect nötig
   const plan = { ...p, select: (x: Parameters<typeof p.select>[0]) => { s.clearMedia(); p.select(x) } }   // Auswahl im Drehbuch löst das Medium ab
   const library = <LibraryPanel items={lib.items} loading={lib.loading} error={lib.error} truncated={lib.truncated} selected={s.mediaId} onSelect={s.selectMedia} />
-  const jobs = useJobs(lib.projectId, shotsWs, () => { void p.reload(); void lib.reload() })   // fertig → Shot + Bibliothek neu
+  const jobs = useJobs(lib.projectId, shotsWs, () => { void p.reload(); void lib.reload(); void guide.reload() })   // fertig → Shot + Bibliothek + Fortschritt neu
   const sh = useShots(plan, lib.projectId, () => void jobs.reload())
   const bt = useBatch(plan, lib.projectId, jobs.jobs, () => void jobs.reload())
   const scene = sh.scene
@@ -72,15 +79,17 @@ export function StudioPage() {
     s.setWorkspace("plan")
     p.select({ kind: "shot", sceneId: c.scene_id, id: c.shot_id })
   }
-  const reload = () => { void lib.reload(); if (shotsWs) void p.reload(); if (s.workspace === "edit") void cut.reload() }
+  const reload = () => { void lib.reload(); void guide.reload(); if (shotsWs) void p.reload(); if (s.workspace === "edit") void cut.reload() }
   const selShot = p.selection?.kind === "shot" ? p.selection : null
   return (
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
       <CockpitTopbar active="/studio" context={t("title")} />
-      <div className="flex min-h-0 flex-1 flex-col text-[#e8eef8]" data-studio-root data-studio-ws={s.workspace}>
+      <div className="relative flex min-h-0 flex-1 flex-col text-[#e8eef8]" data-studio-root data-studio-ws={s.workspace}>
         <StudioHeader projects={lib.projects} projectId={lib.projectId} onProject={lib.setProjectId} onReload={reload}
           workspace={s.workspace} onWorkspace={s.setWorkspace} onCommand={() => s.setDialog("command")} onHelp={() => s.setDialog("help")} running={jobs.running}
-          batch={shotsWs && bt.active ? <BatchStatus job={bt.active} cancelling={bt.cancelling} onCancel={bt.cancel} /> : undefined} />
+          batch={shotsWs && bt.active ? <BatchStatus job={bt.active} cancelling={bt.cancelling} onCancel={bt.cancel} /> : undefined}
+          progress={<ProgressBar overview={guide.overview} onGo={s.setWorkspace} />} />
+        <WorkspaceIntro workspace={s.workspace} open={guide.introOpen} onToggle={guide.toggleIntro} />
         <div className="flex min-h-0 flex-col" style={{ flex: `${100 - s.layout.timeline} 1 0` }}>
           <div className="flex min-h-0 flex-1">
             <div className="min-w-0 border-r border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.library}%` }}>
@@ -92,7 +101,8 @@ export function StudioPage() {
             <Splitter dir="x" label={t("resize_library")} onDrag={(d) => s.drag("library", d)} />
             <div className="min-w-0 flex-1">
               {shotsWs && !s.item
-                ? <div className="flex h-full min-h-0 items-center justify-center p-3" data-studio-panel="preview"><PlanPreview plan={p.plan} selection={p.selection} /></div>
+                ? <PlanCenter plan={p.plan} selection={p.selection} atelier={!!guide.overview?.atelier} busy={p.busy}
+                    onStart={() => void p.addScene()} onImport={() => p.setDialog({ kind: "import" })} onHead={() => plan.select({ kind: "head" })} />
                 : cutting ? <CutPreview clips={cut.clips} base={cut.timeline?.base ?? ""} fps={cut.timeline?.fps ?? 25} time={cp.time} total={cp.total}
                     playing={cp.playing} current={cp.current} onSeek={cp.seek} onPlay={cp.toggle} bindVideo={cp.bindVideo} />
                 : <PreviewPanel item={s.item} bind={s.player.bind} time={s.item ? s.player.time : 0} duration={s.player.duration}
@@ -126,7 +136,7 @@ export function StudioPage() {
                   onSelect={(id) => { s.clearMedia(); cut.select(id); const c = cut.clips.find((x) => x.id === id); if (c) cp.seek(c.start) }} />
             : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
         </div>
-        {s.dialog === "help" && <ShortcutHelp onClose={() => s.setDialog(null)} />}
+        {s.dialog === "help" && <ShortcutHelp onClose={() => s.setDialog(null)} onGo={s.setWorkspace} />}
         {s.dialog === "command" && <CommandPalette onClose={() => s.setDialog(null)} onRun={s.run} />}
         {p.dialog?.kind === "import" && p.preview && <ImportDialog preview={p.preview} busy={p.busy} onRun={() => void p.runImport()} onClose={() => p.setDialog(null)} />}
         {bt.dialog && <BatchDialog kind={bt.dialog.kind} preview={bt.dialog.preview} busy={p.busy} onRun={() => void bt.run()} onClose={bt.close} />}
