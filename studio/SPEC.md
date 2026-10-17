@@ -362,6 +362,98 @@ die der Anbieter für den Auftrag nennt.
 eine OpenRouter-kompatible Bild- bzw. Video-Schnittstelle nachstellt (Adresse über die Kern-Einstellung, falls es sie
 gibt; sonst nur Tests).
 
+## Bauplan Etappe 4 – Schneiden (17.10.)
+
+**Ist-Stand:** Die Zeitleiste im Studio ist noch eine Attrappe (`demoData.ts`, Hinweis „Beispiel“). Zoom, Übersichtsleiste,
+Zeitmarken, Abspielkopf und die Tastenkürzel-Tabelle gibt es schon (`timeline.ts`, `shortcuts.ts`). Die Bausteine
+existieren also: Shots mit Bild bzw. Video und Dauer, Medien in der Bibliothek (Studio-Videos mit `duration`). `ffmpeg`
+ist auf jedem Server da, weil Installer und Update es einrichten. Vorbilder: Video-Editor (Proxy, Filmstreifen,
+Wellenform) und Kern-Videoschnitt (Abspielen über mehrere Clips). Beides dient nur als Vorlage: eigene Kopien mit
+Herkunftsangabe, kein Import über Modulgrenzen.
+
+Wie in Etappe 3 gibt es Schritte. Nach jedem ist etwas Sichtbares fertig:
+
+| Schritt | Inhalt | danach kann man |
+|---|---|---|
+| **4a** | Schnittfassung als Projektdaten, „Aus dem Drehbuch übernehmen“, echte Zeitleiste im Reiter „Schneiden“, Abspielen des ganzen Films in der Vorschau | den Film zum ersten Mal am Stück ansehen |
+| **4b** | Bearbeiten: verschieben, trimmen, teilen (S/Q/W), löschen, verdoppeln, Einrasten, Rückgängig/Wiederholen, Clips aus der Bibliothek auf die Zeitleiste ziehen, automatisch speichern | den Film wirklich schneiden |
+| **4c** | Proxies für große Videos (z. B. Uploads aus dem Video-Editor) und Filmstreifen-Vorschau in den Clips | auch lange Videos flüssig schneiden |
+
+**4a im Detail**
+
+- **Daten:** Datei `studio/timelines/main.json` (eine Schnittfassung je Projekt; mehrere kommen später, deshalb ein
+  Ordner). Die Datei enthält:
+  - `revision` (Zähler)
+  - `fps` (Standard 25)
+  - `tracks`: in 4a eine Videospur `V1`. Der Originalton der Videos gehört zum Clip. Eigene Tonspuren kommen in
+    Etappe 5, Text und Untertitel in Etappe 6.
+  - Je Clip:
+    - `id`
+    - `kind` (`video` | `image` | `placeholder`)
+    - `start` (Sekunden auf der Zeitleiste)
+    - `in`/`out` (Ausschnitt aus dem Medium; bei Bildern 0 bis Dauer)
+    - `media_rel` (Pfad relativ zum Projekt, bei Platzhaltern leer)
+    - `scene_id`/`shot_id` (Herkunft aus dem Drehbuch, sonst leer)
+    - `label`
+  - Atomar geschrieben, wie die anderen Studio-Daten.
+- **API:**
+  - `GET …/timeline`: liefert die Schnittfassung. Ohne Datei kommt eine leere Fassung zurück; dabei wird nichts
+    angelegt.
+  - `PUT …/timeline`: speichert die ganze Fassung mit der bisherigen `revision`. Weicht sie ab (anderer Tab), kommt
+    409 `studio_timeline_conflict`.
+  - `POST …/timeline/from-plan`: baut V1 aus dem Drehbuch.
+- **Prüfung beim Speichern:**
+  - `media_rel` muss eine vorhandene Datei im Projekt mit erlaubter Endung sein, ohne Symlink und ohne `..`.
+    Geprüft wird wie in 2a.
+  - Zahlen müssen endlich und ≥ 0 sein, `in < out`.
+  - Höchstens 2.000 Clips, höchstens 4 Stunden (Konstanten im Modul).
+  - Unbekannte Felder werden verworfen.
+- **„Aus dem Drehbuch übernehmen“:**
+  - Alle Shots in Drehbuch-Reihenfolge werden lückenlos hintereinander gelegt:
+    - Shot mit Video → Videoclip (ganze Länge des Videos)
+    - nur mit Bild → Standbild mit der Dauer des Shots
+    - ohne beides → Platzhalter mit der Dauer des Shots
+  - Ist V1 nicht leer, fragt vorher ein eigener Dialog nach: „Ersetzen“ oder „Abbrechen“. Es gibt kein Browser-Popup.
+- **Oberfläche, Reiter „Schneiden“:**
+  - Die Zeitleiste zeigt die echte Fassung, der Hinweis „Beispiel“ entfällt. Übersichtsleiste, Zoom und Zeitmarken
+    rechnen mit der echten Filmlänge.
+  - Leere Fassung: Hinweis mit Knopf „Aus dem Drehbuch übernehmen“.
+  - Ein Klick auf einen Clip wählt ihn aus. Rechts erscheinen Art, Quelle, Start, Länge und Shot.
+  - Bei Platzhaltern steht dort der Knopf „Im Planen erzeugen“, der direkt zum Shot springt.
+- **Abspielen:**
+  - Die Vorschau spielt den Film über alle Clips hinweg ab:
+    - Videos ab `in`
+    - Bilder als Standbild
+    - Platzhalter als Karte mit dem Shot-Text
+    - Lücken schwarz
+  - Eine eigene Uhr (`requestAnimationFrame`) führt. Der nächste Videoclip wird in einem zweiten `<video>`
+    vorgeladen, damit es beim Wechsel nicht ruckelt.
+  - Leertaste/K, J/L, ←/→, Pos1/Ende und der Zeitcode wirken auf den Film. Klick in die Zeitleiste setzt den
+    Abspielkopf.
+- **Nicht in 4a:** Bearbeiten (4b), Proxies (4c), Ton- und Textspuren, Übergänge und Export (Etappe 7, siehe offene
+  Entscheidung).
+
+**Tests 4a:**
+
+Backend:
+- leere Fassung ohne Anlegen
+- Speichern und Laden
+- `revision`-Konflikt
+- jede Prüfregel einzeln
+- Übernahme aus dem Drehbuch mit allen drei Clip-Arten, Reihenfolge und Dauer
+- nur Projektmitglieder
+
+Frontend:
+- Clip-Lage und Länge
+- Abspiel-Logik als reine Funktion: welcher Clip bei t, Zeit im Medium, nächster Clip
+- Dialog „Ersetzen“
+- Platzhalter-Knopf
+
+hydratest-E2E im Testprojekt:
+- übernehmen, abspielen über einen Clipwechsel hinweg (Bild → Video)
+- Neuladen
+- 1600 und 1280 px
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
@@ -373,6 +465,12 @@ gibt; sonst nur Tests).
   falls Code oder Prompts übernommen werden.
 
 ## Offene Punkte (Till)
+
+- **Etappe 4 (17.10.), offen:** (1) Aufteilung 4a/4b/4c so? (2) Eine schlichte Filmausgabe als MP4 (Format aus dem
+  Drehbuch, Originalton, im Hintergrund, Ergebnis in der Bibliothek) als **4d** vorziehen, damit das erste Filmchen
+  schon nach Etappe 4 als Datei da ist? Die volle Ausgabe mit Vorlagen und Warteschlange bliebe Etappe 7.
+  (3) Shots, die nur ein Bild haben, als Standbild auf die Zeitleiste (Vorschlag) oder als Platzhalter? (4) Zunächst
+  eine Schnittfassung je Projekt?
 
 - ~~Name im Menü~~ → **„Studio“** (Till, 15.10.).
 - ~~Reihenfolge~~ → **Ablauf einer Produktion** (Till, 15.10.): Entwicklung/Vorproduktion → Produktion → Postproduktion →
