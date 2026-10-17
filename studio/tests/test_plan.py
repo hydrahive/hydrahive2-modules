@@ -15,6 +15,7 @@ def test_empty_plan_without_creating_anything(client, auth_headers, ws) -> None:
     assert body["screenplay"]["title"] == "" and body["screenplay"]["scene_order"] == []
     assert body["scenes"] == [] and body["elements"] == []
     assert body["presets"]["shot"][:3] == ["extreme_closeup", "closeup", "medium"]
+    assert body["base"] == str(ws)                                     # Projektordner für Bild-Adressen (wie `abs` der Bibliothek)
     assert not (ws / "studio").exists()                                # Lesen legt nichts an
 
 
