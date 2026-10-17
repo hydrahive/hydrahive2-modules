@@ -92,3 +92,13 @@ describe("Alte Shots ohne Varianten (vor 3a)", () => {
     expect(attr(out, "data-shot-variant")).toEqual(["atelier/images/x.png"])
   })
 })
+
+import { PlanSidebar } from "./PlanSidebar"
+
+describe("Planen, links: eindeutige Bereichs-Kennung", () => {
+  it("Seitenleiste heißt „sidebar“, die Bibliothek darin bleibt „library“ – nie zweimal dieselbe", () => {
+    const p = { plan: null, preview: null, selection: null, select: noop, error: null } as unknown as Parameters<typeof PlanSidebar>[0]["p"]
+    const out = html(<PlanSidebar p={p} library={<section data-studio-panel="library" />} />)
+    expect(attr(out, "data-studio-panel")).toEqual(["sidebar"])
+  })
+})

@@ -9,7 +9,7 @@ export function PlanSidebar({ p, library }: { p: PlanState; library: React.React
   const { t } = useTranslation("studio")
   const [tab, setTab] = useState<"outline" | "library">("outline")
   return (
-    <section className="flex h-full min-h-0 flex-col" data-studio-panel="library">
+    <section className="flex h-full min-h-0 flex-col" data-studio-panel="sidebar">
       <div className="flex gap-1 border-b border-[#2a364b] px-2 pt-2" role="tablist">
         {(["outline", "library"] as const).map((k) => (
           <button key={k} type="button" role="tab" aria-selected={tab === k} data-plan-tab={k} onClick={() => setTab(k)}
