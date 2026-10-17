@@ -40,7 +40,7 @@ def _scenes(client, h, n: int, shots_per: int = 0) -> list[dict]:
 
 def test_preview_counts_and_model(client, auth_headers, ws, monkeypatch) -> None:
     monkeypatch.setattr("backend.image_provider.server_default_model", lambda: "server/bild")
-    a, b = _scenes(client, auth_headers, 2, shots_per=2)
+    a, _ = _scenes(client, auth_headers, 2, shots_per=2)
     _scenes(client, auth_headers, 1)                                         # Szene ohne Shots
     from backend import shots as shots_mod
     scene = shots_mod.load_scene(PROJECT_ID, a["id"])
@@ -67,7 +67,7 @@ def test_images_all_skips_finished_and_counts_failures(client, auth_headers, ws,
             raise ProviderError("provider_rejected")
         return PNG
     monkeypatch.setattr("backend.image_provider.request_image", provider)
-    a, b = _scenes(client, auth_headers, 2, shots_per=2)
+    a, _ = _scenes(client, auth_headers, 2, shots_per=2)
     from backend import shots as shots_mod
     scene = shots_mod.load_scene(PROJECT_ID, a["id"])
     (ws / "bilder").mkdir(exist_ok=True)
@@ -141,7 +141,7 @@ def test_nothing_to_do(client, auth_headers, ws, monkeypatch) -> None:
 
 def test_progress_shows_current_step(client, auth_headers, ws, monkeypatch) -> None:
     monkeypatch.setattr("backend.image_provider.request_image", FakeProvider(delay=0.4))
-    sc, = _scenes(client, auth_headers, 1, shots_per=2)
+    _scenes(client, auth_headers, 1, shots_per=2)
     r = client.post(f"{P}/batch/images_all", headers=auth_headers, json={})
     time.sleep(0.15)
     j = {x["id"]: x for x in client.get(f"{P}/jobs", headers=auth_headers).json()["jobs"]}[r.json()["id"]]
