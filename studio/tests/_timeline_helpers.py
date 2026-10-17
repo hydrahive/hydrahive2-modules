@@ -31,3 +31,19 @@ def _put(client, h, clips: list[dict], revision: int = 0, **extra):
 
 def _code(r) -> str:
     return f"{r.status_code} {r.json().get('detail', {}).get('code')}"
+
+
+def _shots(client, h, ws, layout: list[list[dict]]) -> list[dict]:
+    """Szenen mit Shots anlegen; image_rel/video_rel wie nach dem Erzeugen direkt in die Szenen-Datei schreiben."""
+    out = []
+    for n, shots in enumerate(layout, start=1):
+        sc = client.post(f"{P}/scenes", headers=h, json={"title": f"Szene {n}"}).json()
+        for s in shots:
+            client.post(f"{P}/scenes/{sc['id']}/shots", headers=h, json={"prompt": s.get("prompt", ""), "duration": s["duration"]})
+        f = ws / "studio/scenes" / f"{sc['id']}.json"
+        data = json.loads(f.read_text())
+        for raw, s in zip(data["shots"], shots):
+            raw["image_rel"], raw["video_rel"] = s.get("image"), s.get("video")
+        f.write_text(json.dumps(data))
+        out.append({**sc, "shots": data["shots"]})
+    return out
