@@ -15,7 +15,6 @@ export function StudioHeader({ workspace, onWorkspace, onCommand, onHelp }: Prop
   const { t } = useTranslation("studio")
   return (
     <header className="flex h-11 shrink-0 items-center gap-3 border-b border-[#2a364b] bg-[#0d1420] px-3">
-      <span className="text-sm font-black tracking-tight text-[#e8eef8]">{t("title")}</span>
       <select className="rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1 text-xs text-[#c3ccdd]" aria-label={t("project")}>
         <option>Nordwind (Beispiel)</option>
       </select>

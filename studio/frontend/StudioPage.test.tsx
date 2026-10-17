@@ -27,6 +27,13 @@ describe("Studio-Attrappe (Etappe 0)", () => {
     expect(out).toContain("mockup_banner")
   })
 
+  it("Hauptmenü von HydraHive bleibt oben (Till, 15.10.): Kern-Kopfleiste vor der Studio-Leiste", () => {
+    const out = renderToStaticMarkup(<StudioPage />)
+    const top = out.indexOf('href="/buddy"') >= 0 ? out.indexOf('href="/buddy"') : out.search(/Buddy|Projekte/)
+    expect(top).toBeGreaterThanOrEqual(0)
+    expect(top).toBeLessThan(out.indexOf("data-studio-root"))
+  })
+
   it("Zeitleiste: Übersicht, Spuren aller Arten, Platzhalter-Clip erkennbar", () => {
     const out = renderToStaticMarkup(<TimelinePanel time={8} view={{ start: 0, span: 40 }} snap selected={null} focus="all"
       onView={noop} onSeek={noop} onSelect={noop} onSnap={noop} />)
