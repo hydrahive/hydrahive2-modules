@@ -101,14 +101,16 @@ def test_each_rule_rejects_the_whole_timeline(client, auth_headers, ws, tmp_path
         "in negativ": _clip(kind="video", media_rel=vid, **{"in": -1}),
         "in = out": _clip(media_rel=img, **{"in": 2, "out": 2}),
         "Text statt Zahl": _clip(media_rel=img, start="1"),
+        "Wahrheitswert statt Zahl": _clip(media_rel=img, start=True),
         "über 4 Stunden": _clip(media_rel=img, start=4 * 3600 - 1, out=2),
     }
     for name, clip in bad.items():
         r = _put(client, auth_headers, [clip])
         assert _code(r) == "400 studio_timeline_invalid", name
-    raw = json.dumps({"revision": 0, "tracks": [{"clips": [_clip(media_rel=img, out=12345)]}]}).replace("12345", "1e999")
-    r = client.put(T, headers={**auth_headers, "Content-Type": "application/json"}, content=raw)   # „unendlich“ als rohes JSON
-    assert _code(r) == "400 studio_timeline_invalid"
+    for field, bad_num in (("out", "1e999"), ("in", "NaN"), ("start", "NaN"), ("out", "NaN")):   # nur als rohes JSON möglich
+        raw = json.dumps({"revision": 0, "tracks": [{"clips": [_clip(media_rel=img, **{field: 12345})]}]}).replace("12345", bad_num)
+        r = client.put(T, headers={**auth_headers, "Content-Type": "application/json"}, content=raw)
+        assert _code(r) == "400 studio_timeline_invalid", f"{field}={bad_num}"
     too_many = [_clip(id=f"{i:032x}", media_rel=img, start=i, out=1) for i in range(2001)]
     assert _code(_put(client, auth_headers, too_many)) == "400 studio_timeline_invalid"
     assert _code(client.put(T, headers=auth_headers, json={"revision": 0, "tracks": "x"})) == "400 studio_timeline_invalid"
@@ -188,3 +190,34 @@ def test_only_members(client, other_headers, ws) -> None:
     assert _code(client.get(T, headers=other_headers)) == "404 studio_project_not_found"
     assert _code(client.put(T, headers=other_headers, json={"revision": 0, "tracks": []})) == "404 studio_project_not_found"
     assert _code(client.post(f"{T}/from-plan", headers=other_headers, json={})) == "404 studio_project_not_found"
+
+
+def test_deleted_media_becomes_placeholder_and_nothing_else_is_lost(client, auth_headers, ws) -> None:
+    img = _media(ws, "images", "a.png", PNG)
+    vid = _media(ws, "videos", "b.mp4", MP4)
+    r = _put(client, auth_headers, [
+        _clip(id="1" * 32, kind="video", media_rel=vid, start=0, out=4, label="Hafen", shot_id="2" * 32),
+        _clip(id="3" * 32, media_rel=img, start=4, out=3),
+    ])
+    assert r.status_code == 200
+    (ws / vid).unlink()                                                  # Video später gelöscht
+    tl = client.get(T, headers=auth_headers).json()
+    assert tl["revision"] == 1
+    a, b = tl["tracks"][0]["clips"]
+    assert a == {"id": "1" * 32, "kind": "placeholder", "start": 0, "in": 0, "out": 4, "media_rel": "", "scene_id": "",
+                 "shot_id": "2" * 32, "label": "Hafen", "missing": True}
+    assert b["kind"] == "image" and b["media_rel"] == img and "missing" not in b
+    assert _put(client, auth_headers, tl["tracks"][0]["clips"], 1).status_code == 200   # lässt sich so wieder speichern
+    assert client.get(T, headers=auth_headers).json()["tracks"][0]["clips"][0]["missing"] is True
+
+
+def test_single_broken_clip_in_file_is_skipped(client, auth_headers, ws) -> None:
+    img = _media(ws, "images", "a.png", PNG)
+    (ws / "studio/timelines").mkdir(parents=True)
+    good = _clip(id="1" * 32, media_rel=img, out=3)
+    (ws / "studio/timelines/main.json").write_text(json.dumps({"revision": 7, "fps": 25, "tracks": [{"id": "V1", "clips": [
+        good, {"kind": "video", "start": "x"}, "Unsinn", _clip(id="2" * 32, kind="placeholder", start=3, out=2)]}]}))
+    tl = client.get(T, headers=auth_headers).json()
+    assert tl["revision"] == 7
+    assert [c["id"] for c in tl["tracks"][0]["clips"]] == ["1" * 32, "2" * 32]
+    assert all("missing" not in c for c in tl["tracks"][0]["clips"])

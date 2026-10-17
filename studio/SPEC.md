@@ -415,6 +415,9 @@ Wie in Etappe 3 gibt es Schritte. Nach jedem ist etwas Sichtbares fertig:
   - 409 `studio_timeline_conflict`: `revision` passt nicht.
   - 409 `studio_timeline_not_empty`: Übernahme ohne `replace`, obwohl V1 Clips hat.
   - 400 `studio_timeline_no_shots`: Das Drehbuch hat keine Shots.
+- **Medium später gelöscht:** Beim Laden wird ein Clip, dessen Datei fehlt, zum Platzhalter mit `missing: true`.
+  Start, Länge, Shot und Name bleiben erhalten. Die Oberfläche zeigt „Medium fehlt“. Der Rest der Fassung bleibt
+  unberührt. Einzelne kaputte Clips in der Datei werden beim Laden übersprungen, die Fassung bleibt lesbar.
 - **Länge eines Videos** bei der Übernahme: `duration` aus der Begleitdatei des Videos (schreibt 3b mit), sonst die Dauer
   des Shots. Fehlt die Videodatei, wird der Shot als Standbild bzw. Platzhalter übernommen.
 - **„Aus dem Drehbuch übernehmen“:**
