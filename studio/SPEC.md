@@ -253,6 +253,47 @@ der Standard. Läuft im Hintergrund nur so lange wie die Anfrage dauert (kein ei
 - **2a:** Daten, Übernahme, Kopf/Szenen/Bausteine (Backend + Frontend).
 - **2b:** Shots bearbeiten, Storyboard echt, Regie-Agent.
 
+### Bauplan 2b – Shots und Regie-Agent (17.10.)
+
+**Stand nach 2a:** Shots liegen in `scenes/<id>.json` → `shots[]` und werden im Storyboard angezeigt. Bearbeiten lassen
+sie sich noch nicht. Der Regie-Agent des Ateliers (`atelier/backend/director.py`) ist das Vorbild.
+
+**Backend** (neue Datei `backend/shots.py`, Routen in `backend/shot_routes.py`, alles mit Mitgliedschaftsprüfung):
+- `POST …/plan/scenes/{sid}/shots`: neuer Shot am Ende der Szene. Standarddauer aus dem Kopf (`default_duration`),
+  Status `planned`.
+- `PUT …/plan/scenes/{sid}/shots/{id}`: Kamera (`shot`), Beschreibung (`prompt`), Bausteine, Dauer. Status und
+  Mediendateien (`image_rel`, `video_rel`) ändert nur das Erzeugen (Etappe 3), nicht dieses Formular.
+- `DELETE …/plan/scenes/{sid}/shots/{id}`.
+- `PUT …/plan/scenes/{sid}/shots/order` mit `{shot_ids: [...]}` setzt die Reihenfolge. Unbekannte IDs fallen weg,
+  fehlende kommen hinten an.
+- Bausteine eines Shots: nur die der Szene (`element_ids` der Szene). Prüfung wie in 2a; Längen bleiben gleich.
+- `POST …/plan/scenes/{sid}/decompose` (**Regie-Agent**):
+  - Szene → 2–5 Shots per LLM.
+  - Prompt nach dem Vorbild des Atelier-Regieagenten: eigene Kopie im Studio, kein Import über die Modulgrenze.
+    Erlaubt sind nur die Shot-Arten aus den Vorgaben und nur die Bausteine der Szene. Der Look aus dem Kopf und das
+    Aussehen der Bausteine kommen in den Kontext.
+  - Modell: `models.text` aus dem Kopf, sonst der Standard des Servers (`llm_client.complete(model=None)`).
+  - **Ersetzt** die Shots der Szene nur bei Erfolg. Bei LLM-Fehler oder unbrauchbarer Antwort bleiben die alten Shots,
+    und die Antwort ist 502 `studio_decompose_failed` mit klarer Meldung.
+  - Shots mit Bild oder Video gehen beim Ersetzen nicht stillschweigend verloren: Hat die Szene schon Shots mit
+    Medien, ist die Antwort 409 `studio_decompose_has_media`. Das Frontend fragt dann in einem eigenen Dialog nach und
+    schickt `{"replace": true}`. Die Mediendateien selbst bleiben in der Bibliothek.
+  - Gleichzeitig nur eine Zerlegung je Projekt (409 `studio_decompose_busy`), damit Doppelklicks keine doppelten
+    LLM-Kosten erzeugen.
+- „Alle Szenen zerlegen“ kommt **nicht** in 2b. Das sind viele LLM-Aufrufe am Stück; besser als Auftrag in Etappe 3.
+
+**Frontend:**
+- Storyboard: Karte anklicken → Shot-Formular rechts (Kamera, Beschreibung, Bausteine der Szene, Dauer, Speichern,
+  Löschen über Dialog). Pfeile ←/→ auf der Karte ändern die Reihenfolge. „+“ legt einen neuen Shot an.
+- Knopf „In Shots zerlegen“ in der Storyboard-Leiste. Er zeigt beim Arbeiten einen Ladezustand und ist dann gesperrt.
+  Danach kommt die Rückmeldung „3 Shots angelegt“ oder die Fehlermeldung. Bei vorhandenen Medien öffnet sich der Dialog
+  „Ersetzen?“ mit dem Hinweis, dass die Bilder in der Bibliothek bleiben.
+- Gesamtdauer der Szene in der Storyboard-Leiste.
+
+**Prüfung wie immer:** Tests rot/grün, Mutanten, Gegenprobe `main`, hydratest-E2E mit echtem Klick auf „In Shots
+zerlegen“ (echtes Modell des Testservers; schlägt das fehl, zählt auch die saubere Fehlermeldung), 1600/1280 px,
+Bilder direkt im Chat.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.

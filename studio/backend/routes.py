@@ -15,6 +15,7 @@ from hydrahive.projects._config_io import list_for_user
 from . import library
 from ._guard import guard
 from .plan_routes import router as plan_router
+from .shot_routes import router as shot_router
 
 router = APIRouter()
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
@@ -32,3 +33,4 @@ async def get_library(project_id: str, auth: Auth) -> dict:
 
 
 router.include_router(plan_router)
+router.include_router(shot_router)

@@ -15,6 +15,7 @@ import { SceneForm } from "./SceneForm"
 import { StoryboardPanel } from "./StoryboardPanel"
 
 const noop = () => {}
+const SB = { onSelect: noop, onAdd: noop, onMove: noop, onDecompose: noop }
 const html = (el: React.ReactElement) => renderToStaticMarkup(el).replace(/&quot;/g, '"')
 const attr = (out: string, name: string) => [...out.matchAll(new RegExp(`${name}="([^"]+)"`, "g"))].map((m) => m[1])
 const shot = (id: string, image_rel: string | null) => ({ id, order: 0, shot: "closeup", prompt: `Prompt ${id}`, element_ids: [], duration: 5, status: "planned", image_rel, video_rel: null })
@@ -110,12 +111,12 @@ describe("Studio Etappe 2a – Planen", () => {
   })
 
   it("Storyboard: echte Shots der gewählten Szene, ohne Szene ein Hinweis, kein Beispiel-Schild", () => {
-    const out = html(<StoryboardPanel scene={PLAN.scenes[0]} base="/data/w" selected="h2" onSelect={noop} />)
+    const out = html(<StoryboardPanel scene={PLAN.scenes[0]} base="/data/w" selected="h2" busy={null} {...SB} />)
     expect(attr(out, "data-storyboard-shot")).toEqual(["h1", "h2"])
     expect(out).toContain("%2Fdata%2Fw%2Fatelier%2Fimages%2Fa.png")
     expect(out).not.toContain("data-studio-demo-badge")
-    expect(html(<StoryboardPanel scene={null} base="/data/w" selected={null} onSelect={noop} />)).toContain("storyboard_pick_scene")
-    expect(html(<StoryboardPanel scene={PLAN.scenes[1]} base="/data/w" selected={null} onSelect={noop} />)).toContain("storyboard_no_shots")
+    expect(html(<StoryboardPanel scene={null} base="/data/w" selected={null} busy={null} {...SB} />)).toContain("storyboard_pick_scene")
+    expect(html(<StoryboardPanel scene={PLAN.scenes[1]} base="/data/w" selected={null} busy={null} {...SB} />)).toContain("storyboard_no_shots")
   })
 
   it("Löschen über eigenen Dialog mit Namen", () => {

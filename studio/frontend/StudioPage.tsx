@@ -1,12 +1,12 @@
 import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
+import { DecomposeDialog } from "./DecomposeDialog"
 import { DeleteDialog } from "./DeleteDialog"
 import { ImportDialog } from "./ImportDialog"
 import { InspectorPanel } from "./InspectorPanel"
 import { LibraryPanel } from "./LibraryPanel"
 import { PlanInspector } from "./PlanInspector"
-import { sceneOf } from "./planLogic"
 import { PlanPreview } from "./PlanPreview"
 import { PlanSidebar } from "./PlanSidebar"
 import { PreviewPanel } from "./PreviewPanel"
@@ -17,6 +17,7 @@ import { StudioHeader } from "./StudioHeader"
 import { TimelinePanel } from "./TimelinePanel"
 import { useLibrary } from "./useLibrary"
 import { usePlan } from "./usePlan"
+import { useShots } from "./useShots"
 import { useStudioState } from "./useStudioState"
 
 const toastCls = "pointer-events-none fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-[4px] border border-[#46617f] bg-[#0e1420] px-3 py-1.5 text-xs text-[#c3ccdd]"
@@ -31,7 +32,8 @@ export function StudioPage() {
   const plan = { ...p, select: (x: Parameters<typeof p.select>[0]) => { s.clearMedia(); p.select(x) } }   // Auswahl im Drehbuch löst das Medium ab
   const focus = s.workspace === "audio" ? "audio" : s.workspace === "subtitles" ? "subtitles" : "all"
   const library = <LibraryPanel items={lib.items} loading={lib.loading} error={lib.error} truncated={lib.truncated} selected={s.mediaId} onSelect={s.selectMedia} />
-  const scene = sceneOf(p.plan, p.selection)
+  const sh = useShots(plan, lib.projectId)
+  const scene = sh.scene
   const reload = () => { void lib.reload(); if (planning) void p.reload() }
   return (
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
@@ -53,7 +55,7 @@ export function StudioPage() {
             </div>
             <Splitter dir="x" label={t("resize_inspector")} onDrag={(d) => s.drag("inspector", d)} />
             <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
-              {planning && !s.item ? <PlanInspector p={plan} images={lib.items.filter((i) => i.kind === "image")} />
+              {planning && !s.item ? <PlanInspector p={plan} shots={sh} images={lib.items.filter((i) => i.kind === "image")} />
                 : <InspectorPanel workspace={s.workspace} clipId={s.clipId} item={s.item} />}
             </div>
           </div>
@@ -61,14 +63,16 @@ export function StudioPage() {
         <Splitter dir="y" label={t("resize_timeline")} onDrag={(d) => s.drag("timeline", d)} />
         <div className="min-h-0 border-t border-[#2a364b] bg-[#0b111b]" style={{ flex: `${s.layout.timeline} 1 0` }}>
           {planning
-            ? <StoryboardPanel scene={scene} base={p.plan?.base ?? ""} selected={p.selection?.kind === "shot" ? p.selection.id : null}
-                onSelect={(id) => { if (scene) plan.select({ kind: "shot", sceneId: scene.id, id }) }} />
+            ? <StoryboardPanel scene={scene} base={p.plan?.base ?? ""} selected={p.selection?.kind === "shot" ? p.selection.id : null} busy={sh.busy}
+                onSelect={(id) => { if (scene) plan.select({ kind: "shot", sceneId: scene.id, id }) }}
+                onAdd={() => void sh.add()} onMove={(id, d) => void sh.move(id, d)} onDecompose={() => void sh.decompose()} />
             : <TimelinePanel time={s.time} view={s.view} snap={s.snap} selected={s.clipId} focus={focus}
                 onView={s.setView} onSeek={s.seek} onSelect={s.selectClip} onSnap={s.toggleSnap} />}
         </div>
         {s.dialog === "help" && <ShortcutHelp onClose={() => s.setDialog(null)} />}
         {s.dialog === "command" && <CommandPalette onClose={() => s.setDialog(null)} onRun={s.run} />}
         {p.dialog?.kind === "import" && p.preview && <ImportDialog preview={p.preview} busy={p.busy} onRun={() => void p.runImport()} onClose={() => p.setDialog(null)} />}
+        {sh.confirm && <DecomposeDialog count={sh.confirm.count} busy={sh.busy !== null} onConfirm={() => void sh.confirmReplace()} onClose={sh.closeConfirm} />}
         {p.dialog?.kind === "delete" && <DeleteDialog name={p.dialog.name} busy={p.busy} onConfirm={p.confirmDelete} onClose={() => p.setDialog(null)} />}
         {s.toast && <div className={toastCls} data-studio-toast>{t("toast_later", { action: t(`action.${s.toast}`) })}</div>}
         {planning && p.notice && <div className={toastCls} data-plan-notice>{p.notice}</div>}

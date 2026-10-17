@@ -91,6 +91,12 @@ export const planApi = {
   addElement: (pid: string, data: Partial<PlanElement>) => api.post<PlanElement>(`${base(pid)}/elements`, data),
   saveElement: (pid: string, id: string, data: Partial<PlanElement>) => api.put<PlanElement>(`${base(pid)}/elements/${one(id)}`, data),
   deleteElement: (pid: string, id: string) => api.delete<{ deleted: string }>(`${base(pid)}/elements/${one(id)}`),
+  addShot: (pid: string, sid: string, data: Partial<Shot>) => api.post<Shot>(`${base(pid)}/scenes/${one(sid)}/shots`, data),
+  saveShot: (pid: string, sid: string, id: string, data: Partial<Shot>) => api.put<Shot>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}`, data),
+  deleteShot: (pid: string, sid: string, id: string) => api.delete<{ deleted: string }>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}`),
+  orderShots: (pid: string, sid: string, shot_ids: string[]) => api.put<{ shots: Shot[] }>(`${base(pid)}/scenes/${one(sid)}/shots/order`, { shot_ids }),
+  decompose: (pid: string, sid: string, replace: boolean) =>
+    api.post<{ shots: Shot[]; count: number }>(`${base(pid)}/scenes/${one(sid)}/decompose`, replace ? { replace: true } : {}),
   importPreview: (pid: string) => api.get<ImportPreview>(`${base(pid)}/import/atelier`),
   importRun: (pid: string) => api.post<{ scenes: number; shots: number; elements: number }>(`${base(pid)}/import/atelier`, {}),
 }
