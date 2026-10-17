@@ -221,3 +221,13 @@ def test_single_broken_clip_in_file_is_skipped(client, auth_headers, ws) -> None
     assert tl["revision"] == 7
     assert [c["id"] for c in tl["tracks"][0]["clips"]] == ["1" * 32, "2" * 32]
     assert all("missing" not in c for c in tl["tracks"][0]["clips"])
+
+
+def test_answers_carry_the_project_folder_for_files(client, auth_headers, ws) -> None:
+    """Wie GET plan: `base` = Projektordner, damit die Oberfläche Bilder/Videos über /api/files zeigen kann."""
+    _shots(client, auth_headers, ws, [[{"duration": 3}]])
+    for r in (client.get(T, headers=auth_headers), _put(client, auth_headers, []),
+              client.post(f"{T}/from-plan", headers=auth_headers, json={"replace": True})):
+        assert r.status_code == 200, r.text
+        assert r.json()["base"] == str(ws)
+    assert "base" not in json.loads((ws / "studio/timelines/main.json").read_text())   # nicht in der Datei
