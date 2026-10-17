@@ -11,8 +11,8 @@ from typing import Any
 
 from . import plan
 from ._sources import IMAGE_EXT, VIDEO_EXT
-from ._timeline_plan import clips_from_scenes
 from ._store import is_id, new_id, read_json, root, safe_rel, write_json
+from ._timeline_plan import clips_from_scenes
 
 MAX_CLIPS = 2000
 MAX_SECONDS = 4 * 3600
