@@ -3,6 +3,7 @@ openai/gpt-5-image lehnt 16:9 ab und nennt „Accepted: 1:1, 3:2, 2:3, auto“).
 from __future__ import annotations
 
 import base64
+import json
 
 import httpx
 import pytest
@@ -17,7 +18,6 @@ class Resp:
         self.status_code, self.text = status, text
 
     def json(self):
-        import json
         return json.loads(self.text)
 
 
@@ -37,7 +37,7 @@ def _post(sent, answers):
 
 def test_nearest_accepted_format_is_retried_once(calls, monkeypatch) -> None:
     from backend import image_provider
-    ok = Resp(200, '{"data":[{"b64_json":"%s"}]}' % base64.b64encode(PNG).decode())
+    ok = Resp(200, json.dumps({"data": [{"b64_json": base64.b64encode(PNG).decode()}]}))
     monkeypatch.setattr(httpx, "post", _post(calls, [Resp(400, REJECT), ok]))
     raw = image_provider.request_image(model="openai/gpt-5-image", prompt="p", references=[], aspect_ratio="16:9")
     assert raw == PNG

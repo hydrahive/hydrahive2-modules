@@ -9,6 +9,8 @@ from __future__ import annotations
 import base64
 import binascii
 import logging
+import math
+import re
 
 import httpx
 
@@ -28,11 +30,53 @@ def server_default_model() -> str:
     return get_media_model("image")
 
 
+_ACCEPTED = re.compile(r"aspect_ratio[^\"]*\"?[^.]*?Accepted:\s*([0-9a-z:, ]+)", re.IGNORECASE)
+
+
+def _ratio(v: str) -> float | None:
+    a, _, b = v.partition(":")
+    try:
+        return float(a) / float(b) if b else None
+    except (ValueError, ZeroDivisionError):
+        return None
+
+
+def nearest_aspect(wanted: str, accepted: str) -> str | None:
+    """Erlaubtes Format, das dem gewünschten am nächsten kommt; None = gewünschtes ist schon erlaubt bzw. nichts passt.
+    Nur „auto“ erlaubt → „auto“ (das Modell wählt selbst)."""
+    opts = [o.strip() for o in accepted.split(",") if o.strip()]
+    if wanted in opts:
+        return None
+    w = _ratio(wanted)
+    ratios = [(o, _ratio(o)) for o in opts]
+    fit = [(o, r) for o, r in ratios if r]
+    if w and fit:
+        return min(fit, key=lambda x: abs(math.log(x[1] / w)))[0]
+    return "auto" if "auto" in opts else None
+
+
 def request_image(*, model: str, prompt: str, references: list[str], aspect_ratio: str, seed: int | None = None) -> bytes:
     from hydrahive.llm._config import openrouter_key
     key = openrouter_key()
     if not key:
         raise ProviderError("no_key")
+    try:
+        return _request(key, model, prompt, references, aspect_ratio, seed)
+    except _FormatRejected as e:                    # Modell kann das Format nicht → einmal mit dem nächsten erlaubten
+        logger.info("Studio-Bild: %s kann %s nicht, nehme %s", model, aspect_ratio, e.instead)
+        try:
+            return _request(key, model, prompt, references, e.instead, seed)
+        except _FormatRejected:
+            raise ProviderError("provider_rejected") from None
+
+
+class _FormatRejected(Exception):
+    def __init__(self, instead: str) -> None:
+        super().__init__(instead)
+        self.instead = instead
+
+
+def _request(key: str, model: str, prompt: str, references: list[str], aspect_ratio: str, seed: int | None) -> bytes:
     payload: dict = {"model": model, "prompt": prompt, "aspect_ratio": aspect_ratio}
     if references:
         payload["input_references"] = [{"type": "image_url", "image_url": {"url": u}} for u in references]
@@ -44,6 +88,10 @@ def request_image(*, model: str, prompt: str, references: list[str], aspect_rati
         logger.warning("Studio-Bild: Anbieter nicht erreichbar: %s", e)
         raise ProviderError("provider_unreachable") from e
     if resp.status_code != 200:
+        m = _ACCEPTED.search(resp.text or "") if resp.status_code == 400 else None
+        instead = nearest_aspect(aspect_ratio, m.group(1)) if m else None
+        if instead:
+            raise _FormatRejected(instead)
         logger.warning("Studio-Bild: Anbieter antwortet %s: %s", resp.status_code, resp.text[:300])
         raise ProviderError("provider_rejected")
     try:
