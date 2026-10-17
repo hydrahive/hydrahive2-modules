@@ -18,7 +18,7 @@ const noop = () => {}
 const SB = { onSelect: noop, onAdd: noop, onMove: noop, onDecompose: noop }
 const html = (el: React.ReactElement) => renderToStaticMarkup(el).replace(/&quot;/g, '"')
 const attr = (out: string, name: string) => [...out.matchAll(new RegExp(`${name}="([^"]+)"`, "g"))].map((m) => m[1])
-const shot = (id: string, image_rel: string | null) => ({ id, order: 0, shot: "closeup", prompt: `Prompt ${id}`, element_ids: [], duration: 5, status: "planned", image_rel, video_rel: null })
+const shot = (id: string, image_rel: string | null) => ({ id, order: 0, shot: "closeup", prompt: `Prompt ${id}`, element_ids: [], duration: 5, status: "planned", image_rel, video_rel: null, variants: [] })
 
 const PLAN: Plan = {
   base: "/data/w",

@@ -5,7 +5,7 @@ import { errorCode, moveShot, sceneOf } from "./planLogic"
 import type { PlanState } from "./usePlan"
 
 /** Shots der gewählten Szene: anlegen, speichern, löschen, sortieren, per Regie-Agent zerlegen (Spec „Bauplan 2b“). */
-export function useShots(p: PlanState, projectId: string) {
+export function useShots(p: PlanState, projectId: string, onJobStarted: () => void = () => {}) {
   const { t } = useTranslation("studio")
   const [busy, setBusy] = useState<"decompose" | null>(null)
   const [confirm, setConfirm] = useState<{ sceneId: string; count: number } | null>(null)
@@ -36,6 +36,8 @@ export function useShots(p: PlanState, projectId: string) {
     move: (id: string, dir: -1 | 1) => scene && p.act(() => planApi.orderShots(projectId, sid, moveShot(scene.shots.map((s) => s.id), id, dir)), t("notice_moved")),
     decompose: () => sid && decompose(sid, false),
     confirmReplace: () => confirm && decompose(confirm.sceneId, true),
+    generateImage: (id: string) => p.act(() => planApi.generateImage(projectId, sid, id), t("notice_image_started"), onJobStarted),
+    chooseVariant: (id: string, rel: string) => p.act(() => planApi.chooseVariant(projectId, sid, id, rel), t("notice_saved")),
   }
 }
 

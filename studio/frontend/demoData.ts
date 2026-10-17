@@ -40,8 +40,3 @@ export const DEMO_TRACKS: DemoTrack[] = [
     ],
   },
 ]
-
-export const DEMO_JOBS = [
-  { id: "j1", label: "Video erzeugen: Shot 3", percent: 42 },
-  { id: "j2", label: "Proxy: Drohnenflug.mp4", percent: 88 },
-]

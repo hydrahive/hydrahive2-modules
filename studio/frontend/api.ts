@@ -3,7 +3,7 @@ import { api } from "@/shared/api-client"
 /** Medienart in der Studio-Bibliothek (Backend: backend/library.py). */
 export type MediaKind = "video" | "image" | "audio" | "music" | "element"
 export type Origin = "ai" | "upload"
-export type Source = "atelier" | "videoeditor" | "tonstudio"
+export type Source = "atelier" | "videoeditor" | "tonstudio" | "studio"
 
 export interface LibraryItem {
   id: string

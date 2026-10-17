@@ -57,7 +57,28 @@ describe("Studio 3a – Bild erzeugen", () => {
 
   it("Storyboard: Karte zeigt „läuft“ für Shots mit laufendem Auftrag", () => {
     const scene: Scene = { id: "s", title: "S", description: "", location: "", time_of_day: "", element_ids: [], dialogues: [], camera: {}, shots: [shot("a"), shot("b")] }
-    const out = html(<StoryboardPanel scene={scene} base="/w" selected={null} busy={null} running={["b"]} onSelect={noop} onAdd={noop} onMove={noop} onDecompose={noop} />)
+    const out = html(<StoryboardPanel scene={scene} base="/w" selected={null} busy={null} runningShots={["b"]} onSelect={noop} onAdd={noop} onMove={noop} onDecompose={noop} />)
     expect(attr(out, "data-storyboard-running")).toEqual(["b"])
+  })
+})
+
+import { StudioHeader } from "./StudioHeader"
+
+describe("Kopfzeile: echte Aufträge statt Beispiel", () => {
+  const head = (running: number) => html(<StudioHeader projects={[]} projectId="" onProject={noop} onReload={noop} workspace="plan"
+    onWorkspace={noop} onCommand={noop} onHelp={noop} running={running} />)
+  it("zeigt die Zahl laufender Aufträge, ohne laufende nichts", () => {
+    expect(head(3)).toContain('jobs:{"count":3}')
+    expect(head(3)).toContain("data-studio-jobs")
+    expect(head(0)).not.toContain("data-studio-jobs")
+  })
+})
+
+import { studioI18n } from "./i18n"
+
+describe("Bibliothek: Quelle „Studio“", () => {
+  it("hat einen Namen in beiden Sprachen", () => {
+    expect((studioI18n.de.studio.source as Record<string, string>).studio).toBe("Studio")
+    expect((studioI18n.en.studio.source as Record<string, string>).studio).toBe("Studio")
   })
 })

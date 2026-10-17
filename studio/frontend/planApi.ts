@@ -31,6 +31,19 @@ export interface Shot {
   status: string
   image_rel: string | null
   video_rel: string | null
+  variants: string[]
+}
+
+export interface Job {
+  id: string
+  kind: "image" | "video"
+  target: string
+  scene_id: string
+  status: "queued" | "running" | "done" | "failed"
+  error: string | null
+  result: Record<string, unknown> | null
+  created_at: string
+  finished_at: string | null
 }
 
 export interface Scene {
@@ -97,6 +110,10 @@ export const planApi = {
   orderShots: (pid: string, sid: string, shot_ids: string[]) => api.put<{ shots: Shot[] }>(`${base(pid)}/scenes/${one(sid)}/shots/order`, { shot_ids }),
   decompose: (pid: string, sid: string, replace: boolean) =>
     api.post<{ shots: Shot[]; count: number }>(`${base(pid)}/scenes/${one(sid)}/decompose`, replace ? { replace: true } : {}),
+  generateImage: (pid: string, sid: string, id: string) => api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/image`, {}),
+  chooseVariant: (pid: string, sid: string, id: string, image_rel: string) =>
+    api.put<Shot>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/variant`, { image_rel }),
+  jobs: (pid: string) => api.get<{ jobs: Job[] }>(`${base(pid)}/jobs`),
   importPreview: (pid: string) => api.get<ImportPreview>(`${base(pid)}/import/atelier`),
   importRun: (pid: string) => api.post<{ scenes: number; shots: number; elements: number }>(`${base(pid)}/import/atelier`, {}),
 }

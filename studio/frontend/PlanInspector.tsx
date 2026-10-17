@@ -7,9 +7,11 @@ import { SceneForm } from "./SceneForm"
 import { ShotForm } from "./ShotForm"
 import type { PlanState } from "./usePlan"
 import type { ShotsState } from "./useShots"
+import type { Job } from "./planApi"
+import { jobFor } from "./jobLogic"
 
 /** Planen, rechts: Formular des Gewählten. `key` mit `rev` setzt das Formular nach dem Speichern auf die frischen Daten. */
-export function PlanInspector({ p, shots, images }: { p: PlanState; shots?: ShotsState; images: LibraryItem[] }) {
+export function PlanInspector({ p, shots, images, jobs = [] }: { p: PlanState; shots?: ShotsState; images: LibraryItem[]; jobs?: Job[] }) {
   const { t } = useTranslation("studio")
   const { plan, selection: sel } = p
   let body: React.ReactNode = <p className="mt-3 text-xs text-[#68758a]">{t("nothing_selected")}</p>
@@ -33,7 +35,9 @@ export function PlanInspector({ p, shots, images }: { p: PlanState; shots?: Shot
     const shot = index >= 0 ? scene?.shots[index] : undefined
     if (scene && shot) {
       body = <ShotForm key={`${shot.id}-${p.rev}`} shot={shot} index={index} elements={plan.elements} sceneElementIds={scene.element_ids}
-        presets={plan.presets.shot ?? []} busy={p.busy} onSave={(d) => void shots.save(shot.id, d)} onDelete={() => shots.remove(shot.id, index)} />
+        presets={plan.presets.shot ?? []} busy={p.busy} onSave={(d) => void shots.save(shot.id, d)} onDelete={() => shots.remove(shot.id, index)}
+        base={plan.base} job={jobFor(jobs, shot.id)} onGenerate={() => void shots.generateImage(shot.id)}
+        onChoose={(rel) => void shots.chooseVariant(shot.id, rel)} />
     }
   }
   return (
