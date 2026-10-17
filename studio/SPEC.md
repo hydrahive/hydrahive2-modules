@@ -649,6 +649,86 @@ Die E2E-Tests haben über unsichtbare Kennungen geklickt und nie geprüft, ob ei
   Ergebnisse landen in der Bibliothek unter „Studio · frei“ und lassen sich per Knopf einem Shot zuweisen oder auf die
   Zeitleiste legen.
 
+### Bauplan B2 – Drehbuch aus einer Idee und aus dem Storyteller (18.10.)
+
+**Ist-Stand (geprüft):**
+- Das Studio hat Kopf, Szenen (mit Shots) und Bausteine. Szenen-Gruppen gibt es nicht.
+- Der Regie-Agent (`director.py`) zeigt das Muster für einen KI-Aufruf: Text-Modell aus dem Kopf, sonst das
+  Standardmodell, Antwort als JSON, unbrauchbare Antworten werden abgelehnt.
+- Storyteller-Format (Modul 0.20.0, nur lesen):
+  - `storyteller/books/<id>/book.json` enthält `title`.
+  - `structure.json` enthält Teile → Kapitel (`id`, `title`, `scenes`) und Steckbriefe (`kind` character|place|item,
+    `name`, `aliases`, `description`, `fields`).
+  - `scenes/<id>.json` enthält `title`, `summary` und `pov`.
+  - Der Papierkorb liegt außerhalb von `books/`.
+
+**Ein gemeinsamer Entwurf für beide Wege.** Beide Wege liefern einen **Entwurf** und speichern nichts.
+- Aufbau:
+  - Kopf: Titel, Logline, Beschreibung, Stil
+  - Bausteine mit lokalem Schlüssel
+  - Szenen mit Beschreibung, Ort, Tageszeit, Bausteinen und Shots
+- Der Browser zeigt den Entwurf als Vorschau. Erst „Übernehmen“ schickt ihn zurück. Der Server prüft ihn dann noch
+  einmal vollständig (Längen, Arten, Grenzen wie beim normalen Speichern) und schreibt ihn.
+- Auf dem Server bleibt kein Entwurf liegen.
+
+**Aus einer Idee:**
+- Eingabe:
+  - Idee: 1–2.000 Zeichen
+  - Länge: „30 s“, „1 min“ oder „2 min“
+  - Stil: optional, bis 300 Zeichen
+- Ein Aufruf des Text-Modells des Drehbuchs, sonst des Standardmodells. Liefert:
+  - Titel und Logline
+  - 2–8 Szenen
+  - Figuren, Orte und Gegenstände mit Aussehen
+  - je Szene 2–5 Shots mit englischem Bild-/Video-Prompt, Einstellung und Dauer (3–10 s)
+- Zu viele Szenen oder Shots werden abgeschnitten. Unbekannte Einstellungen werden leer, unbekannte Bausteine fallen weg.
+- Unbrauchbare Antwort oder Fehler des Anbieters: Code `studio_idea_failed`, das Drehbuch bleibt unverändert.
+
+**Aus dem Storyteller:**
+- Liste der Bücher des Projekts mit Kapiteln und Zahl der Szenen. Nur lesend, eigene Lese-Hilfe, kein Import aus dem
+  Storyteller-Modul.
+- Ein Buch wählen und Kapitel ankreuzen (Standard: alle). Daraus wird ein Entwurf:
+  - Steckbrief → Baustein: character → Figur, place → Ort, item → Gegenstand. Die Beschreibung wird aus `description`
+    und den Eigenschaften („Augenfarbe: grün“) zusammengesetzt.
+  - Szene → Szene: Titel und Zusammenfassung → Beschreibung. Die Perspektive (`pov`) wird der Szene als Figur
+    zugeordnet, wenn sie einem Steckbrief-Namen oder Alias entspricht.
+  - Steckbriefe, deren Name oder Alias in Titel oder Zusammenfassung einer Szene vorkommt, werden dieser Szene
+    zugeordnet.
+  - Kapitel bestimmen nur Auswahl und Reihenfolge. Das Studio hat keine Szenen-Gruppen, der Kapiteltitel geht nicht
+    verloren, steht aber nicht in der Szene. **Abweichung von der Kurzfassung oben.**
+  - Shots entstehen nicht. In der Vorschau gibt es den Haken „Danach alle Szenen in Shots zerlegen“. Er öffnet nach
+    dem Übernehmen den vorhandenen Sammelauftrag-Dialog (3c), mit Anzahl und Modell, vor dem Start.
+  - Höchstens 200 Szenen je Entwurf. Was darüber hinausgeht, wird in der Vorschau als Hinweis genannt.
+  - Leere Szenen und Szenen ohne Titel bekommen „Szene N“.
+  - Kaputte oder fehlende Dateien werden übersprungen, nicht als Fehler gemeldet.
+
+**Übernehmen:**
+- Ist das Drehbuch leer, entsteht es aus dem Entwurf („neu“).
+- Hat es schon Szenen, werden die neuen Szenen **angehängt**. Die Vorschau sagt das vorher deutlich.
+- Bestehende Szenen, Shots und Medien werden nie verändert. Kopf-Felder werden nur gefüllt, wenn sie leer sind.
+- Bausteine gleicher Art und gleichen Namens (Groß-/Kleinschreibung egal) werden wiederverwendet, nicht doppelt
+  angelegt.
+
+**Wo die Knöpfe sind:**
+- Startfeld „So fängst du an“: zusätzlich „Aus einer Idee“ (immer) und „Aus dem Storyteller“ (nur wenn das Projekt
+  Bücher hat; `overview.books`).
+- Gliederung unter den Szenen: „Szenen aus einer Idee“ und „Aus dem Storyteller“, zum Anhängen.
+
+**Schnittstellen** (alle prüfen die Mitgliedschaft):
+- `POST …/plan/draft/idea` mit `{idea, length, style}` liefert `{draft}`.
+- `GET …/plan/draft/books` liefert `{books: [{id, title, chapters: [{id, title, scenes}], entities}]}`.
+- `POST …/plan/draft/book` mit `{book_id, chapter_ids?}` liefert `{draft, truncated}`.
+- `POST …/plan/draft/apply` mit `{draft}` liefert `{mode, scenes, shots, elements_new, elements_reused}`.
+- `GET …/overview` bekommt zusätzlich `books` (Anzahl).
+
+**Prüfung B2:**
+- pytest: Idee mit ersetztem LLM, Grenzen, kaputte Antwort, Storyteller-Zuordnung, Kapitel-Auswahl, kaputte Dateien,
+  neu/anhängen, Wiederverwendung, fremdes Projekt 404.
+- vitest: Dialoge und Vorschau.
+- E2E (nur sichtbare Texte, 1600 und 1280 px):
+  - Leeres Projekt → „Aus einer Idee“ mit echter KI → Vorschau → Übernehmen → Szenen mit Shots.
+  - Danach „Aus dem Storyteller“ mit einem Testbuch → angehängt.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
