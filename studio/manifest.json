@@ -1,0 +1,11 @@
+{
+  "id": "studio",
+  "name": "Studio",
+  "version": "0.0.1",
+  "description": "Ein Ort für Bild, Video, Ton und Schnitt: planen, erzeugen, schneiden, vertonen, untertiteln, ausgeben. Vorschau des Aufbaus (Attrappe) – löst später Atelier, Video-Editor und Tonstudio ab.",
+  "icon": "Clapperboard",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "min_core_version": "2.0.0"
+}
