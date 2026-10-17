@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronUp, Download, FileText, MapPin, Package, Plus, User } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ELEMENT_KINDS, type ElementKind, type ImportPreview, type Plan, type Selection } from "./planApi"
-import { showImport } from "./planLogic"
+import { importAmounts, showImport } from "./planLogic"
 
 const ICON: Record<ElementKind, typeof User> = { character: User, place: MapPin, object: Package }
 const row = (active: boolean) => `flex w-full min-w-0 items-center gap-1.5 rounded-[4px] px-1.5 py-1 text-left text-xs ${active ? "bg-[#1c2940] text-[#69d7ff]" : "text-[#e8eef8] hover:bg-[#111827]"}`
@@ -27,7 +27,7 @@ export function PlanOutline({ plan, preview, selection, onSelect, onMove, onAddS
     <div className="mt-2 min-h-0 flex-1 space-y-3 overflow-y-auto px-2 pb-3" data-plan-outline>
       {showImport(preview) && preview && (
         <div className="space-y-2 rounded-[4px] border border-[#69d7ff]/40 bg-[#69d7ff]/10 p-2 text-[11px] leading-relaxed text-[#c3ccdd]" data-plan-import>
-          <p>{t("import_offer", { scenes: preview.scenes, shots: preview.shots, elements: preview.elements })}</p>
+          <p>{t("import_offer", importAmounts(t, preview))}</p>
           <button type="button" onClick={onImport} className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-2 py-1 font-black text-[#08111c]">
             <Download size={12} /> {t("import_open")}
           </button>

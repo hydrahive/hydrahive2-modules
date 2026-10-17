@@ -40,3 +40,8 @@ export function sceneOf(plan: Plan | null, sel: Selection | null): Scene | null 
   const id = sel.kind === "scene" ? sel.id : sel.kind === "shot" ? sel.sceneId : null
   return plan.scenes.find((s) => s.id === id) ?? null
 }
+
+/** Mengen für Angebot und Dialog der Übernahme, je mit Einzahl/Mehrzahl („1 Figur“, „2 Figuren“). */
+export function importAmounts(t: (k: string, o?: Record<string, unknown>) => string, p: ImportPreview) {
+  return { scenes: t("scene_count", { count: p.scenes }), shots: t("shot_count", { count: p.shots }), elements: t("figure_count", { count: p.elements }) }
+}

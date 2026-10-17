@@ -1,6 +1,7 @@
 import { Download, Loader2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { ImportPreview } from "./planApi"
+import { importAmounts } from "./planLogic"
 import { Backdrop } from "./StudioDialogs"
 
 interface Props {
@@ -17,7 +18,7 @@ export function ImportDialog({ preview, busy, onRun, onClose }: Props) {
     <Backdrop onClose={onClose} label={t("import_title")}>
       <div className="space-y-3 p-4 text-xs text-[#c3ccdd]" data-import-dialog>
         <h3 className="text-sm font-black text-[#e8eef8]">{t("import_title")}</h3>
-        <p>{t("import_counts", { scenes: preview.scenes, shots: preview.shots, elements: preview.elements })}</p>
+        <p>{t("import_counts", importAmounts(t, preview))}</p>
         {preview.look && <p>{t("import_look")}</p>}
         <p className="rounded-[4px] border border-[#46617f] bg-[#111827] px-2.5 py-2 leading-relaxed text-[#8d9ab0]">{t("import_hint")}</p>
         <div className="flex justify-end gap-2 pt-1">
