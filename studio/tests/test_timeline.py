@@ -231,3 +231,12 @@ def test_answers_carry_the_project_folder_for_files(client, auth_headers, ws) ->
         assert r.status_code == 200, r.text
         assert r.json()["base"] == str(ws)
     assert "base" not in json.loads((ws / "studio/timelines/main.json").read_text())   # nicht in der Datei
+
+
+def test_file_values_are_checked_on_load(client, auth_headers, ws) -> None:
+    (ws / "studio/timelines").mkdir(parents=True)
+    f = ws / "studio/timelines/main.json"
+    for raw_rev, raw_fps, want_rev, want_fps in ((-3, 999, 0, 25), ("7", "25", 0, 25), (True, None, 0, 25), (4, 30, 4, 30)):
+        f.write_text(json.dumps({"revision": raw_rev, "fps": raw_fps, "tracks": [{"id": "V1", "clips": []}]}))
+        tl = client.get(T, headers=auth_headers).json()
+        assert (tl["revision"], tl["fps"]) == (want_rev, want_fps), (raw_rev, raw_fps)

@@ -45,7 +45,8 @@ def _text(v: Any, n: int) -> str:
     return v.strip()[:n] if isinstance(v, str) else ""
 
 
-def _clip(pid: str, raw: Any) -> dict:
+def _clip(pid: str, raw: Any, *, on_load: bool = False) -> dict:
+    """Ein Clip. Beim Laden (`on_load`) wird ein Clip, dessen Medium inzwischen fehlt, zum Platzhalter (`missing`)."""
     if not isinstance(raw, dict) or raw.get("kind") not in KINDS:
         raise Invalid()
     kind = raw["kind"]
@@ -53,16 +54,23 @@ def _clip(pid: str, raw: Any) -> dict:
     if t_in >= t_out or start + (t_out - t_in) > MAX_SECONDS:
         raise Invalid()
     media = raw.get("media_rel") or ""
+    missing = False
     if kind == "placeholder":
         if media:
             raise Invalid()
+        missing = raw.get("missing") is True
     elif safe_rel(pid, media, _EXT[kind]) is None:
-        raise Invalid()
-    return {
+        if not on_load:
+            raise Invalid()
+        kind, media, missing = "placeholder", "", True
+    out = {
         "id": raw["id"] if is_id(raw.get("id")) else new_id(), "kind": kind, "start": start, "in": t_in, "out": t_out,
         "media_rel": media, "scene_id": raw.get("scene_id") if is_id(raw.get("scene_id")) else "",
         "shot_id": raw.get("shot_id") if is_id(raw.get("shot_id")) else "", "label": _text(raw.get("label"), 200),
     }
+    if missing:
+        out["missing"] = True
+    return out
 
 
 def clean(pid: str, data: Any) -> dict:
@@ -79,17 +87,28 @@ def clean(pid: str, data: Any) -> dict:
     return {"fps": fps, "tracks": [{"id": "V1", "kind": "video", "clips": [_clip(pid, c) for c in raw_clips]}]}
 
 
+def _loaded_clips(pid: str, raw: dict) -> list[dict]:
+    tracks = raw.get("tracks")
+    first = tracks[0] if isinstance(tracks, list) and tracks and isinstance(tracks[0], dict) else {}
+    out = []
+    for c in (first.get("clips") if isinstance(first.get("clips"), list) else [])[:MAX_CLIPS]:
+        try:
+            out.append(_clip(pid, c, on_load=True))
+        except plan.PlanError:
+            continue                                     # einzelner kaputter Clip: überspringen, Rest bleibt
+    return out
+
+
 def load(pid: str) -> dict:
-    """Gespeicherte Fassung oder leer; kaputte/unpassende Dateien lesen sich als leer (nichts wird angelegt)."""
+    """Gespeicherte Fassung oder leer (nichts wird angelegt). Kaputte Clips werden übersprungen, Clips mit
+    gelöschtem Medium werden Platzhalter – die übrige Arbeit geht nie verloren."""
     raw = read_json(_path(pid), None)
     if not isinstance(raw, dict):
         return empty()
-    try:
-        tl = clean(pid, raw)
-    except plan.PlanError:
-        return empty()
     rev = raw.get("revision")
-    return {"revision": rev if isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0 else 0, **tl}
+    fps = raw.get("fps") if raw.get("fps") in FPS_ALLOWED else FPS_DEFAULT
+    return {"revision": rev if isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0 else 0, "fps": fps,
+            "tracks": [{"id": "V1", "kind": "video", "clips": _loaded_clips(pid, raw)}]}
 
 
 def save(pid: str, data: Any) -> dict:
