@@ -90,10 +90,28 @@ def start(pid: str, kind: str, target: str, scene_id: str, work: Callable[[], di
 
 
 def recover(pid: str) -> int:
-    """Nach einem Neustart: laufende Aufträge ohne Thread als abgebrochen markieren. Gibt die Anzahl zurück."""
+    """Nach einem Neustart: laufende Aufträge ohne Thread als abgebrochen markieren. Gibt die Anzahl zurück.
+
+    Ein Video, das so abbricht, ließ den Shot sonst ewig auf „Video läuft“ stehen – der Shot wird mit zurückgesetzt."""
     n = 0
     for j in list_jobs(pid):
         if j.get("status") in ("running", "queued") and (pid, j.get("target")) not in _running:
             _save(pid, {**j, "status": "failed", "error": "interrupted", "finished_at": _now()})
+            if j.get("kind") == "video":
+                _reset_video_shot(pid, j.get("scene_id"), j.get("target"))
             n += 1
     return n
+
+
+def _reset_video_shot(pid: str, scene_id, shot_id) -> None:
+    from . import shots
+    try:
+        scene = shots.load_scene(pid, scene_id)
+    except plan.PlanError:
+        return
+    items = list(scene.get("shots") or [])
+    for i, s in enumerate(items):
+        if isinstance(s, dict) and s.get("id") == shot_id and s.get("status") == "video_processing":
+            items[i] = {**s, "status": "failed"}
+            shots.save_shots(pid, scene, items)
+            return

@@ -25,6 +25,7 @@ def _run(fn, *args):
 @router.get("")
 def get_plan(project_id: str, auth: Auth) -> dict:
     guard(auth[0], project_id)
+    jobs.recover(project_id)                      # liegengebliebene Aufträge (Neustart) zuerst bereinigen
     return plan.get_plan(project_id)
 
 

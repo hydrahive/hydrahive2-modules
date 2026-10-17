@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, Depends
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import director, generate, plan, shots
+from . import director, generate, generate_video, plan, shots
 from ._guard import guard
 
 router = APIRouter(prefix="/projects/{project_id}/plan/scenes/{scene_id}")
@@ -68,3 +68,9 @@ def generate_image(project_id: str, scene_id: str, shot_id: str, auth: Auth) -> 
 def choose_variant(project_id: str, scene_id: str, shot_id: str, data: Data, auth: Auth) -> dict:
     guard(auth[0], project_id)
     return _run(generate.choose_variant, project_id, scene_id, shot_id, data.get("image_rel"))
+
+
+@router.post("/shots/{shot_id}/video", status_code=202)
+def make_video(project_id: str, scene_id: str, shot_id: str, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    return _run(generate_video.start_video, project_id, scene_id, shot_id)

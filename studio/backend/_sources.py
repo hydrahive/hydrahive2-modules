@@ -100,7 +100,11 @@ def tonstudio(root: Path, make) -> list[dict]:
 
 
 def studio(root: Path, make) -> list[dict]:
-    return [make(p, "image", "ai", "studio", sidecar(p)) for p in files(root, "studio/media/images", IMAGE_EXT)]
+    out = [make(p, "image", "ai", "studio", sidecar(p)) for p in files(root, "studio/media/images", IMAGE_EXT)]
+    for p in files(root, "studio/media/videos", VIDEO_EXT):
+        meta = sidecar(p)
+        out.append(make(p, "video", "ai", "studio", {**meta, "duration": _num(meta.get("duration"))}))
+    return out
 
 
 READERS = (atelier, videoeditor, tonstudio, studio)

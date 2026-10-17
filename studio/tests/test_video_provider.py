@@ -15,12 +15,14 @@ def vp(monkeypatch):
     return video_provider
 
 
-def _client(monkeypatch, handler):
-    real = httpx.Client
+_REAL_CLIENT = httpx.Client                                # vor jedem Ersatz festhalten
 
+
+def _client(monkeypatch, handler):
+    """httpx.Client durch einen mit fester Antwort ersetzen (jeder Aufruf ersetzt den vorigen, nicht verschachtelt)."""
     def make(*a, **k):
         k["transport"] = httpx.MockTransport(handler)
-        return real(*a, **k)
+        return _REAL_CLIENT(*a, **k)
     monkeypatch.setattr(httpx, "Client", make)
 
 
@@ -49,9 +51,10 @@ def test_submit_rejected(vp, monkeypatch) -> None:
 
 
 def test_wait_until_done_failed_and_timeout(vp, monkeypatch) -> None:
-    states = iter([{"status": "pending"}, {"status": "processing"}, {"status": "completed", "unsigned_urls": ["https://cdn.example/a.mp4"]}])
-    _client(monkeypatch, lambda req: httpx.Response(200, json=next(states)))
-    assert vp.wait_for_video("job-7", duration=5) == "https://cdn.example/a.mp4"
+    states = [{"status": "pending"}, {"status": "processing"}, {"status": "completed", "unsigned_urls": ["https://cdn.example/a.mp4"]}]
+    seen = []
+    _client(monkeypatch, lambda req: (seen.append(req), httpx.Response(200, json=states[min(len(seen) - 1, 2)]))[1])
+    assert vp.wait_for_video("job-7", duration=5) == "https://cdn.example/a.mp4" and len(seen) == 3
     _client(monkeypatch, lambda req: httpx.Response(200, json={"status": "failed", "error": "content policy"}))
     with pytest.raises(vp.ProviderError, match="video_failed"):
         vp.wait_for_video("job-7", duration=5)
@@ -83,6 +86,7 @@ def test_download_key_only_to_openrouter_and_size_limit(vp, monkeypatch, tmp_pat
     assert seen[-1].headers["Authorization"] == "Bearer k"
     with pytest.raises(vp.ProviderError, match="bad_url"):
         vp.download_video("http://cdn.example/a.mp4", dest)                      # nur https
+    dest.unlink()
     monkeypatch.setattr(vp, "MAX_BYTES", 20)
     with pytest.raises(vp.ProviderError, match="too_big"):
         vp.download_video("https://cdn.example/a.mp4", dest)

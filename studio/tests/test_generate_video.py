@@ -159,7 +159,8 @@ def test_at_most_two_videos_at_once(client, auth_headers, ws, monkeypatch) -> No
 
 
 def test_interrupted_video_marks_shot_failed(client, auth_headers, ws) -> None:
-    from backend import jobs, shots as shots_mod
+    from backend import jobs
+    from backend import shots as shots_mod
     sc, shot = _with_image(client, auth_headers, ws)
     scene = shots_mod.load_scene(PROJECT_ID, sc["id"])
     scene["shots"][0]["status"] = "video_processing"
