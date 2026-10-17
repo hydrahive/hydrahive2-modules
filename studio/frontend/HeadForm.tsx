@@ -3,15 +3,18 @@ import { useTranslation } from "react-i18next"
 import { ASPECTS, MODEL_KEYS, type Head } from "./planApi"
 import { paletteFromText } from "./planLogic"
 import { Field, FormActions, Label, fieldCls } from "./formParts"
+import { ModelPick } from "./ModelPick"
+import type { Catalog, ModelKind } from "./modelCatalog"
 
 interface Props {
   head: Head
   busy: boolean
   onSave: (h: Partial<Head>) => void
+  catalogs?: Partial<Record<ModelKind, Catalog | null>>
 }
 
 /** Planen, rechts: Drehbuch-Kopf (Titel, Kurzbeschreibung, Format, Standard-Dauer, Modelle, Look). */
-export function HeadForm({ head, busy, onSave }: Props) {
+export function HeadForm({ head, busy, onSave, catalogs = {} }: Props) {
   const { t } = useTranslation("studio")
   const [h, setH] = useState(head)
   const [palette, setPalette] = useState(head.look.palette.join(", "))
@@ -36,7 +39,7 @@ export function HeadForm({ head, busy, onSave }: Props) {
       <fieldset className="space-y-2">
         <legend><Label>{t("f.models")}</Label></legend>
         {MODEL_KEYS.map((k) => (
-          <Field key={k} name={`model_${k}`} label={t(`gen.${k}`)} value={h.models[k]} max={200}
+          <ModelPick key={k} kind={k} value={h.models[k]} catalog={catalogs[k] ?? null}
             onChange={(v) => set("models", { ...h.models, [k]: v })} />
         ))}
         <p className="text-[10px] leading-relaxed text-[#68758a]">{t("f.models_hint")}</p>

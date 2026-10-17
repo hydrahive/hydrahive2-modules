@@ -80,4 +80,20 @@ describe("Studio Etappe 1", () => {
     const bad = [...strings(studioI18n.de), ...strings(studioI18n.en)].filter(([, v]) => /terminal|shell|sudo|install\.conf|HH_[A-Z]/i.test(v))
     expect(bad).toEqual([])
   })
+
+  it("Jeder im Code benutzte Text-Schlüssel existiert in de und en (auch zusammengesetzte wie `gen.${k}`)", () => {
+    const files = import.meta.glob(["./*.ts", "./*.tsx", "!./*.test.ts", "!./*.test.tsx", "!./i18n*.ts"], { query: "?raw", import: "default", eager: true })
+    const code = Object.values(files).join("\n")
+    const has = (obj: unknown, path: string) => path.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), obj) !== undefined
+    const plain = [...code.matchAll(/\bt\("([a-z_]+(?:\.[a-z_]+)*)"/g)].map((m) => m[1])
+    const prefixes = [...code.matchAll(/\bt\(`([a-z_]+)\.\$\{/g)].map((m) => m[1])
+    expect(plain.length).toBeGreaterThan(50)
+    expect(prefixes.length).toBeGreaterThan(10)
+    for (const lang of ["de", "en"] as const) {
+      const s = studioI18n[lang].studio
+      const plural = (k: string) => has(s, `${k}_one`) && has(s, `${k}_other`)
+      expect(plain.filter((k) => !has(s, k) && !plural(k)), lang).toEqual([])
+      expect(prefixes.filter((k) => { const v = (s as Record<string, unknown>)[k]; return !v || typeof v !== "object" }), lang).toEqual([])
+    }
+  })
 })
