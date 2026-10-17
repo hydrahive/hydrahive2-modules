@@ -13,7 +13,7 @@ O = f"{MOD_PREFIX}/projects/{PROJECT_ID}/overview"
 def test_empty_project_without_creating_anything(client, auth_headers, ws) -> None:
     r = client.get(O, headers=auth_headers)
     assert r.status_code == 200, r.text
-    assert r.json() == {"scenes": 0, "shots": 0, "with_image": 0, "with_video": 0, "clips": 0, "atelier": False}
+    assert r.json() == {"scenes": 0, "shots": 0, "with_image": 0, "with_video": 0, "clips": 0, "atelier": False, "books": 0}
     assert not (ws / "studio").exists()
 
 
@@ -26,7 +26,7 @@ def test_counts(client, auth_headers, ws) -> None:
     ])
     client.post(f"{MOD_PREFIX}/projects/{PROJECT_ID}/timeline/from-plan", headers=auth_headers, json={})
     o = client.get(O, headers=auth_headers).json()
-    assert o == {"scenes": 2, "shots": 3, "with_image": 2, "with_video": 1, "clips": 3, "atelier": False}
+    assert o == {"scenes": 2, "shots": 3, "with_image": 2, "with_video": 1, "clips": 3, "atelier": False, "books": 0}
 
 
 def test_atelier_offer(client, auth_headers, ws) -> None:
