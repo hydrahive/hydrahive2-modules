@@ -39,6 +39,8 @@ describe("Modelle im Drehbuch – aus dem Katalog", () => {
     const reg = toCatalog({ default: "claude-sonnet-4-6", models: [{ id: "openai-codex/gpt-6-astra", label: "GPT-6 Astra", provider: "openai-codex" }] })
     expect(reg.models[0].name).toBe("GPT-6 Astra")
     expect(toCatalog(null)).toEqual({ default: "", models: [] })
+    const odd = toCatalog({ models: [{ id: "a/leer", name: "" }, { name: "ohne ID" }, { id: "" }, null, "x", { id: 5 }] })
+    expect(odd.models).toEqual([{ id: "a/leer", name: "a/leer" }])                  // leerer Name → ID; ohne gültige ID → weg
     expect(toCatalog({ models: "kaputt" })).toEqual({ default: "", models: [] })
   })
 
