@@ -4,10 +4,12 @@ import { ElementForm } from "./ElementForm"
 import { HeadForm } from "./HeadForm"
 import { sceneOf } from "./planLogic"
 import { SceneForm } from "./SceneForm"
+import { ShotForm } from "./ShotForm"
 import type { PlanState } from "./usePlan"
+import type { ShotsState } from "./useShots"
 
 /** Planen, rechts: Formular des Gewählten. `key` mit `rev` setzt das Formular nach dem Speichern auf die frischen Daten. */
-export function PlanInspector({ p, images }: { p: PlanState; images: LibraryItem[] }) {
+export function PlanInspector({ p, shots, images }: { p: PlanState; shots?: ShotsState; images: LibraryItem[] }) {
   const { t } = useTranslation("studio")
   const { plan, selection: sel } = p
   let body: React.ReactNode = <p className="mt-3 text-xs text-[#68758a]">{t("nothing_selected")}</p>
@@ -25,20 +27,13 @@ export function PlanInspector({ p, images }: { p: PlanState; images: LibraryItem
       body = <ElementForm key={`${el.id}-${p.rev}`} element={el} base={plan.base} images={images} busy={p.busy}
         onSave={(e) => void p.saveElement(el.id, e)} onDelete={() => p.setDialog({ kind: "delete", target: "element", id: el.id, name: el.name })} />
     }
-  } else if (plan && sel?.kind === "shot") {
-    const shot = sceneOf(plan, sel)?.shots.find((s) => s.id === sel.id)
-    if (shot) {
-      body = (
-        <div className="mt-3 space-y-2 text-xs" data-plan-form="shot">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[#8d9ab0]">
-            <dt>{t("f.camera")}</dt><dd className="text-right text-[#e8eef8]">{shot.shot ? t(`cam.shot.${shot.shot}`) : "–"}</dd>
-            <dt>{t("length")}</dt><dd className="text-right text-[#e8eef8]">{shot.duration} s</dd>
-            <dt>{t("f.status")}</dt><dd className="text-right text-[#e8eef8]">{t(`shot_status.${shot.status}`, { defaultValue: shot.status })}</dd>
-          </dl>
-          {shot.prompt && <p className="whitespace-pre-wrap rounded-[4px] bg-[#111827] p-2 text-[#c3ccdd]">{shot.prompt}</p>}
-          <p className="text-[10px] leading-relaxed text-[#68758a]">{t("shots_soon")}</p>
-        </div>
-      )
+  } else if (plan && sel?.kind === "shot" && shots) {
+    const scene = sceneOf(plan, sel)
+    const index = scene?.shots.findIndex((s) => s.id === sel.id) ?? -1
+    const shot = index >= 0 ? scene?.shots[index] : undefined
+    if (scene && shot) {
+      body = <ShotForm key={`${shot.id}-${p.rev}`} shot={shot} index={index} elements={plan.elements} sceneElementIds={scene.element_ids}
+        presets={plan.presets.shot ?? []} busy={p.busy} onSave={(d) => void shots.save(shot.id, d)} onDelete={() => shots.remove(shot.id, index)} />
     }
   }
   return (

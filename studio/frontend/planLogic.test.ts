@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { errorText, fileOf, importAmounts, moveScene, paletteFromText, sceneOf, showImport } from "./planLogic"
+import { errorCode, errorText, fileOf, importAmounts, moveScene, paletteFromText, sceneOf, showImport } from "./planLogic"
 import type { ImportPreview, Plan } from "./planApi"
 
 const t = (k: string) => `T:${k}`
@@ -35,6 +35,10 @@ describe("Planen – Logik", () => {
     expect(errorText(t, new Error("studio_plan_exists"))).toBe("T:err.studio_plan_exists")
     expect(errorText(t, new Error("Netz weg"))).toBe("Netz weg")
     expect(errorText(t, "kaputt")).toBe("T:load_failed")
+    const coded = Object.assign(new Error("Übersetzter Kern-Text"), { code: "studio_decompose_has_media" })
+    expect(errorText(t, coded)).toBe("T:err.studio_decompose_has_media")      // Code des API-Clients zählt
+    expect(errorCode(coded)).toBe("studio_decompose_has_media")
+    expect(errorCode(Object.assign(new Error("x"), { code: "fremd" }))).toBeNull()
   })
 
   it("Farbpalette aus Text: getrennt durch Komma oder Leerzeichen, höchstens 12", () => {
