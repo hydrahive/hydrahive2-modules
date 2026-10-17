@@ -53,7 +53,7 @@ export function CommandPalette({ onClose, onRun }: { onClose: () => void; onRun:
           if (e.key === "ArrowUp") { e.preventDefault(); setIdx((i) => Math.max(i - 1, 0)) }
           if (e.key === "Enter" && hits[idx]) run(hits[idx].action)
         }}
-        className="w-full border-b border-[#2a364b] bg-transparent px-4 py-3 text-sm text-[#e8eef8] outline-none placeholder:text-[#3f4b60]" />
+        className="w-full border-b border-[#2a364b] bg-transparent px-4 py-3 text-sm text-[#e8eef8] outline-none placeholder:text-[#68758a]" />
       <ul className="max-h-[50vh] overflow-y-auto py-1 text-xs">
         {hits.map((s, i) => (
           <li key={s.action}>

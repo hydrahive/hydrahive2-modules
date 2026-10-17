@@ -31,7 +31,7 @@ export function LibraryPanel({ selected, onSelect }: { selected: string | null; 
       <label className="mx-3 mt-2 flex items-center gap-1.5 rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1">
         <Search size={12} className="text-[#68758a]" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")}
-          className="w-full bg-transparent text-xs text-[#e8eef8] outline-none placeholder:text-[#3f4b60]" />
+          className="w-full bg-transparent text-xs text-[#e8eef8] outline-none placeholder:text-[#68758a]" />
       </label>
       <div className="mt-2 min-h-0 flex-1 space-y-3 overflow-y-auto px-2 pb-3">
         {GROUPS.map((g) => {

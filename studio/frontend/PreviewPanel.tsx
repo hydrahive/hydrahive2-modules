@@ -10,6 +10,21 @@ interface Props {
   onSeek: (t: number) => void
 }
 
+/** Pegelanzeige links/rechts (Attrappe: bewegt sich nur beim Abspielen). */
+function Meter({ playing }: { playing: boolean }) {
+  const { t } = useTranslation("studio")
+  return (
+    <div className="flex h-full max-h-64 shrink-0 gap-0.5 self-center" title={t("meter")} data-studio-meter>
+      {[0.72, 0.64].map((lvl, i) => (
+        <div key={i} className="relative w-1.5 overflow-hidden rounded-full bg-[#111827]">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#5fd38d] via-[#d8d35f] to-[#ff6b8a] transition-all duration-150"
+            style={{ height: playing ? `${lvl * 100}%` : "0%" }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /** Vorschau: Bild, Transportleiste, Zeitcode, Format und Proxy-Schalter (Attrappe: farbige Fläche statt Video). */
 export function PreviewPanel({ time, playing, onPlay, onSeek }: Props) {
   const { t } = useTranslation("studio")
@@ -17,13 +32,14 @@ export function PreviewPanel({ time, playing, onPlay, onSeek }: Props) {
   const btn = "rounded-[4px] p-1.5 text-[#c3ccdd] hover:bg-[#111827] hover:text-white"
   return (
     <section className="flex h-full min-h-0 flex-col items-center justify-center gap-2 p-3" data-studio-panel="preview">
-      <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
+      <div className="relative flex min-h-0 w-full flex-1 items-center justify-center gap-2">
         <div className="aspect-video max-h-full w-full max-w-full rounded-[4px] border border-[#223048]"
           style={{ background: `radial-gradient(circle at 30% 40%, hsl(${hue} 50% 38%), hsl(${hue + 40} 45% 10%))` }}>
           <div className="flex h-full items-end justify-center pb-[8%]">
             {time > 6.5 && time < 10 && <span className="rounded bg-black/50 px-2 py-0.5 text-sm text-white">Wo bist du gewesen?</span>}
           </div>
         </div>
+        <Meter playing={playing} />
       </div>
       <div className="flex w-full items-center gap-1">
         <button type="button" className={btn} title={t("goto_start")} onClick={() => onSeek(0)}><SkipBack size={14} /></button>

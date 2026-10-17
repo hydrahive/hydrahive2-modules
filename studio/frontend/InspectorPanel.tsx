@@ -10,7 +10,7 @@ interface Props {
 }
 
 const label = "block text-[10px] font-bold uppercase tracking-wide text-[#68758a]"
-const field = "mt-1 w-full rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1 text-xs text-[#e8eef8]"
+const field = "mt-1 w-full rounded-[4px] border border-[#46617f] bg-[#111827] px-2 py-1 text-xs text-[#e8eef8]"
 
 /** Eigenschaften: zeigt je nach Arbeitsbereich und Auswahl das Passende (Attrappe). */
 export function InspectorPanel({ workspace, clipId, mediaId }: Props) {
@@ -47,7 +47,7 @@ function GenerateForm({ placeholder }: { placeholder: string | null }) {
   const { t } = useTranslation("studio")
   return (
     <div className="mt-3 space-y-3 text-xs" data-studio-generate>
-      {placeholder && <p className="rounded-[4px] border border-[#ffb86b]/40 bg-[#ffb86b]/10 px-2 py-1.5 text-[#ffb86b]">{t("fill_placeholder", { name: placeholder })}</p>}
+      {placeholder && <p className="rounded-[4px] border border-[#ffb86b]/40 bg-[#ffb86b]/10 px-2.5 py-2 leading-relaxed text-[#ffb86b]">{t("fill_placeholder", { name: placeholder })}</p>}
       <div className="flex gap-1">
         {(["image", "video", "voice", "music"] as const).map((k, i) => (
           <button key={k} type="button" className={`flex-1 rounded-[4px] px-1 py-1 text-[11px] font-bold ${i === 1 ? "bg-[#1c2940] text-[#69d7ff]" : "bg-[#111827] text-[#8d9ab0]"}`}>
