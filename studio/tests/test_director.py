@@ -59,7 +59,7 @@ def test_failure_keeps_old_shots(client, auth_headers, ws) -> None:
     _, _, sc = _setup(client, auth_headers)
     D = f"{P}/scenes/{sc['id']}/decompose"
     client.post(f"{P}/scenes/{sc['id']}/shots", headers=auth_headers, json={"prompt": "alt"})
-    for side in (dict(side_effect=RuntimeError("api down")), dict(return_value="Leider nein."), dict(return_value="[]")):
+    for side in ({"side_effect": RuntimeError("api down")}, {"return_value": "Leider nein."}, {"return_value": "[]"}):
         with patch(LLM, new=AsyncMock(**side)):
             r = client.post(D, headers=auth_headers, json={})
         assert r.status_code == 502 and r.json()["detail"]["code"] == "studio_decompose_failed", side
