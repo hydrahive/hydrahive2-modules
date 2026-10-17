@@ -46,6 +46,8 @@ def _work(pid: str, scene_id: str, shot_id: str) -> dict:
         duration = video_provider.nearest(int(shot.get("duration") or 5), video_provider.allowed_durations(model))
         image_rel = shot.get("image_rel") or ""
         prompt = generate.build_prompt(pid, scene, shot)
+        # Hat der Shot schon ein Video, bleibt es bei einem Fehlschlag stehen: dann zurück auf „fertig“, sonst „fehlgeschlagen“
+        back = "done" if shot.get("video_rel") else "failed"
         _set_shot(pid, scene_id, shot_id, status="video_processing")
         try:
             rid = video_provider.submit_video(model=model, prompt=prompt, image_url=_image_data_url(pid, image_rel),
@@ -56,7 +58,7 @@ def _work(pid: str, scene_id: str, shot_id: str) -> dict:
             target.parent.mkdir(parents=True, exist_ok=True)
             video_provider.download_video(url, target)
         except (video_provider.ProviderError, jobs.JobFailed) as e:
-            _set_shot(pid, scene_id, shot_id, status="failed")
+            _set_shot(pid, scene_id, shot_id, status=back)
             raise jobs.JobFailed(str(e)) from e
         rel = f"{MEDIA_DIR}/{name}"
         created = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

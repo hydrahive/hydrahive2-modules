@@ -112,6 +112,6 @@ def _reset_video_shot(pid: str, scene_id, shot_id) -> None:
     items = list(scene.get("shots") or [])
     for i, s in enumerate(items):
         if isinstance(s, dict) and s.get("id") == shot_id and s.get("status") == "video_processing":
-            items[i] = {**s, "status": "failed"}
+            items[i] = {**s, "status": "done" if s.get("video_rel") else "failed"}
             shots.save_shots(pid, scene, items)
             return

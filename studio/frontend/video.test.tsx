@@ -66,3 +66,13 @@ describe("Studio 3b – Video", () => {
     expect([...out.matchAll(/data-storyboard-video="([^"]+)"/g)].map((m) => m[1])).toEqual(["a"])
   })
 })
+
+describe("Neuer Versuch fehlgeschlagen, altes Video da", () => {
+  it("zeigt das alte Video weiter und die Meldung zum letzten Versuch", () => {
+    const s = shot({ image_rel: "studio/media/images/1.png", video_rel: "studio/media/videos/v.mp4", status: "done" })
+    const out = html(<ShotVideo shot={s} base="/w" job={job({ status: "failed", error: "provider_rejected" })} onGenerate={noop} />)
+    expect(out).toContain("data-shot-video-player")
+    expect(out).toContain("job_err.provider_rejected")
+    expect(out).toContain("video_again")
+  })
+})
