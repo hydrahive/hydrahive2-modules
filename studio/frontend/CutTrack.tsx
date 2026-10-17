@@ -10,7 +10,7 @@ import type { TimelineClip } from "./timelineApi"
 /** Was die Spur zum Bearbeiten braucht (ohne: nur ansehen wie in 4a). */
 export interface TrackEdit {
   onMove: (id: string, index: number) => void
-  /** Kürzen: Rand um `delta` Sekunden; `final` = losgelassen (für Rückgängig nur ein Schritt). */
+  /** Kürzen: Rand um `delta` Sekunden gegenüber dem Stand beim Greifen; `final` = losgelassen (ein Verlaufsschritt). */
   onTrim: (id: string, edge: "start" | "end", delta: number, final: boolean) => void
   onDrop: (mediaId: string, index: number) => void
   /** Einfügemarke (Filmzeit) beim Ziehen – von außen gesetzt, damit die Anzeige testbar ist. */
@@ -54,16 +54,15 @@ export function CutTrack({ clips, base, view, time, selected, edit, onSelect, on
     if (!c) return
     const edgeT = edge === "start" ? c.start : c.start + clipLength(c)
     const perPx = view.span / (el.getBoundingClientRect().width || 1)
-    let last = 0
     const delta = (x: number) => {
       const raw = edgeT + (x - x0) * perPx
       const snapped = snapEdge(raw, edit.snapTo, view.span, el.getBoundingClientRect().width)
       return snapped - edgeT
     }
-    const move = (e: PointerEvent) => { const d = delta(e.clientX); edit.onTrim(id, edge, d - last, false); last = d }
+    const move = (e: PointerEvent) => edit.onTrim(id, edge, delta(e.clientX), false)
     const up = (e: PointerEvent) => {
       window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up)
-      const d = delta(e.clientX); edit.onTrim(id, edge, d - last, true)
+      edit.onTrim(id, edge, delta(e.clientX), true)
     }
     window.addEventListener("pointermove", move)
     window.addEventListener("pointerup", up)

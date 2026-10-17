@@ -72,6 +72,18 @@ describe("4b – magnetische Hauptspur", () => {
     expect(Math.round((minStart.out - minStart.in) * FPS)).toBe(MIN_FRAMES)
   })
 
+  it("Kürzen in vielen kleinen Schritten = ein großer Schritt vom Ausgangsstand (nichts geht durch Runden verloren)", () => {
+    // Die Oberfläche rechnet beim Ziehen immer vom Stand beim Greifen aus – so wie hier: Gesamtverschiebung je Ereignis.
+    const total = -1.6
+    let shown = ALL
+    for (let i = 1; i <= 6; i++) shown = trim(ALL, "b", "end", (total * i) / 6, FPS)
+    expect(shown[1].out).toBe(trim(ALL, "b", "end", total, FPS)[1].out)
+    expect(shown[1].out).toBe(5.4)
+    let wrong = ALL                                                                       // so war es falsch: kleine Schritte auf dem schon gekürzten Stand
+    for (let i = 0; i < 6; i++) wrong = trim(wrong, "b", "end", total / 6 / 20, FPS)
+    expect(wrong[1].out).toBe(7)                                                          // jeder Mini-Schritt fällt beim Runden weg
+  })
+
   it("Löschen, Verdoppeln, Einfügen, Anhängen", () => {
     expect(lay(remove(ALL, "b", FPS))).toBe("a@0+4 c@4+2")
     const d = duplicate(ALL, "a", FPS, id)

@@ -71,10 +71,11 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     else if (a.kind === "duplicate") apply(duplicate(clips, selected, fps, newId))
   }, [apply, clips, fps, selected, select, time, hist])
 
-  // Kürzen: während des Ziehens ohne Verlaufsschritt, beim Loslassen genau ein Schritt
+  // Kürzen: immer vom Stand beim Greifen aus (delta = Gesamtverschiebung), während des Ziehens ohne Verlaufsschritt,
+  // beim Loslassen genau ein Schritt
   const onTrim = useCallback((id: string, edge: "start" | "end", delta: number, final: boolean) => {
     if (!trimFrom.current) trimFrom.current = clips
-    const next = trim(clips, id, edge, delta, fps, durations.current)
+    const next = trim(trimFrom.current, id, edge, delta, fps, durations.current)
     if (!final) { apply(next, false); return }
     const before = trimFrom.current
     trimFrom.current = null
