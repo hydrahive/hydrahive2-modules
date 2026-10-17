@@ -75,3 +75,13 @@ def test_unknown_or_foreign_book(client, auth_headers, ws) -> None:
     b = make_book(ws)
     r = client.post(f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/plan/draft/book", headers=auth_headers, json={"book_id": b["id"]})
     assert r.status_code == 404
+
+
+def test_pov_alone_assigns_the_character(client, auth_headers, ws) -> None:
+    """Perspektive allein (Name kommt im Text nicht vor) ordnet die Figur zu, auch über einen Alias, ohne Groß/klein."""
+    b = make_book(ws, chapters=[{"title": "A", "scenes": [{"title": "Nebel", "summary": "Niemand ist da.", "pov": "mira"},
+                                                          {"title": "Wind", "summary": "Es pfeift.", "pov": "Miri"},
+                                                          {"title": "Leer", "summary": "Stille.", "pov": "Ole"}]}])
+    d = client.post(f"{D}/book", headers=auth_headers, json={"book_id": b["id"]}).json()["draft"]
+    mira = next(e["key"] for e in d["elements"] if e["name"] == "Mira")
+    assert [s["element_keys"] for s in d["scenes"]] == [[mira], [mira], []]
