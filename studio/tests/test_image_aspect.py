@@ -69,3 +69,13 @@ def test_second_rejection_stops(calls, monkeypatch) -> None:
     with pytest.raises(image_provider.ProviderError):
         image_provider.request_image(model="m", prompt="p", references=[], aspect_ratio="16:9")
     assert len(calls) == 2                                                        # genau ein Neuversuch, keine Schleife
+
+
+def test_changing_lists_do_not_loop(calls, monkeypatch) -> None:
+    """Nennt der Anbieter beim Neuversuch wieder andere Formate, bleibt es bei genau einem Neuversuch."""
+    from backend import image_provider
+    other = Resp(400, REJECT.replace("Accepted: 1:1, 3:2, 2:3, auto", "Accepted: 1:1"))
+    monkeypatch.setattr(httpx, "post", _post(calls, [Resp(400, REJECT), other, other]))
+    with pytest.raises(image_provider.ProviderError) as e:
+        image_provider.request_image(model="m", prompt="p", references=[], aspect_ratio="16:9")
+    assert str(e.value) == "provider_rejected" and len(calls) == 2
