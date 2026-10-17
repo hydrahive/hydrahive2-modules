@@ -56,9 +56,17 @@ describe("4b – automatisch speichern", () => {
     s.change(tl(2, 2))
     await s.flush()
     expect(save).toHaveBeenCalledTimes(1)                                                // nach Konflikt kein weiterer Versuch
-    const failing = new AutoSaver(async () => { throw new Error("netz weg") }, (st) => states.push(st))
+    let down = true
+    const flaky = vi.fn(async (t: Timeline) => { if (down) throw new Error("netz weg"); return { ...t, revision: t.revision + 1 } })
+    const failing = new AutoSaver(flaky, (st) => states.push(st))
     failing.loaded(tl(0)); failing.change(tl(0, 1)); await failing.flush()
     expect(states.at(-1)).toBe("error")
+    down = false
+    failing.change(tl(0, 2)); await failing.flush()                                      // nächste Änderung versucht es wieder
+    expect(flaky).toHaveBeenCalledTimes(2)
+    expect(flaky.mock.calls[1][0]).toMatchObject({ revision: 0 })
+    expect(flaky.mock.calls[1][0].tracks[0].clips).toHaveLength(2)
+    expect(states.at(-1)).toBe("saved")
     const idle = vi.fn(async (t: Timeline) => t)
     const nothing = new AutoSaver(idle, () => {})
     nothing.loaded(tl(0)); await nothing.flush()
