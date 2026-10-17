@@ -494,6 +494,58 @@ hydratest-E2E im Testprojekt:
 - Neuladen
 - 1600 und 1280 px
 
+## Bauplan 4b – Bearbeiten (17.10.)
+
+**Grundentscheidung: magnetische Hauptspur** (wie CapCut oder die Hauptspur in Final Cut). Die Clips auf V1 liegen
+immer lückenlos hintereinander. Verschieben heißt umsortieren. Kürzen, Teilen und Löschen schieben den Rest automatisch
+nach. Das passt zu einem Film aus Shots, ist für Laien sofort verständlich und vermeidet Überlappungen und
+versehentliche schwarze Lücken. Freies Platzieren mit Lücken und Überlagerungen kommt mit weiteren Spuren (Text, Ton) in
+den späteren Etappen.
+
+**Bearbeiten (alles im Browser, reine Funktionen in `cutEdit.ts`, jede Änderung bildgenau auf 1/fps gerundet):**
+
+| Aktion | Bedienung | Wirkung |
+|---|---|---|
+| Auswählen | Klick auf Clip | wählt ihn aus, Abspielkopf springt an den Anfang |
+| Umsortieren | Clip ziehen | Einfügemarke zeigt die neue Stelle, beim Loslassen rückt alles nach |
+| Kürzen | linken/rechten Rand ziehen | ändert `in`/`out`, der Rest rückt nach. Mindestlänge 5 Bilder. Videos nicht über ihr Ende hinaus (soweit die Länge bekannt ist) |
+| Teilen | S oder Knopf | teilt den Clip unter dem Abspielkopf in zwei |
+| Teilen und links/rechts löschen | Q / W | teilt und entfernt den Teil vor bzw. nach dem Abspielkopf |
+| Löschen | Entf oder Knopf | entfernt den gewählten Clip, der Rest rückt nach |
+| Verdoppeln | Strg+D oder Knopf | Kopie direkt dahinter |
+| Kopieren / Einfügen | Strg+C / Strg+V | Einfügen hinter dem gewählten Clip, sonst ans Ende |
+| Rückgängig / Wiederholen | Strg+Z / Strg+Shift+Z (oder Knöpfe) | bis 100 Schritte, je Projekt im Browser, nicht gespeichert |
+| Einrasten | N oder Magnet-Knopf | beim Kürzen rastet der Rand am Abspielkopf ein |
+| Aus der Bibliothek | Video oder Bild auf die Spur ziehen, oder Knopf „An die Zeitleiste anhängen“ in den Eigenschaften | fügt an der Stelle ein. Bilder 5 s, Videos in voller Länge; fehlt die Länge, ermittelt der Browser sie, sonst 5 s. Musik und Sprache gehen noch nicht (Hinweis: kommt mit „Ton“) |
+
+- **Automatisch speichern:** 0,8 s nach der letzten Änderung, mit `revision`.
+  - In der Leiste steht der Stand „Gespeichert“, „Speichert …“ oder „Nicht gespeichert“.
+  - Bei 409 `studio_timeline_conflict` (anderer Tab) erscheint eine Meldung mit Knopf „Neu laden“. Es wird nichts still
+    überschrieben.
+  - Verlässt man den Reiter, wird sofort gespeichert.
+- **Backend:** zusätzliche Prüfregel: Auf V1 dürfen sich Clips nicht überlappen. Lücken sind erlaubt (ältere Daten).
+  Sonst bleibt alles wie in 4a. Ein überlappender Clip lehnt die ganze Fassung ab (400 `studio_timeline_invalid`), beim
+  Laden wird der überlappende Clip übersprungen.
+- **Tastenkürzel** wirken nur im Reiter „Schneiden“ und nicht in Eingabefeldern. Der Hinweis „kommt mit dem echten
+  Schnitt“ entfällt, Marker kommen später („kommt später“).
+- **Nicht in 4b:** Proxies und Filmstreifen (4c), MP4-Ausgabe (4d), mehrere Spuren, Übergänge, Mehrfachauswahl.
+
+**Tests 4b:**
+- Backend: Überlappung abgelehnt, Lücke erlaubt, beim Laden übersprungen.
+- Frontend:
+  - jede Bearbeitung als reine Funktion, mit Randfällen: Teilen am Rand, Mindestlänge, Video-Ende, Umsortieren an
+    Anfang und Ende, Einfügen aus der Bibliothek
+  - Rückgängig und Wiederholen
+  - Einrasten
+  - Speicherstand und Konflikt
+- hydratest-E2E im Browser:
+  - Teilen mit S, Umsortieren per Ziehen, Kürzen per Ziehen, Löschen, Verdoppeln
+  - Rückgängig und Wiederholen
+  - Bild aus der Bibliothek ziehen
+  - Neuladen behält alles
+  - Konflikt mit zweitem Tab
+  - jeweils bei 1600 und 1280 px
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.

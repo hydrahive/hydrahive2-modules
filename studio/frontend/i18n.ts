@@ -71,7 +71,7 @@ const de = {
   resize_library: "Breite der Bibliothek",
   resize_inspector: "Breite der Eigenschaften",
   resize_timeline: "Höhe der Zeitleiste",
-  toast_later: "„{{action}}“ kommt mit dem echten Schnitt.",
+  toast_later: "„{{action}}“ kommt später.",
   action: {
     "toggle-play": "Abspielen / Pause", "seek-back": "Zurückspulen (mehrfach = schneller)", "seek-forward": "Vorspulen (mehrfach = schneller)",
     "frame-back": "Ein Bild zurück", "frame-forward": "Ein Bild vor", "jump-back": "5 Sekunden zurück", "jump-forward": "5 Sekunden vor",
@@ -152,7 +152,7 @@ const en: typeof de = {
   resize_library: "Library width",
   resize_inspector: "Properties width",
   resize_timeline: "Timeline height",
-  toast_later: "“{{action}}” comes with real editing.",
+  toast_later: "“{{action}}” comes later.",
   action: {
     "toggle-play": "Play / pause", "seek-back": "Rewind (press again = faster)", "seek-forward": "Fast forward (press again = faster)",
     "frame-back": "One frame back", "frame-forward": "One frame forward", "jump-back": "5 seconds back", "jump-forward": "5 seconds forward",

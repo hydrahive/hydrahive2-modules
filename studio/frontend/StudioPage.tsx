@@ -9,6 +9,8 @@ import { followView } from "./cutLogic"
 import { CutInspector } from "./CutInspector"
 import { CutPreview } from "./CutPreview"
 import { CutTimeline } from "./CutTimeline"
+import { CutToolbar } from "./CutToolbar"
+import { editAction } from "./cutKeys"
 import { FromPlanDialog } from "./FromPlanDialog"
 import { DecomposeDialog } from "./DecomposeDialog"
 import { DeleteDialog } from "./DeleteDialog"
@@ -30,6 +32,7 @@ import { useLibrary } from "./useLibrary"
 import { usePlan } from "./usePlan"
 import { useBatch } from "./useBatch"
 import { useCut } from "./useCut"
+import { useCutEdit } from "./useCutEdit"
 import { useCutPlayer } from "./useCutPlayer"
 import { useJobs } from "./useJobs"
 import { useShots } from "./useShots"
@@ -45,8 +48,13 @@ export function StudioPage() {
   const [workspace, setWorkspace] = useState<Workspace>("edit")
   const cut = useCut(lib.projectId, workspace === "edit")
   const cp = useCutPlayer(cut.clips)
-  // Im Reiter „Schneiden“ steuern die Tasten den Film – außer ein Medium aus der Bibliothek ist gewählt (Vorrang in der Vorschau)
-  const s = useStudioState(lib.items, workspace, setWorkspace, (item) => (workspace === "edit" && !item ? cp : null))
+  const ed = useCutEdit(lib.projectId, cut.timeline, cut.setTimeline, cut.selected, cut.select, cp.time)
+  const editKeys = (a: Parameters<typeof editAction>[0]) => { const x = editAction(a); if (x) ed.run(x); return !!x }
+  const changeWs = (w: Workspace) => { if (workspace === "edit" && w !== "edit") void ed.flush(); setWorkspace(w) }   // verlassen → sofort speichern
+  // Im Reiter „Schneiden“ steuern die Tasten Film und Schnitt. Ist ein Medium aus der Bibliothek gewählt, spielt die
+  // Vorschau das Medium – dann bleibt das Abspielen bei ihm, Teilen/Löschen/Rückgängig wirken weiter auf den Schnitt.
+  const s = useStudioState(lib.items, workspace, changeWs,
+    (item) => (workspace !== "edit" ? null : item ? { edit: editKeys, toggleSnap: ed.toggleSnap } : { ...cp, edit: editKeys, toggleSnap: ed.toggleSnap }))
   const planning = s.workspace === "plan"
   const generating = s.workspace === "generate"
   const shotsWs = planning || generating                       // beide arbeiten auf dem Drehbuch
@@ -94,7 +102,8 @@ export function StudioPage() {
             <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
               {planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} />
                 : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} /> : <GenerateHint />)
-                : cutting ? <CutInspector clip={cut.clip} onPlan={toPlan} />
+                : s.workspace === "edit" ? <CutInspector clip={s.item ? null : cut.clip} onPlan={toPlan} media={s.item}
+                    onAppend={() => { if (s.item && ed.addMedia(s.item)) { s.clearMedia(); cut.setNotice(t("cut_notice_appended")) } }} />
                 : <MediaInfo item={s.item} />}
             </div>
           </div>
@@ -110,6 +119,10 @@ export function StudioPage() {
             : s.workspace === "edit"
               ? <CutTimeline timeline={cut.timeline} base={cut.timeline?.base ?? ""} time={cp.time} view={followView(cut.view, cp.time, cp.total)}
                   selected={cut.selected} busy={cut.busy} onView={cut.setView} onSeek={cp.seek} onFromPlan={cut.fromPlan}
+                  toolbar={<CutToolbar save={ed.save} selected={cut.selected} canUndo={ed.canUndo} canRedo={ed.canRedo} canSplit={ed.canSplit}
+                    snap={ed.snap} onAction={ed.run} onSnap={ed.toggleSnap} onReload={() => void cut.reload()} />}
+                  edit={{ onMove: ed.move, onTrim: ed.onTrim, dropAt: null, snapTo: ed.snapTo,
+                    onDrop: (mediaId, index) => { const it = lib.items.find((i) => i.id === mediaId); if (it && !ed.addMedia(it, index)) cut.setNotice(t("cut_no_audio_yet")) } }}
                   onSelect={(id) => { s.clearMedia(); cut.select(id); const c = cut.clips.find((x) => x.id === id); if (c) cp.seek(c.start) }} />
             : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
         </div>

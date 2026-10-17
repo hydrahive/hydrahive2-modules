@@ -1,10 +1,10 @@
-import { Clapperboard, Film, Image as ImageIcon, Loader2, Sparkles, ZoomIn, ZoomOut } from "lucide-react"
+import { Clapperboard, Loader2, ZoomIn, ZoomOut } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { fileUrl } from "@/shared/files"
 import { clipLength, filmLength } from "./cutLogic"
-import { fileOf } from "./planLogic"
+import { pct } from "./cutDnd"
+import { CutTrack, type TrackEdit } from "./CutTrack"
 import { centerAt, tickStep, toFraction, zoom, type Viewport } from "./timeline"
-import { clipsOf, type Timeline, type TimelineClip } from "./timelineApi"
+import { clipsOf, type Timeline } from "./timelineApi"
 
 interface Props {
   timeline: Timeline | null
@@ -17,16 +17,18 @@ interface Props {
   onSeek: (t: number) => void
   onSelect: (id: string) => void
   onFromPlan: () => void
+  /** Werkzeugleiste (4b) und Bearbeiten; ohne nur Ansehen. */
+  toolbar?: React.ReactNode
+  edit?: TrackEdit
 }
 
-const pct = (n: number) => `${Math.round(n * 1e6) / 1e4}%`
 const fractionOf = (clientX: number, el: HTMLElement) => {
   const r = el.getBoundingClientRect()
   return r.width ? Math.min(1, Math.max(0, (clientX - r.left) / r.width)) : 0
 }
 
 /** Reiter „Schneiden“: echte Zeitleiste (Spur V1) mit Übersichtsleiste, Zoom und Abspielkopf (Etappe 4a). */
-export function CutTimeline({ timeline, base, time, view, selected, busy, onView, onSeek, onSelect, onFromPlan }: Props) {
+export function CutTimeline({ timeline, base, time, view, selected, busy, onView, onSeek, onSelect, onFromPlan, toolbar, edit }: Props) {
   const { t } = useTranslation("studio")
   const clips = clipsOf(timeline)
   const total = Math.max(filmLength(clips), 1)
@@ -45,6 +47,7 @@ export function CutTimeline({ timeline, base, time, view, selected, busy, onView
         <button type="button" className="rounded-[4px] p-1 hover:bg-[#111827]" title={t("zoom_in")} onClick={() => onView(zoom(view, 0.7, toFraction(time, view), total))}><ZoomIn size={13} /></button>
         <button type="button" className="rounded-[4px] p-1 hover:bg-[#111827]" title={t("zoom_out")} onClick={() => onView(zoom(view, 1.4, toFraction(time, view), total))}><ZoomOut size={13} /></button>
         <span className="ml-1 truncate">{t("cut_count", { count: clips.length })}</span>
+        {toolbar}
         <span className="ml-auto" />
         {fromPlan}
       </div>
@@ -69,39 +72,10 @@ export function CutTimeline({ timeline, base, time, view, selected, busy, onView
                 {ticks.filter((s) => toFraction(s, view) < 0.97).map((s) => <span key={s} className="absolute top-0.5" style={{ left: pct(toFraction(s, view)) }}>{s}s</span>)}
               </div>
             </div>
-            <div className="relative flex h-16 border-b border-[#1e2738]" data-studio-track="video">
-              <div className="flex w-24 shrink-0 items-center gap-1 border-r border-[#1e2738] bg-[#0d1420] px-2 text-[10px] font-bold text-[#8d9ab0]">V1 {t("cut_track_video")}</div>
-              <div className="relative min-w-0 flex-1 overflow-hidden" onPointerDown={(e) => { if (e.target === e.currentTarget) onSeek(view.start + fractionOf(e.clientX, e.currentTarget) * view.span) }}>
-                {clips.map((c) => <ClipBlock key={c.id} clip={c} base={base} view={view} active={c.id === selected} onSelect={onSelect} />)}
-                {toFraction(time, view) >= 0 && toFraction(time, view) <= 1 && (
-                  <span className="pointer-events-none absolute inset-y-0 w-px bg-[#ff6b8a]" data-studio-playhead style={{ left: pct(toFraction(time, view)) }} />
-                )}
-              </div>
-            </div>
+            <CutTrack clips={clips} base={base} view={view} time={time} selected={selected} edit={edit} onSelect={onSelect} onSeek={onSeek} />
           </div>
         </>
       )}
     </section>
-  )
-}
-
-function ClipBlock({ clip, base, view, active, onSelect }: { clip: TimelineClip; base: string; view: Viewport; active: boolean; onSelect: (id: string) => void }) {
-  const left = toFraction(clip.start, view)
-  const width = clipLength(clip) / view.span
-  if (left + width < 0 || left > 1) return null
-  const ph = clip.kind === "placeholder"
-  const img = clip.kind === "image" ? fileOf(base, clip.media_rel) : ""
-  return (
-    <button type="button" data-cut-clip={clip.id} data-placeholder={ph ? "1" : undefined} onClick={() => onSelect(clip.id)} title={clip.label}
-      className={`absolute inset-y-1.5 flex items-center gap-1 overflow-hidden rounded-[3px] px-1.5 text-left text-[10px] text-white
-        ${ph ? `border border-dashed ${clip.missing ? "border-[#ff6b8a] bg-[#ff6b8a]/10 text-[#ff6b8a]" : "border-[#ffb86b] bg-[#ffb86b]/10 text-[#ffb86b]"}`
-        : clip.kind === "image" ? "bg-[#3d5a80]" : "bg-[#2f6aa8]"} ${active ? "ring-2 ring-[#69d7ff]" : ""}`}
-      style={{ left: pct(left), width: pct(width) }}>
-      {img && <img src={fileUrl(img)} alt="" loading="lazy" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-35" />}
-      <span className="relative flex min-w-0 items-center gap-1">
-        {ph ? <Sparkles size={10} className="shrink-0" /> : clip.kind === "image" ? <ImageIcon size={10} className="shrink-0" /> : <Film size={10} className="shrink-0" />}
-        <span className="truncate">{clip.label}</span>
-      </span>
-    </button>
   )
 }

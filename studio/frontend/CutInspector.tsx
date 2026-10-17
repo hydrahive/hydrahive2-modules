@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight } from "lucide-react"
+import { AlertTriangle, ArrowRight, ListPlus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { clipLength } from "./cutLogic"
 import type { TimelineClip } from "./timelineApi"
@@ -6,8 +6,15 @@ import type { TimelineClip } from "./timelineApi"
 const round = (n: number) => Math.round(n * 100) / 100
 
 /** Eigenschaften eines Clips der Zeitleiste; Platzhalter springen zum Shot ins „Planen“. */
-export function CutInspector({ clip, onPlan }: { clip: TimelineClip | null; onPlan: (c: TimelineClip) => void }) {
+export function CutInspector({ clip, onPlan, media = null, onAppend }: {
+  clip: TimelineClip | null
+  onPlan: (c: TimelineClip) => void
+  /** Gewähltes Medium der Bibliothek (4b): an die Zeitleiste anhängen. */
+  media?: { kind: string; name: string } | null
+  onAppend?: () => void
+}) {
   const { t } = useTranslation("studio")
+  if (!clip && media) return <MediaAppend media={media} onAppend={onAppend} />
   return (
     <section className="flex h-full min-h-0 flex-col overflow-y-auto p-3" data-studio-panel="inspector">
       <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("properties")}</h2>
@@ -33,6 +40,26 @@ export function CutInspector({ clip, onPlan }: { clip: TimelineClip | null; onPl
           )}
         </div>
       )}
+    </section>
+  )
+}
+
+function MediaAppend({ media, onAppend }: { media: { kind: string; name: string }; onAppend?: () => void }) {
+  const { t } = useTranslation("studio")
+  const ok = media.kind === "image" || media.kind === "video"
+  return (
+    <section className="flex h-full min-h-0 flex-col overflow-y-auto p-3" data-studio-panel="inspector">
+      <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("properties")}</h2>
+      <p className="mt-3 break-words text-xs font-bold text-[#e8eef8]">{media.name}</p>
+      {ok ? (
+        <>
+          <button type="button" onClick={onAppend} data-cut-append
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-[4px] bg-[#69d7ff] py-1.5 text-xs font-black text-[#08111c]">
+            <ListPlus size={13} /> {t("cut_append")}
+          </button>
+          <p className="mt-2 text-[10px] leading-relaxed text-[#68758a]">{t("cut_append_hint")}</p>
+        </>
+      ) : <p className="mt-3 rounded-[4px] border border-[#46617f] bg-[#111827] px-2.5 py-2 text-[11px] leading-relaxed text-[#8d9ab0]">{t("cut_no_audio_yet")}</p>}
     </section>
   )
 }

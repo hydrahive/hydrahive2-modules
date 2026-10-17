@@ -16,6 +16,11 @@ export const cut_de = {
   cut_replace_question_other: "Die Zeitleiste hat schon {{count}} Clips. Sie werden durch die Shots aus dem Drehbuch ersetzt. Medien in der Bibliothek bleiben erhalten.",
   cut_replace: "Ersetzen",
   cut_notice_built: "Zeitleiste aus dem Drehbuch aufgebaut.",
+  cut_save: { saved: "Gespeichert", dirty: "Nicht gespeichert", saving: "Speichert …", error: "Nicht gespeichert – nächster Versuch bei der nächsten Änderung", conflict: "In einem anderen Fenster geändert – bitte neu laden" },
+  cut_append: "An die Zeitleiste anhängen",
+  cut_append_hint: "Kommt ans Ende des Films. Du kannst Bilder und Videos auch direkt auf die Spur ziehen.",
+  cut_no_audio_yet: "Musik und Sprache kommen mit dem Reiter „Ton“ auf eigene Spuren. Auf die Video-Spur passen Bilder und Videos.",
+  cut_notice_appended: "An die Zeitleiste angehängt.",
   cut_err: {
     studio_timeline_invalid: "Die Schnittfassung enthält ungültige Angaben und wurde nicht gespeichert.",
     studio_timeline_conflict: "Die Schnittfassung wurde inzwischen woanders geändert. Bitte neu laden.",
@@ -40,6 +45,11 @@ export const cut_en: typeof cut_de = {
   cut_replace_question_other: "The timeline already has {{count}} clips. They will be replaced by the shots from the screenplay. Media in the library are kept.",
   cut_replace: "Replace",
   cut_notice_built: "Timeline built from the screenplay.",
+  cut_save: { saved: "Saved", dirty: "Not saved", saving: "Saving …", error: "Not saved – will retry with the next change", conflict: "Changed in another window – please reload" },
+  cut_append: "Append to the timeline",
+  cut_append_hint: "Goes to the end of the film. You can also drag images and videos straight onto the track.",
+  cut_no_audio_yet: "Music and voice come to their own tracks with the “Audio” tab. The video track takes images and videos.",
+  cut_notice_appended: "Appended to the timeline.",
   cut_err: {
     studio_timeline_invalid: "The edit contains invalid values and was not saved.",
     studio_timeline_conflict: "The edit was changed elsewhere in the meantime. Please reload.",

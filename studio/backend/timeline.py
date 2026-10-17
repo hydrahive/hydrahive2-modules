@@ -7,6 +7,7 @@ verworfen außer unbekannten Feldern).
 from __future__ import annotations
 
 import math
+from itertools import pairwise
 from typing import Any
 
 from . import plan
@@ -19,6 +20,7 @@ MAX_SECONDS = 4 * 3600
 FPS_ALLOWED = (24, 25, 30)
 FPS_DEFAULT = 25
 KINDS = ("video", "image", "placeholder")
+EPS = 1e-6                                 # Gleitkomma-Reste beim Aneinanderstoßen zählen nicht als Überlappung
 _EXT = {"video": VIDEO_EXT, "image": IMAGE_EXT}
 
 
@@ -84,18 +86,30 @@ def clean(pid: str, data: Any) -> dict:
     if not isinstance(raw_clips, list) or len(raw_clips) > MAX_CLIPS:
         raise Invalid()
     fps = data.get("fps") if data.get("fps") in FPS_ALLOWED else FPS_DEFAULT
-    return {"fps": fps, "tracks": [{"id": "V1", "kind": "video", "clips": [_clip(pid, c) for c in raw_clips]}]}
+    clips = sorted((_clip(pid, c) for c in raw_clips), key=lambda c: c["start"])
+    for a, b in pairwise(clips):                # magnetische Hauptspur: Clips dürfen sich nicht überlappen
+        if b["start"] < _end(a) - EPS:
+            raise Invalid()
+    return {"fps": fps, "tracks": [{"id": "V1", "kind": "video", "clips": clips}]}
+
+
+def _end(c: dict) -> float:
+    return c["start"] + c["out"] - c["in"]
 
 
 def _loaded_clips(pid: str, raw: dict) -> list[dict]:
     tracks = raw.get("tracks")
     first = tracks[0] if isinstance(tracks, list) and tracks and isinstance(tracks[0], dict) else {}
-    out = []
+    ok = []
     for c in (first.get("clips") if isinstance(first.get("clips"), list) else [])[:MAX_CLIPS]:
         try:
-            out.append(_clip(pid, c, on_load=True))
+            ok.append(_clip(pid, c, on_load=True))
         except plan.PlanError:
             continue                                     # einzelner kaputter Clip: überspringen, Rest bleibt
+    out: list[dict] = []
+    for c in sorted(ok, key=lambda c: c["start"]):
+        if not out or c["start"] >= _end(out[-1]) - EPS:  # überlappender Clip (alte/kaputte Datei) wird übersprungen
+            out.append(c)
     return out
 
 
