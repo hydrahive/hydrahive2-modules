@@ -1,0 +1,49 @@
+/** Texte für „Schneiden“ (Etappe 4). Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
+
+export const cut_de = {
+  cut_from_plan: "Aus dem Drehbuch übernehmen",
+  cut_from_plan_hint: "Legt alle Shots in Drehbuch-Reihenfolge hintereinander: Video, sonst Bild als Standbild, sonst Platzhalter.",
+  cut_empty: "Die Zeitleiste ist noch leer. „Aus dem Drehbuch übernehmen“ legt alle Shots hintereinander – fertige Videos, Bilder als Standbild und Platzhalter für das, was noch fehlt.",
+  cut_count_one: "{{count}} Clip",
+  cut_count_other: "{{count}} Clips",
+  cut_track_video: "Video",
+  cut_kind: { video: "Video", image: "Standbild", placeholder: "Platzhalter" },
+  cut_from_source: "Ab Stelle im Video",
+  cut_missing: "Das Medium wurde gelöscht. Erzeuge den Shot neu oder lege ein anderes Medium an diese Stelle.",
+  cut_placeholder_card: "Noch nicht erzeugt",
+  cut_to_plan: "Im Planen erzeugen",
+  cut_replace_question_one: "Die Zeitleiste hat schon {{count}} Clip. Er wird durch die Shots aus dem Drehbuch ersetzt. Medien in der Bibliothek bleiben erhalten.",
+  cut_replace_question_other: "Die Zeitleiste hat schon {{count}} Clips. Sie werden durch die Shots aus dem Drehbuch ersetzt. Medien in der Bibliothek bleiben erhalten.",
+  cut_replace: "Ersetzen",
+  cut_notice_built: "Zeitleiste aus dem Drehbuch aufgebaut.",
+  cut_err: {
+    studio_timeline_invalid: "Die Schnittfassung enthält ungültige Angaben und wurde nicht gespeichert.",
+    studio_timeline_conflict: "Die Schnittfassung wurde inzwischen woanders geändert. Bitte neu laden.",
+    studio_timeline_not_empty: "Die Zeitleiste ist nicht leer.",
+    studio_timeline_no_shots: "Das Drehbuch hat noch keine Shots. Lege sie im Reiter „Planen“ an.",
+  },
+}
+
+export const cut_en: typeof cut_de = {
+  cut_from_plan: "Take over from the screenplay",
+  cut_from_plan_hint: "Lays out all shots in screenplay order: video, otherwise the image as a still, otherwise a placeholder.",
+  cut_empty: "The timeline is still empty. “Take over from the screenplay” lays out all shots one after another – finished videos, images as stills and placeholders for what is still missing.",
+  cut_count_one: "{{count}} clip",
+  cut_count_other: "{{count}} clips",
+  cut_track_video: "Video",
+  cut_kind: { video: "Video", image: "Still", placeholder: "Placeholder" },
+  cut_from_source: "From point in video",
+  cut_missing: "The medium was deleted. Create the shot again or put another medium in this place.",
+  cut_placeholder_card: "Not created yet",
+  cut_to_plan: "Create in Plan",
+  cut_replace_question_one: "The timeline already has {{count}} clip. It will be replaced by the shots from the screenplay. Media in the library are kept.",
+  cut_replace_question_other: "The timeline already has {{count}} clips. They will be replaced by the shots from the screenplay. Media in the library are kept.",
+  cut_replace: "Replace",
+  cut_notice_built: "Timeline built from the screenplay.",
+  cut_err: {
+    studio_timeline_invalid: "The edit contains invalid values and was not saved.",
+    studio_timeline_conflict: "The edit was changed elsewhere in the meantime. Please reload.",
+    studio_timeline_not_empty: "The timeline is not empty.",
+    studio_timeline_no_shots: "The screenplay has no shots yet. Create them in the “Plan” tab.",
+  },
+}

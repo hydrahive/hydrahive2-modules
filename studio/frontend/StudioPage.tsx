@@ -1,9 +1,15 @@
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { BatchDialog } from "./BatchDialog"
 import { BatchMenu } from "./BatchMenu"
 import { BatchStatus } from "./BatchStatus"
+import { followView } from "./cutLogic"
+import { CutInspector } from "./CutInspector"
+import { CutPreview } from "./CutPreview"
+import { CutTimeline } from "./CutTimeline"
+import { FromPlanDialog } from "./FromPlanDialog"
 import { DecomposeDialog } from "./DecomposeDialog"
 import { DeleteDialog } from "./DeleteDialog"
 import { ImportDialog } from "./ImportDialog"
@@ -21,18 +27,26 @@ import { TimelinePanel } from "./TimelinePanel"
 import { useLibrary } from "./useLibrary"
 import { usePlan } from "./usePlan"
 import { useBatch } from "./useBatch"
+import { useCut } from "./useCut"
+import { useCutPlayer } from "./useCutPlayer"
 import { useJobs } from "./useJobs"
 import { useShots } from "./useShots"
 import { useStudioState } from "./useStudioState"
+import type { Workspace } from "./workspaces"
 
 const toastCls = "pointer-events-none fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-[4px] border border-[#46617f] bg-[#0e1420] px-3 py-1.5 text-xs text-[#c3ccdd]"
 
-/** Studio: Bibliothek + Vorschau (Etappe 1), „Planen“ mit echten Planungsdaten (Etappe 2a). Zeitleiste noch Beispiel. */
+/** Studio: Bibliothek + Vorschau (Etappe 1), „Planen“ (Etappe 2–3), „Schneiden“ mit echter Schnittfassung (Etappe 4). */
 export function StudioPage() {
   const { t } = useTranslation("studio")
   const lib = useLibrary()
-  const s = useStudioState(lib.items)
+  const [workspace, setWorkspace] = useState<Workspace>("edit")
+  const cut = useCut(lib.projectId, workspace === "edit")
+  const cp = useCutPlayer(cut.clips)
+  // Im Reiter „Schneiden“ steuern die Tasten den Film – außer ein Medium aus der Bibliothek ist gewählt (Vorrang in der Vorschau)
+  const s = useStudioState(lib.items, workspace, setWorkspace, (item) => (workspace === "edit" && !item ? cp : null))
   const planning = s.workspace === "plan"
+  const cutting = s.workspace === "edit" && !s.item
   const p = usePlan(lib.projectId, planning)
   const plan = { ...p, select: (x: Parameters<typeof p.select>[0]) => { s.clearMedia(); p.select(x) } }   // Auswahl im Drehbuch löst das Medium ab
   const focus = s.workspace === "audio" ? "audio" : s.workspace === "subtitles" ? "subtitles" : "all"
@@ -41,7 +55,12 @@ export function StudioPage() {
   const sh = useShots(plan, lib.projectId, () => void jobs.reload())
   const bt = useBatch(plan, lib.projectId, jobs.jobs, () => void jobs.reload())
   const scene = sh.scene
-  const reload = () => { void lib.reload(); if (planning) void p.reload() }
+  /** Platzhalter → zum Shot im „Planen“ springen, dort wird er erzeugt. */
+  const toPlan = (c: { scene_id: string; shot_id: string }) => {
+    s.setWorkspace("plan")
+    p.select({ kind: "shot", sceneId: c.scene_id, id: c.shot_id })
+  }
+  const reload = () => { void lib.reload(); if (planning) void p.reload(); if (s.workspace === "edit") void cut.reload() }
   return (
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
       <CockpitTopbar active="/studio" context={t("title")} />
@@ -58,12 +77,15 @@ export function StudioPage() {
             <div className="min-w-0 flex-1">
               {planning && !s.item
                 ? <div className="flex h-full min-h-0 items-center justify-center p-3" data-studio-panel="preview"><PlanPreview plan={p.plan} selection={p.selection} /></div>
+                : cutting ? <CutPreview clips={cut.clips} base={cut.timeline?.base ?? ""} fps={cut.timeline?.fps ?? 25} time={cp.time} total={cp.total}
+                    playing={cp.playing} current={cp.current} onSeek={cp.seek} onPlay={cp.toggle} bindVideo={cp.bindVideo} />
                 : <PreviewPanel item={s.item} bind={s.player.bind} time={s.item ? s.player.time : 0} duration={s.player.duration}
                     playing={s.player.playing} onPlay={s.player.toggle} onSeek={s.seek} />}
             </div>
             <Splitter dir="x" label={t("resize_inspector")} onDrag={(d) => s.drag("inspector", d)} />
             <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
               {planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} />
+                : cutting ? <CutInspector clip={cut.clip} onPlan={toPlan} />
                 : <InspectorPanel workspace={s.workspace} clipId={s.clipId} item={s.item} />}
             </div>
           </div>
@@ -76,6 +98,10 @@ export function StudioPage() {
                 onSelect={(id) => { if (scene) plan.select({ kind: "shot", sceneId: scene.id, id }) }}
                 batchMenu={<BatchMenu running={!!bt.active} onPick={(k) => void bt.open(k)} />}
                 onAdd={() => void sh.add()} onMove={(id, d) => void sh.move(id, d)} onDecompose={() => void sh.decompose()} />
+            : s.workspace === "edit"
+              ? <CutTimeline timeline={cut.timeline} base={cut.timeline?.base ?? ""} time={cp.time} view={followView(cut.view, cp.time, cp.total)}
+                  selected={cut.selected} busy={cut.busy} onView={cut.setView} onSeek={cp.seek} onFromPlan={cut.fromPlan}
+                  onSelect={(id) => { s.clearMedia(); cut.select(id); const c = cut.clips.find((x) => x.id === id); if (c) cp.seek(c.start) }} />
             : <TimelinePanel time={s.time} view={s.view} snap={s.snap} selected={s.clipId} focus={focus}
                 onView={s.setView} onSeek={s.seek} onSelect={s.selectClip} onSnap={s.toggleSnap} />}
         </div>
@@ -83,10 +109,12 @@ export function StudioPage() {
         {s.dialog === "command" && <CommandPalette onClose={() => s.setDialog(null)} onRun={s.run} />}
         {p.dialog?.kind === "import" && p.preview && <ImportDialog preview={p.preview} busy={p.busy} onRun={() => void p.runImport()} onClose={() => p.setDialog(null)} />}
         {bt.dialog && <BatchDialog kind={bt.dialog.kind} preview={bt.dialog.preview} busy={p.busy} onRun={() => void bt.run()} onClose={bt.close} />}
+        {cut.confirm && <FromPlanDialog count={cut.clips.length} busy={cut.busy} onConfirm={cut.confirmReplace} onClose={cut.closeConfirm} />}
         {sh.confirm && <DecomposeDialog count={sh.confirm.count} busy={sh.busy !== null} onConfirm={() => void sh.confirmReplace()} onClose={sh.closeConfirm} />}
         {p.dialog?.kind === "delete" && <DeleteDialog name={p.dialog.name} busy={p.busy} onConfirm={p.confirmDelete} onClose={() => p.setDialog(null)} />}
         {s.toast && <div className={toastCls} data-studio-toast>{t("toast_later", { action: t(`action.${s.toast}`) })}</div>}
         {planning && p.notice && <div className={toastCls} data-plan-notice>{p.notice}</div>}
+        {s.workspace === "edit" && cut.notice && <div className={toastCls} data-cut-notice>{cut.notice}</div>}
       </div>
     </CockpitShell>
   )

@@ -1,10 +1,12 @@
 /** Texte für „Planen“ (Etappe 2a). Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
 import { cam_de, cam_en } from "./i18nCamera"
+import { cut_de, cut_en } from "./i18nCut"
 import { jobs_de, jobs_en } from "./i18nJobs"
 
 export const plan_de = {
   ...cam_de,
   ...jobs_de,
+  ...cut_de,
   screenplay: "Drehbuch",
   scenes: "Szenen",
   elements: "Bausteine",
@@ -78,6 +80,7 @@ export const plan_de = {
     studio_video_needs_image: "Für ein Video braucht der Shot zuerst ein Bild.",
     studio_batch_running: "In diesem Projekt läuft schon ein Auftrag für mehrere Shots. Bitte warten oder ihn abbrechen.",
     studio_batch_nothing: "Es gibt nichts zu tun – alles ist schon fertig.",
+    ...cut_de.cut_err,
   },
   f: {
     title: "Titel", logline: "Kurzbeschreibung", description: "Beschreibung", aspect: "Bildformat", duration: "Standard-Dauer (s)",
@@ -94,6 +97,7 @@ export const plan_de = {
 export const plan_en: typeof plan_de = {
   ...cam_en,
   ...jobs_en,
+  ...cut_en,
   screenplay: "Screenplay",
   scenes: "Scenes",
   elements: "Elements",
@@ -167,6 +171,7 @@ export const plan_en: typeof plan_de = {
     studio_video_needs_image: "A video needs an image for the shot first.",
     studio_batch_running: "A job for several shots is already running in this project. Please wait or cancel it.",
     studio_batch_nothing: "There is nothing to do – everything is finished already.",
+    ...cut_en.cut_err,
   },
   f: {
     title: "Title", logline: "Logline", description: "Description", aspect: "Aspect ratio", duration: "Default duration (s)",
