@@ -66,7 +66,8 @@ def test_reads_all_old_modules(client, auth_headers, ws) -> None:
     assert ton["kind"] == "music" and ton["source"] == "tonstudio" and ton["name"] == "folk rock"
     for i in r.json()["items"]:
         assert Path(i["abs"]).is_absolute() and Path(i["abs"]).exists() and i["id"] and i["size"] >= 0
-    assert not any(k.endswith(".json") for k in items)               # Begleitdateien erscheinen nie selbst
+    # Begleitdateien von Medien erscheinen nie selbst (Figuren sind Bausteine – deren Eintrag IST ihre character.json)
+    assert not any(k.endswith(".json") for k, i in items.items() if i["kind"] != "element")
 
 
 def test_ids_are_stable_and_newest_first(client, auth_headers, ws) -> None:
