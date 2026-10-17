@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { api } from "@/shared/api-client"
+import { latestOnly } from "./latestOnly"
 import { introOpen, rememberedWorkspace, rememberWorkspace, setIntroOpen, startWorkspace, type Overview } from "./guideLogic"
 import type { Workspace } from "./workspaces"
 
@@ -10,15 +11,17 @@ export function useGuide(projectId: string, workspace: Workspace, setWorkspace: 
   const [overview, setOverview] = useState<Overview | null>(null)
   const [startedFor, setStartedFor] = useState("")
   const [intro, setIntro] = useState<Record<string, boolean>>({})
+  const [guard] = useState(latestOnly)
 
   const load = useCallback(async () => {
     if (!projectId) return null
     try {
-      const o = await api.get<Overview>(`/modules/studio/projects/${encodeURIComponent(projectId)}/overview`)
-      setOverview(o)
-      return o
+      const r = await guard.run(projectId, () => api.get<Overview>(`/modules/studio/projects/${encodeURIComponent(projectId)}/overview`))
+      if (!r.current) return null
+      setOverview(r.value)
+      return r.value
     } catch { return null }
-  }, [projectId])
+  }, [projectId, guard])
 
   // Beim Öffnen und bei jedem Projektwechsel einmal den passenden Reiter wählen
   useEffect(() => {

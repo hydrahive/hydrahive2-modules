@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { latestOnly } from "./latestOnly"
 import { errorCode, errorText } from "./planLogic"
 import type { Viewport } from "./timeline"
 import { clipsOf, timelineApi, type Timeline } from "./timelineApi"
@@ -13,11 +14,15 @@ export function useCut(projectId: string, active: boolean) {
   const [confirm, setConfirm] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [view, setView] = useState<Viewport>({ start: 0, span: 30 })
+  const [guard] = useState(latestOnly)
 
   const load = useCallback(async () => {
     if (!projectId) { setTimeline(null); return }
-    try { setTimeline(await timelineApi.get(projectId)) } catch (e) { setNotice(errorText(t, e)) }
-  }, [projectId, t])
+    try {
+      const r = await guard.run(projectId, () => timelineApi.get(projectId))
+      if (r.current) setTimeline(r.value)
+    } catch (e) { setNotice(errorText(t, e)) }
+  }, [projectId, t, guard])
 
   useEffect(() => {
     if (!active) return

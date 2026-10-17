@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { planApi, type Job } from "./planApi"
 import { runningJobs } from "./jobLogic"
+import { latestOnly } from "./latestOnly"
 
 const POLL_MS = 3000
 
@@ -10,12 +11,15 @@ export function useJobs(projectId: string, active: boolean, onFinished: () => vo
   const before = useRef<Set<string>>(new Set())
   const steps = useRef("")
   const finished = useRef(onFinished)
+  const [guard] = useState(latestOnly)
   useEffect(() => { finished.current = onFinished }, [onFinished])
 
   const load = useCallback(async () => {
     if (!projectId) { setJobs([]); return }
     try {
-      const list = (await planApi.jobs(projectId)).jobs
+      const r = await guard.run(projectId, () => planApi.jobs(projectId))
+      if (!r.current) return
+      const list = r.value.jobs
       const nowRunning = new Set(list.filter((j) => j.status === "running" || j.status === "queued").map((j) => j.id))
       // Sammelaufträge machen nach jedem Schritt etwas fertig → dann auch neu laden, nicht erst am Ende
       const stepKey = list.filter((j) => j.progress && nowRunning.has(j.id)).map((j) => `${j.id}:${j.progress?.done}:${j.progress?.failed}`).join("|")
@@ -25,7 +29,7 @@ export function useJobs(projectId: string, active: boolean, onFinished: () => vo
       setJobs(list)
       if (ended) finished.current()
     } catch { /* nächster Versuch beim nächsten Takt */ }
-  }, [projectId])
+  }, [projectId, guard])
 
   useEffect(() => {
     if (!active) return

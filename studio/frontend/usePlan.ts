@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { planApi, type ElementKind, type ImportPreview, type Plan, type Selection } from "./planApi"
+import { latestOnly } from "./latestOnly"
 import { errorText, moveScene } from "./planLogic"
 
 type Dialog = { kind: "import" } | { kind: "delete"; target: "scene" | "element" | "shot"; id: string; name: string; sceneId?: string } | null
@@ -18,18 +19,21 @@ export function usePlan(projectId: string, active: boolean) {
   const [dialog, setDialog] = useState<Dialog>(null)
 
   const loadedFor = useRef("")                              // Projekt der geladenen Daten
+  const [guard] = useState(latestOnly)                       // späte Antworten eines vorigen Projekts verwerfen
 
   const load = useCallback(async (pid: string) => {
     if (!pid) { setPlan(null); setPreview(null); return }
     setError(null)
     try {
-      const [p, pre] = await Promise.all([planApi.get(pid), planApi.importPreview(pid)])
-      setPlan(p); setPreview(pre); setRev((r) => r + 1)
+      const r = await guard.run(pid, () => Promise.all([planApi.get(pid), planApi.importPreview(pid)]))
+      if (!r.current) return
+      const [p, pre] = r.value
+      setPlan(p); setPreview(pre); setRev((x) => x + 1)
       // anderes Projekt → Auswahl weg; beim ersten Laden bleibt eine schon gesetzte Auswahl (Sprung aus „Schneiden“)
       if (loadedFor.current && loadedFor.current !== pid) setSelection(null)
       loadedFor.current = pid
     } catch (e) { setPlan(null); setError(errorText(t, e)) }
-  }, [t])
+  }, [t, guard])
 
   useEffect(() => {
     if (!active) return
