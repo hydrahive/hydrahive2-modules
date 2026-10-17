@@ -175,3 +175,41 @@ def test_running_job_after_restart_is_marked_failed(client, auth_headers, ws) ->
     jobs.recover(PROJECT_ID)
     got = client.get(f"{P}/jobs", headers=auth_headers).json()["jobs"]
     assert got[0]["status"] == "failed" and got[0]["error"] == "interrupted"
+
+
+def test_references_only_of_shot_elements_and_real_images(client, auth_headers, ws, provider) -> None:
+    """Referenzen: nur Bausteine des Shots, nur echte Bilddateien im Projekt (keine Verknüpfungen nach draußen)."""
+    import os
+    ole, sc, shot = _shot(client, auth_headers, ws)
+    (ws / "bilder/mira.png").write_bytes(PNG)
+    mira = client.post(f"{P}/elements", headers=auth_headers, json={"kind": "character", "name": "Mira", "references": ["bilder/mira.png"]}).json()
+    client.put(f"{P}/scenes/{sc['id']}", headers=auth_headers, json={"element_ids": [ole["id"], mira["id"]]})   # Mira in der Szene, nicht im Shot
+    # Referenz nachträglich durch eine Verknüpfung nach draußen ersetzen (Datei wurde nach dem Speichern getauscht)
+    outside = ws.parent / "draussen.png"
+    outside.write_bytes(PNG)
+    (ws / "bilder/ole.png").unlink()
+    os.symlink(outside, ws / "bilder/ole.png")
+    client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=auth_headers, json={})
+    assert _wait(client, auth_headers, sc["id"], shot["id"])["status"] == "done"
+    assert provider.calls[0]["references"] == []                     # Ole: Symlink → raus; Mira: nicht im Shot → raus
+    (ws / "bilder/ole.png").unlink()
+    outside.unlink()
+
+
+def test_too_big_is_not_an_image(monkeypatch) -> None:
+    from backend import image_provider
+    monkeypatch.setattr(image_provider, "MAX_BYTES", 100)
+    assert image_provider.image_kind(PNG) == "png"
+    assert image_provider.image_kind(PNG + b"\0" * 200) is None
+    assert image_provider.image_kind(b"\xff\xd8\xff\xe0abc") == "jpg"
+    assert image_provider.image_kind(b"RIFF\0\0\0\0WEBPVP8 ") == "webp"
+
+
+def test_variants_only_from_studio_media(client, auth_headers, ws) -> None:
+    from backend import shots as shots_mod
+    _, sc, shot = _shot(client, auth_headers, ws, with_ref=False)
+    scene = shots_mod.load_scene(PROJECT_ID, sc["id"])
+    scene["shots"][0]["variants"] = ["studio/media/images/ok.png", "../../etc/passwd", "atelier/images/x.png",
+                                     "studio/media/images/../../x.png", 5]
+    saved = shots_mod.save_shots(PROJECT_ID, scene, scene["shots"])[0]
+    assert saved["variants"] == ["studio/media/images/ok.png"]
