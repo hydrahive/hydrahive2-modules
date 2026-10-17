@@ -51,7 +51,7 @@ def _work(pid: str, scene_id: str, shot_id: str) -> dict:
         _set_shot(pid, scene_id, shot_id, status="video_processing")
         try:
             rid = video_provider.submit_video(model=model, prompt=prompt, image_url=_image_data_url(pid, image_rel),
-                                              duration=duration, aspect_ratio=head["aspect_ratio"])
+                                              duration=duration, aspect_ratio=video_provider.fit_aspect(model, head["aspect_ratio"]))
             url = video_provider.wait_for_video(rid, duration=duration)
             name = f"{new_id()}.mp4"
             target = root(pid, create=True) / "media" / "videos" / name

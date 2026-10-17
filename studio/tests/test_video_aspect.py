@@ -75,11 +75,12 @@ def test_listing_is_asked_once_for_duration_and_format(listing) -> None:
 def test_job_sends_the_fitted_format(client, auth_headers, ws, monkeypatch) -> None:
     """Der Auftrag schickt das angepasste Format an den Anbieter (nicht das des Drehbuchs)."""
     from _video_helpers import FakeVideo, _install
+
     from backend import video_provider
     fake = FakeVideo()
     _install(monkeypatch, fake)
     monkeypatch.setattr(video_provider, "fit_aspect", lambda model, ar: "16:9" if ar == "1:1" else ar)
-    from _gen_helpers import P, PNG
+    from _gen_helpers import PNG, P
     client.put(f"{P}/screenplay", headers=auth_headers, json={"aspect_ratio": "1:1", "models": {"video": "google/veo-3.1"}})
     sc = client.post(f"{P}/scenes", headers=auth_headers, json={"title": "S"}).json()
     sh = client.post(f"{P}/scenes/{sc['id']}/shots", headers=auth_headers, json={"prompt": "p", "duration": 4}).json()
