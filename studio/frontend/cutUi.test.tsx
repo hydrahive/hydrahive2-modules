@@ -23,6 +23,7 @@ describe("4b – Werkzeugleiste", () => {
     for (const a of ["split", "delete", "duplicate", "undo", "redo"]) expect(out).toContain(`data-cut-action="${a}"`)
     expect(out.match(/<button[^>]*data-cut-action="redo"[^>]*>/)?.[0]).toContain(' disabled=""')
     expect(out.match(/<button[^>]*data-cut-action="undo"[^>]*>/)?.[0]).not.toContain(' disabled=""')
+    expect(bar({ canUndo: false }).match(/<button[^>]*data-cut-action="undo"[^>]*>/)?.[0]).toContain(' disabled=""')
     expect(out).toMatch(/data-cut-snap[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-cut-snap/)
     const none = bar({ selected: null, canSplit: false })
     for (const a of ["split", "delete", "duplicate"]) expect(none.match(new RegExp(`<button[^>]*data-cut-action="${a}"[^>]*>`))?.[0]).toContain(' disabled=""')

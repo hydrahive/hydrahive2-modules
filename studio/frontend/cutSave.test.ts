@@ -37,7 +37,9 @@ describe("4b – automatisch speichern", () => {
     s.change(tl(1, 1))
     await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS + 10)
     s.change(tl(1, 2))                                                                   // während der erste läuft
-    release(); await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS + 10)
+    release(); await vi.advanceTimersByTimeAsync(10)                                     // nur der erste ist fertig …
+    expect(save).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS + 10)                                // … der zweite folgt nach der Ruhezeit
     expect(save).toHaveBeenCalledTimes(2)
     expect(save.mock.calls[1][0]).toMatchObject({ revision: 2 })
     release(); await vi.advanceTimersByTimeAsync(10)

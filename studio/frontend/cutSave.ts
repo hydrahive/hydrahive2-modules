@@ -55,8 +55,7 @@ export class AutoSaver {
         else { this.pending = this.pending ?? tl; this.failed = true; this.onState("error") }   // nächster Versuch mit der nächsten Änderung
       },
     ).finally(() => { this.running = null })
-    await this.running
-    if (this.pending && !this.stopped && !this.failed && !this.timer) this.change(this.pending)   // während des Speicherns geändert
+    await this.running                                               // während des Speicherns geändert: change() hat schon neu geplant
   }
 
   cancel(): void {

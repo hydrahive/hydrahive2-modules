@@ -36,7 +36,7 @@ export function moveTo(clips: TimelineClip[], id: string, index: number, fps: nu
   const from = sorted.findIndex((c) => c.id === id)
   if (from < 0) return clips
   const rest = sorted.filter((c) => c.id !== id)
-  const to = Math.max(0, Math.min(index, rest.length))
+  const to = Math.max(0, Math.min(index, rest.length))            // splice würde negative Stellen vom Ende zählen
   if (to === from) return clips
   rest.splice(to, 0, sorted[from])
   return pack(rest.map((c, i) => ({ ...c, start: i })), fps)
@@ -45,9 +45,9 @@ export function moveTo(clips: TimelineClip[], id: string, index: number, fps: nu
 /** Teilen am Abspielkopf. Liefert die neue Liste und die beiden Hälften (oder null, wenn nichts zu teilen ist). */
 function cut(clips: TimelineClip[], t: number, fps: number, newId: NewId) {
   const at = frame(t, fps)
-  const c = clips.find((x) => at > x.start && at < x.start + len(x))
+  const c = clips.find((x) => at >= x.start && at < x.start + len(x))
   if (!c) return null
-  const offset = at - c.start
+  const offset = at - c.start                                      // beide Teile mindestens MIN_FRAMES lang (deckt auch die Ränder ab)
   if (offset * fps < MIN_FRAMES - 1e-6 || (len(c) - offset) * fps < MIN_FRAMES - 1e-6) return null
   const left = { ...c, out: frame(c.in + offset, fps) }
   const right = { ...c, id: newId(), start: at, in: frame(c.in + offset, fps) }
@@ -74,7 +74,7 @@ export function trim(clips: TimelineClip[], id: string, edge: "start" | "end", d
     if (c.id !== id) return c
     if (edge === "start") return { ...c, in: frame(Math.min(Math.max(0, c.in + delta), c.out - min), fps) }
     const limit = c.kind === "video" && durations[c.id] ? durations[c.id] : Infinity
-    return { ...c, out: frame(Math.max(Math.min(c.out + delta, limit), c.in + min), fps) }
+    return { ...c, out: frame(Math.min(c.out + delta, limit), fps) }                    // Mindestlänge setzt pack()
   }), fps)
 }
 

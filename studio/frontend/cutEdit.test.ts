@@ -17,8 +17,10 @@ const ALL = [A, B, C]
 const lay = (cs: TimelineClip[]) => cs.map((x) => `${x.id}@${x.start}+${Math.round((x.out - x.in) * 100) / 100}`).join(" ")
 
 describe("4b – magnetische Hauptspur", () => {
-  it("pack: lückenlos, Reihenfolge bleibt, bildgenau", () => {
+  it("pack: lückenlos, Reihenfolge bleibt, bildgenau, nie kürzer als die Mindestlänge", () => {
     expect(lay(pack([c({ id: "a", start: 3, out: 2 }), c({ id: "b", start: 9, in: 0.013, out: 1.01 })], FPS))).toBe("a@0+2 b@2+1")
+    const tiny = pack([c({ id: "a", in: 1, out: 1.04 })], FPS)[0]                   // 1 Bild → auf 5 Bilder aufgefüllt
+    expect(Math.round((tiny.out - tiny.in) * FPS)).toBe(MIN_FRAMES)
   })
 
   it("Umsortieren: an Anfang, Mitte, Ende; gleiche Stelle ändert nichts", () => {
@@ -26,8 +28,9 @@ describe("4b – magnetische Hauptspur", () => {
     expect(lay(moveTo(ALL, "a", 1, FPS))).toBe("b@0+6 a@6+4 c@10+2")             // Index = Stelle in der Liste ohne den Clip
     expect(lay(moveTo(ALL, "a", 2, FPS))).toBe("b@0+6 c@6+2 a@8+4")
     expect(lay(moveTo(ALL, "a", 99, FPS))).toBe("b@0+6 c@6+2 a@8+4")
-    expect(moveTo(ALL, "b", 1, FPS)).toEqual(ALL)
-    expect(moveTo(ALL, "gibt-es-nicht", 0, FPS)).toEqual(ALL)
+    expect(moveTo(ALL, "b", 1, FPS)).toBe(ALL)                                       // gleiche Stelle: unverändert, kein neuer Stand
+    expect(moveTo(ALL, "gibt-es-nicht", 0, FPS)).toBe(ALL)
+    expect(lay(moveTo(ALL, "c", -1, FPS))).toBe("c@0+2 a@2+4 b@6+6")             // Stelle vor dem Anfang → an den Anfang (nicht vom Ende gezählt)
   })
 
   it("Einfügemarke: Index aus der Zeit (vor/hinter der Mitte eines Clips)", () => {
@@ -44,7 +47,9 @@ describe("4b – magnetische Hauptspur", () => {
     expect(lay(r).replace(/n\d+/, "R")).toBe("a@0+4 b@4+2 R@6+4 c@10+2")
     expect(r[1]).toMatchObject({ id: "b", in: 1, out: 3 })
     expect(r[2]).toMatchObject({ kind: "video", in: 3, out: 7, media_rel: B.media_rel })
-    expect(splitAt(ALL, 4, FPS, id)).toEqual(ALL)                                  // genau an einer Grenze
+    expect(splitAt(ALL, 4, FPS, id)).toBe(ALL)                                     // genau an einer Grenze
+    expect(splitAt([A], 0, FPS, id)).toHaveLength(1)                                // am Filmanfang
+    expect(splitAt([A], 4, FPS, id)).toHaveLength(1)                                // am Filmende
     expect(splitAt(ALL, 4 + 2 / FPS, FPS, id)).toEqual(ALL)                       // Rest wäre kürzer als die Mindestlänge
     expect(splitAt(ALL, 20, FPS, id)).toEqual(ALL)
     expect(splitAt(ALL, 6.013, FPS, id)[1].out).toBe(3)                            // bildgenau gerundet
@@ -68,8 +73,10 @@ describe("4b – magnetische Hauptspur", () => {
     expect(trim(ALL, "a", "end", 3, FPS)[0].out).toBe(7)                            // Bild: frei verlängerbar
     const min = trim(ALL, "a", "end", -99, FPS)[0]
     expect(Math.round((min.out - min.in) * FPS)).toBe(MIN_FRAMES)
+    expect(min.out).toBe(MIN_FRAMES / FPS)                                           // nicht erst beim Packen aufgefüllt
     const minStart = trim(ALL, "b", "start", 99, FPS)[1]
     expect(Math.round((minStart.out - minStart.in) * FPS)).toBe(MIN_FRAMES)
+    expect(minStart).toMatchObject({ in: 7 - MIN_FRAMES / FPS, out: 7 })            // der Anfang wandert, das Ende bleibt
   })
 
   it("Kürzen in vielen kleinen Schritten = ein großer Schritt vom Ausgangsstand (nichts geht durch Runden verloren)", () => {

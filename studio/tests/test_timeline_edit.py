@@ -45,3 +45,19 @@ def test_overlapping_clip_in_file_is_skipped_on_load(client, auth_headers, ws) -
     tl = client.get(T, headers=auth_headers).json()
     assert [c["id"] for c in tl["tracks"][0]["clips"]] == ["1" * 32, "3" * 32]
     assert _put(client, auth_headers, tl["tracks"][0]["clips"], 3).status_code == 200   # so wieder speicherbar
+
+
+def test_end_counts_the_part_of_the_medium(client, auth_headers, ws) -> None:
+    """Ende = Start + (out − in): ein Clip mit Ausschnitt 3–5 s ist 2 s lang, nicht 5 s."""
+    img = _media(ws, "images", "a.png", PNG)
+    clips = [_clip(id="1" * 32, media_rel=img, start=0, **{"in": 3, "out": 5}), _clip(id="2" * 32, media_rel=img, start=2, out=1)]
+    assert _put(client, auth_headers, clips).status_code == 200            # stößt genau an, keine Überlappung
+
+
+def test_file_is_sorted_on_load(client, auth_headers, ws) -> None:
+    img = _media(ws, "images", "a.png", PNG)
+    (ws / "studio/timelines").mkdir(parents=True)
+    (ws / "studio/timelines/main.json").write_text(json.dumps({"revision": 1, "fps": 25, "tracks": [{"id": "V1", "clips": [
+        _clip(id="3" * 32, media_rel=img, start=6, out=1), _clip(id="1" * 32, media_rel=img, start=0, out=5),
+        _clip(id="2" * 32, media_rel=img, start=5, out=1)]}]}))
+    assert [c["id"] for c in client.get(T, headers=auth_headers).json()["tracks"][0]["clips"]] == ["1" * 32, "2" * 32, "3" * 32]
