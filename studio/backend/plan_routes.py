@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, Depends
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import import_atelier, plan
+from . import import_atelier, jobs, plan
 from ._guard import guard
 
 router = APIRouter(prefix="/projects/{project_id}/plan")
@@ -89,3 +89,10 @@ def import_preview(project_id: str, auth: Auth) -> dict:
 def import_run(project_id: str, auth: Auth) -> dict:
     guard(auth[0], project_id)
     return _run(import_atelier.run, project_id)
+
+
+@router.get("/jobs")
+def list_jobs(project_id: str, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    jobs.recover(project_id)
+    return {"jobs": jobs.list_jobs(project_id)}

@@ -6,7 +6,6 @@ import json
 import time
 
 import pytest
-
 from conftest import MOD_PREFIX, OTHER_PROJECT_ID, PROJECT_ID
 
 P = f"{MOD_PREFIX}/projects/{PROJECT_ID}/plan"
@@ -66,7 +65,7 @@ def _shot(client, h, ws, with_ref: bool = True) -> tuple[dict, dict, dict]:
 
 
 def test_generate_image_for_shot(client, auth_headers, ws, provider) -> None:
-    ole, sc, shot = _shot(client, auth_headers, ws)
+    _, sc, shot = _shot(client, auth_headers, ws)
     r = client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=auth_headers, json={})
     assert r.status_code == 202, r.text
     assert r.json()["status"] in ("queued", "running") and r.json()["kind"] == "image"
