@@ -18,6 +18,25 @@ logger = logging.getLogger("hhmod_studio.jobs")
 KEEP = 50                                   # so viele erledigte Aufträge je Projekt behalten
 _lock = threading.Lock()
 _running: set[tuple[str, str]] = set()      # (Projekt, Ziel)
+_cancel: set[str] = set()                   # Aufträge, die abbrechen sollen (nach dem laufenden Schritt)
+
+
+class Progress:
+    """Fortschritt eines Sammelauftrags; schreibt bei jeder Änderung in die Auftragsdatei."""
+
+    def __init__(self, pid: str, job: dict) -> None:
+        self.pid, self.job = pid, job
+
+    def set(self, **fields) -> None:
+        self.job["progress"] = {**(self.job.get("progress") or {}), **fields}
+        _save(self.pid, self.job)
+
+    def cancelled(self) -> bool:
+        return self.job["id"] in _cancel
+
+
+class Cancelled(RuntimeError):
+    """Der Auftrag wurde abgebrochen."""
 
 
 class JobFailed(RuntimeError):
@@ -26,6 +45,11 @@ class JobFailed(RuntimeError):
 
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _stamp() -> str:
+    """Zeitstempel mit Mikrosekunden – Aufträge aus derselben Sekunde behalten so ihre Reihenfolge."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def _dir(pid: str):
@@ -47,19 +71,24 @@ def list_jobs(pid: str) -> list[dict]:
 
 
 def _prune(pid: str) -> None:
-    finished = [j for j in list_jobs(pid) if j.get("status") in ("done", "failed")]
+    finished = [j for j in list_jobs(pid) if j.get("status") in ("done", "failed", "cancelled")]
     for j in finished[KEEP:]:
         (_dir(pid) / f"{j['id']}.json").unlink(missing_ok=True)
 
 
-def start(pid: str, kind: str, target: str, scene_id: str, work: Callable[[], dict]) -> dict:
-    """Auftrag anlegen und im Hintergrund ausführen. `work` liefert das Ergebnis (dict) oder wirft JobFailed."""
+def start(pid: str, kind: str, target: str, scene_id: str, work: Callable[..., dict], *,
+          busy_code: str = "studio_job_running", progress: dict | None = None) -> dict:
+    """Auftrag anlegen und im Hintergrund ausführen. `work` liefert das Ergebnis (dict) oder wirft JobFailed.
+
+    Mit `progress` ist es ein Sammelauftrag: `work(Progress)` meldet Fortschritt und prüft `cancelled()`."""
     with _lock:
         if (pid, target) in _running:
-            raise plan.PlanError("studio_job_running", 409)
+            raise plan.PlanError(busy_code, 409)
         _running.add((pid, target))
     job = {"id": new_id(), "kind": kind, "target": target, "scene_id": scene_id, "status": "running",
-           "error": None, "result": None, "created_at": _now(), "finished_at": None}
+           "error": None, "result": None, "created_at": _stamp(), "finished_at": None}
+    if progress is not None:
+        job["progress"] = progress
     try:
         _save(pid, job)
     except Exception:
@@ -69,8 +98,10 @@ def start(pid: str, kind: str, target: str, scene_id: str, work: Callable[[], di
 
     def run() -> None:
         try:
-            job["result"] = work()
+            job["result"] = work(Progress(pid, job)) if progress is not None else work()
             job["status"] = "done"
+        except Cancelled:
+            job["status"] = "cancelled"
         except JobFailed as e:
             job["status"], job["error"] = "failed", str(e)
         except Exception:
@@ -84,8 +115,19 @@ def start(pid: str, kind: str, target: str, scene_id: str, work: Callable[[], di
             finally:
                 with _lock:
                     _running.discard((pid, target))
+                    _cancel.discard(job["id"])
 
     threading.Thread(target=run, name=f"studio-{kind}-{target[:8]}", daemon=True).start()
+    return job
+
+
+def cancel(pid: str, job_id: str) -> dict:
+    """Abbruch anfordern; der laufende Schritt wird noch fertig. Nur laufende Sammelaufträge."""
+    job = next((j for j in list_jobs(pid) if j["id"] == job_id), None) if is_id(job_id) else None
+    if job is None:
+        raise plan.PlanError("studio_not_found", 404)
+    if job.get("status") == "running" and "progress" in job:
+        _cancel.add(job_id)
     return job
 
 

@@ -5,9 +5,9 @@ nicht übereinander importieren. Ersetzt die Shots der Szene NUR bei Erfolg; Sho
 """
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
+import threading
 
 from hydrahive.llm import client as llm_client
 
@@ -18,7 +18,7 @@ logger = logging.getLogger("hhmod_studio.director")
 
 MAX_SHOTS = 5
 _busy: set[str] = set()                                   # Projekte mit laufender Zerlegung
-_busy_lock = asyncio.Lock()
+_busy_lock = threading.Lock()                             # Thread-Lock: auch Sammelaufträge (eigene Loop) zerlegen
 
 SYSTEM_PROMPT = (
     "You are a professional film director and cinematographer. You break a scene down into a sequence of concrete "
@@ -85,7 +85,7 @@ async def decompose(pid: str, scene_id: str, *, replace: bool = False) -> list[d
     scene = shots.load_scene(pid, scene_id)                # 404 vor allem anderen
     if _has_media(scene) and not replace:
         raise plan.PlanError("studio_decompose_has_media", 409)
-    async with _busy_lock:
+    with _busy_lock:
         if pid in _busy:
             raise plan.PlanError("studio_decompose_busy", 409)
         _busy.add(pid)

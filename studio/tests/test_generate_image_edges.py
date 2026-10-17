@@ -143,7 +143,7 @@ def test_jobs_in_the_same_second_keep_their_order(ws) -> None:
     from backend import jobs
     ids = []
     for i in range(3):
-        ids.append(jobs.start(PROJECT_ID, "image", f"{i}" * 32, "", lambda: {})["id"])
+        ids.append(jobs.start(PROJECT_ID, "image", f"{i}" * 32, "", dict)["id"])
     for t in __import__("threading").enumerate():
         if t.name.startswith("studio-"):
             t.join(5)

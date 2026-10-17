@@ -5,7 +5,6 @@ import json
 import time
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from _gen_helpers import PNG, FakeProvider, P
 from _video_helpers import FakeVideo, _install
 from conftest import PROJECT_ID
@@ -116,9 +115,10 @@ def test_videos_all(client, auth_headers, ws, monkeypatch) -> None:
 def test_one_batch_per_project_and_cancel(client, auth_headers, ws, monkeypatch) -> None:
     monkeypatch.setattr("backend.image_provider.request_image", FakeProvider(delay=0.3))
     _scenes(client, auth_headers, 1, shots_per=5)
+    _scenes(client, auth_headers, 1)                                         # Szene ohne Shots: decompose_all hätte Arbeit
     r = client.post(f"{P}/batch/images_all", headers=auth_headers, json={})
     jid = r.json()["id"]
-    second = client.post(f"{P}/batch/videos_all", headers=auth_headers, json={})
+    second = client.post(f"{P}/batch/decompose_all", headers=auth_headers, json={})   # andere Art, gleiche Sperre
     assert second.status_code == 409 and second.json()["detail"]["code"] == "studio_batch_running"
     time.sleep(0.4)
     assert client.post(f"{P}/jobs/{jid}/cancel", headers=auth_headers, json={}).status_code == 200
