@@ -136,3 +136,16 @@ def test_prompt_has_no_double_punctuation(client, auth_headers, ws) -> None:
     scene = shots_mod.load_scene(PROJECT_ID, sc["id"])
     prompt = generate.build_prompt(PROJECT_ID, scene, scene["shots"][0])
     assert ".." not in prompt and ". ." not in prompt and "Boot läuft ein. wide establishing shot" in prompt
+
+
+def test_jobs_in_the_same_second_keep_their_order(ws) -> None:
+    """Aufträge kurz hintereinander: der neueste steht vorn (sonst zeigt die Oberfläche den alten Stand)."""
+    from backend import jobs
+    ids = []
+    for i in range(3):
+        ids.append(jobs.start(PROJECT_ID, "image", f"{i}" * 32, "", lambda: {})["id"])
+    for t in __import__("threading").enumerate():
+        if t.name.startswith("studio-"):
+            t.join(5)
+    order = [j["id"] for j in jobs.list_jobs(PROJECT_ID) if j["id"] in ids]
+    assert order == list(reversed(ids))
