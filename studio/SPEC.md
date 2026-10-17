@@ -157,15 +157,15 @@ Am Ende gibt es für Medien **nur noch „Studio“**, damit die Leiste oben lee
 
 | # | Inhalt | Nutzbar danach |
 |---|---|---|
-| **0** | **Klickbare Attrappe** auf hydratest: Layout, Reiter, Panels ziehbar, Tastenkürzel-Hilfe, Beispieldaten. Kein Backend. | Till beurteilt Aufbau und Gefühl im Browser |
-| 1 | Gerüst echt: Modul `studio`, Projektwahl, Bibliothek liest alle vorhandenen Medien (auch aus Atelier, Video-Editor und Tonstudio, nur lesend), Vorschau spielt ab, Panelgrößen gespeichert | Medien aller Module an einem Ort ansehen |
-| 2 | Schneiden: Zeitleiste mit Spuren, Clips ziehen, trimmen, teilen, Einrasten, Rückgängig, Übersichtsleiste, Proxies | Schnitt im Studio |
-| 3 | Ton: Tonspuren, Mixer, Wellenform, Musik und Sprache auf der Zeitleiste | Vertonen im Studio |
-| 4 | Ausgabe: Render-Vorlagen, Warteschlange im Hintergrund, Ergebnisse in der Bibliothek | fertige Videos aus dem Studio |
-| 5 | Erzeugen: Bild, Video, Sprache, Musik im Panel, Varianten, Ergebnis direkt in der Bibliothek, Platzhalter füllen | KI im Ablauf |
-| 6 | Planen: Drehbuch, Szenen und Shots als Storyboard-Leiste, Bausteine (Figuren, Orte), Regie-Agent | Film vom Drehbuch bis zum Schnitt |
-| 7 | Untertitel: Transkribieren, Spur, Stil, Übersetzen, zweisprachig, SRT-Export, Einbrennen | Untertitel und Übersetzung |
-| 8 | Übernahme alter Daten, Nachfolger für die Agenten-Werkzeuge, alte Module und Medien-Cockpit entfernen | ein Modul statt vier |
+| **0** | **Klickbare Attrappe** auf hydratest: Layout, Reiter, Panels ziehbar, Tastenkürzel-Hilfe, Beispieldaten. Kein Backend. ✅ | Till beurteilt Aufbau und Gefühl im Browser |
+| 1 | Gerüst echt: Projektwahl, Bibliothek liest alle vorhandenen Medien (Atelier, Video-Editor, Tonstudio, Uploads – nur lesend), Vorschau spielt ab, Panelgrößen gespeichert | Medien aller Module an einem Ort ansehen |
+| 2 | **Planen:** Drehbuch (Akte, Szenen, Shots), Bausteine (Figuren, Orte, Objekte), Look, Storyboard-Leiste, Regie-Agent | Film im Studio planen |
+| 3 | **Erzeugen:** Bild, Video, Sprache, Musik im Panel, Platzhalter aus dem Drehbuch füllen, Varianten, Ergebnis direkt in der Bibliothek | Vom Drehbuch zu fertigen Shots |
+| 4 | Schneiden: Zeitleiste mit Spuren, ziehen, trimmen, teilen, Einrasten, Rückgängig, Übersichtsleiste, Proxies | Schnitt im Studio |
+| 5 | Ton: Tonspuren, Mixer, Wellenform, Pegel, Musik und Sprache auf der Zeitleiste | Vertonen im Studio |
+| 6 | Untertitel: Transkribieren, Spur, Stil, Übersetzen, zweisprachig, SRT, Einbrennen | Untertitel und Übersetzung |
+| 7 | Ausgabe: Render-Vorlagen, Warteschlange im Hintergrund, Ergebnisse in der Bibliothek | fertige Videos aus dem Studio |
+| 8 | Übernahme alter Daten, Nachfolger für die Agenten-Werkzeuge, alte Module und Kern-Reiter „Media“ entfernen | nur noch „Studio“ |
 | später | Text-Schnitt über Transkript (Descript-Prinzip), Vertonung in Zielsprache, Farbe, Effekte, Übergänge | |
 
 ## Grundregeln (wie immer)
@@ -181,4 +181,6 @@ Am Ende gibt es für Medien **nur noch „Studio“**, damit die Leiste oben lee
 ## Offene Punkte (Till)
 
 - ~~Name im Menü~~ → **„Studio“** (Till, 15.10.).
-- Reihenfolge der Etappen 5 und 6 (Erzeugen vor Planen oder umgekehrt).
+- ~~Reihenfolge~~ → **Ablauf einer Produktion** (Till, 15.10.): Entwicklung/Vorproduktion → Produktion → Postproduktion →
+  Auslieferung, also Planen → Erzeugen → Schneiden → Ton → Untertitel → Ausgabe. Das Meistgenutzte (Atelier, 18
+  Projekte auf Prod) kommt zuerst. Schnitt und Export laufen bis Etappe 7 weiter in den alten Modulen.
