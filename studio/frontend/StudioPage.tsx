@@ -42,10 +42,7 @@ export function StudioPage() {
           </div>
         </div>
         <Splitter dir="y" label={t("resize_timeline")} onDrag={(d) => s.drag("timeline", d)} />
-        <div className="relative min-h-0 border-t border-[#2a364b] bg-[#0b111b]" style={{ flex: `${s.layout.timeline} 1 0` }}>
-          <span className="pointer-events-none absolute right-2 top-1.5 z-10 rounded-full border border-[#ffb86b]/40 bg-[#ffb86b]/10 px-2 py-0.5 text-[10px] text-[#ffb86b]" data-studio-demo-badge>
-            {t("demo_badge")}
-          </span>
+        <div className="min-h-0 border-t border-[#2a364b] bg-[#0b111b]" style={{ flex: `${s.layout.timeline} 1 0` }}>
           {s.workspace === "plan"
             ? <StoryboardPanel selected={s.clipId} onSelect={s.selectClip} />
             : <TimelinePanel time={s.time} view={s.view} snap={s.snap} selected={s.clipId} focus={focus}

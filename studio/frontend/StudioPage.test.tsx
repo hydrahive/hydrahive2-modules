@@ -39,7 +39,6 @@ describe("Studio Etappe 1", () => {
     expect(attr(out, "data-studio-panel")).toEqual(["library", "preview", "inspector", "timeline"])
     expect(attr(out, "data-studio-workspace")).toEqual(["plan", "generate", "edit", "audio", "subtitles", "deliver"])
     expect(attr(out, "data-studio-splitter")).toEqual(["x", "x", "y"])
-    expect(out).toContain("data-studio-demo-badge")
     const top = out.search(/href="\/buddy"|Buddy|Projekte/)
     expect(top).toBeGreaterThanOrEqual(0)
     expect(top).toBeLessThan(out.indexOf("data-studio-root"))
@@ -84,6 +83,7 @@ describe("Studio Etappe 1", () => {
     expect(out).toContain("data-studio-overview")
     expect(attr(out, "data-studio-track")).toEqual(["text", "video", "voice", "music", "subtitle"])
     expect(out).toMatch(/data-studio-clip="c4" data-placeholder="1"/)
+    expect(out).toContain("data-studio-demo-badge")              // als Beispiel markiert, in der eigenen Leiste
   })
 
   it("Texte: de/en gleich, jedes Kürzel hat einen Namen, keine Terminal-Hinweise", () => {

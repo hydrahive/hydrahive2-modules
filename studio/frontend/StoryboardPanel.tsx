@@ -11,6 +11,8 @@ export function StoryboardPanel({ selected, onSelect }: { selected: string | nul
       <div className="flex h-8 shrink-0 items-center gap-2 border-b border-[#2a364b] px-3 text-[11px] text-[#8d9ab0]">
         <span className="font-black uppercase tracking-[0.14em] text-[#68758a]">{t("storyboard")}</span>
         <span>{t("act", { n: 1 })} · {t("scene", { n: 1 })}</span>
+        <span className="ml-auto" />
+        <span className="shrink-0 rounded-full border border-[#ffb86b]/40 bg-[#ffb86b]/10 px-2 py-0.5 text-[10px] text-[#ffb86b]" data-studio-demo-badge>{t("demo_badge")}</span>
       </div>
       <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-3">
         {shots.map((s, i) => (

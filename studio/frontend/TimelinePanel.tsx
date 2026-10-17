@@ -43,7 +43,8 @@ export function TimelinePanel({ time, view, snap, selected, focus, onView, onSee
         <span className="mx-2 h-4 w-px bg-[#2a364b]" />
         <button type="button" className="rounded-[4px] p-1 hover:bg-[#111827]" title={t("zoom_in")} onClick={() => onView(zoom(view, 0.7, toFraction(time, view), DEMO_DURATION))}><ZoomIn size={13} /></button>
         <button type="button" className="rounded-[4px] p-1 hover:bg-[#111827]" title={t("zoom_out")} onClick={() => onView(zoom(view, 1.4, toFraction(time, view), DEMO_DURATION))}><ZoomOut size={13} /></button>
-        <span className="ml-auto text-[10px]">{t("overview_hint")}</span>
+        <span className="ml-auto truncate text-[10px]">{t("overview_hint")}</span>
+        <span className="shrink-0 rounded-full border border-[#ffb86b]/40 bg-[#ffb86b]/10 px-2 py-0.5 text-[10px] text-[#ffb86b]" data-studio-demo-badge>{t("demo_badge")}</span>
       </div>
       {/* Übersicht: ganzer Film, Rahmen = sichtbarer Ausschnitt */}
       <div className="relative mx-2 mt-1.5 h-4 shrink-0 cursor-pointer rounded-[3px] bg-[#111827]" data-studio-overview

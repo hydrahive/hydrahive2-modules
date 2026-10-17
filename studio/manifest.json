@@ -1,7 +1,7 @@
 {
   "id": "studio",
   "name": "Studio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ein Ort für Bild, Video, Ton und Schnitt: planen, erzeugen, schneiden, vertonen, untertiteln, ausgeben. Im Aufbau – zeigt schon alle Medien aus Atelier, Video-Editor und Tonstudio. Löst diese später ab.",
   "icon": "Clapperboard",
   "nav_group": "working",
