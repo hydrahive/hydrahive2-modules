@@ -37,6 +37,7 @@ export function useShots(p: PlanState, projectId: string, onJobStarted: () => vo
     decompose: () => sid && decompose(sid, false),
     confirmReplace: () => confirm && decompose(confirm.sceneId, true),
     generateImage: (id: string) => p.act(() => planApi.generateImage(projectId, sid, id), t("notice_image_started"), onJobStarted),
+    generateVideo: (id: string) => p.act(() => planApi.generateVideo(projectId, sid, id), t("notice_video_started"), onJobStarted),
     chooseVariant: (id: string, rel: string) => p.act(() => planApi.chooseVariant(projectId, sid, id, rel), t("notice_saved")),
   }
 }

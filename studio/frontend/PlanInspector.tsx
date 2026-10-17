@@ -8,7 +8,7 @@ import { ShotForm } from "./ShotForm"
 import type { PlanState } from "./usePlan"
 import type { ShotsState } from "./useShots"
 import type { Job } from "./planApi"
-import { jobFor } from "./jobLogic"
+import { latestJob } from "./jobLogic"
 
 /** Planen, rechts: Formular des Gewählten. `key` mit `rev` setzt das Formular nach dem Speichern auf die frischen Daten. */
 export function PlanInspector({ p, shots, images, jobs = [] }: { p: PlanState; shots?: ShotsState; images: LibraryItem[]; jobs?: Job[] }) {
@@ -36,7 +36,8 @@ export function PlanInspector({ p, shots, images, jobs = [] }: { p: PlanState; s
     if (scene && shot) {
       body = <ShotForm key={`${shot.id}-${p.rev}`} shot={shot} index={index} elements={plan.elements} sceneElementIds={scene.element_ids}
         presets={plan.presets.shot ?? []} busy={p.busy} onSave={(d) => void shots.save(shot.id, d)} onDelete={() => shots.remove(shot.id, index)}
-        base={plan.base} job={jobFor(jobs, shot.id)} onGenerate={() => void shots.generateImage(shot.id)}
+        base={plan.base} job={latestJob(jobs, shot.id, "image")} videoJob={latestJob(jobs, shot.id, "video")}
+        onGenerate={() => void shots.generateImage(shot.id)} onVideo={() => void shots.generateVideo(shot.id)}
         onChoose={(rel) => void shots.chooseVariant(shot.id, rel)} />
     }
   }

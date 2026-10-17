@@ -75,6 +75,7 @@ export const plan_de = {
     studio_decompose_busy: "Die KI zerlegt in diesem Projekt gerade schon eine Szene. Bitte kurz warten.",
     studio_job_running: "Für diesen Shot läuft schon ein Auftrag.",
     studio_variant_unknown: "Dieses Bild gehört nicht zu diesem Shot.",
+    studio_video_needs_image: "Für ein Video braucht der Shot zuerst ein Bild.",
   },
   f: {
     title: "Titel", logline: "Kurzbeschreibung", description: "Beschreibung", aspect: "Bildformat", duration: "Standard-Dauer (s)",
@@ -161,6 +162,7 @@ export const plan_en: typeof plan_de = {
     studio_decompose_busy: "The AI is already splitting a scene in this project. Please wait a moment.",
     studio_job_running: "A job is already running for this shot.",
     studio_variant_unknown: "This image does not belong to this shot.",
+    studio_video_needs_image: "A video needs an image for the shot first.",
   },
   f: {
     title: "Title", logline: "Logline", description: "Description", aspect: "Aspect ratio", duration: "Default duration (s)",

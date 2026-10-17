@@ -126,3 +126,13 @@ def test_attach_keeps_at_most_8_variants_in_order(ws, client, auth_headers) -> N
     raw = json.loads((ws / f"studio/scenes/{sc['id']}.json").read_text())["shots"][0]["variants"]
     assert raw == [f"studio/media/images/n{i}.png" for i in range(2, 10)]   # schon die gespeicherte Datei ist begrenzt
     assert shots_mod.load_scene(PROJECT_ID, sc["id"])["shots"][0]["image_rel"] == "studio/media/images/n9.png"
+
+
+def test_prompt_has_no_double_punctuation(client, auth_headers, ws) -> None:
+    from backend import generate
+    from backend import shots as shots_mod
+    _, sc, shot = _shot(client, auth_headers, ws, with_ref=False)
+    client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers, json={"prompt": "Boot läuft ein.  "})
+    scene = shots_mod.load_scene(PROJECT_ID, sc["id"])
+    prompt = generate.build_prompt(PROJECT_ID, scene, scene["shots"][0])
+    assert ".." not in prompt and ". ." not in prompt and "Boot läuft ein. wide establishing shot" in prompt

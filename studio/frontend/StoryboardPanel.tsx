@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Clapperboard, Loader2, Plus, Sparkles } from "lucide-react"
+import { ChevronLeft, ChevronRight, Clapperboard, Film, Loader2, Plus, Sparkles } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { fileUrl } from "@/shared/files"
 import type { Scene } from "./planApi"
@@ -47,8 +47,13 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
                   <span className="relative grid aspect-video place-items-center overflow-hidden bg-[#0d1420]">
                     {img ? <img src={fileUrl(img)} alt="" loading="lazy" className="h-full w-full object-cover" />
                       : <Clapperboard size={18} className="text-[#46617f]" />}
+                    {s.video_rel && (
+                      <span className="absolute bottom-1 right-1 rounded bg-black/70 p-0.5 text-[#69d7ff]" data-storyboard-video={s.id} title={t("video")}>
+                        <Film size={12} />
+                      </span>
+                    )}
                     {runningShots.includes(s.id) && (
-                      <span className="absolute inset-0 grid place-items-center bg-black/55" data-storyboard-running={s.id} title={t("image_running")}>
+                      <span className="absolute inset-0 grid place-items-center bg-black/55" data-storyboard-running={s.id} title={t("job_running")}>
                         <Loader2 size={18} className="animate-spin text-[#69d7ff]" />
                       </span>
                     )}
