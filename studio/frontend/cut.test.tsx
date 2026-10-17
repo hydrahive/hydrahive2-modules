@@ -57,6 +57,8 @@ describe("Studio 4a – Abspiel-Logik", () => {
     expect(nextMediaClip(CLIPS, 0)?.id).toBe("v2")
     expect(nextMediaClip(CLIPS, 5)?.id).toBe("v2")
     expect(nextMediaClip(CLIPS, 11)).toBeNull()
+    const later = clip({ id: "v3", kind: "video", start: 30, out: 2, media_rel: "studio/media/videos/c.mp4" })
+    expect(nextMediaClip([later, ...CLIPS], 5)?.id).toBe("v2")          // der nächste nach Zeit, nicht der erste im Array
   })
 })
 
