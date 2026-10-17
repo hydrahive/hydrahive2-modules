@@ -23,6 +23,7 @@ describe("Studio 3a – Bild erzeugen", () => {
     expect(jobFor(jobs, "a")?.id).toBe("neu")
     expect(jobFor(jobs, "x")).toBeNull()
     expect(runningJobs(jobs)).toBe(1)
+    expect(runningJobs([job({ status: "queued" }), job({ status: "running" }), job({ status: "done" })])).toBe(2)   // wartende zählen mit
     expect(jobText(t, job({ status: "failed", error: "no_key" }))).toBe("T:job_err.no_key")
     expect(jobText(t, job({ status: "failed", error: "irgendwas" }))).toBe("T:job_err.internal")
     expect(jobText(t, job({ status: "running" }))).toBe("")
