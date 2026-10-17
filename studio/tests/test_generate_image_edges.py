@@ -1,6 +1,7 @@
 """Studio 3a: Aufträge nach Neustart, Referenzen, Größe, Varianten-Pfade, alte Daten (studio/SPEC.md „Bauplan Etappe 3“)."""
 from __future__ import annotations
 
+import base64
 import json
 
 from _gen_helpers import PNG, P, _shot, _wait
@@ -67,3 +68,61 @@ def test_old_shots_without_variants_still_work(client, auth_headers, ws) -> None
     f.write_text(json.dumps(data))
     shot = client.get(P, headers=auth_headers).json()["scenes"][0]["shots"][0]
     assert shot["variants"] == [] and shot["image_rel"] == "atelier/images/x.png" and shot["status"] == "image_ready"
+
+
+def test_provider_without_key_and_with_bad_answers(monkeypatch) -> None:
+    """Der echte Anbieter-Aufruf: ohne Schlüssel kein Netzaufruf; Fehlerantworten werden zu Codes."""
+    import httpx
+    from backend import image_provider as ip
+    calls: list = []
+    monkeypatch.setattr("hydrahive.llm._config.openrouter_key", lambda: "")
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: calls.append(k) or None)
+    try:
+        ip.request_image(model="m", prompt="p", references=[], aspect_ratio="1:1")
+        raise AssertionError("kein Fehler ohne Schlüssel")
+    except ip.ProviderError as e:
+        assert str(e) == "no_key" and calls == []
+
+    monkeypatch.setattr("hydrahive.llm._config.openrouter_key", lambda: "k")
+
+    def answer(status: int, body):
+        return lambda *a, **k: (calls.append(k), httpx.Response(status, json=body))[1]
+    for status, body, code in ((400, {"error": {"message": "x"}}, "provider_rejected"), (200, {"data": []}, "empty_answer"),
+                               (200, {"data": [{"b64_json": "!!kein base64!!"}]}, "empty_answer")):
+        monkeypatch.setattr(httpx, "post", answer(status, body))
+        try:
+            ip.request_image(model="m", prompt="p", references=["data:x"], aspect_ratio="1:1", seed=7)
+            raise AssertionError("kein Fehler")
+        except ip.ProviderError as e:
+            assert str(e) == code, (status, body)
+    sent = calls[-1]["json"]
+    assert sent["seed"] == 7 and sent["input_references"] == [{"type": "image_url", "image_url": {"url": "data:x"}}]
+    assert calls[-1]["headers"]["Authorization"] == "Bearer k"
+    monkeypatch.setattr(httpx, "post", answer(200, {"data": [{"b64_json": base64.b64encode(PNG).decode()}]}))
+    assert ip.request_image(model="m", prompt="p", references=[], aspect_ratio="1:1") == PNG
+    assert "input_references" not in calls[-1]["json"] and "seed" not in calls[-1]["json"]
+
+
+def test_old_finished_jobs_are_pruned_running_ones_kept(ws) -> None:
+    from backend import jobs
+    d = ws / "studio/jobs"
+    d.mkdir(parents=True, exist_ok=True)
+    for i in range(jobs.KEEP + 5):
+        (d / f"{i:032x}.json").write_text(json.dumps({"status": "done", "target": "t", "created_at": f"2026-10-17T10:{i // 60:02d}:{i % 60:02d}Z"}))
+    (d / f"{'e' * 32}.json").write_text(json.dumps({"status": "running", "target": "x", "created_at": "2026-01-01T00:00:00Z"}))
+    jobs._prune(PROJECT_ID)
+    left = {j["id"]: j for j in jobs.list_jobs(PROJECT_ID)}
+    assert len([j for j in left.values() if j["status"] == "done"]) == jobs.KEEP
+    assert "e" * 32 in left                                             # laufender Auftrag bleibt, auch wenn er alt ist
+    assert f"{0:032x}" not in left and f"{jobs.KEEP + 4:032x}" in left  # die ältesten erledigten fliegen raus
+
+
+def test_attach_keeps_at_most_8_variants_in_order(ws, client, auth_headers) -> None:
+    from backend import generate
+    from backend import shots as shots_mod
+    _, sc, shot = _shot(client, auth_headers, ws, with_ref=False)
+    for i in range(10):
+        generate._attach(PROJECT_ID, sc["id"], shot["id"], f"studio/media/images/n{i}.png")
+    raw = json.loads((ws / f"studio/scenes/{sc['id']}.json").read_text())["shots"][0]["variants"]
+    assert raw == [f"studio/media/images/n{i}.png" for i in range(2, 10)]   # schon die gespeicherte Datei ist begrenzt
+    assert shots_mod.load_scene(PROJECT_ID, sc["id"])["shots"][0]["image_rel"] == "studio/media/images/n9.png"
