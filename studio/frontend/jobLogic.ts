@@ -24,3 +24,13 @@ export function jobText(t: (k: string) => string, job: Job | null): string {
   if (!job || job.status !== "failed") return ""
   return t(`job_err.${job.error && KNOWN.has(job.error) ? job.error : "internal"}`)
 }
+
+/** Sammelauftrag (mehrere Shots/Szenen) statt Einzelauftrag? */
+export function isBatch(job: Job): boolean {
+  return job.kind === "decompose_all" || job.kind === "images_all" || job.kind === "videos_all"
+}
+
+/** Der laufende Sammelauftrag des Projekts oder null. */
+export function activeBatch(jobs: Job[]): Job | null {
+  return jobs.find((j) => isBatch(j) && (j.status === "running" || j.status === "queued")) ?? null
+}

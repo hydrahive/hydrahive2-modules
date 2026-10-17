@@ -8,6 +8,7 @@ const POLL_MS = 3000
 export function useJobs(projectId: string, active: boolean, onFinished: () => void) {
   const [jobs, setJobs] = useState<Job[]>([])
   const before = useRef<Set<string>>(new Set())
+  const steps = useRef("")
   const finished = useRef(onFinished)
   useEffect(() => { finished.current = onFinished }, [onFinished])
 
@@ -16,7 +17,10 @@ export function useJobs(projectId: string, active: boolean, onFinished: () => vo
     try {
       const list = (await planApi.jobs(projectId)).jobs
       const nowRunning = new Set(list.filter((j) => j.status === "running" || j.status === "queued").map((j) => j.id))
-      const ended = [...before.current].some((id) => !nowRunning.has(id))
+      // Sammelaufträge machen nach jedem Schritt etwas fertig → dann auch neu laden, nicht erst am Ende
+      const stepKey = list.filter((j) => j.progress && nowRunning.has(j.id)).map((j) => `${j.id}:${j.progress?.done}:${j.progress?.failed}`).join("|")
+      const ended = [...before.current].some((id) => !nowRunning.has(id)) || (stepKey !== steps.current && steps.current !== "")
+      steps.current = stepKey
       before.current = nowRunning
       setJobs(list)
       if (ended) finished.current()

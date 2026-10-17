@@ -331,6 +331,22 @@ Standardmodell des Servers (`get_media_model`). Es stehen keine festen Modelle i
 - **3d – Sprache und Musik** (zum Shot bzw. zur Szene): erst nach Etappe 5 „Ton“ sinnvoll, weil es vorher keinen
   Platz dafür auf der Zeitleiste gibt. Verschoben nach Etappe 5.
 
+**Bauplan 3c im Detail (17.10.):**
+- Drei Sammelaufträge: `decompose_all` (alle Szenen **ohne** Shots zerlegen), `images_all` (Bild für jeden Shot **ohne** Bild)
+  und `videos_all` (Video für jeden Shot **mit** Bild und **ohne** Video). Fertiges wird nie überschrieben; neu zerlegen
+  oder ersetzen bleibt Sache des einzelnen Shots bzw. der einzelnen Szene.
+- `GET …/plan/batch/{art}` nennt vorher, was passieren würde: Anzahl und Modell (aus dem Drehbuch, sonst der Standard des
+  Servers). Bei 0 bietet die Oberfläche nichts an.
+- `POST …/plan/batch/{art}` startet. Je Projekt läuft höchstens ein Sammelauftrag (409 `studio_batch_running`). Die Schritte
+  laufen **nacheinander** (Videos nutzen trotzdem die Grenze von 2 je Server). Ein Fehler bei einem Schritt bricht den
+  Sammelauftrag nicht ab; er zählt als fehlgeschlagen und es geht weiter.
+- Fortschritt im Auftrag: `total`, `done`, `failed`, `current` (Name des Shots/der Szene). Die Kopfzeile zeigt ihn
+  („Bilder: 3 von 8“).
+- `POST …/plan/jobs/{id}/cancel` bricht ab: der laufende Schritt wird noch fertig, danach endet der Auftrag mit Status
+  `cancelled`. Was fertig ist, bleibt.
+- Nach einem Neustart steht ein unterbrochener Sammelauftrag als `failed`/`interrupted` da (wie in 3a); ein neuer Start
+  macht mit dem Rest weiter, weil Fertiges übersprungen wird.
+
 **Aufträge (gemeinsam für 3a–3c):** Datei je Auftrag unter `studio/jobs/<id>.json` (Art, Ziel, Status, Fehler,
 Zeitstempel), atomar geschrieben. Ein Auftrag je Shot gleichzeitig; ein zweiter Klick ergibt 409
 `studio_job_running`. Fehler der Anbieter erscheinen als klare Meldung am Shot (z. B. kein Schlüssel für OpenRouter →

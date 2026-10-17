@@ -34,16 +34,21 @@ export interface Shot {
   variants: string[]
 }
 
+export type BatchKind = "decompose_all" | "images_all" | "videos_all"
+export const BATCH_KINDS: BatchKind[] = ["decompose_all", "images_all", "videos_all"]
+export interface BatchPreview { count: number; model: string }
+
 export interface Job {
   id: string
-  kind: "image" | "video"
+  kind: "image" | "video" | BatchKind
   target: string
   scene_id: string
-  status: "queued" | "running" | "done" | "failed"
+  status: "queued" | "running" | "done" | "failed" | "cancelled"
   error: string | null
   result: Record<string, unknown> | null
   created_at: string
   finished_at: string | null
+  progress?: { total: number; done: number; failed: number; current: string }
 }
 
 export interface Scene {
@@ -115,6 +120,9 @@ export const planApi = {
   chooseVariant: (pid: string, sid: string, id: string, image_rel: string) =>
     api.put<Shot>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/variant`, { image_rel }),
   jobs: (pid: string) => api.get<{ jobs: Job[] }>(`${base(pid)}/jobs`),
+  batchPreview: (pid: string, kind: BatchKind) => api.get<BatchPreview>(`${base(pid)}/batch/${kind}`),
+  batchStart: (pid: string, kind: BatchKind) => api.post<Job>(`${base(pid)}/batch/${kind}`, {}),
+  cancelJob: (pid: string, id: string) => api.post<Job>(`${base(pid)}/jobs/${one(id)}/cancel`, {}),
   importPreview: (pid: string) => api.get<ImportPreview>(`${base(pid)}/import/atelier`),
   importRun: (pid: string) => api.post<{ scenes: number; shots: number; elements: number }>(`${base(pid)}/import/atelier`, {}),
 }
