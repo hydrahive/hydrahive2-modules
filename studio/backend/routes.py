@@ -14,6 +14,7 @@ from hydrahive.projects._config_io import list_for_user
 
 from . import library, overview
 from ._guard import guard
+from .draft_routes import router as draft_router
 from .plan_routes import router as plan_router
 from .shot_routes import router as shot_router
 from .timeline_routes import router as timeline_router
@@ -39,6 +40,7 @@ def get_overview(project_id: str, auth: Auth) -> dict:
     return overview.overview(project_id)
 
 
+router.include_router(draft_router)
 router.include_router(plan_router)
 router.include_router(shot_router)
 router.include_router(timeline_router)

@@ -28,7 +28,8 @@ def test_apply_into_empty_plan(client, auth_headers, ws) -> None:
     assert sorted(names.values()) == ["Leuchtturm", "Mira"]
     s1, s2 = plan["scenes"]
     assert [s1["title"], s2["title"]] == ["Steg", "Nacht"]
-    assert [names[i] for i in s1["element_ids"]] == ["Mira"]
+    assert [names[i] for i in s1["element_ids"]] == ["Mira", "Leuchtturm"]                # „fremd“ fällt weg, Turm aus dem Shot
+    assert [names[i] for i in s2["element_ids"]] == ["Leuchtturm"]
     shot = s1["shots"][0]
     # Shot-Bausteine müssen in der Szene sein → der Turm wird der Szene mit zugeordnet
     assert sorted(names[i] for i in shot["element_ids"]) == ["Leuchtturm", "Mira"]
@@ -50,7 +51,7 @@ def test_append_keeps_existing_and_reuses_elements(client, auth_headers, ws) -> 
     assert [s["title"] for s in after["scenes"]] == ["Alt", "Steg", "Nacht"]
     el = {e["id"]: e for e in after["elements"]}
     assert el[mira["id"]]["description"] == "alt" and len(el) == 2                     # wiederverwendet, nicht geändert
-    assert after["scenes"][1]["element_ids"] == [mira["id"]]
+    assert after["scenes"][1]["element_ids"][0] == mira["id"]                            # die vorhandene Mira
 
 
 def test_apply_checks_everything(client, auth_headers, ws) -> None:
