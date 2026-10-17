@@ -11,7 +11,6 @@ export class AutoSaver {
   private timer: ReturnType<typeof setTimeout> | null = null
   private running: Promise<void> | null = null
   private stopped = false
-  private failed = false
 
   private save: (t: Timeline) => Promise<Timeline>
   private onState: (s: SaveState) => void
@@ -32,7 +31,6 @@ export class AutoSaver {
 
   change(tl: Timeline): void {
     if (this.stopped) return
-    this.failed = false
     this.pending = tl
     this.onState("dirty")
     if (this.timer) clearTimeout(this.timer)
@@ -48,11 +46,11 @@ export class AutoSaver {
     this.pending = null
     this.onState("saving")
     this.running = this.save(tl).then(
-      (r) => { this.rev = r.revision; this.failed = false; this.onState(this.pending ? "dirty" : "saved") },
+      (r) => { this.rev = r.revision; this.onState(this.pending ? "dirty" : "saved") },
       (e: unknown) => {
         const code = (e as { code?: string })?.code ?? (e instanceof Error ? e.message : "")
         if (code === "studio_timeline_conflict") { this.stopped = true; this.onState("conflict") }
-        else { this.pending = this.pending ?? tl; this.failed = true; this.onState("error") }   // nächster Versuch mit der nächsten Änderung
+        else { this.pending = this.pending ?? tl; this.onState("error") }   // nächster Versuch mit der nächsten Änderung
       },
     ).finally(() => { this.running = null })
     await this.running                                               // während des Speicherns geändert: change() hat schon neu geplant
