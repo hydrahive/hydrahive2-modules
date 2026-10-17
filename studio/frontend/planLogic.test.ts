@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { errorText, fileOf, moveScene, paletteFromText, sceneOf, showImport } from "./planLogic"
+import { errorText, fileOf, importAmounts, moveScene, paletteFromText, sceneOf, showImport } from "./planLogic"
 import type { ImportPreview, Plan } from "./planApi"
 
 const t = (k: string) => `T:${k}`
@@ -41,6 +41,11 @@ describe("Planen – Logik", () => {
     expect(paletteFromText("#111, #222  #333,,")).toEqual(["#111", "#222", "#333"])
     expect(paletteFromText(Array.from({ length: 20 }, (_, i) => `#${i}`).join(","))).toHaveLength(12)
     expect(paletteFromText("  ")).toEqual([])
+  })
+
+  it("Mengen der Übernahme mit Einzahl/Mehrzahl über count", () => {
+    const tc = (k: string, o?: Record<string, unknown>) => `${k}=${o?.count}`
+    expect(importAmounts(tc, preview({ scenes: 1, shots: 0, elements: 2 }))).toEqual({ scenes: "scene_count=1", shots: "shot_count=0", elements: "figure_count=2" })
   })
 
   it("Szene zur Auswahl (Szene oder Shot)", () => {

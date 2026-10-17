@@ -59,13 +59,13 @@ describe("Studio Etappe 2a – Planen", () => {
   it("Leeres Studio, Atelier hat Daten: Übernahme wird angeboten", () => {
     const out = outline({ plan: EMPTY, preview: PREVIEW })
     expect(out).toContain("data-plan-import")
-    expect(out).toContain('import_offer:{"scenes":2,"shots":3,"elements":1}')
+    expect(out).toContain('import_offer:{"scenes":"scene_count:{\\"count\\":2}","shots":"shot_count:{\\"count\\":3}","elements":"figure_count:{\\"count\\":1}"}')
     expect(outline({ plan: EMPTY, preview: { ...PREVIEW, plan_exists: true } })).not.toContain("data-plan-import")
   })
 
   it("Übernahme-Dialog: Mengen, Hinweis auf Kopie, eigener Knopf statt Rückfrage-Popup", () => {
     const out = html(<ImportDialog preview={PREVIEW} busy={false} onRun={noop} onClose={noop} />)
-    expect(out).toContain('import_counts:{"scenes":2,"shots":3,"elements":1}')
+    expect(out).toContain('import_counts:{"scenes":"scene_count:{\\"count\\":2}","shots":"shot_count:{\\"count\\":3}","elements":"figure_count:{\\"count\\":1}"}')
     expect(out).toContain("import_look")
     expect(out).toContain("import_hint")
     expect(out).toContain("data-import-run")
