@@ -23,7 +23,8 @@ describe("4b – magnetische Hauptspur", () => {
 
   it("Umsortieren: an Anfang, Mitte, Ende; gleiche Stelle ändert nichts", () => {
     expect(lay(moveTo(ALL, "c", 0, FPS))).toBe("c@0+2 a@2+4 b@6+6")
-    expect(lay(moveTo(ALL, "a", 2, FPS))).toBe("b@0+6 a@6+4 c@10+2")             // Index = Stelle in der Liste ohne den Clip
+    expect(lay(moveTo(ALL, "a", 1, FPS))).toBe("b@0+6 a@6+4 c@10+2")             // Index = Stelle in der Liste ohne den Clip
+    expect(lay(moveTo(ALL, "a", 2, FPS))).toBe("b@0+6 c@6+2 a@8+4")
     expect(lay(moveTo(ALL, "a", 99, FPS))).toBe("b@0+6 c@6+2 a@8+4")
     expect(moveTo(ALL, "b", 1, FPS)).toEqual(ALL)
     expect(moveTo(ALL, "gibt-es-nicht", 0, FPS)).toEqual(ALL)
@@ -40,7 +41,7 @@ describe("4b – magnetische Hauptspur", () => {
 
   it("Teilen am Abspielkopf: zwei Clips, Quelle passt, Rest unverändert; am Rand oder in der Lücke nichts", () => {
     const r = splitAt(ALL, 6, FPS, id)
-    expect(lay(r)).toBe("a@0+4 b@4+2 n1@6+4 c@10+2")
+    expect(lay(r).replace(/n\d+/, "R")).toBe("a@0+4 b@4+2 R@6+4 c@10+2")
     expect(r[1]).toMatchObject({ id: "b", in: 1, out: 3 })
     expect(r[2]).toMatchObject({ kind: "video", in: 3, out: 7, media_rel: B.media_rel })
     expect(splitAt(ALL, 4, FPS, id)).toEqual(ALL)                                  // genau an einer Grenze
@@ -50,14 +51,17 @@ describe("4b – magnetische Hauptspur", () => {
   })
 
   it("Teilen und links/rechts löschen (Q/W) – Rest rückt nach", () => {
-    expect(lay(splitKeep(ALL, 6, "right", FPS, id))).toBe("a@0+4 n2@4+4 c@8+2")
-    expect(lay(splitKeep(ALL, 6, "left", FPS, id))).toBe("a@0+4 b@4+2 c@6+2")
+    const q = splitKeep(ALL, 6, "left", FPS, id)                                     // Q: links vom Abspielkopf weg
+    expect(lay(q).replace(/n\d+/, "R")).toBe("a@0+4 R@4+4 c@8+2")
+    expect(q[1]).toMatchObject({ in: 3, out: 7 })
+    expect(lay(splitKeep(ALL, 6, "right", FPS, id))).toBe("a@0+4 b@4+2 c@6+2")     // W: rechts weg
     expect(splitKeep(ALL, 50, "left", FPS, id)).toEqual(ALL)
   })
 
   it("Kürzen: Ränder, Mindestlänge, Video-Ende, Bilder frei verlängerbar; Rest rückt nach", () => {
     expect(lay(trim(ALL, "b", "end", -2, FPS))).toBe("a@0+4 b@4+4 c@8+2")
-    expect(trim(ALL, "b", "start", 0.5, FPS)[1]).toMatchObject({ in: 1.5, out: 7, start: 4 })
+    expect(trim(ALL, "b", "start", 0.48, FPS)[1]).toMatchObject({ in: 1.48, out: 7, start: 4 })
+    expect(trim(ALL, "b", "start", 0.5, FPS)[1].in).toBe(1.52)                     // 37,5 Bilder → 38 (bildgenau)
     expect(trim(ALL, "b", "start", -5, FPS)[1].in).toBe(0)                          // nicht vor den Anfang der Quelle
     expect(trim(ALL, "b", "end", 99, FPS, { b: 8 })[1].out).toBe(8)                 // nicht über das Video-Ende
     expect(trim(ALL, "b", "end", 99, FPS)[1].out).toBe(106)                         // Länge unbekannt → frei
@@ -71,10 +75,11 @@ describe("4b – magnetische Hauptspur", () => {
   it("Löschen, Verdoppeln, Einfügen, Anhängen", () => {
     expect(lay(remove(ALL, "b", FPS))).toBe("a@0+4 c@4+2")
     const d = duplicate(ALL, "a", FPS, id)
-    expect(lay(d)).toBe("a@0+4 n3@4+4 b@8+6 c@14+2")
+    expect(lay(d).replace(/n\d+/, "N")).toBe("a@0+4 N@4+4 b@8+6 c@14+2")
     expect(d[1]).toMatchObject({ kind: "image", media_rel: A.media_rel, label: A.label })
-    expect(lay(paste(ALL, C, "a", FPS, id))).toBe("a@0+4 n4@4+2 b@6+6 c@12+2")
-    expect(lay(paste(ALL, C, null, FPS, id))).toBe("a@0+4 b@4+6 c@10+2 n5@12+2")
+    expect(lay(paste(ALL, C, "a", FPS, id)).replace(/n\d+/, "N")).toBe("a@0+4 N@4+2 b@6+6 c@12+2")
+    expect(lay(paste(ALL, C, null, FPS, id)).replace(/n\d+/, "N")).toBe("a@0+4 b@4+6 c@10+2 N@12+2")
+    expect(paste(ALL, { ...C, missing: true }, null, FPS, id)[3].missing).toBe(true)
     expect(lay(append(ALL, c({ id: "z", out: 1 }), 0, FPS))).toBe("z@0+1 a@1+4 b@5+6 c@11+2")
   })
 
