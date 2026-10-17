@@ -409,6 +409,14 @@ Wie in Etappe 3 gibt es Schritte. Nach jedem ist etwas Sichtbares fertig:
   - Zahlen müssen endlich und ≥ 0 sein, `in < out`.
   - Höchstens 2.000 Clips, höchstens 4 Stunden (Konstanten im Modul).
   - Unbekannte Felder werden verworfen.
+- **Fehlercodes:**
+  - 400 `studio_timeline_invalid`: Fassung verletzt eine Prüfregel. Sie wird ganz abgelehnt, nichts still verworfen
+    außer unbekannten Feldern.
+  - 409 `studio_timeline_conflict`: `revision` passt nicht.
+  - 409 `studio_timeline_not_empty`: Übernahme ohne `replace`, obwohl V1 Clips hat.
+  - 400 `studio_timeline_no_shots`: Das Drehbuch hat keine Shots.
+- **Länge eines Videos** bei der Übernahme: `duration` aus der Begleitdatei des Videos (schreibt 3b mit), sonst die Dauer
+  des Shots. Fehlt die Videodatei, wird der Shot als Standbild bzw. Platzhalter übernommen.
 - **„Aus dem Drehbuch übernehmen“:**
   - Alle Shots in Drehbuch-Reihenfolge werden lückenlos hintereinander gelegt:
     - Shot mit Video → Videoclip (ganze Länge des Videos)
