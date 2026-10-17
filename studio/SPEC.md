@@ -206,6 +206,53 @@ Am Ende gibt es für Medien **nur noch „Studio“**, damit die Leiste oben lee
 
 **Nicht in Etappe 1:** Hochladen, Löschen, Umbenennen, Ordner anlegen.
 
+## Bauplan Etappe 2 – Planen (15.10.)
+
+**Till, 15.10.:** eigener `studio/`-Ordner von Anfang an, damit Ordnung ins Projekt kommt. Atelier-Daten werden per Knopf
+**kopiert**, das Atelier bleibt unangetastet. Danach gelten die Daten im Studio. Was später noch im Atelier geändert wird,
+sieht das Studio nicht mehr (Hinweis im Dialog).
+
+**Daten** (unter `<projekt>/studio/`, nur das Studio schreibt hier):
+```
+studio/
+  screenplay.json            # Kopf: title, logline, description, aspect_ratio, default_duration, models{video,image,voice,music}, look{style,palette[]}, scene_order[]
+  scenes/<id>.json           # title, description, location, time_of_day, element_ids[], dialogues[{element_id,line,emotion}], camera{shot,lens,light,weather,time,mood}, shots[]
+  elements/<id>/element.json # kind (character|place|object), name, description, style_anchor, palette[], references[] (rel. zum Projekt)
+  imported.json              # wann/von wo übernommen (Atelier), was übernommen wurde
+```
+- Die Shots liegen **in der Szene** (`shots[]`: id, order, shot, prompt, element_ids, duration, status, image_rel,
+  video_rel). Es gibt keine eigene Datei je Szene mehr, damit Szene und Shots nie auseinanderlaufen.
+- IDs: 32 Hex-Zeichen (wie Atelier), geprüft. Längen und gültige Werte wie im Atelier (Titel 200, Beschreibung 4000,
+  Dialog 2000, ≤ 100 Dialoge, ≤ 32 Bausteine, Dauer 1–60 s, Status `planned|image_ready|video_processing|done|failed`,
+  Kamera-Schlüssel aus einer festen Liste).
+- Schreiben ist atomar (`.tmp` + `os.replace`), damit nie eine halbe Datei liegt.
+- Referenzbilder sind Pfade aus der Bibliothek (relativ zum Projekt, nur Bilder im Projekt, keine Symlinks).
+
+**Übernahme aus dem Atelier** (`POST …/import/atelier`, idempotent):
+- Kopiert screenplay.json, scenes/*.json (dabei `character_ids` → `element_ids`), shots/<scene>.json (→ `shots[]` der
+  Szene), characters/<id>/character.json (→ `elements/<id>/element.json`, kind `character`), ci.json (→ `look`).
+- Gleiche IDs, Referenzbilder bleiben, wo sie sind (`atelier/characters/<id>/…`, nur lesen).
+- Gibt es im Studio schon Planungsdaten, wird nichts überschrieben (409 `studio_plan_exists`).
+- Zeigt vorher, was übernommen würde (`GET …/import/atelier` → Anzahl Szenen, Shots, Figuren, Look ja/nein).
+
+**Regie-Agent** (`POST …/scenes/{id}/decompose`, `POST …/decompose`): Szene → Shots per LLM, Prompt angelehnt an den
+Atelier-Regieagenten (gleiche Regeln: 2–5 Shots, nur erlaubte Shot-Arten, nur Bausteine der Szene). Ersetzt die Shots
+der Szene. Bei Fehler bleiben die alten Shots und eine klare Meldung erscheint. Modell: `models.text` aus dem Kopf, sonst
+der Standard. Läuft im Hintergrund nur so lange wie die Anfrage dauert (kein eigener Auftrag in Etappe 2).
+
+**Frontend „Planen“:**
+- Links: **Drehbuch-Gliederung** (Kopf, Szenen in Reihenfolge, Hoch/Runter). Darunter die **Bausteine** (Figuren,
+  Orte, Objekte). Die Bibliothek bleibt über einen Reiter erreichbar.
+- Mitte: Vorschau des gewählten Shots bzw. des Referenzbilds der Figur.
+- Rechts: Formular des Gewählten (Kopf, Szene, Shot, Baustein), Speichern mit Rückmeldung, Löschen über Dialog (kein
+  `confirm()`).
+- Unten: Storyboard aus den echten Shots der gewählten Szene, Knopf „In Shots zerlegen“.
+- Leeres Studio, Atelier hat Daten: Hinweis „Aus dem Atelier übernehmen“ mit Vorschau der Mengen.
+
+**Aufteilung:**
+- **2a:** Daten, Übernahme, Kopf/Szenen/Bausteine (Backend + Frontend).
+- **2b:** Shots bearbeiten, Storyboard echt, Regie-Agent.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.

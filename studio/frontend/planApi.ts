@@ -1,0 +1,96 @@
+import { api } from "@/shared/api-client"
+
+/** Planungsdaten des Studios (Backend: backend/plan.py, Spec „Bauplan Etappe 2“). */
+export type ElementKind = "character" | "place" | "object"
+export const ELEMENT_KINDS: ElementKind[] = ["character", "place", "object"]
+export const CAMERA_KEYS = ["shot", "lens", "light", "weather", "time", "mood"] as const
+export type CameraKey = (typeof CAMERA_KEYS)[number]
+export const MODEL_KEYS = ["video", "image", "voice", "music", "text"] as const
+export const ASPECTS = ["16:9", "9:16", "1:1", "4:3", "21:9"] as const
+
+export interface Head {
+  title: string
+  logline: string
+  description: string
+  aspect_ratio: string
+  default_duration: number
+  models: Record<(typeof MODEL_KEYS)[number], string>
+  look: { style: string; palette: string[] }
+  scene_order: string[]
+}
+
+export interface Dialogue { element_id: string; line: string; emotion: string }
+
+export interface Shot {
+  id: string
+  order: number
+  shot: string
+  prompt: string
+  element_ids: string[]
+  duration: number
+  status: string
+  image_rel: string | null
+  video_rel: string | null
+}
+
+export interface Scene {
+  id: string
+  title: string
+  description: string
+  location: string
+  time_of_day: string
+  element_ids: string[]
+  dialogues: Dialogue[]
+  camera: Partial<Record<CameraKey, string>>
+  shots: Shot[]
+}
+
+export interface PlanElement {
+  id: string
+  kind: ElementKind
+  name: string
+  description: string
+  style_anchor: string
+  palette: string[]
+  references: string[]
+}
+
+export interface Plan {
+  base: string
+  screenplay: Head
+  scenes: Scene[]
+  elements: PlanElement[]
+  presets: Partial<Record<CameraKey | "style", string[]>>
+}
+
+export interface ImportPreview {
+  available: boolean
+  scenes: number
+  shots: number
+  elements: number
+  look: boolean
+  plan_exists: boolean
+}
+
+export type Selection =
+  | { kind: "head" }
+  | { kind: "scene"; id: string }
+  | { kind: "element"; id: string }
+  | { kind: "shot"; sceneId: string; id: string }
+
+const base = (pid: string) => `/modules/studio/projects/${encodeURIComponent(pid)}/plan`
+const one = (id: string) => encodeURIComponent(id)
+
+export const planApi = {
+  get: (pid: string) => api.get<Plan>(base(pid)),
+  saveHead: (pid: string, head: Partial<Head>) => api.put<Head>(`${base(pid)}/screenplay`, head),
+  order: (pid: string, scene_order: string[]) => api.put<Head>(`${base(pid)}/order`, { scene_order }),
+  addScene: (pid: string, data: Partial<Scene>) => api.post<Scene>(`${base(pid)}/scenes`, data),
+  saveScene: (pid: string, id: string, data: Partial<Scene>) => api.put<Scene>(`${base(pid)}/scenes/${one(id)}`, data),
+  deleteScene: (pid: string, id: string) => api.delete<{ deleted: string }>(`${base(pid)}/scenes/${one(id)}`),
+  addElement: (pid: string, data: Partial<PlanElement>) => api.post<PlanElement>(`${base(pid)}/elements`, data),
+  saveElement: (pid: string, id: string, data: Partial<PlanElement>) => api.put<PlanElement>(`${base(pid)}/elements/${one(id)}`, data),
+  deleteElement: (pid: string, id: string) => api.delete<{ deleted: string }>(`${base(pid)}/elements/${one(id)}`),
+  importPreview: (pid: string) => api.get<ImportPreview>(`${base(pid)}/import/atelier`),
+  importRun: (pid: string) => api.post<{ scenes: number; shots: number; elements: number }>(`${base(pid)}/import/atelier`, {}),
+}

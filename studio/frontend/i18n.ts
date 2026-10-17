@@ -1,4 +1,5 @@
 /** Texte des Studios (de/en). Ohne Terminal-, Datei- oder Einstellungs-Hinweise (Grundregel). */
+import { plan_de, plan_en } from "./i18nPlan"
 
 const de = {
   title: "Studio",
@@ -38,9 +39,8 @@ const de = {
   volume: "Lautstärke",
   opacity: "Deckkraft",
   fill_placeholder: "Platzhalter „{{name}}“ aus dem Drehbuch füllen",
-  gen: { image: "Bild", video: "Video", voice: "Sprache", music: "Musik" },
+  gen: { image: "Bild", video: "Video", voice: "Sprache", music: "Musik", text: "Text" },
   prompt: "Beschreibung",
-  elements: "Figuren & Orte",
   model: "Modell",
   variants: "Varianten",
   generate_now: "Erzeugen",
@@ -115,9 +115,8 @@ const en: typeof de = {
   volume: "Volume",
   opacity: "Opacity",
   fill_placeholder: "Fill placeholder “{{name}}” from the screenplay",
-  gen: { image: "Image", video: "Video", voice: "Voice", music: "Music" },
+  gen: { image: "Image", video: "Video", voice: "Voice", music: "Music", text: "Text" },
   prompt: "Description",
-  elements: "Characters & places",
   model: "Model",
   variants: "Variants",
   generate_now: "Generate",
@@ -154,4 +153,4 @@ const en: typeof de = {
   },
 }
 
-export const studioI18n = { de: { studio: de }, en: { studio: en } }
+export const studioI18n = { de: { studio: { ...de, ...plan_de } }, en: { studio: { ...en, ...plan_en } } }
