@@ -58,8 +58,8 @@ export function TimelinePanel({ time, view, snap, selected, focus, onView, onSee
       </div>
       <div className="relative mt-1 min-h-0 flex-1 overflow-y-auto">
         <div className="flex h-5 border-b border-[#1e2738] pl-24 text-[10px] text-[#3f4b60]">
-          <div className="relative flex-1 cursor-pointer" onPointerDown={(e) => onSeek(view.start + fractionOf(e.clientX, e.currentTarget) * view.span)}>
-            {ticks.map((s) => <span key={s} className="absolute top-0.5" style={{ left: `${toFraction(s, view) * 100}%` }}>{s}s</span>)}
+          <div className="relative flex-1 cursor-pointer overflow-hidden" onPointerDown={(e) => onSeek(view.start + fractionOf(e.clientX, e.currentTarget) * view.span)}>
+            {ticks.filter((s) => toFraction(s, view) < 0.97).map((s) => <span key={s} className="absolute top-0.5" style={{ left: `${toFraction(s, view) * 100}%` }}>{s}s</span>)}
           </div>
         </div>
         <div ref={laneRef} className="relative">
