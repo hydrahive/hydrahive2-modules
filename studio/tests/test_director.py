@@ -112,3 +112,12 @@ def test_unknown_scene(client, auth_headers, ws) -> None:
     with patch(LLM, new=AsyncMock(return_value='[{"prompt": "a"}]')) as llm:
         assert client.post(f"{P}/scenes/{'a' * 32}/decompose", headers=auth_headers, json={}).status_code == 404
     assert llm.call_count == 0
+
+
+def test_llm_outage_is_logged_with_cause(client, auth_headers, ws, caplog) -> None:
+    sc = client.post(f"{P}/scenes", headers=auth_headers, json={"title": "S"}).json()
+    with patch(LLM, new=AsyncMock(side_effect=RuntimeError("Kontingent erschöpft"))):
+        r = client.post(f"{P}/scenes/{sc['id']}/decompose", headers=auth_headers, json={})
+    assert r.status_code == 502
+    assert "LLM-Fehler" in caplog.text and "Kontingent erschöpft" in caplog.text
+    assert "unbrauchbare Antwort" not in caplog.text
