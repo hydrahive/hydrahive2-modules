@@ -168,6 +168,44 @@ Am Ende gibt es für Medien **nur noch „Studio“**, damit die Leiste oben lee
 | 8 | Übernahme alter Daten, Nachfolger für die Agenten-Werkzeuge, alte Module und Kern-Reiter „Media“ entfernen | nur noch „Studio“ |
 | später | Text-Schnitt über Transkript (Descript-Prinzip), Vertonung in Zielsprache, Farbe, Effekte, Übergänge | |
 
+## Bauplan Etappe 1 – Gerüst mit echter Bibliothek (15.10.)
+
+**Nur lesen.** Etappe 1 schreibt nichts in die Ordner der alten Module und legt auch noch keinen `studio/`-Ordner an.
+
+**Backend: `GET /api/modules/studio/projects/{id}/library`** liefert eine Liste aller Medien des Projekts.
+- **Atelier** (`atelier/`):
+  - `images/*` und `output/*` (Bild, Begleitdatei `.json` mit `prompt`)
+  - `videos/*.json` (nur `status == "completed"`, Video unter `video_rel`, `prompt`, `model`, `duration`)
+  - `films/*` (Video)
+  - `audio/*.mp3|wav|…` (Musik/Sprache, `.json` mit `prompt`, `model`)
+  - `characters/<id>/character.json` als Baustein `element` (Name, erstes Bild als Vorschau)
+- **Video-Editor** (`videoeditor/originals/*`): Video, Herkunft „hochgeladen“.
+- **Tonstudio** (`tonstudio/clips/*.{mp3,…}` + `.json`): Musik, `name`, `prompt`, `model`.
+- Eintrag: `id` (stabil: Hash aus Pfad), `kind` (video, image, audio, music, element), `name`, `origin` (ai, upload),
+  `source` (atelier, videoeditor, tonstudio), `rel` (Pfad relativ zum Projekt), `abs` (für `/api/files`), `size`,
+  `created_at`, optional `duration`, `prompt`, `model`, `thumb_abs`.
+- Sicherheit:
+  - Nur Mitglieder des Projekts (`list_for_user`), sonst 404 `studio_project_not_found`. Projekt-ID wird geprüft.
+  - Symlinks und alles außerhalb des Projektordners werden übersprungen.
+  - Kaputte `.json` ignorieren, die Datei erscheint trotzdem (Name aus dem Dateinamen).
+- Grenze: höchstens 5.000 Einträge je Abruf (Konstante im Modul), neueste zuerst. Mehr hat auf Prod
+  heute kein Projekt.
+- **Ausliefern** der Dateien über den Kern (`/api/files`, mit Range, Rechteprüfung). Das Modul bekommt keinen eigenen
+  Datei-Endpunkt.
+
+**Frontend:**
+- Die Projektwahl oben listet die Projekte des Nutzers. Zuletzt gewählt wird im Browser gemerkt.
+- Die Bibliothek zeigt die echten Einträge mit Filtern, Suche und Ordnern. Die Herkunftsordner heißen jetzt „KI-erzeugt“,
+  „Hochgeladen“ und je Quelle „Aus dem Atelier“, „Aus dem Video-Editor“, „Aus dem Tonstudio“.
+- Vorschaubilder: Bilder direkt. Videos per `<video preload="metadata">`, das erste Bild genügt. Für Musik ein Symbol.
+- Ein Klick wählt den Eintrag, die Vorschau zeigt bzw. spielt das echte Medium (`<video>`, `<img>`, `<audio>`), mit
+  Transportleiste, Zeitcode und Tastenkürzeln am echten Medium.
+- Die Eigenschaften zeigen Name, Art, Herkunft, Größe, Datum, Prompt und Modell.
+- Zeitleiste und Storyboard bleiben Beispieldaten (Hinweis bleibt) bis Etappe 2/4. Leeres Projekt: freundlicher Hinweis
+  statt leerer Fläche.
+
+**Nicht in Etappe 1:** Hochladen, Löschen, Umbenennen, Ordner anlegen.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
