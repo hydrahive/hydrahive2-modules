@@ -10,6 +10,7 @@ interface Props {
   selected: string | null
   busy: "decompose" | null
   runningShots?: string[]
+  batchMenu?: React.ReactNode
   onSelect: (id: string) => void
   onAdd: () => void
   onMove: (id: string, dir: -1 | 1) => void
@@ -19,7 +20,7 @@ interface Props {
 const arrow = "rounded p-0.5 text-[#68758a] hover:bg-[#1c2940] hover:text-[#e8eef8] disabled:opacity-30 disabled:hover:bg-transparent"
 
 /** Planen, unten: Shots der gewählten Szene – anklicken, sortieren, hinzufügen, per Regie-Agent zerlegen. */
-export function StoryboardPanel({ scene, base, selected, busy, runningShots = [], onSelect, onAdd, onMove, onDecompose }: Props) {
+export function StoryboardPanel({ scene, base, selected, busy, runningShots = [], batchMenu, onSelect, onAdd, onMove, onDecompose }: Props) {
   const { t } = useTranslation("studio")
   const running = busy === "decompose"
   return (
@@ -29,6 +30,7 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
         {scene && <span className="truncate">{scene.title || t("untitled")}</span>}
         {scene && scene.shots.length > 0 && <span className="shrink-0 text-[#68758a]" data-storyboard-duration>{t("scene_duration", { seconds: sceneDuration(scene) })}</span>}
         <span className="ml-auto" />
+        {batchMenu}
         {scene && (
           <button type="button" onClick={onDecompose} disabled={running} data-storyboard-decompose title={t("decompose_hint")}
             className="flex shrink-0 items-center gap-1.5 rounded-[4px] border border-[#46617f] px-2 py-0.5 font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">

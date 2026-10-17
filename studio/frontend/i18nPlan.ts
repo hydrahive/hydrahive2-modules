@@ -76,6 +76,8 @@ export const plan_de = {
     studio_job_running: "Für diesen Shot läuft schon ein Auftrag.",
     studio_variant_unknown: "Dieses Bild gehört nicht zu diesem Shot.",
     studio_video_needs_image: "Für ein Video braucht der Shot zuerst ein Bild.",
+    studio_batch_running: "In diesem Projekt läuft schon ein Auftrag für mehrere Shots. Bitte warten oder ihn abbrechen.",
+    studio_batch_nothing: "Es gibt nichts zu tun – alles ist schon fertig.",
   },
   f: {
     title: "Titel", logline: "Kurzbeschreibung", description: "Beschreibung", aspect: "Bildformat", duration: "Standard-Dauer (s)",
@@ -163,6 +165,8 @@ export const plan_en: typeof plan_de = {
     studio_job_running: "A job is already running for this shot.",
     studio_variant_unknown: "This image does not belong to this shot.",
     studio_video_needs_image: "A video needs an image for the shot first.",
+    studio_batch_running: "A job for several shots is already running in this project. Please wait or cancel it.",
+    studio_batch_nothing: "There is nothing to do – everything is finished already.",
   },
   f: {
     title: "Title", logline: "Logline", description: "Description", aspect: "Aspect ratio", duration: "Default duration (s)",

@@ -13,10 +13,11 @@ interface Props {
   onCommand: () => void
   onHelp: () => void
   running?: number
+  batch?: React.ReactNode
 }
 
 /** Studio-Leiste: Projekt, Arbeitsbereiche als Reiter, laufende Aufträge, Befehlssuche, Hilfe. */
-export function StudioHeader({ projects, projectId, onProject, onReload, workspace, onWorkspace, onCommand, onHelp, running = 0 }: Props) {
+export function StudioHeader({ projects, projectId, onProject, onReload, workspace, onWorkspace, onCommand, onHelp, running = 0, batch }: Props) {
   const { t } = useTranslation("studio")
   return (
     <header className="flex h-11 shrink-0 items-center gap-3 border-b border-[#2a364b] bg-[#0d1420] px-3">
@@ -38,11 +39,11 @@ export function StudioHeader({ projects, projectId, onProject, onReload, workspa
           </button>
         ))}
       </nav>
-      {running > 0 && (
+      {batch ?? (running > 0 && (
         <span data-studio-jobs className="flex items-center gap-1.5 rounded-[4px] px-2 py-1 text-[11px] text-[#8d9ab0]">
           <Loader2 size={12} className="animate-spin text-[#ffb86b]" /> {t("jobs", { count: running })}
         </span>
-      )}
+      ))}
       <button type="button" onClick={onCommand} data-studio-action="command"
         className="flex items-center gap-1.5 rounded-[4px] border border-[#2a364b] px-2 py-1 text-[11px] text-[#8d9ab0] hover:text-[#e8eef8]">
         <Command size={12} /> {t("command_hint")}
