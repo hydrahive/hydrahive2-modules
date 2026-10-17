@@ -55,7 +55,7 @@ def test_default_model_when_head_has_none(client, auth_headers, ws) -> None:
     assert llm.call_args.kwargs["model"] is None                            # Standard des Servers
 
 
-def test_failure_keeps_old_shots(client, auth_headers, ws) -> None:
+def test_failure_keeps_old_shots(client, auth_headers, ws, caplog) -> None:
     _, _, sc = _setup(client, auth_headers)
     D = f"{P}/scenes/{sc['id']}/decompose"
     client.post(f"{P}/scenes/{sc['id']}/shots", headers=auth_headers, json={"prompt": "alt"})
@@ -64,6 +64,7 @@ def test_failure_keeps_old_shots(client, auth_headers, ws) -> None:
             r = client.post(D, headers=auth_headers, json={})
         assert r.status_code == 502 and r.json()["detail"]["code"] == "studio_decompose_failed", side
         assert [s["prompt"] for s in client.get(P, headers=auth_headers).json()["scenes"][0]["shots"]] == ["alt"]
+    assert "LLM-Fehler" in caplog.text and "unbrauchbare Antwort" in caplog.text   # Ursache steht im Log
 
 
 def test_shots_with_media_need_confirmation(client, auth_headers, ws) -> None:
@@ -74,6 +75,8 @@ def test_shots_with_media_need_confirmation(client, auth_headers, ws) -> None:
         r = client.post(D, headers=auth_headers, json={})
         assert r.status_code == 409 and r.json()["detail"]["code"] == "studio_decompose_has_media"
         assert llm.call_count == 0                                          # kein LLM-Aufruf vor der Rückfrage
+        for not_yes in ({"replace": "ja"}, {"replace": 1}, {"anders": True}):
+            assert client.post(D, headers=auth_headers, json=not_yes).status_code == 409, not_yes
         assert client.post(D, headers=auth_headers, json={"replace": True}).status_code == 200
     assert [s["prompt"] for s in client.get(P, headers=auth_headers).json()["scenes"][0]["shots"]] == ["neu"]
 

@@ -39,9 +39,12 @@ def test_add_update_delete_shot(client, auth_headers, ws) -> None:
     assert [x["id"] for x in plan["scenes"][0]["shots"]] == [a["id"], b["id"]]
     assert plan["scenes"][0]["title"] == "Hafen"                           # Szene bleibt sonst unverändert
 
+    c = client.post(S, headers=auth_headers, json={"prompt": "c"}).json()
+    assert client.delete(f"{S}/{b['id']}", headers=auth_headers).status_code == 200     # den mittleren
+    assert [x["id"] for x in client.get(P, headers=auth_headers).json()["scenes"][0]["shots"]] == [a["id"], c["id"]]
     assert client.delete(f"{S}/{a['id']}", headers=auth_headers).status_code == 200
     left = client.get(P, headers=auth_headers).json()["scenes"][0]["shots"]
-    assert [x["id"] for x in left] == [b["id"]] and left[0]["order"] == 0
+    assert [x["id"] for x in left] == [c["id"]] and left[0]["order"] == 0
     assert client.delete(f"{S}/{a['id']}", headers=auth_headers).status_code == 404
     assert client.put(f"{S}/{a['id']}", headers=auth_headers, json={}).status_code == 404
 
@@ -67,6 +70,8 @@ def test_shot_ids_and_members_are_checked(client, auth_headers, other_headers, w
     assert client.post(S, headers=other_headers, json={}).status_code == 404
     assert client.post(f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/plan/scenes/{sc['id']}/shots", headers=auth_headers, json={}).status_code == 404
     assert client.post(S, json={}).status_code == 401
+    (ws / "studio/scenes/kaputt.json").write_text('{"title": "fremd", "shots": []}')   # Datei mit falschem Namen
+    assert client.post(f"{P}/scenes/kaputt/shots", headers=auth_headers, json={}).status_code == 404
 
 
 def test_at_most_50_shots(client, auth_headers, ws) -> None:
