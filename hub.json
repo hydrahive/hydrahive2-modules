@@ -134,6 +134,11 @@
       "id": "vitrine",
       "name": "Vitrine",
       "path": "vitrine"
+    },
+    {
+      "id": "studio",
+      "name": "Studio",
+      "path": "studio"
     }
   ]
 }
