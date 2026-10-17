@@ -1,67 +1,13 @@
 """Studio 3a: Bild für einen Shot erzeugen (studio/SPEC.md „Bauplan Etappe 3“). Der Anbieter wird ersetzt."""
 from __future__ import annotations
 
-import base64
 import json
 import time
 
-import pytest
+from _gen_helpers import PNG, FakeProvider, P, _shot, _wait
 from conftest import MOD_PREFIX, OTHER_PROJECT_ID, PROJECT_ID
 
-P = f"{MOD_PREFIX}/projects/{PROJECT_ID}/plan"
-PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
-
-
-class FakeProvider:
-    """Nimmt die Anfragen an den Bild-Anbieter entgegen (statt OpenRouter)."""
-
-    def __init__(self, result=PNG, error: str | None = None, delay: float = 0.0):
-        self.calls: list[dict] = []
-        self.result, self.error, self.delay = result, error, delay
-
-    def __call__(self, **kw):
-        self.calls.append(kw)
-        if self.delay:
-            time.sleep(self.delay)
-        if self.error:
-            from backend.image_provider import ProviderError
-            raise ProviderError(self.error)
-        return self.result
-
-
-@pytest.fixture
-def provider(monkeypatch):
-    fake = FakeProvider()
-    monkeypatch.setattr("backend.image_provider.request_image", fake)
-    return fake
-
-
-def _wait(client, h, sid: str, shot_id: str, timeout: float = 5.0) -> dict:
-    end = time.time() + timeout
-    while time.time() < end:
-        r = client.get(f"{P}/jobs", headers=h)
-        jobs = [j for j in r.json()["jobs"] if j["target"] == shot_id]
-        if jobs and jobs[0]["status"] in ("done", "failed"):
-            return jobs[0]
-        time.sleep(0.05)
-    raise AssertionError("Auftrag nicht fertig geworden")
-
-
-def _shot(client, h, ws, with_ref: bool = True) -> tuple[dict, dict, dict]:
-    client.put(f"{P}/screenplay", headers=h, json={"aspect_ratio": "9:16", "look": {"style": "film noir", "palette": ["#111"]},
-                                                     "models": {"image": "test/billig"}})
-    refs = []
-    if with_ref:
-        (ws / "bilder").mkdir(exist_ok=True)
-        (ws / "bilder/ole.png").write_bytes(PNG)
-        refs = ["bilder/ole.png"]
-    ole = client.post(f"{P}/elements", headers=h, json={"kind": "character", "name": "Ole", "description": "alter Fischer",
-                                                       "style_anchor": "yellow raincoat", "references": refs}).json()
-    sc = client.post(f"{P}/scenes", headers=h, json={"title": "Hafen", "element_ids": [ole["id"]],
-                                                    "camera": {"light": "golden_hour", "weather": "rain"}}).json()
-    shot = client.post(f"{P}/scenes/{sc['id']}/shots", headers=h, json={"prompt": "boat enters harbour", "shot": "wide",
-                                                                         "element_ids": [ole["id"]]}).json()
-    return ole, sc, shot
+pytest_plugins = ["_gen_helpers"]                 # Fixture `provider`
 
 
 def test_generate_image_for_shot(client, auth_headers, ws, provider) -> None:
@@ -165,63 +111,3 @@ def test_ids_and_members(client, auth_headers, other_headers, ws, provider) -> N
     assert client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=other_headers, json={}).status_code == 404
     assert client.get(f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/plan/jobs", headers=auth_headers).status_code == 404
     assert provider.calls == []
-
-
-def test_running_job_after_restart_is_marked_failed(client, auth_headers, ws) -> None:
-    from backend import jobs
-    (ws / "studio/jobs").mkdir(parents=True, exist_ok=True)
-    (ws / "studio/jobs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.json").write_text(json.dumps(
-        {"id": "a" * 32, "kind": "image", "target": "b" * 32, "scene_id": "c" * 32, "status": "running"}))
-    jobs.recover(PROJECT_ID)
-    got = client.get(f"{P}/jobs", headers=auth_headers).json()["jobs"]
-    assert got[0]["status"] == "failed" and got[0]["error"] == "interrupted"
-
-
-def test_references_only_of_shot_elements_and_real_images(client, auth_headers, ws, provider) -> None:
-    """Referenzen: nur Bausteine des Shots, nur echte Bilddateien im Projekt (keine Verknüpfungen nach draußen)."""
-    import os
-    ole, sc, shot = _shot(client, auth_headers, ws)
-    (ws / "bilder/mira.png").write_bytes(PNG)
-    mira = client.post(f"{P}/elements", headers=auth_headers, json={"kind": "character", "name": "Mira", "references": ["bilder/mira.png"]}).json()
-    client.put(f"{P}/scenes/{sc['id']}", headers=auth_headers, json={"element_ids": [ole["id"], mira["id"]]})   # Mira in der Szene, nicht im Shot
-    # Referenz nachträglich durch eine Verknüpfung nach draußen ersetzen (Datei wurde nach dem Speichern getauscht)
-    outside = ws.parent / "draussen.png"
-    outside.write_bytes(PNG)
-    (ws / "bilder/ole.png").unlink()
-    os.symlink(outside, ws / "bilder/ole.png")
-    client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=auth_headers, json={})
-    assert _wait(client, auth_headers, sc["id"], shot["id"])["status"] == "done"
-    assert provider.calls[0]["references"] == []                     # Ole: Symlink → raus; Mira: nicht im Shot → raus
-    (ws / "bilder/ole.png").unlink()
-    outside.unlink()
-
-
-def test_too_big_is_not_an_image(monkeypatch) -> None:
-    from backend import image_provider
-    monkeypatch.setattr(image_provider, "MAX_BYTES", 100)
-    assert image_provider.image_kind(PNG) == "png"
-    assert image_provider.image_kind(PNG + b"\0" * 200) is None
-    assert image_provider.image_kind(b"\xff\xd8\xff\xe0abc") == "jpg"
-    assert image_provider.image_kind(b"RIFF\0\0\0\0WEBPVP8 ") == "webp"
-
-
-def test_variants_only_from_studio_media(client, auth_headers, ws) -> None:
-    from backend import shots as shots_mod
-    _, sc, _shot_unused = _shot(client, auth_headers, ws, with_ref=False)
-    scene = shots_mod.load_scene(PROJECT_ID, sc["id"])
-    scene["shots"][0]["variants"] = ["studio/media/images/ok.png", "../../etc/passwd", "atelier/images/x.png",
-                                     "studio/media/images/../../x.png", 5]
-    saved = shots_mod.save_shots(PROJECT_ID, scene, scene["shots"])[0]
-    assert saved["variants"] == ["studio/media/images/ok.png"]
-
-
-def test_old_shots_without_variants_still_work(client, auth_headers, ws) -> None:
-    """Shots aus der Zeit vor 3a (ohne `variants`) kommen beim Lesen vollständig an – sonst stürzt die Oberfläche ab."""
-    sc = client.post(f"{P}/scenes", headers=auth_headers, json={"title": "Alt"}).json()
-    f = ws / "studio/scenes" / f"{sc['id']}.json"
-    data = json.loads(f.read_text())
-    data["shots"] = [{"id": "d" * 32, "order": 0, "shot": "wide", "prompt": "alt", "element_ids": [], "duration": 5,
-                      "status": "image_ready", "image_rel": "atelier/images/x.png", "video_rel": None}]   # Stand 0.3.0
-    f.write_text(json.dumps(data))
-    shot = client.get(P, headers=auth_headers).json()["scenes"][0]["shots"][0]
-    assert shot["variants"] == [] and shot["image_rel"] == "atelier/images/x.png" and shot["status"] == "image_ready"

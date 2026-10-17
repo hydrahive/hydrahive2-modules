@@ -83,10 +83,13 @@ def save_head(pid: str, data: dict, *, scene_order: list[str] | None = None) -> 
 def list_scenes(pid: str) -> list[dict]:
     d = root(pid) / "scenes"
     by_id = {}
+    elements = _element_ids(pid) if d.is_dir() else set()
     for f in sorted(d.glob("*.json")) if d.is_dir() else []:
         data = read_json(f, None)
         if is_id(f.stem) and isinstance(data, dict):
-            by_id[f.stem] = {**data, "id": f.stem}
+            # Beim Lesen dieselbe Prüfung wie beim Schreiben: ältere Dateien (z. B. Shots ohne `variants`) kommen
+            # vollständig an, die Oberfläche bekommt nie halbe Datensätze.
+            by_id[f.stem] = _clean.scene(f.stem, data, elements)
     order = [s for s in get_head(pid)["scene_order"] if s in by_id]
     return [by_id[s] for s in order] + [v for k, v in by_id.items() if k not in order]
 
