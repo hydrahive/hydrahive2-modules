@@ -213,3 +213,15 @@ def test_variants_only_from_studio_media(client, auth_headers, ws) -> None:
                                      "studio/media/images/../../x.png", 5]
     saved = shots_mod.save_shots(PROJECT_ID, scene, scene["shots"])[0]
     assert saved["variants"] == ["studio/media/images/ok.png"]
+
+
+def test_old_shots_without_variants_still_work(client, auth_headers, ws) -> None:
+    """Shots aus der Zeit vor 3a (ohne `variants`) kommen beim Lesen vollständig an – sonst stürzt die Oberfläche ab."""
+    sc = client.post(f"{P}/scenes", headers=auth_headers, json={"title": "Alt"}).json()
+    f = ws / "studio/scenes" / f"{sc['id']}.json"
+    data = json.loads(f.read_text())
+    data["shots"] = [{"id": "d" * 32, "order": 0, "shot": "wide", "prompt": "alt", "element_ids": [], "duration": 5,
+                      "status": "image_ready", "image_rel": "atelier/images/x.png", "video_rel": None}]   # Stand 0.3.0
+    f.write_text(json.dumps(data))
+    shot = client.get(P, headers=auth_headers).json()["scenes"][0]["shots"][0]
+    assert shot["variants"] == [] and shot["image_rel"] == "atelier/images/x.png" and shot["status"] == "image_ready"

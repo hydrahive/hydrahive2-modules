@@ -83,3 +83,12 @@ describe("Bibliothek: Quelle „Studio“", () => {
     expect((studioI18n.en.studio.source as Record<string, string>).studio).toBe("Studio")
   })
 })
+
+describe("Alte Shots ohne Varianten (vor 3a)", () => {
+  it("Bildbereich stürzt nicht ab, zeigt das vorhandene Bild als einzige Wahl", () => {
+    const old = { ...shot("a", { image_rel: "atelier/images/x.png" }), variants: undefined } as unknown as Shot
+    const out = html(<ShotImage shot={old} base="/w" job={null} onGenerate={noop} onChoose={noop} />)
+    expect(out).toContain("data-shot-generate")
+    expect(attr(out, "data-shot-variant")).toEqual(["atelier/images/x.png"])
+  })
+})
