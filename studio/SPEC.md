@@ -607,8 +607,15 @@ Die E2E-Tests haben über unsichtbare Kennungen geklickt und nie geprüft, ob ei
 - **Hilfe:**
   - Das „?“ im Studio öffnet einen Dialog mit zwei Reitern: **„So geht’s“** (kurzer Ablauf in 5 Schritten mit
     Knöpfen, die direkt in den jeweiligen Reiter springen) und „Tastenkürzel“ (wie bisher).
-  - Hilfe-Text für die Kern-„Hilfe zur Seite“ nur, wenn der Kern Modul-Themen erlaubt (wird geprüft). Sonst steht er
-    im Studio-Dialog, damit es keinen Kern-PR braucht.
+  - Geprüft: Die Hilfe-Themen des Kerns sind eine feste Liste (`HelpTopic` in `i18n/help/loader.ts`), Module können
+    keine eigenen hinzufügen. Die Anleitung steht deshalb im Studio-Dialog „So geht’s“, ganz ohne Kern-PR.
+- **Übersicht vom Server:** `GET …/projects/{id}/overview` liefert in einem Aufruf:
+  - `scenes`, `shots`, `with_image`, `with_video` (Shots mit Bild bzw. Video)
+  - `clips` (Clips der Schnittfassung)
+  - `atelier` (gibt es übernehmbare Atelier-Daten)
+
+  Nur lesend, nichts wird angelegt. Start-Reiter, Fortschrittsleiste und „Weiter: …“ rechnen daraus, als reine
+  Funktion im Frontend.
 - **Prüfung B1:** Ein neuer E2E-Test `studio-erstnutzer.cjs` beginnt mit einem leeren Projekt und klickt nur über
   sichtbare Texte (`getByRole(..., { name })`):
   - Start in „Planen“, Startfeld sichtbar
