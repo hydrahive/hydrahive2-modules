@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { SHORTCUTS, keyLabel, type ShortcutAction } from "./shortcuts"
 
-function Backdrop({ onClose, children, label }: { onClose: () => void; children: React.ReactNode; label: string }) {
+export function Backdrop({ onClose, children, label }: { onClose: () => void; children: React.ReactNode; label: string }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     window.addEventListener("keydown", onKey)

@@ -5,7 +5,7 @@ import shutil
 from datetime import datetime, timezone
 
 from . import _clean, presets
-from ._store import is_id, new_id, read_json, root, safe_rel, write_json
+from ._store import is_id, new_id, project_root, read_json, root, safe_rel, write_json
 
 IMAGE_EXT = {"png", "jpg", "jpeg", "webp", "gif"}
 
@@ -115,8 +115,9 @@ def reorder(pid: str, order: list) -> dict:
 
 
 def get_plan(pid: str) -> dict:
-    return {"screenplay": get_head(pid), "scenes": list_scenes(pid), "elements": list_elements(pid),
-            "presets": presets.catalog()}
+    # base = Projektordner, damit das Frontend Bilder über /api/files zeigen kann (wie `abs` in der Bibliothek)
+    return {"base": str(project_root(pid)), "screenplay": get_head(pid), "scenes": list_scenes(pid),
+            "elements": list_elements(pid), "presets": presets.catalog()}
 
 
 def has_plan(pid: str) -> bool:

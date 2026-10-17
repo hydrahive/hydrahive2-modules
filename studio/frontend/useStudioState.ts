@@ -73,7 +73,7 @@ export function useStudioState(items: LibraryItem[]) {
   return {
     workspace, setWorkspace, item, player, time, seek, view, setView, snap,
     toggleSnap: () => setSnap((s) => !s), clipId, selectClip: (id: string) => { setClipId(id); setMediaId(null) },
-    mediaId, selectMedia: (id: string) => { setMediaId(id); setClipId(null) }, layout,
+    mediaId, selectMedia: (id: string) => { setMediaId(id); setClipId(null) }, clearMedia: () => setMediaId(null), layout,
     drag: (key: keyof StudioLayout, d: number) => setLayout((l) => dragLayout(l, key, d)),
     dialog, setDialog, run, toast,
   }
