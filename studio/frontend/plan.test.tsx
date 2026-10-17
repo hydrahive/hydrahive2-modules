@@ -48,8 +48,11 @@ describe("Studio Etappe 2a – Planen", () => {
     expect(attr(out, "data-plan-scene")).toEqual(["s2", "s1"])
     expect(attr(out, "data-plan-element")).toEqual(["e1", "e2"])            // Figuren vor Orten
     expect(out).toMatch(/data-plan-scene="s1"[^>]*aria-current="true"/)
-    expect(out).toMatch(/data-plan-move="s2:-1"[^>]*disabled/)
-    expect(out).toMatch(/data-plan-move="s1:1"[^>]*disabled/)
+    const btn = (key: string) => out.match(new RegExp(`<button[^>]*data-plan-move="${key}"[^>]*>`))?.[0] ?? ""
+    expect(btn("s2:-1")).toContain(" disabled=\"\"")                       // erste Szene nicht weiter hoch
+    expect(btn("s1:1")).toContain(" disabled=\"\"")                       // letzte Szene nicht weiter runter
+    expect(btn("s2:1")).not.toContain(" disabled=\"\"")
+    expect(btn("s1:-1")).not.toContain(" disabled=\"\"")
     expect(out).not.toContain("data-plan-import")
   })
 
@@ -89,7 +92,8 @@ describe("Studio Etappe 2a – Planen", () => {
   })
 
   it("Baustein: Referenzbilder über /api/files, Bilder der Bibliothek zum Hinzufügen", () => {
-    const imgs = [IMG("b1", "/data/w/atelier/images/b1.png"), IMG("b2", "/data/w/atelier/images/b2.png")]
+    const imgs = [IMG("b1", "/data/w/atelier/images/b1.png"), IMG("b2", "/data/w/atelier/images/b2.png"),
+      IMG("c", "/data/w/atelier/characters/c/a.png")]                    // schon Referenz → nicht noch einmal anbieten
     const out = html(<ElementForm element={PLAN.elements[1]} base="/data/w" images={imgs} busy={false} onSave={noop} onDelete={noop} />)
     expect(out).toContain("/api/files?path=%2Fdata%2Fw%2Fatelier%2Fcharacters%2Fc%2Fa.png")
     expect(attr(out, "data-element-pick")).toEqual(["atelier/images/b1.png", "atelier/images/b2.png"])
