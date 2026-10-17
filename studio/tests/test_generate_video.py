@@ -144,3 +144,21 @@ def test_start_image_must_be_a_real_image_in_the_project(client, auth_headers, w
     finally:
         (ws / "bilder/start.png").unlink()
         outside.unlink()
+
+
+def test_failed_retry_keeps_existing_video_done(client, auth_headers, ws, monkeypatch) -> None:
+    """Hat der Shot schon ein fertiges Video, darf ein fehlgeschlagener neuer Versuch ihn nicht als „fehlgeschlagen“ zeigen."""
+    _install(monkeypatch, FakeVideo())
+    sc, shot = _with_image(client, auth_headers, ws)
+    U = f"{P}/scenes/{sc['id']}/shots/{shot['id']}/video"
+    client.post(U, headers=auth_headers, json={})
+    _wait(client, auth_headers, sc["id"], shot["id"])
+    first = client.get(P, headers=auth_headers).json()["scenes"][0]["shots"][0]
+    assert first["status"] == "done" and first["video_rel"]
+    _install(monkeypatch, FakeVideo(fail_at="submit", code="provider_rejected"))
+    time.sleep(0.05)
+    client.post(U, headers=auth_headers, json={})
+    job = _wait(client, auth_headers, sc["id"], shot["id"])
+    assert job["status"] == "failed"                                           # der Auftrag zeigt den Fehler …
+    after = client.get(P, headers=auth_headers).json()["scenes"][0]["shots"][0]
+    assert after["status"] == "done" and after["video_rel"] == first["video_rel"]   # … der Shot behält sein Video
