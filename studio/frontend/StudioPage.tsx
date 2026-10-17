@@ -49,7 +49,8 @@ export function StudioPage() {
   const { t } = useTranslation("studio")
   const lib = useLibrary()
   const [workspace, setWorkspace] = useState<Workspace>("plan")
-  const guide = useGuide(lib.projectId, workspace, setWorkspace)
+  const [stamp, setStamp] = useState("")                        // Drehbuch/Schnitt geändert → Fortschritt neu
+  const guide = useGuide(lib.projectId, workspace, setWorkspace, stamp)
   const cut = useCut(lib.projectId, workspace === "edit")
   const cp = useCutPlayer(cut.clips)
   const ed = useCutEdit(lib.projectId, cut.timeline, cut.setTimeline, cut.selected, cut.select, cp.time)
@@ -65,6 +66,8 @@ export function StudioPage() {
   const cutting = s.workspace === "edit" && !s.item
   const soon = s.workspace === "audio" || s.workspace === "subtitles" || s.workspace === "deliver" ? s.workspace : null
   const p = usePlan(lib.projectId, shotsWs)
+  const nextStamp = `${p.rev}:${cut.timeline?.revision ?? ""}:${cut.clips.length}`
+  if (nextStamp !== stamp) setStamp(nextStamp)                   // beim Rendern abgeglichen, kein Effect nötig
   const plan = { ...p, select: (x: Parameters<typeof p.select>[0]) => { s.clearMedia(); p.select(x) } }   // Auswahl im Drehbuch löst das Medium ab
   const library = <LibraryPanel items={lib.items} loading={lib.loading} error={lib.error} truncated={lib.truncated} selected={s.mediaId} onSelect={s.selectMedia} />
   const jobs = useJobs(lib.projectId, shotsWs, () => { void p.reload(); void lib.reload(); void guide.reload() })   // fertig → Shot + Bibliothek + Fortschritt neu

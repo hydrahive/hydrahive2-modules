@@ -4,7 +4,9 @@ import { introOpen, rememberedWorkspace, rememberWorkspace, setIntroOpen, startW
 import type { Workspace } from "./workspaces"
 
 /** Führung (B1): Übersicht des Projekts, Start-Reiter beim Öffnen/Projektwechsel, Reiter je Projekt merken, Kurzhilfe. */
-export function useGuide(projectId: string, workspace: Workspace, setWorkspace: (w: Workspace) => void) {
+export function useGuide(projectId: string, workspace: Workspace, setWorkspace: (w: Workspace) => void,
+  /** ändert sich, sobald Drehbuch oder Schnittfassung neu geladen wurden → Fortschritt neu holen */
+  changed: unknown = null) {
   const [overview, setOverview] = useState<Overview | null>(null)
   const [startedFor, setStartedFor] = useState("")
   const [intro, setIntro] = useState<Record<string, boolean>>({})
@@ -33,6 +35,12 @@ export function useGuide(projectId: string, workspace: Workspace, setWorkspace: 
   }, [projectId, startedFor, load, setWorkspace])
 
   useEffect(() => { if (projectId && startedFor === projectId) rememberWorkspace(projectId, workspace) }, [projectId, startedFor, workspace])
+
+  useEffect(() => {
+    if (!projectId || startedFor !== projectId) return
+    const id = window.setTimeout(() => { void load() }, 0)
+    return () => window.clearTimeout(id)
+  }, [changed, projectId, startedFor, load])
 
   const open = intro[workspace] ?? introOpen(workspace)
   return {
