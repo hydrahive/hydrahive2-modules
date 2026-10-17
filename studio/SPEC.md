@@ -139,6 +139,20 @@ studio/
 - Erst wenn die Übernahme auf Prod gelaufen ist, werden die alten Module entfernt, ebenso der Medien-Reiter im
   Kern-Cockpit samt `mediaWorkflows`/`mediaSources`.
 
+### Endzustand der Hauptleiste (Till, 15.10.)
+
+Am Ende gibt es für Medien **nur noch „Studio“**, damit die Leiste oben leerer und übersichtlicher wird:
+- **Weg:** die Module Atelier, Video-Editor und Tonstudio (Eintrag in der Leiste, Modul, `hub.json`).
+- **Weg aus dem Kern** (eigener Kern-PR in Etappe 8):
+  - der feste Reiter **„Media“** (`CORE_NAV` in `CockpitTopbar.tsx`, `QUICK_LINK_PATHS`, `nav-config.ts`, Route `/media`,
+    `MediaCockpitPage` mit `features/cockpit/media/`)
+  - die Verweise darauf (`BuddyPage` primaryLinks, `extensions/types.ts`, Hilfe-Thema `atelier`)
+  - Alte Links auf `/media`, `/atelier`, `/videoeditor` und `/tonstudio` leiten auf `/studio` weiter.
+- **Bleibt:** „Studio“ als Modul-Reiter (`cockpit: true`). Der Kern hängt nicht vom Studio ab: Fehlt es, gibt es
+  einfach keinen Medien-Reiter.
+- Installationen, die wir nicht kennen: Übernahme und Abschalten laufen über die Admin-Konsole bzw. automatisch beim
+  Update, ohne Terminal. Kein Server verliert Daten. Die Inhalte der alten Ordner landen im Archiv.
+
 ## Etappen (je Etappe: Spec-Nachtrag → Tests → Code → Prüfung → PR → Tills OK)
 
 | # | Inhalt | Nutzbar danach |
@@ -166,5 +180,5 @@ studio/
 
 ## Offene Punkte (Till)
 
-- Name im Menü: „Studio“, „Medien-Studio“ oder etwas Eigenes.
+- ~~Name im Menü~~ → **„Studio“** (Till, 15.10.).
 - Reihenfolge der Etappen 5 und 6 (Erzeugen vor Planen oder umgekehrt).
