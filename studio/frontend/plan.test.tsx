@@ -74,7 +74,7 @@ describe("Studio Etappe 2a – Planen", () => {
   })
 
   it("Kopf: Werte, Seitenformate, Palette als Text", () => {
-    const out = html(<HeadForm head={PLAN.screenplay} busy={false} onSave={noop} />)
+    const out = html(<HeadForm head={PLAN.screenplay} busy={false} onSave={noop} catalogs={{ video: { default: "", models: [] } }} />)
     expect(out).toContain('value="Sturm"')
     expect(attr(out, "data-head-aspect")).toEqual(["16:9", "9:16", "1:1", "4:3", "21:9"])
     expect(out).toContain('value="#111, #222"')

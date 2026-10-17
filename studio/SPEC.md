@@ -362,6 +362,34 @@ die der Anbieter für den Auftrag nennt.
 eine OpenRouter-kompatible Bild- bzw. Video-Schnittstelle nachstellt (Adresse über die Kern-Einstellung, falls es sie
 gibt; sonst nur Tests).
 
+## Nachtrag Reiter (17.10.) – keine Attrappe mehr
+
+**Anlass:** Till hat den Reiter „Erzeugen“ geöffnet und konnte nichts tun. Die rechte Seite war noch die Attrappe aus
+Etappe 0: alles gesperrt, dazu der veraltete Text „kommt in Etappe 3“. Erzeugen gab es bisher nur in „Planen“ (Shot
+wählen). Ton, Untertitel und Ausgabe zeigten noch die Beispiel-Zeitleiste „Nordwind“. Grundsatz ab jetzt: **Kein Reiter
+zeigt Beispieldaten oder gesperrte Attrappen.** Was noch nicht da ist, sagt das ehrlich und führt dorthin, wo es
+weitergeht.
+
+- **Erzeugen** nutzt dieselben Daten und Bausteine wie „Planen“:
+  - **Links „Shots“:** alle Shots aller Szenen in Drehbuch-Reihenfolge, nach Szene gruppiert, mit kleinem Bild und
+    Stand. Der Stand ist einer von „ohne Bild“, „Bild“, „Video“, „läuft“, „fehlgeschlagen“ (aus dem letzten Auftrag des
+    Shots).
+  - Oben in der Liste stehen die Zahlen „N mit Bild · M mit Video von X“.
+  - Ohne Shots erscheint ein Hinweis mit dem Knopf „Zum Planen“.
+  - **Mitte:** Bild oder Video des gewählten Shots, wie in „Planen“.
+  - **Rechts:** das Shot-Formular mit Bild erzeugen, Varianten und Video erzeugen, wie in „Planen“. Ist kein Shot
+    gewählt, steht dort der Hinweis „Wähle links einen Shot“.
+  - **Unten:** das Storyboard der Szene des gewählten Shots, mit „Für alle …“. Laufende Sammelaufträge stehen in der
+    Kopfzeile.
+- **Ton, Untertitel, Ausgabe:**
+  - Unten steht statt der Beispiel-Zeitleiste ein ehrlicher Hinweis. Er sagt, was dort kommt (ohne
+    Etappen-Nummern), und hat einen Knopf „Zum Schneiden“, um den Film anzusehen.
+  - Rechts stehen weiter die Angaben zu einem gewählten Medium der Bibliothek.
+- **Beispieldaten entfallen ganz:** `demoData.ts`, die Attrappen-Zeitleiste und das gesperrte Erzeugen-Formular werden
+  gelöscht.
+- **Prüfung:** Ein Browser-Test öffnet jeden der sechs Reiter. Er prüft, dass nirgends Beispieldaten stehen und dass im
+  Reiter „Erzeugen“ ein Bild für einen Shot ohne Bild tatsächlich erzeugt wird (ein Bild, ≈ 1,5 ct).
+
 ## Bauplan Etappe 4 – Schneiden (17.10.)
 
 **Ist-Stand:** Die Zeitleiste im Studio ist noch eine Attrappe (`demoData.ts`, Hinweis „Beispiel“). Zoom, Übersichtsleiste,

@@ -5,11 +5,10 @@ vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Re
 vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() => {})) } }))
 import type { LibraryItem } from "./api"
 import { studioI18n } from "./i18n"
-import { InspectorPanel } from "./InspectorPanel"
 import { LibraryPanel } from "./LibraryPanel"
+import { MediaInfo } from "./MediaInfo"
 import { MediaView } from "./MediaView"
 import { StudioPage } from "./StudioPage"
-import { TimelinePanel } from "./TimelinePanel"
 import { SHORTCUTS } from "./shortcuts"
 
 const noop = () => {}
@@ -34,7 +33,7 @@ const ITEMS = [
 ]
 
 describe("Studio Etappe 1", () => {
-  it("Gerüst mit Hauptmenü oben, vier Bereiche, sechs Arbeitsbereiche, Zeitleiste als Beispiel markiert", () => {
+  it("Gerüst mit Hauptmenü oben, vier Bereiche, sechs Arbeitsbereiche", () => {
     const out = html(<StudioPage />)
     expect(attr(out, "data-studio-panel")).toEqual(["library", "preview", "inspector", "timeline"])
     expect(attr(out, "data-studio-workspace")).toEqual(["plan", "generate", "edit", "audio", "subtitles", "deliver"])
@@ -66,24 +65,12 @@ describe("Studio Etappe 1", () => {
     expect(html(<MediaView item={null} bind={noop} />)).toContain("preview_empty")
   })
 
-  it("Eigenschaften: Angaben zum Medium inkl. Beschreibung; Platzhalter zeigt „Erzeugen“ (noch gesperrt)", () => {
-    const info = html(<InspectorPanel workspace="edit" clipId={null} item={ITEMS[1]} />)
+  it("Eigenschaften: Angaben zum Medium inkl. Beschreibung; ohne Medium ein Hinweis", () => {
+    const info = html(<MediaInfo item={ITEMS[1]} />)
     expect(info).toContain('data-studio-info="i2"')
     expect(info).toContain("Leuchtturm")
     expect(info).toContain("source.atelier")
-    const gen = html(<InspectorPanel workspace="edit" clipId="c4" item={null} />)
-    expect(gen).toContain("data-studio-generate")
-    expect(gen).toContain('fill_placeholder:{"name":"Shot 3 – Sturm zieht auf"}')
-    expect(gen).toContain("generate_soon")
-  })
-
-  it("Zeitleiste (noch Beispiel): Übersicht, alle Spurarten, Platzhalter", () => {
-    const out = html(<TimelinePanel time={8} view={{ start: 0, span: 40 }} snap selected={null} focus="all"
-      onView={noop} onSeek={noop} onSelect={noop} onSnap={noop} />)
-    expect(out).toContain("data-studio-overview")
-    expect(attr(out, "data-studio-track")).toEqual(["text", "video", "voice", "music", "subtitle"])
-    expect(out).toMatch(/data-studio-clip="c4" data-placeholder="1"/)
-    expect(out).toContain("data-studio-demo-badge")              // als Beispiel markiert, in der eigenen Leiste
+    expect(html(<MediaInfo item={null} />)).toContain("pick_medium")
   })
 
   it("Texte: de/en gleich, jedes Kürzel hat einen Namen, keine Terminal-Hinweise", () => {
@@ -92,5 +79,21 @@ describe("Studio Etappe 1", () => {
     for (const s of SHORTCUTS) expect(de).toContain(`action.${s.action}`)
     const bad = [...strings(studioI18n.de), ...strings(studioI18n.en)].filter(([, v]) => /terminal|shell|sudo|install\.conf|HH_[A-Z]/i.test(v))
     expect(bad).toEqual([])
+  })
+
+  it("Jeder im Code benutzte Text-Schlüssel existiert in de und en (auch zusammengesetzte wie `gen.${k}`)", () => {
+    const files = import.meta.glob(["./*.ts", "./*.tsx", "!./*.test.ts", "!./*.test.tsx", "!./i18n*.ts"], { query: "?raw", import: "default", eager: true })
+    const code = Object.values(files).join("\n")
+    const has = (obj: unknown, path: string) => path.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), obj) !== undefined
+    const plain = [...code.matchAll(/\bt\("([a-z_]+(?:\.[a-z_]+)*)"/g)].map((m) => m[1])
+    const prefixes = [...code.matchAll(/\bt\(`([a-z_]+)\.\$\{/g)].map((m) => m[1])
+    expect(plain.length).toBeGreaterThan(50)
+    expect(prefixes.length).toBeGreaterThan(10)
+    for (const lang of ["de", "en"] as const) {
+      const s = studioI18n[lang].studio
+      const plural = (k: string) => has(s, `${k}_one`) && has(s, `${k}_other`)
+      expect(plain.filter((k) => !has(s, k) && !plural(k)), lang).toEqual([])
+      expect(prefixes.filter((k) => { const v = (s as Record<string, unknown>)[k]; return !v || typeof v !== "object" }), lang).toEqual([])
+    }
   })
 })

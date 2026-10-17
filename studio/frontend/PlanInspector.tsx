@@ -9,14 +9,16 @@ import type { PlanState } from "./usePlan"
 import type { ShotsState } from "./useShots"
 import type { Job } from "./planApi"
 import { latestJob } from "./jobLogic"
+import { useModelCatalogs } from "./modelCatalog"
 
 /** Planen, rechts: Formular des Gewählten. `key` mit `rev` setzt das Formular nach dem Speichern auf die frischen Daten. */
 export function PlanInspector({ p, shots, images, jobs = [] }: { p: PlanState; shots?: ShotsState; images: LibraryItem[]; jobs?: Job[] }) {
   const { t } = useTranslation("studio")
   const { plan, selection: sel } = p
+  const catalogs = useModelCatalogs(sel?.kind === "head")          // erst laden, wenn das Drehbuch-Formular offen ist
   let body: React.ReactNode = <p className="mt-3 text-xs text-[#68758a]">{t("nothing_selected")}</p>
   if (plan && sel?.kind === "head") {
-    body = <HeadForm key={`head-${p.rev}`} head={plan.screenplay} busy={p.busy} onSave={(h) => void p.saveHead(h)} />
+    body = <HeadForm key={`head-${p.rev}`} head={plan.screenplay} busy={p.busy} onSave={(h) => void p.saveHead(h)} catalogs={catalogs} />
   } else if (plan && sel?.kind === "scene") {
     const scene = sceneOf(plan, sel)
     if (scene) {

@@ -2,11 +2,13 @@
 import { cam_de, cam_en } from "./i18nCamera"
 import { cut_de, cut_en } from "./i18nCut"
 import { jobs_de, jobs_en } from "./i18nJobs"
+import { models_de, models_en } from "./i18nModels"
 
 export const plan_de = {
   ...cam_de,
   ...jobs_de,
   ...cut_de,
+  ...models_de,
   screenplay: "Drehbuch",
   scenes: "Szenen",
   elements: "Bausteine",
@@ -84,7 +86,7 @@ export const plan_de = {
   },
   f: {
     title: "Titel", logline: "Kurzbeschreibung", description: "Beschreibung", aspect: "Bildformat", duration: "Standard-Dauer (s)",
-    models: "Modelle", models_hint: "Leer lassen für den Standard.", style: "Stil", palette: "Farben (z. B. #1a2b3c, #ffcc00)",
+    models: "Modelle", models_hint: "„Standard“ nimmt das Modell aus den Einstellungen des Servers.", style: "Stil", palette: "Farben (z. B. #1a2b3c, #ffcc00)",
     location: "Ort", time_of_day: "Tageszeit", camera: "Kamera", dialogues: "Dialoge", speaker: "Sprecher", narrator: "Erzähler",
     line: "Text", emotion: "Tonfall (optional)", add_dialogue: "Dialog hinzufügen", kind: "Art", name: "Name",
     style_anchor: "Aussehen (bleibt in jedem Bild gleich)", references: "Referenzbilder", add_reference: "Bild aus der Bibliothek hinzufügen",
@@ -98,6 +100,7 @@ export const plan_en: typeof plan_de = {
   ...cam_en,
   ...jobs_en,
   ...cut_en,
+  ...models_en,
   screenplay: "Screenplay",
   scenes: "Scenes",
   elements: "Elements",
@@ -175,7 +178,7 @@ export const plan_en: typeof plan_de = {
   },
   f: {
     title: "Title", logline: "Logline", description: "Description", aspect: "Aspect ratio", duration: "Default duration (s)",
-    models: "Models", models_hint: "Leave empty for the default.", style: "Style", palette: "Colours (e.g. #1a2b3c, #ffcc00)",
+    models: "Models", models_hint: "“Default” uses the model from the server settings.", style: "Style", palette: "Colours (e.g. #1a2b3c, #ffcc00)",
     location: "Location", time_of_day: "Time of day", camera: "Camera", dialogues: "Dialogues", speaker: "Speaker", narrator: "Narrator",
     line: "Line", emotion: "Tone (optional)", add_dialogue: "Add dialogue", kind: "Kind", name: "Name",
     style_anchor: "Look (stays the same in every image)", references: "Reference images", add_reference: "Add image from the library",
