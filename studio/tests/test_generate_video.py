@@ -184,3 +184,22 @@ def test_plan_read_repairs_interrupted_video(client, auth_headers, ws) -> None:
     (ws / "studio/jobs" / f"{'8' * 32}.json").write_text(json.dumps(
         {"id": "8" * 32, "kind": "video", "target": shot["id"], "scene_id": sc["id"], "status": "running", "created_at": "2026-10-17T10:00:00Z"}))
     assert client.get(P, headers=auth_headers).json()["scenes"][0]["shots"][0]["status"] == "failed"
+
+
+def test_start_image_must_be_a_real_image_in_the_project(client, auth_headers, ws, video) -> None:
+    """Zeigt das Bild des Shots nach draußen (Verknüpfung) oder fehlt es, geht nichts an den Anbieter."""
+    import os
+    sc, shot = _with_image(client, auth_headers, ws)
+    outside = ws.parent / "fremd.png"
+    outside.write_bytes(PNG)
+    (ws / "bilder/start.png").unlink()
+    os.symlink(outside, ws / "bilder/start.png")
+    try:
+        client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/video", headers=auth_headers, json={})
+        job = _wait(client, auth_headers, sc["id"], shot["id"])
+        assert job["status"] == "failed" and job["error"] == "image_gone"
+        assert [c for c, _ in video.calls if c == "submit"] == []
+        assert client.get(P, headers=auth_headers).json()["scenes"][0]["shots"][0]["status"] == "failed"
+    finally:
+        (ws / "bilder/start.png").unlink()
+        outside.unlink()

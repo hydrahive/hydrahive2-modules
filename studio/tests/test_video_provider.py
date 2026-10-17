@@ -90,12 +90,12 @@ def test_download_key_only_to_openrouter_and_size_limit(vp, monkeypatch, tmp_pat
     monkeypatch.setattr(vp, "MAX_BYTES", 20)
     with pytest.raises(vp.ProviderError, match="too_big"):
         vp.download_video("https://cdn.example/a.mp4", dest)
-    assert not dest.exists()                                                     # keine halbe Datei
+    assert not dest.exists() and list(tmp_path.iterdir()) == []                 # keine halbe Datei, auch kein .part
     monkeypatch.setattr(vp, "MAX_BYTES", 10_000)
     _client(monkeypatch, lambda req: httpx.Response(200, content=b"<html>nein</html>"))
     with pytest.raises(vp.ProviderError, match="bad_video"):
         vp.download_video("https://cdn.example/a.mp4", dest)
-    assert not dest.exists()
+    assert not dest.exists() and list(tmp_path.iterdir()) == []
 
 
 def test_allowed_durations_from_model_list(vp, monkeypatch) -> None:
