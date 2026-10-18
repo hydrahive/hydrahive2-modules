@@ -6,6 +6,7 @@ Regel-Arten:
   advent  1. Advent bis 23.12.
   season  meteorologisch: spring 03-01, summer 06-01, autumn 09-01, winter 12-01
   time    HH:MM bis HH:MM (auch über Mitternacht, Ende ausschließlich)
+  advent_sunday, nth_weekday, dates – siehe calendar_extra (einzelne Advente, Muttertag, Chanukka/Ramadan)
 """
 from __future__ import annotations
 
@@ -13,25 +14,15 @@ import datetime as dt
 import re
 from dataclasses import dataclass, field
 
-KINDS = ("range", "easter", "advent", "season", "time")
-HOLIDAY_KINDS = {"range", "easter", "advent"}
+from . import calendar_extra as extra
+from .calendar_templates import TEMPLATES
+
+KINDS = ("range", "easter", "advent", "season", "time", *extra.KINDS)
+HOLIDAY_KINDS = {"range", "easter", "advent", *extra.KINDS}
 SEASONS = {"spring": (3, 5), "summer": (6, 8), "autumn": (9, 11), "winter": (12, 2)}
+
 _MD = re.compile(r"^(\d{2})-(\d{2})$")
 _HM = re.compile(r"^(\d{2}):(\d{2})$")
-
-TEMPLATES = [
-    {"name": "Neujahr", "kind": "range", "from": "01-01", "to": "01-01", "priority": 50},
-    {"name": "Ostern", "kind": "easter", "offset_from": -2, "offset_to": 1, "priority": 50},
-    {"name": "Pfingsten", "kind": "easter", "offset_from": 49, "offset_to": 50, "priority": 50},
-    {"name": "Halloween", "kind": "range", "from": "10-31", "to": "10-31", "priority": 50},
-    {"name": "Advent", "kind": "advent", "priority": 40},
-    {"name": "Weihnachten", "kind": "range", "from": "12-24", "to": "12-26", "priority": 60},
-    {"name": "Silvester", "kind": "range", "from": "12-31", "to": "12-31", "priority": 60},
-    {"name": "Frühling", "kind": "season", "season": "spring", "priority": 10},
-    {"name": "Sommer", "kind": "season", "season": "summer", "priority": 10},
-    {"name": "Herbst", "kind": "season", "season": "autumn", "priority": 10},
-    {"name": "Winter", "kind": "season", "season": "winter", "priority": 10},
-]
 
 
 @dataclass
@@ -55,10 +46,7 @@ def easter(year: int) -> dt.date:
     return dt.date(year, month, day + 1)
 
 
-def first_advent(year: int) -> dt.date:
-    christmas_eve = dt.date(year, 12, 24)
-    fourth = christmas_eve - dt.timedelta(days=(christmas_eve.weekday() + 1) % 7)
-    return fourth - dt.timedelta(weeks=3)
+first_advent = extra.first_advent
 
 
 def _md(s) -> tuple[int, int] | None:
@@ -109,6 +97,8 @@ def matches(rule: dict, now: dt.datetime) -> bool:
             return False
         t = now.hour * 60 + now.minute
         return a <= t < b if a <= b else (t >= a or t < b)
+    if kind in extra.KINDS:
+        return extra.matches(rule, now.date())
     return False
 
 
@@ -168,4 +158,6 @@ def validate_rule(rule: dict) -> list[str]:
                 errs.append("offset: -120 ≤ offset_from ≤ offset_to ≤ 120")
         except (TypeError, ValueError):
             errs.append("offset: ganze Zahlen erwartet")
+    elif kind in extra.KINDS:
+        errs += extra.validate(rule)
     return errs

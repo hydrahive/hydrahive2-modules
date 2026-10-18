@@ -1,5 +1,6 @@
 // Vitrine-Kalenderregeln im Browser: Anzeige-Text, Prüfung (gleich wie renderer/calendar.py), neue Regeln.
-export type Kind = "range" | "easter" | "advent" | "season" | "time"
+export type Kind = "range" | "easter" | "advent" | "season" | "time" | "advent_sunday" | "nth_weekday" | "dates"
+export interface Period { from: string; to: string }
 export type Season = "spring" | "summer" | "autumn" | "winter"
 
 export interface Rule {
@@ -14,6 +15,11 @@ export interface Rule {
   season?: Season
   offset_from?: number
   offset_to?: number
+  n?: number
+  month?: number
+  weekday?: number
+  days?: number
+  dates?: Period[]
 }
 
 export interface Template {
@@ -25,6 +31,11 @@ export interface Template {
   season?: Season
   offset_from?: number
   offset_to?: number
+  n?: number
+  month?: number
+  weekday?: number
+  days?: number
+  dates?: Period[]
 }
 
 type T = (key: string, opts?: Record<string, unknown>) => string
@@ -42,6 +53,27 @@ export function validMonthDay(s?: string): boolean {
 }
 
 const md = (s?: string) => (s ? `${s.slice(3, 5)}.${s.slice(0, 2)}.` : "?")
+const ymd = (s?: string) => (s ? `${s.slice(8, 10)}.${s.slice(5, 7)}.${s.slice(0, 4)}` : "?")
+const YMD = /^\d{4}-\d{2}-\d{2}$/
+const MAX_SPAN_DAYS = 40      // wie renderer/calendar_extra.py
+
+function dayNumber(s: string): number | null {
+  if (!YMD.test(s)) return null
+  const d = new Date(`${s}T00:00:00Z`)
+  return Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== s ? null : d.getTime() / 86_400_000
+}
+
+/** Termine als Textzeilen „JJJJ-MM-TT JJJJ-MM-TT“ – ein Zeitraum je Zeile (Leerzeilen zählen nicht). */
+export function parseDates(text: string): Period[] {
+  return text.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
+    const [from = "", to = ""] = l.split(/\s+/)
+    return { from, to }
+  })
+}
+
+export function formatDates(dates?: Period[]): string {
+  return (dates ?? []).map((p) => `${p.from} ${p.to}`).join("\n")
+}
 
 export function describeRule(r: Rule, t: T): string {
   switch (r.kind) {
@@ -50,6 +82,12 @@ export function describeRule(r: Rule, t: T): string {
     case "season": return t(`season.${r.season}`)
     case "advent": return t("kind.advent")
     case "easter": return t("easter_range", { from: r.offset_from, to: r.offset_to })
+    case "advent_sunday": return t("advent_n", { n: r.n })
+    case "nth_weekday": return t("nth_weekday_desc", { n: t(`nth.${r.n}`), weekday: t(`weekday.${r.weekday}`), month: t(`month.${r.month}`) })
+    case "dates": {
+      const d = r.dates ?? []
+      return t("dates_desc", { count: d.length, first: ymd(d[0]?.from), last: ymd(d[d.length - 1]?.to) })
+    }
   }
 }
 
@@ -68,6 +106,20 @@ export function ruleErrors(r: Rule): string[] {
     if (!Number.isInteger(a) || !Number.isInteger(b) || a < -120 || b > 120 || a > b) errs.push("offset")
   } else if (r.kind === "season" && !["spring", "summer", "autumn", "winter"].includes(r.season ?? "")) {
     errs.push("season")
+  } else if (r.kind === "advent_sunday" && ![1, 2, 3, 4].includes(Number(r.n))) {
+    errs.push("n")
+  } else if (r.kind === "nth_weekday") {
+    const m = Number(r.month), w = Number(r.weekday), n = Number(r.n)
+    if (!Number.isInteger(m) || m < 1 || m > 12) errs.push("month")
+    if (!Number.isInteger(w) || w < 0 || w > 6) errs.push("weekday")
+    if (![-1, 1, 2, 3, 4, 5].includes(n)) errs.push("n")
+    if (r.days !== undefined && (!Number.isInteger(Number(r.days)) || Number(r.days) < 1 || Number(r.days) > 31)) errs.push("days")
+  } else if (r.kind === "dates") {
+    const bad = (r.dates ?? []).some((p) => {
+      const a = dayNumber(p.from), b = dayNumber(p.to)
+      return a === null || b === null || a > b || b - a > MAX_SPAN_DAYS
+    })
+    if (bad || (r.dates ?? []).length > 40) errs.push("dates")
   }
   return errs
 }
@@ -82,6 +134,9 @@ const DEFAULTS: Record<Kind, Partial<Rule>> = {
   season: { season: "autumn" },
   easter: { offset_from: -2, offset_to: 1 },
   advent: {},
+  advent_sunday: { n: 1 },
+  nth_weekday: { month: 5, weekday: 6, n: 2 },
+  dates: { dates: [] },
 }
 
 export function newRule(kind: Kind): Rule {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { clamp, describeRule, displayState, fromTemplate, newRule, ruleErrors, sizeLabel, type Rule } from "./rules"
+import { clamp, describeRule, displayState, formatDates, fromTemplate, newRule, parseDates, ruleErrors, sizeLabel, type Rule } from "./rules"
 
 const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k)
 
@@ -32,6 +32,35 @@ describe("Vitrine-Regeln", () => {
     expect(sizeLabel(512)).toBe("512 B")
     expect(sizeLabel(9_135_259)).toBe("8.7 MB")
     expect(sizeLabel(1536)).toBe("1.5 KB")
+  })
+})
+
+describe("Neue Feiertagsarten", () => {
+  it("beschreibt Adventssonntag, n-ten Wochentag und Termine je Jahr", () => {
+    expect(describeRule({ kind: "advent_sunday", n: 2 } as Rule, t)).toBe('advent_n:{"n":2}')
+    expect(describeRule({ kind: "nth_weekday", month: 5, weekday: 6, n: 2 } as Rule, t)).toBe('nth_weekday_desc:{"n":"nth.2","weekday":"weekday.6","month":"month.5"}')
+    expect(describeRule({ kind: "dates", dates: [{ from: "2026-12-04", to: "2026-12-12" }, { from: "2027-12-24", to: "2028-01-01" }] } as Rule, t))
+      .toBe('dates_desc:{"count":2,"first":"04.12.2026","last":"01.01.2028"}')
+    expect(describeRule({ kind: "dates", dates: [] } as unknown as Rule, t)).toBe('dates_desc:{"count":0,"first":"?","last":"?"}')
+  })
+
+  it("prüft die neuen Arten wie der Server", () => {
+    expect(ruleErrors({ ...newRule("advent_sunday"), name: "x" })).toEqual([])
+    expect(ruleErrors({ ...newRule("advent_sunday"), name: "x", n: 5 })).toContain("n")
+    expect(ruleErrors({ ...newRule("nth_weekday"), name: "x" })).toEqual([])
+    expect(ruleErrors({ ...newRule("nth_weekday"), name: "x", month: 13 })).toContain("month")
+    expect(ruleErrors({ ...newRule("nth_weekday"), name: "x", n: 0 })).toContain("n")
+    expect(ruleErrors({ ...newRule("dates"), name: "x" })).toEqual([])
+    expect(ruleErrors({ ...newRule("dates"), name: "x", dates: [{ from: "2026-12-12", to: "2026-12-04" }] })).toContain("dates")
+    expect(ruleErrors({ ...newRule("dates"), name: "x", dates: [{ from: "2026-02-30", to: "2026-03-01" }] })).toContain("dates")
+    expect(ruleErrors({ ...newRule("dates"), name: "x", dates: [{ from: "2026-01-01", to: "2026-03-01" }] })).toContain("dates")
+  })
+
+  it("liest und schreibt Termine als Textzeilen", () => {
+    expect(parseDates("2026-12-04 2026-12-12\n\n 2027-12-24  2028-01-01 ")).toEqual([
+      { from: "2026-12-04", to: "2026-12-12" }, { from: "2027-12-24", to: "2028-01-01" }])
+    expect(formatDates([{ from: "2026-12-04", to: "2026-12-12" }])).toBe("2026-12-04 2026-12-12")
+    expect(parseDates("quatsch")).toEqual([{ from: "quatsch", to: "" }])
   })
 })
 
