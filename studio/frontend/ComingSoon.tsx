@@ -2,7 +2,7 @@ import { ArrowRight, Construction } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 /** Ton, Untertitel, Ausgabe: ehrlicher Hinweis, was dort kommt – statt Beispieldaten. */
-export function ComingSoon({ workspace, onCut }: { workspace: "audio" | "subtitles" | "deliver"; onCut: () => void }) {
+export function ComingSoon({ workspace, onCut }: { workspace: "audio" | "subtitles"; onCut: () => void }) {
   const { t } = useTranslation("studio")
   return (
     <section className="flex h-full min-h-0 flex-col items-center justify-center gap-3 p-4 text-center" data-studio-panel="timeline" data-studio-soon={workspace}>

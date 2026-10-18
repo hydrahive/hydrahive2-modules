@@ -35,7 +35,6 @@ const de = {
   soon: {
     audio: "Hier kommen Tonspuren, Musik, Sprache und ein Mischpult hinzu. Bis dahin hörst du den Originalton der Videos beim Abspielen im Reiter „Schneiden“.",
     subtitles: "Hier kommen Untertitel hinzu: aus der Sprache erkennen, bearbeiten, übersetzen und ins Video einbrennen.",
-    deliver: "Hier kommt die Ausgabe des fertigen Films als Datei hinzu (Formate wie 16:9, 9:16, 1:1). Bis dahin siehst du den Film im Reiter „Schneiden“ am Stück.",
   },
   soon_to_cut: "Zum Schneiden",
   position: "Position",
@@ -116,7 +115,6 @@ const en: typeof de = {
   soon: {
     audio: "Audio tracks, music, voice and a mixer will be added here. Until then you hear the original sound of the videos when playing in the “Edit” tab.",
     subtitles: "Subtitles will be added here: recognise from speech, edit, translate and burn into the video.",
-    deliver: "Exporting the finished film as a file will be added here (formats like 16:9, 9:16, 1:1). Until then you can watch the film in one piece in the “Edit” tab.",
   },
   soon_to_cut: "Go to Edit",
   position: "Position",

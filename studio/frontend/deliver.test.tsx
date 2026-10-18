@@ -31,6 +31,9 @@ describe("4d – Ausgabe: Übersicht", () => {
     expect(filmSize("kaputt")).toEqual([1280, 720])
     expect(minutes(75.4)).toBe("1:15")
     expect(minutes(9)).toBe("0:09")
+    expect(minutes(12.5)).toBe("0:12")
+    expect(minutes(59.9)).toBe("0:59")
+    expect(minutes(60 - 1e-9)).toBe("1:00")                                         // Gleitkomma-Rest zählt als 1:00
   })
 })
 

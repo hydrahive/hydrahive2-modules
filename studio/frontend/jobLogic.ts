@@ -17,7 +17,7 @@ export function runningJobs(jobs: Job[]): number {
 }
 
 const KNOWN = new Set(["no_key", "provider_rejected", "provider_unreachable", "empty_answer", "bad_image", "interrupted", "shot_gone",
-  "video_failed", "timeout", "bad_url", "too_big", "bad_video", "image_gone"])
+  "video_failed", "timeout", "bad_url", "too_big", "bad_video", "image_gone", "render_failed"])
 
 /** Meldung zu einem fehlgeschlagenen Auftrag (Code → Text). Leer, wenn nichts schiefging. */
 export function jobText(t: (k: string) => string, job: Job | null): string {
