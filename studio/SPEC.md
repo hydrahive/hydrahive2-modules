@@ -1061,6 +1061,32 @@ Prüfregeln/Grenzen, Konflikt, SRT/VTT-Format inkl. Zeitformat und Sonderzeichen
 Teilen/Zusammenführen, aktueller Eintrag bei Zeit t, Spur); E2E nur über sichtbare Texte bei 1280 und 1600 px (Erzeugen,
 bearbeiten, Rückgängig, Herunterladen und Datei prüfen, nichts im Bild eingebrannt: Film-MP4 unverändert).
 
+### Bauplan 6b – Aus dem Ton heraushören (18.10.)
+
+**Probe auf hydratest (18.10., 15 s Ton mit `language=de`):** whisper-large-v3 liefert je Satz einen Abschnitt, die
+Zeiten liegen ≈ 0,3 s neben der echten Stelle, Kosten 0,011 ct (≈ ½ ct je 10 min Film). whisper-large-v3-turbo
+ähnlich, etwas ungenauer. whisper-1 fasst alles in **einen** Abschnitt (0–24 s) zusammen → ungeeignet. Lokales
+Wyoming liefert keine Zeiten. (Die schlechte Erkennung in der Probe lag an der englischen Testsprecherstimme.)
+
+- **Was gehört wird:** Originalton der Videos (V1) und die Spur „Sprache“ (A1) an ihren Stellen, **ohne Musik** und
+  ohne Mischpult-Einstellungen – die Erkennung soll die Stimmen gut hören. ffmpeg mischt das als Mono, 16 kHz, AAC
+  32 kbit/s (60 min ≈ 14 MB). Höchstens 60 min Film (`studio_subtitles_too_long`).
+- **Auftrag** `transcribe` (Ziel `subtitles:<projekt>:<sprache>`, einer zur Zeit, `studio_subtitles_running`). Modell:
+  Standard des Servers für Transkription (`get_media_model("transcribe")`); ist dort ein lokales Modell eingestellt,
+  lehnt der Start ab (`studio_subtitles_cloud_model`, keine Zeiten). Sprache = Sprache des Films, immer mitgeschickt.
+- **Aus den Abschnitten werden Untertitel:** Text gesäubert, Abschnitte mit `no_speech_prob` > 0,6 entfallen,
+  lange Abschnitte werden wie in 6a geteilt (Zeilen ≤ 42 Zeichen, ≤ 7 s), Ende höchstens Filmende, keine Überlappung,
+  mindestens 0,5 s. Quelle `audio`.
+- **Ersetzen:** Vorhandene Untertitel → der Start braucht `replace: true` (sonst `studio_subtitles_not_empty`).
+  Ändert jemand die Untertitel, während der Auftrag läuft, schreibt der Auftrag nicht darüber (Fehler `changed`). Im
+  Browser ist die Liste währenddessen gesperrt; danach lädt sie den neuen Stand.
+- **Oberfläche:** Knopf „Aus dem Ton heraushören …“ → eigener Dialog: Sprache des Films, Länge, Kosten-Hinweis
+  („weniger als 1 Cent“ bzw. „etwa N Cent“), Hinweis „Musik wird nicht mitgehört“, bei vorhandenen Untertiteln
+  „ersetzt die N Untertitel“. Fortschritt „Ton wird angehört …“, Fehler mit Text.
+- **Fehlercodes im Auftrag:** `no_key`, `provider_rejected`, `provider_unreachable`, `empty_answer`,
+  `no_speech_found` (kein Abschnitt mit Sprache), `render_failed` (Ton mischen), `changed`.
+  Vor dem Start: `studio_subtitles_no_audio` (weder Video noch Sprachclip auf der Zeitleiste).
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
