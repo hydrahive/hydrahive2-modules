@@ -89,3 +89,11 @@ describe("Quellen der Bibliothek", () => {
     }
   })
 })
+
+describe("4d – Liste lädt", () => {
+  it("solange die Liste noch nicht da ist: „Lädt …“ statt „Noch kein Film“", () => {
+    const out = html(<DeliverPanel clips={[c("video", 0, 4)]} renders={null} job={null} {...base} />)
+    expect(out).toContain("loading")
+    expect(out).not.toContain("deliver_none")
+  })
+})
