@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from renderer import calendar
+from renderer import calendar, calendar_extra
 
 _VIDEO = re.compile(r"^[a-z0-9][a-z0-9._-]{0,120}\.(mp4|webm|mkv|mov)$")
 _HM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -52,6 +52,8 @@ class Config(BaseModel):
             except (TypeError, ValueError):
                 raise ValueError(f"Regel {i + 1}: Priorität muss eine Zahl sein") from None
             keep = {k: r[k] for k in ("from", "to", "season", "offset_from", "offset_to") if k in r}
+            if r["kind"] in calendar_extra.KINDS:
+                keep = calendar_extra.clean(r)          # nur die Felder der Art – kein from/to/dates-Mischmasch
             clean.append({"id": str(r.get("id") or i)[:40], "name": str(r["name"]).strip()[:60], "kind": r["kind"],
                           "enabled": bool(r.get("enabled", True)), "priority": max(0, min(prio, 100)),
                           "videos": [str(v) for v in vids], **keep})

@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next"
-import { ruleErrors, type Kind, type Rule, type Season } from "./rules"
+import { newRule, ruleErrors, type Kind, type Rule, type Season } from "./rules"
 import type { VideoFile } from "./api"
+import { RuleFieldsExtra } from "./RuleFieldsExtra"
 
 const field = "w-full rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1.5 text-sm text-[#e8eef8]"
 const label = "block text-xs text-[#8d9ab0]"
+const KINDS: Kind[] = ["range", "easter", "advent", "advent_sunday", "nth_weekday", "dates", "season", "time"]
 
 /** Eine Regel bearbeiten (eingeklappt in der Liste, ausgeklappt = dieses Formular). */
 export function RuleEditor({ rule, videos, onChange }: { rule: Rule; videos: VideoFile[]; onChange: (r: Rule) => void }) {
@@ -18,8 +20,8 @@ export function RuleEditor({ rule, videos, onChange }: { rule: Rule; videos: Vid
     <div className="grid gap-3 border-t border-[#1c2638] p-3 md:grid-cols-2">
       <label className={label}>{t("name")}<input className={field + bad("name")} value={rule.name} onChange={(e) => set({ name: e.target.value })} /></label>
       <label className={label}>{t("kind_label")}
-        <select className={field} value={rule.kind} onChange={(e) => set({ kind: e.target.value as Kind })}>
-          {(["range", "easter", "advent", "season", "time"] as Kind[]).map((k) => <option key={k} value={k}>{t(`kind.${k}`)}</option>)}
+        <select className={field} value={rule.kind} onChange={(e) => set({ ...newRule(e.target.value as Kind), id: rule.id, name: rule.name, enabled: rule.enabled, priority: rule.priority, videos: rule.videos })}>
+          {KINDS.map((k) => <option key={k} value={k}>{t(`kind.${k}`)}</option>)}
         </select>
       </label>
 
@@ -41,6 +43,8 @@ export function RuleEditor({ rule, videos, onChange }: { rule: Rule; videos: Vid
             {(["spring", "summer", "autumn", "winter"] as Season[]).map((s) => <option key={s} value={s}>{t(`season.${s}`)}</option>)}
           </select>
         </label>}
+
+      <RuleFieldsExtra key={rule.kind} rule={rule} errs={errs} set={set} />
 
       <label className={label}>{t("priority")}<input type="number" min={0} max={100} className={field} value={rule.priority} onChange={(e) => set({ priority: Number(e.target.value) })} /></label>
 
