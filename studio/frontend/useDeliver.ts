@@ -10,7 +10,8 @@ const POLL_MS = 1500
 /** Reiter „Ausgabe“ (4d): fertige Filme laden, Film starten, Fortschritt beobachten (solange der Reiter offen ist). */
 export function useDeliver(p: PlanState, projectId: string, active: boolean, jobs: Job[], reloadJobs: () => void, onDone: () => void) {
   const { t } = useTranslation("studio")
-  const [renders, setRenders] = useState<RenderItem[]>([])
+  const [renders, setRenders] = useState<RenderItem[] | null>(null)                 // null = noch nicht geladen
+  const [loadedFor, setLoadedFor] = useState("")
   const [guard] = useState(latestOnly)
   const job = jobs.find((j) => j.kind === "render") ?? null
   const running = job?.status === "running" || job?.status === "queued"
@@ -20,8 +21,8 @@ export function useDeliver(p: PlanState, projectId: string, active: boolean, job
     if (!projectId) { setRenders([]); return }
     try {
       const r = await guard.run(projectId, () => renderApi.list(projectId))
-      if (r.current) setRenders(r.value.renders)
-    } catch { /* nächster Versuch beim nächsten Öffnen */ }
+      if (r.current) { setRenders(r.value.renders); setLoadedFor(projectId) }
+    } catch { setRenders([]) }
   }, [projectId, guard])
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export function useDeliver(p: PlanState, projectId: string, active: boolean, job
   }, [running, load, onDone])
 
   return {
-    renders, job,
+    renders: loadedFor === projectId ? renders : null, job,                      // anderes Projekt → erst laden
     start: () => p.act(() => renderApi.start(projectId), t("notice_render_started"), () => reloadJobs()),
   }
 }

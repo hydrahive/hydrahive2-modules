@@ -10,7 +10,8 @@ import type { TimelineClip } from "./timelineApi"
 interface Props {
   clips: TimelineClip[]
   aspect: string
-  renders: RenderItem[]
+  /** null = wird noch geladen */
+  renders: RenderItem[] | null
   job: Job | null
   busy: boolean
   onRender: () => void
@@ -48,7 +49,8 @@ export function DeliverPanel({ clips, aspect, renders, job, busy, onRender, onCu
         {job?.status === "failed" && <p className="text-[#ff6b8a]" data-deliver-error>{jobText(t, job)}</p>}
       </div>
       <h3 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("deliver_films")}</h3>
-      {!renders.length ? <p className="text-[#68758a]">{t("deliver_none")}</p> : (
+      {!renders ? <p className="flex items-center gap-1.5 text-[#68758a]"><Loader2 size={12} className="animate-spin" /> {t("loading")}</p>
+        : !renders.length ? <p className="text-[#68758a]">{t("deliver_none")}</p> : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
           {renders.map((r) => (
             <figure key={r.rel} className="space-y-1.5 rounded-[6px] border border-[#2a364b] bg-[#0d1420] p-2" data-deliver-film={r.rel}>
