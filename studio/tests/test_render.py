@@ -111,3 +111,14 @@ def test_keep_last_ten(client, auth_headers, ws) -> None:
 def test_foreign_project(client, auth_headers) -> None:
     assert client.post(f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/render", headers=auth_headers, json={}).status_code == 404
     assert client.get(f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/renders", headers=auth_headers).status_code == 404
+
+
+@needs_ffmpeg
+def test_tricky_placeholder_texts_render(client, auth_headers, ws) -> None:
+    """Shot-Namen sind Nutzertext: Doppelpunkt, Apostroph, Prozent, Klammern, Backslash, Semikolon, Komma, Zeilenumbruch."""
+    labels = ["Der Sturm: 'Shot' 2 – 100% [x]", "a\\b;c,d", "Zeile1\nZeile2", "Äöü ß € 🙂", "'''", ""]
+    put_timeline(client, auth_headers, [clip("placeholder", i, 0, 1, label=t) for i, t in enumerate(labels)])
+    client.post(f"{R}/render", headers=auth_headers, json={})
+    job = wait_render(client, auth_headers)
+    assert job["status"] == "done", job
+    assert abs(float(probe(ws / job["result"]["rel"])["format"]["duration"]) - 6) < 0.25
