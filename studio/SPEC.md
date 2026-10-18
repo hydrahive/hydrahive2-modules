@@ -729,6 +729,56 @@ Die E2E-Tests haben über unsichtbare Kennungen geklickt und nie geprüft, ob ei
   - Leeres Projekt → „Aus einer Idee“ mit echter KI → Vorschau → Übernehmen → Szenen mit Shots.
   - Danach „Aus dem Storyteller“ mit einem Testbuch → angehängt.
 
+### Bauplan B3 – „Erzeugen“ eigenständig: Shot anlegen und freies Bild (18.10.)
+
+**Ist-Stand (geprüft):**
+- In „Erzeugen“ zeigt die linke Seite nur die Shot-Liste. Neue Shots gibt es nur in „Planen“.
+- Bilder entstehen nur für Shots (`generate._work`, Auftrag je Shot). Die Bibliothek liest `studio/media/images` und
+  `studio/media/videos`.
+- Shot-Varianten müssen unter `studio/media/images/` liegen (`_clean.shot`).
+- Die Zeitleiste hängt Bibliotheks-Bilder bisher nur im Reiter „Schneiden“ an (im Browser, `fromLibrary`, 5 s).
+
+**Links in „Erzeugen“** stehen über der Shot-Liste zwei Knöpfe:
+- **„+ Shot“** öffnet eine kleine Liste der Szenen. Ein Klick legt dort einen leeren Shot an und wählt ihn aus. Ohne
+  Szenen ist der Knopf gesperrt, der vorhandene Hinweis „Zum Planen“ bleibt.
+- **„Freies Bild“** öffnet den Bereich für freie Bilder. Ein Klick auf einen Shot schließt ihn wieder.
+
+**Freies Bild:**
+- Rechts steht das Formular:
+  - Beschreibung (1–2.000 Zeichen)
+  - Modell (Katalog, Standard = Bild-Modell des Drehbuchs bzw. des Servers)
+  - Format (Standard = Format des Drehbuchs)
+  - Anzahl 1–4
+  - optional bis zu 3 Referenzbilder aus der Bibliothek, nur Bilder des Projekts
+- Darunter ein Hinweis zu den Kosten: Jedes Bild ist ein Aufruf beim Anbieter.
+- Ein Auftrag erzeugt die Bilder nacheinander. Je Projekt läuft nur ein Auftrag für freie Bilder gleichzeitig.
+- Der Fortschritt steht im Formular („2 von 4“). Ein fehlgeschlagenes Bild bricht die übrigen nicht ab.
+- Die Bilder landen in `studio/media/free/`, jeweils mit Begleitdatei (Beschreibung, Modell, Format, Zeit).
+- In der Bibliothek erscheinen sie als Quelle **„Studio · frei“**.
+- Die Mitte zeigt die Galerie der freien Bilder, neueste zuerst. Je Bild gibt es:
+  - **„Einem Shot zuweisen“**: Auswahl „Szene · Shot N“. Das Bild wird das aktuelle Bild des Shots und eine Variante,
+    Status wie beim normalen Erzeugen. Varianten dürfen dafür auch unter `studio/media/free/` liegen.
+  - **„Auf die Zeitleiste“**: Das Bild wird als Standbild (5 s) hinten an die Schnittfassung angehängt. Das läuft
+    auf dem Server mit Revisionsprüfung, ein offener Schnitt-Tab merkt es beim nächsten Laden.
+
+**Schnittstellen** (alle prüfen die Mitgliedschaft):
+- `POST …/plan/free-images` mit `{prompt, model?, aspect_ratio?, count, references?}` liefert den Auftrag (202).
+  Fehler: `studio_free_invalid`, `studio_free_running` (409).
+- `PUT …/plan/scenes/{sid}/shots/{id}/assign` mit `{image_rel}` liefert den Shot. Erlaubt sind nur echte Bilder
+  unter `studio/media/free/` oder `studio/media/images/`. Fehler: `studio_assign_invalid`.
+- `POST …/timeline/append` mit `{media_rel}` liefert die Fassung. Erlaubt sind nur Bilder und Videos des Studios
+  (`studio/media/…`).
+
+**Prüfung B3:**
+- pytest: Auftrag mit ersetztem Anbieter, Anzahl, Referenzen nur aus dem Projekt, ein Fehler je Bild bricht nicht
+  ab, Begleitdatei, Bibliothek „frei“, Zuweisen, Anhängen mit Revision, fremdes Projekt 404.
+- vitest: Knöpfe links, Formular, Galerie.
+- E2E (nur sichtbare Texte, 1280 und 1600 px):
+  - „Freies Bild“ mit echtem Bild (≈ 1,5 ct)
+  - einem Shot zuweisen
+  - auf die Zeitleiste legen
+  - „+ Shot“ legt einen Shot in der gewählten Szene an
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
