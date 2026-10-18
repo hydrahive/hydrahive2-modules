@@ -8,9 +8,11 @@ from __future__ import annotations
 import logging
 import shutil
 import subprocess
+import tempfile
 import time
 from collections.abc import Callable
 from datetime import datetime, timezone
+from pathlib import Path
 
 from . import jobs, plan, render_args, timeline
 from ._sources import IMAGE_EXT, VIDEO_EXT
@@ -87,14 +89,20 @@ def start(pid: str) -> dict:
         out_dir = root(pid, create=True) / "renders"
         out_dir.mkdir(parents=True, exist_ok=True)
         tmp = out_dir / f".{name}.part.mp4"
-        cmd = render_args.command(segs, project_root(pid), tmp, size=size, fps=tl["fps"])
-        try:
-            _run_ffmpeg(cmd, seconds, lambda f: progress.set(done=round(f * 100)))
-            tmp.replace(out_dir / name)
-        except RenderFailed as e:
-            raise jobs.JobFailed("render_failed") from e
-        finally:
-            tmp.unlink(missing_ok=True)
+        with tempfile.TemporaryDirectory(prefix="studio-render-") as td:
+            texts = {}
+            for i, s in enumerate(segs):
+                if s["kind"] == "placeholder" and render_args.label_text(s.get("label", "")):
+                    texts[i] = Path(td) / f"{i}.txt"
+                    texts[i].write_text(render_args.wrap(render_args.label_text(s["label"]), size), encoding="utf-8")
+            cmd = render_args.command(segs, project_root(pid), tmp, size=size, fps=tl["fps"], text_files=texts)
+            try:
+                _run_ffmpeg(cmd, seconds, lambda f: progress.set(done=round(f * 100)))
+                tmp.replace(out_dir / name)
+            except RenderFailed as e:
+                raise jobs.JobFailed("render_failed") from e
+            finally:
+                tmp.unlink(missing_ok=True)
         meta = {"duration": seconds, "width": size[0], "height": size[1], "fps": tl["fps"], "revision": tl["revision"],
                 "clips": len(clips), "missing": render_args.missing_count(segs),
                 "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}

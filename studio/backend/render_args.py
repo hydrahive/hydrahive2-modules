@@ -55,12 +55,43 @@ def total_seconds(segs: list[dict]) -> float:
     return round(sum(s["seconds"] for s in segs), 3)
 
 
-def _text(label: str) -> str:
-    """Text für drawtext sicher machen (Graph-Syntax: \\ ' : % und Zeilenumbrüche)."""
-    t = (label or "").replace("\n", " ").strip()[:120]
-    for ch in ("\\", "'", ":", "%", ",", ";", "[", "]"):
-        t = t.replace(ch, "\\" + ch)
-    return t
+def label_text(label: str) -> str:
+    """Text der Platzhalter-Karte: eine Zeile, höchstens 120 Zeichen. Er kommt über eine Datei (textfile=) in den Film,
+    deshalb ist keine Maskierung für den Filtergraphen nötig (Nutzertext mit : ' % [ ] \\ ; , war sonst fehleranfällig)."""
+    return " ".join((label or "").split())[:120]
+
+
+CHAR_WIDTH = 0.6                # mittlere Zeichenbreite von DejaVu Sans im Verhältnis zur Schriftgröße
+MAX_LINES = 4
+
+
+def font_size(size: tuple[int, int]) -> int:
+    """Schriftgröße nach der kürzeren Seite (hochkant sonst viel zu groß)."""
+    return max(18, min(size) // 20)
+
+
+def wrap(text: str, size: tuple[int, int]) -> str:
+    """Wortweise umbrechen, sodass jede Zeile in 90 % der Breite passt; höchstens MAX_LINES Zeilen (Rest mit …)."""
+    per_line = max(8, int(size[0] * 0.9 / (font_size(size) * CHAR_WIDTH)))
+    lines: list[str] = []
+    for word in text.split():
+        while len(word) > per_line:                     # überlange Wörter hart teilen
+            lines.append(word[:per_line])
+            word = word[per_line:]
+        if lines and len(lines[-1]) + 1 + len(word) <= per_line:
+            lines[-1] += " " + word
+        elif word:
+            lines.append(word)
+    if len(lines) > MAX_LINES:
+        lines = lines[:MAX_LINES]
+        lines[-1] = lines[-1][: per_line - 1].rstrip() + "…"
+    return "\n".join(lines)
+
+
+def _graph_path(p: Path) -> str:
+    """Pfad als Wert im Filtergraphen: in '…' und mit maskierten \\ ' : (eigener, fester Ordner – kein Nutzertext)."""
+    v = str(p).replace("\\", "\\\\").replace("'", "\\'").replace(":", "\\:")
+    return f"'{v}'"
 
 
 def _media(base: Path, rel: str) -> str:
@@ -70,8 +101,11 @@ def _media(base: Path, rel: str) -> str:
     return str(p)
 
 
-def command(segs: list[dict], base: Path, out: Path, *, size: tuple[int, int], fps: int) -> list[str]:
+def command(segs: list[dict], base: Path, out: Path, *, size: tuple[int, int], fps: int,
+            text_files: dict[int, Path] | None = None) -> list[str]:
+    """`text_files`: je Platzhalter-Abschnitt (Index) eine Datei mit label_text(); ohne Datei keine Schrift."""
     w, h = size
+    text_files = text_files or {}
     fit = (f"scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:black,"
            f"setsar=1,fps={fps},format=yuv420p")
     args = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-nostdin"]
@@ -92,8 +126,9 @@ def command(segs: list[dict], base: Path, out: Path, *, size: tuple[int, int], f
             n_in += 1
         else:
             args += ["-f", "lavfi", "-t", d, "-i", f"color=c=black:s={w}x{h}:r={fps}"]
-            text = f",drawtext=text='{_text(s['label'])}':fontcolor=white:fontsize={max(18, h // 24)}:x=(w-tw)/2:y=(h-th)/2" \
-                if s["kind"] == "placeholder" and s.get("label") else ""
+            # expansion=none: %{…} im Nutzertext nicht auswerten (sonst Warnung bzw. eingesetzte Werte)
+            text = (f",drawtext=textfile={_graph_path(text_files[i])}:expansion=none:fontcolor=white:fontsize={font_size(size)}"
+                    ":line_spacing=8:x=(w-tw)/2:y=(h-th)/2") if i in text_files else ""
             graph.append(f"[{n_in}:v]setsar=1{text},format=yuv420p[v{i}]")
             n_in += 1
         if not (s["kind"] == "video" and s.get("has_audio", True)):
