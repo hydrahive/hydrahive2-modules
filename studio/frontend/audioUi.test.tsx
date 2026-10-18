@@ -32,6 +32,8 @@ describe("5a – Tonspuren in der Zeitleiste", () => {
     expect(out).toMatch(/data-cut-clip="m1"[^>]*style="left:10%;width:50%"/)       // 2 s von 20, 10 s lang
     expect(out).toMatch(/data-cut-clip="s1"[^>]*style="left:5%;width:10%"/)          // 1–3 s
     expect(out).toContain('data-cut-length="12"')                                // Musik endet nach dem Bild
+    const overview = out.slice(out.indexOf("data-studio-overview"), out.indexOf("data-cut-ruler"))
+    expect(overview).toContain("left:16.6667%;width:83.3333%")                  // Musik 2–12 von 12 s in der Übersicht
     expect(out).toContain('cut_count:{"count":3}')
   })
 
@@ -61,9 +63,11 @@ describe("5a – Tonspuren in der Zeitleiste", () => {
 
   it("Gelöschter Ton: Clip bleibt rot gestrichelt mit „Ton fehlt“, ohne Wellenform", () => {
     const gone = withTrack(TL, "A2", [{ ...MUSIC, media_rel: "", missing: true }])
-    const out = timeline(gone, { waveforms: { "atelier/audio/lied.mp3": [50, 50] } })
+    const out = timeline(gone, { waveforms: { "": [50, 50], "atelier/audio/lied.mp3": [50, 50] } })
     expect(out).toMatch(/data-cut-clip="m1"[^>]*data-missing="1"/)
     expect(out).toContain("cut_audio_missing")
+    const m1 = out.slice(out.indexOf('data-cut-clip="m1"'), out.indexOf("cut_audio_missing"))
+    expect(m1).not.toContain("data-waveform")                                   // keine Wellenform, auch keine flache
   })
 
   it("Wellenform: geladen als Balken, sonst flache Linie", () => {

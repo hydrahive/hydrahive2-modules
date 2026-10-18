@@ -32,7 +32,9 @@ describe("5a – Tonspuren: frei, Lücken bleiben, nie überlappend", () => {
     expect(placeFree([M1, M2], 8, 3, FPS)).toBe(7)              // 8–11 stößt an M2 → davor, falls näher
     expect(placeFree([M1, M2], 9, 7, FPS)).toBe(13)             // Lücke 4–10 zu klein → hinter M2
     expect(placeFree([], -3, 2, FPS)).toBe(0)                   // nie vor 0
-    expect(placeFree([M1], 1.013, 1, FPS)).toBe(4)              // bildgenau
+    expect(placeFree([M2], -3, 2, FPS)).toBe(0)                 // nie vor 0, auch mit anderen Clips
+    expect(placeFree([], 1.013, 1, FPS)).toBe(1)                // bildgenau (1,013 s → Bild 25)
+    expect(placeFree([M1], 1.013, 1, FPS)).toBe(4)
   })
 
   it("Ablegen aus der Bibliothek: an freier Stelle, Rest unverändert", () => {
@@ -57,6 +59,13 @@ describe("5a – Tonspuren: frei, Lücken bleiben, nie überlappend", () => {
     const M3 = a({ id: "m3", start: 10, in: 8, out: 11 })
     expect(lay(trimAudio([M1, M3], "m3", "start", -20, FPS))).toBe("m1@0+4 m3@4+9")       // bis an M1, nicht darüber
     expect(Math.round((trimAudio([M1], "m1", "end", -10, FPS)[0].out - 0) * FPS)).toBe(5)  // Mindestlänge 5 Bilder
+  })
+
+  it("Teilen: Stelle im Medium läuft auch bei Ausschnitt weiter (in > 0)", () => {
+    const cut = a({ id: "k", start: 10, in: 3, out: 9 })               // 10–16, Medium 3–9
+    const s = splitAudio([cut], 12, FPS, id)
+    expect(s.find((c) => c.start === 12)?.in).toBe(5)                  // 3 + (12 − 10)
+    expect(s.find((c) => c.id === "k")?.out).toBe(5)
   })
 
   it("Teilen am Abspielkopf: zwei Teile, Stelle im Medium läuft weiter", () => {

@@ -48,6 +48,8 @@ describe("5a – Bearbeiten über alle Spuren", () => {
 
   it("Löschen: auf der Tonspur bleibt die Lücke, auf V1 rückt der Rest nach", () => {
     expect(lay(editTracks(TR, { kind: "delete" }, ctx("s1")).A1)).toBe("")
+    const two = { ...TR, A2: [au({ id: "m1", start: 0, out: 2 }), au({ id: "m2", start: 5, out: 2 })] }
+    expect(lay(editTracks(two, { kind: "delete" }, ctx("m1")).A2)).toBe("m2@5+2")         // m2 bleibt bei 5 s
     expect(lay(editTracks(TR, { kind: "delete" }, ctx("v1")).V1)).toBe("v2@0+4")
     expect(editTracks(TR, { kind: "delete" }, ctx(null))).toBe(TR)
   })
