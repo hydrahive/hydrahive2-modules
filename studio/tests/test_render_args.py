@@ -42,16 +42,15 @@ def test_command_shape() -> None:
             {"kind": "image", "seconds": 5, "media": "b.png"},
             {"kind": "placeholder", "seconds": 2, "label": "Sturm: 'Shot' 2 \\ 100%"},
             {"kind": "gap", "seconds": 1}]
-    cmd = ra.command(segs, BASE, Path("/out/x.mp4"), size=(1280, 720), fps=25)
+    cmd = ra.command(segs, BASE, Path("/out/x.mp4"), size=(1280, 720), fps=25, text_files={2: Path("/tmp/r 1/2.txt")})
     assert cmd[0] == "ffmpeg" and cmd[-1] == "/out/x.mp4" and "-filter_complex" in cmd
     graph = cmd[cmd.index("-filter_complex") + 1]
     assert "concat=n=4:v=1:a=1" in graph
     assert graph.count("scale=1280:720:force_original_aspect_ratio=decrease") == 2       # Video + Bild eingepasst
     assert graph.count("pad=1280:720") == 2
     assert "fps=25" in graph and "drawtext=" in graph
-    # Text sicher maskiert: kein ungeschütztes ' : \\ % im drawtext-Text
-    dt = graph[graph.index("drawtext="):].split("[", 1)[0]
-    assert "Sturm\\:" in dt and "100\\%" in dt
+    # Nutzertext steht nie im Graphen, nur der Pfad der Textdatei (in '…', ':' maskiert)
+    assert "drawtext=textfile='/tmp/r 1/2.txt':expansion=none" in graph and "Sturm" not in graph
     ins = [cmd[i + 1] for i, a in enumerate(cmd) if a == "-i"]
     assert ins[0] == "/proj/v.mp4" and ins[1] == "/proj/b.png"
     assert cmd[cmd.index("/proj/v.mp4") - 5: cmd.index("/proj/v.mp4")] == ["-ss", "1.000", "-t", "2.000", "-i"]
@@ -76,3 +75,28 @@ def test_no_shell_and_no_path_escape() -> None:
 def test_time_limit() -> None:
     assert ra.time_limit(10) == 120
     assert ra.time_limit(100) == 400
+
+
+def test_label_text_one_line() -> None:
+    assert ra.label_text("  a\n b\t c ") == "a b c"
+    assert len(ra.label_text("x" * 500)) == 120
+    assert ra.label_text("") == ""
+
+
+def test_no_text_file_no_drawtext() -> None:
+    cmd = ra.command([{"kind": "placeholder", "seconds": 1, "label": "x"}], BASE, Path("/o.mp4"), size=(320, 240), fps=25)
+    assert "drawtext" not in cmd[cmd.index("-filter_complex") + 1]
+
+
+@pytest.mark.parametrize(("size", "chars"), [((720, 1280), 120), ((1280, 720), 120), ((1080, 1080), 60), ((960, 720), 30)])
+def test_text_fits_the_frame(size, chars) -> None:
+    """Schrift nach der kürzeren Seite; Zeilen so umbrochen, dass sie in 90 % der Breite passen (DejaVu ≈ 0,6 × Größe)."""
+    fs = ra.font_size(size)
+    assert 18 <= fs <= min(size) // 18 + 1
+    lines = ra.wrap(ra.label_text("Wort " * (chars // 5)), size).split("\n")
+    assert all(len(line) * fs * 0.6 <= size[0] * 0.9 for line in lines)
+    assert len(lines) <= 4
+
+
+def test_wrap_keeps_short_text_on_one_line() -> None:
+    assert ra.wrap("Der Sturm · Shot 2", (720, 1280)) == "Der Sturm · Shot 2"
