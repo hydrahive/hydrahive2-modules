@@ -28,6 +28,19 @@ describe("Tastenkürzel", () => {
     expect(actionFor(key("s"), { tagName: "DIV" } as unknown as EventTarget)).toBe("split")
   })
 
+  it("Regler und Kästchen (5b): Kürzel wirken, nur Pfeile/Pos1/Ende und Leertaste gehören dem Element", () => {
+    const range = { tagName: "INPUT", type: "range" } as unknown as EventTarget
+    const box = { tagName: "INPUT", type: "checkbox" } as unknown as EventTarget
+    expect(actionFor(key("z", { ctrlKey: true }), range)).toBe("undo")
+    expect(actionFor(key("z", { ctrlKey: true, shiftKey: true }), range)).toBe("redo")
+    expect(actionFor(key("k"), range)).toBe("toggle-play")
+    expect(actionFor(key("s"), range)).toBe("split")
+    for (const k of ["ArrowLeft", "ArrowRight", "Home", "End"]) expect(actionFor(key(k), range)).toBeNull()
+    expect(actionFor(key(" "), box)).toBeNull()                                  // Leertaste schaltet das Kästchen
+    expect(actionFor(key("z", { ctrlKey: true }), box)).toBe("undo")
+    expect(actionFor(key("z", { ctrlKey: true }), { tagName: "INPUT", type: "number" } as unknown as EventTarget)).toBeNull()
+  })
+
   it("jede Taste nur einmal vergeben, Anzeige lesbar", () => {
     const all = SHORTCUTS.flatMap((s) => s.keys)
     expect(new Set(all).size).toBe(all.length)

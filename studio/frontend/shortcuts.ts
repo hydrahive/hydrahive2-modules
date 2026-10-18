@@ -52,12 +52,22 @@ export function keyName(e: KeyLike): string {
   return parts.filter(Boolean).join("+")
 }
 
-/** Welche Aktion zur Taste gehört – oder null. In Eingabefeldern wirkt kein Kürzel. */
+/** Tasten, die Regler bzw. Kästchen selbst brauchen (dort wirkt das Kürzel nicht). */
+const OWN_KEYS: Record<string, Set<string>> = {
+  range: new Set(["arrowleft", "arrowright", "arrowup", "arrowdown", "home", "end", "pageup", "pagedown"]),
+  checkbox: new Set(["space"]),
+}
+
+/** Welche Aktion zur Taste gehört – oder null. In Text-Eingabefeldern wirkt kein Kürzel; in Reglern und Kästchen
+ *  (Mischpult, 5b) wirken alle außer den Tasten, die das Element selbst bedient. */
 export function actionFor(e: KeyLike, target: EventTarget | null): ShortcutAction | null {
-  const el = target as HTMLElement | null
+  const el = target as (HTMLElement & { type?: string }) | null
   const tag = el?.tagName?.toLowerCase()
+  const name = keyName(e)
+  const own = tag === "input" ? OWN_KEYS[(el?.type ?? "").toLowerCase()] : undefined
+  if (own) return own.has(name.split("+").pop() ?? "") ? null : BY_KEY.get(name) ?? null
   if (tag === "input" || tag === "textarea" || tag === "select" || el?.isContentEditable) return null
-  return BY_KEY.get(keyName(e)) ?? null
+  return BY_KEY.get(name) ?? null
 }
 
 /** Anzeige einer Taste für Menschen („Strg+Shift+Z“). */
