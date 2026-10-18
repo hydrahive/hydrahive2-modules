@@ -64,11 +64,13 @@ export function PlanOutline({ plan, preview, selection, onSelect, onMove, onAddS
           ))}
         </ol>
         {!plan.scenes.length && <p className="px-1.5 text-[11px] text-[#68758a]" data-plan-no-scenes>{t("no_scenes")}</p>}
-        {/* Mehr Szenen auf einmal: aus einer Idee oder aus dem Storyteller (werden angehängt) */}
-        <div className="mt-1.5 flex flex-wrap gap-1 px-1">
-          <button type="button" onClick={onIdea} data-plan-more="idea" className={addBtn}><Sparkles size={10} /> {t("more_idea")}</button>
-          {books > 0 && <button type="button" onClick={onBook} data-plan-more="book" className={addBtn}><BookOpen size={10} /> {t("more_book")}</button>}
-        </div>
+        {/* Mehr Szenen auf einmal (werden angehängt); ohne Szenen bietet das Startfeld dieselben Wege – keine Doppelung */}
+        {plan.scenes.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1 px-1">
+            <button type="button" onClick={onIdea} data-plan-more="idea" className={addBtn}><Sparkles size={10} /> {t("more_idea")}</button>
+            {books > 0 && <button type="button" onClick={onBook} data-plan-more="book" className={addBtn}><BookOpen size={10} /> {t("more_book")}</button>}
+          </div>
+        )}
       </div>
       <div>
         <p className={heading}>

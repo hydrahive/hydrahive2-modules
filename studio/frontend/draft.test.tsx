@@ -35,12 +35,16 @@ describe("B2 – Wege ins Drehbuch", () => {
     expect(buttons(html(<StartCard atelier books={2} {...base} />))).toEqual(["start_idea", "start_book", "start_self", "start_atelier"])
   })
 
-  it("Gliederung: unter den Szenen „Szenen aus einer Idee“, mit Büchern auch „Aus dem Storyteller“", () => {
-    const o = (books: number) => buttons(html(<PlanOutline plan={PLAN} preview={null} selection={null} onSelect={noop} onMove={noop}
+  it("Gliederung: zum Anhängen unter den Szenen – erst wenn es Szenen gibt (sonst hat das Startfeld die Wege)", () => {
+    const withScene = { ...PLAN, scenes: [{ id: "s1", title: "Hafen", description: "", location: "", time_of_day: "", element_ids: [],
+      dialogues: [], camera: {}, shots: [] }] }
+    const o = (plan: Plan, books: number) => buttons(html(<PlanOutline plan={plan} preview={null} selection={null} onSelect={noop} onMove={noop}
       onAddScene={noop} onAddElement={noop} onImport={noop} books={books} onIdea={noop} onBook={noop} />))
-    expect(o(0)).toContain("more_idea")
-    expect(o(0)).not.toContain("more_book")
-    expect(o(1)).toContain("more_book")
+    expect(o(PLAN, 1)).not.toContain("more_idea")                                     // leer: keine Doppelung zum Startfeld
+    expect(o(PLAN, 1)).not.toContain("more_book")
+    expect(o(withScene, 0)).toContain("more_idea")
+    expect(o(withScene, 0)).not.toContain("more_book")
+    expect(o(withScene, 1)).toContain("more_book")
   })
 })
 
