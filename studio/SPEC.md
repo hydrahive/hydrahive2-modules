@@ -901,7 +901,47 @@ Wie bisher in Schritten, nach jedem ist etwas Sichtbares fertig:
   abspielen, „Film als MP4 erzeugen“, Download mit ffprobe geprüft (Ton hörbar ≠ Stille per `volumedetect`, Länge =
   Ende des letzten Clips).
 
-**5b und 5c** bekommen vor dem Start einen eigenen Nachtrag.
+**5c** bekommt vor dem Start einen eigenen Nachtrag.
+
+### Bauplan 5b – Mischpult (18.10.)
+
+**Ist-Stand (nach 5a, geprüft):** Tonspuren `A1`/`A2` mit Clips (`start`, `in`, `out`, `media_rel`). Die Ausgabe mischt
+mit `amix normalize=0` + `alimiter`. Der Reiter „Ton“ zeigt noch „kommt noch“. ffmpeg hat `volume`, `afade`, `asplit`,
+`sidechaincompress` (8.0 auf .2, 6.1 auf hydratest).
+
+**Daten (Erweiterung der Schnittfassung, alles optional, Standard = heutiges Verhalten):**
+- Je Spur `V1`, `A1`, `A2`: `gain_db` (−60 bis +12, Standard 0), `mute` (Standard aus), `solo` (Standard aus). Bei
+  `V1` gelten die Werte für den Originalton der Videos.
+- Je Tonclip: `gain_db` (−60 bis +12), `fade_in`, `fade_out` (Sekunden, ≥ 0, zusammen höchstens die Cliplänge).
+- Fassungsweit `duck`: Musik automatisch leiser, solange auf „Sprache“ etwas klingt (Standard **an**, sobald beide
+  Spuren Clips haben – Till 18.10.: „ja“). Stärke fest −12 dB, sanft (Anstieg 0,2 s, Rückkehr 0,6 s).
+- Unbekannte Werte werden beim Speichern abgelehnt (`studio_timeline_invalid`), wie bei den anderen Feldern.
+
+**Regeln:**
+- Solo: Gibt es mindestens eine Solo-Spur, klingen nur Solo-Spuren. Sonst klingen alle nicht stummen Spuren.
+- Lautstärke wirkt in der Vorschau (`volume` am `<audio>`/`<video>`, über +0 dB hinaus nur in der Ausgabe – Browser
+  begrenzen auf 1,0; die Anzeige sagt das) und in der Ausgabe (`volume=…dB`).
+- Blenden: in der Vorschau angenähert (Lautstärke rampt mit der Film-Uhr), in der Ausgabe exakt (`afade`).
+- Ducking in der Ausgabe: Sprachspur per `asplit` als Steuersignal in `sidechaincompress` auf die Musik. In der Vorschau
+  angenähert: Musik −12 dB, solange ein Sprachclip läuft.
+
+**Oberfläche:**
+- Reiter **„Ton“** (bisher „kommt noch“): oben die Vorschau und dieselben Abspielknöpfe wie „Schneiden“, unten das
+  **Mischpult** mit drei Kanälen „Originalton“, „Sprache“, „Musik“: Regler (dB, Doppelklick = 0), Knöpfe **Stumm** und
+  **Solo**, Pegelanzeige beim Abspielen (Web-Audio-Analyser je Kanal), Zahl der Clips.
+- Schalter **„Musik leiser, wenn gesprochen wird“**.
+- Rechts die Eigenschaften des gewählten Tonclips: Lautstärke, **Einblenden** und **Ausblenden** (Sekunden).
+- Auch im Reiter „Schneiden“ zeigen die Tonclips ihre Blenden als Schräge und die Spurköpfe Stumm/Solo-Zustand.
+- Alles läuft über den bestehenden Verlauf (Rückgängig) und das automatische Speichern.
+
+**Tests 5b:**
+- pytest: Prüfregeln der neuen Felder, alte Fassungen unverändert, Graph als reine Funktion (Lautstärke je Clip/Spur,
+  Blenden, Stumm/Solo, Originalton aus, Ducking nur mit Sprache und Musik), echtes Rendern: stumme Spur still, Solo,
+  Lautstärke −20 dB messbar leiser, Blende am Anfang leiser als in der Mitte, Ducking: Musik während Sprache leiser.
+- vitest: Mix-Logik (wer klingt, Lautstärke bei t mit Blenden und Ducking), Mischpult, Eigenschaften.
+- E2E (nur sichtbare Texte, 1280 und 1600): Musik leiser stellen, Stumm, Solo, Blende setzen, Rückgängig, Neuladen,
+  Film erzeugen und Pegel per `volumedetect` prüfen.
+
 
 ## Grundregeln (wie immer)
 
