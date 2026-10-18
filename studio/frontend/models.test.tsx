@@ -71,6 +71,14 @@ describe("Modelle im Drehbuch – aus dem Katalog", () => {
     expect(out).not.toContain("data-model-search")                           // kleine Liste ohne Suche
   })
 
+  it("Auswahlliste und Suchfeld tragen beide einen Namen (Suchfeld nicht im selben <label> wie die Liste)", () => {
+    const many = toCatalog({ default: "a/0", models: Array.from({ length: 40 }, (_, i) => ({ id: `a/${i}` })) })
+    const out = html(<ModelPick kind="text" value="" catalog={many} onChange={noop} />)
+    expect(out).toMatch(/<select[^>]*aria-label="gen\.text"/)
+    expect(out).toMatch(/<input[^>]*type="search"[^>]*aria-label="model_search_for:\{"what":"gen\.text"\}"/)
+    expect(out).not.toMatch(/<label[^>]*>(?:(?!<\/label>).)*<input[^>]*type="search"/s)      // Suchfeld nicht im Label
+  })
+
   it("große Liste (Text): mit Suchfeld; leerer Katalog: Textfeld mit Hinweis; lädt: Hinweis", () => {
     const many = toCatalog({ default: "a/0", models: Array.from({ length: 40 }, (_, i) => ({ id: `a/${i}` })) })
     expect(html(<ModelPick kind="text" value="" catalog={many} onChange={noop} />)).toContain("data-model-search")
