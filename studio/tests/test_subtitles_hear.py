@@ -229,3 +229,4 @@ def test_defaults_for_the_dialog(client, auth_headers, ws, hear) -> None:
     put(client, auth_headers, [cue(1, 0, 1)])
     assert client.get(f"{S}/de/from-audio", headers=auth_headers).json()["existing"] == 1
     assert json.dumps(d)                                                  # einfache Werte
+    assert _code(client.get(f"{S}/xx/from-audio", headers=auth_headers)) == "404 studio_not_found"
