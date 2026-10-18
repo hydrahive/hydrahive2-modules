@@ -59,7 +59,8 @@ export function DeliverPanel({ clips, aspect, renders, job, busy, onRender, onCu
                 <p className="text-[#e8eef8]">{(r.created_at || "").slice(0, 16).replace("T", " ")}</p>
                 <p className="text-[#8d9ab0]">{t("deliver_film_info", { length: minutes(r.duration ?? 0), width: r.width, height: r.height })}</p>
                 {!!r.missing && <p className="text-[#ffb86b]">{t("deliver_missing", { count: r.missing })}</p>}
-                <a href={fileUrl(r.abs)} download={`film-${(r.created_at || r.name).slice(0, 16).replace(/[^0-9]/g, "")}.mp4`}
+                {/* eigene Adresse: dieselbe wie im Abspieler bricht Chromium den Download gelegentlich ab („canceled“) */}
+                <a href={`${fileUrl(r.abs)}&download=1`} download={`film-${(r.created_at || r.name).slice(0, 16).replace(/[^0-9]/g, "")}.mp4`}
                   className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 font-bold text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940]">
                   <Download size={12} /> {t("deliver_download")}
                 </a>
