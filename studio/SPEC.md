@@ -912,8 +912,9 @@ Wie bisher in Schritten, nach jedem ist etwas Sichtbares fertig:
 
 ## Offene Punkte (Till)
 
-- **Etappe 5 (18.10.):** Aufteilung 5a/5b/5c; feste Spuren „Sprache“ + „Musik“ oder frei viele; Sprache aus 5c an den
-  Shot binden (wandert beim Umsortieren mit); Musik automatisch leiser, wenn gesprochen wird; eigenen Ton hochladen.
+- ~~Etappe 5~~ → **freigegeben (Till, 18.10.):** Aufteilung 5a/5b/5c. Zwei **feste** Tonspuren „Sprache“ und „Musik“.
+  Sprache aus 5c hängt am Shot und wandert beim Umsortieren mit. Musik wird automatisch leiser, wenn gesprochen wird
+  (in 5b). Eigenen Ton hochladen kommt mit Etappe 7.
 
 - ~~Bedienbarkeit~~ → **Etappe B vor 4d** (Till, 17.10.). Drehbuch aus einer Idee: ja. Drehbuch aus dem
   **Storyteller** übernehmen: ja („das ideale Drehbuch-Werkzeug, und der ist schon fertig“).
