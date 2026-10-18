@@ -913,17 +913,23 @@ mit `amix normalize=0` + `alimiter`. Der Reiter „Ton“ zeigt noch „kommt no
 - Je Spur `V1`, `A1`, `A2`: `gain_db` (−60 bis +12, Standard 0), `mute` (Standard aus), `solo` (Standard aus). Bei
   `V1` gelten die Werte für den Originalton der Videos.
 - Je Tonclip: `gain_db` (−60 bis +12), `fade_in`, `fade_out` (Sekunden, ≥ 0, zusammen höchstens die Cliplänge).
-- Fassungsweit `duck`: Musik automatisch leiser, solange auf „Sprache“ etwas klingt (Standard **an**, sobald beide
-  Spuren Clips haben – Till 18.10.: „ja“). Stärke fest −12 dB, sanft (Anstieg 0,2 s, Rückkehr 0,6 s).
-- Unbekannte Werte werden beim Speichern abgelehnt (`studio_timeline_invalid`), wie bei den anderen Feldern.
+- Fassungsweit `duck`: Musik automatisch leiser, solange auf „Sprache“ etwas klingt (Standard **an** – Till 18.10.:
+  „ja“). Gespeichert wird nur `duck: false`.
+- Werte, die dem Standard entsprechen, werden nicht gespeichert: alte Fassungen und die Ausgabe ohne Mischpult-Einstellungen
+  bleiben genau wie in 5a.
+- Ungültige Werte (außerhalb des Bereichs, falscher Typ, Blenden länger als der Clip) werden beim Speichern abgelehnt
+  (`studio_timeline_invalid`). Beim Laden einer Datei fallen ungültige Mischpult-Werte still auf den Standard zurück.
 
 **Regeln:**
 - Solo: Gibt es mindestens eine Solo-Spur, klingen nur Solo-Spuren. Sonst klingen alle nicht stummen Spuren.
-- Lautstärke wirkt in der Vorschau (`volume` am `<audio>`/`<video>`, über +0 dB hinaus nur in der Ausgabe – Browser
-  begrenzen auf 1,0; die Anzeige sagt das) und in der Ausgabe (`volume=…dB`).
-- Blenden: in der Vorschau angenähert (Lautstärke rampt mit der Film-Uhr), in der Ausgabe exakt (`afade`).
-- Ducking in der Ausgabe: Sprachspur per `asplit` als Steuersignal in `sidechaincompress` auf die Musik. In der Vorschau
-  angenähert: Musik −12 dB, solange ein Sprachclip läuft.
+- **Ducking als feste Kurve** (statt Kompressor, damit Vorschau und Film gleich klingen und es exakt prüfbar ist): aus
+  den hörbaren Sprachclips entstehen Zeiträume. Die Musik sinkt 0,2 s vor Beginn eines Sprachclips auf −12 dB und kehrt
+  nach dessen Ende in 0,6 s zurück (Trapez je Zeitraum, überlappende nehmen das Minimum). Dieselbe Formel rechnet die
+  Vorschau (TypeScript) und die Ausgabe (`volume='…':eval=frame`, Python). Höchstens 300 Zeiträume; nahe beieinander
+  liegende (Abstand < 0,8 s) werden zusammengelegt.
+- Lautstärke und Blenden: Ausgabe exakt (`volume=…dB`, `afade`). Vorschau über Web Audio (je Medium eine
+  Verstärkung, je Kanal ein Analyser für die Pegelanzeige), daher auch über 0 dB hinaus. Kann der Browser Web Audio
+  nicht starten, bleibt der Ton über die normale Lautstärke des Elements (höchstens 0 dB).
 
 **Oberfläche:**
 - Reiter **„Ton“** (bisher „kommt noch“): oben die Vorschau und dieselben Abspielknöpfe wie „Schneiden“, unten das
@@ -938,6 +944,7 @@ mit `amix normalize=0` + `alimiter`. Der Reiter „Ton“ zeigt noch „kommt no
 - pytest: Prüfregeln der neuen Felder, alte Fassungen unverändert, Graph als reine Funktion (Lautstärke je Clip/Spur,
   Blenden, Stumm/Solo, Originalton aus, Ducking nur mit Sprache und Musik), echtes Rendern: stumme Spur still, Solo,
   Lautstärke −20 dB messbar leiser, Blende am Anfang leiser als in der Mitte, Ducking: Musik während Sprache leiser.
+  Die Ducking-Kurve ist in Python und TypeScript an denselben Stützstellen gleich (gemeinsame Testtabelle).
 - vitest: Mix-Logik (wer klingt, Lautstärke bei t mit Blenden und Ducking), Mischpult, Eigenschaften.
 - E2E (nur sichtbare Texte, 1280 und 1600): Musik leiser stellen, Stumm, Solo, Blende setzen, Rückgängig, Neuladen,
   Film erzeugen und Pegel per `volumedetect` prüfen.
