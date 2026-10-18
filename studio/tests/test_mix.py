@@ -36,8 +36,10 @@ def test_mixer_values_are_saved_only_when_not_default(client, auth_headers, ws) 
     assert "gain_db" not in a1 and "mute" not in a1 and "solo" not in a1        # Standard wird nicht gespeichert
     assert a2["clips"][0]["gain_db"] == -6.5 and a2["clips"][0]["fade_in"] == 1 and a2["clips"][0]["fade_out"] == 0.5
     assert tl["duck"] is False
-    r2 = _put(client, auth_headers, _tr(a2=[_aclip(id="1" * 32, out=6, media_rel=m, gain_db=0, fade_in=0)]), 1, duck=True)
+    r2 = _put(client, auth_headers, _tr(a2=[_aclip(id="1" * 32, out=6, media_rel=m, gain_db=0, fade_in=0)],
+                                        V1={"gain_db": 0, "mute": False, "solo": False}), 1, duck=True)
     saved = json.loads((ws / "studio/timelines/main.json").read_text())
+    assert set(saved["tracks"][0]) == {"id", "kind", "clips"}                    # Standardwerte der Spur nicht gespeichert
     assert "duck" not in saved and "gain_db" not in saved["tracks"][2]["clips"][0] and "fade_in" not in saved["tracks"][2]["clips"][0]
     assert r2.json()["duck"] is True                                             # Antwort nennt den Standard
 
@@ -48,6 +50,7 @@ def test_mixer_rules(client, auth_headers, ws) -> None:
         "Spur zu laut": _tr(V1={"gain_db": 12.5}),
         "Spur zu leise": _tr(A1={"gain_db": -61}),
         "Spur Text": _tr(A1={"gain_db": "3"}),
+        "Spur Wahrheitswert": _tr(A1={"gain_db": True}),
         "Stumm als Zahl": _tr(A2={"mute": 1}),
         "Solo als Text": _tr(A2={"solo": "ja"}),
         "Clip zu laut": _tr(a2=[_aclip(media_rel=m, gain_db=13)]),
@@ -138,7 +141,10 @@ def test_graph_mute_solo_and_silent_original() -> None:
     assert "/proj/s.wav" not in cmd and "/proj/m.wav" in cmd           # stumme Spur fällt ganz weg
     solo = ra.command(segs, BASE, Path("/o.mp4"), size=(320, 240), fps=25, audio=parts, mixer=mix.Mixer(tracks={"V1": {}, "A1": {"solo": True}, "A2": {}}))
     g = _graph(solo)
-    assert "/proj/m.wav" not in solo and "/proj/s.wav" in solo and "[a0]volume=0" in g     # Originalton ohne Solo → stumm
+    assert "/proj/m.wav" not in solo and "/proj/s.wav" in solo and "[a0]volume=0[o]" in g  # Originalton ohne Solo → stumm
+    muted = _graph(ra.command(segs, BASE, Path("/o.mp4"), size=(320, 240), fps=25, audio=[],
+                              mixer=mix.Mixer(tracks={"V1": {"mute": True, "gain_db": -3}, "A1": {}, "A2": {}})))
+    assert "[a0]volume=0[a]" in muted                                       # stumm schlägt Lautstärke
 
 
 def test_graph_ducking_only_with_voice_and_music() -> None:
