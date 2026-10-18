@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Download, FileText, MapPin, Package, Plus, User } from "lucide-react"
+import { BookOpen, ChevronDown, ChevronUp, Download, FileText, MapPin, Package, Plus, Sparkles, User } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ELEMENT_KINDS, type ElementKind, type ImportPreview, type Plan, type Selection } from "./planApi"
 import { importAmounts, showImport } from "./planLogic"
@@ -17,10 +17,14 @@ interface Props {
   onAddScene: () => void
   onAddElement: (kind: ElementKind) => void
   onImport: () => void
+  /** Bücher im Storyteller des Projekts (B2) */
+  books: number
+  onIdea: () => void
+  onBook: () => void
 }
 
 /** Planen, links: Drehbuch-Kopf, Szenen in Reihenfolge (hoch/runter), darunter die Bausteine nach Art. */
-export function PlanOutline({ plan, preview, selection, onSelect, onMove, onAddScene, onAddElement, onImport }: Props) {
+export function PlanOutline({ plan, preview, selection, onSelect, onMove, onAddScene, onAddElement, onImport, books, onIdea, onBook }: Props) {
   const { t } = useTranslation("studio")
   const is = (kind: Selection["kind"], id?: string) => selection?.kind === kind && (!id || ("id" in selection && selection.id === id))
   const elements = ELEMENT_KINDS.flatMap((k) => plan.elements.filter((e) => e.kind === k))
@@ -60,6 +64,13 @@ export function PlanOutline({ plan, preview, selection, onSelect, onMove, onAddS
           ))}
         </ol>
         {!plan.scenes.length && <p className="px-1.5 text-[11px] text-[#68758a]" data-plan-no-scenes>{t("no_scenes")}</p>}
+        {/* Mehr Szenen auf einmal (werden angehängt); ohne Szenen bietet das Startfeld dieselben Wege – keine Doppelung */}
+        {plan.scenes.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1 px-1">
+            <button type="button" onClick={onIdea} data-plan-more="idea" className={addBtn}><Sparkles size={10} /> {t("more_idea")}</button>
+            {books > 0 && <button type="button" onClick={onBook} data-plan-more="book" className={addBtn}><BookOpen size={10} /> {t("more_book")}</button>}
+          </div>
+        )}
       </div>
       <div>
         <p className={heading}>

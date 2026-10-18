@@ -16,13 +16,14 @@ export function ModelPick({ kind, value, catalog, onChange }: Props) {
   const { t } = useTranslation("studio")
   const [q, setQ] = useState("")
   const name = `model_${kind}`
+  const label = t(`gen.${kind}`)
   let body: React.ReactNode
   if (!catalog) {
     body = <p className="mt-1 flex items-center gap-1.5 text-[11px] text-[#68758a]"><Loader2 size={11} className="animate-spin" /> {t("loading")}</p>
   } else if (!catalog.models.length) {
     body = (
       <>
-        <input value={value} maxLength={200} onChange={(e) => onChange(e.target.value)} data-field={name} className={fieldCls} />
+        <input value={value} maxLength={200} onChange={(e) => onChange(e.target.value)} data-field={name} aria-label={label} className={fieldCls} />
         <p className="mt-1 text-[10px] leading-relaxed text-[#68758a]">{t("model_catalog_empty")}</p>
       </>
     )
@@ -32,9 +33,10 @@ export function ModelPick({ kind, value, catalog, onChange }: Props) {
       <>
         {catalog.models.length >= SEARCH_FROM && (
           <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("model_search")} data-model-search={kind}
+            aria-label={t("model_search_for", { what: label })}
             className={`${fieldCls} py-0.5 text-[11px]`} />
         )}
-        <select value={value} onChange={(e) => onChange(e.target.value)} data-field={name} className={fieldCls}>
+        <select value={value} onChange={(e) => onChange(e.target.value)} data-field={name} aria-label={label} className={fieldCls}>
           <option value="">{t("model_default", { model: catalog.default || t("model_auto") })}</option>
           {groups.map((g) => (
             <optgroup key={g.group} label={g.group === "kept" ? t("model_group_kept") : g.group === "cloud" ? t("model_group_cloud")
@@ -46,5 +48,6 @@ export function ModelPick({ kind, value, catalog, onChange }: Props) {
       </>
     )
   }
-  return <label className="block" data-model-pick={kind}><Label>{t(`gen.${kind}`)}</Label>{body}</label>
+  // div statt label: bei großen Listen stehen Suchfeld und Auswahl untereinander, jedes mit eigenem Namen
+  return <div className="block" data-model-pick={kind}><Label>{label}</Label>{body}</div>
 }

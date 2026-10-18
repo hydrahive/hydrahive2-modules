@@ -40,7 +40,8 @@ const EMPTY: Plan = { ...PLAN, screenplay: { ...PLAN.screenplay, title: "", scen
 const PREVIEW: ImportPreview = { available: true, scenes: 2, shots: 3, elements: 1, look: true, plan_exists: false }
 const IMG = (id: string, abs: string): LibraryItem => ({ id, kind: "image", origin: "ai", source: "atelier", name: id, rel: abs.slice(8), abs, size: 1, created_at: "" })
 const outline = (p: Partial<Parameters<typeof PlanOutline>[0]>) => html(
-  <PlanOutline plan={PLAN} preview={null} selection={null} onSelect={noop} onMove={noop} onAddScene={noop} onAddElement={noop} onImport={noop} {...p} />)
+  <PlanOutline plan={PLAN} preview={null} selection={null} onSelect={noop} onMove={noop} onAddScene={noop} onAddElement={noop} onImport={noop}
+    books={0} onIdea={noop} onBook={noop} {...p} />)
 
 describe("Studio Etappe 2a – Planen", () => {
   it("Gliederung: Kopf, Szenen in Reihenfolge, Bausteine nach Art, Auswahl markiert, Ränder gesperrt", () => {

@@ -7,17 +7,20 @@ interface Props {
   plan: Plan | null
   selection: Selection | null
   atelier: boolean
+  books: number
   busy: boolean
   onStart: () => void
   onImport: () => void
+  onIdea: () => void
+  onBook: () => void
   onHead: () => void
 }
 
 /** Mitte in „Planen“/„Erzeugen“: ohne Szenen das Startfeld, ohne Auswahl ein Hinweis mit Knopf, sonst die Vorschau. */
-export function PlanCenter({ plan, selection, atelier, busy, onStart, onImport, onHead }: Props) {
+export function PlanCenter({ plan, selection, atelier, books, busy, onStart, onImport, onIdea, onBook, onHead }: Props) {
   const { t } = useTranslation("studio")
   let body: React.ReactNode
-  if (plan && !plan.scenes.length) body = <StartCard atelier={atelier} busy={busy} onStart={onStart} onImport={onImport} />
+  if (plan && !plan.scenes.length) body = <StartCard atelier={atelier} books={books} busy={busy} onStart={onStart} onImport={onImport} onIdea={onIdea} onBook={onBook} />
   else if (plan && !selection) {
     body = (
       <div className="max-w-sm space-y-3 text-center text-xs leading-relaxed text-[#8d9ab0]" data-plan-pick>

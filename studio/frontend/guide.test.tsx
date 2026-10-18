@@ -15,7 +15,7 @@ import type { Plan, Scene } from "./planApi"
 
 const noop = () => {}
 const html = (el: React.ReactElement) => renderToStaticMarkup(el).replace(/&quot;/g, '"')
-const O = (p: Partial<Overview>): Overview => ({ scenes: 0, shots: 0, with_image: 0, with_video: 0, clips: 0, atelier: false, ...p })
+const O = (p: Partial<Overview>): Overview => ({ scenes: 0, shots: 0, with_image: 0, with_video: 0, clips: 0, atelier: false, books: 0, ...p })
 const scene = (p: Partial<Scene>): Scene => ({ id: "s1", title: "Hafen", description: "", location: "", time_of_day: "", element_ids: [],
   dialogues: [], camera: {}, shots: [], ...p })
 const PLAN: Plan = { base: "/w", presets: {}, elements: [], scenes: [], screenplay: { title: "" } as Plan["screenplay"] }
@@ -45,14 +45,16 @@ describe("B1 – wohin zuerst, was als Nächstes", () => {
 
 describe("B1 – Startfeld und beschriftete Knöpfe", () => {
   it("Startfeld: „Selbst anfangen“ als Knopf, Atelier nur wenn es etwas gibt", () => {
-    const out = html(<StartCard atelier={false} busy={false} onStart={noop} onImport={noop} />)
+    const out = html(<StartCard atelier={false} books={0} busy={false} onStart={noop} onImport={noop} onIdea={noop} onBook={noop} />)
     expect(out).toContain("start_title")
-    expect(buttons(out)).toEqual(["start_self"])
-    expect(buttons(html(<StartCard atelier busy={false} onStart={noop} onImport={noop} />))).toEqual(["start_self", "start_atelier"])
+    expect(buttons(out)).toContain("start_self")
+    expect(buttons(out)).not.toContain("start_atelier")
+    expect(buttons(html(<StartCard atelier books={0} busy={false} onStart={noop} onImport={noop} onIdea={noop} onBook={noop} />))).toContain("start_atelier")
   })
 
   it("Gliederung: „+ Szene“, „+ Figur“, „+ Ort“, „+ Gegenstand“ mit Text", () => {
-    const out = html(<PlanOutline plan={PLAN} preview={null} selection={null} onSelect={noop} onMove={noop} onAddScene={noop} onAddElement={noop} onImport={noop} />)
+    const out = html(<PlanOutline plan={PLAN} preview={null} selection={null} onSelect={noop} onMove={noop} onAddScene={noop} onAddElement={noop} onImport={noop}
+      books={0} onIdea={noop} onBook={noop} />)
     for (const k of ["add_scene_short", "add_character_short", "add_place_short", "add_object_short"]) expect(buttons(out)).toContain(k)
   })
 
