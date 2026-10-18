@@ -1,14 +1,17 @@
 import { AlertTriangle, ArrowRight, ListPlus } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { ClipMixForm } from "./ClipMixForm"
 import { clipLength } from "./cutLogic"
 import type { TimelineClip } from "./timelineApi"
 
 const round = (n: number) => Math.round(n * 100) / 100
 
 /** Eigenschaften eines Clips der Zeitleiste; Platzhalter springen zum Shot ins „Planen“. */
-export function CutInspector({ clip, onPlan, media = null, onAppend }: {
+export function CutInspector({ clip, onPlan, media = null, onAppend, mix }: {
   clip: TimelineClip | null
   onPlan: (c: TimelineClip) => void
+  /** Tonclip (5b): Lautstärke und Blenden einstellen. */
+  mix?: (v: { gain_db?: number; fade_in?: number; fade_out?: number }) => void
   /** Gewähltes Medium der Bibliothek (4b): an die Zeitleiste anhängen. */
   media?: { kind: string; name: string } | null
   onAppend?: () => void
@@ -33,6 +36,7 @@ export function CutInspector({ clip, onPlan, media = null, onAppend }: {
               <AlertTriangle size={13} className="mt-0.5 shrink-0" /> {t(clip.kind === "audio" ? "cut_audio_missing_hint" : "cut_missing")}
             </p>
           )}
+          {clip.kind === "audio" && mix && <ClipMixForm clip={clip} onChange={mix} />}
           {clip.kind === "placeholder" && clip.shot_id && (
             <button type="button" onClick={() => onPlan(clip)} data-cut-to-plan
               className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#ffb86b]/60 bg-[#ffb86b]/10 py-1.5 font-bold text-[#ffb86b] hover:bg-[#ffb86b]/20">

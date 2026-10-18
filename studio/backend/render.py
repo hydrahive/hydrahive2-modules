@@ -14,7 +14,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import jobs, plan, render_args, timeline
+from . import jobs, mix, plan, render_args, timeline
 from ._sources import AUDIO_EXT, IMAGE_EXT, VIDEO_EXT
 from ._store import is_id, new_id, project_root, read_json, root, safe_rel, write_json
 
@@ -76,7 +76,7 @@ def _segments(pid: str, clips: list[dict]) -> list[dict]:
 
 
 def _audio(pid: str, tl: dict) -> list[dict]:
-    sound = [c for t in tl["tracks"] if t["kind"] == "audio" for c in t["clips"]]
+    sound = [{**c, "track": t["id"]} for t in tl["tracks"] if t["kind"] == "audio" for c in t["clips"]]
     return render_args.audio_parts(sound, exists=lambda rel: bool(safe_rel(pid, rel, AUDIO_EXT)))
 
 
@@ -102,7 +102,8 @@ def start(pid: str) -> dict:
                 if s["kind"] == "placeholder" and render_args.label_text(s.get("label", "")):
                     texts[i] = Path(td) / f"{i}.txt"
                     texts[i].write_text(render_args.wrap(render_args.label_text(s["label"]), size), encoding="utf-8")
-            cmd = render_args.command(segs, project_root(pid), tmp, size=size, fps=tl["fps"], text_files=texts, audio=sound)
+            cmd = render_args.command(segs, project_root(pid), tmp, size=size, fps=tl["fps"], text_files=texts, audio=sound,
+                                      mixer=mix.Mixer.of(tl))
             try:
                 _run_ffmpeg(cmd, seconds, lambda f: progress.set(done=round(f * 100)))
                 tmp.replace(out_dir / name)

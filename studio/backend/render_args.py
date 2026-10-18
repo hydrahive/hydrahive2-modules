@@ -12,10 +12,13 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
+from . import mix_args
+from .mix import Mixer
+
 SIZES = {"16:9": (1280, 720), "9:16": (720, 1280), "1:1": (1080, 1080), "4:3": (960, 720), "21:9": (1680, 720)}
 DEFAULT_SIZE = SIZES["16:9"]
 EPS = 1e-3                     # kleinere Lücken (Gleitkomma-Reste beim Aneinanderstoßen) zählen nicht
-AUDIO = "aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo"
+AUDIO = mix_args.AUDIO
 
 
 def frame_size(aspect: str) -> tuple[int, int]:
@@ -50,13 +53,16 @@ def segments(clips: list[dict], *, exists: Callable[[str], bool]) -> list[dict]:
 
 
 def audio_parts(clips: list[dict], *, exists: Callable[[str], bool]) -> list[dict]:
-    """Tonclips aller Tonspuren → Teile zum Mischen (nach Start). Ohne Datei (gelöscht) → weggelassen = Stille."""
+    """Tonclips aller Tonspuren → Teile zum Mischen (nach Start). Ohne Datei (gelöscht) → weggelassen = Stille.
+    `track` (A1/A2) und die Mischpult-Werte des Clips (5b) werden mitgegeben, falls vorhanden."""
     out = []
     for c in sorted(clips, key=lambda x: x["start"]):
         media = c.get("media_rel") or ""
         if c.get("missing") or not media or not exists(media):
             continue
-        out.append({"start": c["start"], "in": c["in"], "seconds": round(c["out"] - c["in"], 3), "media": media})
+        part = {"start": c["start"], "in": c["in"], "seconds": round(c["out"] - c["in"], 3), "media": media}
+        part.update({k: c[k] for k in ("track", "gain_db", "fade_in", "fade_out") if c.get(k)})
+        out.append(part)
     return out
 
 
@@ -125,9 +131,9 @@ def _media(base: Path, rel: str) -> str:
 
 
 def command(segs: list[dict], base: Path, out: Path, *, size: tuple[int, int], fps: int,
-            text_files: dict[int, Path] | None = None, audio: list[dict] | None = None) -> list[str]:
+            text_files: dict[int, Path] | None = None, audio: list[dict] | None = None, mixer: Mixer | None = None) -> list[str]:
     """`text_files`: je Platzhalter-Abschnitt (Index) eine Datei mit label_text(); ohne Datei keine Schrift.
-    `audio`: Teile aus audio_parts(); ohne sie bleibt der Graph genau wie in 4d."""
+    `audio`: Teile aus audio_parts(); `mixer`: Mischpult (5b). Ohne beides bleibt der Graph genau wie in 4d."""
     w, h = size
     text_files = text_files or {}
     fit = (f"scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:black,"
@@ -160,17 +166,10 @@ def command(segs: list[dict], base: Path, out: Path, *, size: tuple[int, int], f
             graph.append(f"[{n_in}:a]{AUDIO},asetpts=PTS-STARTPTS[a{i}]")
             n_in += 1
         pairs.append(f"[v{i}][a{i}]")
-    audio = audio or []
-    graph.append(f"{''.join(pairs)}concat=n={len(segs)}:v=1:a=1[v][{'a0' if audio else 'a'}]")
-    for k, p in enumerate(audio):
-        d = f"{p['seconds']:.3f}"
-        args += ["-ss", f"{p['in']:.3f}", "-t", d, "-i", _media(base, p["media"])]
-        graph.append(f"[{n_in}:a]{AUDIO},atrim=duration={d},asetpts=PTS-STARTPTS,"
-                     f"adelay={round(p['start'] * 1000)}:all=1[m{k}]")
-        n_in += 1
-    if audio:   # duration=first: die Länge gibt der Bildteil vor (er ist per pad_to schon lang genug)
-        mix = "".join(f"[m{k}]" for k in range(len(audio)))
-        graph.append(f"[a0]{mix}amix=inputs={len(audio) + 1}:normalize=0:duration=first,alimiter=limit=0.95[a]")
+    extra_args, extra_graph = mix_args.build(audio or [], base, n_in, mixer or Mixer(), _media)
+    graph.append(f"{''.join(pairs)}concat=n={len(segs)}:v=1:a=1[v][{'a0' if extra_graph else 'a'}]")
+    args += extra_args
+    graph += extra_graph
     args += ["-filter_complex", ";".join(graph), "-map", "[v]", "-map", "[a]",
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p", "-r", str(fps),
              "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart",

@@ -22,6 +22,12 @@ export class History<T> {
     this.future = []
   }
 
+  /** Letzten Schritt durch einen neuen Stand ersetzen (z. B. Regler wird weiter gezogen); Wiederholen entfällt. */
+  replaceTop(next: T): void {
+    this.now = next
+    this.future = []
+  }
+
   undo(): T {
     const prev = this.past.pop()
     if (prev !== undefined) { this.future.push(this.now); this.now = prev }

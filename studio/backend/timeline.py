@@ -11,7 +11,7 @@ import math
 from itertools import pairwise
 from typing import Any
 
-from . import plan
+from . import _timeline_load, mix, plan
 from ._sources import AUDIO_EXT, IMAGE_EXT, VIDEO_EXT
 from ._store import is_id, new_id, read_json, root, safe_rel, write_json
 from ._timeline_plan import _video_length, clips_from_scenes
@@ -36,12 +36,22 @@ def _path(pid: str):
     return root(pid) / "timelines" / "main.json"
 
 
-def _tracks(clips: dict[str, list[dict]]) -> list[dict]:
-    return [{"id": tid, "kind": kind, "clips": clips.get(tid, [])} for tid, kind in TRACKS]
+def _tracks(clips: dict[str, list[dict]], values: dict[str, dict] | None = None) -> list[dict]:
+    """Spuren in fester Reihenfolge; `values`: Mischpult-Werte je Spur (nur Abweichungen vom Standard)."""
+    return [{"id": tid, "kind": kind, **(values or {}).get(tid, {}), "clips": clips.get(tid, [])} for tid, kind in TRACKS]
+
+
+def _with_duck(tl: dict, duck: bool) -> dict:
+    return {**tl, "duck": False} if not duck else tl
 
 
 def empty() -> dict:
     return {"revision": 0, "fps": FPS_DEFAULT, "tracks": _tracks({})}
+
+
+def with_default_duck(tl: dict) -> dict:
+    """Antwort an den Browser: `duck` immer ausgeschrieben (in der Datei nur `false`)."""
+    return {**tl, "duck": tl.get("duck", True) is not False}
 
 
 def _num(v: Any) -> float:
@@ -80,12 +90,18 @@ def _clip(pid: str, raw: Any, *, on_load: bool = False, audio: bool = False) -> 
     }
     if missing:
         out["missing"] = True
+    if kind == "audio":
+        try:
+            out.update(mix.clip_values(raw, t_out - t_in, strict=not on_load))
+        except mix.Bad as e:
+            raise Invalid() from e
     return out
 
 
-def clean(pid: str, data: Any, keep: dict[str, list[dict]] | None = None) -> dict:
-    """Prüft eine Fassung vollständig; wirft Invalid bei jeder Verletzung. `keep`: Clips je Spur für Spuren, die in
-    `data` fehlen (gespeicherter Stand) – sie werden wie neue geprüft."""
+def clean(pid: str, data: Any, keep: dict[str, dict] | None = None) -> dict:
+    """Prüft eine Fassung vollständig; wirft Invalid bei jeder Verletzung. `keep`: gespeicherte Spuren (Clips und
+    Mischpult-Werte) für Spuren, die in `data` fehlen – sie werden wie neue geprüft. Fehlt `duck`, gilt der gespeicherte
+    Wert bzw. der Standard."""
     if not isinstance(data, dict):
         raise Invalid()
     tracks = data.get("tracks")
@@ -94,10 +110,17 @@ def clean(pid: str, data: Any, keep: dict[str, list[dict]] | None = None) -> dic
     ids = [t.get("id", "V1") for t in tracks]                         # ohne id: V1 (Fassungen aus 4a/4b)
     if len(set(ids)) != len(ids) or "V1" not in ids or any(i not in dict(TRACKS) for i in ids):
         raise Invalid()
-    given = {i: t.get("clips") for i, t in zip(ids, tracks)}
+    keep = keep or {}
+    full = {**{k: v for k, v in keep.items() if k != "_duck"}, **dict(zip(ids, tracks))}
+    given = {i: t.get("clips") for i, t in full.items()}
+    try:
+        values = {i: mix.track_values(t, strict=True) for i, t in full.items()}
+        duck = mix.flag(data["duck"]) if "duck" in data else keep.get("_duck", True)
+    except mix.Bad as e:
+        raise Invalid() from e
     out: dict[str, list[dict]] = {}
     for tid, kind in TRACKS:
-        raw = given[tid] if tid in given else (keep or {}).get(tid, [])
+        raw = given.get(tid, [])
         if not isinstance(raw, list) or len(raw) > MAX_CLIPS:
             raise Invalid()
         clips = sorted((_clip(pid, c, audio=kind == "audio") for c in raw), key=lambda c: c["start"])
@@ -108,44 +131,17 @@ def clean(pid: str, data: Any, keep: dict[str, list[dict]] | None = None) -> dic
     if sum(len(c) for c in out.values()) > MAX_CLIPS:
         raise Invalid()
     fps = data.get("fps") if data.get("fps") in FPS_ALLOWED else FPS_DEFAULT
-    return {"fps": fps, "tracks": _tracks(out)}
+    return _with_duck({"fps": fps, "tracks": _tracks(out, values)}, duck)
 
 
 def _end(c: dict) -> float:
     return c["start"] + c["out"] - c["in"]
 
 
-def _loaded_clips(pid: str, raw: Any, audio: bool) -> list[dict]:
-    ok = []
-    for c in (raw.get("clips") if isinstance(raw, dict) and isinstance(raw.get("clips"), list) else [])[:MAX_CLIPS]:
-        try:
-            ok.append(_clip(pid, c, on_load=True, audio=audio))
-        except plan.PlanError:
-            continue                                     # einzelner kaputter Clip: überspringen, Rest bleibt
-    out: list[dict] = []
-    for c in sorted(ok, key=lambda c: c["start"]):
-        if not out or c["start"] >= _end(out[-1]) - EPS:  # überlappender Clip (alte/kaputte Datei) wird übersprungen
-            out.append(c)
-    return out
-
-
 def load(pid: str) -> dict:
-    """Gespeicherte Fassung oder leer (nichts wird angelegt). Kaputte Clips werden übersprungen, Clips mit
-    gelöschtem Medium werden Platzhalter bzw. stumme Tonclips – die übrige Arbeit geht nie verloren. Fehlende
-    Tonspuren (Fassungen vor Etappe 5) kommen leer dazu; die Datei bleibt dabei unverändert."""
+    """Gespeicherte Fassung oder leer (nichts wird angelegt); Einzelheiten in _timeline_load.from_file."""
     raw = read_json(_path(pid), None)
-    if not isinstance(raw, dict):
-        return empty()
-    rev = raw.get("revision")
-    fps = raw.get("fps") if raw.get("fps") in FPS_ALLOWED else FPS_DEFAULT
-    stored = raw.get("tracks") if isinstance(raw.get("tracks"), list) else []
-    by_id: dict[str, Any] = {}
-    for i, t in enumerate(stored):
-        if isinstance(t, dict):
-            by_id.setdefault(t.get("id") or ("V1" if i == 0 else ""), t)
-    clips = {tid: _loaded_clips(pid, by_id.get(tid), kind == "audio") for tid, kind in TRACKS}
-    return {"revision": rev if isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0 else 0, "fps": fps,
-            "tracks": _tracks(clips)}
+    return _timeline_load.from_file(pid, raw) if isinstance(raw, dict) else empty()
 
 
 def clips_of(tl: dict, track: str = "V1") -> list[dict]:
@@ -156,8 +152,9 @@ def all_clips(tl: dict) -> list[dict]:
     return [c for t in tl["tracks"] for c in t["clips"]]
 
 
-def _keep(tl: dict) -> dict[str, list[dict]]:
-    return {t["id"]: t["clips"] for t in tl["tracks"]}
+def _keep(tl: dict) -> dict[str, dict]:
+    """Gespeicherter Stand je Spur (Clips + Mischpult-Werte) und `duck` – für Spuren, die beim Speichern fehlen."""
+    return {**{t["id"]: t for t in tl["tracks"]}, "_duck": tl.get("duck", True) is not False}
 
 
 def save(pid: str, data: Any) -> dict:

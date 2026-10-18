@@ -38,12 +38,13 @@ import { StudioHeader } from "./StudioHeader"
 import { useLibrary } from "./useLibrary"
 import { usePlan } from "./usePlan"
 import { useBatch } from "./useBatch"
-import { useCut } from "./useCut"
-import { useCutEdit } from "./useCutEdit"
-import { useCutPlayer } from "./useCutPlayer"
-import { useWaveforms } from "./useWaveforms"
 import { appendNotice, cutDrops } from "./cutWiring"
-import { allClips, clipsOf, findClip } from "./timelineApi"
+import { CutArea } from "./CutArea"
+import { MixerPanel } from "./MixerPanel"
+import { MixInspector } from "./MixInspector"
+import { countsOf } from "./mixLogic"
+import { editing, useCutWorkspace } from "./useCutWorkspace"
+import { clipsOf, findClip } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
 import { useDraft } from "./useDraft"
 import { useFree } from "./useFree"
@@ -57,31 +58,28 @@ import type { Workspace } from "./workspaces"
 
 const toastCls = "pointer-events-none fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-[4px] border border-[#46617f] bg-[#0e1420] px-3 py-1.5 text-xs text-[#c3ccdd]"
 
-/** Studio: Planen und Erzeugen arbeiten auf dem Drehbuch, Schneiden und Ausgabe auf der Schnittfassung. Ton (Mixer) und
- *  Untertitel kommen noch. */
+/** Studio: Planen und Erzeugen arbeiten auf dem Drehbuch, Schneiden, Ton und Ausgabe auf der Schnittfassung. Untertitel
+ *  kommen noch. */
 export function StudioPage() {
   const { t } = useTranslation("studio")
   const lib = useLibrary()
   const [workspace, setWorkspace] = useState<Workspace>("plan")
   const [stamp, setStamp] = useState("")                        // Drehbuch/Schnitt geändert → Fortschritt neu
   const guide = useGuide(lib.projectId, workspace, setWorkspace, stamp)
-  const cut = useCut(lib.projectId, workspace === "edit" || workspace === "deliver")   // „Ausgabe“ braucht die Fassung
-  const every = allClips(cut.timeline)
-  const cp = useCutPlayer(cut.clips, every)
-  const waves = useWaveforms(lib.projectId, workspace === "edit" ? every : [])
-  const ed = useCutEdit(lib.projectId, cut.timeline, cut.setTimeline, cut.selected, cut.select, cp.time, waves.lengths)
+  const mixing = workspace === "audio"
+  const { cut, every, mixer, cp, waves, ed } = useCutWorkspace(lib.projectId, workspace)
   const editKeys = (a: Parameters<typeof editAction>[0]) => { const x = editAction(a); if (x) ed.run(x); return !!x }
-  const changeWs = (w: Workspace) => { if (workspace === "edit" && w !== "edit") void ed.flush(); setWorkspace(w) }   // verlassen → sofort speichern
+  const changeWs = (w: Workspace) => { if (editing(workspace) && !editing(w)) void ed.flush(); setWorkspace(w) }   // verlassen → sofort speichern
   // Im Reiter „Schneiden“ steuern die Tasten Film und Schnitt. Ist ein Medium aus der Bibliothek gewählt, spielt die
   // Vorschau das Medium – dann bleibt das Abspielen bei ihm, Teilen/Löschen/Rückgängig wirken weiter auf den Schnitt.
   const s = useStudioState(lib.items, workspace, changeWs,
-    (item) => (workspace !== "edit" ? null : item ? { edit: editKeys, toggleSnap: ed.toggleSnap } : { ...cp, edit: editKeys, toggleSnap: ed.toggleSnap }))
+    (item) => (!editing(workspace) ? null : item ? { edit: editKeys, toggleSnap: ed.toggleSnap } : { ...cp, edit: editKeys, toggleSnap: ed.toggleSnap }))
   const planning = s.workspace === "plan"
   const generating = s.workspace === "generate"
   const shotsWs = planning || generating                       // beide arbeiten auf dem Drehbuch
-  const cutting = s.workspace === "edit" && !s.item
+  const cutting = editing(s.workspace) && !s.item
   const delivering = s.workspace === "deliver"
-  const soon = s.workspace === "audio" || s.workspace === "subtitles" ? s.workspace : null
+  const soon = s.workspace === "subtitles" ? s.workspace : null
   const p = usePlan(lib.projectId, shotsWs || delivering)                 // „Ausgabe“: Format aus dem Drehbuch
   const nextStamp = `${p.rev}:${cut.timeline?.revision ?? ""}:${every.length}`
   if (nextStamp !== stamp) setStamp(nextStamp)                   // beim Rendern abgeglichen, kein Effect nötig
@@ -103,7 +101,7 @@ export function StudioPage() {
     s.setWorkspace("plan")
     p.select({ kind: "shot", sceneId: c.scene_id, id: c.shot_id })
   }
-  const reload = () => { void lib.reload(); void guide.reload(); if (shotsWs) void p.reload(); if (s.workspace === "edit") void cut.reload() }
+  const reload = () => { void lib.reload(); void guide.reload(); if (shotsWs) void p.reload(); if (editing(s.workspace)) void cut.reload() }
   const selShot = p.selection?.kind === "shot" ? p.selection : null
   return (
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
@@ -147,7 +145,7 @@ export function StudioPage() {
                     onIdea={dr.openIdea} onBook={dr.openBook} />
                 : cutting ? <CutPreview clips={cut.clips} base={cut.timeline?.base ?? ""} fps={cut.timeline?.fps ?? 25} time={cp.time} total={cp.total}
                     playing={cp.playing} current={cp.current} onSeek={cp.seek} onPlay={cp.toggle} bindVideo={cp.bindVideo}
-                    sound={<CutSound tracks={[clipsOf(cut.timeline, "A1"), clipsOf(cut.timeline, "A2")]} base={cut.timeline?.base ?? ""}
+                    sound={<CutSound voice={clipsOf(cut.timeline, "A1")} music={clipsOf(cut.timeline, "A2")} mixer={mixer} base={cut.timeline?.base ?? ""}
                       time={cp.time} playing={cp.playing} rate={cp.rate} />} />
                 : <PreviewPanel item={s.item} bind={s.player.bind} time={s.item ? s.player.time : 0} duration={s.player.duration}
                     playing={s.player.playing} onPlay={s.player.toggle} onSeek={s.seek} />}
@@ -158,7 +156,9 @@ export function StudioPage() {
                 : freeOpen ? <FreeForm form={fr.form} catalog={imageCatalog} images={lib.items.filter((i) => i.kind === "image")} job={freeJob}
                     busy={p.busy} onChange={fr.setForm} onRun={() => void fr.run()} />
                 : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} /> : <GenerateHint />)
-                : s.workspace === "edit" ? <CutInspector clip={s.item ? null : cut.clip} onPlan={toPlan} media={s.item}
+                : mixing && !s.item ? <MixInspector clip={cut.clip} onChange={(v) => cut.clip && ed.onClipMix(cut.clip.id, v)} />
+                : editing(s.workspace) ? <CutInspector clip={s.item ? null : cut.clip} onPlan={toPlan} media={s.item}
+                    mix={cut.clip?.kind === "audio" ? (v) => cut.clip && ed.onClipMix(cut.clip.id, v) : undefined}
                     onAppend={() => { const k = appendNotice(s.item, ed.addMedia); if (k) { s.clearMedia(); cut.setNotice(t(k)) } }} />
                 : <MediaInfo item={s.item} />}
             </div>
@@ -172,13 +172,15 @@ export function StudioPage() {
                 onSelect={(id) => { if (scene) plan.select({ kind: "shot", sceneId: scene.id, id }) }}
                 batchMenu={<BatchMenu running={!!bt.active} onPick={(k) => void bt.open(k)} />}
                 onAdd={() => void sh.add()} onMove={(id, d) => void sh.move(id, d)} onDecompose={() => void sh.decompose()} />
-            : s.workspace === "edit"
-              ? <CutTimeline timeline={cut.timeline} base={cut.timeline?.base ?? ""} time={cp.time} view={followView(cut.view, cp.time, cp.total)}
-                  selected={cut.selected} busy={cut.busy} onView={cut.setView} onSeek={cp.seek} onFromPlan={cut.fromPlan}
-                  toolbar={<CutToolbar save={ed.save} selected={cut.selected} canUndo={ed.canUndo} canRedo={ed.canRedo} canSplit={ed.canSplit}
-                    snap={ed.snap} onAction={ed.run} onSnap={ed.toggleSnap} onReload={() => void cut.reload()} />}
-                  {...cutDrops(lib.items, ed, every, () => cut.setNotice(t("cut_not_on_timeline")))} waveforms={waves.peaks}
-                  onSelect={(id) => { s.clearMedia(); cut.select(id); const c = findClip(cut.timeline, id); if (c) cp.seek(c.start) }} />
+            : editing(s.workspace)
+              ? <CutArea mixer={mixing ? <MixerPanel mixer={mixer} counts={countsOf(cut.timeline)} playing={cp.playing} onTrack={ed.onTrackMix} onDuck={ed.onDuck} /> : null}>
+                  <CutTimeline timeline={cut.timeline} base={cut.timeline?.base ?? ""} time={cp.time} view={followView(cut.view, cp.time, cp.total)}
+                    selected={cut.selected} busy={cut.busy} onView={cut.setView} onSeek={cp.seek} onFromPlan={cut.fromPlan} mixer={mixer}
+                    toolbar={<CutToolbar save={ed.save} selected={cut.selected} canUndo={ed.canUndo} canRedo={ed.canRedo} canSplit={ed.canSplit}
+                      snap={ed.snap} onAction={ed.run} onSnap={ed.toggleSnap} onReload={() => void cut.reload()} />}
+                    {...cutDrops(lib.items, ed, every, () => cut.setNotice(t("cut_not_on_timeline")))} waveforms={waves.peaks}
+                    onSelect={(id) => { s.clearMedia(); cut.select(id); const c = findClip(cut.timeline, id); if (c) cp.seek(c.start) }} />
+                </CutArea>
             : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
         </div>
         </>}
@@ -192,7 +194,7 @@ export function StudioPage() {
         {p.dialog?.kind === "delete" && <DeleteDialog name={p.dialog.name} busy={p.busy} onConfirm={p.confirmDelete} onClose={() => p.setDialog(null)} />}
         {s.toast && <div className={toastCls} data-studio-toast>{t("toast_later", { action: t(`action.${s.toast}`) })}</div>}
         {shotsWs && p.notice && <div className={toastCls} data-plan-notice>{p.notice}</div>}
-        {s.workspace === "edit" && cut.notice && <div className={toastCls} data-cut-notice>{cut.notice}</div>}
+        {editing(s.workspace) && cut.notice && <div className={toastCls} data-cut-notice>{cut.notice}</div>}
       </div>
     </CockpitShell>
   )

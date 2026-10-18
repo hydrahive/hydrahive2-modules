@@ -1,4 +1,4 @@
-import { AudioLines, Mic, Music } from "lucide-react"
+import { AudioLines, Mic, Music, VolumeX } from "lucide-react"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { AudioTrack as TrackId } from "./cutAudio"
@@ -32,6 +32,8 @@ interface Props {
   edit?: AudioEdit
   onSelect: (id: string) => void
   onSeek: (t: number) => void
+  /** Stumm bzw. nicht im Solo (5b): blass, Hinweis im Spurkopf. */
+  silent?: boolean
 }
 
 const timeAt = (el: HTMLElement, clientX: number, view: Viewport) => {
@@ -40,7 +42,7 @@ const timeAt = (el: HTMLElement, clientX: number, view: Viewport) => {
 }
 
 /** Tonspur „Sprache“ (A1) oder „Musik“ (A2): Clips liegen frei, Lücken sind Stille (Spec „Bauplan Etappe 5“, 5a). */
-export function AudioTrack({ id, clips, view, time, selected, waveforms, perSecond, edit, onSelect, onSeek }: Props) {
+export function AudioTrack({ id, clips, view, time, selected, waveforms, perSecond, edit, onSelect, onSeek, silent = false }: Props) {
   const { t } = useTranslation("studio")
   const lane = useRef<HTMLDivElement>(null)
   const grab = useRef<{ id: string; offset: number } | null>(null)    // Abstand Mauszeiger → Clipanfang beim Greifen
@@ -76,9 +78,11 @@ export function AudioTrack({ id, clips, view, time, selected, waveforms, perSeco
   }
 
   return (
-    <div className="relative flex h-12 border-b border-[#1e2738]" data-studio-track={id === "A1" ? "voice" : "music"}>
-      <div className="flex w-24 shrink-0 items-center gap-1 border-r border-[#1e2738] bg-[#0d1420] px-2 text-[10px] font-bold text-[#8d9ab0]">
-        <Icon size={11} className="shrink-0" /> {id} {t(id === "A1" ? "cut_track_voice" : "cut_track_music")}
+    <div className={`relative flex h-12 border-b border-[#1e2738] ${silent ? "opacity-45" : ""}`} data-studio-track={id === "A1" ? "voice" : "music"}
+      data-track-silent={silent ? "1" : undefined}>
+      <div className="flex w-24 shrink-0 items-center gap-1 border-r border-[#1e2738] bg-[#0d1420] px-2 text-[10px] font-bold text-[#8d9ab0]"
+        title={silent ? t("mix_track_silent") : undefined}>
+        {silent ? <VolumeX size={11} className="shrink-0 text-[#ff6b8a]" /> : <Icon size={11} className="shrink-0" />} {id} {t(id === "A1" ? "cut_track_voice" : "cut_track_music")}
       </div>
       <div ref={lane} className={`relative min-w-0 flex-1 overflow-hidden ${over ? "bg-[#2a7f62]/10" : ""}`} data-cut-audio-lane={id}
         onPointerDown={(e) => { if (e.target === e.currentTarget) onSeek(timeAt(e.currentTarget, e.clientX, view)) }}
@@ -123,6 +127,7 @@ export function AudioTrack({ id, clips, view, time, selected, waveforms, perSeco
                 ${c.missing ? "border border-dashed border-[#ff6b8a] bg-[#ff6b8a]/10 text-[#ff6b8a]" : id === "A1" ? "bg-[#2a6f7f]" : "bg-[#2a7f62]"} ${active ? "ring-2 ring-[#7ee0b5]" : ""}`}
               style={{ left: pct(left), width: pct(width) }}>
               {!c.missing && <Waveform peaks={waveforms[c.media_rel]} perSecond={perSecond} from={c.in} to={c.out} />}
+              <FadeMarks clip={c} />
               {grip("start")}
               <span className="pointer-events-none relative flex min-w-0 items-center gap-1">
                 <AudioLines size={10} className="shrink-0" /><span className="truncate">{c.missing ? t("cut_audio_missing") : c.label}</span>
@@ -137,4 +142,17 @@ export function AudioTrack({ id, clips, view, time, selected, waveforms, perSeco
       </div>
     </div>
   )
+}
+
+/** Blenden als dunkle Schräge am Clipanfang bzw. -ende (5b). */
+function FadeMarks({ clip }: { clip: TimelineClip }) {
+  const len = clipLength(clip)
+  if (!len || (!clip.fade_in && !clip.fade_out)) return null
+  const w = (s: number) => pct(Math.min(1, s / len))
+  return <>
+    {!!clip.fade_in && <span className="pointer-events-none absolute inset-y-0 left-0 bg-gradient-to-br from-black/55 from-50% to-transparent to-50%"
+      style={{ width: w(clip.fade_in) }} data-fade="in" />}
+    {!!clip.fade_out && <span className="pointer-events-none absolute inset-y-0 right-0 bg-gradient-to-bl from-black/55 from-50% to-transparent to-50%"
+      style={{ width: w(clip.fade_out) }} data-fade="out" />}
+  </>
 }
