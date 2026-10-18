@@ -8,6 +8,8 @@ export interface Overview {
   with_video: number
   clips: number
   atelier: boolean
+  /** Bücher im Storyteller des Projekts */
+  books: number
 }
 
 export type Step = "plan" | "shots" | "images" | "videos" | "cut"

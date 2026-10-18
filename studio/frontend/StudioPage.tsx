@@ -14,6 +14,7 @@ import { editAction } from "./cutKeys"
 import { FromPlanDialog } from "./FromPlanDialog"
 import { DecomposeDialog } from "./DecomposeDialog"
 import { DeleteDialog } from "./DeleteDialog"
+import { DraftDialog } from "./DraftDialog"
 import { ImportDialog } from "./ImportDialog"
 import { ComingSoon } from "./ComingSoon"
 import { GenerateHint } from "./GenerateHint"
@@ -35,6 +36,7 @@ import { useBatch } from "./useBatch"
 import { useCut } from "./useCut"
 import { useCutEdit } from "./useCutEdit"
 import { useCutPlayer } from "./useCutPlayer"
+import { useDraft } from "./useDraft"
 import { useGuide } from "./useGuide"
 import { WorkspaceIntro } from "./WorkspaceIntro"
 import { useJobs } from "./useJobs"
@@ -73,6 +75,8 @@ export function StudioPage() {
   const jobs = useJobs(lib.projectId, shotsWs, () => { void p.reload(); void lib.reload(); void guide.reload() })   // fertig → Shot + Bibliothek + Fortschritt neu
   const sh = useShots(plan, lib.projectId, () => void jobs.reload())
   const bt = useBatch(plan, lib.projectId, jobs.jobs, () => void jobs.reload())
+  const dr = useDraft(plan, lib.projectId, () => void bt.open("decompose_all"))
+  const books = guide.overview?.books ?? 0
   const scene = sh.scene
   /** Platzhalter → zum Shot im „Planen“ springen, dort wird er erzeugt. */
   const toPlan = (c: { scene_id: string; shot_id: string }) => {
@@ -93,7 +97,7 @@ export function StudioPage() {
         <div className="flex min-h-0 flex-col" style={{ flex: `${100 - s.layout.timeline} 1 0` }}>
           <div className="flex min-h-0 flex-1">
             <div className="min-w-0 border-r border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.library}%` }}>
-              {planning ? <PlanSidebar p={plan} library={library} />
+              {planning ? <PlanSidebar p={plan} library={library} books={books} onIdea={dr.openIdea} onBook={dr.openBook} />
                 : generating ? <ShotList plan={p.plan} jobs={jobs.jobs} selected={selShot?.id ?? null} onPlan={() => s.setWorkspace("plan")}
                     onSelect={(sceneId, id) => plan.select({ kind: "shot", sceneId, id })} />
                 : library}
@@ -101,8 +105,9 @@ export function StudioPage() {
             <Splitter dir="x" label={t("resize_library")} onDrag={(d) => s.drag("library", d)} />
             <div className="min-w-0 flex-1">
               {shotsWs && !s.item
-                ? <PlanCenter plan={p.plan} selection={p.selection} atelier={!!guide.overview?.atelier} busy={p.busy}
-                    onStart={() => void p.addScene()} onImport={() => p.setDialog({ kind: "import" })} onHead={() => plan.select({ kind: "head" })} />
+                ? <PlanCenter plan={p.plan} selection={p.selection} atelier={!!guide.overview?.atelier} books={books} busy={p.busy}
+                    onStart={() => void p.addScene()} onImport={() => p.setDialog({ kind: "import" })} onHead={() => plan.select({ kind: "head" })}
+                    onIdea={dr.openIdea} onBook={dr.openBook} />
                 : cutting ? <CutPreview clips={cut.clips} base={cut.timeline?.base ?? ""} fps={cut.timeline?.fps ?? 25} time={cp.time} total={cp.total}
                     playing={cp.playing} current={cp.current} onSeek={cp.seek} onPlay={cp.toggle} bindVideo={cp.bindVideo} />
                 : <PreviewPanel item={s.item} bind={s.player.bind} time={s.item ? s.player.time : 0} duration={s.player.duration}
@@ -139,6 +144,7 @@ export function StudioPage() {
         {s.dialog === "help" && <ShortcutHelp onClose={() => s.setDialog(null)} onGo={s.setWorkspace} />}
         {s.dialog === "command" && <CommandPalette onClose={() => s.setDialog(null)} onRun={s.run} />}
         {p.dialog?.kind === "import" && p.preview && <ImportDialog preview={p.preview} busy={p.busy} onRun={() => void p.runImport()} onClose={() => p.setDialog(null)} />}
+        <DraftDialog d={dr} append={!!p.plan?.scenes.length} />
         {bt.dialog && <BatchDialog kind={bt.dialog.kind} preview={bt.dialog.preview} busy={p.busy} onRun={() => void bt.run()} onClose={bt.close} />}
         {cut.confirm && <FromPlanDialog count={cut.clips.length} busy={cut.busy} onConfirm={cut.confirmReplace} onClose={cut.closeConfirm} />}
         {sh.confirm && <DecomposeDialog count={sh.confirm.count} busy={sh.busy !== null} onConfirm={() => void sh.confirmReplace()} onClose={sh.closeConfirm} />}

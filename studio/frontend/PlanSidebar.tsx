@@ -5,7 +5,8 @@ import { PlanOutline } from "./PlanOutline"
 import type { PlanState } from "./usePlan"
 
 /** Planen, links: Reiter „Drehbuch“ (Gliederung) und „Bibliothek“ (die bisherige Medienliste). */
-export function PlanSidebar({ p, library }: { p: PlanState; library: React.ReactNode }) {
+/** books/onIdea/onBook: „Mehr Szenen“ aus einer Idee oder aus dem Storyteller (B2). */
+export function PlanSidebar({ p, library, books = 0, onIdea, onBook }: { p: PlanState; library: React.ReactNode; books?: number; onIdea?: () => void; onBook?: () => void }) {
   const { t } = useTranslation("studio")
   const [tab, setTab] = useState<"outline" | "library">("outline")
   return (
@@ -21,7 +22,8 @@ export function PlanSidebar({ p, library }: { p: PlanState; library: React.React
       {tab === "library" ? <div className="min-h-0 flex-1">{library}</div>
         : p.plan ? (
           <PlanOutline plan={p.plan} preview={p.preview} selection={p.selection} onSelect={p.select} onMove={(id, d) => void p.move(id, d)}
-            onAddScene={() => void p.addScene()} onAddElement={(k) => void p.addElement(k)} onImport={() => p.setDialog({ kind: "import" })} />
+            onAddScene={() => void p.addScene()} onAddElement={(k) => void p.addElement(k)} onImport={() => p.setDialog({ kind: "import" })}
+            books={books} onIdea={() => onIdea?.()} onBook={() => onBook?.()} />
         ) : p.error ? <p className="p-3 text-xs text-[#ff6b8a]" data-plan-error>{p.error}</p>
           : <p className="flex items-center gap-1.5 p-3 text-xs text-[#68758a]"><Loader2 size={12} className="animate-spin" /> {t("loading")}</p>}
     </section>

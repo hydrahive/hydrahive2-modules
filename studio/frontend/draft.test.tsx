@@ -49,7 +49,8 @@ describe("B2 – Aus einer Idee", () => {
     const form = (idea: string) => html(<IdeaForm idea={idea} length="60" style="" busy={false} error={null}
       onIdea={noop} onLength={noop} onStyle={noop} onRun={noop} onClose={noop} />)
     const out = form("")
-    expect(out).toContain("idea_label") && expect(out).toContain("idea_style")
+    expect(out).toContain("idea_label")
+    expect(out).toContain("idea_style")
     expect(buttons(out)).toEqual(["idea_len.30", "idea_len.60", "idea_len.120", "cancel", "idea_run"])
     expect(out).toMatch(/aria-pressed="true"[^>]*>idea_len\.60|data-idea-length="60"[^>]*aria-pressed="true"/)
     expect(out).toMatch(/<button[^>]*disabled=""[^>]*data-idea-run/)
@@ -78,10 +79,14 @@ describe("B2 – Vorschau", () => {
   it("zeigt Titel, Mengen, Szenen mit Shots und Bausteinen; Übernehmen und Verwerfen", () => {
     const out = html(<DraftPreview draft={DRAFT} append={false} truncated={0} busy={false} canDecompose={false} decompose={false}
       onDecompose={noop} onApply={noop} onDiscard={noop} />)
-    expect(out).toContain("Licht im Sturm") && expect(out).toContain("Eine Wärterin hält das Licht.")
+    expect(out).toContain("Licht im Sturm")
+    expect(out).toContain("Eine Wärterin hält das Licht.")
     expect(out).toContain('draft_counts:{"scenes":2,"shots":2,"elements":2}')
-    expect(out).toContain("Am Steg") && expect(out).toContain("Die Nacht") && expect(out).toContain("harbour")
-    expect(out).toContain("Mira") && expect(out).toContain("Leuchtturm")
+    expect(out).toContain("Am Steg")
+    expect(out).toContain("Die Nacht")
+    expect(out).toContain("harbour")
+    expect(out).toContain("Mira")
+    expect(out).toContain("Leuchtturm")
     expect(buttons(out)).toEqual(["draft_discard", "draft_apply"])
     expect(out).toContain("draft_new")
     expect(out).not.toContain("draft_append")
@@ -90,7 +95,8 @@ describe("B2 – Vorschau", () => {
   it("Drehbuch hat schon Szenen → deutlicher Hinweis „wird angehängt“; abgeschnittene Szenen genannt", () => {
     const out = html(<DraftPreview draft={DRAFT} append truncated={5} busy={false} canDecompose={false} decompose={false}
       onDecompose={noop} onApply={noop} onDiscard={noop} />)
-    expect(out).toContain("draft_append") && expect(out).not.toContain("draft_new")
+    expect(out).toContain("draft_append")
+    expect(out).not.toContain("draft_new")
     expect(out).toContain('draft_truncated:{"count":5}')
   })
 
@@ -111,7 +117,9 @@ describe("B2 – Aus dem Storyteller", () => {
   it("Buch wählen, Kapitel ankreuzen (Standard: alle), Zahl der Szenen", () => {
     const out = html(<BookPick books={[BOOK]} bookId="b1" chapters={["c1", "c2"]} busy={false} error={null}
       onBook={noop} onToggle={noop} onRun={noop} onClose={noop} />)
-    expect(out).toContain("Der Leuchtturm") && expect(out).toContain("Ankunft") && expect(out).toContain("Sturm")
+    expect(out).toContain("Der Leuchtturm")
+    expect(out).toContain("Ankunft")
+    expect(out).toContain("Sturm")
     expect((out.match(/type="checkbox"[^>]*checked=""/g) || []).length).toBe(2)
     expect(out).toContain('book_scenes:{"count":3}')
     expect(buttons(out)).toEqual(["cancel", "book_run"])

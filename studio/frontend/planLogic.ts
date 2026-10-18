@@ -24,7 +24,8 @@ export function showImport(p: ImportPreview | null): boolean {
 const KNOWN = new Set(["studio_plan_exists", "studio_nothing_to_import", "studio_element_invalid", "studio_not_found", "studio_project_not_found",
   "studio_too_many_shots", "studio_decompose_failed", "studio_decompose_has_media", "studio_decompose_busy",
   "studio_job_running", "studio_variant_unknown", "studio_video_needs_image", "studio_batch_running", "studio_batch_nothing",
-  "studio_timeline_invalid", "studio_timeline_conflict", "studio_timeline_not_empty", "studio_timeline_no_shots"])
+  "studio_timeline_invalid", "studio_timeline_conflict", "studio_timeline_not_empty", "studio_timeline_no_shots",
+  "studio_idea_invalid", "studio_idea_failed", "studio_book_not_found", "studio_book_empty", "studio_draft_invalid"])
 
 /** Fehlertext: bekannte Fehlercodes des Studios übersetzt, sonst die Meldung, sonst ein Standardtext. */
 export function errorText(t: (k: string) => string, e: unknown): string {
