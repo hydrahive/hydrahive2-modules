@@ -14,6 +14,7 @@ from ._clean import text
 from ._store import is_id, project_root, read_json
 
 KIND = {"character": "character", "place": "place", "item": "object"}
+_ENDING = r"(?:s|es|'s|’s)?"                # „des Leuchtturms“, „Miras“, „Mira's“ – mehr nicht, sonst wäre „Miranda“ eine Mira
 SCENE_WORD = {"en": "Scene"}                  # Titel für Szenen ohne Titel, je Sprache des Buchs; sonst „Szene“
 
 
@@ -86,7 +87,7 @@ def _mentioned(entities: list[dict], pov: str, words: str) -> list[str]:
     for e in entities:
         names = _names(e)
         hit = pov.casefold() in {n.casefold() for n in names} or any(
-            re.search(rf"(?<!\w){re.escape(n)}(?!\w)", words, re.IGNORECASE) for n in names)
+            re.search(rf"(?<!\w){re.escape(n)}{_ENDING}(?!\w)", words, re.IGNORECASE) for n in names)
         if hit:
             out.append(e["id"])
     return out
