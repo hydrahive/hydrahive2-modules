@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import time
 
-from _gen_helpers import PNG, P, FakeProvider
+from _gen_helpers import PNG, FakeProvider, P
 from conftest import MOD_PREFIX, OTHER_PROJECT_ID, PROJECT_ID
 
 pytest_plugins = ["_gen_helpers"]                 # Fixture `provider`

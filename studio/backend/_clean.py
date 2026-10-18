@@ -10,6 +10,7 @@ ELEMENT_KINDS = ("character", "place", "object")
 SHOT_STATUS = ("planned", "image_ready", "video_processing", "done", "failed")
 MODEL_KEYS = ("video", "image", "voice", "music", "text")
 CAMERA_KEYS = ("shot", "lens", "light", "weather", "time", "mood")
+VARIANT_DIRS = ("studio/media/images/", "studio/media/free/")    # Bilder des Studios: je Shot erzeugt oder frei (B3)
 
 
 def text(v: Any, n: int) -> str:
@@ -73,7 +74,7 @@ def shot(v: Any, order: int, elements: set[str]) -> dict:
         "image_rel": v["image_rel"] if isinstance(v.get("image_rel"), str) else None,
         "video_rel": v["video_rel"] if isinstance(v.get("video_rel"), str) else None,
         "variants": [x for x in (v.get("variants") if isinstance(v.get("variants"), list) else [])
-                     if isinstance(x, str) and x.startswith("studio/media/images/") and ".." not in x][-8:],
+                     if isinstance(x, str) and x.startswith(VARIANT_DIRS) and ".." not in x][-8:],
     }
 
 

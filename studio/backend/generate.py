@@ -8,7 +8,7 @@ from __future__ import annotations
 import base64
 from datetime import datetime, timezone
 
-from . import image_provider, jobs, plan, presets, shots
+from . import _clean, image_provider, jobs, plan, presets, shots
 from ._clean import CAMERA_KEYS
 from ._store import new_id, project_root, root, safe_rel, write_json
 
@@ -111,6 +111,16 @@ def _attach(pid: str, scene_id: str, shot_id: str, rel: str) -> None:
 def start_image(pid: str, scene_id: str, shot_id: str) -> dict:
     _find(shots.load_scene(pid, scene_id), shot_id)       # 404 vor dem Auftrag
     return jobs.start(pid, "image", shot_id, scene_id, lambda: _work(pid, scene_id, shot_id))
+
+
+def assign(pid: str, scene_id: str, shot_id: str, rel) -> dict:
+    """Ein Bild des Studios (frei oder je Shot erzeugt) als aktuelles Bild und Variante des Shots (B3)."""
+    _find(shots.load_scene(pid, scene_id), shot_id)       # 404 vor der Pfadprüfung
+    ok = isinstance(rel, str) and rel.startswith(_clean.VARIANT_DIRS) and ".." not in rel and safe_rel(pid, rel, plan.IMAGE_EXT)
+    if not ok:
+        raise plan.PlanError("studio_assign_invalid")
+    _attach(pid, scene_id, shot_id, rel)
+    return _find(shots.load_scene(pid, scene_id), shot_id)
 
 
 def choose_variant(pid: str, scene_id: str, shot_id: str, rel) -> dict:

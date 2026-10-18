@@ -37,6 +37,12 @@ def put_timeline(project_id: str, data: Data, auth: Auth) -> dict:
     return _run(project_id, timeline.save, data)
 
 
+@router.post("/append")
+def append_media(project_id: str, data: Data, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    return _run(project_id, timeline.append, data.get("media_rel") if isinstance(data, dict) else None)
+
+
 @router.post("/from-plan")
 def from_plan(project_id: str, auth: Auth, data: Data = None) -> dict:
     guard(auth[0], project_id)

@@ -70,6 +70,12 @@ def choose_variant(project_id: str, scene_id: str, shot_id: str, data: Data, aut
     return _run(generate.choose_variant, project_id, scene_id, shot_id, data.get("image_rel"))
 
 
+@router.put("/shots/{shot_id}/assign")
+def assign_image(project_id: str, scene_id: str, shot_id: str, data: Data, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    return _run(generate.assign, project_id, scene_id, shot_id, data.get("image_rel"))
+
+
 @router.post("/shots/{shot_id}/video", status_code=202)
 def make_video(project_id: str, scene_id: str, shot_id: str, auth: Auth) -> dict:
     guard(auth[0], project_id)
