@@ -11,7 +11,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 
 from . import plan
-from ._store import is_id, new_id, read_json, root, write_json
+from ._store import is_id, new_id, project_lock, read_json, root, write_json
 
 logger = logging.getLogger("hhmod_studio.jobs")
 
@@ -146,6 +146,11 @@ def recover(pid: str) -> int:
 
 
 def _reset_video_shot(pid: str, scene_id, shot_id) -> None:
+    with project_lock(pid):
+        _reset_locked(pid, scene_id, shot_id)
+
+
+def _reset_locked(pid: str, scene_id, shot_id) -> None:
     from . import shots
     try:
         scene = shots.load_scene(pid, scene_id)

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, Depends
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import batch, import_atelier, jobs, plan
+from . import batch, free_images, import_atelier, jobs, plan
 from ._guard import guard
 
 router = APIRouter(prefix="/projects/{project_id}/plan")
@@ -109,6 +109,12 @@ def batch_preview(project_id: str, kind: str, auth: Auth) -> dict:
 def batch_start(project_id: str, kind: str, auth: Auth) -> dict:
     guard(auth[0], project_id)
     return _run(batch.start, project_id, kind)
+
+
+@router.post("/free-images", status_code=202)
+def free_start(project_id: str, data: Data, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    return _run(free_images.start, project_id, data)
 
 
 @router.post("/jobs/{job_id}/cancel")

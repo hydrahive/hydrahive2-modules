@@ -10,7 +10,7 @@ import threading
 from datetime import datetime, timezone
 
 from . import generate, jobs, plan, shots, video_provider
-from ._store import new_id, project_root, root, safe_rel, write_json
+from ._store import new_id, project_lock, project_root, root, safe_rel, write_json
 
 MEDIA_DIR = "studio/media/videos"
 MAX_PARALLEL = 2
@@ -19,13 +19,14 @@ _MIME = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": 
 
 
 def _set_shot(pid: str, scene_id: str, shot_id: str, **fields) -> None:
-    scene = shots.load_scene(pid, scene_id)
-    items = list(scene.get("shots") or [])
-    for i, s in enumerate(items):
-        if isinstance(s, dict) and s.get("id") == shot_id:
-            items[i] = {**s, **fields}
-            shots.save_shots(pid, scene, items)
-            return
+    with project_lock(pid):                               # Lesen-Ändern-Schreiben ohne fremde Änderung dazwischen
+        scene = shots.load_scene(pid, scene_id)
+        items = list(scene.get("shots") or [])
+        for i, s in enumerate(items):
+            if isinstance(s, dict) and s.get("id") == shot_id:
+                items[i] = {**s, **fields}
+                shots.save_shots(pid, scene, items)
+                return
     raise jobs.JobFailed("shot_gone")
 
 

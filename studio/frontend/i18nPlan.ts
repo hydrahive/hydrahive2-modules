@@ -2,6 +2,7 @@
 import { cam_de, cam_en } from "./i18nCamera"
 import { cut_de, cut_en } from "./i18nCut"
 import { draft_de, draft_en } from "./i18nDraft"
+import { free_de, free_en } from "./i18nFree"
 import { guide_de, guide_en } from "./i18nGuide"
 import { jobs_de, jobs_en } from "./i18nJobs"
 import { models_de, models_en } from "./i18nModels"
@@ -12,6 +13,7 @@ export const plan_de = {
   ...cut_de,
   ...guide_de,
   ...draft_de,
+  ...free_de,
   ...models_de,
   screenplay: "Drehbuch",
   scenes: "Szenen",
@@ -87,6 +89,7 @@ export const plan_de = {
     studio_batch_nothing: "Es gibt nichts zu tun – alles ist schon fertig.",
     ...cut_de.cut_err,
     ...draft_de.draft_err,
+    ...free_de.free_err,
   },
   f: {
     title: "Titel", logline: "Kurzbeschreibung", description: "Beschreibung", aspect: "Bildformat", duration: "Standard-Dauer (s)",
@@ -106,6 +109,7 @@ export const plan_en: typeof plan_de = {
   ...cut_en,
   ...guide_en,
   ...draft_en,
+  ...free_en,
   ...models_en,
   screenplay: "Screenplay",
   scenes: "Scenes",
@@ -181,6 +185,7 @@ export const plan_en: typeof plan_de = {
     studio_batch_nothing: "There is nothing to do – everything is finished already.",
     ...cut_en.cut_err,
     ...draft_en.draft_err,
+    ...free_en.free_err,
   },
   f: {
     title: "Title", logline: "Logline", description: "Description", aspect: "Aspect ratio", duration: "Default duration (s)",

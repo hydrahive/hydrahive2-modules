@@ -12,6 +12,9 @@ import { CutTimeline } from "./CutTimeline"
 import { CutToolbar } from "./CutToolbar"
 import { editAction } from "./cutKeys"
 import { FromPlanDialog } from "./FromPlanDialog"
+import { FreeForm } from "./FreeForm"
+import { FreeGallery } from "./FreeGallery"
+import { GenerateSideBar } from "./GenerateSideBar"
 import { DecomposeDialog } from "./DecomposeDialog"
 import { DeleteDialog } from "./DeleteDialog"
 import { DraftDialog } from "./DraftDialog"
@@ -37,6 +40,8 @@ import { useCut } from "./useCut"
 import { useCutEdit } from "./useCutEdit"
 import { useCutPlayer } from "./useCutPlayer"
 import { useDraft } from "./useDraft"
+import { useFree } from "./useFree"
+import { useModelCatalogs } from "./modelCatalog"
 import { useGuide } from "./useGuide"
 import { WorkspaceIntro } from "./WorkspaceIntro"
 import { useJobs } from "./useJobs"
@@ -77,6 +82,10 @@ export function StudioPage() {
   const bt = useBatch(plan, lib.projectId, jobs.jobs, () => void jobs.reload())
   const dr = useDraft(plan, lib.projectId, () => void bt.open("decompose_all"))
   const books = guide.overview?.books ?? 0
+  const fr = useFree(plan, lib.projectId, p.plan, () => { void jobs.reload(); void lib.reload(); void p.reload(); void guide.reload() })
+  const freeOpen = generating && fr.open && !s.item
+  const imageCatalog = useModelCatalogs(freeOpen).image
+  const freeJob = jobs.jobs.find((j) => j.kind === "free_images") ?? null
   const scene = sh.scene
   /** Platzhalter → zum Shot im „Planen“ springen, dort wird er erzeugt. */
   const toPlan = (c: { scene_id: string; shot_id: string }) => {
@@ -98,13 +107,24 @@ export function StudioPage() {
           <div className="flex min-h-0 flex-1">
             <div className="min-w-0 border-r border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.library}%` }}>
               {planning ? <PlanSidebar p={plan} library={library} books={books} onIdea={dr.openIdea} onBook={dr.openBook} />
-                : generating ? <ShotList plan={p.plan} jobs={jobs.jobs} selected={selShot?.id ?? null} onPlan={() => s.setWorkspace("plan")}
-                    onSelect={(sceneId, id) => plan.select({ kind: "shot", sceneId, id })} />
+                : generating ? (
+                  <div className="flex h-full min-h-0 flex-col">
+                    <GenerateSideBar plan={p.plan} free={fr.open} busy={p.busy} pickScene={fr.pickScene} onFree={fr.toggle} onAddShot={fr.addShot} />
+                    <div className="min-h-0 flex-1">
+                      <ShotList plan={p.plan} jobs={jobs.jobs} selected={fr.open ? null : selShot?.id ?? null} onPlan={() => s.setWorkspace("plan")}
+                        onSelect={(sceneId, id) => { fr.close(); plan.select({ kind: "shot", sceneId, id }) }} />
+                    </div>
+                  </div>
+                )
                 : library}
             </div>
             <Splitter dir="x" label={t("resize_library")} onDrag={(d) => s.drag("library", d)} />
             <div className="min-w-0 flex-1">
-              {shotsWs && !s.item
+              {freeOpen
+                ? <div className="flex h-full min-h-0 justify-center overflow-y-auto p-3" data-studio-panel="preview">
+                    <FreeGallery items={lib.items} plan={p.plan} busy={p.busy} onAssign={(sc, sh, rel) => void fr.assign(sc, sh, rel)} onTimeline={(rel) => void fr.timeline(rel)} />
+                  </div>
+                : shotsWs && !s.item
                 ? <PlanCenter plan={p.plan} selection={p.selection} atelier={!!guide.overview?.atelier} books={books} busy={p.busy}
                     onStart={() => void p.addScene()} onImport={() => p.setDialog({ kind: "import" })} onHead={() => plan.select({ kind: "head" })}
                     onIdea={dr.openIdea} onBook={dr.openBook} />
@@ -116,6 +136,8 @@ export function StudioPage() {
             <Splitter dir="x" label={t("resize_inspector")} onDrag={(d) => s.drag("inspector", d)} />
             <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
               {planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} />
+                : freeOpen ? <FreeForm form={fr.form} catalog={imageCatalog} images={lib.items.filter((i) => i.kind === "image")} job={freeJob}
+                    busy={p.busy} onChange={fr.setForm} onRun={() => void fr.run()} />
                 : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} /> : <GenerateHint />)
                 : s.workspace === "edit" ? <CutInspector clip={s.item ? null : cut.clip} onPlan={toPlan} media={s.item}
                     onAppend={() => { if (s.item && ed.addMedia(s.item)) { s.clearMedia(); cut.setNotice(t("cut_notice_appended")) } }} />

@@ -13,6 +13,7 @@ from hydrahive.llm import client as llm_client
 
 from . import plan, presets, shots
 from ._clean import CAMERA_KEYS
+from ._store import project_lock
 
 logger = logging.getLogger("hhmod_studio.director")
 
@@ -102,6 +103,7 @@ async def decompose(pid: str, scene_id: str, *, replace: bool = False) -> list[d
             logger.warning("Studio-Regie: unbrauchbare Antwort (Projekt %s, Szene %s)", pid, scene_id)
             raise plan.PlanError("studio_decompose_failed", 502)
         fresh = [{k: it.get(k) for k in shots.EDITABLE} | {"status": "planned"} for it in items]
-        return shots.save_shots(pid, shots.load_scene(pid, scene_id), fresh)
+        with project_lock(pid):
+            return shots.save_shots(pid, shots.load_scene(pid, scene_id), fresh)
     finally:
         _busy.discard(pid)

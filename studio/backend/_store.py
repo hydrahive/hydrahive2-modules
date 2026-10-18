@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import threading
 import uuid
 from pathlib import Path
 from typing import Any
@@ -42,10 +43,24 @@ def read_json(path: Path, default: Any) -> Any:
 
 
 def write_json(path: Path, data: Any) -> None:
+    """Atomar schreiben. Eigene Temp-Datei je Aufruf: gleichzeitige Schreiber nehmen sich die Datei nicht weg."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(tmp, path)
+    tmp = path.with_name(f"{path.name}.{uuid.uuid4().hex[:12]}.tmp")
+    try:
+        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+_locks: dict[str, threading.RLock] = {}
+_locks_guard = threading.Lock()
+
+
+def project_lock(project_id: str) -> threading.RLock:
+    """Sperre je Projekt für Lesen-Ändern-Schreiben (Aufträge laufen in eigenen Threads). Wiedereintrittsfähig."""
+    with _locks_guard:
+        return _locks.setdefault(project_id, threading.RLock())
 
 
 def safe_rel(project_id: str, rel: Any, exts: set[str]) -> str | None:

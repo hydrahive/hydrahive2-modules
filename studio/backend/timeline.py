@@ -13,13 +13,14 @@ from typing import Any
 from . import plan
 from ._sources import IMAGE_EXT, VIDEO_EXT
 from ._store import is_id, new_id, read_json, root, safe_rel, write_json
-from ._timeline_plan import clips_from_scenes
+from ._timeline_plan import _video_length, clips_from_scenes
 
 MAX_CLIPS = 2000
 MAX_SECONDS = 4 * 3600
 FPS_ALLOWED = (24, 25, 30)
 FPS_DEFAULT = 25
 KINDS = ("video", "image", "placeholder")
+IMAGE_SECONDS = 5                          # Standbild wie im Browser (frontend/cutEdit.ts IMAGE_SECONDS)
 EPS = 1e-6                                 # Gleitkomma-Reste beim Aneinanderstoßen zählen nicht als Überlappung
 _EXT = {"video": VIDEO_EXT, "image": IMAGE_EXT}
 
@@ -137,6 +138,21 @@ def _write(pid: str, tl: dict, revision: Any) -> dict:
     out = {"revision": current + 1, **tl}
     write_json(root(pid, create=True) / "timelines" / "main.json", out)
     return out
+
+
+def append(pid: str, media_rel) -> dict:
+    """Ein Bild (Standbild, IMAGE_SECONDS) oder Video des Studios hinten an V1 hängen (B3 „Auf die Zeitleiste“)."""
+    rel = media_rel if isinstance(media_rel, str) and media_rel.startswith("studio/media/") and ".." not in media_rel else ""
+    kind = "image" if rel and safe_rel(pid, rel, IMAGE_EXT) else "video" if rel and safe_rel(pid, rel, VIDEO_EXT) else ""
+    if not kind:
+        raise Invalid()
+    current = load(pid)
+    clips = current["tracks"][0]["clips"]
+    start = max((_end(c) for c in clips), default=0.0)
+    length = IMAGE_SECONDS if kind == "image" else _video_length(pid, rel, IMAGE_SECONDS)
+    clip = {"id": new_id(), "kind": kind, "start": start, "in": 0, "out": length, "media_rel": rel, "label": rel.rsplit("/", 1)[-1]}
+    tl = clean(pid, {"fps": current["fps"], "tracks": [{"clips": [*clips, clip]}]})
+    return _write(pid, tl, current["revision"])
 
 
 def from_plan(pid: str, *, replace: bool) -> dict:
