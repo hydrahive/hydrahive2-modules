@@ -38,7 +38,8 @@ def test_rules(client, auth_headers, ws) -> None:
         [cue(1, 2, 1)],                                      # Ende vor Anfang
         [cue(1, -1, 1)],
         [{"id": "1" * 32, "start": "0", "end": 1, "text": "x"}],
-        [{"id": "1" * 32, "start": True, "end": 1, "text": "x"}],
+        [{"id": "1" * 32, "start": True, "end": 3, "text": "x"}],    # True wäre sonst 1 s
+        [{"id": "1" * 32, "start": 0, "end": True, "text": "x"}],
         [cue(1, 0, 1, "   ")],                               # leer
         [cue(1, 0, 1, "x" * 201)],                           # zu lang
         [cue(1, 0, 5 * 3600)],                               # über die Filmgrenze

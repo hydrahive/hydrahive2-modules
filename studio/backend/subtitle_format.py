@@ -18,14 +18,8 @@ def _stamp(ms: int, sep: str) -> str:
 
 
 def _times(cues: list[dict]) -> list[tuple[int, int]]:
-    """Auf Millisekunden gerundet; ein Anfang liegt nie vor dem gerundeten Ende des Vorgängers."""
-    out, last = [], 0
-    for c in cues:
-        a = max(_ms(c["start"]), last)
-        b = max(_ms(c["end"]), a + 1)
-        out.append((a, b))
-        last = b
-    return out
+    """In Millisekunden. Die Daten sind schon auf ms gerundet und ohne Überlappung (subtitles.clean_cues)."""
+    return [(_ms(c["start"]), _ms(c["end"])) for c in cues]
 
 
 def srt(cues: list[dict]) -> str:

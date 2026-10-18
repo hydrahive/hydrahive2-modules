@@ -61,6 +61,12 @@ def test_each_cue_at_most_seven_seconds(client, auth_headers, ws) -> None:
     assert (c["start"], c["end"]) == (0, 7)
 
 
+def test_no_part_longer_than_seven_seconds(client, auth_headers, ws) -> None:
+    film(client, auth_headers, ws, [{"duration": 14, "speech": "Ja. Ole schaut lange auf das graue Wasser hinaus."}])
+    cues = client.post(F, headers=auth_headers, json={}).json()["cues"]
+    assert len(cues) == 2 and all(c["end"] - c["start"] <= 7 + 1e-6 for c in cues), cues
+
+
 def test_too_many_sentences_for_a_short_shot_stay_together(client, auth_headers, ws) -> None:
     film(client, auth_headers, ws, [{"duration": 1, "speech": "Ja. Nein. Doch."}])
     cues = client.post(F, headers=auth_headers, json={}).json()["cues"]
