@@ -110,6 +110,9 @@ describe("6a – Reiter „Untertitel“", () => {
     expect(box("b")).toContain('style="left:30%;width:20%"')
     expect(box("b")).toContain('aria-pressed="true"')
     expect(box("a")).toContain('aria-pressed="false"')
+    expect(out).toContain("data-sub-playhead")
+    const away = html(<SubtitleTrack cues={CUES} view={{ start: 0, span: 10 }} time={60} selected={null} onSelect={noop} onSeek={noop} />)
+    expect(away).not.toContain("data-sub-playhead")                         // außerhalb der Ansicht: nicht aus dem Fenster ragen
   })
 
   it("Vorschau: Untertitel nur darübergelegt (nicht im Bild), Zeilen erhalten, in der Lücke nichts", () => {

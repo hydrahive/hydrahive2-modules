@@ -76,7 +76,7 @@ export function StudioPage() {
   const subbing = workspace === "subtitles"
   const p = usePlan(lib.projectId, workspace === "plan" || workspace === "generate" || workspace === "deliver" || subbing)  // Format, Sprache
   const sub = useSubtitles(lib.projectId, p.plan?.screenplay.language ?? "", subbing, cp.time, (x) => cut.setNotice(x))
-  const st = useSubtitleTab(sub, { time: cp.time, view: cut.view, onSeek: cp.seek, plan: p.plan })
+  const st = useSubtitleTab(sub, { time: cp.time, view: followView(cut.view, cp.time, cp.total), onSeek: cp.seek, plan: p.plan })
   const s = useStudioState(lib.items, workspace, changeWs, (item) => (subbing ? (item ? { edit: st.keys } : { ...cp, edit: st.keys })
     : !editing(workspace) ? null : item ? { edit: editKeys, toggleSnap: ed.toggleSnap } : { ...cp, edit: editKeys, toggleSnap: ed.toggleSnap }))
   const planning = s.workspace === "plan"

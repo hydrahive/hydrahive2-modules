@@ -27,7 +27,9 @@ export function SubtitleTrack({ cues, view, time, selected, onSelect, onSeek }: 
             </button>
           )
         })}
-        <span className="pointer-events-none absolute inset-y-0 w-px bg-[#ff6b8a]" style={{ left: pct(toFraction(time, view)) }} />
+        {time >= view.start && time <= view.start + view.span && (
+          <span className="pointer-events-none absolute inset-y-0 w-px bg-[#ff6b8a]" style={{ left: pct(toFraction(time, view)) }} data-sub-playhead />
+        )}
       </div>
     </div>
   )
