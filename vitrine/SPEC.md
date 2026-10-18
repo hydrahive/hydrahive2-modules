@@ -65,7 +65,13 @@ Eine Regel = Zeitraum + Video(s) + Priorität. Höchste passende Priorität gewi
 | fester Tag/Zeitraum | 24.–26.12. Weihnachten, 31.12.–01.01. Silvester |
 | beweglicher Feiertag | Ostern ± Tage, Pfingsten (aus dem Osterdatum berechnet) |
 | Tageszeit | 06–10 Uhr Morgen-Variante, 22–06 Uhr Nacht |
+| einzelner Adventssonntag | „1. Advent“ … „4. Advent“: vom Sonntag bis zum Samstag davor; der 4. Advent bis 23.12. |
+| n-ter Wochentag im Monat | Muttertag = 2. Sonntag im Mai (Wochentag, n = 1–5 oder −1 = letzter, Dauer in Tagen) |
+| Termine je Jahr | Chanukka, Ramadan, Zuckerfest: Datum hängt am jüdischen bzw. islamischen Kalender und ist nicht aus einer einfachen Regel berechenbar. Die Regel enthält pro Jahr einen Zeitraum (JJJJ-MM-TT bis JJJJ-MM-TT, auch über Jahreswechsel). Vorlagen bringen die berechneten Termine 2026–2035 mit; Ramadan kann wegen der Mondsichtung um einen Tag abweichen. |
 | Standard | wenn sonst nichts passt |
+
+Alle Feiertagsarten (fester Zeitraum, Ostern, Advent, Adventssonntag, n-ter Wochentag, Termine je Jahr) zählen als Feiertag:
+ihr Name erscheint oben unter dem Datum. Vorlagen für alle Arten sind im Cockpit wählbar.
 
 ### Layout (hochkant 1080×1920)
 
