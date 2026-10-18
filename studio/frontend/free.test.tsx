@@ -56,6 +56,9 @@ describe("B3 – Freies Bild: Formular", () => {
   it("läuft: Fortschritt „2 von 4“, Knopf gesperrt; fertig mit Fehlern: Meldung", () => {
     const run = html(<FreeForm form={{ ...FORM, prompt: "x" }} catalog={null} images={[]} job={job({})} busy={false} onChange={noop} onRun={noop} />)
     expect(run).toContain('free_progress:{"done":2,"total":4}')
+    const withFail = html(<FreeForm form={{ ...FORM, prompt: "x" }} catalog={null} images={[]} busy={false} onChange={noop} onRun={noop}
+      job={job({ progress: { total: 4, done: 1, failed: 1, current: "" } })} />)
+    expect(withFail).toContain('free_progress:{"done":2,"total":4}')                   // fehlgeschlagene zählen als erledigt
     expect(run).toMatch(/<button[^>]*disabled=""[^>]*data-free-run/)
     const failed = html(<FreeForm form={{ ...FORM, prompt: "x" }} catalog={null} images={[]} job={job({ status: "failed", error: "no_key" })} busy={false}
       onChange={noop} onRun={noop} />)
@@ -104,6 +107,8 @@ describe("B3 – Galerie freier Bilder", () => {
     expect(html(<FreeGallery items={[]} plan={plan} busy={false} onAssign={noop} onTimeline={noop} />)).toContain("free_none")
     const noShots = html(<FreeGallery items={free} plan={PLAN([])} busy={false} onAssign={noop} onTimeline={noop} />)
     expect(noShots).toContain("free_no_shots")
+    expect(buttons(noShots)).not.toContain("free_assign")                              // ohne Shots nichts zuzuweisen
+    expect(noShots).not.toContain("<select")
   })
 
   it("Liste der Shots zum Zuweisen", () => {
