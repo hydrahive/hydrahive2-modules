@@ -1,0 +1,77 @@
+{
+  "_": "Gemeinsame Stützstellen der Ducking-Kurve (Python backend/mix.py und TypeScript frontend/mixLogic.ts). Musik-Faktor (linear) bei Zeit t für Sprachzeiträume. Übergänge linear in dB (−12 dB), also halber Weg = −6 dB = 0,5012.",
+  "spans": [
+    [
+      2,
+      4
+    ],
+    [
+      4.5,
+      5
+    ],
+    [
+      10,
+      11
+    ]
+  ],
+  "merged": [
+    [
+      2,
+      5
+    ],
+    [
+      10,
+      11
+    ]
+  ],
+  "points": [
+    [
+      0,
+      1
+    ],
+    [
+      1.8,
+      1
+    ],
+    [
+      1.9,
+      0.5012
+    ],
+    [
+      2,
+      0.2512
+    ],
+    [
+      3,
+      0.2512
+    ],
+    [
+      5,
+      0.2512
+    ],
+    [
+      5.3,
+      0.5012
+    ],
+    [
+      5.6,
+      1
+    ],
+    [
+      9.8,
+      1
+    ],
+    [
+      10.5,
+      0.2512
+    ],
+    [
+      11.6,
+      1
+    ],
+    [
+      20,
+      1
+    ]
+  ]
+}

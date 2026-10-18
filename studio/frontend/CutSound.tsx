@@ -1,17 +1,29 @@
 import { useEffect, useRef } from "react"
 import { fileUrl } from "@/shared/files"
 import { fileOf } from "./planLogic"
+import { setGain } from "./audioGraph"
+import { clipGain, voiceSpans, type Mixer } from "./mixLogic"
 import { needsSeek, soundTarget } from "./soundLogic"
-import type { TimelineClip } from "./timelineApi"
+import type { TimelineClip, TrackId } from "./timelineApi"
 
-/** Ton der Tonspuren in der Vorschau: je Spur ein unsichtbares <audio>, das der Film-Uhr folgt (Spec 5a „Abspielen“). */
-export function CutSound({ tracks, base, time, playing, rate }: { tracks: TimelineClip[][]; base: string; time: number; playing: boolean; rate: number }) {
-  return <>{tracks.map((clips, i) => <SoundLane key={i} clips={clips} base={base} time={time} playing={playing} rate={rate} />)}</>
+interface Props { voice: TimelineClip[]; music: TimelineClip[]; mixer: Mixer; base: string; time: number; playing: boolean; rate: number }
+
+/** Ton der Tonspuren in der Vorschau: je Spur ein unsichtbares <audio>, das der Film-Uhr folgt (Spec 5a „Abspielen“),
+ *  mit Lautstärke, Blenden und Ducking aus dem Mischpult (5b). */
+export function CutSound({ voice, music, mixer, base, time, playing, rate }: Props) {
+  const spans = voiceSpans(mixer, voice)
+  return <>
+    <SoundLane track="A1" clips={voice} mixer={mixer} spans={spans} base={base} time={time} playing={playing} rate={rate} />
+    <SoundLane track="A2" clips={music} mixer={mixer} spans={spans} base={base} time={time} playing={playing} rate={rate} />
+  </>
 }
 
-function SoundLane({ clips, base, time, playing, rate }: { clips: TimelineClip[]; base: string; time: number; playing: boolean; rate: number }) {
+function SoundLane({ track, clips, mixer, spans, base, time, playing, rate }: { track: TrackId; clips: TimelineClip[]; mixer: Mixer;
+  spans: [number, number][]; base: string; time: number; playing: boolean; rate: number }) {
   const el = useRef<HTMLAudioElement | null>(null)
   const target = soundTarget(clips, time)
+  const level = target ? clipGain(mixer, track, target.clip, time, spans) : 0
+  useEffect(() => { setGain(el.current, track, level) }, [track, level, target?.clip.id])
   useEffect(() => {
     const a = el.current
     if (!a || !target) return

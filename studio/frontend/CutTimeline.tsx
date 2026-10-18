@@ -6,6 +6,7 @@ import { pct } from "./cutDnd"
 import { CutTrack, type TrackEdit } from "./CutTrack"
 import { centerAt, tickStep, toFraction, zoom, type Viewport } from "./timeline"
 import { allClips, clipsOf, type Timeline } from "./timelineApi"
+import { audibleTracks, type Mixer } from "./mixLogic"
 import { PER_SECOND } from "./useWaveforms"
 
 interface Props {
@@ -26,6 +27,8 @@ interface Props {
   audio?: AudioEdit
   /** Wellenform je Tondatei (media_rel → Spitzenwerte). */
   waveforms?: Record<string, number[] | undefined>
+  /** Mischpult (5b): stumme bzw. nicht hörbare Spuren werden blass gezeigt. */
+  mixer?: Mixer
 }
 
 const fractionOf = (clientX: number, el: HTMLElement) => {
@@ -36,7 +39,8 @@ const fractionOf = (clientX: number, el: HTMLElement) => {
 /** Reiter „Schneiden“: echte Zeitleiste mit Bildspur V1, Tonspuren „Sprache“ und „Musik“, Übersichtsleiste, Zoom und
  *  Abspielkopf (Etappe 4a, 5a). */
 export function CutTimeline({ timeline, base, time, view, selected, busy, onView, onSeek, onSelect, onFromPlan, toolbar, edit, audio,
-  waveforms = {} }: Props) {
+  waveforms = {}, mixer }: Props) {
+  const hears = mixer ? audibleTracks(mixer.tracks) : null
   const { t } = useTranslation("studio")
   const clips = clipsOf(timeline)
   const every = allClips(timeline)
@@ -86,7 +90,7 @@ export function CutTimeline({ timeline, base, time, view, selected, busy, onView
         <CutTrack clips={clips} base={base} view={view} time={time} selected={selected} edit={edit} onSelect={onSelect} onSeek={onSeek} />
         {(["A1", "A2"] as const).map((id) => (
           <AudioTrack key={id} id={id} clips={clipsOf(timeline, id)} view={view} time={time} selected={selected} waveforms={waveforms}
-            perSecond={PER_SECOND} edit={audio} onSelect={onSelect} onSeek={onSeek} />
+            perSecond={PER_SECOND} edit={audio} onSelect={onSelect} onSeek={onSeek} silent={!!hears && !hears.has(id)} />
         ))}
       </div>
     </section>

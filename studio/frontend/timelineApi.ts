@@ -14,6 +14,10 @@ export interface TimelineClip {
   label: string
   /** Medium wurde gelöscht – der Clip steht als Platzhalter da (Ton: stummer Clip). */
   missing?: boolean
+  /** Mischpult (5b, nur Tonclips): Lautstärke in dB, Ein-/Ausblenden in Sekunden. Fehlt = 0. */
+  gain_db?: number
+  fade_in?: number
+  fade_out?: number
 }
 
 export interface Timeline {
@@ -22,10 +26,14 @@ export interface Timeline {
   revision: number
   fps: number
   tracks: TimelineTrack[]
+  /** Musik leiser, wenn gesprochen wird (5b). Fehlt (älterer Server) = an. */
+  duck?: boolean
 }
 
 export type TrackId = "V1" | "A1" | "A2"
-export interface TimelineTrack { id: TrackId; kind: "video" | "audio"; clips: TimelineClip[] }
+export interface TrackMix { gain_db?: number; mute?: boolean; solo?: boolean }
+/** Spur mit Mischpult-Werten (5b; bei V1 gelten sie für den Originalton). Fehlt ein Wert = Standard. */
+export interface TimelineTrack extends TrackMix { id: TrackId; kind: "video" | "audio"; clips: TimelineClip[] }
 
 const base = (pid: string) => `/modules/studio/projects/${encodeURIComponent(pid)}/timeline`
 
@@ -48,7 +56,12 @@ export const allClips = (tl: Timeline | null): TimelineClip[] => tl?.tracks.flat
 /** Spur ersetzen; fehlende Tonspuren (Server vor Etappe 5) kommen leer dazu. */
 export function withTrack(tl: Timeline, track: TrackId, clips: TimelineClip[]): Timeline {
   const ids: TrackId[] = ["V1", "A1", "A2"]
-  return { ...tl, tracks: ids.map((id) => ({ id, kind: id === "V1" ? "video" : "audio", clips: id === track ? clips : clipsOf(tl, id) })) }
+  return { ...tl, tracks: ids.map((id) => {
+    const old = tl.tracks.find((t) => t.id === id)
+    const mix: TrackMix = {}
+    for (const k of ["gain_db", "mute", "solo"] as const) if (old && old[k] !== undefined) (mix as Record<string, unknown>)[k] = old[k]
+    return { id, kind: id === "V1" ? "video" : "audio", ...mix, clips: id === track ? clips : clipsOf(tl, id) }
+  }) }
 }
 
 /** Clip mit dieser ID auf irgendeiner Spur. */

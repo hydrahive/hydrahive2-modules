@@ -8,7 +8,17 @@ import {
   addMedia as addTo, canSplit, editTracks, moveAudioClip, moveVideoClip, toTimeline, trackOf, tracksOf, trimTracks,
   type Clipboard, type Tracks,
 } from "./cutTracks"
-import { timelineApi, type Timeline } from "./timelineApi"
+import { mixerOf, setClipMix, setDuck, setTrackMix, type Mixer } from "./mixLogic"
+import { timelineApi, type Timeline, type TrackId, type TrackMix } from "./timelineApi"
+
+/** Verlaufszustand: Clips aller Spuren und Mischpult (5b) – Rückgängig gilt für beides. */
+interface Snap { tracks: Tracks; mixer: Mixer }
+const snapOf = (tl: Timeline | null): Snap => ({ tracks: tracksOf(tl), mixer: mixerOf(tl) })
+function build(tl: Timeline, s: Snap): Timeline {
+  let out = toTimeline(tl, s.tracks)
+  for (const id of ["V1", "A1", "A2"] as const) out = setTrackMix(out, id, { gain_db: 0, mute: false, solo: false, ...s.mixer.tracks[id] })
+  return setDuck(out, s.mixer.duck)
+}
 
 const newId = () => crypto.randomUUID().replace(/-/g, "")
 
@@ -19,7 +29,7 @@ const newId = () => crypto.randomUUID().replace(/-/g, "")
 export function useCutEdit(projectId: string, timeline: Timeline | null, setTimeline: (t: Timeline) => void,
   selected: string | null, select: (id: string | null) => void, time: number, lengths: Record<string, number> = {}) {
   // `lengths`: echte Länge der Tondateien (media_rel → s, aus der Wellenform) – Grenze beim Kürzen
-  const [hist] = useState(() => new History<Tracks>(tracksOf(null)))   // ein Objekt je Hook, Inhalt ändert sich
+  const [hist] = useState(() => new History<Snap>(snapOf(null)))   // ein Objekt je Hook, Inhalt ändert sich
   const loadedFor = useRef<number | null>(null)
   const saver = useRef<AutoSaver | null>(null)
   const clipboard = useRef<Clipboard | null>(null)
@@ -41,7 +51,7 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
   // aus useCut – nur ein neuer Stand vom Server ändert sie.
   if (timeline && timeline.revision !== seen) {
     setSeen(timeline.revision)
-    hist.reset(tracksOf(timeline))
+    hist.reset(snapOf(timeline))
     setFlags({ undo: false, redo: false })
   }
   useEffect(() => {
@@ -52,21 +62,24 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
 
   const fps = timeline?.fps ?? 25
   const tracks = tracksOf(timeline)
+  const mixer = mixerOf(timeline)
 
-  const apply = useCallback((next: Tracks, record = true) => {
+  const lastMix = useRef<string>("")                                 // Ziel des letzten Mischpult-Schritts (s. u.)
+  const commit = useCallback((next: Snap, record = true) => {
     if (!timeline) return
-    const tl = toTimeline(timeline, next)
-    if (record) hist.push(next)
+    const tl = build(timeline, next)
+    if (record) { hist.push(next); lastMix.current = "" }
     setTimeline(tl)
     saver.current?.change(tl)
     syncFlags()
   }, [timeline, setTimeline, hist, syncFlags])
+  const apply = useCallback((next: Tracks, record = true) => commit({ tracks: next, mixer }, record), [commit, mixer])
   const change = useCallback((next: Tracks) => { if (next !== tracks) apply(next) }, [apply, tracks])
 
   const run = useCallback((a: EditAction) => {
     const h = hist
     if (a.kind === "undo" || a.kind === "redo") {
-      if (a.kind === "undo" ? h.canUndo : h.canRedo) apply(a.kind === "undo" ? h.undo() : h.redo(), false)
+      if (a.kind === "undo" ? h.canUndo : h.canRedo) { lastMix.current = ""; commit(a.kind === "undo" ? h.undo() : h.redo(), false) }
       return
     }
     if (a.kind === "copy") {
@@ -78,7 +91,7 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     const next = editTracks(tracks, a, { selected, time, fps, newId }, clipboard.current)
     change(next)
     if (a.kind === "delete" && next !== tracks) select(null)
-  }, [apply, change, tracks, fps, selected, select, time, hist])
+  }, [commit, change, tracks, fps, selected, select, time, hist])
 
   // Kürzen: immer vom Stand beim Greifen aus (delta = Gesamtverschiebung), während des Ziehens ohne Verlaufsschritt,
   // beim Loslassen genau ein Schritt
@@ -90,8 +103,8 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     if (!final) { apply(next, false); return }
     const before = trimFrom.current
     trimFrom.current = null
-    if (JSON.stringify(before) !== JSON.stringify(next)) { hist.push(next); apply(next, false) }
-  }, [apply, tracks, fps, hist, lengths])
+    if (JSON.stringify(before) !== JSON.stringify(next)) { hist.push({ tracks: next, mixer }); lastMix.current = ""; apply(next, false) }
+  }, [apply, tracks, fps, hist, lengths, mixer])
 
   /** Medium ablegen: Bild/Video an Stelle `index` auf V1, Ton ab `at` (Standard: Abspielkopf) auf seine Spur. */
   const place = useCallback((item: LibraryItem, index?: number, at?: number, track?: AudioTrack): boolean => {
@@ -118,11 +131,31 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
 
   const move = useCallback((id: string, index: number) => change(moveVideoClip(tracks, id, index, fps)), [change, tracks, fps])
   const moveAudio = useCallback((id: string, track: AudioTrack, start: number) => change(moveAudioClip(tracks, id, track, start, fps)), [change, tracks, fps])
+  // Mischpult (5b): Regler liefern beim Ziehen viele Werte – solange dasselbe Ziel weiter verstellt wird, ersetzt der
+  // neue Wert den letzten Verlaufsschritt (ein Rückgängig nimmt die ganze Reglerbewegung zurück).
+  const mixChange = useCallback((key: string, tl: Timeline) => {
+    const next = snapOf(tl)
+    if (lastMix.current === key && hist.canUndo) hist.replaceTop(next)
+    else hist.push(next)
+    lastMix.current = key
+    commit(next, false)
+  }, [commit, hist])
+  const onTrackMix = useCallback((id: TrackId, v: TrackMix) => {
+    if (!timeline) return
+    const kind = "gain_db" in v ? "gain" : Object.keys(v)[0]
+    mixChange(`track:${id}:${kind}`, setTrackMix(timeline, id, v))
+  }, [timeline, mixChange])
+  const onClipMix = useCallback((clipId: string, v: { gain_db?: number; fade_in?: number; fade_out?: number }) => {
+    if (!timeline) return
+    mixChange(`clip:${clipId}:${Object.keys(v)[0]}`, setClipMix(timeline, clipId, v))
+  }, [timeline, mixChange])
+  const onDuck = useCallback((on: boolean) => { if (timeline) mixChange(`duck:${on}`, setDuck(timeline, on)) }, [timeline, mixChange])
   const flush = useCallback(() => saver.current?.flush(), [])
   const learnDuration = useCallback((clipId: string, seconds: number) => { if (seconds > 0) durations.current[clipId] = seconds }, [])
 
   return {
     save, snap, toggleSnap: () => setSnap((s) => !s), run, onTrim, addMedia, move, moveAudio, flush, learnDuration,
+    mixer, onTrackMix, onClipMix, onDuck,
     canUndo: flags.undo, canRedo: flags.redo,
     canSplit: canSplit(tracks, { selected, time, fps, newId }),
     snapTo: snap ? [time] : [],

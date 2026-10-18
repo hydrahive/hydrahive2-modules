@@ -154,3 +154,9 @@ def test_graph_ducking_only_with_voice_and_music() -> None:
     muted_voice = _graph(ra.command(segs, BASE, Path("/o.mp4"), size=(320, 240), fps=25, audio=[voice, music],
                                     mixer=mix.Mixer(tracks={"V1": {}, "A1": {"mute": True}, "A2": {}})))
     assert "eval=frame" not in muted_voice                          # stumme Sprache duckt nicht
+
+
+def test_duck_table_copy_for_the_browser_is_the_same() -> None:
+    """Der Vite-Build sieht nur frontend/ – dort liegt eine Kopie der Tabelle für frontend/mixLogic.test.ts."""
+    fe = Path(__file__).resolve().parents[1] / "frontend" / "duckTable.test.json"
+    assert json.loads(fe.read_text()) == TABLE
