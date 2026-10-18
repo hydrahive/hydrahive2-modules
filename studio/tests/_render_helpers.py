@@ -59,3 +59,28 @@ def put_timeline(client, h, clips: list[dict]) -> dict:
 
 def clip(kind: str, start: float, t_in: float, t_out: float, media: str = "", label: str = "x") -> dict:
     return {"kind": kind, "start": start, "in": t_in, "out": t_out, "media_rel": media, "scene_id": "", "shot_id": "", "label": label}
+
+
+def make_audio(ws, name: str, seconds: float, *, freq: int = 880, sub: str = "atelier/audio") -> str:
+    d = ws / sub
+    d.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", f"sine=f={freq}:d={seconds}",
+                    "-ar", "44100", str(d / name)], check=True, timeout=60)
+    return f"{sub}/{name}"
+
+
+def put_tracks(client, h, video: list[dict], voice: list[dict], music: list[dict]) -> dict:
+    cur = client.get(f"{R}/timeline", headers=h).json()
+    r = client.put(f"{R}/timeline", headers=h, json={"revision": cur["revision"], "fps": 25, "tracks": [
+        {"id": "V1", "kind": "video", "clips": video}, {"id": "A1", "kind": "audio", "clips": voice},
+        {"id": "A2", "kind": "audio", "clips": music}]})
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def max_volume(path, start: float, seconds: float) -> float:
+    """Lautester Wert (dB) im Ausschnitt; -91 = Stille."""
+    out = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-ss", str(start), "-t", str(seconds), "-i", str(path),
+                          "-af", "volumedetect", "-vn", "-f", "null", "-"], capture_output=True, text=True, timeout=60).stderr
+    vals = [float(line.rsplit(":", 1)[1].split()[0]) for line in out.splitlines() if "max_volume" in line]
+    return vals[0] if vals else -91.0

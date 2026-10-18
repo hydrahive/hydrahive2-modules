@@ -873,13 +873,15 @@ Wie bisher in Schritten, nach jedem ist etwas Sichtbares fertig:
   mit 5c, siehe offene Frage.)
 - **Prüfung beim Speichern:** wie V1, `media_rel` mit Ton-Endung (`AUDIO_EXT`), höchstens 2.000 Clips über alle Spuren.
   Fehlercodes wie 4a (`studio_timeline_invalid`, `studio_timeline_conflict`). Fehlendes Medium beim Laden → Clip
-  bleibt mit `missing: true` stehen und wird als Stille gerendert.
+  bleibt mit `missing: true` und leerem `media_rel` stehen (so wieder speicherbar) und wird als Stille gerendert.
 - **Länge eines Tonclips** beim Ablegen: `duration` aus der Begleitdatei, sonst ermittelt der Browser sie, sonst 10 s.
 - **Wellenform:** `GET …/waveform?rel=…` rechnet einmal mit ffmpeg (mono, 8 kHz, Spitzenwerte 50 je Sekunde) und legt
   das Ergebnis unter `studio/cache/peaks/` ab (wegwerfbar, Schlüssel = Pfad + Größe + Änderungszeit). Bei Fehler zeigt
   der Clip eine flache Linie, nichts bricht.
 - **Abspielen:** Die Vorschau spielt je Tonspur ein eigenes `<audio>` im Takt der Film-Uhr (nachstellen, wenn mehr als
   0,15 s daneben). Originalton der Videos wie bisher.
+- **Filmlänge** = Ende des letzten Clips über alle Spuren. Reicht der Ton über das letzte Bild hinaus, wird der Rest
+  schwarz (der Ton wird nicht abgeschnitten). Nur Ton ohne Bild ergibt einen schwarzen Film mit Ton.
 - **Ausgabe:** Der 4d-Graph liefert Bild + Originalton wie bisher. Danach wird jeder Tonclip mit
   `atrim`/`asetpts`/`adelay` an seine Stelle gelegt und mit dem Originalton per `amix` (`normalize=0`) gemischt,
   zum Schluss `alimiter` gegen Übersteuern. Ohne Tonclips bleibt der Graph genau wie in 4d.
@@ -896,7 +898,8 @@ Wie bisher in Schritten, nach jedem ist etwas Sichtbares fertig:
 - vitest: Ablegen, Verschieben mit Einrasten und ohne Überlappung, Teilen/Kürzen, Abspiel-Logik (welcher Tonclip bei
   t, Zeit im Medium).
 - E2E (nur sichtbare Texte, 1280 und 1600 px): Musik aus der Bibliothek auf „Musik“ ziehen, verschieben, kürzen,
-  abspielen, „Film als MP4 erzeugen“, Download mit ffprobe geprüft (Ton hörbar ≠ Stille per `volumedetect`).
+  abspielen, „Film als MP4 erzeugen“, Download mit ffprobe geprüft (Ton hörbar ≠ Stille per `volumedetect`, Länge =
+  Ende des letzten Clips).
 
 **5b und 5c** bekommen vor dem Start einen eigenen Nachtrag.
 
