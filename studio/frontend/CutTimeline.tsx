@@ -29,6 +29,8 @@ interface Props {
   waveforms?: Record<string, number[] | undefined>
   /** Mischpult (5b): stumme bzw. nicht hörbare Spuren werden blass gezeigt. */
   mixer?: Mixer
+  /** Weitere Zeile unter den Tonspuren (Untertitel, 6a). */
+  extra?: React.ReactNode
 }
 
 const fractionOf = (clientX: number, el: HTMLElement) => {
@@ -39,7 +41,7 @@ const fractionOf = (clientX: number, el: HTMLElement) => {
 /** Reiter „Schneiden“: echte Zeitleiste mit Bildspur V1, Tonspuren „Sprache“ und „Musik“, Übersichtsleiste, Zoom und
  *  Abspielkopf (Etappe 4a, 5a). */
 export function CutTimeline({ timeline, base, time, view, selected, busy, onView, onSeek, onSelect, onFromPlan, toolbar, edit, audio,
-  waveforms = {}, mixer }: Props) {
+  waveforms = {}, mixer, extra }: Props) {
   const hears = mixer ? audibleTracks(mixer.tracks) : null
   const { t } = useTranslation("studio")
   const clips = clipsOf(timeline)
@@ -92,6 +94,7 @@ export function CutTimeline({ timeline, base, time, view, selected, busy, onView
           <AudioTrack key={id} id={id} clips={clipsOf(timeline, id)} view={view} time={time} selected={selected} waveforms={waveforms}
             perSecond={PER_SECOND} edit={audio} onSelect={onSelect} onSeek={onSeek} silent={!!hears && !hears.has(id)} />
         ))}
+        {extra}
       </div>
     </section>
   )

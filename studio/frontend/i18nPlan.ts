@@ -6,11 +6,13 @@ import { draft_de, draft_en } from "./i18nDraft"
 import { free_de, free_en } from "./i18nFree"
 import { guide_de, guide_en } from "./i18nGuide"
 import { jobs_de, jobs_en } from "./i18nJobs"
+import { subtitles_de, subtitles_en } from "./i18nSubtitles"
 import { models_de, models_en } from "./i18nModels"
 
 export const plan_de = {
   ...cam_de,
   ...jobs_de,
+  ...subtitles_de,
   ...cut_de,
   ...guide_de,
   ...draft_de,
@@ -86,6 +88,10 @@ export const plan_de = {
     studio_decompose_busy: "Die KI zerlegt in diesem Projekt gerade schon eine Szene. Bitte kurz warten.",
     studio_job_running: "Für diesen Shot läuft schon ein Auftrag.",
     studio_music_running: "Es wird schon Musik erzeugt. Bitte warten, bis sie fertig ist.",
+    studio_subtitles_invalid: "Die Untertitel enthalten ungültige Werte und wurden nicht gespeichert.",
+    studio_subtitles_conflict: "Die Untertitel wurden inzwischen woanders geändert. Bitte neu laden.",
+    studio_subtitles_no_speech: "Kein Shot auf der Zeitleiste hat einen Sprechtext. Lege zuerst die Shots im Reiter „Schneiden“ auf die Zeitleiste.",
+    studio_subtitles_empty: "Es gibt noch keine Untertitel zum Herunterladen.",
     studio_music_needs_text: "Bitte beschreiben, wie die Musik klingen soll.",
     studio_music_invalid: "Die Länge muss zwischen 5 und 180 Sekunden liegen.",
     studio_variant_unknown: "Dieses Bild gehört nicht zu diesem Shot.",
@@ -113,6 +119,7 @@ export const plan_de = {
 export const plan_en: typeof plan_de = {
   ...cam_en,
   ...jobs_en,
+  ...subtitles_en,
   ...cut_en,
   ...guide_en,
   ...draft_en,
@@ -188,6 +195,10 @@ export const plan_en: typeof plan_de = {
     studio_decompose_busy: "The AI is already splitting a scene in this project. Please wait a moment.",
     studio_job_running: "A job is already running for this shot.",
     studio_music_running: "Music is already being created. Please wait until it is finished.",
+    studio_subtitles_invalid: "The subtitles contain invalid values and were not saved.",
+    studio_subtitles_conflict: "The subtitles were changed elsewhere in the meantime. Please reload.",
+    studio_subtitles_no_speech: "No shot on the timeline has a spoken line. First put the shots on the timeline in the “Edit” tab.",
+    studio_subtitles_empty: "There are no subtitles to download yet.",
     studio_music_needs_text: "Please describe how the music should sound.",
     studio_music_invalid: "The length must be between 5 and 180 seconds.",
     studio_variant_unknown: "This image does not belong to this shot.",

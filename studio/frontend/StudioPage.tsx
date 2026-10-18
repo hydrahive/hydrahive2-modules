@@ -18,7 +18,6 @@ import { DeleteDialog } from "./DeleteDialog"
 import { DeliverPanel } from "./DeliverPanel"
 import { DraftDialog } from "./DraftDialog"
 import { ImportDialog } from "./ImportDialog"
-import { ComingSoon } from "./ComingSoon"
 import { GenerateHint } from "./GenerateHint"
 import { MediaInfo } from "./MediaInfo"
 import { ShotList } from "./ShotList"
@@ -37,10 +36,14 @@ import { usePlan } from "./usePlan"
 import { useBatch } from "./useBatch"
 import { appendNotice } from "./cutWiring"
 import { CutArea } from "./CutArea"
+import { CutTimeline } from "./CutTimeline"
+import { followView } from "./cutLogic"
 import { MusicForm } from "./MusicForm"
 import { useMusic } from "./useMusic"
 import { MixInspector } from "./MixInspector"
-import { editing, useCutWorkspace } from "./useCutWorkspace"
+import { editing, filmWs, useCutWorkspace } from "./useCutWorkspace"
+import { useSubtitleTab } from "./useSubtitleTab"
+import { useSubtitles } from "./useSubtitles"
 import { clipsOf, findClip } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
 import { useDraft } from "./useDraft"
@@ -55,8 +58,7 @@ import type { Workspace } from "./workspaces"
 
 const toastCls = "pointer-events-none fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-[4px] border border-[#46617f] bg-[#0e1420] px-3 py-1.5 text-xs text-[#c3ccdd]"
 
-/** Studio: Planen und Erzeugen arbeiten auf dem Drehbuch, Schneiden, Ton und Ausgabe auf der Schnittfassung. Untertitel
- *  kommen noch. */
+/** Studio: Planen und Erzeugen arbeiten auf dem Drehbuch, Schneiden, Ton, Untertitel und Ausgabe auf der Schnittfassung. */
 export function StudioPage() {
   const { t } = useTranslation("studio")
   const lib = useLibrary()
@@ -66,18 +68,22 @@ export function StudioPage() {
   const mixing = workspace === "audio"
   const { cut, every, mixer, cp, waves, ed } = useCutWorkspace(lib.projectId, workspace)
   const editKeys = (a: Parameters<typeof editAction>[0]) => { const x = editAction(a); if (x) ed.run(x); return !!x }
-  const changeWs = (w: Workspace) => { if (editing(workspace) && !editing(w)) void ed.flush(); setWorkspace(w) }   // verlassen → sofort speichern
+  const changeWs = (w: Workspace) => {                                            // verlassen → sofort speichern
+    if (editing(workspace) && !editing(w)) void ed.flush()
+    if (workspace === "subtitles" && w !== "subtitles") void sub.flush(); setWorkspace(w) }
   // Im Reiter „Schneiden“ steuern die Tasten Film und Schnitt. Ist ein Medium aus der Bibliothek gewählt, spielt die
   // Vorschau das Medium – dann bleibt das Abspielen bei ihm, Teilen/Löschen/Rückgängig wirken weiter auf den Schnitt.
-  const s = useStudioState(lib.items, workspace, changeWs,
-    (item) => (!editing(workspace) ? null : item ? { edit: editKeys, toggleSnap: ed.toggleSnap } : { ...cp, edit: editKeys, toggleSnap: ed.toggleSnap }))
+  const subbing = workspace === "subtitles"
+  const p = usePlan(lib.projectId, workspace === "plan" || workspace === "generate" || workspace === "deliver" || subbing)  // Format, Sprache
+  const sub = useSubtitles(lib.projectId, p.plan?.screenplay.language ?? "", subbing, cp.time, (x) => cut.setNotice(x))
+  const st = useSubtitleTab(sub, { time: cp.time, view: followView(cut.view, cp.time, cp.total), onSeek: cp.seek, plan: p.plan })
+  const s = useStudioState(lib.items, workspace, changeWs, (item) => (subbing ? (item ? { edit: st.keys } : { ...cp, edit: st.keys })
+    : !editing(workspace) ? null : item ? { edit: editKeys, toggleSnap: ed.toggleSnap } : { ...cp, edit: editKeys, toggleSnap: ed.toggleSnap }))
   const planning = s.workspace === "plan"
   const generating = s.workspace === "generate"
   const shotsWs = planning || generating                       // beide arbeiten auf dem Drehbuch
-  const cutting = editing(s.workspace) && !s.item
+  const cutting = filmWs(s.workspace) && !s.item
   const delivering = s.workspace === "deliver"
-  const soon = s.workspace === "subtitles" ? s.workspace : null
-  const p = usePlan(lib.projectId, shotsWs || delivering)                 // „Ausgabe“: Format aus dem Drehbuch
   const nextStamp = `${p.rev}:${cut.timeline?.revision ?? ""}:${every.length}`
   if (nextStamp !== stamp) setStamp(nextStamp)                   // beim Rendern abgeglichen, kein Effect nötig
   const plan = { ...p, select: (x: Parameters<typeof p.select>[0]) => { s.clearMedia(); p.select(x) } }   // Auswahl im Drehbuch löst das Medium ab
@@ -119,7 +125,7 @@ export function StudioPage() {
         <div className="flex min-h-0 flex-col" style={{ flex: `${100 - s.layout.timeline} 1 0` }}>
           <div className="flex min-h-0 flex-1">
             <div className="min-w-0 border-r border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.library}%` }}>
-              {planning ? <PlanSidebar p={plan} library={library} books={books} onIdea={dr.openIdea} onBook={dr.openBook} />
+              {subbing ? st.left : planning ? <PlanSidebar p={plan} library={library} books={books} onIdea={dr.openIdea} onBook={dr.openBook} />
                 : generating ? (
                   <div className="flex h-full min-h-0 flex-col">
                     <GenerateSideBar plan={p.plan} free={fr.open} busy={p.busy} pickScene={fr.pickScene} onFree={fr.toggle} onAddShot={fr.addShot} />
@@ -143,14 +149,14 @@ export function StudioPage() {
                     onIdea={dr.openIdea} onBook={dr.openBook} />
                 : cutting ? <CutPreview clips={cut.clips} base={cut.timeline?.base ?? ""} fps={cut.timeline?.fps ?? 25} time={cp.time} total={cp.total}
                     playing={cp.playing} current={cp.current} onSeek={cp.seek} onPlay={cp.toggle} bindVideo={cp.bindVideo}
-                    sound={<CutSound voice={clipsOf(cut.timeline, "A1")} music={clipsOf(cut.timeline, "A2")} mixer={mixer} base={cut.timeline?.base ?? ""}
+                    overlay={subbing ? st.overlay : undefined} sound={<CutSound voice={clipsOf(cut.timeline, "A1")} music={clipsOf(cut.timeline, "A2")} mixer={mixer} base={cut.timeline?.base ?? ""}
                       time={cp.time} playing={cp.playing} rate={cp.rate} />} />
                 : <PreviewPanel item={s.item} bind={s.player.bind} time={s.item ? s.player.time : 0} duration={s.player.duration}
                     playing={s.player.playing} onPlay={s.player.toggle} onSeek={s.seek} />}
             </div>
             <Splitter dir="x" label={t("resize_inspector")} onDrag={(d) => s.drag("inspector", d)} />
             <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
-              {planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} />
+              {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} />
                 : freeOpen ? <FreeForm form={fr.form} catalog={imageCatalog} images={lib.items.filter((i) => i.kind === "image")} job={freeJob}
                     busy={p.busy} onChange={fr.setForm} onRun={() => void fr.run()} />
                 : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} /> : <GenerateHint />)
@@ -175,7 +181,9 @@ export function StudioPage() {
               ? <CutArea mixing={mixing} cut={cut} cp={cp} ed={ed} mixer={mixer} every={every} waves={waves.peaks} items={lib.items}
                   onNotice={(k) => cut.setNotice(t(k))} onSelect={(id) => { s.clearMedia(); cut.select(id); const c = findClip(cut.timeline, id); if (c) cp.seek(c.start) }}
                   onMusic={mu.show} musicRunning={mu.running} />
-            : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
+            : subbing ? <CutTimeline timeline={cut.timeline} base={cut.timeline?.base ?? ""} time={cp.time} view={followView(cut.view, cp.time, cp.total)}
+                selected={null} busy={cut.busy} onView={cut.setView} onSeek={cp.seek} onSelect={() => {}} onFromPlan={cut.fromPlan} mixer={mixer} extra={st.track} />
+            : null}
         </div>
         </>}
         {s.dialog === "help" && <ShortcutHelp onClose={() => s.setDialog(null)} onGo={s.setWorkspace} />}
@@ -184,12 +192,13 @@ export function StudioPage() {
         {mu.open && <MusicForm defaults={mu.defaults} job={mu.job} busy={mu.busy} onRun={(r) => void mu.run(r)} onClose={mu.close} />}
         <DraftDialog d={dr} append={!!p.plan?.scenes.length} />
         {bt.dialog && <BatchDialog kind={bt.dialog.kind} preview={bt.dialog.preview} busy={p.busy} onRun={() => void bt.run()} onClose={bt.close} />}
+        {st.dialog}
         {cut.confirm && <FromPlanDialog count={cut.clips.length} busy={cut.busy} onConfirm={cut.confirmReplace} onClose={cut.closeConfirm} />}
         {sh.confirm && <DecomposeDialog count={sh.confirm.count} busy={sh.busy !== null} onConfirm={() => void sh.confirmReplace()} onClose={sh.closeConfirm} />}
         {p.dialog?.kind === "delete" && <DeleteDialog name={p.dialog.name} busy={p.busy} onConfirm={p.confirmDelete} onClose={() => p.setDialog(null)} />}
         {s.toast && <div className={toastCls} data-studio-toast>{t("toast_later", { action: t(`action.${s.toast}`) })}</div>}
         {shotsWs && p.notice && <div className={toastCls} data-plan-notice>{p.notice}</div>}
-        {editing(s.workspace) && cut.notice && <div className={toastCls} data-cut-notice>{cut.notice}</div>}
+        {filmWs(s.workspace) && cut.notice && <div className={toastCls} data-cut-notice>{cut.notice}</div>}
       </div>
     </CockpitShell>
   )

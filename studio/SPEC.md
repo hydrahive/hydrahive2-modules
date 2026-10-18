@@ -163,7 +163,7 @@ Am Ende gibt es für Medien **nur noch „Studio“**, damit die Leiste oben lee
 | 3 | **Erzeugen:** Bild und Video je Shot (3a, 3b), mehrere auf einmal als Auftrag (3c), Varianten, Ergebnis direkt in der Bibliothek. Sprache/Musik → Etappe 5 | Vom Drehbuch zu fertigen Shots |
 | 4 | Schneiden: Zeitleiste mit Spuren, ziehen, trimmen, teilen, Einrasten, Rückgängig, Übersichtsleiste, Proxies | Schnitt im Studio |
 | 5 | Ton: Tonspuren, Mixer, Wellenform, Pegel, Musik und Sprache auf der Zeitleiste | Vertonen im Studio |
-| 6 | Untertitel: Transkribieren, Spur, Stil, Übersetzen, zweisprachig, SRT, Einbrennen | Untertitel und Übersetzung |
+| 6 | Untertitel: aus Sprechtexten oder herausgehört, Spur, Übersetzen, SRT/WebVTT als Dateien (nie eingebrannt) | Untertitel und Übersetzung |
 | 7 | Ausgabe: Render-Vorlagen, Warteschlange im Hintergrund, Ergebnisse in der Bibliothek | fertige Videos aus dem Studio |
 | 8 | Übernahme alter Daten, Nachfolger für die Agenten-Werkzeuge, alte Module und Kern-Reiter „Media“ entfernen | nur noch „Studio“ |
 | später | Text-Schnitt über Transkript (Descript-Prinzip), Vertonung in Zielsprache, Farbe, Effekte, Übergänge | |
@@ -1013,6 +1013,53 @@ mit `amix normalize=0` + `alimiter`. Der Reiter „Ton“ zeigt noch „kommt no
 - E2E (nur sichtbare Texte, 1280 und 1600): Musik leiser stellen, Stumm, Solo, Blende setzen, Rückgängig, Neuladen,
   Film erzeugen und Pegel per `volumedetect` prüfen.
 
+
+## Bauplan Etappe 6 – Untertitel (18.10.)
+
+**Tills Vorgaben (18.10.):** Untertitel **als Dateien, nie eingebrannt** („ich hasse eingebrannte Texte“). Quelle:
+Sprechtexte oder Heraushören – „vielleicht beides“ → beide Wege, der Nutzer wählt. Damit entfällt „Einbrennen“ aus
+der Etappenliste.
+
+**Ist-Stand (geprüft):**
+- Sprechtexte stehen je Shot (`speech`, 5c-1), die erzeugte Sprache liegt als gebundener Clip auf A1 (`shot_id`) am
+  Anfang ihres Bildes. Daraus ergeben sich Text **und** Zeit ohne Kosten.
+- Kern: Heraushören über OpenRouter `/audio/transcriptions` (`media_models.transcribe` = `openai/whisper-large-v3`) und
+  lokal über Wyoming faster-whisper. Der Kern-Baustein `transcribe_file` gibt nur Text zurück, **ohne Zeiten**.
+- Probe auf hydratest (18.10.): `response_format=verbose_json` + `timestamp_granularities[]=segment` liefert Abschnitte
+  mit `start`/`end` (whisper-large-v3 und whisper-1). Kosten laut Antwort ≈ 0,03 ct je 10 s (≈ 2 ct für 10 min Film).
+  **Ohne Sprachangabe erkannte Whisper einen deutschen Clip als Englisch** und lieferte Unsinn → die Sprache wird immer
+  mitgeschickt. Lokales Wyoming liefert keine Zeiten → für 6b nur OpenRouter (lokal später, falls Zeiten möglich).
+
+| Schritt | Inhalt | danach kann man |
+|---|---|---|
+| **6a** | Untertitelspur aus den **Sprechtexten**, Reiter „Untertitel“ (Liste bearbeiten, Spur unter der Zeitleiste, Anzeige in der Vorschau), Herunterladen als **SRT und WebVTT** | Untertitel ohne Kosten als Datei mitgeben |
+| **6b** | **Aus dem Ton heraushören** (Auftrag: Ton des fertigen Schnitts mischen → Whisper mit Zeiten), Kosten-Hinweis | auch Originalton und frei gelegte Sprache untertiteln |
+| **6c** | **Übersetzen** in weitere Sprachen (Text-KI, Zeiten bleiben), je Sprache eine Datei; in der Ausgabe optional als **abschaltbare** Untertitelspur im MP4 (nicht eingebrannt) | mehrsprachige Untertitel |
+
+**Daten:** `studio/subtitles/<sprache>.json` (z. B. `de.json`): `{language, source: "speech"|"audio"|"translation",
+from?, revision, cues: [{id, start, end, text}]}`. Zeiten in Sekunden auf der Film-Uhr, sortiert, ohne Überlappung,
+`end - start` ≥ 0,5 s, Text ≤ 2 Zeilen à 42 Zeichen (längere werden beim Erzeugen geteilt), höchstens 5.000 Einträge.
+Speichern wie die Schnittfassung mit `revision` (Konflikt → `studio_subtitles_conflict`). Die Sprache des Films steht
+im Drehbuch-Kopf (`language`, Standard „de“) und wird dort gewählt.
+
+**6a im Detail**
+- **Aus Sprechtexten:** je Shot mit Sprechtext in Reihenfolge der Bildspur. Zeit = gebundener Sprachclip auf A1, sonst
+  der Bildclip des Shots auf V1. Text an Satzgrenzen teilen, die Zeit nach Textlänge verteilen; jeder Teil ≤ 7 s.
+  Shots, die nicht auf der Zeitleiste liegen, zählen nicht (Hinweis mit Anzahl).
+- **Neu erzeugen** über vorhandene, bearbeitete Untertitel fragt in einem eigenen Dialog („Ersetzen“/„Abbrechen“).
+- **Reiter „Untertitel“:** links Liste der Einträge (Zeit von/bis, Text), Klick springt in der Vorschau dorthin;
+  Text und Zeiten bearbeiten, Eintrag teilen/zusammenführen/löschen/hinzufügen am Abspielkopf; Rückgängig wie im
+  Schnitt; automatisch speichern. Unter der Zeitleiste die Zeile „Untertitel“ (Kästchen, Ränder ziehbar).
+  Die Vorschau zeigt den aktuellen Untertitel als Überlagerung im Browser (nicht im Bild).
+- **Herunterladen:** Knöpfe „SRT herunterladen“ und „WebVTT herunterladen“ (Datei `<Filmtitel>.<sprache>.srt|vtt`);
+  die Dateien entstehen beim Abruf aus den Daten, nichts wird doppelt gespeichert.
+- **Fehlercodes:** `studio_subtitles_invalid`, `studio_subtitles_conflict`, `studio_subtitles_no_speech` (kein Shot mit
+  Sprechtext auf der Zeitleiste), `studio_not_found`.
+
+**Tests 6a:** pytest (Erzeugen aus Sprechtexten mit/ohne Sprachclip, Teilen langer Texte, Reihenfolge nach Umsortieren,
+Prüfregeln/Grenzen, Konflikt, SRT/VTT-Format inkl. Zeitformat und Sonderzeichen, nur Mitglieder); vitest (Bearbeiten,
+Teilen/Zusammenführen, aktueller Eintrag bei Zeit t, Spur); E2E nur über sichtbare Texte bei 1280 und 1600 px (Erzeugen,
+bearbeiten, Rückgängig, Herunterladen und Datei prüfen, nichts im Bild eingebrannt: Film-MP4 unverändert).
 
 ## Grundregeln (wie immer)
 

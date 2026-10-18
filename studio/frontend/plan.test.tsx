@@ -82,6 +82,17 @@ describe("Studio Etappe 2a – Planen", () => {
     expect(out).toContain('value="kling"')
   })
 
+  it("Kopf: Sprache des Films (für Untertitel), ohne Angabe Deutsch", () => {
+    const de = html(<HeadForm head={PLAN.screenplay} busy={false} onSave={noop} />)
+    expect(de).toContain("sub_language")
+    const chosen = (out: string) => out.match(/<option value="([a-z]+)"[^>]*data-head-language[^>]*selected=""/)?.[1]
+    expect(chosen(de)).toBe("de")
+    expect(de).toContain(">lang.de</option>")
+    const en = html(<HeadForm head={{ ...PLAN.screenplay, language: "en" }} busy={false} onSave={noop} />)
+    expect(chosen(en)).toBe("en")
+    expect(attr(en, "data-head-language")).toHaveLength(18)
+  })
+
   it("Szene: Felder, Kamera aus den Vorgaben, Bausteine zum Ankreuzen, Dialoge", () => {
     const out = html(<SceneForm scene={PLAN.scenes[0]} elements={PLAN.elements} presets={PLAN.presets} busy={false} onSave={noop} onDelete={noop} />)
     expect(out).toContain('value="Hafen"')

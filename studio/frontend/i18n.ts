@@ -32,9 +32,6 @@ const de = {
   gen_no_prompt: "ohne Beschreibung",
   gen_pick_shot: "Wähle links einen Shot. Hier erzeugst du dann ein Bild, wählst eine Variante und machst daraus ein Video. Unten unter „Für alle …“ geht das für viele Shots auf einmal.",
   gen_state: { none: "ohne Bild", image: "Bild", video: "Video", running: "läuft", failed: "fehlgeschlagen" },
-  soon: {
-    subtitles: "Hier kommen Untertitel hinzu: aus der Sprache erkennen, bearbeiten, übersetzen und ins Video einbrennen.",
-  },
   soon_to_cut: "Zum Schneiden",
   position: "Position",
   source: { atelier: "Atelier", videoeditor: "Video-Editor", tonstudio: "Tonstudio", studio: "Studio", studio_free: "Studio · frei", studio_render: "Studio · Ausgabe", studio_voice: "Studio · Sprache", studio_music: "Studio · Musik" },
@@ -111,9 +108,6 @@ const en: typeof de = {
   gen_no_prompt: "no description",
   gen_pick_shot: "Select a shot on the left. Here you then create an image, pick a variant and turn it into a video. “For all …” below does this for many shots at once.",
   gen_state: { none: "no image", image: "image", video: "video", running: "running", failed: "failed" },
-  soon: {
-    subtitles: "Subtitles will be added here: recognise from speech, edit, translate and burn into the video.",
-  },
   soon_to_cut: "Go to Edit",
   position: "Position",
   source: { atelier: "Atelier", videoeditor: "Video editor", tonstudio: "Tonstudio", studio: "Studio", studio_free: "Studio · free", studio_render: "Studio · Output", studio_voice: "Studio · Voice", studio_music: "Studio · Music" },
