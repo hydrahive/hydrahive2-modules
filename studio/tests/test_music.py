@@ -102,3 +102,48 @@ def test_defaults_from_screenplay_and_scene(client, auth_headers, ws, music) -> 
     assert d["scenes"] == [{"id": sc["id"], "title": "Sturm", "description": "Gewitter über dem Hafen", "seconds": 12}]
     empty = client.get(f"{M}/defaults", headers=auth_headers)
     assert empty.status_code == 200
+
+
+def test_real_provider_without_key_fails_with_no_key(monkeypatch) -> None:
+    import hydrahive.llm._config as cfg
+    import pytest
+    monkeypatch.setattr(cfg, "openrouter_key", lambda: "")
+    from backend import music_provider
+    with pytest.raises(music_provider.ProviderError) as e:
+        music_provider.generate("x", "m")
+    assert str(e.value) == "no_key"
+
+
+def test_real_provider_reads_the_stream(monkeypatch) -> None:
+    """Echter Baustein gegen einen nachgebauten OpenRouter-Stream (httpx MockTransport): Audio in Teilen + [DONE]."""
+    import base64
+
+    import httpx
+    import hydrahive.llm._config as cfg
+
+    from backend import music_provider
+    audio = b"ID3" + bytes(range(256)) * 40
+    b64 = base64.b64encode(audio).decode()
+    body = (f'data: {{"choices":[{{"delta":{{"audio":{{"data":"{b64[:500]}"}}}}}}]}}\n\n'
+            f'data: {{"choices":[{{"delta":{{"audio":{{"data":"{b64[500:]}"}}}}}}]}}\n\ndata: [DONE]\n\n').encode()
+    seen = {}
+
+    def handler(req):
+        seen["json"] = req.read()
+        return httpx.Response(200, content=body, headers={"content-type": "text/event-stream"})
+    real = httpx.AsyncClient
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(handler), **kw))
+    monkeypatch.setattr(cfg, "openrouter_key", lambda: "k")
+    assert music_provider.generate("Streicher", "google/lyria") == audio
+    assert b'"modalities":["text","audio"]' in seen["json"].replace(b" ", b"") and b"Streicher" in seen["json"]
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(
+        lambda r: httpx.Response(200, content=b"data: [DONE]\n\n")), **kw))
+    import pytest
+    with pytest.raises(music_provider.ProviderError) as e:
+        music_provider.generate("x", "m")
+    assert str(e.value) == "empty_answer"
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(
+        lambda r: httpx.Response(402, content=b"no credits")), **kw))
+    with pytest.raises(music_provider.ProviderError) as e:
+        music_provider.generate("x", "m")
+    assert str(e.value) == "provider_rejected"
