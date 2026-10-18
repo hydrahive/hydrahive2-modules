@@ -8,10 +8,12 @@ import type { Workspace } from "./workspaces"
 
 /** „Schneiden“ und „Ton“ arbeiten auf der Schnittfassung (5b). */
 export const editing = (w: Workspace): boolean => w === "edit" || w === "audio"
+/** Reiter, die den Film abspielen (Schneiden, Ton, Untertitel). */
+export const filmWs = (w: Workspace): boolean => editing(w) || w === "subtitles"
 
 /** Schnittfassung, Wiedergabe (mit Mischpult), Wellenformen und Bearbeiten – gebündelt für StudioPage. */
 export function useCutWorkspace(projectId: string, workspace: Workspace) {
-  const cut = useCut(projectId, editing(workspace) || workspace === "deliver")   // „Ausgabe“ braucht die Fassung auch
+  const cut = useCut(projectId, filmWs(workspace) || workspace === "deliver")   // „Untertitel“ und „Ausgabe“ brauchen sie auch
   const every = allClips(cut.timeline)
   const mixer = mixerOf(cut.timeline)
   const cp = useCutPlayer(cut.clips, every, originalGain(mixer))

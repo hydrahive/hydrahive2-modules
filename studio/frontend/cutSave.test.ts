@@ -75,3 +75,19 @@ describe("4b – automatisch speichern", () => {
     expect(idle).not.toHaveBeenCalled()                                                  // nichts geändert → nichts gespeichert
   })
 })
+
+describe("6a – derselbe Speicherer für die Untertitel", () => {
+  it("eigener Konfliktcode hält an; der der Schnittfassung nicht", async () => {
+    type Sub = { revision: number; cues: { id: string }[] }
+    const states: string[] = []
+    const save = vi.fn(async (_s: Sub): Promise<Sub> => { throw Object.assign(new Error("x"), { code: "studio_subtitles_conflict" }) })
+    const s = new AutoSaver<Sub>(save, (st) => states.push(st), "studio_subtitles_conflict")
+    s.loaded({ revision: 3 })
+    s.change({ revision: 3, cues: [{ id: "a" }] }); await s.flush()
+    expect(states.at(-1)).toBe("conflict")
+    expect(save.mock.calls[0][0]).toEqual({ revision: 3, cues: [{ id: "a" }] })
+    const other = new AutoSaver<Sub>(vi.fn(async () => { throw conflict() }), (st) => states.push(st), "studio_subtitles_conflict")
+    other.loaded({ revision: 0 }); other.change({ revision: 0, cues: [] }); await other.flush()
+    expect(states.at(-1)).toBe("error")
+  })
+})

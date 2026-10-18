@@ -7,12 +7,15 @@ export const CAMERA_KEYS = ["shot", "lens", "light", "weather", "time", "mood"] 
 export type CameraKey = (typeof CAMERA_KEYS)[number]
 export const MODEL_KEYS = ["video", "image", "voice", "music", "text"] as const
 export const ASPECTS = ["16:9", "9:16", "1:1", "4:3", "21:9"] as const
+export const LANGUAGES = ["de", "en", "fr", "es", "it", "nl", "pl", "pt", "tr", "uk", "ru", "sv", "da", "no", "fi", "cs", "ja", "zh"] as const
 
 export interface Head {
   title: string
   logline: string
   description: string
   aspect_ratio: string
+  /** Sprache des Films (Untertitel, 6). */
+  language?: string
   default_duration: number
   models: Record<(typeof MODEL_KEYS)[number], string>
   look: { style: string; palette: string[] }

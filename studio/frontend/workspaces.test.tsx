@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from "vitest"
 
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k) }) }))
 vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() => {})) } }))
-import { ComingSoon } from "./ComingSoon"
 import { GenerateHint } from "./GenerateHint"
 import { ShotList } from "./ShotList"
 import { shotCounts, shotState } from "./shotListLogic"
@@ -76,14 +75,11 @@ describe("Reiter „Erzeugen“ – Shot-Liste", () => {
   })
 })
 
-describe("Reiter Ton, Untertitel – ehrlich statt Beispiel („Ausgabe“ ist seit 4d echt)", () => {
-  it("Hinweis je Reiter mit Knopf „Zum Schneiden“", () => {
-    for (const ws of ["subtitles"] as const) {                              // „Ton“ ist seit 5b ein echter Reiter
-      const out = html(<ComingSoon workspace={ws} onCut={noop} />)
-      expect(out).toContain(`soon.${ws}`)
-      expect(out).toContain("data-soon-to-cut")
-      expect(out).toContain(`data-studio-soon="${ws}"`)
-    }
+describe("Alle Reiter sind echt – keine Beispiele, kein „kommt noch“ (Untertitel seit 6a)", () => {
+  it("es gibt keinen „kommt noch“-Platzhalter mehr", async () => {
+    const files = import.meta.glob(["./*.tsx", "!./*.test.tsx"], { query: "?raw", import: "default", eager: true })
+    expect(Object.keys(files).some((f) => f.includes("ComingSoon"))).toBe(false)
+    expect(Object.values(files).join("\n")).not.toContain("data-studio-soon")
   })
 
   it("Studio startet ohne Beispieldaten (kein „Nordwind“, kein Beispiel-Hinweis)", () => {

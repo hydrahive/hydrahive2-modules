@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { ASPECTS, MODEL_KEYS, type Head } from "./planApi"
+import { ASPECTS, LANGUAGES, MODEL_KEYS, type Head } from "./planApi"
 import { paletteFromText } from "./planLogic"
 import { Field, FormActions, Label, fieldCls } from "./formParts"
 import { ModelPick } from "./ModelPick"
@@ -36,6 +36,11 @@ export function HeadForm({ head, busy, onSave, catalogs = {} }: Props) {
             onChange={(e) => set("default_duration", Math.max(1, Math.min(60, Number(e.target.value) || 1)))} />
         </label>
       </div>
+      <label className="block"><Label>{t("sub_language")}</Label>
+        <select value={h.language ?? "de"} onChange={(e) => set("language", e.target.value)} className={fieldCls}>
+          {LANGUAGES.map((l) => <option key={l} value={l} data-head-language={l}>{t(`lang.${l}`)}</option>)}
+        </select>
+      </label>
       <fieldset className="space-y-2">
         <legend><Label>{t("f.models")}</Label></legend>
         {MODEL_KEYS.map((k) => (

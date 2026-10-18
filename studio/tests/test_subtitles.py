@@ -93,3 +93,13 @@ def test_screenplay_has_a_film_language(client, auth_headers, ws) -> None:
     assert client.get(f"{P}", headers=auth_headers).json()["screenplay"]["language"] == "en"
     client.put(f"{P}/screenplay", headers=auth_headers, json={"language": "Klingonisch"})
     assert client.get(f"{P}", headers=auth_headers).json()["screenplay"]["language"] == "de"
+
+
+def test_same_languages_in_backend_and_frontend() -> None:
+    import re
+    from pathlib import Path
+
+    from backend._clean import LANGUAGES
+    ts = (Path(__file__).resolve().parents[1] / "frontend/planApi.ts").read_text()
+    front = re.search(r"export const LANGUAGES = \[([^\]]*)\]", ts).group(1)
+    assert tuple(re.findall(r'"([a-z]+)"', front)) == LANGUAGES
