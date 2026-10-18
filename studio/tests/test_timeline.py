@@ -12,7 +12,8 @@ def test_empty_timeline_without_creating_anything(client, auth_headers, ws) -> N
     assert r.status_code == 200, r.text
     tl = r.json()
     assert tl["revision"] == 0 and tl["fps"] == 25
-    assert tl["tracks"] == [{"id": "V1", "kind": "video", "clips": []}]
+    assert tl["tracks"] == [{"id": "V1", "kind": "video", "clips": []}, {"id": "A1", "kind": "audio", "clips": []},
+                            {"id": "A2", "kind": "audio", "clips": []}]   # Tonspuren seit 5a
     assert not (ws / "studio").exists()                                  # Lesen legt nichts an
 
 

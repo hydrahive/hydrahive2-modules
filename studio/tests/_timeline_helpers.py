@@ -47,3 +47,26 @@ def _shots(client, h, ws, layout: list[list[dict]]) -> list[dict]:
         f.write_text(json.dumps(data))
         out.append({**sc, "shots": data["shots"]})
     return out
+
+
+MP3 = b"ID3\x03\x00\x00\x00\x00\x00\x00" + b"\0" * 64
+
+
+def _audio(ws, name: str, meta: dict | None = None, sub: str = "atelier/audio") -> str:
+    d = ws / sub
+    d.mkdir(parents=True, exist_ok=True)
+    (d / name).write_bytes(MP3)
+    if meta is not None:
+        (d / f"{name}.json").write_text(json.dumps(meta))
+    return f"{sub}/{name}"
+
+
+def _aclip(**kw) -> dict:
+    return {"id": "b" * 32, "kind": "audio", "start": 0, "in": 0, "out": 5, "media_rel": "", "scene_id": "", "shot_id": "",
+            "label": "Musik", **kw}
+
+
+def _put_tracks(client, h, video: list[dict], voice: list[dict], music: list[dict], revision: int = 0):
+    return client.put(T, headers=h, json={"revision": revision, "fps": 25, "tracks": [
+        {"id": "V1", "kind": "video", "clips": video}, {"id": "A1", "kind": "audio", "clips": voice},
+        {"id": "A2", "kind": "audio", "clips": music}]})

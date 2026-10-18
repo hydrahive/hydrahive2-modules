@@ -838,6 +838,71 @@ Die E2E-Tests haben über unsichtbare Kennungen geklickt und nie geprüft, ob ei
   - auf die Zeitleiste legen
   - „+ Shot“ legt einen Shot in der gewählten Szene an
 
+## Bauplan Etappe 5 – Ton (18.10.)
+
+**Ist-Stand (geprüft):**
+- Die Schnittfassung `studio/timelines/main.json` hat nur die Spur `V1` (magnetisch). Ton gibt es nur als Originalton
+  der Video-Clips. `clean()` lehnt mehr als eine Spur ab.
+- Die Bibliothek zeigt schon Ton (`audio`/`music`) aus Atelier (`atelier/audio`) und Tonstudio (`tonstudio/clips`).
+  Zieht man ihn auf die Zeitleiste, kommt der Hinweis „kommt mit ‚Ton‘“ (`cut_no_audio_yet`).
+- Die Ausgabe (4d) baut einen concat-Graphen, Ton je Abschnitt ist Originalton oder Stille.
+- Der Drehbuch-Kopf hat schon `models.voice` und `models.music` (seit 2a, bisher ungenutzt).
+- Kern: Sprache über OpenRouter `/audio/speech` (`media_models.tts`, Stimmen je Modell) oder lokales Piper; Musik
+  über OpenRouter (`media_models.music`, Lyria). Schlüssel kommt wie bei Bild/Video über `openrouter_key()`.
+- Vorlagen (nur zum Abschauen, eigene Fassung mit Herkunft): Video-Editor `_audio_mix.py` (adelay/volume/afade/amix,
+  Stumm/Solo) und `_audio_peaks.py` (Wellenform 60 Werte/s aus PCM).
+
+Wie bisher in Schritten, nach jedem ist etwas Sichtbares fertig:
+
+| Schritt | Inhalt | danach kann man |
+|---|---|---|
+| **5a** | Tonspuren „Sprache“ und „Musik“ in der Schnittfassung, Ton aus der Bibliothek auf die Spuren ziehen, verschieben, kürzen, teilen, löschen, Wellenform, Abspielen mit Ton, Ausgabe mischt die Tonspuren mit ein | Musik unter den Film legen und als MP4 herunterladen |
+| **5b** | Reiter „Ton“: Mixer mit Lautstärke je Spur (auch Originalton), Stumm/Solo, Lautstärke und Ein-/Ausblenden je Clip, Pegelanzeige beim Abspielen | den Ton abmischen |
+| **5c** | Sprache und Musik erzeugen (bisher 3d): Sprechtext je Shot → Sprache auf „Sprache“ am Shot-Anfang; Musik für den Film oder eine Szene → „Musik“. Als Auftrag mit Fortschritt, Kosten-Hinweis | den Film ohne fremde Dateien vertonen |
+
+**5a im Detail**
+
+- **Daten:** `tracks` bekommt zwei feste Tonspuren nach `V1`: `A1` (`kind: "audio"`, Name „Sprache“) und `A2`
+  (`kind: "audio"`, Name „Musik“). Alte Fassungen ohne Tonspuren werden beim Laden ergänzt, die Datei bleibt
+  unverändert, bis der Nutzer speichert. Tonclip: `id`, `kind: "audio"`, `start`, `in`/`out`, `media_rel`, `label`
+  (wie Videoclips). Ab 5b zusätzlich `gain_db`, `fade_in`, `fade_out`; je Spur `gain_db`, `mute`, `solo`.
+- **Tonspuren sind nicht magnetisch:** Clips liegen frei, Lücken sind Stille. Innerhalb einer Spur dürfen sich Clips
+  nicht überlappen (Ablehnen wie bei V1). Verschieben = Ziehen an eine freie Stelle, Einrasten an Clipkanten aller
+  Spuren und am Abspielkopf.
+- **Ton hängt nicht an den Bildern:** Umsortieren auf V1 verschiebt den Ton nicht. (Die Bindung an einen Shot kommt
+  mit 5c, siehe offene Frage.)
+- **Prüfung beim Speichern:** wie V1, `media_rel` mit Ton-Endung (`AUDIO_EXT`), höchstens 2.000 Clips über alle Spuren.
+  Fehlercodes wie 4a (`studio_timeline_invalid`, `studio_timeline_conflict`). Fehlendes Medium beim Laden → Clip
+  bleibt mit `missing: true` und leerem `media_rel` stehen (so wieder speicherbar) und wird als Stille gerendert.
+- **Länge eines Tonclips** beim Ablegen: `duration` aus der Begleitdatei, sonst ermittelt der Browser sie, sonst 10 s.
+- **Wellenform:** `GET …/waveform?rel=…` rechnet einmal mit ffmpeg (mono, 8 kHz, Spitzenwerte 50 je Sekunde) und legt
+  das Ergebnis unter `studio/cache/peaks/` ab (wegwerfbar, Schlüssel = Pfad + Größe + Änderungszeit). Bei Fehler zeigt
+  der Clip eine flache Linie, nichts bricht.
+- **Abspielen:** Die Vorschau spielt je Tonspur ein eigenes `<audio>` im Takt der Film-Uhr (nachstellen, wenn mehr als
+  0,15 s daneben). Originalton der Videos wie bisher.
+- **Filmlänge** = Ende des letzten Clips über alle Spuren. Reicht der Ton über das letzte Bild hinaus, wird der Rest
+  schwarz (der Ton wird nicht abgeschnitten). Nur Ton ohne Bild ergibt einen schwarzen Film mit Ton.
+- **Ausgabe:** Der 4d-Graph liefert Bild + Originalton wie bisher. Danach wird jeder Tonclip mit
+  `atrim`/`asetpts`/`adelay` an seine Stelle gelegt und mit dem Originalton per `amix` (`normalize=0`) gemischt,
+  zum Schluss `alimiter` gegen Übersteuern. Ohne Tonclips bleibt der Graph genau wie in 4d.
+- **Oberfläche (Reiter „Schneiden“):** Unter V1 die Zeilen „Sprache“ und „Musik“. Ziehen aus der Bibliothek legt Ton
+  auf die passende Spur (Musik → „Musik“, sonst „Sprache“; Ablegen auf der anderen Spur geht auch). Teilen (S),
+  Löschen, Verdoppeln, Rückgängig, Kürzen an den Griffen wirken auf den gewählten Tonclip. Knopf „An die Zeitleiste
+  anhängen“ legt Ton ab dem Abspielkopf auf die Spur. Der Hinweis `cut_no_audio_yet` entfällt.
+
+**Tests 5a:**
+- pytest: Laden alter Fassung (ergänzt A1/A2), Speichern/Laden mit Tonclips, Überlappung je Spur abgelehnt, Spuren
+  ohne Überlappung untereinander erlaubt, falsche Endung, fehlendes Medium, Grenzen; Wellenform (echtes ffmpeg,
+  Cache, Pfad außerhalb → 404); Ausgabe: Graph mit/ohne Ton (reine Funktion), echtes Rendern mit Musik (ffprobe:
+  Tonspur vorhanden, Länge = Bildlänge).
+- vitest: Ablegen, Verschieben mit Einrasten und ohne Überlappung, Teilen/Kürzen, Abspiel-Logik (welcher Tonclip bei
+  t, Zeit im Medium).
+- E2E (nur sichtbare Texte, 1280 und 1600 px): Musik aus der Bibliothek auf „Musik“ ziehen, verschieben, kürzen,
+  abspielen, „Film als MP4 erzeugen“, Download mit ffprobe geprüft (Ton hörbar ≠ Stille per `volumedetect`, Länge =
+  Ende des letzten Clips).
+
+**5b und 5c** bekommen vor dem Start einen eigenen Nachtrag.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
@@ -849,6 +914,10 @@ Die E2E-Tests haben über unsichtbare Kennungen geklickt und nie geprüft, ob ei
   falls Code oder Prompts übernommen werden.
 
 ## Offene Punkte (Till)
+
+- ~~Etappe 5~~ → **freigegeben (Till, 18.10.):** Aufteilung 5a/5b/5c. Zwei **feste** Tonspuren „Sprache“ und „Musik“.
+  Sprache aus 5c hängt am Shot und wandert beim Umsortieren mit. Musik wird automatisch leiser, wenn gesprochen wird
+  (in 5b). Eigenen Ton hochladen kommt mit Etappe 7.
 
 - ~~Bedienbarkeit~~ → **Etappe B vor 4d** (Till, 17.10.). Drehbuch aus einer Idee: ja. Drehbuch aus dem
   **Storyteller** übernehmen: ja („das ideale Drehbuch-Werkzeug, und der ist schon fertig“).

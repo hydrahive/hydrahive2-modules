@@ -77,7 +77,7 @@ function Item({ m, active, onSelect }: { m: LibraryItem; active: boolean; onSele
   return (
     <li>
       <button type="button" data-library-item={m.id} data-library-kind={m.kind} onClick={() => onSelect(m.id)} title={m.prompt ?? m.name}
-        draggable={m.kind === "image" || m.kind === "video"}
+        draggable={m.kind !== "element"}
         onDragStart={(e) => { e.dataTransfer.setData(MEDIA_MIME, m.id); e.dataTransfer.effectAllowed = "copy" }}
         className={`flex w-full items-center gap-2 rounded-[4px] px-1.5 py-1 text-left ${active ? "bg-[#1c2940]" : "hover:bg-[#111827]"}`}>
         <Thumb m={m} />

@@ -25,11 +25,12 @@ export function CutInspector({ clip, onPlan, media = null, onAppend }: {
             <dt>{t("info.kind")}</dt><dd className="text-right text-[#e8eef8]">{t(`cut_kind.${clip.kind}`)}</dd>
             <dt>{t("start")}</dt><dd className="text-right text-[#e8eef8]" data-cut-start={round(clip.start)}>{round(clip.start)} s</dd>
             <dt>{t("length")}</dt><dd className="text-right text-[#e8eef8]" data-cut-len={round(clipLength(clip))}>{round(clipLength(clip))} s</dd>
-            {clip.kind === "video" && <><dt>{t("cut_from_source")}</dt><dd className="text-right text-[#e8eef8]">{round(clip.in)} s</dd></>}
+            {(clip.kind === "video" || clip.kind === "audio") && <><dt>{t(clip.kind === "audio" ? "cut_from_sound" : "cut_from_source")}</dt>
+              <dd className="text-right text-[#e8eef8]">{round(clip.in)} s</dd></>}
           </dl>
           {clip.missing && (
             <p className="flex gap-1.5 rounded-[4px] border border-[#ff6b8a]/40 bg-[#ff6b8a]/10 px-2.5 py-2 leading-relaxed text-[#ff6b8a]">
-              <AlertTriangle size={13} className="mt-0.5 shrink-0" /> {t("cut_missing")}
+              <AlertTriangle size={13} className="mt-0.5 shrink-0" /> {t(clip.kind === "audio" ? "cut_audio_missing_hint" : "cut_missing")}
             </p>
           )}
           {clip.kind === "placeholder" && clip.shot_id && (
@@ -47,19 +48,20 @@ export function CutInspector({ clip, onPlan, media = null, onAppend }: {
 function MediaAppend({ media, onAppend }: { media: { kind: string; name: string }; onAppend?: () => void }) {
   const { t } = useTranslation("studio")
   const ok = media.kind === "image" || media.kind === "video"
+  const sound = media.kind === "music" || media.kind === "audio"
   return (
     <section className="flex h-full min-h-0 flex-col overflow-y-auto p-3" data-studio-panel="inspector">
       <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("properties")}</h2>
       <p className="mt-3 break-words text-xs font-bold text-[#e8eef8]">{media.name}</p>
-      {ok ? (
+      {ok || sound ? (
         <>
           <button type="button" onClick={onAppend} data-cut-append
             className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-[4px] bg-[#69d7ff] py-1.5 text-xs font-black text-[#08111c]">
-            <ListPlus size={13} /> {t("cut_append")}
+            <ListPlus size={13} /> {t(sound ? (media.kind === "music" ? "cut_append_music" : "cut_append_voice") : "cut_append")}
           </button>
-          <p className="mt-2 text-[10px] leading-relaxed text-[#68758a]">{t("cut_append_hint")}</p>
+          <p className="mt-2 text-[10px] leading-relaxed text-[#68758a]">{t(sound ? "cut_append_sound_hint" : "cut_append_hint")}</p>
         </>
-      ) : <p className="mt-3 rounded-[4px] border border-[#46617f] bg-[#111827] px-2.5 py-2 text-[11px] leading-relaxed text-[#8d9ab0]">{t("cut_no_audio_yet")}</p>}
+      ) : <p className="mt-3 rounded-[4px] border border-[#46617f] bg-[#111827] px-2.5 py-2 text-[11px] leading-relaxed text-[#8d9ab0]">{t("cut_not_on_timeline")}</p>}
     </section>
   )
 }

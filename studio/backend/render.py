@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from . import jobs, plan, render_args, timeline
-from ._sources import IMAGE_EXT, VIDEO_EXT
+from ._sources import AUDIO_EXT, IMAGE_EXT, VIDEO_EXT
 from ._store import is_id, new_id, project_root, read_json, root, safe_rel, write_json
 
 logger = logging.getLogger("hhmod_studio.render")
@@ -75,15 +75,22 @@ def _segments(pid: str, clips: list[dict]) -> list[dict]:
     return segs
 
 
+def _audio(pid: str, tl: dict) -> list[dict]:
+    sound = [c for t in tl["tracks"] if t["kind"] == "audio" for c in t["clips"]]
+    return render_args.audio_parts(sound, exists=lambda rel: bool(safe_rel(pid, rel, AUDIO_EXT)))
+
+
 def start(pid: str) -> dict:
     tl = timeline.load(pid)
-    clips = tl["tracks"][0]["clips"]
-    if not clips:
+    clips = timeline.clips_of(tl)
+    if not clips and not _audio(pid, tl):          # nur gelöschter Ton ergäbe einen Film der Länge 0
         raise plan.PlanError("studio_render_empty")
     size = render_args.frame_size(plan.get_head(pid)["aspect_ratio"])
 
     def work(progress: jobs.Progress) -> dict:
-        segs = _segments(pid, clips)
+        sound = _audio(pid, tl)
+        lost = sum(1 for c in timeline.all_clips(tl) if c["kind"] == "audio") - len(sound)
+        segs = render_args.pad_to(_segments(pid, clips), render_args.audio_end(sound))
         seconds = render_args.total_seconds(segs)
         name = f"{new_id()}.mp4"
         out_dir = root(pid, create=True) / "renders"
@@ -95,7 +102,7 @@ def start(pid: str) -> dict:
                 if s["kind"] == "placeholder" and render_args.label_text(s.get("label", "")):
                     texts[i] = Path(td) / f"{i}.txt"
                     texts[i].write_text(render_args.wrap(render_args.label_text(s["label"]), size), encoding="utf-8")
-            cmd = render_args.command(segs, project_root(pid), tmp, size=size, fps=tl["fps"], text_files=texts)
+            cmd = render_args.command(segs, project_root(pid), tmp, size=size, fps=tl["fps"], text_files=texts, audio=sound)
             try:
                 _run_ffmpeg(cmd, seconds, lambda f: progress.set(done=round(f * 100)))
                 tmp.replace(out_dir / name)
@@ -104,7 +111,7 @@ def start(pid: str) -> dict:
             finally:
                 tmp.unlink(missing_ok=True)
         meta = {"duration": seconds, "width": size[0], "height": size[1], "fps": tl["fps"], "revision": tl["revision"],
-                "clips": len(clips), "missing": render_args.missing_count(segs),
+                "clips": len(timeline.all_clips(tl)), "missing": render_args.missing_count(segs) + lost,
                 "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
         write_json(out_dir / f"{name}.json", meta)
         progress.set(done=100)

@@ -13,7 +13,7 @@ def overview(pid: str) -> dict:
         "shots": len(shots),
         "with_image": sum(1 for s in shots if s.get("image_rel")),
         "with_video": sum(1 for s in shots if s.get("video_rel")),
-        "clips": len(timeline.load(pid)["tracks"][0]["clips"]),
+        "clips": len(timeline.all_clips(timeline.load(pid))),
         "atelier": bool(atelier["available"]) and not atelier["plan_exists"],
         "books": draft_book.count(pid),
     }

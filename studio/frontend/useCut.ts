@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { latestOnly } from "./latestOnly"
 import { errorCode, errorText } from "./planLogic"
 import type { Viewport } from "./timeline"
-import { clipsOf, timelineApi, type Timeline } from "./timelineApi"
+import { clipsOf, findClip, timelineApi, type Timeline } from "./timelineApi"
 
 /** Zustand für „Schneiden“ (Etappe 4a): Schnittfassung laden, aus dem Drehbuch übernehmen (mit Rückfrage), Auswahl. */
 export function useCut(projectId: string, active: boolean) {
@@ -51,7 +51,7 @@ export function useCut(projectId: string, active: boolean) {
   const clips = clipsOf(timeline)
   return {
     timeline, setTimeline, clips, busy, notice, setNotice, confirm, selected, select: setSelected, reload: load, view, setView,
-    clip: clips.find((c) => c.id === selected) ?? null,
+    clip: findClip(timeline, selected),                               // auf allen Spuren (auch Ton, 5a)
     fromPlan: () => (clips.length ? setConfirm(true) : void fromPlan(false)),
     confirmReplace: () => void fromPlan(true),
     closeConfirm: () => setConfirm(false),

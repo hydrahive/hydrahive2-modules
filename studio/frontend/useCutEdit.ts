@@ -1,24 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { LibraryItem } from "./api"
-import { append, duplicate, fromLibrary, moveTo, paste, remove, splitAt, splitKeep, trim } from "./cutEdit"
+import { needsLength, withLength, type AudioTrack } from "./cutAudio"
 import { History } from "./cutHistory"
 import type { EditAction } from "./cutKeys"
 import { AutoSaver, type SaveState } from "./cutSave"
-import { clipsOf, timelineApi, type Timeline, type TimelineClip } from "./timelineApi"
+import {
+  addMedia as addTo, canSplit, editTracks, moveAudioClip, moveVideoClip, toTimeline, trackOf, tracksOf, trimTracks,
+  type Clipboard, type Tracks,
+} from "./cutTracks"
+import { timelineApi, type Timeline } from "./timelineApi"
 
 const newId = () => crypto.randomUUID().replace(/-/g, "")
 
-/** Bearbeiten im Reiter „Schneiden“ (4b): Änderungen, Rückgängig/Wiederholen, automatisch speichern, Einrasten.
- *  `timeline` kommt aus useCut; eigene Änderungen behalten dessen `revision`, nur Laden vom Server setzt sie neu –
- *  daran erkennt der Hook, wann der Verlauf neu beginnt. Die echte revision fürs Speichern führt der AutoSaver. */
+/** Bearbeiten im Reiter „Schneiden“ (4b, 5a): Änderungen auf allen Spuren, Rückgängig/Wiederholen, automatisch
+ *  speichern, Einrasten. `timeline` kommt aus useCut; eigene Änderungen behalten dessen `revision`, nur Laden vom
+ *  Server setzt sie neu – daran erkennt der Hook, wann der Verlauf neu beginnt. Die echte revision fürs Speichern führt
+ *  der AutoSaver. */
 export function useCutEdit(projectId: string, timeline: Timeline | null, setTimeline: (t: Timeline) => void,
-  selected: string | null, select: (id: string | null) => void, time: number) {
-  const [hist] = useState(() => new History<TimelineClip[]>([]))   // ein Objekt je Hook, Inhalt ändert sich
+  selected: string | null, select: (id: string | null) => void, time: number, lengths: Record<string, number> = {}) {
+  // `lengths`: echte Länge der Tondateien (media_rel → s, aus der Wellenform) – Grenze beim Kürzen
+  const [hist] = useState(() => new History<Tracks>(tracksOf(null)))   // ein Objekt je Hook, Inhalt ändert sich
   const loadedFor = useRef<number | null>(null)
   const saver = useRef<AutoSaver | null>(null)
-  const clipboard = useRef<TimelineClip | null>(null)
+  const clipboard = useRef<Clipboard | null>(null)
   const durations = useRef<Record<string, number>>({})
-  const trimFrom = useRef<TimelineClip[] | null>(null)
+  const trimFrom = useRef<Tracks | null>(null)
   const [save, setSave] = useState<SaveState>("saved")
   const [snap, setSnap] = useState(true)
   const [flags, setFlags] = useState({ undo: false, redo: false })
@@ -35,7 +41,7 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
   // aus useCut – nur ein neuer Stand vom Server ändert sie.
   if (timeline && timeline.revision !== seen) {
     setSeen(timeline.revision)
-    hist.reset(clipsOf(timeline))
+    hist.reset(tracksOf(timeline))
     setFlags({ undo: false, redo: false })
   }
   useEffect(() => {
@@ -45,16 +51,17 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
   }, [timeline])
 
   const fps = timeline?.fps ?? 25
-  const clips = clipsOf(timeline)
+  const tracks = tracksOf(timeline)
 
-  const apply = useCallback((next: TimelineClip[], record = true) => {
+  const apply = useCallback((next: Tracks, record = true) => {
     if (!timeline) return
-    const tl: Timeline = { ...timeline, tracks: [{ id: "V1", kind: "video", clips: next }] }
+    const tl = toTimeline(timeline, next)
     if (record) hist.push(next)
     setTimeline(tl)
     saver.current?.change(tl)
     syncFlags()
   }, [timeline, setTimeline, hist, syncFlags])
+  const change = useCallback((next: Tracks) => { if (next !== tracks) apply(next) }, [apply, tracks])
 
   const run = useCallback((a: EditAction) => {
     const h = hist
@@ -62,43 +69,62 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
       if (a.kind === "undo" ? h.canUndo : h.canRedo) apply(a.kind === "undo" ? h.undo() : h.redo(), false)
       return
     }
-    if (a.kind === "split") return apply(splitAt(clips, time, fps, newId))
-    if (a.kind === "split-keep") return apply(splitKeep(clips, time, a.drop, fps, newId))
-    if (a.kind === "copy") { clipboard.current = clips.find((c) => c.id === selected) ?? null; return }
-    if (a.kind === "paste") { if (clipboard.current) apply(paste(clips, clipboard.current, selected, fps, newId)); return }
-    if (!selected) return
-    if (a.kind === "delete") { apply(remove(clips, selected, fps)); select(null) }
-    else if (a.kind === "duplicate") apply(duplicate(clips, selected, fps, newId))
-  }, [apply, clips, fps, selected, select, time, hist])
+    if (a.kind === "copy") {
+      const t = trackOf(tracks, selected)
+      const c = t ? tracks[t].find((x) => x.id === selected) : undefined
+      clipboard.current = t && c ? { clip: c, track: t } : null
+      return
+    }
+    const next = editTracks(tracks, a, { selected, time, fps, newId }, clipboard.current)
+    change(next)
+    if (a.kind === "delete" && next !== tracks) select(null)
+  }, [apply, change, tracks, fps, selected, select, time, hist])
 
   // Kürzen: immer vom Stand beim Greifen aus (delta = Gesamtverschiebung), während des Ziehens ohne Verlaufsschritt,
   // beim Loslassen genau ein Schritt
   const onTrim = useCallback((id: string, edge: "start" | "end", delta: number, final: boolean) => {
-    if (!trimFrom.current) trimFrom.current = clips
-    const next = trim(trimFrom.current, id, edge, delta, fps, durations.current)
+    if (!trimFrom.current) trimFrom.current = tracks
+    const known = { ...durations.current }                         // Medienlänge je Clip: Bibliothek, sonst Wellenform
+    for (const c of [...trimFrom.current.A1, ...trimFrom.current.A2]) if (lengths[c.media_rel]) known[c.id] = lengths[c.media_rel]
+    const next = trimTracks(trimFrom.current, id, edge, delta, fps, known)
     if (!final) { apply(next, false); return }
     const before = trimFrom.current
     trimFrom.current = null
     if (JSON.stringify(before) !== JSON.stringify(next)) { hist.push(next); apply(next, false) }
-  }, [apply, clips, fps, hist])
+  }, [apply, tracks, fps, hist, lengths])
 
-  const addMedia = useCallback((item: LibraryItem, index?: number): boolean => {
-    const c = fromLibrary(item, newId)
-    if (!c) return false
-    if (item.kind === "video" && item.duration) durations.current[c.id] = item.duration
-    apply(append(clips, c, index ?? clips.length, fps))
-    select(c.id)
+  /** Medium ablegen: Bild/Video an Stelle `index` auf V1, Ton ab `at` (Standard: Abspielkopf) auf seine Spur. */
+  const place = useCallback((item: LibraryItem, index?: number, at?: number, track?: AudioTrack): boolean => {
+    const r = addTo(tracks, item, { index, time: at ?? time, track }, fps, newId)
+    if (!r) return false
+    if (item.duration) durations.current[r.clip.id] = item.duration
+    apply(r.tracks)
+    select(r.clip.id)
     return true
-  }, [apply, clips, fps, select])
+  }, [apply, tracks, fps, select, time])
+  const placeLatest = useRef(place)
+  useEffect(() => { placeLatest.current = place })
 
-  const move = useCallback((id: string, index: number) => apply(moveTo(clips, id, index, fps)), [apply, clips, fps])
+  /** Kennt die Bibliothek die Länge eines Tons nicht, wird sie zuerst gemessen (Spec 5a „Länge eines Tonclips“) –
+   *  sonst entstünde ein zu langer Clip. Danach legt der jeweils aktuelle Stand ab (placeLatest). */
+  const addMedia = useCallback((item: LibraryItem, index?: number, at?: number, track?: AudioTrack): boolean => {
+    if (!needsLength(item)) return place(item, index, at, track)
+    const when = at ?? time
+    timelineApi.waveform(projectId, item.rel)
+      .then((w) => placeLatest.current(withLength(item, w.duration), index, when, track),
+        () => placeLatest.current(item, index, when, track))
+    return true
+  }, [place, projectId, time])
+
+  const move = useCallback((id: string, index: number) => change(moveVideoClip(tracks, id, index, fps)), [change, tracks, fps])
+  const moveAudio = useCallback((id: string, track: AudioTrack, start: number) => change(moveAudioClip(tracks, id, track, start, fps)), [change, tracks, fps])
   const flush = useCallback(() => saver.current?.flush(), [])
   const learnDuration = useCallback((clipId: string, seconds: number) => { if (seconds > 0) durations.current[clipId] = seconds }, [])
 
   return {
-    save, snap, toggleSnap: () => setSnap((s) => !s), run, onTrim, addMedia, move, flush, learnDuration,
+    save, snap, toggleSnap: () => setSnap((s) => !s), run, onTrim, addMedia, move, moveAudio, flush, learnDuration,
     canUndo: flags.undo, canRedo: flags.redo,
-    canSplit: splitAt(clips, time, fps, () => "x") !== clips,
+    canSplit: canSplit(tracks, { selected, time, fps, newId }),
     snapTo: snap ? [time] : [],
   }
 }
