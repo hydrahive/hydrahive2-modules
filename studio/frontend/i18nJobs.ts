@@ -51,6 +51,7 @@ export const jobs_de = {
     too_big: "Das Video ist zu groß und wurde nicht gespeichert.",
     bad_video: "Die Antwort des Anbieters war kein gültiges Video. Bitte erneut versuchen.",
     image_gone: "Das Bild dieses Shots fehlt. Bitte zuerst ein Bild erzeugen oder wählen.",
+    render_failed: "Der Film konnte nicht erzeugt werden. Bitte erneut versuchen. Bleibt es dabei, hilft ein Blick in die Admin-Konsole unter System.",
     internal: "Etwas ist schiefgegangen. Bitte erneut versuchen.",
   },
 }
@@ -106,6 +107,7 @@ export const jobs_en: typeof jobs_de = {
     too_big: "The video is too large and was not saved.",
     bad_video: "The provider's answer was not a valid video. Please try again.",
     image_gone: "The image of this shot is missing. Please create or choose an image first.",
+    render_failed: "The film could not be created. Please try again. If it keeps failing, have a look at the admin console under System.",
     internal: "Something went wrong. Please try again.",
   },
 }
