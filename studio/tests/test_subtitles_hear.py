@@ -184,6 +184,9 @@ def test_cue_making_from_segments() -> None:
         {"start": 0.4, "end": 2, "text": " Nein, das stimmt nicht.", "no_speech_prob": 0.1},   # überlappt → beginnt später
         {"start": 3, "end": 4, "text": " [Musik]", "no_speech_prob": 0.7},           # keine Sprache
         {"start": 4.2, "end": 4.8, "text": "   ", "no_speech_prob": 0},             # leer
+        {"start": 4.85, "end": 4.9, "text": " *Geschrei*", "no_speech_prob": 0},     # nur Geräusch-Hinweise
+        {"start": 4.9, "end": 4.95, "text": "(lacht)", "no_speech_prob": 0},
+        {"start": 4.95, "end": 4.99, "text": " ♪ ♪", "no_speech_prob": 0},
         {"start": 5, "end": 25, "text": " Ole steht am Ende des alten Holzstegs und schaut lange auf das graue Wasser hinaus. "
                                          "Hinter ihm kreisen die Möwen.", "no_speech_prob": 0},
         {"start": 30, "end": 40, "text": " Ende.", "no_speech_prob": 0},             # hinter dem Film → gekappt
@@ -193,12 +196,14 @@ def test_cue_making_from_segments() -> None:
     texts = [c["text"] for c in cues]
     assert texts[0] == "Ja." and (cues[0]["start"], cues[0]["end"]) == (0, 0.5)
     assert texts[1] == "Nein, das stimmt nicht." and cues[1]["start"] == 0.5
-    assert "[Musik]" not in " ".join(texts)
+    assert "[Musik]" not in " ".join(texts) and "Geschrei" not in " ".join(texts) and "lacht" not in " ".join(texts)
     assert all(c["text"].strip() for c in cues) and not [c for c in cues if 4 <= c["start"] < 5]
     long = [c for c in cues if 5 <= c["start"] < 25]
     assert len(long) >= 2 and all(c["end"] - c["start"] <= 7 + 1e-6 for c in long)
     assert all(len(line) <= 42 for c in cues for line in c["text"].split("\n"))
     assert cues[-1]["text"] == "Ende." and cues[-1]["end"] == 32
+    kept = cues_from([{"start": 0, "end": 2, "text": " Er sagt *leise*: Danke.", "no_speech_prob": 0}], film_end=5)
+    assert kept[0]["text"] == "Er sagt *leise*: Danke."                     # Hinweis mitten im Satz bleibt
     from itertools import pairwise
     assert all(b["start"] >= a["end"] - 1e-9 for a, b in pairwise(cues))
 

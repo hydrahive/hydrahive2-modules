@@ -3,6 +3,7 @@ Untertitel. Als Auftrag im Hintergrund, höchstens einer je Projekt und Sprache.
 from __future__ import annotations
 
 import math
+import re
 import tempfile
 from pathlib import Path
 
@@ -21,6 +22,8 @@ from ._store import project_lock, project_root
 
 MAX_SECONDS = 3600
 NO_SPEECH = 0.6
+# Nur ein Geräusch-Hinweis der Erkennung („*Geschrei*“, „[Musik]“, „(lacht)“, „♪“) – kein gesprochener Text (Probe 18.10.)
+_NOISE = re.compile(r"^\s*(\*[^*]*\*|\[[^\]]*\]|\([^)]*\)|[♪♫\s]+)\s*$")
 
 
 def _num(v) -> float | None:
@@ -36,7 +39,7 @@ def cues_from(segments: list, *, film_end: float) -> list[dict]:
         a, b = _num(s.get("start")), _num(s.get("end"))
         text = " ".join(str(s.get("text") or "").split())
         p = _num(s.get("no_speech_prob")) or 0.0
-        if a is None or b is None or p > NO_SPEECH:          # leerer Text ergibt bei spread() keinen Untertitel
+        if a is None or b is None or p > NO_SPEECH or _NOISE.match(text):   # leerer Text ergibt bei spread() keinen
             continue
         a = max(a, cues[-1]["end"] if cues else 0.0, 0.0)
         b = min(max(b, a + subtitles.MIN_SECONDS), max(film_end, a + subtitles.MIN_SECONDS))
