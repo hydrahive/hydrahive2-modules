@@ -17,12 +17,14 @@ interface Props {
   onSeek: (t: number) => void
   onPlay: () => void
   bindVideo: (el: HTMLVideoElement | null) => void
+  /** Ton der Tonspuren (unsichtbar, folgt der Film-Uhr). */
+  sound?: React.ReactNode
 }
 
 const frame = "relative flex aspect-video max-h-full w-full items-center justify-center overflow-hidden rounded-[4px] border border-[#223048] bg-black"
 
 /** Vorschau im Reiter „Schneiden“: spielt den ganzen Film über alle Clips (Video, Standbild, Platzhalter, Lücke). */
-export function CutPreview({ clips, base, fps, time, total, playing, current: c, onSeek, onPlay, bindVideo }: Props) {
+export function CutPreview({ clips, base, fps, time, total, playing, current: c, onSeek, onPlay, bindVideo, sound }: Props) {
   const { t } = useTranslation("studio")
   const next = nextMediaClip(clips, time)
   const btn = "rounded-[4px] p-1.5 text-[#c3ccdd] hover:bg-[#111827] hover:text-white disabled:opacity-30"
@@ -43,6 +45,7 @@ export function CutPreview({ clips, base, fps, time, total, playing, current: c,
             </div>
           )}
           {/* nächster Videoclip lädt schon im Hintergrund, damit der Wechsel nicht ruckelt */}
+          {sound}
           {next && next.id !== c?.id && <video key={`pre-${next.id}`} src={fileUrl(fileOf(base, next.media_rel))} preload="auto" muted className="hidden" data-cut-preload={next.id} />}
         </div>
       </div>

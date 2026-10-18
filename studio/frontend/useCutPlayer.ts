@@ -2,16 +2,16 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { activeAt, filmLength, sourceTime } from "./cutLogic"
 import type { TimelineClip } from "./timelineApi"
 
-/** Wiedergabe der Schnittfassung (Etappe 4a): eine eigene Uhr (requestAnimationFrame) führt; das sichtbare <video>
+/** Wiedergabe der Schnittfassung (Etappe 4a; `clips` = Bildspur, `all` = alle Spuren für die Länge): eine eigene Uhr (requestAnimationFrame) führt; das sichtbare <video>
  *  folgt ihr. Beim Clipwechsel wird das Video an die Soll-Stelle gesetzt, sonst läuft es frei (kein „Daumenkino“).
  *  Idee wie im Kern-Videoschnitt (playbackSync.ts), eigene Umsetzung. */
-export function useCutPlayer(clips: TimelineClip[]) {
+export function useCutPlayer(clips: TimelineClip[], all: TimelineClip[] = clips) {
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [rate, setRate] = useState(1)
   const video = useRef<HTMLVideoElement | null>(null)
   const clock = useRef({ t: 0, at: 0 })
-  const total = filmLength(clips)
+  const total = filmLength(all)                          // Ton kann über das letzte Bild hinausreichen (5a)
   const current = activeAt(clips, time)
 
   const seek = useCallback((t: number) => {
@@ -62,5 +62,5 @@ export function useCutPlayer(clips: TimelineClip[]) {
   }, [playing, time, total, seek])
 
   const bindVideo = useCallback((el: HTMLVideoElement | null) => { video.current = el }, [])
-  return { time, total, playing, current, seek, toggle, shuttle, bindVideo }
+  return { time, total, playing, rate, current, seek, toggle, shuttle, bindVideo }
 }

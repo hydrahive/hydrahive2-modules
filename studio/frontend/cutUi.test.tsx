@@ -58,11 +58,18 @@ describe("4b – Zeitleiste zum Bearbeiten", () => {
 })
 
 describe("4b – Bibliothek und Tasten", () => {
-  it("Eigenschaften eines Mediums: „An die Zeitleiste anhängen“ nur für Bild/Video", () => {
-    expect(html(<CutInspector clip={null} onPlan={noop} media={{ kind: "image", name: "Leuchtturm" }} onAppend={noop} />)).toContain("data-cut-append")
+  it("Eigenschaften eines Mediums: Bild/Video anhängen, Ton auf seine Spur (5a), Figuren nicht", () => {
+    const img = html(<CutInspector clip={null} onPlan={noop} media={{ kind: "image", name: "Leuchtturm" }} onAppend={noop} />)
+    expect(img).toContain("data-cut-append")
+    expect(img).toContain("cut_append<")
     const music = html(<CutInspector clip={null} onPlan={noop} media={{ kind: "music", name: "M" }} onAppend={noop} />)
-    expect(music).not.toContain("data-cut-append")
-    expect(music).toContain("cut_no_audio_yet")
+    expect(music).toContain("data-cut-append")
+    expect(music).toContain("cut_append_music")
+    expect(music).toContain("cut_append_sound_hint")
+    expect(html(<CutInspector clip={null} onPlan={noop} media={{ kind: "audio", name: "S" }} onAppend={noop} />)).toContain("cut_append_voice")
+    const fig = html(<CutInspector clip={null} onPlan={noop} media={{ kind: "element", name: "Ole" }} onAppend={noop} />)
+    expect(fig).not.toContain("data-cut-append")
+    expect(fig).toContain("cut_not_on_timeline")
   })
 
   it("Tasten → Bearbeitung (nur im Reiter Schneiden)", () => {

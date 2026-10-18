@@ -8,6 +8,7 @@ import { BatchStatus } from "./BatchStatus"
 import { followView } from "./cutLogic"
 import { CutInspector } from "./CutInspector"
 import { CutPreview } from "./CutPreview"
+import { CutSound } from "./CutSound"
 import { CutTimeline } from "./CutTimeline"
 import { CutToolbar } from "./CutToolbar"
 import { editAction } from "./cutKeys"
@@ -40,6 +41,9 @@ import { useBatch } from "./useBatch"
 import { useCut } from "./useCut"
 import { useCutEdit } from "./useCutEdit"
 import { useCutPlayer } from "./useCutPlayer"
+import { useWaveforms } from "./useWaveforms"
+import { appendNotice, cutDrops } from "./cutWiring"
+import { allClips, clipsOf } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
 import { useDraft } from "./useDraft"
 import { useFree } from "./useFree"
@@ -53,7 +57,8 @@ import type { Workspace } from "./workspaces"
 
 const toastCls = "pointer-events-none fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-[4px] border border-[#46617f] bg-[#0e1420] px-3 py-1.5 text-xs text-[#c3ccdd]"
 
-/** Studio: Planen und Erzeugen arbeiten auf dem Drehbuch, Schneiden auf der Schnittfassung. Ton, Untertitel, Ausgabe kommen noch. */
+/** Studio: Planen und Erzeugen arbeiten auf dem Drehbuch, Schneiden und Ausgabe auf der Schnittfassung. Ton (Mixer) und
+ *  Untertitel kommen noch. */
 export function StudioPage() {
   const { t } = useTranslation("studio")
   const lib = useLibrary()
@@ -61,7 +66,9 @@ export function StudioPage() {
   const [stamp, setStamp] = useState("")                        // Drehbuch/Schnitt geändert → Fortschritt neu
   const guide = useGuide(lib.projectId, workspace, setWorkspace, stamp)
   const cut = useCut(lib.projectId, workspace === "edit" || workspace === "deliver")   // „Ausgabe“ braucht die Fassung
-  const cp = useCutPlayer(cut.clips)
+  const every = allClips(cut.timeline)
+  const cp = useCutPlayer(cut.clips, every)
+  const waves = useWaveforms(lib.projectId, workspace === "edit" ? every : [])
   const ed = useCutEdit(lib.projectId, cut.timeline, cut.setTimeline, cut.selected, cut.select, cp.time)
   const editKeys = (a: Parameters<typeof editAction>[0]) => { const x = editAction(a); if (x) ed.run(x); return !!x }
   const changeWs = (w: Workspace) => { if (workspace === "edit" && w !== "edit") void ed.flush(); setWorkspace(w) }   // verlassen → sofort speichern
@@ -76,7 +83,7 @@ export function StudioPage() {
   const delivering = s.workspace === "deliver"
   const soon = s.workspace === "audio" || s.workspace === "subtitles" ? s.workspace : null
   const p = usePlan(lib.projectId, shotsWs || delivering)                 // „Ausgabe“: Format aus dem Drehbuch
-  const nextStamp = `${p.rev}:${cut.timeline?.revision ?? ""}:${cut.clips.length}`
+  const nextStamp = `${p.rev}:${cut.timeline?.revision ?? ""}:${every.length}`
   if (nextStamp !== stamp) setStamp(nextStamp)                   // beim Rendern abgeglichen, kein Effect nötig
   const plan = { ...p, select: (x: Parameters<typeof p.select>[0]) => { s.clearMedia(); p.select(x) } }   // Auswahl im Drehbuch löst das Medium ab
   const library = <LibraryPanel items={lib.items} loading={lib.loading} error={lib.error} truncated={lib.truncated} selected={s.mediaId} onSelect={s.selectMedia} />
@@ -109,7 +116,7 @@ export function StudioPage() {
         <WorkspaceIntro workspace={s.workspace} open={guide.introOpen} onToggle={guide.toggleIntro} />
         {delivering ? (
           <div className="min-h-0 flex-1">
-            <DeliverPanel clips={cut.clips} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} job={dv.job}
+            <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} job={dv.job}
               busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")} />
           </div>
         ) : <>
@@ -139,7 +146,9 @@ export function StudioPage() {
                     onStart={() => void p.addScene()} onImport={() => p.setDialog({ kind: "import" })} onHead={() => plan.select({ kind: "head" })}
                     onIdea={dr.openIdea} onBook={dr.openBook} />
                 : cutting ? <CutPreview clips={cut.clips} base={cut.timeline?.base ?? ""} fps={cut.timeline?.fps ?? 25} time={cp.time} total={cp.total}
-                    playing={cp.playing} current={cp.current} onSeek={cp.seek} onPlay={cp.toggle} bindVideo={cp.bindVideo} />
+                    playing={cp.playing} current={cp.current} onSeek={cp.seek} onPlay={cp.toggle} bindVideo={cp.bindVideo}
+                    sound={<CutSound tracks={[clipsOf(cut.timeline, "A1"), clipsOf(cut.timeline, "A2")]} base={cut.timeline?.base ?? ""}
+                      time={cp.time} playing={cp.playing} rate={cp.rate} />} />
                 : <PreviewPanel item={s.item} bind={s.player.bind} time={s.item ? s.player.time : 0} duration={s.player.duration}
                     playing={s.player.playing} onPlay={s.player.toggle} onSeek={s.seek} />}
             </div>
@@ -150,7 +159,7 @@ export function StudioPage() {
                     busy={p.busy} onChange={fr.setForm} onRun={() => void fr.run()} />
                 : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} /> : <GenerateHint />)
                 : s.workspace === "edit" ? <CutInspector clip={s.item ? null : cut.clip} onPlan={toPlan} media={s.item}
-                    onAppend={() => { if (s.item && ed.addMedia(s.item)) { s.clearMedia(); cut.setNotice(t("cut_notice_appended")) } }} />
+                    onAppend={() => { const k = appendNotice(s.item, ed.addMedia); if (k) { s.clearMedia(); cut.setNotice(t(k)) } }} />
                 : <MediaInfo item={s.item} />}
             </div>
           </div>
@@ -168,8 +177,7 @@ export function StudioPage() {
                   selected={cut.selected} busy={cut.busy} onView={cut.setView} onSeek={cp.seek} onFromPlan={cut.fromPlan}
                   toolbar={<CutToolbar save={ed.save} selected={cut.selected} canUndo={ed.canUndo} canRedo={ed.canRedo} canSplit={ed.canSplit}
                     snap={ed.snap} onAction={ed.run} onSnap={ed.toggleSnap} onReload={() => void cut.reload()} />}
-                  edit={{ onMove: ed.move, onTrim: ed.onTrim, dropAt: null, snapTo: ed.snapTo,
-                    onDrop: (mediaId, index) => { const it = lib.items.find((i) => i.id === mediaId); if (it && !ed.addMedia(it, index)) cut.setNotice(t("cut_no_audio_yet")) } }}
+                  {...cutDrops(lib.items, ed, every, () => cut.setNotice(t("cut_not_on_timeline")))} waveforms={waves}
                   onSelect={(id) => { s.clearMedia(); cut.select(id); const c = cut.clips.find((x) => x.id === id); if (c) cp.seek(c.start) }} />
             : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
         </div>

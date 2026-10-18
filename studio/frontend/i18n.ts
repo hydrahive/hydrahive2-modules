@@ -33,7 +33,7 @@ const de = {
   gen_pick_shot: "Wähle links einen Shot. Hier erzeugst du dann ein Bild, wählst eine Variante und machst daraus ein Video. Unten unter „Für alle …“ geht das für viele Shots auf einmal.",
   gen_state: { none: "ohne Bild", image: "Bild", video: "Video", running: "läuft", failed: "fehlgeschlagen" },
   soon: {
-    audio: "Hier kommen Tonspuren, Musik, Sprache und ein Mischpult hinzu. Bis dahin hörst du den Originalton der Videos beim Abspielen im Reiter „Schneiden“.",
+    audio: "Hier kommt das Mischpult: Lautstärke je Spur, Stumm und Solo, Ein- und Ausblenden. Musik und Sprache legst du schon jetzt im Reiter „Schneiden“ auf die Tonspuren.",
     subtitles: "Hier kommen Untertitel hinzu: aus der Sprache erkennen, bearbeiten, übersetzen und ins Video einbrennen.",
   },
   soon_to_cut: "Zum Schneiden",
@@ -113,7 +113,7 @@ const en: typeof de = {
   gen_pick_shot: "Select a shot on the left. Here you then create an image, pick a variant and turn it into a video. “For all …” below does this for many shots at once.",
   gen_state: { none: "no image", image: "image", video: "video", running: "running", failed: "failed" },
   soon: {
-    audio: "Audio tracks, music, voice and a mixer will be added here. Until then you hear the original sound of the videos when playing in the “Edit” tab.",
+    audio: "The mixer comes here: volume per track, mute and solo, fading in and out. You can already put music and voice on the sound tracks in the “Edit” tab.",
     subtitles: "Subtitles will be added here: recognise from speech, edit, translate and burn into the video.",
   },
   soon_to_cut: "Go to Edit",

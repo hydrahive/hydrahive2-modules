@@ -12,7 +12,8 @@ export interface TrackEdit {
   onMove: (id: string, index: number) => void
   /** Kürzen: Rand um `delta` Sekunden gegenüber dem Stand beim Greifen; `final` = losgelassen (ein Verlaufsschritt). */
   onTrim: (id: string, edge: "start" | "end", delta: number, final: boolean) => void
-  onDrop: (mediaId: string, index: number) => void
+  /** Medium aus der Bibliothek: `index` = Stelle auf V1, `at` = Filmzeit der Ablage (Ton landet dort auf seiner Spur). */
+  onDrop: (mediaId: string, index: number, at: number) => void
   /** Einfügemarke (Filmzeit) beim Ziehen – von außen gesetzt, damit die Anzeige testbar ist. */
   dropAt: number | null
   /** Ziele fürs Einrasten (z. B. Abspielkopf); leer = aus. */
@@ -84,14 +85,15 @@ export function CutTrack({ clips, base, view, time, selected, edit, onSelect, on
         onDrop={(e) => {
           if (!edit) return
           e.preventDefault()
-          const at = insertAt(clips, timeAt(e.currentTarget, e.clientX, view))
+          const when = timeAt(e.currentTarget, e.clientX, view)
+          const at = insertAt(clips, when)
           const clipId = e.dataTransfer.getData(CLIP_MIME)
           const mediaId = e.dataTransfer.getData(MEDIA_MIME)
           setDrag(null)
           if (clipId) {
             const from = [...clips].sort((a, b) => a.start - b.start).findIndex((c) => c.id === clipId)
             edit.onMove(clipId, from >= 0 && at > from ? at - 1 : at)             // Index in der Liste ohne den Clip
-          } else if (mediaId) edit.onDrop(mediaId, at)
+          } else if (mediaId) edit.onDrop(mediaId, at, when)
         }}>
         {clips.map((c) => <CutClip key={c.id} clip={c} base={base} view={view} active={c.id === selected} editable={!!edit}
           onSelect={onSelect} onTrimStart={startTrim} />)}
