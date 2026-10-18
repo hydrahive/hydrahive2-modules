@@ -101,6 +101,14 @@ def test_vorlagen_neue_feiertage():
     assert cal.matches(by["Muttertag"], dt.datetime(2027, 5, 9))
 
 
+def test_chanukka_und_advent_wechseln_sich_ab():
+    by = {t["name"]: t for t in cal.TEMPLATES}
+    rules = [{**by["Chanukka"], "id": "c", "enabled": True, "videos": ["chanukka.mp4"]},
+             {**by["2. Advent"], "id": "a", "enabled": True, "videos": ["advent2.mp4"]}]
+    c = cal.choose({"rules": rules}, dt.datetime(2026, 12, 8), {"chanukka.mp4", "advent2.mp4"})
+    assert sorted(c.videos) == ["advent2.mp4", "chanukka.mp4"]
+
+
 def test_advent_sonntag_gewinnt_vor_adventszeit():
     rules = [R(name="Advent", kind="advent", priority=40, videos=["advent.mp4"]),
              R(name="2. Advent", kind="advent_sunday", n=2, priority=45, videos=["advent2.mp4"])]

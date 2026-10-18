@@ -4,6 +4,8 @@ Chanukka/Ramadan/Zuckerfest: Termine berechnet am 18.10.2026 mit `convertdate` (
 25. Kislew; ab dem Vorabend, an dem das erste Licht brennt) und `hijridate` (Umm-al-Qura-Kalender; Ramadan 1.–letzter
 Tag, Zuckerfest 1.–3. Schawwal). Der Ramadan richtet sich je nach Gemeinde nach der Mondsichtung und kann um einen Tag
 abweichen. Nach 2035 neue Termine eintragen.
+
+Chanukka hat dieselbe Priorität wie die Adventssonntage: fallen beide zusammen, wechseln sich die Videos ab.
 """
 from __future__ import annotations
 
@@ -42,7 +44,7 @@ TEMPLATES = [
     {"name": "Nikolaus", "kind": "range", "from": "12-06", "to": "12-06", "priority": 50},
     {"name": "Weihnachten", "kind": "range", "from": "12-24", "to": "12-26", "priority": 60},
     {"name": "Silvester", "kind": "range", "from": "12-31", "to": "12-31", "priority": 60},
-    {"name": "Chanukka", "kind": "dates", "dates": _dates(_CHANUKKA), "priority": 48},
+    {"name": "Chanukka", "kind": "dates", "dates": _dates(_CHANUKKA), "priority": 45},
     {"name": "Ramadan", "kind": "dates", "dates": _dates(_RAMADAN), "priority": 30},
     {"name": "Zuckerfest", "kind": "dates", "dates": _dates(_ZUCKERFEST), "priority": 50},
     {"name": "Frühling", "kind": "season", "season": "spring", "priority": 10},
