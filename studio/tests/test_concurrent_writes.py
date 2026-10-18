@@ -57,15 +57,17 @@ def test_parallel_attach_keeps_every_image(client, auth_headers, ws) -> None:
 
     from backend import generate
     sc = client.post(f"{P}/scenes", headers=auth_headers, json={"title": "Hafen"}).json()
-    ids = [client.post(f"{P}/scenes/{sc['id']}/shots", headers=auth_headers, json={"prompt": f"p{i}"}).json()["id"] for i in range(4)]
+    ids = [client.post(f"{P}/scenes/{sc['id']}/shots", headers=auth_headers, json={"prompt": f"p{i}"}).json()["id"] for i in range(8)]
     d = ws / "studio/media/images"
     d.mkdir(parents=True, exist_ok=True)
-    for i in range(4):
-        (d / f"{i}.png").write_bytes(PNG)
+    for i in range(8):
+        for k in range(8):
+            (d / f"{i}-{k}.png").write_bytes(PNG)
 
     def attach(i: int) -> None:
-        for _ in range(10):
-            generate._attach(PROJECT_ID, sc["id"], ids[i], f"studio/media/images/{i}.png")
-    assert _hammer(4, attach) == []
+        for k in range(8):                              # jedes Bild einmal → am Ende 8 Varianten je Shot
+            generate._attach(PROJECT_ID, sc["id"], ids[i], f"studio/media/images/{i}-{k}.png")
+    assert _hammer(8, attach) == []
     shots = client.get(P, headers=auth_headers).json()["scenes"][0]["shots"]
-    assert [s["image_rel"] for s in shots] == [f"studio/media/images/{i}.png" for i in range(4)]
+    assert [s["image_rel"] for s in shots] == [f"studio/media/images/{i}-7.png" for i in range(8)]
+    assert [len(s["variants"]) for s in shots] == [8] * 8                               # keine Variante verloren

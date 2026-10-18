@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from . import _clean, plan
-from ._store import is_id, read_json, write_json
+from ._store import is_id, project_lock, read_json, write_json
 
 MAX_SHOTS = 50
 EDITABLE = ("shot", "prompt", "element_ids", "duration")      # Status und Medien ändert nur das Erzeugen (Etappe 3)
@@ -39,6 +39,16 @@ def _editable(data: dict) -> dict:
     return {k: data[k] for k in EDITABLE if k in data}
 
 
+def _locked(fn):
+    """Lesen-Ändern-Schreiben einer Szene unter der Projektsperre (Aufträge schreiben gleichzeitig in die Szene)."""
+    def run(pid: str, *args, **kw):
+        with project_lock(pid):
+            return fn(pid, *args, **kw)
+    run.__name__, run.__doc__ = fn.__name__, fn.__doc__
+    return run
+
+
+@_locked
 def add(pid: str, scene_id: str, data: dict) -> dict:
     scene = load_scene(pid, scene_id)
     shots = list(scene.get("shots") or [])
@@ -48,6 +58,7 @@ def add(pid: str, scene_id: str, data: dict) -> dict:
     return save_shots(pid, scene, [*shots, new])[-1]
 
 
+@_locked
 def update(pid: str, scene_id: str, shot_id: str, data: dict) -> dict:
     scene = load_scene(pid, scene_id)
     shots = list(scene.get("shots") or [])
@@ -56,12 +67,14 @@ def update(pid: str, scene_id: str, shot_id: str, data: dict) -> dict:
     return save_shots(pid, scene, shots)[i]
 
 
+@_locked
 def delete(pid: str, scene_id: str, shot_id: str) -> None:
     scene = load_scene(pid, scene_id)
     i = _find(scene, shot_id)
     save_shots(pid, scene, [s for j, s in enumerate(scene.get("shots") or []) if j != i])
 
 
+@_locked
 def reorder(pid: str, scene_id: str, shot_ids: list) -> list[dict]:
     scene = load_scene(pid, scene_id)
     by_id = {s.get("id"): s for s in scene.get("shots") or [] if isinstance(s, dict)}

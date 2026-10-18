@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from . import _clean, image_provider, jobs, plan, presets, shots
 from ._clean import CAMERA_KEYS
-from ._store import new_id, project_root, root, safe_rel, write_json
+from ._store import new_id, project_lock, project_root, root, safe_rel, write_json
 
 MAX_REFERENCES = 3           # mehr nehmen manche Modelle nicht an (HTTP 400)
 MAX_VARIANTS = 8
@@ -96,15 +96,16 @@ def _work(pid: str, scene_id: str, shot_id: str) -> dict:
 
 def _attach(pid: str, scene_id: str, shot_id: str, rel: str) -> None:
     """Neues Bild an den Shot hängen (Szene frisch laden – der Nutzer kann inzwischen bearbeitet haben)."""
-    scene = shots.load_scene(pid, scene_id)
-    items = list(scene.get("shots") or [])
-    for i, s in enumerate(items):
-        if isinstance(s, dict) and s.get("id") == shot_id:
-            variants = [v for v in s.get("variants") or [] if isinstance(v, str)] + [rel]
-            items[i] = {**s, "image_rel": rel, "variants": variants[-MAX_VARIANTS:],
-                        "status": "image_ready" if s.get("status") in (None, "planned", "failed", "image_ready") else s["status"]}
-            shots.save_shots(pid, scene, items)
-            return
+    with project_lock(pid):
+        scene = shots.load_scene(pid, scene_id)
+        items = list(scene.get("shots") or [])
+        for i, s in enumerate(items):
+            if isinstance(s, dict) and s.get("id") == shot_id:
+                variants = [v for v in s.get("variants") or [] if isinstance(v, str) and v != rel] + [rel]
+                items[i] = {**s, "image_rel": rel, "variants": variants[-MAX_VARIANTS:],
+                            "status": "image_ready" if s.get("status") in (None, "planned", "failed", "image_ready") else s["status"]}
+                shots.save_shots(pid, scene, items)
+                return
     raise jobs.JobFailed("shot_gone")
 
 
@@ -124,6 +125,11 @@ def assign(pid: str, scene_id: str, shot_id: str, rel) -> dict:
 
 
 def choose_variant(pid: str, scene_id: str, shot_id: str, rel) -> dict:
+    with project_lock(pid):
+        return _choose(pid, scene_id, shot_id, rel)
+
+
+def _choose(pid: str, scene_id: str, shot_id: str, rel) -> dict:
     scene = shots.load_scene(pid, scene_id)
     items = list(scene.get("shots") or [])
     for i, s in enumerate(items):
