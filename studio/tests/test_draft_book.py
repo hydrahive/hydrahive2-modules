@@ -85,3 +85,14 @@ def test_pov_alone_assigns_the_character(client, auth_headers, ws) -> None:
     d = client.post(f"{D}/book", headers=auth_headers, json={"book_id": b["id"]}).json()["draft"]
     mira = next(e["key"] for e in d["elements"] if e["name"] == "Mira")
     assert [s["element_keys"] for s in d["scenes"]] == [[mira], [mira], []]
+
+
+def test_german_endings_count_as_mention(client, auth_headers, ws) -> None:
+    """„des Leuchtturms“, „Miras Mantel“ zählen als Erwähnung; „Lateinisch“ ist keine „Laterne“, „Miranda“ keine „Mira“."""
+    b = make_book(ws, chapters=[{"title": "A", "scenes": [
+        {"title": "Treppe", "summary": "Sie steigt die Treppe des Leuchtturms hinauf. Miras Mantel ist nass."},
+        {"title": "Fremd", "summary": "Miranda spricht Lateinisch."}]}])
+    d = client.post(f"{D}/book", headers=auth_headers, json={"book_id": b["id"]}).json()["draft"]
+    key = {e["name"]: e["key"] for e in d["elements"]}
+    assert sorted(d["scenes"][0]["element_keys"]) == sorted([key["Mira"], key["Leuchtturm"]])
+    assert d["scenes"][1]["element_keys"] == []
