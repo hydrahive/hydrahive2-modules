@@ -9,6 +9,7 @@ from ._store import is_id, new_id
 ELEMENT_KINDS = ("character", "place", "object")
 SHOT_STATUS = ("planned", "image_ready", "video_processing", "done", "failed")
 MODEL_KEYS = ("video", "image", "voice", "music", "text")
+LANGUAGES = ("de", "en", "fr", "es", "it", "nl", "pl", "pt", "tr", "uk", "ru", "sv", "da", "no", "fi", "cs", "ja", "zh")
 CAMERA_KEYS = ("shot", "lens", "light", "weather", "time", "mood")
 VARIANT_DIRS = ("studio/media/images/", "studio/media/free/")
 VOICE_DIR = "studio/media/voice/"                                   # erzeugte Sprache je Shot (5c)    # Bilder des Studios: je Shot erzeugt oder frei (B3)
@@ -45,6 +46,7 @@ def head(data: dict, *, scene_order: list[str]) -> dict:
         "logline": text(data.get("logline"), 500),
         "description": text(data.get("description"), 4000),
         "aspect_ratio": text(data.get("aspect_ratio"), 16) or "16:9",
+        "language": data["language"] if data.get("language") in LANGUAGES else "de",   # Sprache des Films (Untertitel, 6)
         "default_duration": num(data.get("default_duration"), 1, 60, 5),
         "models": {k: text(models.get(k), 200) for k in MODEL_KEYS},
         "look": {"style": text(look.get("style"), 2000), "palette": palette(look.get("palette"))},

@@ -19,6 +19,7 @@ from .draft_routes import router as draft_router
 from .music_routes import router as music_router
 from .plan_routes import router as plan_router
 from .shot_routes import router as shot_router
+from .subtitle_routes import router as subtitle_router
 from .timeline_routes import router as timeline_router
 
 router = APIRouter()
@@ -78,4 +79,5 @@ router.include_router(draft_router)
 router.include_router(music_router)
 router.include_router(plan_router)
 router.include_router(shot_router)
+router.include_router(subtitle_router)
 router.include_router(timeline_router)
