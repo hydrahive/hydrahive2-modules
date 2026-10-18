@@ -61,3 +61,22 @@ describe("5c – Sprache folgt ihrem Bildclip", () => {
     expect(a1.find((x) => x.id === "v2")?.start).toBe(4)
   })
 })
+
+describe("5c – Kürzen per Griff zieht die Sprache mit (wie im Hook)", () => {
+  it("trimTracks: Bild kürzer → gebundene Sprache kürzer und rückt mit", async () => {
+    const { trimTracks } = await import("./cutTracks")
+    const a1 = trimTracks(BASE, "p1", "end", -2.48, FPS, {}).A1          // p1: 4 s → 1,52 s (bildgenau), p2 rückt nach
+    expect(lay(a1)).toBe("v1@0+1.52 v2@1.52+2.5 f@9+1")
+  })
+})
+
+describe("5c – jede Bearbeitung auf V1 nimmt die Sprache mit", () => {
+  const ctx = { selected: "p1", time: 1, fps: FPS, newId: () => "n" }
+  it("Löschen, Umsortieren, Bibliothek einfügen", async () => {
+    const { addMedia, editTracks, moveVideoClip } = await import("./cutTracks")
+    expect(lay(editTracks(BASE, { kind: "delete" }, ctx).A1)).toBe("v2@0+2.5 f@9+1")
+    expect(lay(moveVideoClip(BASE, "p2", 0, FPS).A1)).toBe("v2@0+2.5 v1@3+2 f@9+1")
+    const r = addMedia(BASE, { kind: "image", rel: "b.png", name: "B" }, { index: 0, time: 0 }, FPS, () => "neu")!
+    expect(lay(r.tracks.A1)).toBe("v1@5+2 f@8+1 v2@9+2.5")               // Bild vorn: beide rücken 5 s, f weicht in die nächste Lücke
+  })
+})

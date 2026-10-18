@@ -79,3 +79,12 @@ describe("5c-1 – gebundene Sprache in den Eigenschaften", () => {
     expect(html(<CutInspector clip={{ ...clip, kind: "image" }} onPlan={noop} onUnbind={noop} />)).not.toContain("cut_voice_bound")
   })
 })
+
+describe("5c-1 – Speichern im Shot", () => {
+  it("schickt Sprechtext und Stimme mit, aber nie Status oder Medien", async () => {
+    const { shotChanges } = await import("./planLogic")
+    const c = shotChanges(shot({ speech: "Hallo", voice: "af_bella", status: "done", image_rel: "x.png", voice_rel: "studio/media/voice/a.wav" }))
+    expect(c).toEqual({ shot: "", prompt: "Ole", element_ids: [], duration: 4, speech: "Hallo", voice: "af_bella" })
+    expect(shotChanges(shot({ speech: undefined, voice: undefined }))).toMatchObject({ speech: "", voice: "" })
+  })
+})

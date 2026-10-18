@@ -9,7 +9,7 @@ import {
   type Clipboard, type Tracks,
 } from "./cutTracks"
 import { mixerOf, setClipMix, setDuck, setTrackMix, type Mixer } from "./mixLogic"
-import { followPictures, unbind } from "./voiceBind"
+import { unbind } from "./voiceBind"
 import { timelineApi, type Timeline, type TrackId, type TrackMix } from "./timelineApi"
 
 /** Verlaufszustand: Clips aller Spuren und Mischpult (5b) – Rückgängig gilt für beides. */
@@ -74,9 +74,8 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     saver.current?.change(tl)
     syncFlags()
   }, [timeline, setTimeline, hist, syncFlags])
-  // Jede Änderung zieht die an Shots gebundene Sprache nach (5c: sie folgt ihrem Bildclip)
-  const apply = useCallback((next: Tracks, record = true) => commit({ tracks: followPictures(tracks, next, fps), mixer }, record),
-    [commit, mixer, tracks, fps])
+  // Die Bearbeitungen (cutTracks) ziehen die an Shots gebundene Sprache selbst nach (5c)
+  const apply = useCallback((next: Tracks, record = true) => commit({ tracks: next, mixer }, record), [commit, mixer])
   const change = useCallback((next: Tracks) => { if (next !== tracks) apply(next) }, [apply, tracks])
 
   const run = useCallback((a: EditAction) => {
@@ -103,13 +102,10 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     const known = { ...durations.current }                         // Medienlänge je Clip: Bibliothek, sonst Wellenform
     for (const c of [...trimFrom.current.A1, ...trimFrom.current.A2]) if (lengths[c.media_rel]) known[c.id] = lengths[c.media_rel]
     const next = trimTracks(trimFrom.current, id, edge, delta, fps, known)
-    if (!final) { commit({ tracks: followPictures(trimFrom.current, next, fps), mixer }, false); return }
+    if (!final) { commit({ tracks: next, mixer }, false); return }                  // trimTracks zieht die Sprache schon mit
     const before = trimFrom.current
     trimFrom.current = null
-    if (JSON.stringify(before) !== JSON.stringify(next)) {
-      const done = followPictures(before, next, fps)
-      hist.push({ tracks: done, mixer }); lastMix.current = ""; commit({ tracks: done, mixer }, false)
-    }
+    if (JSON.stringify(before) !== JSON.stringify(next)) { hist.push({ tracks: next, mixer }); lastMix.current = ""; commit({ tracks: next, mixer }, false) }
   }, [commit, tracks, fps, hist, lengths, mixer])
 
   /** Medium ablegen: Bild/Video an Stelle `index` auf V1, Ton ab `at` (Standard: Abspielkopf) auf seine Spur. */

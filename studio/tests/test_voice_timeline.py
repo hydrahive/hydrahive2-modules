@@ -62,3 +62,17 @@ def test_bound_clip_survives_save_and_load(client, auth_headers, ws, voice) -> N
     saved = json.loads((ws / "studio/timelines/main.json").read_text())
     assert saved["tracks"][1]["clips"][0]["shot_id"] == a["id"]
     _ = tl
+
+
+def test_replace_drops_old_bound_speech_of_shots_without_speech(client, auth_headers, ws, voice) -> None:
+    """Gebundene Sprache wird beim Ersetzen immer neu aus dem Drehbuch gelegt – hat der Shot keine mehr, fällt sie weg."""
+    sc, a = scene_with_shot(client, auth_headers, speech="Eins")
+    _speech(client, auth_headers, sc, a)
+    tl = client.post(f"{T}/from-plan", headers=auth_headers, json={}).json()
+    assert len(tl["tracks"][1]["clips"]) == 1
+    f = ws / f"studio/scenes/{sc['id']}.json"
+    data = json.loads(f.read_text())
+    data["shots"][0]["voice_rel"] = None                                 # Sprache am Shot entfernt
+    f.write_text(json.dumps(data))
+    tl2 = client.post(f"{T}/from-plan", headers=auth_headers, json={"replace": True}).json()
+    assert tl2["tracks"][1]["clips"] == []

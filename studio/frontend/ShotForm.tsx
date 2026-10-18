@@ -5,6 +5,7 @@ import { ShotImage } from "./ShotImage"
 import { ShotSpeech } from "./ShotSpeech"
 import { ShotVideo } from "./ShotVideo"
 import { Field, FormActions, Label, fieldCls } from "./formParts"
+import { shotChanges } from "./planLogic"
 
 interface Props {
   shot: Shot
@@ -77,7 +78,7 @@ export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy
       </div>
       <p className="text-[11px] text-[#8d9ab0]">{t("f.status")}: <span className="text-[#e8eef8]">{t(`shot_status.${shot.status}`, { defaultValue: shot.status })}</span></p>
       <FormActions busy={busy} dirty={dirty} onDelete={onDelete}
-        onSave={() => onSave({ shot: s.shot, prompt: s.prompt, element_ids: s.element_ids, duration: s.duration, speech: s.speech ?? "", voice: s.voice ?? "" })} />
+        onSave={() => onSave(shotChanges(s))} />
     </div>
   )
 }

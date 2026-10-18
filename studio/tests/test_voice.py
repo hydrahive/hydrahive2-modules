@@ -103,3 +103,33 @@ def test_batch_speech_for_all_shots_with_text(client, auth_headers, ws, voice) -
     assert [bool(x["voice_rel"]) for x in shots] == [True, True, False]
     assert client.get(f"{P}/batch/speech_all", headers=auth_headers).json()["count"] == 0          # schon fertig → nichts mehr
     _ = a, b
+
+
+def test_voice_rel_in_file_must_point_into_the_voice_folder(client, auth_headers, ws, voice) -> None:
+    sc, _ = scene_with_shot(client, auth_headers, speech="Hallo")
+    f = ws / f"studio/scenes/{sc['id']}.json"
+    data = json.loads(f.read_text())
+    for bad in ("../../etc/passwd", "studio/media/images/a.png", "studio/media/voice/../../x.wav", 5):
+        data["shots"][0]["voice_rel"] = bad
+        f.write_text(json.dumps(data))
+        assert client.get(f"{P}", headers=auth_headers).json()["scenes"][0]["shots"][0]["voice_rel"] is None, bad
+    data["shots"][0]["voice_rel"] = "studio/media/voice/ok.wav"
+    f.write_text(json.dumps(data))
+    assert client.get(f"{P}", headers=auth_headers).json()["scenes"][0]["shots"][0]["voice_rel"] == "studio/media/voice/ok.wav"
+
+
+def test_real_provider_without_key_fails_with_no_key(client, auth_headers, ws, monkeypatch) -> None:
+    """Der echte Anbieter-Baustein (ohne Ersatz) meldet ohne Schlüssel „no_key“ statt zu senden."""
+    import hydrahive.llm._config as cfg
+    import hydrahive.llm.local_voice as lv
+    monkeypatch.setattr(cfg, "openrouter_key", lambda: "")
+    monkeypatch.setattr(lv, "is_local", lambda m: False)
+    sent = []
+    import hydrahive.tools._openrouter_media as om
+    monkeypatch.setattr(om, "synthesize_speech", lambda *a, **k: sent.append(a))
+    import pytest
+
+    from backend import voice_provider
+    with pytest.raises(voice_provider.ProviderError) as e:
+        voice_provider.synthesize("Hallo", "", "x/y")
+    assert str(e.value) == "no_key" and sent == []
