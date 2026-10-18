@@ -47,6 +47,9 @@ def test_nter_wochentag_letzter_und_dauer():
     assert not cal.matches(letzter_mo_mai, dt.datetime(2026, 5, 27)) and not cal.matches(letzter_mo_mai, dt.datetime(2026, 5, 18))
     fuenfter = R(kind="nth_weekday", month=2, weekday=6, n=5)          # Feb 2026 hat keinen 5. Sonntag
     assert not any(cal.matches(fuenfter, dt.datetime(2026, 2, d)) for d in range(1, 29))
+    assert not cal.matches(fuenfter, dt.datetime(2026, 3, 1))           # … und rutscht nicht in den März
+    fuenfter_fr = R(kind="nth_weekday", month=5, weekday=4, n=5)        # Mai 2026: Freitag 1./8./15./22./29.
+    assert cal.matches(fuenfter_fr, dt.datetime(2026, 5, 29)) and not cal.matches(fuenfter_fr, dt.datetime(2026, 5, 22))
 
 
 def test_termine_je_jahr_auch_ueber_jahreswechsel():
@@ -56,6 +59,8 @@ def test_termine_je_jahr_auch_ueber_jahreswechsel():
     assert cal.matches(r, dt.datetime(2027, 12, 31)) and cal.matches(r, dt.datetime(2028, 1, 1, 12))
     assert not cal.matches(r, dt.datetime(2028, 1, 2))
     assert not cal.matches(R(kind="dates", dates=[]), dt.datetime(2026, 12, 5))
+    verkehrt = R(kind="dates", dates=[{"from": "2026-12-12", "to": "2026-12-04"}])   # ungültig gespeichert → nie
+    assert not any(cal.matches(verkehrt, dt.datetime(2026, 12, d)) for d in range(1, 31))
 
 
 def test_neue_arten_sind_feiertage():
@@ -90,7 +95,9 @@ def test_vorlagen_neue_feiertage():
     assert cal.matches(by["Chanukka"], dt.datetime(2026, 12, 5)) and cal.matches(by["Chanukka"], dt.datetime(2030, 12, 25))
     assert cal.matches(by["Ramadan"], dt.datetime(2027, 2, 20)) and not cal.matches(by["Ramadan"], dt.datetime(2027, 3, 9))
     assert cal.matches(by["Zuckerfest"], dt.datetime(2027, 3, 9))
-    assert cal.matches(by["Karneval"], dt.datetime(2027, 2, 8))          # Rosenmontag 2027 = Ostern 28.03. − 48
+    # Karneval = Weiberfastnacht (Ostern − 52) bis Faschingsdienstag (− 47); 2027: Ostern 28.03.
+    assert cal.matches(by["Karneval"], dt.datetime(2027, 2, 4)) and cal.matches(by["Karneval"], dt.datetime(2027, 2, 9))
+    assert not cal.matches(by["Karneval"], dt.datetime(2027, 2, 3)) and not cal.matches(by["Karneval"], dt.datetime(2027, 2, 10))
     assert cal.matches(by["Muttertag"], dt.datetime(2027, 5, 9))
 
 
