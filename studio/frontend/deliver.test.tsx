@@ -74,3 +74,18 @@ describe("4d – Ausgabe: Reiter", () => {
     expect(out).toContain('deliver_film_info:{"length":"0:12","width":1280,"height":720}')
   })
 })
+
+import { studioI18n } from "./i18n"
+
+describe("Quellen der Bibliothek", () => {
+  it("jede Quelle, die das Backend liefert, hat einen Namen (de/en) – auch „Studio · Ausgabe“", () => {
+    const backend = import.meta.glob("../backend/_sources.py", { query: "?raw", import: "default", eager: true })
+    const code = Object.values(backend).join("\n")
+    const sources = [...new Set([...code.matchAll(/make\([^)]*?"(?:ai|upload)"\s*,\s*"([a-z_]+)"/g)].map((m) => m[1]))]
+    expect(sources).toContain("studio_render")
+    for (const lang of ["de", "en"] as const) {
+      const names = (studioI18n[lang].studio as unknown as { source: Record<string, string> }).source
+      expect(sources.filter((s) => !names[s]), lang).toEqual([])
+    }
+  })
+})
