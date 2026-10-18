@@ -32,15 +32,19 @@ export interface Shot {
   image_rel: string | null
   video_rel: string | null
   variants: string[]
+  /** 5c: Sprechtext, Stimme (leer = Standard des Modells), erzeugte Sprache. Fehlt bei älteren Servern. */
+  speech?: string
+  voice?: string
+  voice_rel?: string | null
 }
 
-export type BatchKind = "decompose_all" | "images_all" | "videos_all"
-export const BATCH_KINDS: BatchKind[] = ["decompose_all", "images_all", "videos_all"]
+export type BatchKind = "decompose_all" | "images_all" | "videos_all" | "speech_all"
+export const BATCH_KINDS: BatchKind[] = ["decompose_all", "images_all", "videos_all", "speech_all"]
 export interface BatchPreview { count: number; model: string }
 
 export interface Job {
   id: string
-  kind: "image" | "video" | "free_images" | "render" | BatchKind
+  kind: "image" | "video" | "speech" | "free_images" | "render" | BatchKind
   target: string
   scene_id: string
   status: "queued" | "running" | "done" | "failed" | "cancelled"
@@ -117,6 +121,8 @@ export const planApi = {
     api.post<{ shots: Shot[]; count: number }>(`${base(pid)}/scenes/${one(sid)}/decompose`, replace ? { replace: true } : {}),
   generateImage: (pid: string, sid: string, id: string) => api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/image`, {}),
   generateVideo: (pid: string, sid: string, id: string) => api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/video`, {}),
+  generateSpeech: (pid: string, sid: string, id: string) => api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/speech`, {}),
+  voices: (pid: string) => api.get<{ model: string; voices: string[] }>(`/modules/studio/projects/${encodeURIComponent(pid)}/voices`),
   chooseVariant: (pid: string, sid: string, id: string, image_rel: string) =>
     api.put<Shot>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/variant`, { image_rel }),
   jobs: (pid: string) => api.get<{ jobs: Job[] }>(`${base(pid)}/jobs`),

@@ -6,6 +6,7 @@ import {
 } from "./cutAudio"
 import { append, duplicate, fromLibrary, moveTo, paste, remove, splitAt, splitKeep, trim } from "./cutEdit"
 import type { EditAction } from "./cutKeys"
+import { followPictures } from "./voiceBind"
 import { clipsOf, withTrack, type Timeline, type TimelineClip, type TrackId } from "./timelineApi"
 
 export type Tracks = Record<TrackId, TimelineClip[]>
@@ -28,8 +29,13 @@ export function trackOf(tr: Tracks, id: string | null): TrackId | null {
 const isAudio = (t: TrackId | null): t is AudioTrack => t === "A1" || t === "A2"
 const set = (tr: Tracks, t: TrackId, clips: TimelineClip[]): Tracks => (clips === tr[t] ? tr : { ...tr, [t]: clips })
 
-/** Teilen, Q/W, Löschen, Verdoppeln, Einfügen. Kopieren/Rückgängig erledigt der Aufrufer. */
+/** Teilen, Q/W, Löschen, Verdoppeln, Einfügen. Kopieren/Rückgängig erledigt der Aufrufer. Ändert sich V1, folgt die an
+ *  Shots gebundene Sprache (5c). */
 export function editTracks(tr: Tracks, a: EditAction, ctx: Ctx, board: Clipboard | null = null): Tracks {
+  return followPictures(tr, editRaw(tr, a, ctx, board), ctx.fps)
+}
+
+function editRaw(tr: Tracks, a: EditAction, ctx: Ctx, board: Clipboard | null): Tracks {
   const { selected, time, fps, newId } = ctx
   const t = trackOf(tr, selected)
   const at = isAudio(t) ? t : "V1"
@@ -47,11 +53,13 @@ export function editTracks(tr: Tracks, a: EditAction, ctx: Ctx, board: Clipboard
   return tr
 }
 
+/** Rand ziehen. Auf V1 folgt die an Shots gebundene Sprache (5c) dem gekürzten Bild. */
 export function trimTracks(tr: Tracks, id: string, edge: "start" | "end", delta: number, fps: number,
   durations: Record<string, number>): Tracks {
   const t = trackOf(tr, id)
   if (!t) return tr
-  return set(tr, t, isAudio(t) ? trimAudio(tr[t], id, edge, delta, fps, durations) : trim(tr.V1, id, edge, delta, fps, durations))
+  if (isAudio(t)) return set(tr, t, trimAudio(tr[t], id, edge, delta, fps, durations))
+  return followPictures(tr, set(tr, "V1", trim(tr.V1, id, edge, delta, fps, durations)), fps)
 }
 
 /** Tonclip auf eine Tonspur (auch die andere) an die Zeit `start` ziehen. Bildclips bleiben auf V1 (→ unverändert). */
@@ -64,7 +72,7 @@ export function moveAudioClip(tr: Tracks, id: string, to: AudioTrack, start: num
 }
 
 export function moveVideoClip(tr: Tracks, id: string, index: number, fps: number): Tracks {
-  return trackOf(tr, id) === "V1" ? set(tr, "V1", moveTo(tr.V1, id, index, fps)) : tr
+  return trackOf(tr, id) === "V1" ? followPictures(tr, set(tr, "V1", moveTo(tr.V1, id, index, fps)), fps) : tr
 }
 
 /** Medium aus der Bibliothek ablegen: Bild/Video an Stelle `index` auf V1, Ton auf seine Spur (oder `track`) ab `time`.
@@ -80,7 +88,7 @@ export function addMedia(tr: Tracks, item: Media, at: { index?: number; time: nu
   }
   const c = fromLibrary(item, newId)
   if (!c) return null
-  return { tracks: { ...tr, V1: append(tr.V1, c, at.index ?? tr.V1.length, fps) }, clip: c }
+  return { tracks: followPictures(tr, { ...tr, V1: append(tr.V1, c, at.index ?? tr.V1.length, fps) }, fps), clip: c }
 }
 
 export const canSplit = (tr: Tracks, ctx: Ctx): boolean =>

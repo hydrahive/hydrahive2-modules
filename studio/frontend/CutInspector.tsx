@@ -7,11 +7,13 @@ import type { TimelineClip } from "./timelineApi"
 const round = (n: number) => Math.round(n * 100) / 100
 
 /** Eigenschaften eines Clips der Zeitleiste; Platzhalter springen zum Shot ins „Planen“. */
-export function CutInspector({ clip, onPlan, media = null, onAppend, mix }: {
+export function CutInspector({ clip, onPlan, media = null, onAppend, mix, onUnbind }: {
   clip: TimelineClip | null
   onPlan: (c: TimelineClip) => void
   /** Tonclip (5b): Lautstärke und Blenden einstellen. */
   mix?: (v: { gain_db?: number; fade_in?: number; fade_out?: number }) => void
+  /** An einen Shot gebundene Sprache (5c) lösen. */
+  onUnbind?: () => void
   /** Gewähltes Medium der Bibliothek (4b): an die Zeitleiste anhängen. */
   media?: { kind: string; name: string } | null
   onAppend?: () => void
@@ -35,6 +37,13 @@ export function CutInspector({ clip, onPlan, media = null, onAppend, mix }: {
             <p className="flex gap-1.5 rounded-[4px] border border-[#ff6b8a]/40 bg-[#ff6b8a]/10 px-2.5 py-2 leading-relaxed text-[#ff6b8a]">
               <AlertTriangle size={13} className="mt-0.5 shrink-0" /> {t(clip.kind === "audio" ? "cut_audio_missing_hint" : "cut_missing")}
             </p>
+          )}
+          {clip.kind === "audio" && clip.shot_id && (
+            <div className="space-y-1.5 rounded-[4px] border border-[#2a364b] p-2.5 text-[#8d9ab0]" data-cut-bound>
+              <p className="leading-relaxed">{t("cut_voice_bound")}</p>
+              {onUnbind && <button type="button" onClick={onUnbind} data-cut-unbind
+                className="rounded-[4px] border border-[#46617f] px-2 py-0.5 font-bold text-[#69d7ff] hover:bg-[#1c2940]">{t("cut_voice_unbind")}</button>}
+            </div>
           )}
           {clip.kind === "audio" && mix && <ClipMixForm clip={clip} onChange={mix} />}
           {clip.kind === "placeholder" && clip.shot_id && (
