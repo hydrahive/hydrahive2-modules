@@ -22,9 +22,9 @@ export function MixerPanel({ mixer, counts, playing, onTrack, onDuck }: Props) {
   const { t } = useTranslation("studio")
   const hears = audibleTracks(mixer.tracks)
   return (
-    <section className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto p-3" data-mixer>
+    <section className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto p-3" data-mixer aria-description={t("mix_hint")}>
       <div className="flex flex-wrap items-center gap-3 text-xs text-[#8d9ab0]">
-        <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("mix_title")}</h2>
+        <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]" title={t("mix_hint")}>{t("mix_title")}</h2>
         <label className="ml-auto flex cursor-pointer items-center gap-2 text-[#c3ccdd]" title={t("mix_duck_hint")}>
           <input type="checkbox" checked={mixer.duck} onChange={(e) => onDuck(e.target.checked)} data-mix-duck className="accent-[#69d7ff]" />
           {t("mix_duck")}
@@ -34,7 +34,6 @@ export function MixerPanel({ mixer, counts, playing, onTrack, onDuck }: Props) {
         {CHANNELS.map((ch) => <Channel key={ch.id} id={ch.id} label={t(ch.key)} Icon={ch.icon} v={mixer.tracks[ch.id]} count={counts[ch.id]}
           live={hears.has(ch.id)} playing={playing} onChange={(v) => onTrack(ch.id, v)} />)}
       </div>
-      <p className="text-[10px] leading-relaxed text-[#68758a]">{t("mix_hint")}</p>
     </section>
   )
 }
