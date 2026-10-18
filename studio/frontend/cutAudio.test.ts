@@ -95,3 +95,18 @@ describe("5a – Ton in der Vorschau", () => {
     expect(needsSeek(5, 5.05, false)).toBe(true)
   })
 })
+
+
+describe("5a – Länge vor dem Ablegen messen", () => {
+  it("nur bei Ton ohne bekannte Länge; gemessene Länge wird übernommen", async () => {
+    const { needsLength, withLength } = await import("./cutAudio")
+    expect(needsLength({ kind: "music" })).toBe(true)
+    expect(needsLength({ kind: "audio", duration: 0 })).toBe(true)
+    expect(needsLength({ kind: "music", duration: 3 })).toBe(false)
+    expect(needsLength({ kind: "image" })).toBe(false)
+    expect(needsLength({ kind: "video" })).toBe(false)
+    expect(withLength<{ kind: string; duration?: number }>({ kind: "music" }, 3.03)).toEqual({ kind: "music", duration: 3.03 })
+    const it0: { kind: string; duration?: number } = { kind: "music" }
+    expect(withLength(it0, 0)).toBe(it0)
+  })
+})

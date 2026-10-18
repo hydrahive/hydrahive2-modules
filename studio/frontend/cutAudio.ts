@@ -99,3 +99,10 @@ export function audioAt(clips: TimelineClip[], t: number): TimelineClip | null {
   return clips.find((c) => !c.missing && c.media_rel && t >= c.start && t < end(c)) ?? null
 }
 
+
+
+/** Muss die Länge eines Bibliothekseintrags vor dem Ablegen gemessen werden? (Ton ohne bekannte Länge) */
+export const needsLength = (item: { kind: string; duration?: number }): boolean => !!audioTrackFor(item.kind) && !(item.duration && item.duration > 0)
+
+/** Gemessene Länge in den Eintrag übernehmen; 0/unlesbar → ohne Länge (dann AUDIO_SECONDS). */
+export const withLength = <T extends { duration?: number }>(item: T, seconds: number): T => (seconds > 0 ? { ...item, duration: seconds } : item)

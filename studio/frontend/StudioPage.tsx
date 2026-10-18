@@ -69,7 +69,7 @@ export function StudioPage() {
   const every = allClips(cut.timeline)
   const cp = useCutPlayer(cut.clips, every)
   const waves = useWaveforms(lib.projectId, workspace === "edit" ? every : [])
-  const ed = useCutEdit(lib.projectId, cut.timeline, cut.setTimeline, cut.selected, cut.select, cp.time)
+  const ed = useCutEdit(lib.projectId, cut.timeline, cut.setTimeline, cut.selected, cut.select, cp.time, waves.lengths)
   const editKeys = (a: Parameters<typeof editAction>[0]) => { const x = editAction(a); if (x) ed.run(x); return !!x }
   const changeWs = (w: Workspace) => { if (workspace === "edit" && w !== "edit") void ed.flush(); setWorkspace(w) }   // verlassen → sofort speichern
   // Im Reiter „Schneiden“ steuern die Tasten Film und Schnitt. Ist ein Medium aus der Bibliothek gewählt, spielt die
@@ -177,7 +177,7 @@ export function StudioPage() {
                   selected={cut.selected} busy={cut.busy} onView={cut.setView} onSeek={cp.seek} onFromPlan={cut.fromPlan}
                   toolbar={<CutToolbar save={ed.save} selected={cut.selected} canUndo={ed.canUndo} canRedo={ed.canRedo} canSplit={ed.canSplit}
                     snap={ed.snap} onAction={ed.run} onSnap={ed.toggleSnap} onReload={() => void cut.reload()} />}
-                  {...cutDrops(lib.items, ed, every, () => cut.setNotice(t("cut_not_on_timeline")))} waveforms={waves}
+                  {...cutDrops(lib.items, ed, every, () => cut.setNotice(t("cut_not_on_timeline")))} waveforms={waves.peaks}
                   onSelect={(id) => { s.clearMedia(); cut.select(id); const c = cut.clips.find((x) => x.id === id); if (c) cp.seek(c.start) }} />
             : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
         </div>

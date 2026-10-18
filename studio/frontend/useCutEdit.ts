@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { LibraryItem } from "./api"
-import type { AudioTrack } from "./cutAudio"
+import { needsLength, withLength, type AudioTrack } from "./cutAudio"
 import { History } from "./cutHistory"
 import type { EditAction } from "./cutKeys"
 import { AutoSaver, type SaveState } from "./cutSave"
@@ -17,7 +17,8 @@ const newId = () => crypto.randomUUID().replace(/-/g, "")
  *  Server setzt sie neu – daran erkennt der Hook, wann der Verlauf neu beginnt. Die echte revision fürs Speichern führt
  *  der AutoSaver. */
 export function useCutEdit(projectId: string, timeline: Timeline | null, setTimeline: (t: Timeline) => void,
-  selected: string | null, select: (id: string | null) => void, time: number) {
+  selected: string | null, select: (id: string | null) => void, time: number, lengths: Record<string, number> = {}) {
+  // `lengths`: echte Länge der Tondateien (media_rel → s, aus der Wellenform) – Grenze beim Kürzen
   const [hist] = useState(() => new History<Tracks>(tracksOf(null)))   // ein Objekt je Hook, Inhalt ändert sich
   const loadedFor = useRef<number | null>(null)
   const saver = useRef<AutoSaver | null>(null)
@@ -83,15 +84,17 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
   // beim Loslassen genau ein Schritt
   const onTrim = useCallback((id: string, edge: "start" | "end", delta: number, final: boolean) => {
     if (!trimFrom.current) trimFrom.current = tracks
-    const next = trimTracks(trimFrom.current, id, edge, delta, fps, durations.current)
+    const known = { ...durations.current }                         // Medienlänge je Clip: Bibliothek, sonst Wellenform
+    for (const c of [...trimFrom.current.A1, ...trimFrom.current.A2]) if (lengths[c.media_rel]) known[c.id] = lengths[c.media_rel]
+    const next = trimTracks(trimFrom.current, id, edge, delta, fps, known)
     if (!final) { apply(next, false); return }
     const before = trimFrom.current
     trimFrom.current = null
     if (JSON.stringify(before) !== JSON.stringify(next)) { hist.push(next); apply(next, false) }
-  }, [apply, tracks, fps, hist])
+  }, [apply, tracks, fps, hist, lengths])
 
   /** Medium ablegen: Bild/Video an Stelle `index` auf V1, Ton ab `at` (Standard: Abspielkopf) auf seine Spur. */
-  const addMedia = useCallback((item: LibraryItem, index?: number, at?: number, track?: AudioTrack): boolean => {
+  const place = useCallback((item: LibraryItem, index?: number, at?: number, track?: AudioTrack): boolean => {
     const r = addTo(tracks, item, { index, time: at ?? time, track }, fps, newId)
     if (!r) return false
     if (item.duration) durations.current[r.clip.id] = item.duration
@@ -99,6 +102,19 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     select(r.clip.id)
     return true
   }, [apply, tracks, fps, select, time])
+  const placeLatest = useRef(place)
+  useEffect(() => { placeLatest.current = place })
+
+  /** Kennt die Bibliothek die Länge eines Tons nicht, wird sie zuerst gemessen (Spec 5a „Länge eines Tonclips“) –
+   *  sonst entstünde ein zu langer Clip. Danach legt der jeweils aktuelle Stand ab (placeLatest). */
+  const addMedia = useCallback((item: LibraryItem, index?: number, at?: number, track?: AudioTrack): boolean => {
+    if (!needsLength(item)) return place(item, index, at, track)
+    const when = at ?? time
+    timelineApi.waveform(projectId, item.rel)
+      .then((w) => placeLatest.current(withLength(item, w.duration), index, when, track),
+        () => placeLatest.current(item, index, when, track))
+    return true
+  }, [place, projectId, time])
 
   const move = useCallback((id: string, index: number) => change(moveVideoClip(tracks, id, index, fps)), [change, tracks, fps])
   const moveAudio = useCallback((id: string, track: AudioTrack, start: number) => change(moveAudioClip(tracks, id, track, start, fps)), [change, tracks, fps])
