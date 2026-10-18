@@ -122,3 +122,21 @@ def test_tricky_placeholder_texts_render(client, auth_headers, ws) -> None:
     job = wait_render(client, auth_headers)
     assert job["status"] == "done", job
     assert abs(float(probe(ws / job["result"]["rel"])["format"]["duration"]) - 6) < 0.25
+
+
+def test_placeholder_text_file_is_wrapped(client, auth_headers, ws, monkeypatch) -> None:
+    """Die Textdatei für die Platzhalter-Karte enthält den umbrochenen Text (hochkant schmal)."""
+    from backend import render
+    seen: list[str] = []
+
+    def fake(cmd, seconds, progress):
+        graph = cmd[cmd.index("-filter_complex") + 1]
+        path = graph.split("textfile='", 1)[1].split("'", 1)[0]
+        seen.append(open(path, encoding="utf-8").read())
+        raise render.RenderFailed()
+    monkeypatch.setattr(render, "_run_ffmpeg", fake)
+    client.put(f"{R}/plan/screenplay", headers=auth_headers, json={"aspect_ratio": "9:16"})
+    put_timeline(client, auth_headers, [clip("placeholder", 0, 0, 1, label="Ankunft im Hafen · Shot 3 – Kapitän Ole an der Reling")])
+    client.post(f"{R}/render", headers=auth_headers, json={})
+    wait_render(client, auth_headers)
+    assert seen and "\n" in seen[0] and seen[0].replace("\n", " ") == "Ankunft im Hafen · Shot 3 – Kapitän Ole an der Reling"

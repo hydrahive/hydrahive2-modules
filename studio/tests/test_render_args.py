@@ -100,3 +100,12 @@ def test_text_fits_the_frame(size, chars) -> None:
 
 def test_wrap_keeps_short_text_on_one_line() -> None:
     assert ra.wrap("Der Sturm · Shot 2", (720, 1280)) == "Der Sturm · Shot 2"
+
+
+def test_wrap_long_word_and_too_many_lines() -> None:
+    size = (720, 1280)
+    per_line = int(720 * 0.9 / (ra.font_size(size) * 0.6))
+    long = ra.wrap("X" * (per_line * 2 + 3), size).split("\n")
+    assert [len(x) for x in long] == [per_line, per_line, 3]                        # überlanges Wort hart geteilt
+    many = ra.wrap("abc " * 200, size).split("\n")
+    assert len(many) == 4 and many[-1].endswith("…") and len(many[-1]) <= per_line   # Rest mit …
