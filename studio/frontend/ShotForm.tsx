@@ -21,8 +21,8 @@ interface Props {
   onChoose?: (rel: string) => void
   videoJob?: Job | null
   onVideo?: () => void
-  /** 5c: Stimmen des Sprachmodells (leer = nur Standardstimme), Sprache erzeugen. */
-  voices?: string[]
+  /** 5c: Stimmen des Sprachmodells (leer = nur Standardstimme, null = lädt noch), Sprache erzeugen. */
+  voices?: string[] | null
   speechJob?: Job | null
   onSpeech?: () => void
 }
@@ -54,7 +54,7 @@ export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy
       </div>
       <Field name="prompt" label={t("f.shot_prompt")} value={s.prompt} max={2000} rows={5} onChange={(v) => setS({ ...s, prompt: v })} />
       <Field name="speech" label={t("f.speech")} value={s.speech ?? ""} max={1000} rows={3} onChange={(v) => setS({ ...s, speech: v })} />
-      {voices.length ? (
+      {voices === null ? <p className="text-[11px] text-[#68758a]" data-shot-voice-loading>{t("voices_loading")}</p> : voices.length ? (
         <label className="block"><Label>{t("f.voice")}</Label>
           <select value={s.voice ?? ""} onChange={(e) => setS({ ...s, voice: e.target.value })} className={fieldCls} data-shot-voice>
             <option value="">{t("voice_default")}</option>

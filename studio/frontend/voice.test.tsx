@@ -27,6 +27,12 @@ describe("5c-1 – Sprechtext im Shot", () => {
     expect(out).toContain('<option value="">voice_default</option>')
   })
 
+  it("Stimmen laden noch: Hinweis statt „nur eine Stimme“", () => {
+    const out = html(<ShotForm shot={shot()} index={0} elements={[]} sceneElementIds={[]} presets={[]} busy={false} onSave={noop} onDelete={noop} voices={null} />)
+    expect(out).toContain("voices_loading")
+    expect(out).not.toContain("voice_only_default")
+  })
+
   it("ohne Stimmen des Modells: kein Auswahlfeld, Hinweis „Standardstimme“", () => {
     const out = html(<ShotForm shot={shot()} index={0} elements={[]} sceneElementIds={[]} presets={[]} busy={false} onSave={noop} onDelete={noop} voices={[]} />)
     expect(out).not.toContain("data-shot-voice")
