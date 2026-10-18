@@ -94,12 +94,18 @@ def test_duck_curve_matches_table(t, want) -> None:
     assert mix.duck_factor(TABLE["merged"], t) == pytest.approx(want, abs=2e-3)
 
 
+def _ffexpr(expr: str, t: float) -> float:
+    """Wertet den ffmpeg-Ausdruck mit Python aus (dieselben Funktionen: if, lt, min, pow)."""
+    env = {"if": None, "lt": lambda a, b: 1 if a < b else 0, "min": min, "pow": pow, "t": t}
+    code = expr.replace("if(", "_if(")
+    env["_if"] = lambda c, a, b: a if c else b
+    return eval(code, {"__builtins__": {}}, env)  # nur eigener, fest erzeugter Ausdruck
+
+
 def test_duck_expression_is_the_same_curve() -> None:
     expr = mix.duck_expr(TABLE["merged"])
     for t, want in TABLE["points"]:
-        got = eval(expr.replace("t", f"({t})").replace("min(", "min(").replace("max(", "max(").replace("if(", "_if("),  # noqa: S307
-                   {"_if": lambda c, a, b: a if c else b, "min": min, "max": max, "lt": lambda a, b: a < b, "gte": lambda a, b: a >= b})
-        assert got == pytest.approx(want, abs=2e-3), t
+        assert _ffexpr(expr, t) == pytest.approx(want, abs=2e-3), t
     assert mix.duck_expr([]) == "1"
 
 

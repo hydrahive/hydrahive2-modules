@@ -22,7 +22,7 @@ def _run(project_id: str, fn, *args, **kw) -> dict:
         tl = fn(project_id, *args, **kw)
     except plan.PlanError as e:
         raise coded(e.status, e.code)
-    return {**tl, "base": str(project_root(project_id))}
+    return {**timeline.with_default_duck(tl), "base": str(project_root(project_id))}
 
 
 @router.get("")

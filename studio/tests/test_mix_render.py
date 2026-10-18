@@ -1,7 +1,15 @@
 """Studio 5b: Mischpult im echten Film (ffmpeg) – Pegel per volumedetect (studio/SPEC.md „Bauplan 5b“)."""
 from __future__ import annotations
 
-from _render_helpers import R, clip, make_audio, make_image, max_volume, needs_ffmpeg, wait_render
+from _render_helpers import (
+    R,
+    clip,
+    make_audio,
+    make_image,
+    max_volume,
+    needs_ffmpeg,
+    wait_render,
+)
 
 T = f"{R}/timeline"
 
@@ -36,7 +44,14 @@ def test_gain_mute_and_solo(client, auth_headers, ws) -> None:
     assert max_volume(_film(client, auth_headers, ws), 1, 2) < -60
     _put(client, auth_headers, [clip("image", 0, 0, 4, b)], [clip("audio", 0, 0, 4, s)], [clip("audio", 0, 0, 4, m)],
          A2={"solo": True}, top={"duck": False})
-    assert max_volume(_film(client, auth_headers, ws), 1, 2) == max_volume(_film(client, auth_headers, ws), 1, 2) > -30   # nur Musik
+    solo = _film(client, auth_headers, ws)
+    # Musik 880 Hz, Sprache 440 Hz: Bandpass um die Sprache misst, ob sie zu hören ist
+    voice = lambda f: max_volume(f, 1, 2, af="bandpass=f=440:width_type=q:w=8,bandpass=f=440:width_type=q:w=8")
+    music = lambda f: max_volume(f, 1, 2, af="bandpass=f=880:width_type=q:w=8,bandpass=f=880:width_type=q:w=8")
+    assert music(solo) > -40 and voice(solo) < music(solo) - 25          # Solo „Musik“: Sprache weg
+    _put(client, auth_headers, [clip("image", 0, 0, 4, b)], [clip("audio", 0, 0, 4, s)], [clip("audio", 0, 0, 4, m)], top={"duck": False})
+    both = _film(client, auth_headers, ws)
+    assert voice(both) > voice(solo) + 25                                 # ohne Solo: Sprache da
 
 
 @needs_ffmpeg
@@ -59,7 +74,7 @@ def test_music_ducks_under_voice(client, auth_headers, ws) -> None:
     _put(client, auth_headers, [clip("image", 0, 0, 8, b)], voice, music, top={"duck": False})
     plain = _film(client, auth_headers, ws)
     # nur die Musik messen: Ausschnitt mit Sprache über einen Tiefpass unter 600 Hz
-    low = lambda f, s0, d: max_volume(f, s0, d, af="lowpass=f=400,lowpass=f=400")   # noqa: E731
+    low = lambda f, s0, d: max_volume(f, s0, d, af="lowpass=f=400,lowpass=f=400")
     assert low(plain, 3.4, 1.2) - low(ducked, 3.4, 1.2) > 8                 # während Sprache deutlich leiser
     assert abs(low(plain, 0.5, 1.5) - low(ducked, 0.5, 1.5)) < 1.5         # vorher gleich
     assert abs(low(plain, 6.5, 1) - low(ducked, 6.5, 1)) < 1.5             # nachher wieder gleich
