@@ -142,6 +142,12 @@ def test_real_provider_reads_the_stream(monkeypatch) -> None:
     with pytest.raises(music_provider.ProviderError) as e:
         music_provider.generate("x", "m")
     assert str(e.value) == "empty_answer"
+    cut = body.split(b"data: [DONE]")[0]                                  # Stream bricht ab: Ton ja, Ende-Signal nein
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(
+        lambda r: httpx.Response(200, content=cut)), **kw))
+    with pytest.raises(music_provider.ProviderError) as e:
+        music_provider.generate("x", "m")
+    assert str(e.value) == "empty_answer"
     monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(
         lambda r: httpx.Response(402, content=b"no credits")), **kw))
     with pytest.raises(music_provider.ProviderError) as e:

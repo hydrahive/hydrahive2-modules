@@ -14,7 +14,7 @@ MIN_SECONDS, MAX_SECONDS = 5, 180
 
 
 def _seconds(v) -> int:
-    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or not MIN_SECONDS <= v <= MAX_SECONDS:
+    if not isinstance(v, (int, float)) or not math.isfinite(v) or not MIN_SECONDS <= v <= MAX_SECONDS:
         raise plan.PlanError("studio_music_invalid")
     return round(v)
 
