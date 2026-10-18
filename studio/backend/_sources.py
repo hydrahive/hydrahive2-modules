@@ -101,6 +101,9 @@ def tonstudio(root: Path, make) -> list[dict]:
 
 def studio(root: Path, make) -> list[dict]:
     out = [make(p, "image", "ai", "studio", sidecar(p)) for p in files(root, "studio/media/images", IMAGE_EXT)]
+    for p in files(root, "studio/media/voice", AUDIO_EXT):
+        meta = sidecar(p)
+        out.append(make(p, "audio", "ai", "studio_voice", {**meta, "prompt": meta.get("text")}, name=(meta.get("text") or "")[:60] or None))
     out += [make(p, "image", "ai", "studio_free", sidecar(p)) for p in files(root, "studio/media/free", IMAGE_EXT)]
     for p in files(root, "studio/renders", VIDEO_EXT):
         meta = sidecar(p)

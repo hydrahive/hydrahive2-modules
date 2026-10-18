@@ -4,10 +4,10 @@ from __future__ import annotations
 import json
 
 from _timeline_helpers import _code
-from _voice_helpers import P, FakeVoice, scene_with_shot, voice, wait_job  # noqa: F401 – Fixture
-
+from _voice_helpers import P, scene_with_shot, wait_job
 from conftest import MOD_PREFIX, PROJECT_ID
 
+pytest_plugins = ["_voice_helpers"]                # Fixture `voice`
 
 def test_shot_has_speech_text_and_voice(client, auth_headers, ws, voice) -> None:
     sc, s = scene_with_shot(client, auth_headers, speech="Da ist er!", voice="af_bella")

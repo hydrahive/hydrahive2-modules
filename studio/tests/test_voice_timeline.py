@@ -4,8 +4,9 @@ from __future__ import annotations
 import json
 
 from _timeline_helpers import T
-from _voice_helpers import P, scene_with_shot, voice, wait_job  # noqa: F401 – Fixture
+from _voice_helpers import P, scene_with_shot, wait_job
 
+pytest_plugins = ["_voice_helpers"]                # Fixture `voice`
 
 def _speech(client, h, sc, s):
     client.post(f"{P}/scenes/{sc['id']}/shots/{s['id']}/speech", headers=h)

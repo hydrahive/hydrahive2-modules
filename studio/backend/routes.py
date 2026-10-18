@@ -13,7 +13,7 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 from hydrahive.projects._config_io import list_for_user
 
-from . import library, overview, plan, render, waveform
+from . import library, overview, plan, render, voice_provider, waveform
 from ._guard import guard
 from .draft_routes import router as draft_router
 from .plan_routes import router as plan_router
@@ -57,6 +57,14 @@ async def get_waveform(project_id: str, rel: str, auth: Auth) -> dict:
         return await asyncio.to_thread(waveform.waveform, project_id, rel)
     except waveform.NotFound:
         raise coded(404, "studio_media_not_found")
+
+
+@router.get("/projects/{project_id}/voices")
+async def get_voices(project_id: str, auth: Auth, model: str = "") -> dict:
+    """Stimmen des Sprachmodells (Auswahl im Shot); ohne `model` das des Drehbuchs bzw. der Standard des Servers."""
+    guard(auth[0], project_id)
+    m = model.strip()[:200] or plan.get_head(project_id)["models"]["voice"] or voice_provider.server_default_model()
+    return {"model": m, "voices": await asyncio.to_thread(voice_provider.voices, m)}
 
 
 @router.get("/projects/{project_id}/overview")
