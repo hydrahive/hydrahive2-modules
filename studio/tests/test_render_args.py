@@ -21,9 +21,11 @@ def test_size_from_aspect(aspect, size) -> None:
 
 
 def test_segments_with_gaps_and_kinds() -> None:
-    clips = [_c("video", 0, 1, 3, "v.mp4"), _c("image", 4, 0, 5, "b.png"), _c("placeholder", 9, 0, 2, label="Sturm · Shot 2")]
+    # Video 0–2 (Ausschnitt 1–3), Lücke 2–3, Bild 3–8, direkt danach Platzhalter 8–10
+    clips = [_c("video", 0, 1, 3, "v.mp4"), _c("image", 3, 0, 5, "b.png"), _c("placeholder", 8, 0, 2, label="Sturm · Shot 2")]
     segs = ra.segments(clips, exists=lambda rel: True)
     assert [(s["kind"], s["seconds"]) for s in segs] == [("video", 2), ("gap", 1), ("image", 5), ("placeholder", 2)]
+    assert ra.total_seconds(segs) == 10
     assert segs[0]["in"] == 1 and segs[3]["label"] == "Sturm · Shot 2"
 
 
@@ -31,6 +33,8 @@ def test_missing_file_becomes_placeholder() -> None:
     segs = ra.segments([_c("video", 0, 0, 3, "weg.mp4", label="A"), _c("image", 3, 0, 2, "da.png")], exists=lambda rel: rel == "da.png")
     assert [s["kind"] for s in segs] == ["placeholder", "image"]
     assert segs[0]["label"] == "A" and ra.missing_count(segs) == 1
+    loaded = ra.segments([_c("placeholder", 0, 0, 2, label="B") | {"missing": True}, _c("placeholder", 2, 0, 1)], exists=lambda r: True)
+    assert ra.missing_count(loaded) == 1                                               # beim Laden schon fehlend
 
 
 def test_command_shape() -> None:
@@ -50,7 +54,7 @@ def test_command_shape() -> None:
     assert "Sturm\\:" in dt and "100\\%" in dt
     ins = [cmd[i + 1] for i, a in enumerate(cmd) if a == "-i"]
     assert ins[0] == "/proj/v.mp4" and ins[1] == "/proj/b.png"
-    assert ["-ss", "1.000", "-t", "2.000"] == cmd[cmd.index("/proj/v.mp4") - 4: cmd.index("/proj/v.mp4")]
+    assert cmd[cmd.index("/proj/v.mp4") - 5: cmd.index("/proj/v.mp4")] == ["-ss", "1.000", "-t", "2.000", "-i"]
     for want in (["-c:v", "libx264"], ["-c:a", "aac"], ["-movflags", "+faststart"], ["-pix_fmt", "yuv420p"]):
         i = cmd.index(want[0])
         assert cmd[i:i + 2] == want

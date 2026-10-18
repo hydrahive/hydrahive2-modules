@@ -10,9 +10,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from hydrahive.api.middleware.auth import require_auth
+from hydrahive.api.middleware.errors import coded
 from hydrahive.projects._config_io import list_for_user
 
-from . import library, overview
+from . import library, overview, plan, render
 from ._guard import guard
 from .draft_routes import router as draft_router
 from .plan_routes import router as plan_router
@@ -32,6 +33,21 @@ def list_projects(auth: Auth) -> dict:
 async def get_library(project_id: str, auth: Auth) -> dict:
     guard(auth[0], project_id)
     return await asyncio.to_thread(library.list_items, project_id)
+
+
+@router.post("/projects/{project_id}/render", status_code=202)
+def post_render(project_id: str, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    try:
+        return render.start(project_id)
+    except plan.PlanError as e:
+        raise coded(e.status, e.code)
+
+
+@router.get("/projects/{project_id}/renders")
+def get_renders(project_id: str, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    return render.list_renders(project_id)
 
 
 @router.get("/projects/{project_id}/overview")

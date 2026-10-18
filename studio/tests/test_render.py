@@ -32,7 +32,7 @@ def test_render_real_film(client, auth_headers, ws) -> None:
     rel = job["result"]["rel"]
     assert rel.startswith("studio/renders/") and rel.endswith(".mp4")
     info = probe(ws / rel)
-    v_st = [x for x in info["streams"] if x["codec_type"] == "video"][0]
+    v_st = next(x for x in info["streams"] if x["codec_type"] == "video")
     a_st = [x for x in info["streams"] if x["codec_type"] == "audio"]
     assert (v_st["width"], v_st["height"]) == (720, 1280) and v_st["codec_name"] == "h264" and v_st["r_frame_rate"] == "25/1"
     assert a_st and a_st[0]["codec_name"] == "aac"
