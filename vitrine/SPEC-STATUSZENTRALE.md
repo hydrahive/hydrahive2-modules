@@ -1,4 +1,4 @@
-# Vitrine — Statuszentrale und Wechsel (Entwurf 18.10.2026, wartet auf Tills Freigabe)
+# Vitrine — Statuszentrale und Wechsel (freigegeben von Till am 18.10.2026)
 
 ## Was
 
@@ -37,8 +37,7 @@ Er bekommt eine zweite Quelle:
 - **Umschalten auf Dashboard:** Der Dienst fragt jede ¼ s die Leerlaufzeit des Kiosk-X-Servers ab (XScreenSaver-Erweiterung).
   Liegt die letzte Eingabe (Maus, auch Klick oder Tastatur) unter 1 s, wird umgeschaltet.
 - **Zurück zum Video:** nach **2 Minuten** ohne Eingabe (im Cockpit einstellbar, 30 s – 30 min) oder über den Knopf „Zurück“ auf der Seite.
-- **Nachtmodus** hat Vorrang: Nachts bleibt das Display dunkel, auch wenn die Maus bewegt wird.
-  Ausnahme: Bei einer Fehlerkarte schaltet die Maus auch nachts aufs Dashboard (offen, siehe Entscheidungen).
+- **Nachtmodus:** Auch nachts weckt die Maus das Dashboard. Nach der Rückkehrzeit geht es zurück zum Nachtbild.
 - Fällt EVDI oder der Kiosk aus, bleibt der Dienst im Modus `video`. Das Dashboard ist eine Zugabe, kein Muss.
 
 ### Kiosk-Sitzung statt Anmeldebildschirm
@@ -103,9 +102,9 @@ V1 = **Statuszentrale**, nur lesen:
 - Browser abgestürzt oder EVDI fehlt → Video läuft weiter, das Cockpit zeigt „Dashboard nicht verfügbar“
 - Die Daten-Route lehnt ohne Schlüssel, mit falschem Schlüssel und von einer anderen Adresse als 127.0.0.1 ab (Tests)
 
-## Entscheidungen (offen, Till)
+## Entscheidungen (Till, 18.10.2026)
 
-1. sddm-Anmeldebildschirm auf .2 durch die Kiosk-Sitzung ersetzen? (Vorschlag: ja, an .2 hängt kein Monitor)
-2. Rückkehr nach 2 min? (Vorschlag: ja, im Cockpit änderbar)
-3. Nachts: Maus weckt das Dashboard nur bei einer Fehlermeldung, sonst bleibt es dunkel? (Vorschlag: Maus weckt immer, nach 2 min wieder dunkel)
-4. Browser: Firefox (schon installiert, als Snap) oder Chromium? (Vorschlag: erst Firefox messen, wechseln nur wenn die Last nicht passt)
+1. Der sddm-Anmeldebildschirm auf .2 wird durch die Kiosk-Sitzung **ersetzt**.
+2. Zurück zum Video nach **2 Minuten** ohne Eingabe, im Cockpit änderbar.
+3. Nachts weckt die Maus das Dashboard **immer**. Nach der Rückkehrzeit wird es wieder dunkel.
+4. Browser: **zuerst Firefox** (schon installiert) und die Last messen. Chromium nur, wenn das Kriterium (< 20 %) nicht erreicht wird.
