@@ -90,6 +90,15 @@ def test_only_music_counts_as_nothing_to_hear(client, auth_headers, ws, hear) ->
 
 
 @needs_ffmpeg
+def test_voice_alone_is_enough(client, auth_headers, ws, hear) -> None:
+    a = make_audio(ws, "sprache.wav", 1.5, sub="studio/media/voice")
+    put_tracks(client, auth_headers, [clip("placeholder", 0, 0, 3)], [{**clip("audio", 0.5, 0, 1.5, a), "kind": "audio"}], [])
+    assert client.get(f"{S}/de/from-audio", headers=auth_headers).json()["audible"] is True
+    assert client.post(H, headers=auth_headers, json={}).status_code == 202
+    assert wait_hear(client, auth_headers)["status"] == "done"
+
+
+@needs_ffmpeg
 def test_local_model_is_refused(client, auth_headers, ws, monkeypatch) -> None:
     _film(client, auth_headers, ws)
     monkeypatch.setattr("backend.hear_provider.server_model", lambda: "local/whisper")
