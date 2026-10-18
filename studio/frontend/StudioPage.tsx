@@ -43,7 +43,7 @@ import { useCutEdit } from "./useCutEdit"
 import { useCutPlayer } from "./useCutPlayer"
 import { useWaveforms } from "./useWaveforms"
 import { appendNotice, cutDrops } from "./cutWiring"
-import { allClips, clipsOf } from "./timelineApi"
+import { allClips, clipsOf, findClip } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
 import { useDraft } from "./useDraft"
 import { useFree } from "./useFree"
@@ -178,7 +178,7 @@ export function StudioPage() {
                   toolbar={<CutToolbar save={ed.save} selected={cut.selected} canUndo={ed.canUndo} canRedo={ed.canRedo} canSplit={ed.canSplit}
                     snap={ed.snap} onAction={ed.run} onSnap={ed.toggleSnap} onReload={() => void cut.reload()} />}
                   {...cutDrops(lib.items, ed, every, () => cut.setNotice(t("cut_not_on_timeline")))} waveforms={waves.peaks}
-                  onSelect={(id) => { s.clearMedia(); cut.select(id); const c = cut.clips.find((x) => x.id === id); if (c) cp.seek(c.start) }} />
+                  onSelect={(id) => { s.clearMedia(); cut.select(id); const c = findClip(cut.timeline, id); if (c) cp.seek(c.start) }} />
             : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
         </div>
         </>}

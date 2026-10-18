@@ -7,7 +7,7 @@ import { CutInspector } from "./CutInspector"
 import { CutTimeline } from "./CutTimeline"
 import { Waveform } from "./Waveform"
 import { deliverSummary } from "./deliverLogic"
-import { allClips, clipsOf, withTrack, type Timeline, type TimelineClip } from "./timelineApi"
+import { allClips, clipsOf, findClip, withTrack, type Timeline, type TimelineClip } from "./timelineApi"
 import { slicePeaks } from "./waveLogic"
 
 const noop = () => {}
@@ -91,6 +91,11 @@ describe("5a – Hilfen", () => {
     expect(withTrack(old, "A2", [MUSIC]).tracks.map((t) => t.id)).toEqual(["V1", "A1", "A2"])
     expect(allClips(TL).map((c) => c.id)).toEqual(["v1", "s1", "m1"])
     expect(allClips(null)).toEqual([])
+    expect(findClip(TL, "m1")).toBe(MUSIC)                             // gewählter Tonclip → Eigenschaften rechts
+    expect(findClip(TL, "v1")?.id).toBe("v1")
+    expect(findClip(TL, "weg")).toBeNull()
+    expect(findClip(TL, null)).toBeNull()
+    expect(findClip(null, "m1")).toBeNull()
   })
 
   it("Ausgabe-Übersicht zählt alle Spuren, Länge bis zum letzten Ton", () => {

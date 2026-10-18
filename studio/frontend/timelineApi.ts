@@ -50,3 +50,7 @@ export function withTrack(tl: Timeline, track: TrackId, clips: TimelineClip[]): 
   const ids: TrackId[] = ["V1", "A1", "A2"]
   return { ...tl, tracks: ids.map((id) => ({ id, kind: id === "V1" ? "video" : "audio", clips: id === track ? clips : clipsOf(tl, id) })) }
 }
+
+/** Clip mit dieser ID auf irgendeiner Spur. */
+export const findClip = (tl: Timeline | null, id: string | null): TimelineClip | null =>
+  (id && allClips(tl).find((c) => c.id === id)) || null
