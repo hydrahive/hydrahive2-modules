@@ -169,3 +169,17 @@ export function displayState(st: { running: boolean; connected: boolean; night: 
   if (!st.connected) return "no_display"
   return st.night ? "night" : "running"
 }
+
+
+/** Dashboard (Statuszentrale) für die Statuskarte: aus | bereit | nicht verfügbar (mit Grund aus dem Dienst). */
+export type DashboardState = "off" | "ready" | "unavailable"
+
+export function dashboardInfo(st: { mode?: string | null; dashboard?: string | null } | null): {
+  mode: string | null; state: DashboardState; reason: string | null
+} {
+  const d = st?.dashboard ?? null
+  const mode = st?.mode ?? null
+  if (!d || d === "aus") return { mode, state: "off", reason: null }
+  if (d === "bereit") return { mode, state: "ready", reason: null }
+  return { mode, state: "unavailable", reason: d.replace(/^nicht verfügbar:\s*/, "") }
+}

@@ -16,7 +16,8 @@ from typing import Callable, Iterable
 import usb.core
 from PIL import Image
 
-from . import aic, cached_play, cards, config, hydra_state, inbox, night, preview, program, scene, sysinfo, video, warmer
+from . import aic, cached_play, cards, config, hydra_state, inbox, mode, night, preview, program, scene, sysinfo, video, warmer
+from . import play_dashboard as dash_play
 from .frames import _connect_real, encode, fallback_frame, write_preview  # noqa: F401 - auch von Tests genutzt
 
 SEARCH_SECONDS = 0.2      # ohne Host meldet sich das Display nur 1–2 s am USB an (gemessen 16.10.) – oft genug nachsehen
@@ -37,27 +38,27 @@ class Runner:
                  status: Callable[[], str] = sysinfo.current, sleep: Callable[[float], None] = time.sleep,
                  fps: int = DEFAULT_FPS, quality: int = 80,
                  program: Callable[[dt.datetime], program.Program] | None = None,
-                 now: Callable[[], dt.datetime] = dt.datetime.now, check_every: float = 1.0, warmer=None):
+                 now: Callable[[], dt.datetime] = dt.datetime.now, check_every: float = 1.0, warmer=None, dashboard=None):
         self.data = data_dir
         self.connect, self.status, self.sleep, self.now = connect, status, sleep, now
         self.fps, self.quality, self.check_every = fps, quality, check_every
         self._frames = frames or self._video_frames
-        self._watch = config.Watcher(data_dir)
-        self._config = config.load(data_dir)
+        self._watch, self._config = config.Watcher(data_dir), config.load(data_dir)
         self._program = program or self._program_from_config
         self._uses_config = program is None          # Bildrate aus config.json (Cockpit); sonst fester Wert (Tests)
-        self.preview_every = 10.0
-        self._preview_t = 0.0
-        self.inbox_every = 1.0
-        self.cache_check_every = 2.0
+        self.preview_every, self._preview_t, self.inbox_every, self.cache_check_every = 10.0, 0.0, 1.0, 2.0
         self._warmer = warmer
-        self.state = {"connected": False, "frames": 0, "reconnects": 0, "size": None, "video": None,
-                      "rule": None, "holiday": None, "night": None, "error": None, "cache": None, "preview": None}
+        self._dash, self._mode = dashboard, mode.Mode(return_after=mode.return_seconds(self._config))
+        self.mode_every, self._mode_t, self.dashboard_repeat = 0.25 if dashboard else 1e9, -1e18, 2.0
+        self.state = {"connected": False, "frames": 0, "reconnects": 0, "size": None, "video": None, "rule": None,
+                      "holiday": None, "night": None, "error": None, "cache": None, "preview": None, "mode": "video",
+                      "dashboard": "aus" if dashboard is None else "startet"}
 
     def _program_from_config(self, now: dt.datetime) -> program.Program:
         fresh = self._watch.poll()
         if fresh is not None:
             self._config = fresh
+            self._mode.return_after = mode.return_seconds(fresh)
         return preview.current(self.data, self._config, now)
 
     def source(self) -> Path | None:
@@ -127,6 +128,8 @@ class Runner:
 
     def _play(self, disp, max_frames) -> None:
         w, h = disp.width, disp.height
+        if self._dash is not None and dash_play.wants(self):
+            return dash_play.play(self, disp, max_frames)
         prog = self._program(self.now())
         key = prog.key()
         self.state.update(video=prog.video.name if prog.video else None, rule=prog.rule,
@@ -167,6 +170,8 @@ class Runner:
                     chk_t = t0
                     if self._program(self.now()).key() != key:
                         raise _Switch
+                if dash_play.due(self) and dash_play.wants(self):
+                    raise _Switch
                 dt_ = time.monotonic() - t0
                 if dt_ < period:
                     self.sleep(period - dt_)
@@ -174,18 +179,11 @@ class Runner:
             src.close()
 
     def _status_line(self) -> tuple[str, bool]:
-        base = self.status()
-        more, alert = hydra_state.extra(self.data)
-        return (f"{base}  ·  {more}" if more and base else base or more), alert
+        return hydra_state.line(self.status(), self.data)
 
     def _play_night(self, disp, prog, key, max_frames) -> None:
-        while max_frames is None or self.state["frames"] < max_frames:
-            now = self.now()
-            self._send(disp, night.frame(prog.night, disp.width, disp.height, now))
-            if self._program(now).key() != key:
-                raise _Switch
-            self.sleep(1.0)
-        self._write_state()
+        if dash_play.night_loop(self, disp, prog, key, max_frames, night.frame):
+            raise _Switch
 
 
 def main() -> None:
@@ -193,7 +191,8 @@ def main() -> None:
     data = Path(os.environ.get("VITRINE_DATA", "/var/lib/hydrahive2/vitrine"))
     warm = warmer.Warmer(data / "cache", frames=lambda src, w, h, fps: video.frames(
         video.prepare(Path(src), data / "cache", w, h, fps), w, h, fps, loop=False))
-    Runner(data_dir=data, quality=int(os.environ.get("VITRINE_QUALITY", "80")), warmer=warm).run()
+    Runner(data_dir=data, quality=int(os.environ.get("VITRINE_QUALITY", "80")), warmer=warm,
+           dashboard=dash_play.from_env()).run()
 
 
 if __name__ == "__main__":

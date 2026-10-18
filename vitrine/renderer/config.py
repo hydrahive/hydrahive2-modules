@@ -13,8 +13,9 @@ DEFAULTS: dict = {
     "rotate_minutes": 10,
     "fps": 24,                  # Bildrate (12–30); Atelier-Videos haben 24
     "message_seconds": 15,      # Standard-Dauer einer Einblendung (5–120); Fehler bleiben länger
+    "dashboard_return_seconds": 120,   # Dashboard → zurück zum Video nach so vielen Sekunden ohne Eingabe (30–1800)
 }
-FPS_RANGE, MESSAGE_RANGE = (12, 30), (5, 120)
+FPS_RANGE, MESSAGE_RANGE, RETURN_RANGE = (12, 30), (5, 120), (30, 1800)
 
 
 def _int_in(v, lo: int, hi: int) -> bool:
@@ -41,6 +42,8 @@ def load(data_dir: Path) -> dict:
         out["fps"] = raw["fps"]
     if _int_in(raw.get("message_seconds"), *MESSAGE_RANGE):
         out["message_seconds"] = raw["message_seconds"]
+    if _int_in(raw.get("dashboard_return_seconds"), *RETURN_RANGE):
+        out["dashboard_return_seconds"] = raw["dashboard_return_seconds"]
     return out
 
 

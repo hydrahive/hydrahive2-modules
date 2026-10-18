@@ -24,3 +24,9 @@ def extra(data_dir: Path, *, now: float | None = None) -> tuple[str, bool]:
     if errors:
         parts.append(f"{errors} Fehler/h")
     return "  ·  ".join(parts), errors > 0
+
+
+def line(base: str, data_dir: Path) -> tuple[str, bool]:
+    """Ganze Status-Leiste: Rechnerwerte + Hydra-Zusatz (Agenten, Fehler/h); Alarm, wenn Fehler in der letzten Stunde."""
+    more, alert = extra(data_dir)
+    return (f"{base}  ·  {more}" if more and base else base or more), alert

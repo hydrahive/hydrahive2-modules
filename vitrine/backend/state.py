@@ -39,5 +39,5 @@ def program_info(data_dir: Path) -> dict:
     try:
         raw = json.loads((data_dir / "state.json").read_text())
     except (OSError, ValueError):
-        return {"rule": None, "holiday": None, "night": None, "preview": None}
-    return {k: raw.get(k) for k in ("rule", "holiday", "night", "preview")}
+        return {"rule": None, "holiday": None, "night": None, "preview": None, "mode": None, "dashboard": None}
+    return {k: raw.get(k) for k in ("rule", "holiday", "night", "preview", "mode", "dashboard")}

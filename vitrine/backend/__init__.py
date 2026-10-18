@@ -12,3 +12,6 @@ def register(ctx) -> None:
     ctx.register_tool(tools.DISPLAY_TOOL)
     ctx.register_butler_action(butler.ACTION)
     ctx.register_job("notify", notify.job, interval_seconds=30, initial_delay_seconds=20)
+    if hasattr(ctx, "register_device_router"):          # Kiosk-Browser ohne Login (Statuszentrale)
+        from .kiosk_routes import device_router, kiosk_auth
+        ctx.register_device_router(device_router, auth=kiosk_auth)

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Hand, MonitorPlay, MoonStar, PlugZap, Sparkles } from "lucide-react"
+import { Hand, LayoutDashboard, MonitorPlay, MoonStar, PlugZap, Sparkles } from "lucide-react"
 import { vitrineApi, type VitrineStatus } from "./api"
-import { displayState } from "./rules"
+import { dashboardInfo, displayState } from "./rules"
 
 const POLL_MS = 5000
 
@@ -28,6 +28,7 @@ export function StatusCard() {
   const state = ds === "loading" ? "…" : ds === "stopped" ? t("state_stopped") : ds === "no_display" ? t("state_no_display")
     : ds === "night" ? t(`night_${st?.night}`) : t("state_running")
   const tone = st?.running && st.connected ? "text-emerald-300" : "text-amber-300"
+  const dash = dashboardInfo(st)
   return (
     <section className="grid gap-4 rounded-[6px] border border-[#2a364b] bg-[#111827] p-4 md:grid-cols-[180px_1fr]">
       <div className="flex aspect-[9/16] w-[180px] items-center justify-center overflow-hidden rounded-[4px] border border-[#2a364b] bg-black">
@@ -43,6 +44,13 @@ export function StatusCard() {
           {st?.holiday && <><dt className="text-[#718097]">{t("holiday")}</dt><dd className="flex items-center gap-1 text-amber-200"><Sparkles size={13} />{st.holiday}</dd></>}
           <dt className="text-[#718097]">{t("fps")}</dt><dd>{st?.fps ?? "—"}</dd>
           <dt className="text-[#718097]">{t("panel")}</dt><dd>{st?.size ? `${st.size[0]}×${st.size[1]}` : "—"}</dd>
+          <dt className="text-[#718097]">{t("dashboard")}</dt>
+          <dd className={`flex items-center gap-1 ${dash.state === "ready" ? "text-emerald-300" : dash.state === "unavailable" ? "text-amber-300" : ""}`}>
+            <LayoutDashboard size={13} />
+            {dash.state === "off" ? t("dashboard_off") : dash.state === "ready"
+              ? (dash.mode === "dashboard" ? t("dashboard_shown") : t("dashboard_ready"))
+              : t("dashboard_unavailable", { reason: dash.reason })}
+          </dd>
         </dl>
         {ds === "no_display" && (
           <p className="flex items-start gap-2 rounded-[4px] border border-amber-300/40 bg-amber-300/10 p-2 text-xs text-amber-100">

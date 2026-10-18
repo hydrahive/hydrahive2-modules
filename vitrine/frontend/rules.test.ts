@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { clamp, describeRule, displayState, formatDates, fromTemplate, newRule, parseDates, ruleErrors, sizeLabel, type Rule } from "./rules"
+import { clamp, dashboardInfo, describeRule, displayState, formatDates, fromTemplate, newRule, parseDates, ruleErrors, sizeLabel, type Rule } from "./rules"
 
 const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k)
 
@@ -83,5 +83,16 @@ describe("Statuskarte", () => {
     expect(displayState({ running: true, connected: false, night: "dim" })).toBe("no_display")
     expect(displayState({ running: true, connected: true, night: "dim" })).toBe("night")
     expect(displayState({ running: true, connected: true, night: null })).toBe("running")
+  })
+})
+
+describe("Dashboard-Anzeige", () => {
+  it("zeigt Modus und ob das Dashboard verfügbar ist", () => {
+    expect(dashboardInfo(null)).toEqual({ mode: null, state: "off", reason: null })
+    expect(dashboardInfo({ mode: "video", dashboard: "aus" })).toEqual({ mode: "video", state: "off", reason: null })
+    expect(dashboardInfo({ mode: "dashboard", dashboard: "bereit" })).toEqual({ mode: "dashboard", state: "ready", reason: null })
+    expect(dashboardInfo({ mode: "video", dashboard: "nicht verfügbar: libevdi fehlt" }))
+      .toEqual({ mode: "video", state: "unavailable", reason: "libevdi fehlt" })
+    expect(dashboardInfo({ mode: "video", dashboard: "startet" })).toEqual({ mode: "video", state: "unavailable", reason: "startet" })
   })
 })
