@@ -17,6 +17,7 @@ import { FreeGallery } from "./FreeGallery"
 import { GenerateSideBar } from "./GenerateSideBar"
 import { DecomposeDialog } from "./DecomposeDialog"
 import { DeleteDialog } from "./DeleteDialog"
+import { DeliverPanel } from "./DeliverPanel"
 import { DraftDialog } from "./DraftDialog"
 import { ImportDialog } from "./ImportDialog"
 import { ComingSoon } from "./ComingSoon"
@@ -39,6 +40,7 @@ import { useBatch } from "./useBatch"
 import { useCut } from "./useCut"
 import { useCutEdit } from "./useCutEdit"
 import { useCutPlayer } from "./useCutPlayer"
+import { useDeliver } from "./useDeliver"
 import { useDraft } from "./useDraft"
 import { useFree } from "./useFree"
 import { useModelCatalogs } from "./modelCatalog"
@@ -58,7 +60,7 @@ export function StudioPage() {
   const [workspace, setWorkspace] = useState<Workspace>("plan")
   const [stamp, setStamp] = useState("")                        // Drehbuch/Schnitt geändert → Fortschritt neu
   const guide = useGuide(lib.projectId, workspace, setWorkspace, stamp)
-  const cut = useCut(lib.projectId, workspace === "edit")
+  const cut = useCut(lib.projectId, workspace === "edit" || workspace === "deliver")   // „Ausgabe“ braucht die Fassung
   const cp = useCutPlayer(cut.clips)
   const ed = useCutEdit(lib.projectId, cut.timeline, cut.setTimeline, cut.selected, cut.select, cp.time)
   const editKeys = (a: Parameters<typeof editAction>[0]) => { const x = editAction(a); if (x) ed.run(x); return !!x }
@@ -71,15 +73,17 @@ export function StudioPage() {
   const generating = s.workspace === "generate"
   const shotsWs = planning || generating                       // beide arbeiten auf dem Drehbuch
   const cutting = s.workspace === "edit" && !s.item
-  const soon = s.workspace === "audio" || s.workspace === "subtitles" || s.workspace === "deliver" ? s.workspace : null
-  const p = usePlan(lib.projectId, shotsWs)
+  const delivering = s.workspace === "deliver"
+  const soon = s.workspace === "audio" || s.workspace === "subtitles" ? s.workspace : null
+  const p = usePlan(lib.projectId, shotsWs || delivering)                 // „Ausgabe“: Format aus dem Drehbuch
   const nextStamp = `${p.rev}:${cut.timeline?.revision ?? ""}:${cut.clips.length}`
   if (nextStamp !== stamp) setStamp(nextStamp)                   // beim Rendern abgeglichen, kein Effect nötig
   const plan = { ...p, select: (x: Parameters<typeof p.select>[0]) => { s.clearMedia(); p.select(x) } }   // Auswahl im Drehbuch löst das Medium ab
   const library = <LibraryPanel items={lib.items} loading={lib.loading} error={lib.error} truncated={lib.truncated} selected={s.mediaId} onSelect={s.selectMedia} />
-  const jobs = useJobs(lib.projectId, shotsWs, () => { void p.reload(); void lib.reload(); void guide.reload() })   // fertig → Shot + Bibliothek + Fortschritt neu
+  const jobs = useJobs(lib.projectId, shotsWs || delivering, () => { void p.reload(); void lib.reload(); void guide.reload() })   // fertig → Shot + Bibliothek + Fortschritt neu
   const sh = useShots(plan, lib.projectId, () => void jobs.reload())
   const bt = useBatch(plan, lib.projectId, jobs.jobs, () => void jobs.reload())
+  const dv = useDeliver(plan, lib.projectId, delivering, jobs.jobs, jobs.reload, () => void lib.reload())
   const dr = useDraft(plan, lib.projectId, () => void bt.open("decompose_all"))
   const books = guide.overview?.books ?? 0
   const fr = useFree(plan, lib.projectId, p.plan, () => { void jobs.reload(); void lib.reload(); void p.reload(); void guide.reload() })
@@ -103,6 +107,12 @@ export function StudioPage() {
           batch={shotsWs && bt.active ? <BatchStatus job={bt.active} cancelling={bt.cancelling} onCancel={bt.cancel} /> : undefined}
           progress={<ProgressBar overview={guide.overview} onGo={s.setWorkspace} />} />
         <WorkspaceIntro workspace={s.workspace} open={guide.introOpen} onToggle={guide.toggleIntro} />
+        {delivering ? (
+          <div className="min-h-0 flex-1">
+            <DeliverPanel clips={cut.clips} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} job={dv.job}
+              busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")} />
+          </div>
+        ) : <>
         <div className="flex min-h-0 flex-col" style={{ flex: `${100 - s.layout.timeline} 1 0` }}>
           <div className="flex min-h-0 flex-1">
             <div className="min-w-0 border-r border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.library}%` }}>
@@ -163,6 +173,7 @@ export function StudioPage() {
                   onSelect={(id) => { s.clearMedia(); cut.select(id); const c = cut.clips.find((x) => x.id === id); if (c) cp.seek(c.start) }} />
             : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
         </div>
+        </>}
         {s.dialog === "help" && <ShortcutHelp onClose={() => s.setDialog(null)} onGo={s.setWorkspace} />}
         {s.dialog === "command" && <CommandPalette onClose={() => s.setDialog(null)} onRun={s.run} />}
         {p.dialog?.kind === "import" && p.preview && <ImportDialog preview={p.preview} busy={p.busy} onRun={() => void p.runImport()} onClose={() => p.setDialog(null)} />}

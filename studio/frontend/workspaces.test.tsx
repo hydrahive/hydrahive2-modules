@@ -76,9 +76,9 @@ describe("Reiter „Erzeugen“ – Shot-Liste", () => {
   })
 })
 
-describe("Reiter Ton, Untertitel, Ausgabe – ehrlich statt Beispiel", () => {
+describe("Reiter Ton, Untertitel – ehrlich statt Beispiel („Ausgabe“ ist seit 4d echt)", () => {
   it("Hinweis je Reiter mit Knopf „Zum Schneiden“", () => {
-    for (const ws of ["audio", "subtitles", "deliver"] as const) {
+    for (const ws of ["audio", "subtitles"] as const) {
       const out = html(<ComingSoon workspace={ws} onCut={noop} />)
       expect(out).toContain(`soon.${ws}`)
       expect(out).toContain("data-soon-to-cut")

@@ -546,6 +546,65 @@ den späteren Etappen.
   - Konflikt mit zweitem Tab
   - jeweils bei 1600 und 1280 px
 
+## Bauplan 4d – Schlichte Filmausgabe als MP4 (18.10.)
+
+**Ist-Stand (geprüft):**
+- Die Schnittfassung `studio/timelines/main.json` hat eine Spur V1 mit Clips der Arten `video`, `image` und
+  `placeholder`, jeweils mit `in`/`out`. Lücken zwischen den Clips sind erlaubt.
+- `ffmpeg` mit `drawtext` (freetype, fontconfig), `concat`, `color` und `anullsrc` ist auf .2 (8.0) und hydratest
+  (6.1) vorhanden. Der Installer richtet es ein (`00-deps.sh`).
+- Die Schrift „DejaVu Sans“ wird über `fontconfig-config` (fonts-dejavu-core) immer mitgeliefert.
+- Gemessen auf hydratest: 16 s Film aus Video, Standbild und Platzhalter in 0,5 s (`libx264 veryfast`).
+
+**Ablauf:**
+- Im Reiter **„Ausgabe“** (bisher „kommt noch“) steht:
+  - eine Übersicht: Länge, Zahl der Clips, Format und Größe, Hinweis bei Platzhaltern
+  - der Knopf **„Film als MP4 erzeugen“**
+  - darunter die Liste der fertigen Filme mit **„Ansehen“** und **„Herunterladen“**
+- Der Knopf startet einen Auftrag (wie die Bilder) mit Fortschritt in Prozent. Je Projekt läuft nur ein Film
+  gleichzeitig. Kosten entstehen keine, es läuft alles auf dem Server.
+- Ergebnis: `studio/renders/<id>.mp4` mit Begleitdatei (Länge, Größe, Revision der Schnittfassung, Zeit). Der Film
+  erscheint in der Bibliothek unter der Quelle „Studio · Ausgabe“.
+
+**Was im Film landet:**
+- Format nach dem Drehbuch:
+  - 16:9 → 1280×720
+  - 9:16 → 720×1280
+  - 1:1 → 1080×1080
+  - 4:3 → 960×720
+  - 21:9 → 1680×720
+- 25 fps (aus der Schnittfassung), H.264 + AAC 48 kHz Stereo, `+faststart` (im Browser abspielbar).
+- **Video-Clip:** Ausschnitt `in`–`out`, eingepasst mit schwarzem Rand (nicht verzerrt, nicht beschnitten),
+  Originalton. Hat das Video keinen Ton, entsteht dort Stille.
+- **Bild-Clip:** Standbild für die Länge des Clips, eingepasst, Stille.
+- **Platzhalter:** schwarze Karte mit dem Clip-Namen (z. B. „Der Sturm · Shot 2“), Stille.
+- **Lücke** zwischen Clips: Schwarz und Stille.
+- Ein Clip, dessen Datei beim Rendern fehlt, wird zum Platzhalter. Der Film entsteht trotzdem, die Übersicht nennt
+  die Zahl.
+
+**Grenzen und Fehler:**
+- Leere Zeitleiste: Knopf gesperrt, Hinweis „Erst im Reiter ‚Schneiden‘ Clips anlegen“. Auf dem Server Code
+  `studio_render_empty`.
+- `ffmpeg` fehlt oder bricht ab: Auftrag `failed` mit Code `render_failed`, die letzten Zeilen des Fehlers stehen
+  nur im Log.
+- Zeitgrenze: Filmlänge × 4, mindestens 120 s.
+- Behalten werden die letzten 10 Filme je Projekt. Ältere werden beim nächsten Rendern gelöscht, nur
+  `studio/renders/`.
+
+**Schnittstellen:**
+- `POST …/render` liefert den Auftrag (202). Fehler: `studio_render_empty`, `studio_render_running` (409).
+- `GET …/renders` liefert die Liste: `rel`, `abs` (für /api/files), Länge, Größe, Zeit.
+
+**Prüfung 4d:**
+- pytest:
+  - Bau der ffmpeg-Argumente als reine Funktion (Lücke, Bild, Platzhalter, fehlende Datei, Format je
+    Seitenverhältnis)
+  - echtes ffmpeg-Rendern eines kleinen Films (Länge und Größe mit ffprobe geprüft)
+  - Auftrag, nur einer gleichzeitig, leere Zeitleiste, Aufräumen auf 10, Bibliothek, fremdes Projekt 404
+- vitest: Reiter „Ausgabe“.
+- E2E (nur sichtbare Texte, 1280 und 1600 px): Drehbuch übernehmen, „Film als MP4 erzeugen“, Fortschritt, „Ansehen“
+  spielt ab, „Herunterladen“ liefert eine MP4. Länge und Größe der heruntergeladenen Datei mit ffprobe geprüft.
+
 ## Etappe B – Bedienbar machen (17.10., vor 4d)
 
 **Anlass (Till, 17.10.):** „Ich habe keine Ahnung, wo ich Bilder erstellen oder Shots hinzufügen kann. Es ist auf das
