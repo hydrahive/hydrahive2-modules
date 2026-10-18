@@ -36,7 +36,7 @@ def cues_from(segments: list, *, film_end: float) -> list[dict]:
         a, b = _num(s.get("start")), _num(s.get("end"))
         text = " ".join(str(s.get("text") or "").split())
         p = _num(s.get("no_speech_prob")) or 0.0
-        if a is None or b is None or not text or p > NO_SPEECH:
+        if a is None or b is None or p > NO_SPEECH:          # leerer Text ergibt bei spread() keinen Untertitel
             continue
         a = max(a, cues[-1]["end"] if cues else 0.0, 0.0)
         b = min(max(b, a + subtitles.MIN_SECONDS), max(film_end, a + subtitles.MIN_SECONDS))
@@ -55,13 +55,13 @@ def _parts(pid: str) -> tuple[list[dict], list[dict], float]:
 
 
 def info(pid: str, lang: str) -> dict:
-    """Werte für den Dialog: Filmlänge, Modell, ob es ein Cloud-Modell ist, vorhandene Untertitel."""
-    subtitles.language(lang)
+    """Werte für den Dialog: Filmlänge, Modell, ob es ein Cloud-Modell ist, vorhandene Untertitel (prüft die Sprache)."""
+    existing = len(subtitles.load(pid, lang)["cues"])
     tl = timeline.load(pid)
     end = max((c["start"] + c["out"] - c["in"] for c in timeline.all_clips(tl)), default=0.0)
     model = hear_provider.server_model()
     return {"seconds": round(end, 3), "model": model, "cloud": not hear_provider.is_local(model),
-            "existing": len(subtitles.load(pid, lang)["cues"]), "max_seconds": MAX_SECONDS}
+            "existing": existing, "max_seconds": MAX_SECONDS}
 
 
 def start(pid: str, lang: str, *, replace: bool) -> dict:

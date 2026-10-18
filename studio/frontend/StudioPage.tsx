@@ -44,6 +44,7 @@ import { MixInspector } from "./MixInspector"
 import { editing, filmWs, useCutWorkspace } from "./useCutWorkspace"
 import { useSubtitleTab } from "./useSubtitleTab"
 import { useSubtitles } from "./useSubtitles"
+import { useHear } from "./useHear"
 import { clipsOf, findClip } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
 import { useDraft } from "./useDraft"
@@ -69,14 +70,14 @@ export function StudioPage() {
   const { cut, every, mixer, cp, waves, ed } = useCutWorkspace(lib.projectId, workspace)
   const editKeys = (a: Parameters<typeof editAction>[0]) => { const x = editAction(a); if (x) ed.run(x); return !!x }
   const changeWs = (w: Workspace) => {                                            // verlassen → sofort speichern
-    if (editing(workspace) && !editing(w)) void ed.flush()
-    if (workspace === "subtitles" && w !== "subtitles") void sub.flush(); setWorkspace(w) }
+    if (editing(workspace) && !editing(w)) void ed.flush(); if (workspace === "subtitles" && w !== "subtitles") void sub.flush(); setWorkspace(w) }
   // Im Reiter „Schneiden“ steuern die Tasten Film und Schnitt. Ist ein Medium aus der Bibliothek gewählt, spielt die
   // Vorschau das Medium – dann bleibt das Abspielen bei ihm, Teilen/Löschen/Rückgängig wirken weiter auf den Schnitt.
   const subbing = workspace === "subtitles"
   const p = usePlan(lib.projectId, workspace === "plan" || workspace === "generate" || workspace === "deliver" || subbing)  // Format, Sprache
   const sub = useSubtitles(lib.projectId, p.plan?.screenplay.language ?? "", subbing, cp.time, (x) => cut.setNotice(x))
-  const st = useSubtitleTab(sub, { time: cp.time, view: followView(cut.view, cp.time, cp.total), onSeek: cp.seek, plan: p.plan })
+  const hear = useHear(lib.projectId, p.plan?.screenplay.language ?? "", subbing, sub.flush, () => void sub.reload(), (x) => cut.setNotice(x))
+  const st = useSubtitleTab(sub, hear, { time: cp.time, view: followView(cut.view, cp.time, cp.total), onSeek: cp.seek, plan: p.plan })
   const s = useStudioState(lib.items, workspace, changeWs, (item) => (subbing ? (item ? { edit: st.keys } : { ...cp, edit: st.keys })
     : !editing(workspace) ? null : item ? { edit: editKeys, toggleSnap: ed.toggleSnap } : { ...cp, edit: editKeys, toggleSnap: ed.toggleSnap }))
   const planning = s.workspace === "plan"

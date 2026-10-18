@@ -74,7 +74,7 @@ describe("6a – Untertitel bearbeiten (rein, mit Grenzen)", () => {
 describe("6a – Reiter „Untertitel“", () => {
   const list = (p: Partial<React.ComponentProps<typeof SubtitleList>> = {}) => html(
     <SubtitleList cues={CUES} selected="b" time={4} hasSpeech busy={false} save="saved" canUndo canRedo={false}
-      onSelect={noop} onChange={noop} onAction={noop} onFromSpeech={noop} onExport={noop} {...p} />)
+      onSelect={noop} onChange={noop} onAction={noop} onFromSpeech={noop} onExport={noop} onHear={noop} hearing={false} {...p} />)
 
   it("Liste: Zeiten, Texte als Eingabe, gewählter Eintrag, Knöpfe", () => {
     const out = list()

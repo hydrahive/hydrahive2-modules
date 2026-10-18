@@ -62,6 +62,10 @@ def test_the_heard_mix_has_no_music(client, auth_headers, ws, monkeypatch) -> No
     f = ws / "gehoert.m4a"
     info = probe(f)
     a = next(s for s in info["streams"] if s["codec_type"] == "audio")
+    import subprocess
+    ch = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=channels,sample_rate", "-of", "csv=p=0", str(f)],
+                        capture_output=True, text=True, timeout=30, check=True).stdout.strip()
+    assert ch == "16000,1"                                               # Mono, 16 kHz – klein für den Upload
     assert a["codec_name"] == "aac" and abs(float(info["format"]["duration"]) - 4.0) < 0.2
     assert max_volume(f, 0.2, 1.5, af="highpass=f=400") > -30            # Originalton (440 Hz) ist da
     assert max_volume(f, 2.6, 1.2, af="highpass=f=600") > -30            # Sprache (880 Hz) ist da
@@ -160,6 +164,7 @@ def test_cue_making_from_segments() -> None:
         {"start": 0, "end": 0.2, "text": " Ja.", "no_speech_prob": 0},                # zu kurz → auf 0,5 s
         {"start": 0.4, "end": 2, "text": " Nein, das stimmt nicht.", "no_speech_prob": 0.1},   # überlappt → beginnt später
         {"start": 3, "end": 4, "text": " [Musik]", "no_speech_prob": 0.7},           # keine Sprache
+        {"start": 4.2, "end": 4.8, "text": "   ", "no_speech_prob": 0},             # leer
         {"start": 5, "end": 25, "text": " Ole steht am Ende des alten Holzstegs und schaut lange auf das graue Wasser hinaus. "
                                          "Hinter ihm kreisen die Möwen.", "no_speech_prob": 0},
         {"start": 30, "end": 40, "text": " Ende.", "no_speech_prob": 0},             # hinter dem Film → gekappt
@@ -170,6 +175,7 @@ def test_cue_making_from_segments() -> None:
     assert texts[0] == "Ja." and (cues[0]["start"], cues[0]["end"]) == (0, 0.5)
     assert texts[1] == "Nein, das stimmt nicht." and cues[1]["start"] == 0.5
     assert "[Musik]" not in " ".join(texts)
+    assert all(c["text"].strip() for c in cues) and not [c for c in cues if 4 <= c["start"] < 5]
     long = [c for c in cues if 5 <= c["start"] < 25]
     assert len(long) >= 2 and all(c["end"] - c["start"] <= 7 + 1e-6 for c in long)
     assert all(len(line) <= 42 for c in cues for line in c["text"].split("\n"))

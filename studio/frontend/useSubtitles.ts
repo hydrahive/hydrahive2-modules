@@ -107,6 +107,7 @@ export function useSubtitles(projectId: string, lang: string, active: boolean, t
     } finally { setBusy(false) }
   }, [projectId, lang, loaded, t])
 
+  const flush = useCallback(() => saver.current?.flush(), [])
   const exportFile = useCallback(async (format: SubtitleFormat) => {
     try {
       await saver.current?.flush()
@@ -116,7 +117,7 @@ export function useSubtitles(projectId: string, lang: string, active: boolean, t
 
   return {
     cues, selected, select: setSelected, save, busy, confirm, canUndo: flags.undo, canRedo: flags.redo,
-    changeText, setTime, action, reload: load, flush: () => saver.current?.flush(),
+    changeText, setTime, action, reload: load, flush,
     fromSpeech: () => (cues.length ? setConfirm(true) : void fromSpeech(false)),
     confirmReplace: () => void fromSpeech(true), closeConfirm: () => setConfirm(false),
     exportFile: (f: SubtitleFormat) => void exportFile(f),
