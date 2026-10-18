@@ -22,6 +22,7 @@ from ._store import project_lock, project_root
 
 MAX_SECONDS = 3600
 NO_SPEECH = 0.6
+TRIES = 2
 # Nur ein Geräusch-Hinweis der Erkennung („*Geschrei*“, „[Musik]“, „(lacht)“, „♪“) – kein gesprochener Text (Probe 18.10.)
 _NOISE = re.compile(r"^\s*(\*[^*]*\*|\[[^\]]*\]|\([^)]*\)|[♪♫\s]+)\s*$")
 
@@ -57,13 +58,17 @@ def _parts(pid: str) -> tuple[list[dict], list[dict], float]:
     return segs, voice, render_args.total_seconds(segs)
 
 
+def _audible(segs: list[dict], voice: list[dict]) -> bool:
+    return bool(voice) or any(s["kind"] == "video" and s.get("has_audio") for s in segs)
+
+
 def info(pid: str, lang: str) -> dict:
-    """Werte für den Dialog: Filmlänge, Modell, ob es ein Cloud-Modell ist, vorhandene Untertitel (prüft die Sprache)."""
+    """Werte für den Dialog: angehörte Länge (Bild + Sprache, ohne Musik – wie im Auftrag), Modell, ob es ein Cloud-Modell
+    ist, ob es etwas zu hören gibt, vorhandene Untertitel (prüft die Sprache)."""
     existing = len(subtitles.load(pid, lang)["cues"])
-    tl = timeline.load(pid)
-    end = max((c["start"] + c["out"] - c["in"] for c in timeline.all_clips(tl)), default=0.0)
+    segs, voice, seconds = _parts(pid)
     model = hear_provider.model_for_subtitles()
-    return {"seconds": round(end, 3), "model": model, "cloud": not hear_provider.is_local(model),
+    return {"seconds": seconds, "audible": _audible(segs, voice), "model": model, "cloud": not hear_provider.is_local(model),
             "existing": existing, "max_seconds": MAX_SECONDS}
 
 
@@ -73,7 +78,7 @@ def start(pid: str, lang: str, *, replace: bool) -> dict:
     if current["cues"] and not replace:
         raise plan.PlanError("studio_subtitles_not_empty", 409)
     segs, voice, seconds = _parts(pid)
-    if not voice and not any(s["kind"] == "video" and s.get("has_audio") for s in segs):
+    if not _audible(segs, voice):
         raise plan.PlanError("studio_subtitles_no_audio")
     if seconds > MAX_SECONDS:
         raise plan.PlanError("studio_subtitles_too_long")
@@ -89,11 +94,15 @@ def start(pid: str, lang: str, *, replace: bool) -> dict:
                 render._run_ffmpeg(hear_args.command(segs, voice, project_root(pid), out), seconds, lambda f: None)
             except render.RenderFailed as e:
                 raise jobs.JobFailed("render_failed") from e
-            try:
-                segments = hear_provider.transcribe(out, lang, model)
-            except hear_provider.ProviderError as e:
-                raise jobs.JobFailed(str(e)) from e
-        cues = cues_from(segments, film_end=seconds)
+            cues: list[dict] = []
+            for _ in range(TRIES):                  # Probe 18.10.: einmal kam ein leerer Abschnitt über alles, danach richtig
+                try:
+                    segments = hear_provider.transcribe(out, lang, model)
+                except hear_provider.ProviderError as e:
+                    raise jobs.JobFailed(str(e)) from e
+                cues = cues_from(segments, film_end=seconds)
+                if cues:
+                    break
         if not cues:
             raise jobs.JobFailed("no_speech_found")
         with project_lock(pid):

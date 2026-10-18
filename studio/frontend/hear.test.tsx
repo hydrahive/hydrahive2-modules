@@ -11,7 +11,7 @@ import type { Job } from "./planApi"
 
 const html = (el: React.ReactElement) => renderToStaticMarkup(el).replace(/&quot;/g, '"')
 const noop = () => {}
-const INFO: HearInfo = { seconds: 95, model: "openai/whisper-large-v3", cloud: true, existing: 0, max_seconds: 3600 }
+const INFO: HearInfo = { seconds: 95, audible: true, model: "openai/whisper-large-v3", cloud: true, existing: 0, max_seconds: 3600 }
 const job = (p: Partial<Job>): Job => ({ id: "j1", kind: "transcribe", target: "subtitles:p:de", scene_id: "", status: "done", error: null,
   result: { count: 4 }, created_at: "x", finished_at: "y", ...p })
 
@@ -61,7 +61,7 @@ describe("6b – Dialog „Aus dem Ton heraushören“", () => {
     expect(dlg({ job: job({ status: "failed", error: "no_speech_found" }) })).toContain("job_err.no_speech_found_hear")
   })
   it("lokales Modell, zu lang, nichts zu hören: Hinweis statt Start", () => {
-    for (const [p, k] of [[{ cloud: false }, "hear_needs_cloud"], [{ seconds: 4000 }, "hear_too_long"], [{ seconds: 0 }, "hear_nothing"]] as const) {
+    for (const [p, k] of [[{ cloud: false }, "hear_needs_cloud"], [{ seconds: 4000 }, "hear_too_long"], [{ seconds: 0 }, "hear_nothing"], [{ audible: false }, "hear_nothing"]] as const) {
       const out = dlg({ info: { ...INFO, ...p } })
       expect(out, k).toContain(k)
       expect(out.match(/<button[^>]*data-hear-run[^>]*>/)?.[0], k).toContain('disabled=""')

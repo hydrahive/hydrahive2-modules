@@ -2,7 +2,7 @@ import { api } from "@/shared/api-client"
 import type { Job } from "./planApi"
 
 /** Heraushören (Spec „Bauplan 6b“): Werte für den Dialog, Auftrag starten, fertigen Auftrag erkennen. Rein, damit testbar. */
-export interface HearInfo { seconds: number; model: string; cloud: boolean; existing: number; max_seconds: number }
+export interface HearInfo { seconds: number; audible: boolean; model: string; cloud: boolean; existing: number; max_seconds: number }
 
 const base = (pid: string, lang: string) => `/modules/studio/projects/${encodeURIComponent(pid)}/subtitles/${encodeURIComponent(lang)}/from-audio`
 export const hearApi = {

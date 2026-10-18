@@ -22,7 +22,7 @@ export function HearDialog({ info, language, job, busy, onRun, onClose }: Props)
 function Body({ info, language, job, busy, onRun, onClose }: Omit<Props, "info"> & { info: HearInfo }) {
   const { t } = useTranslation("studio")
   const running = job?.status === "running" || job?.status === "queued"
-  const block = !info.cloud ? "hear_needs_cloud" : info.seconds <= 0 ? "hear_nothing" : info.seconds > info.max_seconds ? "hear_too_long" : null
+  const block = !info.cloud ? "hear_needs_cloud" : !info.audible || info.seconds <= 0 ? "hear_nothing" : info.seconds > info.max_seconds ? "hear_too_long" : null
   const cost = costText(info.seconds)
   const error = jobText(t, job)
   return (

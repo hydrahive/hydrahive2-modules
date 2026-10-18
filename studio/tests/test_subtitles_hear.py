@@ -141,16 +141,41 @@ def test_provider_errors(client, auth_headers, ws, monkeypatch) -> None:
     _film(client, auth_headers, ws)
     monkeypatch.setattr("backend.hear_provider.server_model", lambda: "m")
     for err in ("no_key", "provider_rejected", "provider_unreachable", "empty_answer"):
-        monkeypatch.setattr("backend.hear_provider.transcribe", FakeHear(error=err))
+        fake = FakeHear(error=err)
+        monkeypatch.setattr("backend.hear_provider.transcribe", fake)
         client.post(H, headers=auth_headers, json={})
         job = wait_hear(client, auth_headers)
         assert (job["status"], job["error"]) == ("failed", err)
+        assert len(fake.calls) == 1                                       # Anbieterfehler: kein zweiter (bezahlter) Versuch
     monkeypatch.setattr("backend.hear_provider.transcribe", FakeHear(segments=[{"start": 0, "end": 2, "text": " ", "no_speech_prob": 0},
                                                                               {"start": 2, "end": 3, "text": "Musik", "no_speech_prob": 0.9}]))
     client.post(H, headers=auth_headers, json={})
     job = wait_hear(client, auth_headers)
     assert (job["status"], job["error"]) == ("failed", "no_speech_found")
     assert not (ws / "studio/subtitles/de.json").exists()
+
+
+@needs_ffmpeg
+def test_one_empty_answer_is_retried_once(client, auth_headers, ws, monkeypatch) -> None:
+    _film(client, auth_headers, ws)
+    answers = [[{"start": 0, "end": 4, "text": "", "no_speech_prob": 0}],
+               [{"start": 0.3, "end": 1.5, "text": " Hallo.", "no_speech_prob": 0}]]
+    calls = []
+
+    def flaky(path, language, model):
+        calls.append(1)
+        return answers[len(calls) - 1]
+    monkeypatch.setattr("backend.hear_provider.transcribe", flaky)
+    monkeypatch.setattr("backend.hear_provider.server_model", lambda: "m")
+    client.post(H, headers=auth_headers, json={})
+    assert wait_hear(client, auth_headers)["status"] == "done"
+    assert len(calls) == 2
+    assert client.get(f"{S}/de", headers=auth_headers).json()["cues"][0]["text"] == "Hallo."
+    nothing = FakeHear(segments=[{"start": 0, "end": 4, "text": "", "no_speech_prob": 0}])
+    monkeypatch.setattr("backend.hear_provider.transcribe", nothing)
+    client.post(H, headers=auth_headers, json={"replace": True})
+    assert wait_hear(client, auth_headers)["error"] == "no_speech_found"
+    assert len(nothing.calls) == 2                                        # genau einmal wiederholt, nicht endlos
 
 
 def test_only_members(client, other_headers) -> None:
@@ -160,11 +185,22 @@ def test_only_members(client, other_headers) -> None:
 
 def test_model_choice(monkeypatch) -> None:
     from backend import hear_provider as hp
-    for server, used in (("openai/whisper-large-v3-turbo", "openai/whisper-large-v3-turbo"), ("openai/whisper-large-v3", "openai/whisper-large-v3"),
+    for server, used in (("openai/whisper-large-v3-turbo", "openai/whisper-large-v3"), ("openai/whisper-large-v3", "openai/whisper-large-v3"),
                          ("openai/whisper-1", "openai/whisper-large-v3"), ("irgendwas/stt", "openai/whisper-large-v3"),
                          ("local/whisper", "local/whisper")):
         monkeypatch.setattr(hp, "server_model", lambda s=server: s)
         assert hp.model_for_subtitles() == used, server
+
+
+@needs_ffmpeg
+def test_dialog_length_is_what_is_heard_not_the_music(client, auth_headers, ws, hear) -> None:
+    _film(client, auth_headers, ws)                                    # Bild 2 s, Sprache bis 4 s, Musik 4 s
+    m = make_audio(ws, "lang.wav", 9, freq=220)
+    cur = client.get(f"{S.rsplit('/subtitles', 1)[0]}/timeline", headers=auth_headers).json()
+    cur["tracks"][2]["clips"] = [{**clip("audio", 0, 0, 9, m), "kind": "audio", "id": "c" * 32}]
+    client.put(f"{S.rsplit('/subtitles', 1)[0]}/timeline", headers=auth_headers, json={"revision": cur["revision"], "fps": 25, "tracks": cur["tracks"]})
+    d = client.get(f"{S}/de/from-audio", headers=auth_headers).json()
+    assert d["seconds"] == 4.0 and d["audible"] is True
 
 
 @needs_ffmpeg
@@ -255,7 +291,7 @@ def test_defaults_for_the_dialog(client, auth_headers, ws, hear) -> None:
     from _timeline_helpers import _clip, _put
     _put(client, auth_headers, [_clip(kind="placeholder", out=90)])
     d = client.get(f"{S}/de/from-audio", headers=auth_headers).json()
-    assert d == {"seconds": 90, "model": "openai/whisper-large-v3", "cloud": True, "existing": 0, "max_seconds": 3600}
+    assert d == {"seconds": 90, "audible": False, "model": "openai/whisper-large-v3", "cloud": True, "existing": 0, "max_seconds": 3600}
     put(client, auth_headers, [cue(1, 0, 1)])
     assert client.get(f"{S}/de/from-audio", headers=auth_headers).json()["existing"] == 1
     assert json.dumps(d)                                                  # einfache Werte

@@ -16,8 +16,9 @@ logger = logging.getLogger("hhmod_studio.hear")
 URL = "https://openrouter.ai/api/v1/audio/transcriptions"
 TIMEOUT = 600.0
 KEYS = ("start", "end", "text", "no_speech_prob")
-# Modelle mit brauchbaren Zeiten je Satz (Probe 18.10.). whisper-1 liefert nur EINEN Abschnitt über den ganzen Ton.
-SEGMENT_MODELS = ("openai/whisper-large-v3", "openai/whisper-large-v3-turbo")
+# Modelle mit brauchbaren Zeiten je Satz (Proben 18.10.): whisper-1 liefert nur EINEN Abschnitt über den ganzen Ton,
+# whisper-large-v3-turbo fasst Sätze über Pausen hinweg zusammen (5,8–20,9 s statt zwei Stellen).
+SEGMENT_MODELS = ("openai/whisper-large-v3",)
 DEFAULT_MODEL = SEGMENT_MODELS[0]
 
 
