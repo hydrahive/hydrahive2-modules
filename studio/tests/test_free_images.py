@@ -78,7 +78,7 @@ def test_all_failed_is_failed(client, auth_headers, ws, monkeypatch) -> None:
 
 def test_bad_input(client, auth_headers, provider) -> None:
     for body in ({"prompt": "", "count": 1}, {"prompt": "x" * 2001, "count": 1}, {"prompt": "x", "count": 0},
-                 {"prompt": "x", "count": 5}, {"prompt": "x", "count": "2"}, {"prompt": "x", "count": 1, "aspect_ratio": "7:3"},
+                 {"prompt": "x", "count": 5}, {"prompt": "x", "count": "2"}, {"prompt": "x", "count": True}, {"prompt": "x", "count": 1, "aspect_ratio": "7:3"},
                  {"prompt": "x", "count": 1, "references": "a.png"}, {"prompt": "x", "count": 1, "model": "m" * 201}):
         r = client.post(F, headers=auth_headers, json=body)
         assert r.status_code == 400 and r.json()["detail"]["code"] == "studio_free_invalid", body
@@ -96,3 +96,14 @@ def test_only_one_free_job_at_a_time(client, auth_headers, ws, monkeypatch) -> N
 def test_foreign_project(client, auth_headers, provider) -> None:
     r = client.post(f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/plan/free-images", headers=auth_headers, json={"prompt": "x", "count": 1})
     assert r.status_code == 404 and provider.calls == []
+
+
+def test_references_only_real_project_images(client, auth_headers, ws, provider) -> None:
+    """Keine Nicht-Bilder, keine Symlinks – auch wenn die Datei im Projekt liegt."""
+    (ws / "bilder").mkdir()
+    (ws / "bilder/echt.png").write_bytes(PNG)
+    (ws / "bilder/notiz.txt").write_text("geheim")
+    (ws / "bilder/link.png").symlink_to(ws / "bilder/echt.png")
+    client.post(F, headers=auth_headers, json={"prompt": "x", "count": 1, "references": ["bilder/notiz.txt", "bilder/link.png"]})
+    _wait_free(client, auth_headers)
+    assert provider.calls[0]["references"] == []
