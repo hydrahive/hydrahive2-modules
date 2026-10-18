@@ -88,6 +88,8 @@ describe("B2 – Vorschau", () => {
     expect(out).toContain("Mira")
     expect(out).toContain("Leuchtturm")
     expect(buttons(out)).toEqual(["draft_discard", "draft_apply"])
+    const sceneTwo = out.split("Die Nacht")[1].split("</li>")[0]
+    expect(sceneTwo).toContain("Leuchtturm, Mira")                                      // Bausteine der Szene in ihrer Zeile
     expect(out).toContain("draft_new")
     expect(out).not.toContain("draft_append")
   })
