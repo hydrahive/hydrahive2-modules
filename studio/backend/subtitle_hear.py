@@ -59,7 +59,7 @@ def info(pid: str, lang: str) -> dict:
     existing = len(subtitles.load(pid, lang)["cues"])
     tl = timeline.load(pid)
     end = max((c["start"] + c["out"] - c["in"] for c in timeline.all_clips(tl)), default=0.0)
-    model = hear_provider.server_model()
+    model = hear_provider.model_for_subtitles()
     return {"seconds": round(end, 3), "model": model, "cloud": not hear_provider.is_local(model),
             "existing": existing, "max_seconds": MAX_SECONDS}
 
@@ -74,7 +74,7 @@ def start(pid: str, lang: str, *, replace: bool) -> dict:
         raise plan.PlanError("studio_subtitles_no_audio")
     if seconds > MAX_SECONDS:
         raise plan.PlanError("studio_subtitles_too_long")
-    model = hear_provider.server_model()
+    model = hear_provider.model_for_subtitles()
     if hear_provider.is_local(model):
         raise plan.PlanError("studio_subtitles_cloud_model")
     revision = current["revision"]

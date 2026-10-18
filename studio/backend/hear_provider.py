@@ -16,6 +16,9 @@ logger = logging.getLogger("hhmod_studio.hear")
 URL = "https://openrouter.ai/api/v1/audio/transcriptions"
 TIMEOUT = 600.0
 KEYS = ("start", "end", "text", "no_speech_prob")
+# Modelle mit brauchbaren Zeiten je Satz (Probe 18.10.). whisper-1 liefert nur EINEN Abschnitt über den ganzen Ton.
+SEGMENT_MODELS = ("openai/whisper-large-v3", "openai/whisper-large-v3-turbo")
+DEFAULT_MODEL = SEGMENT_MODELS[0]
 
 
 class ProviderError(RuntimeError):
@@ -25,6 +28,13 @@ class ProviderError(RuntimeError):
 def server_model() -> str:
     from hydrahive.llm.media_models import get_media_model
     return get_media_model("transcribe")
+
+
+def model_for_subtitles() -> str:
+    """Server-Standard, wenn er Zeiten je Satz liefert oder lokal ist (dann lehnt der Start ab – nicht heimlich in die
+    Cloud); sonst ein Cloud-Modell mit Zeiten beim selben Anbieter."""
+    m = server_model()
+    return m if m in SEGMENT_MODELS or is_local(m) else DEFAULT_MODEL
 
 
 def is_local(model: str) -> bool:

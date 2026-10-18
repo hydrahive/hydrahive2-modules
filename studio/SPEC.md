@@ -1072,8 +1072,10 @@ Wyoming liefert keine Zeiten. (Die schlechte Erkennung in der Probe lag an der e
   ohne Mischpult-Einstellungen – die Erkennung soll die Stimmen gut hören. ffmpeg mischt das als Mono, 16 kHz, AAC
   32 kbit/s (60 min ≈ 14 MB). Höchstens 60 min Film (`studio_subtitles_too_long`).
 - **Auftrag** `transcribe` (Ziel `subtitles:<projekt>:<sprache>`, einer zur Zeit, `studio_subtitles_running`). Modell:
-  Standard des Servers für Transkription (`get_media_model("transcribe")`); ist dort ein lokales Modell eingestellt,
-  lehnt der Start ab (`studio_subtitles_cloud_model`, keine Zeiten). Sprache = Sprache des Films, immer mitgeschickt.
+  Standard des Servers für Transkription, wenn er Zeiten je Satz liefert (whisper-large-v3, -turbo). Steht dort ein
+  anderes Cloud-Modell (auf hydratest: whisper-1, ein Abschnitt für alles), nimmt das Studio whisper-large-v3 beim selben
+  Anbieter; der Dialog zeigt das Modell. Ist ein lokales Modell eingestellt, lehnt der Start ab
+  (`studio_subtitles_cloud_model`) – der Ton geht nicht heimlich in die Cloud. Sprache = Sprache des Films, immer mit.
 - **Aus den Abschnitten werden Untertitel:** Text gesäubert, Abschnitte mit `no_speech_prob` > 0,6 entfallen,
   lange Abschnitte werden wie in 6a geteilt (Zeilen ≤ 42 Zeichen, ≤ 7 s), Ende höchstens Filmende, keine Überlappung,
   mindestens 0,5 s. Quelle `audio`.

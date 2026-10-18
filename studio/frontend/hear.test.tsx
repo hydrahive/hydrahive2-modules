@@ -46,6 +46,7 @@ describe("6b – Dialog „Aus dem Ton heraushören“", () => {
     const out = dlg()
     expect(out).toContain("lang.de")
     expect(out).toContain("1:35")
+    expect(dlg({ info: { ...INFO, seconds: 65 } })).toContain("1:05")
     expect(out).toContain("openai/whisper-large-v3")
     expect(out).toContain("hear_cost_below")
     expect(out).toContain("hear_no_music")

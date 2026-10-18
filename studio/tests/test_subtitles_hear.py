@@ -158,6 +158,25 @@ def test_only_members(client, other_headers) -> None:
     assert client.get(f"{S}/de/from-audio", headers=other_headers).status_code in (404, 405)
 
 
+def test_model_choice(monkeypatch) -> None:
+    from backend import hear_provider as hp
+    for server, used in (("openai/whisper-large-v3-turbo", "openai/whisper-large-v3-turbo"), ("openai/whisper-large-v3", "openai/whisper-large-v3"),
+                         ("openai/whisper-1", "openai/whisper-large-v3"), ("irgendwas/stt", "openai/whisper-large-v3"),
+                         ("local/whisper", "local/whisper")):
+        monkeypatch.setattr(hp, "server_model", lambda s=server: s)
+        assert hp.model_for_subtitles() == used, server
+
+
+@needs_ffmpeg
+def test_server_whisper_1_is_replaced_by_a_model_with_times(client, auth_headers, ws, hear, monkeypatch) -> None:
+    _film(client, auth_headers, ws)
+    monkeypatch.setattr("backend.hear_provider.server_model", lambda: "openai/whisper-1")
+    assert client.get(f"{S}/de/from-audio", headers=auth_headers).json()["model"] == "openai/whisper-large-v3"
+    client.post(H, headers=auth_headers, json={})
+    assert wait_hear(client, auth_headers)["status"] == "done"
+    assert hear.calls[0]["model"] == "openai/whisper-large-v3"
+
+
 def test_cue_making_from_segments() -> None:
     from backend.subtitle_hear import cues_from
     segs = [
