@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from _render_helpers import (
     R,
@@ -132,7 +133,7 @@ def test_placeholder_text_file_is_wrapped(client, auth_headers, ws, monkeypatch)
     def fake(cmd, seconds, progress):
         graph = cmd[cmd.index("-filter_complex") + 1]
         path = graph.split("textfile='", 1)[1].split("'", 1)[0]
-        seen.append(open(path, encoding="utf-8").read())
+        seen.append(Path(path).read_text(encoding="utf-8"))
         raise render.RenderFailed()
     monkeypatch.setattr(render, "_run_ffmpeg", fake)
     client.put(f"{R}/plan/screenplay", headers=auth_headers, json={"aspect_ratio": "9:16"})
