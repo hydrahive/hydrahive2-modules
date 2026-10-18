@@ -34,6 +34,7 @@ describe("5c-2 – Musik auf die Zeitleiste", () => {
     expect(short.out).toBe(12)
     expect(short.fade_out).toBeUndefined()                                  // nicht gekürzt → keine Blende
     expect(musicClip({ rel: "", duration: 0, seconds: 0, scene_id: "" }, () => "n")).toBeNull()
+    expect(musicClip({ rel: "c.mp3", duration: 0, seconds: 20, scene_id: "" }, () => "n")).toBeNull()        // Länge unbekannt → nicht ablegen
   })
 
   it("Platz: Film ab 0 (belegt → nächste freie Stelle), Szene ab ihrem ersten Bildclip, unbekannte Szene → Abspielkopf", () => {
