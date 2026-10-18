@@ -11,10 +11,10 @@ import math
 from itertools import pairwise
 from typing import Any
 
-from . import _timeline_load, mix, plan
+from . import _timeline_load, _timeline_plan, mix, plan
 from ._sources import AUDIO_EXT, IMAGE_EXT, VIDEO_EXT
 from ._store import is_id, new_id, read_json, root, safe_rel, write_json
-from ._timeline_plan import _video_length, clips_from_scenes
+from ._timeline_plan import _video_length
 
 MAX_CLIPS = 2000
 MAX_SECONDS = 4 * 3600
@@ -187,13 +187,10 @@ def append(pid: str, media_rel) -> dict:
 
 
 def from_plan(pid: str, *, replace: bool) -> dict:
-    """V1 aus dem Drehbuch: Video → Videoclip, nur Bild → Standbild, sonst Platzhalter; lückenlos, in Reihenfolge.
-    Die Tonspuren bleiben, wie sie sind."""
+    """V1 aus dem Drehbuch (Einzelheiten in _timeline_plan.build); die Musik bleibt, gebundene Sprache wird neu gelegt."""
     current = load(pid)
     if clips_of(current) and not replace:
         raise plan.PlanError("studio_timeline_not_empty", 409)
-    clips = clips_from_scenes(pid, plan.list_scenes(pid))
-    if not clips:
-        raise plan.PlanError("studio_timeline_no_shots")
-    tl = clean(pid, {"fps": current["fps"], "tracks": [{"id": "V1", "clips": clips}]}, _keep(current))
+    tracks = _timeline_plan.build(pid, current)
+    tl = clean(pid, {"fps": current["fps"], "tracks": tracks}, _keep(current))
     return _write(pid, tl, current["revision"])

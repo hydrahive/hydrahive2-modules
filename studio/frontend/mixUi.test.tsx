@@ -18,7 +18,7 @@ const MUSIC = a({ id: "m1", gain_db: -4.5, fade_in: 2, fade_out: 1 })
 const TL: Timeline = { revision: 1, fps: 25, tracks: [
   { id: "V1", kind: "video", clips: [] }, { id: "A1", kind: "audio", clips: [] }, { id: "A2", kind: "audio", gain_db: -6, clips: [MUSIC] }] }
 const panel = (tl: Timeline, p: Partial<React.ComponentProps<typeof MixerPanel>> = {}) =>
-  html(<MixerPanel mixer={mixerOf(tl)} counts={{ V1: 0, A1: 0, A2: 1 }} playing={false} onTrack={noop} onDuck={noop} {...p} />)
+  html(<MixerPanel mixer={mixerOf(tl)} counts={{ V1: 0, A1: 0, A2: 1 }} playing={false} onTrack={noop} onDuck={noop} onMusic={noop} musicRunning={false} {...p} />)
 const btnOf = (out: string, attr: string) => out.match(new RegExp(`<button[^>]*${attr}[^>]*>`))?.[0] ?? ""
 
 describe("5b – Mischpult", () => {

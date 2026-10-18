@@ -16,12 +16,14 @@ from . import (
     image_provider,
     jobs,
     plan,
+    speech,
     video_provider,
+    voice_provider,
 )
 
 logger = logging.getLogger("hhmod_studio.batch")
 
-KINDS = ("decompose_all", "images_all", "videos_all")
+KINDS = ("decompose_all", "images_all", "videos_all", "speech_all")
 
 
 def _steps(pid: str, kind: str) -> list[tuple[str, str | None, str]]:
@@ -35,7 +37,12 @@ def _steps(pid: str, kind: str) -> list[tuple[str, str | None, str]]:
                 out.append((scene["id"], None, title))
             continue
         for i, s in enumerate(shots, start=1):
-            want = not s.get("image_rel") if kind == "images_all" else bool(s.get("image_rel")) and not s.get("video_rel")
+            if kind == "speech_all":
+                want = bool((s.get("speech") or "").strip()) and not s.get("voice_rel")
+            elif kind == "images_all":
+                want = not s.get("image_rel")
+            else:
+                want = bool(s.get("image_rel")) and not s.get("video_rel")
             if want:
                 out.append((scene["id"], s["id"], f"{title} · Shot {i}"))
     return out
@@ -48,6 +55,8 @@ def _model(pid: str, kind: str) -> str:
         return models["text"] or default_model()
     if kind == "images_all":
         return models["image"] or image_provider.server_default_model()
+    if kind == "speech_all":
+        return models["voice"] or voice_provider.server_default_model()
     return models["video"] or video_provider.server_default_model()
 
 
@@ -62,6 +71,8 @@ def _run_step(pid: str, kind: str, scene_id: str, shot_id: str | None) -> None:
         asyncio.run(director.decompose(pid, scene_id))
     elif kind == "images_all":
         generate._work(pid, scene_id, shot_id)
+    elif kind == "speech_all":
+        speech.work(pid, scene_id, shot_id)
     else:
         generate_video._work(pid, scene_id, shot_id)
 

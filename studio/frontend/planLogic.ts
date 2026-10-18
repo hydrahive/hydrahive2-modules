@@ -1,4 +1,4 @@
-import type { ImportPreview, Plan, Scene, Selection } from "./planApi"
+import type { ImportPreview, Plan, Scene, Selection, Shot } from "./planApi"
 
 /** Szene in der Reihenfolge um eins nach oben (-1) oder unten (+1). Ränder und Unbekanntes ändern nichts. */
 export function moveScene(order: string[], id: string, dir: -1 | 1): string[] {
@@ -71,4 +71,9 @@ export function sceneDuration(scene: Scene | null): number {
 /** Hat die Szene Shots mit Bild oder Video? Dann fragt „In Shots zerlegen“ vor dem Ersetzen nach. */
 export function hasMedia(scene: Scene | null): boolean {
   return !!scene && scene.shots.some((s) => !!(s.image_rel || s.video_rel))
+}
+
+/** Was „Speichern“ im Shot-Formular schickt (Status und Medien ändert nur das Erzeugen; seit 5c mit Sprechtext/Stimme). */
+export function shotChanges(s: Shot): Partial<Shot> {
+  return { shot: s.shot, prompt: s.prompt, element_ids: s.element_ids, duration: s.duration, speech: s.speech ?? "", voice: s.voice ?? "" }
 }

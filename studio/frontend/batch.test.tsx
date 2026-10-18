@@ -22,9 +22,9 @@ describe("Studio 3c – Sammelaufträge", () => {
     expect(activeBatch([job({ status: "cancelled" })])).toBeNull()
   })
 
-  it("Menü: drei Punkte, gesperrt während ein Sammelauftrag läuft", () => {
+  it("Menü: vier Punkte (seit 5c auch Sprache), gesperrt während ein Sammelauftrag läuft", () => {
     const out = html(<BatchMenu running={false} onPick={noop} />)
-    expect([...out.matchAll(/data-batch-pick="([^"]+)"/g)].map((m) => m[1])).toEqual(["decompose_all", "images_all", "videos_all"])
+    expect([...out.matchAll(/data-batch-pick="([^"]+)"/g)].map((m) => m[1])).toEqual(["decompose_all", "images_all", "videos_all", "speech_all"])
     expect(html(<BatchMenu running onPick={noop} />).match(/<button[^>]*data-batch-open[^>]*>/)?.[0]).toContain(' disabled=""')
   })
 

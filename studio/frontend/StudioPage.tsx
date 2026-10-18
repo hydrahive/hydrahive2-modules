@@ -5,12 +5,9 @@ import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { BatchDialog } from "./BatchDialog"
 import { BatchMenu } from "./BatchMenu"
 import { BatchStatus } from "./BatchStatus"
-import { followView } from "./cutLogic"
 import { CutInspector } from "./CutInspector"
 import { CutPreview } from "./CutPreview"
 import { CutSound } from "./CutSound"
-import { CutTimeline } from "./CutTimeline"
-import { CutToolbar } from "./CutToolbar"
 import { editAction } from "./cutKeys"
 import { FromPlanDialog } from "./FromPlanDialog"
 import { FreeForm } from "./FreeForm"
@@ -38,11 +35,11 @@ import { StudioHeader } from "./StudioHeader"
 import { useLibrary } from "./useLibrary"
 import { usePlan } from "./usePlan"
 import { useBatch } from "./useBatch"
-import { appendNotice, cutDrops } from "./cutWiring"
+import { appendNotice } from "./cutWiring"
 import { CutArea } from "./CutArea"
-import { MixerPanel } from "./MixerPanel"
+import { MusicForm } from "./MusicForm"
+import { useMusic } from "./useMusic"
 import { MixInspector } from "./MixInspector"
-import { countsOf } from "./mixLogic"
 import { editing, useCutWorkspace } from "./useCutWorkspace"
 import { clipsOf, findClip } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
@@ -102,6 +99,7 @@ export function StudioPage() {
     p.select({ kind: "shot", sceneId: c.scene_id, id: c.shot_id })
   }
   const reload = () => { void lib.reload(); void guide.reload(); if (shotsWs) void p.reload(); if (editing(s.workspace)) void cut.reload() }
+  const mu = useMusic(lib.projectId, editing(s.workspace), ed.addMusic, (x) => cut.setNotice(x), () => void lib.reload())
   const selShot = p.selection?.kind === "shot" ? p.selection : null
   return (
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
@@ -159,6 +157,7 @@ export function StudioPage() {
                 : mixing && !s.item ? <MixInspector clip={cut.clip} onChange={(v) => cut.clip && ed.onClipMix(cut.clip.id, v)} />
                 : editing(s.workspace) ? <CutInspector clip={s.item ? null : cut.clip} onPlan={toPlan} media={s.item}
                     mix={cut.clip?.kind === "audio" ? (v) => cut.clip && ed.onClipMix(cut.clip.id, v) : undefined}
+                    onUnbind={() => cut.clip && ed.unbindVoice(cut.clip.id)}
                     onAppend={() => { const k = appendNotice(s.item, ed.addMedia); if (k) { s.clearMedia(); cut.setNotice(t(k)) } }} />
                 : <MediaInfo item={s.item} />}
             </div>
@@ -173,20 +172,16 @@ export function StudioPage() {
                 batchMenu={<BatchMenu running={!!bt.active} onPick={(k) => void bt.open(k)} />}
                 onAdd={() => void sh.add()} onMove={(id, d) => void sh.move(id, d)} onDecompose={() => void sh.decompose()} />
             : editing(s.workspace)
-              ? <CutArea mixer={mixing ? <MixerPanel mixer={mixer} counts={countsOf(cut.timeline)} playing={cp.playing} onTrack={ed.onTrackMix} onDuck={ed.onDuck} /> : null}>
-                  <CutTimeline timeline={cut.timeline} base={cut.timeline?.base ?? ""} time={cp.time} view={followView(cut.view, cp.time, cp.total)}
-                    selected={cut.selected} busy={cut.busy} onView={cut.setView} onSeek={cp.seek} onFromPlan={cut.fromPlan} mixer={mixer}
-                    toolbar={<CutToolbar save={ed.save} selected={cut.selected} canUndo={ed.canUndo} canRedo={ed.canRedo} canSplit={ed.canSplit}
-                      snap={ed.snap} onAction={ed.run} onSnap={ed.toggleSnap} onReload={() => void cut.reload()} />}
-                    {...cutDrops(lib.items, ed, every, () => cut.setNotice(t("cut_not_on_timeline")))} waveforms={waves.peaks}
-                    onSelect={(id) => { s.clearMedia(); cut.select(id); const c = findClip(cut.timeline, id); if (c) cp.seek(c.start) }} />
-                </CutArea>
+              ? <CutArea mixing={mixing} cut={cut} cp={cp} ed={ed} mixer={mixer} every={every} waves={waves.peaks} items={lib.items}
+                  onNotice={(k) => cut.setNotice(t(k))} onSelect={(id) => { s.clearMedia(); cut.select(id); const c = findClip(cut.timeline, id); if (c) cp.seek(c.start) }}
+                  onMusic={mu.show} musicRunning={mu.running} />
             : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
         </div>
         </>}
         {s.dialog === "help" && <ShortcutHelp onClose={() => s.setDialog(null)} onGo={s.setWorkspace} />}
         {s.dialog === "command" && <CommandPalette onClose={() => s.setDialog(null)} onRun={s.run} />}
         {p.dialog?.kind === "import" && p.preview && <ImportDialog preview={p.preview} busy={p.busy} onRun={() => void p.runImport()} onClose={() => p.setDialog(null)} />}
+        {mu.open && <MusicForm defaults={mu.defaults} job={mu.job} busy={mu.busy} onRun={(r) => void mu.run(r)} onClose={mu.close} />}
         <DraftDialog d={dr} append={!!p.plan?.scenes.length} />
         {bt.dialog && <BatchDialog kind={bt.dialog.kind} preview={bt.dialog.preview} busy={p.busy} onRun={() => void bt.run()} onClose={bt.close} />}
         {cut.confirm && <FromPlanDialog count={cut.clips.length} busy={cut.busy} onConfirm={cut.confirmReplace} onClose={cut.closeConfirm} />}

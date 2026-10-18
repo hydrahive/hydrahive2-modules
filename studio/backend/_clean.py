@@ -10,7 +10,8 @@ ELEMENT_KINDS = ("character", "place", "object")
 SHOT_STATUS = ("planned", "image_ready", "video_processing", "done", "failed")
 MODEL_KEYS = ("video", "image", "voice", "music", "text")
 CAMERA_KEYS = ("shot", "lens", "light", "weather", "time", "mood")
-VARIANT_DIRS = ("studio/media/images/", "studio/media/free/")    # Bilder des Studios: je Shot erzeugt oder frei (B3)
+VARIANT_DIRS = ("studio/media/images/", "studio/media/free/")
+VOICE_DIR = "studio/media/voice/"                                   # erzeugte Sprache je Shot (5c)    # Bilder des Studios: je Shot erzeugt oder frei (B3)
 
 
 def text(v: Any, n: int) -> str:
@@ -75,6 +76,10 @@ def shot(v: Any, order: int, elements: set[str]) -> dict:
         "video_rel": v["video_rel"] if isinstance(v.get("video_rel"), str) else None,
         "variants": [x for x in (v.get("variants") if isinstance(v.get("variants"), list) else [])
                      if isinstance(x, str) and x.startswith(VARIANT_DIRS) and ".." not in x][-8:],
+        # 5c: Sprechtext, Stimme (leer = Standard des Modells) und erzeugte Sprache
+        "speech": text(v.get("speech"), 1000), "voice": text(v.get("voice"), 100),
+        "voice_rel": v["voice_rel"] if isinstance(v.get("voice_rel"), str) and v["voice_rel"].startswith(VOICE_DIR)
+                     and ".." not in v["voice_rel"] else None,
     }
 
 

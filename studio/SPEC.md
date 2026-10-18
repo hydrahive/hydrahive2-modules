@@ -901,7 +901,71 @@ Wie bisher in Schritten, nach jedem ist etwas Sichtbares fertig:
   abspielen, „Film als MP4 erzeugen“, Download mit ffprobe geprüft (Ton hörbar ≠ Stille per `volumedetect`, Länge =
   Ende des letzten Clips).
 
-**5c** bekommt vor dem Start einen eigenen Nachtrag.
+### Bauplan 5c – Sprache und Musik erzeugen (18.10.)
+
+**Ist-Stand (geprüft):**
+- Shots haben `prompt`, `duration`, Bild und Video, aber keinen Sprechtext. Szenen haben `dialogues` (Sprecher-Baustein,
+  Text, Tonfall), die bisher nur der Regie-Agent liest.
+- Drehbuch-Kopf: `models.voice` und `models.music` (seit 2a, Auswahllisten aus dem Kern-Katalog).
+- Kern: `hydrahive.tools._openrouter_media.synthesize_speech(text, voice, model, key=…)` liefert wav/mp3 (Stimmen je
+  Modell über `media_models.voices_for`), `voice.tts.synthesize_local` für lokales Piper (`local/…`). Musik über
+  OpenRouter-Chat mit `modalities: [text, audio]` als Stream, gelesen mit `_openrouter_media.read_audio_sse` (wie im
+  Atelier). Standard: `media_models.tts` bzw. `media_models.music`. Auf hydratest: `hexgrad/kokoro-82m`, Lyria.
+
+**Was der Nutzer bekommt:**
+- **Sprechtext je Shot:** Im Shot-Formular (Planen und Erzeugen) neue Felder **„Sprechtext“** (bis 1.000 Zeichen) und
+  **„Stimme“** (Auswahl aus den Stimmen des Sprachmodells, leer = Standard des Modells). Knopf **„Sprache erzeugen“**.
+  Das Ergebnis: Datei `studio/media/voice/<id>.wav|mp3` mit Begleitdatei (Text, Stimme, Modell, Dauer, Shot) und
+  `voice_rel` am Shot. Kosten-Hinweis vor dem Start (wie bei Bildern: „kostet je nach Modell ein paar Cent“).
+- **Sammelauftrag „Sprache für alle Shots mit Sprechtext“** im bestehenden Menü „Für alle …“.
+- **Sprache gehört zum Shot** (Till 18.10.): Beim „Aus dem Drehbuch übernehmen“ wird die Sprache eines Shots auf die Spur
+  „Sprache“ an den Anfang seines Bildclips gelegt (`shot_id` gesetzt). Beim Umsortieren, Kürzen oder Löschen auf V1
+  wandert der gebundene Sprachclip mit: Er beginnt immer am Anfang seines Bildclips, bleibt höchstens so lang wie der
+  Bildclip und verschwindet mit ihm. Ein Sprachclip lässt sich lösen („Vom Shot lösen“); dann ist er frei wie in 5a.
+  Neu erzeugte Sprache ersetzt die gebundene Sprache des Shots auf der Zeitleiste (vorher Rückfrage im eigenen Dialog,
+  falls dort von Hand verändert).
+- **Musik erzeugen** im Reiter „Ton“: Knopf **„Musik erzeugen …“** öffnet ein Formular mit Beschreibung (vorbelegt aus
+  Stimmung/Look des Drehbuchs bzw. der Szene), Länge (bis 180 s, Standard: Filmlänge bzw. Länge der Szene, sofern das
+  Modell das kann), Ziel **„für den ganzen Film“** oder **„für die Szene …“**. Ergebnis `studio/media/music/<id>.mp3` mit
+  Begleitdatei; es wird auf die Spur „Musik“ gelegt (ganzer Film: ab 0; Szene: ab dem ersten Clip der Szene) und erscheint
+  in der Bibliothek als „Studio · Musik“. Kosten-Hinweis.
+- Beides läuft als Auftrag mit Fortschritt (vorhandene `jobs.py`), Fehler mit verständlicher Meldung (kein Schlüssel,
+  Anbieter lehnt ab, unlesbare Antwort). Erst wenn ffprobe die Datei als Ton erkennt, wird sie angenommen.
+
+**Prüfregeln:**
+- Sprechtext ≤ 1.000 Zeichen, Musikbeschreibung ≤ 2.000, Länge 5–180 s. Stimme muss eine der Stimmen des Modells sein
+  (sonst Standard + Hinweis in der Begleitdatei, wie der Kern es tut).
+- Höchstens ein Musikauftrag je Projekt gleichzeitig; Sprache bis zu zwei gleichzeitig (wie Videos).
+
+**Tests 5c:**
+- pytest (Anbieter gestubbt, kein Netz): Sprache je Shot (Datei, Begleitdatei, `voice_rel`, Fehlerfälle, Stimme), Sammelauftrag,
+  Musik (Ziel Film/Szene, Ablage, Bibliothek, Platz auf der Spur), Bindung an den Shot (from-plan legt Sprache an, Umsortieren/
+  Kürzen/Löschen auf V1 nimmt sie mit, Lösen), Prüfregeln.
+- vitest: Formularfelder, Bindungslogik als reine Funktion, Dialoge.
+- E2E auf hydratest mit **echter** Sprache (kokoro, Bruchteil eines Cents) und **echter** Musik (Lyria, ≈ 4 ct je Stück), nur sichtbare
+  Texte, 1280 und 1600: Sprechtext eintippen, erzeugen, übernehmen, Sprache liegt am Shot, Umsortieren nimmt sie mit, Musik für den
+  Film erzeugen, Film als MP4 mit Sprache und Musik (Pegel per volumedetect).
+
+**Schritte:** 5c-1 Sprache je Shot + Bindung, 5c-2 Musik erzeugen. Ein PR je Schritt.
+
+**Nachtrag 5c-2 – Musik erzeugen (18.10., nach 5c-1):**
+- Der Auftrag `music` (höchstens einer je Projekt, sonst 409 `studio_music_running`) erzeugt **nur die Datei**:
+  `studio/media/music/<id>.mp3` mit Begleitdatei (Beschreibung, gesendeter Prompt, Modell, Länge, gewünschte Länge,
+  Szene, Zeit). In der Bibliothek erscheint sie als „Studio · Musik“ (Art Musik).
+- **Auf die Zeitleiste legt sie der Browser**, sobald der Auftrag fertig ist (wie Ablegen aus der Bibliothek, ein
+  Verlaufsschritt, automatisch gespeichert). So schreibt weiter nur ein Ort die Schnittfassung; ein Auftrag im
+  Hintergrund kann das Speichern des offenen Fensters nicht in einen Konflikt treiben. Ist das Studio beim Fertigwerden
+  zu, liegt die Musik in der Bibliothek und kann hineingezogen werden (die Meldung beim Start sagt das).
+- Platz: ganzer Film ab 0, Szene ab dem ersten Bildclip der Szene (sonst ab dem Abspielkopf). Ist die Stelle belegt,
+  die nächste freie Stelle (wie 5a). Länge: höchstens die gewünschte Länge; wird gekürzt, blendet die Musik die letzten
+  2 s aus.
+- Formular **„Musik erzeugen …“** im Reiter „Ton“: Beschreibung (vorbelegt aus Look und Logline des Drehbuchs bzw. der
+  Beschreibung der Szene), Ziel „Ganzer Film“ oder eine Szene, Länge in Sekunden (5–180, vorbelegt mit der Länge des
+  Films bzw. der Szene), Modell (aus dem Drehbuch, sonst Standard des Servers), Kosten-Hinweis (Lyria ≈ 4 ct je Stück).
+- Anbieter: OpenRouter-Chat mit `modalities: [text, audio]` als Stream; den Stream liest der Kern
+  (`_openrouter_media.read_audio_sse`). Dem Prompt wird „Instrumental, about N seconds long“ angehängt.
+- Fehlercodes: `studio_music_needs_text` (400), `studio_not_found` (Szene, 404); im Auftrag `no_key`,
+  `provider_rejected`, `provider_unreachable`, `empty_answer`, `bad_audio`.
 
 ### Bauplan 5b – Mischpult (18.10.)
 

@@ -10,12 +10,14 @@ import type { ShotsState } from "./useShots"
 import type { Job } from "./planApi"
 import { latestJob } from "./jobLogic"
 import { useModelCatalogs } from "./modelCatalog"
+import { useVoices } from "./useVoices"
 
 /** Planen, rechts: Formular des Gewählten. `key` mit `rev` setzt das Formular nach dem Speichern auf die frischen Daten. */
 export function PlanInspector({ p, shots, images, jobs = [] }: { p: PlanState; shots?: ShotsState; images: LibraryItem[]; jobs?: Job[] }) {
   const { t } = useTranslation("studio")
   const { plan, selection: sel } = p
   const catalogs = useModelCatalogs(sel?.kind === "head")          // erst laden, wenn das Drehbuch-Formular offen ist
+  const voices = useVoices(p.projectId, plan?.screenplay.models.voice ?? "", sel?.kind === "shot")   // Stimmen erst beim Shot
   let body: React.ReactNode = (
     <div className="mt-3 space-y-2 text-xs leading-relaxed text-[#8d9ab0]" data-plan-inspector-empty>
       <p>{t("plan_inspector_empty")}</p>
@@ -45,7 +47,8 @@ export function PlanInspector({ p, shots, images, jobs = [] }: { p: PlanState; s
         presets={plan.presets.shot ?? []} busy={p.busy} onSave={(d) => void shots.save(shot.id, d)} onDelete={() => shots.remove(shot.id, index)}
         base={plan.base} job={latestJob(jobs, shot.id, "image")} videoJob={latestJob(jobs, shot.id, "video")}
         onGenerate={() => void shots.generateImage(shot.id)} onVideo={() => void shots.generateVideo(shot.id)}
-        onChoose={(rel) => void shots.chooseVariant(shot.id, rel)} />
+        onChoose={(rel) => void shots.chooseVariant(shot.id, rel)}
+        voices={voices} speechJob={latestJob(jobs, shot.id, "speech")} onSpeech={() => void shots.generateSpeech(shot.id)} />
     }
   }
   return (

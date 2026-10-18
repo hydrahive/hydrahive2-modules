@@ -8,7 +8,9 @@ import {
   addMedia as addTo, canSplit, editTracks, moveAudioClip, moveVideoClip, toTimeline, trackOf, tracksOf, trimTracks,
   type Clipboard, type Tracks,
 } from "./cutTracks"
+import { musicClip, placeMusic, type MusicResult } from "./musicLogic"
 import { mixerOf, setClipMix, setDuck, setTrackMix, type Mixer } from "./mixLogic"
+import { unbind } from "./voiceBind"
 import { timelineApi, type Timeline, type TrackId, type TrackMix } from "./timelineApi"
 
 /** Verlaufszustand: Clips aller Spuren und Mischpult (5b) – Rückgängig gilt für beides. */
@@ -73,6 +75,7 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     saver.current?.change(tl)
     syncFlags()
   }, [timeline, setTimeline, hist, syncFlags])
+  // Die Bearbeitungen (cutTracks) ziehen die an Shots gebundene Sprache selbst nach (5c)
   const apply = useCallback((next: Tracks, record = true) => commit({ tracks: next, mixer }, record), [commit, mixer])
   const change = useCallback((next: Tracks) => { if (next !== tracks) apply(next) }, [apply, tracks])
 
@@ -100,11 +103,11 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     const known = { ...durations.current }                         // Medienlänge je Clip: Bibliothek, sonst Wellenform
     for (const c of [...trimFrom.current.A1, ...trimFrom.current.A2]) if (lengths[c.media_rel]) known[c.id] = lengths[c.media_rel]
     const next = trimTracks(trimFrom.current, id, edge, delta, fps, known)
-    if (!final) { apply(next, false); return }
+    if (!final) { commit({ tracks: next, mixer }, false); return }                  // trimTracks zieht die Sprache schon mit
     const before = trimFrom.current
     trimFrom.current = null
-    if (JSON.stringify(before) !== JSON.stringify(next)) { hist.push({ tracks: next, mixer }); lastMix.current = ""; apply(next, false) }
-  }, [apply, tracks, fps, hist, lengths, mixer])
+    if (JSON.stringify(before) !== JSON.stringify(next)) { hist.push({ tracks: next, mixer }); lastMix.current = ""; commit({ tracks: next, mixer }, false) }
+  }, [commit, tracks, fps, hist, lengths, mixer])
 
   /** Medium ablegen: Bild/Video an Stelle `index` auf V1, Ton ab `at` (Standard: Abspielkopf) auf seine Spur. */
   const place = useCallback((item: LibraryItem, index?: number, at?: number, track?: AudioTrack): boolean => {
@@ -129,6 +132,15 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     return true
   }, [place, projectId, time])
 
+  /** Fertige Musik (5c-2) auf die Musik-Spur – ein Verlaufsschritt. false, wenn die Fassung noch nicht geladen ist. */
+  const addMusic = useCallback((r: MusicResult): boolean => {
+    const c = timeline ? musicClip(r, newId) : null
+    if (!c) return false
+    durations.current[c.id] = r.duration
+    apply(placeMusic(tracks, c, r.scene_id, time, fps))
+    select(c.id)
+    return true
+  }, [timeline, apply, tracks, time, fps, select])
   const move = useCallback((id: string, index: number) => change(moveVideoClip(tracks, id, index, fps)), [change, tracks, fps])
   const moveAudio = useCallback((id: string, track: AudioTrack, start: number) => change(moveAudioClip(tracks, id, track, start, fps)), [change, tracks, fps])
   // Mischpult (5b): Regler liefern beim Ziehen viele Werte – solange dasselbe Ziel weiter verstellt wird, ersetzt der
@@ -150,12 +162,13 @@ export function useCutEdit(projectId: string, timeline: Timeline | null, setTime
     mixChange(`clip:${clipId}:${Object.keys(v)[0]}`, setClipMix(timeline, clipId, v))
   }, [timeline, mixChange])
   const onDuck = useCallback((on: boolean) => { if (timeline) mixChange(`duck:${on}`, setDuck(timeline, on)) }, [timeline, mixChange])
+  const unbindVoice = useCallback((clipId: string) => change(unbind(tracks, clipId)), [change, tracks])
   const flush = useCallback(() => saver.current?.flush(), [])
   const learnDuration = useCallback((clipId: string, seconds: number) => { if (seconds > 0) durations.current[clipId] = seconds }, [])
 
   return {
-    save, snap, toggleSnap: () => setSnap((s) => !s), run, onTrim, addMedia, move, moveAudio, flush, learnDuration,
-    mixer, onTrackMix, onClipMix, onDuck,
+    save, snap, toggleSnap: () => setSnap((s) => !s), run, onTrim, addMedia, addMusic, move, moveAudio, flush, learnDuration,
+    mixer, onTrackMix, onClipMix, onDuck, unbindVoice,
     canUndo: flags.undo, canRedo: flags.redo,
     canSplit: canSplit(tracks, { selected, time, fps, newId }),
     snapTo: snap ? [time] : [],
