@@ -37,6 +37,8 @@ import { usePlan } from "./usePlan"
 import { useBatch } from "./useBatch"
 import { appendNotice } from "./cutWiring"
 import { CutArea } from "./CutArea"
+import { MusicForm } from "./MusicForm"
+import { useMusic } from "./useMusic"
 import { MixInspector } from "./MixInspector"
 import { editing, useCutWorkspace } from "./useCutWorkspace"
 import { clipsOf, findClip } from "./timelineApi"
@@ -97,6 +99,7 @@ export function StudioPage() {
     p.select({ kind: "shot", sceneId: c.scene_id, id: c.shot_id })
   }
   const reload = () => { void lib.reload(); void guide.reload(); if (shotsWs) void p.reload(); if (editing(s.workspace)) void cut.reload() }
+  const mu = useMusic(lib.projectId, editing(s.workspace), ed.addMusic, (x) => cut.setNotice(x), () => void lib.reload())
   const selShot = p.selection?.kind === "shot" ? p.selection : null
   return (
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
@@ -170,13 +173,15 @@ export function StudioPage() {
                 onAdd={() => void sh.add()} onMove={(id, d) => void sh.move(id, d)} onDecompose={() => void sh.decompose()} />
             : editing(s.workspace)
               ? <CutArea mixing={mixing} cut={cut} cp={cp} ed={ed} mixer={mixer} every={every} waves={waves.peaks} items={lib.items}
-                  onNotice={(k) => cut.setNotice(t(k))} onSelect={(id) => { s.clearMedia(); cut.select(id); const c = findClip(cut.timeline, id); if (c) cp.seek(c.start) }} />
+                  onNotice={(k) => cut.setNotice(t(k))} onSelect={(id) => { s.clearMedia(); cut.select(id); const c = findClip(cut.timeline, id); if (c) cp.seek(c.start) }}
+                  onMusic={mu.show} musicRunning={mu.running} />
             : soon ? <ComingSoon workspace={soon} onCut={() => s.setWorkspace("edit")} /> : null}
         </div>
         </>}
         {s.dialog === "help" && <ShortcutHelp onClose={() => s.setDialog(null)} onGo={s.setWorkspace} />}
         {s.dialog === "command" && <CommandPalette onClose={() => s.setDialog(null)} onRun={s.run} />}
         {p.dialog?.kind === "import" && p.preview && <ImportDialog preview={p.preview} busy={p.busy} onRun={() => void p.runImport()} onClose={() => p.setDialog(null)} />}
+        {mu.open && <MusicForm defaults={mu.defaults} job={mu.job} busy={mu.busy} onRun={(r) => void mu.run(r)} onClose={mu.close} />}
         <DraftDialog d={dr} append={!!p.plan?.scenes.length} />
         {bt.dialog && <BatchDialog kind={bt.dialog.kind} preview={bt.dialog.preview} busy={p.busy} onRun={() => void bt.run()} onClose={bt.close} />}
         {cut.confirm && <FromPlanDialog count={cut.clips.length} busy={cut.busy} onConfirm={cut.confirmReplace} onClose={cut.closeConfirm} />}

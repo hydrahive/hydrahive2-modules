@@ -67,6 +67,10 @@ export const jobs_de = {
     internal: "Etwas ist schiefgegangen. Bitte erneut versuchen.",
     no_key_voice: "Für Sprache ist kein Anbieter eingerichtet. Das geht in der Admin-Konsole unter KI-Modelle.",
     bad_audio: "Die Antwort des Anbieters war kein gültiger Ton. Bitte erneut versuchen oder im Drehbuch unter „Modelle“ ein anderes Sprachmodell wählen.",
+    no_key_music: "Für Musik ist kein Anbieter eingerichtet. Das geht in der Admin-Konsole unter KI-Modelle.",
+    provider_rejected_music: "Der Anbieter hat die Anfrage abgelehnt. Bitte im Drehbuch unter „Modelle“ ein anderes Musik-Modell eintragen oder später erneut versuchen.",
+    empty_answer_music: "Der Anbieter hat keine Musik geliefert. Bitte erneut versuchen.",
+    bad_audio_music: "Die Antwort des Anbieters war keine gültige Musik. Bitte erneut versuchen oder im Drehbuch unter „Modelle“ ein anderes Musik-Modell wählen.",
     no_text: "Der Shot hat keinen Sprechtext mehr.",
   },
 }
@@ -138,6 +142,10 @@ export const jobs_en: typeof jobs_de = {
     internal: "Something went wrong. Please try again.",
     no_key_voice: "No provider is set up for voice. You can do that in the admin console under AI models.",
     bad_audio: "The provider's answer was not valid sound. Please try again or pick another speech model in the screenplay under “Models”.",
+    no_key_music: "No provider is set up for music. You can do that in the admin console under AI models.",
+    provider_rejected_music: "The provider rejected the request. Please enter a different music model in the screenplay under “Models” or try again later.",
+    empty_answer_music: "The provider returned no music. Please try again.",
+    bad_audio_music: "The provider's answer was not valid music. Please try again or choose a different music model in the screenplay under “Models”.",
     no_text: "The shot has no speech text any more.",
   },
 }
