@@ -80,3 +80,15 @@ Mit dem Testaufbau vom 18.10. (`/opt/vitrine-evdi-test`) prüfen, was S1 vorauss
 - Firefox beenden → Kiosk startet ihn neu; EVDI fehlt → Video läuft, Cockpit zeigt den Grund
 
 Gegenprobe: Mutanten ohne Bytecode-Cache. Dateien ≤ 200 Zeilen. Version 0.7.0.
+
+## Umsetzung (18.10.2026) – Abweichungen vom Plan, alle am Gerät begründet
+- **EVDI im eigenen Thread** (`renderer/dashboard.py`): Ohne laufendes Abarbeiten der EVDI-Ereignisse hängt `xrandr` beim
+  Einschalten des Ausgangs (am Gerät gesehen). Der Thread verarbeitet sie immer, Bilder holt er nur im Dashboard-Modus.
+- **Mauszeiger** zeichnet Vitrine selbst (`renderer/cursor.py`): EVDI liefert den Bildschirminhalt ohne Zeiger.
+  Position über `XQueryPointer` aus einer eigenen X-Verbindung (Xlib ist nicht threadsicher).
+- **Kiosk-Zugang** über die Geräte-Routen des Kerns (`/api/module-device/vitrine/kiosk`, Rate-Limit) mit Kiosk-Schlüssel
+  (`<daten>/kiosk.key`, 0600) **und** direkter Verbindung von 127.0.0.1 – statt einer eigenen Login-Ausnahme.
+- **Kiosk nur ohne echten Monitor:** Der Installer richtet die Kiosk-Sitzung nicht ein, wenn ein Bildschirm angeschlossen ist
+  (dann bleibt der Anmeldebildschirm), und auch nicht, wenn `<daten>/kiosk.off` existiert.
+- **Update-sicherer Rückbau:** Ein Modul-Update ruft `uninstall.sh` + `install.sh`. Der Kiosk-Rückbau läuft daher
+  verzögert (120 s) und nur, wenn das Modul danach wirklich fehlt; `install.sh` bricht ihn ab.

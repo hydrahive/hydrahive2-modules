@@ -35,6 +35,7 @@ class Config(BaseModel):
     rotate_minutes: int = Field(10, ge=0, le=1440)
     fps: int = Field(24, ge=12, le=30)                       # Bildrate; Grenzen wie renderer.config.FPS_RANGE
     message_seconds: int = Field(15, ge=5, le=120)           # Standard-Dauer einer Einblendung
+    dashboard_return_seconds: int = Field(120, ge=30, le=1800)  # Dashboard → Video nach so vielen s ohne Eingabe
 
     @field_validator("rules")
     @classmethod

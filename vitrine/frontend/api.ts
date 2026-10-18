@@ -17,6 +17,10 @@ export interface VitrineStatus {
   night: "dim" | "off" | null
   /** Hinweistext während einer Vorschau auf dem Display, sonst null. */
   preview: string | null
+  /** Was das Display zeigt: Feiertagsvideo oder Dashboard (Statuszentrale). */
+  mode: "video" | "dashboard" | null
+  /** „aus“ | „bereit“ | „nicht verfügbar: <Grund>“ | „startet“ – vom Dienst. */
+  dashboard: string | null
 }
 
 export interface Night {
@@ -35,6 +39,8 @@ export interface VitrineConfig {
   fps: number
   /** Standard-Dauer einer Einblendung in Sekunden, 5–120 (Fehler bleiben länger). */
   message_seconds: number
+  /** Dashboard → zurück zum Video nach so vielen Sekunden ohne Eingabe, 30–1800 (Standard 120). */
+  dashboard_return_seconds: number
 }
 
 export interface VideoFile {

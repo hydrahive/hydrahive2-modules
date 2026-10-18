@@ -31,6 +31,37 @@ SUBSYSTEM==\"usb\", ATTR{idVendor}==\"33c3\", ATTR{idProduct}==\"0e02\", MODE=\"
 EOF
 udevadm control --reload-rules && udevadm trigger --subsystem-match=usb --attr-match=idVendor=33c3"
 
+# --- Kiosk (Statuszentrale per Maus, SPEC-STATUSZENTRALE.md) ---
+# Nur unter Linux mit apt + sddm + Firefox und nur, wenn kein echter Monitor angeschlossen ist (dann gehört der
+# Anmeldebildschirm niemandem). Abschalten: Datei ${DATA}/kiosk.off anlegen.
+KIOSK_ENV=""
+sudo -n bash -c 'systemctl stop hydrahive2-vitrine-kiosk-cleanup.timer' >/dev/null 2>&1 || true   # Update: Rückbau abbrechen
+_monitor=""
+for st in /sys/class/drm/card*-*/status; do
+  [ -r "${st}" ] || continue
+  drv="$(basename "$(readlink -f "$(dirname "${st}")/device/driver" 2>/dev/null)" 2>/dev/null || true)"
+  [ "${drv}" != "evdi" ] && [ "$(cat "${st}")" = "connected" ] && _monitor="$(basename "$(dirname "${st}")")"
+done
+if [ -f "${DATA}/kiosk.off" ]; then
+  echo "Vitrine-Kiosk: abgeschaltet (${DATA}/kiosk.off)"
+elif [ -n "${_monitor}" ]; then
+  echo "Vitrine-Kiosk: nicht eingerichtet – Monitor ${_monitor} angeschlossen (Anmeldebildschirm bleibt)"
+elif command -v apt-get >/dev/null && command -v sddm >/dev/null && command -v firefox >/dev/null; then
+  [ -s "${DATA}/kiosk.key" ] || (umask 077 && head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "${DATA}/kiosk.key")
+  _port="${HH_PORT:-$(systemctl show hydrahive2 -p Environment --value 2>/dev/null | tr ' ' '\n' | sed -n 's/^HH_PORT=//p')}"
+  _url="http://127.0.0.1:${_port:-8001}/api/module-device/vitrine/kiosk?k=$(cat "${DATA}/kiosk.key")"
+  # Nur `sudo -n bash` ist erlaubt (sudoers des Installers) – alles Root-Seitige läuft darüber.
+  _before="$(sudo -n bash -c 'cat /etc/sddm.conf' 2>/dev/null || true)"
+  sudo -n bash "${MODULE_ROOT}/extension/kiosk-install.sh" "${MODULE_ROOT}" "${USER_NAME}" "${_url}"
+  sudo -n bash -c "install -m 755 '${MODULE_ROOT}/extension/kiosk-uninstall.sh' /etc/hydrahive2-vitrine/kiosk-uninstall.sh"
+  [ "${_before}" != "$(sudo -n bash -c 'cat /etc/sddm.conf')" ] && KIOSK_RESTART_SDDM=1
+  KIOSK_ENV="Environment=VITRINE_KIOSK_DISPLAY=:0
+SupplementaryGroups=video
+BindReadOnlyPaths=-/tmp/.X11-unix"
+else
+  echo "Vitrine-Kiosk: nicht eingerichtet (braucht apt, sddm und Firefox)"
+fi
+
 # --- systemd-Dienst ---
 sudo -n bash -c "cat > /etc/systemd/system/${UNIT}.service <<EOF
 [Unit]
@@ -53,10 +84,16 @@ ProtectSystem=strict
 ProtectHome=read-only
 PrivateTmp=true
 ReadWritePaths=${DATA}
+${KIOSK_ENV}
 
 [Install]
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload && systemctl enable --now ${UNIT} >/dev/null && systemctl restart ${UNIT}"
+
+# Erst nach dem Dienst (stellt den virtuellen Monitor bereit): Anmeldebildschirm → Kiosk-Sitzung, nur beim ersten Mal
+if [ "${KIOSK_RESTART_SDDM:-0}" = 1 ]; then
+  sudo -n bash -c 'systemctl restart sddm' && echo "Vitrine-Kiosk: Anmeldung auf Kiosk umgestellt"
+fi
 
 echo "Vitrine-Dienst eingerichtet (${UNIT}); Videos nach ${DATA}/videos"

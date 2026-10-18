@@ -61,6 +61,11 @@ export function SettingsCard({ config, onChange }: { config: VitrineConfig; onCh
           <input type="number" min={5} max={120} className={`${field} ml-2 w-20`} value={config.message_seconds}
             onChange={(e) => onChange({ ...config, message_seconds: clamp(Number(e.target.value), 5, 120) })} />
         </label>
+        <label className="block text-xs text-[#8d9ab0]">{t("dashboard_return_label")}
+          <input type="number" min={30} max={1800} className={`${field} ml-2 w-20`} value={config.dashboard_return_seconds ?? 120}
+            onChange={(e) => onChange({ ...config, dashboard_return_seconds: clamp(Number(e.target.value), 30, 1800) })} />
+          <span className="ml-2 text-[#5b6b82]">{t("dashboard_return_hint")}</span>
+        </label>
       </div>
 
       <div className="space-y-3 rounded-[6px] border border-[#2a364b] bg-[#111827] p-4">
