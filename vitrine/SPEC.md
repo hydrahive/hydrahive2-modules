@@ -88,7 +88,7 @@ ihr Name erscheint oben unter dem Datum. Vorlagen für alle Arten sind im Cockpi
 
 ## Bewusst nicht (V1)
 
-- kein Zweitmonitor für den KDE-Desktop (EVDI) — eigenes Thema
+- kein Zweitmonitor für den KDE-Desktop (EVDI) — eigenes Thema, siehe `SPEC-STATUSZENTRALE.md` (Dashboard per Maus)
 - keine Steuerung über die Display-Knöpfe (Firmware behält sie)
 - keine Firmware-Updates des Displays
 - kein Ton, keine Lampen/Home-Assistant-Aktionen bei Nachrichten (nur Bild; später ausbaubar)
