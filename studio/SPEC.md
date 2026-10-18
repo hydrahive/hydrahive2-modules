@@ -948,6 +948,25 @@ Wie bisher in Schritten, nach jedem ist etwas Sichtbares fertig:
 
 **Schritte:** 5c-1 Sprache je Shot + Bindung, 5c-2 Musik erzeugen. Ein PR je Schritt.
 
+**Nachtrag 5c-2 – Musik erzeugen (18.10., nach 5c-1):**
+- Der Auftrag `music` (höchstens einer je Projekt, sonst 409 `studio_music_running`) erzeugt **nur die Datei**:
+  `studio/media/music/<id>.mp3` mit Begleitdatei (Beschreibung, gesendeter Prompt, Modell, Länge, gewünschte Länge,
+  Szene, Zeit). In der Bibliothek erscheint sie als „Studio · Musik“ (Art Musik).
+- **Auf die Zeitleiste legt sie der Browser**, sobald der Auftrag fertig ist (wie Ablegen aus der Bibliothek, ein
+  Verlaufsschritt, automatisch gespeichert). So schreibt weiter nur ein Ort die Schnittfassung; ein Auftrag im
+  Hintergrund kann das Speichern des offenen Fensters nicht in einen Konflikt treiben. Ist das Studio beim Fertigwerden
+  zu, liegt die Musik in der Bibliothek und kann hineingezogen werden (die Meldung beim Start sagt das).
+- Platz: ganzer Film ab 0, Szene ab dem ersten Bildclip der Szene (sonst ab dem Abspielkopf). Ist die Stelle belegt,
+  die nächste freie Stelle (wie 5a). Länge: höchstens die gewünschte Länge; wird gekürzt, blendet die Musik die letzten
+  2 s aus.
+- Formular **„Musik erzeugen …“** im Reiter „Ton“: Beschreibung (vorbelegt aus Look und Logline des Drehbuchs bzw. der
+  Beschreibung der Szene), Ziel „Ganzer Film“ oder eine Szene, Länge in Sekunden (5–180, vorbelegt mit der Länge des
+  Films bzw. der Szene), Modell (aus dem Drehbuch, sonst Standard des Servers), Kosten-Hinweis (Lyria ≈ 4 ct je Stück).
+- Anbieter: OpenRouter-Chat mit `modalities: [text, audio]` als Stream; den Stream liest der Kern
+  (`_openrouter_media.read_audio_sse`). Dem Prompt wird „Instrumental, about N seconds long“ angehängt.
+- Fehlercodes: `studio_music_needs_text` (400), `studio_not_found` (Szene, 404); im Auftrag `no_key`,
+  `provider_rejected`, `provider_unreachable`, `empty_answer`, `bad_audio`.
+
 ### Bauplan 5b – Mischpult (18.10.)
 
 **Ist-Stand (nach 5a, geprüft):** Tonspuren `A1`/`A2` mit Clips (`start`, `in`, `out`, `media_rel`). Die Ausgabe mischt

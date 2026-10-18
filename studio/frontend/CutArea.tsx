@@ -20,10 +20,12 @@ interface Props {
   items: LibraryItem[]
   onNotice: (key: string) => void
   onSelect: (id: string) => void
+  onMusic: () => void
+  musicRunning: boolean
 }
 
 /** Unterer Bereich in „Schneiden“ und „Ton“: Zeitleiste, im Reiter „Ton“ mit dem Mischpult links daneben (5b). */
-export function CutArea({ mixing, cut, cp, ed, mixer, every, waves, items, onNotice, onSelect }: Props) {
+export function CutArea({ mixing, cut, cp, ed, mixer, every, waves, items, onNotice, onSelect, onMusic, musicRunning }: Props) {
   const timeline = (
     <CutTimeline timeline={cut.timeline} base={cut.timeline?.base ?? ""} time={cp.time} view={followView(cut.view, cp.time, cp.total)}
       selected={cut.selected} busy={cut.busy} onView={cut.setView} onSeek={cp.seek} onFromPlan={cut.fromPlan} mixer={mixer}
@@ -35,7 +37,8 @@ export function CutArea({ mixing, cut, cp, ed, mixer, every, waves, items, onNot
   return (
     <div className="flex h-full min-h-0">
       <div className="w-[420px] min-w-[340px] shrink-0 border-r border-[#2a364b]" data-mixer-area>
-        <MixerPanel mixer={mixer} counts={countsOf(cut.timeline)} playing={cp.playing} onTrack={ed.onTrackMix} onDuck={ed.onDuck} />
+        <MixerPanel mixer={mixer} counts={countsOf(cut.timeline)} playing={cp.playing} onTrack={ed.onTrackMix} onDuck={ed.onDuck}
+          onMusic={onMusic} musicRunning={musicRunning} />
       </div>
       <div className="min-w-0 flex-1">{timeline}</div>
     </div>

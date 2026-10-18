@@ -1,4 +1,4 @@
-import { AudioLines, Mic, Music, Volume2, VolumeX } from "lucide-react"
+import { AudioLines, Loader2, Mic, Music, Volume2, VolumeX } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { peakDb } from "./audioGraph"
@@ -11,6 +11,8 @@ interface Props {
   playing: boolean
   onTrack: (id: TrackId, v: TrackMix) => void
   onDuck: (on: boolean) => void
+  onMusic: () => void
+  musicRunning: boolean
 }
 
 const CHANNELS: { id: TrackId; key: string; icon: typeof Mic }[] = [
@@ -18,7 +20,7 @@ const CHANNELS: { id: TrackId; key: string; icon: typeof Mic }[] = [
 ]
 
 /** Reiter „Ton“: Mischpult mit drei Kanälen (Originalton, Sprache, Musik), Pegel beim Abspielen, Ducking-Schalter. */
-export function MixerPanel({ mixer, counts, playing, onTrack, onDuck }: Props) {
+export function MixerPanel({ mixer, counts, playing, onTrack, onDuck, onMusic, musicRunning }: Props) {
   const { t } = useTranslation("studio")
   const hears = audibleTracks(mixer.tracks)
   return (
@@ -34,6 +36,11 @@ export function MixerPanel({ mixer, counts, playing, onTrack, onDuck }: Props) {
         {CHANNELS.map((ch) => <Channel key={ch.id} id={ch.id} label={t(ch.key)} Icon={ch.icon} v={mixer.tracks[ch.id]} count={counts[ch.id]}
           live={hears.has(ch.id)} playing={playing} onChange={(v) => onTrack(ch.id, v)} />)}
       </div>
+      <button type="button" onClick={onMusic} disabled={musicRunning} title={t("music_open_hint")} data-music-open
+        className="flex items-center justify-center gap-1.5 rounded-[4px] border border-[#46617f] px-3 py-1.5 text-xs font-black text-[#69d7ff] hover:border-[#69d7ff] disabled:opacity-50">
+        {musicRunning ? <Loader2 size={12} className="animate-spin" /> : <Music size={12} />} {t("music_open")}
+      </button>
+      {musicRunning && <p className="text-[11px] text-[#8d9ab0]" data-music-status>{t("music_running")}</p>}
     </section>
   )
 }
