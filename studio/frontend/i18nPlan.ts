@@ -103,6 +103,7 @@ export const plan_de = {
     status: "Stand",
     shot_duration: "Dauer (s)",
     shot_prompt: "Was ist zu sehen (Beschreibung für die KI)",
+    speech: "Sprechtext (wird vorgelesen)", voice: "Stimme",
   },
 }
 
@@ -201,5 +202,6 @@ export const plan_en: typeof plan_de = {
     status: "Status",
     shot_duration: "Duration (s)",
     shot_prompt: "What is seen (description for the AI)",
+    speech: "Speech text (read aloud)", voice: "Voice",
   },
 }

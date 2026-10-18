@@ -17,17 +17,19 @@ export function runningJobs(jobs: Job[]): number {
 }
 
 const KNOWN = new Set(["no_key", "provider_rejected", "provider_unreachable", "empty_answer", "bad_image", "interrupted", "shot_gone",
-  "video_failed", "timeout", "bad_url", "too_big", "bad_video", "image_gone", "render_failed"])
+  "video_failed", "timeout", "bad_url", "too_big", "bad_video", "image_gone", "render_failed", "bad_audio", "no_text"])
 
 /** Meldung zu einem fehlgeschlagenen Auftrag (Code → Text). Leer, wenn nichts schiefging. */
 export function jobText(t: (k: string) => string, job: Job | null): string {
   if (!job || job.status !== "failed") return ""
+  const sound = job.kind === "speech" || job.kind === "speech_all"
+  if (job.error === "no_key" && sound) return t("job_err.no_key_voice")             // „Für Bilder …“ passt hier nicht
   return t(`job_err.${job.error && KNOWN.has(job.error) ? job.error : "internal"}`)
 }
 
 /** Sammelauftrag (mehrere Shots/Szenen) statt Einzelauftrag? */
 export function isBatch(job: Job): boolean {
-  return job.kind === "decompose_all" || job.kind === "images_all" || job.kind === "videos_all"
+  return job.kind === "decompose_all" || job.kind === "images_all" || job.kind === "videos_all" || job.kind === "speech_all"
 }
 
 /** Der laufende Sammelauftrag des Projekts oder null. */

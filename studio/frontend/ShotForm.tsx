@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { Job, PlanElement, Shot } from "./planApi"
 import { ShotImage } from "./ShotImage"
+import { ShotSpeech } from "./ShotSpeech"
 import { ShotVideo } from "./ShotVideo"
 import { Field, FormActions, Label, fieldCls } from "./formParts"
 
@@ -20,10 +21,15 @@ interface Props {
   onChoose?: (rel: string) => void
   videoJob?: Job | null
   onVideo?: () => void
+  /** 5c: Stimmen des Sprachmodells (leer = nur Standardstimme), Sprache erzeugen. */
+  voices?: string[]
+  speechJob?: Job | null
+  onSpeech?: () => void
 }
 
 /** Planen, rechts: ein Shot (Kamera, Beschreibung, Bausteine der Szene, Dauer). Status und Medien ändert das Erzeugen. */
-export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy, onSave, onDelete, base = "", job = null, onGenerate, onChoose, videoJob = null, onVideo }: Props) {
+export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy, onSave, onDelete, base = "", job = null, onGenerate, onChoose, videoJob = null, onVideo,
+  voices = [], speechJob = null, onSpeech }: Props) {
   const { t } = useTranslation("studio")
   const [s, setS] = useState(shot)
   const dirty = JSON.stringify(s) !== JSON.stringify(shot)
@@ -47,6 +53,17 @@ export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy
         </label>
       </div>
       <Field name="prompt" label={t("f.shot_prompt")} value={s.prompt} max={2000} rows={5} onChange={(v) => setS({ ...s, prompt: v })} />
+      <Field name="speech" label={t("f.speech")} value={s.speech ?? ""} max={1000} rows={3} onChange={(v) => setS({ ...s, speech: v })} />
+      {voices.length ? (
+        <label className="block"><Label>{t("f.voice")}</Label>
+          <select value={s.voice ?? ""} onChange={(e) => setS({ ...s, voice: e.target.value })} className={fieldCls} data-shot-voice>
+            <option value="">{t("voice_default")}</option>
+            {voices.map((v) => <option key={v} value={v}>{v}</option>)}
+            {s.voice && !voices.includes(s.voice) && <option value={s.voice}>{s.voice}</option>}
+          </select>
+        </label>
+      ) : <p className="text-[11px] text-[#68758a]">{t("voice_only_default")}</p>}
+      {onSpeech && <ShotSpeech shot={shot} base={base} job={speechJob} onGenerate={onSpeech} />}
       <div>
         <Label>{t("elements")}</Label>
         {!inScene.length && <p className="mt-1 text-[11px] text-[#68758a]">{t("shot_no_elements")}</p>}
@@ -60,7 +77,7 @@ export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy
       </div>
       <p className="text-[11px] text-[#8d9ab0]">{t("f.status")}: <span className="text-[#e8eef8]">{t(`shot_status.${shot.status}`, { defaultValue: shot.status })}</span></p>
       <FormActions busy={busy} dirty={dirty} onDelete={onDelete}
-        onSave={() => onSave({ shot: s.shot, prompt: s.prompt, element_ids: s.element_ids, duration: s.duration })} />
+        onSave={() => onSave({ shot: s.shot, prompt: s.prompt, element_ids: s.element_ids, duration: s.duration, speech: s.speech ?? "", voice: s.voice ?? "" })} />
     </div>
   )
 }
