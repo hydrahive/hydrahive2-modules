@@ -3,7 +3,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from _render_helpers import R, clip, make_audio, make_image, make_video, max_volume, needs_ffmpeg, probe, put_tracks, wait_render
+from _render_helpers import (
+    R,
+    clip,
+    make_audio,
+    make_image,
+    make_video,
+    max_volume,
+    needs_ffmpeg,
+    probe,
+    put_tracks,
+    wait_render,
+)
 
 from backend import render_args as ra
 
@@ -104,3 +115,22 @@ def test_deleted_music_renders_silence(client, auth_headers, ws) -> None:
     job = wait_render(client, auth_headers)
     assert job["status"] == "done", job
     assert max_volume(ws / job["result"]["rel"], 0, 2) < -60
+
+
+def test_only_deleted_sound_counts_as_empty(client, auth_headers, ws) -> None:
+    from _render_helpers import put_tracks as _pt
+    from _timeline_helpers import _aclip, _audio, _code
+    m = _audio(ws, "lied.mp3")
+    _pt(client, auth_headers, [], [], [_aclip(media_rel=m)])
+    (ws / m).unlink()
+    assert _code(client.post(f"{R}/render", headers=auth_headers, json={})) == "400 studio_render_empty"
+
+
+@needs_ffmpeg
+def test_deleted_sound_counts_as_missing(client, auth_headers, ws) -> None:
+    b = make_image(ws, "b.png")
+    m = make_audio(ws, "lied.wav", 1)
+    put_tracks(client, auth_headers, [clip("image", 0, 0, 2, b)], [clip("audio", 0, 0, 1, m)], [])
+    (ws / m).unlink()
+    client.post(f"{R}/render", headers=auth_headers, json={})
+    assert wait_render(client, auth_headers)["result"]["missing"] == 1

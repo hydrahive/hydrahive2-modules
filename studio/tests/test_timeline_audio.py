@@ -18,6 +18,7 @@ def test_empty_timeline_has_both_audio_tracks(client, auth_headers, ws) -> None:
 def test_old_file_without_audio_tracks_gets_them_on_load_unchanged_on_disk(client, auth_headers, ws) -> None:
     img = _media(ws, "images", "a.png", PNG)
     f = ws / "studio/timelines/main.json"
+    f.parent.mkdir(parents=True)
     old = {"revision": 2, "fps": 25, "tracks": [{"id": "V1", "kind": "video", "clips": [_clip(media_rel=img)]}]}
     f.write_text(json.dumps(old))
     tl = client.get(T, headers=auth_headers).json()
@@ -69,11 +70,11 @@ def test_rules_for_audio_tracks(client, auth_headers, ws) -> None:
     }
     for name, (v, a1, a2) in bad.items():
         assert _code(_put_tracks(client, auth_headers, v, a1, a2)) == "400 studio_timeline_invalid", name
-    tracks = lambda *ids: [{"id": i, "kind": "audio" if i[0] == "A" else "video", "clips": []} for i in ids]   # noqa: E731
+    tracks = lambda *ids: [{"id": i, "kind": "audio" if i[0] == "A" else "video", "clips": []} for i in ids]
     for name, tr in {"unbekannte Spur": tracks("V1", "A3"), "Spur doppelt": tracks("V1", "A1", "A1"),
                      "ohne V1": tracks("A1"), "zu viele": tracks("V1", "A1", "A2", "A2")}.items():
         assert _code(client.put(T, headers=auth_headers, json={"revision": 0, "tracks": tr})) == "400 studio_timeline_invalid", name
-    many = lambda off: [_aclip(id=f"{off + i:032x}", start=off + i, out=1, media_rel=m) for i in range(1001)]   # noqa: E731
+    many = lambda off: [_aclip(id=f"{off + i:032x}", start=off + i, out=1, media_rel=m) for i in range(1001)]
     assert _code(_put_tracks(client, auth_headers, [], many(0), many(5000))) == "400 studio_timeline_invalid"   # 2.002 > 2.000
     assert not (ws / "studio/timelines/main.json").exists()
 

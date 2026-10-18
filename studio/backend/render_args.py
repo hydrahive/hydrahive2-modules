@@ -4,6 +4,8 @@ ffmpeg. Argumente immer als Liste (keine Shell). Vorbild für die Einzelschritte
 
 Ein Filtergraph mit concat: jeder Abschnitt wird auf dieselbe Größe, Bildrate und Tonform gebracht, dann aneinander
 gehängt. Video/Bild eingepasst mit schwarzem Rand, Platzhalter und Lücken als schwarze Fläche, Ton Stille.
+Tonspuren (Etappe 5): jeder Tonclip wird ausgeschnitten, an seine Stelle verzögert (adelay) und mit dem Ton des Bildes
+gemischt (amix ohne Normalisieren, danach alimiter). Idee wie videoeditor/backend/_audio_mix.py, eigene Fassung.
 """
 from __future__ import annotations
 
@@ -45,6 +47,27 @@ def segments(clips: list[dict], *, exists: Callable[[str], bool]) -> list[dict]:
                         **({"missing": True} if c.get("missing") else {})})
         t = max(t, c["start"] + seconds)
     return out
+
+
+def audio_parts(clips: list[dict], *, exists: Callable[[str], bool]) -> list[dict]:
+    """Tonclips aller Tonspuren → Teile zum Mischen (nach Start). Ohne Datei (gelöscht) → weggelassen = Stille."""
+    out = []
+    for c in sorted(clips, key=lambda x: x["start"]):
+        media = c.get("media_rel") or ""
+        if c.get("missing") or not media or not exists(media):
+            continue
+        out.append({"start": c["start"], "in": c["in"], "seconds": round(c["out"] - c["in"], 3), "media": media})
+    return out
+
+
+def audio_end(parts: list[dict]) -> float:
+    return round(max((p["start"] + p["seconds"] for p in parts), default=0.0), 3)
+
+
+def pad_to(segs: list[dict], seconds: float) -> list[dict]:
+    """Reicht der Ton über das letzte Bild hinaus, wird der Film bis dahin schwarz verlängert (Ton nicht abschneiden)."""
+    rest = round(seconds - total_seconds(segs), 3)
+    return [*segs, {"kind": "gap", "seconds": rest}] if rest > EPS else segs
 
 
 def missing_count(segs: list[dict]) -> int:
@@ -102,8 +125,9 @@ def _media(base: Path, rel: str) -> str:
 
 
 def command(segs: list[dict], base: Path, out: Path, *, size: tuple[int, int], fps: int,
-            text_files: dict[int, Path] | None = None) -> list[str]:
-    """`text_files`: je Platzhalter-Abschnitt (Index) eine Datei mit label_text(); ohne Datei keine Schrift."""
+            text_files: dict[int, Path] | None = None, audio: list[dict] | None = None) -> list[str]:
+    """`text_files`: je Platzhalter-Abschnitt (Index) eine Datei mit label_text(); ohne Datei keine Schrift.
+    `audio`: Teile aus audio_parts(); ohne sie bleibt der Graph genau wie in 4d."""
     w, h = size
     text_files = text_files or {}
     fit = (f"scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:black,"
@@ -136,7 +160,17 @@ def command(segs: list[dict], base: Path, out: Path, *, size: tuple[int, int], f
             graph.append(f"[{n_in}:a]{AUDIO},asetpts=PTS-STARTPTS[a{i}]")
             n_in += 1
         pairs.append(f"[v{i}][a{i}]")
-    graph.append(f"{''.join(pairs)}concat=n={len(segs)}:v=1:a=1[v][a]")
+    audio = audio or []
+    graph.append(f"{''.join(pairs)}concat=n={len(segs)}:v=1:a=1[v][{'a0' if audio else 'a'}]")
+    for k, p in enumerate(audio):
+        d = f"{p['seconds']:.3f}"
+        args += ["-ss", f"{p['in']:.3f}", "-t", d, "-i", _media(base, p["media"])]
+        graph.append(f"[{n_in}:a]{AUDIO},atrim=duration={d},asetpts=PTS-STARTPTS,"
+                     f"adelay={round(p['start'] * 1000)}:all=1[m{k}]")
+        n_in += 1
+    if audio:   # duration=first: die Länge gibt der Bildteil vor (er ist per pad_to schon lang genug)
+        mix = "".join(f"[m{k}]" for k in range(len(audio)))
+        graph.append(f"[a0]{mix}amix=inputs={len(audio) + 1}:normalize=0:duration=first,alimiter=limit=0.95[a]")
     args += ["-filter_complex", ";".join(graph), "-map", "[v]", "-map", "[a]",
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p", "-r", str(fps),
              "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart",

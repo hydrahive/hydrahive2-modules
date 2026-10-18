@@ -81,6 +81,6 @@ def put_tracks(client, h, video: list[dict], voice: list[dict], music: list[dict
 def max_volume(path, start: float, seconds: float) -> float:
     """Lautester Wert (dB) im Ausschnitt; -91 = Stille."""
     out = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-ss", str(start), "-t", str(seconds), "-i", str(path),
-                          "-af", "volumedetect", "-vn", "-f", "null", "-"], capture_output=True, text=True, timeout=60).stderr
+                          "-af", "volumedetect", "-vn", "-f", "null", "-"], capture_output=True, text=True, timeout=60, check=False).stderr
     vals = [float(line.rsplit(":", 1)[1].split()[0]) for line in out.splitlines() if "max_volume" in line]
     return vals[0] if vals else -91.0
