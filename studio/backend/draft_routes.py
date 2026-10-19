@@ -43,6 +43,6 @@ def post_book(project_id: str, data: Data, auth: Auth) -> dict:
 def post_apply(project_id: str, data: Data, auth: Auth) -> dict:
     guard(auth[0], project_id)
     try:
-        return draft_apply.apply(project_id, data.get("draft"))
+        return draft_apply.apply(project_id, data.get("draft"), replace=data.get("replace") is True)
     except plan.PlanError as e:
         raise coded(e.status, e.code)

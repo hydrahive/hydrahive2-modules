@@ -1295,7 +1295,7 @@ fliegen in G6 raus.
 
 - **Seite** `/studio/neu` wird echt: Projektwahl oben links (gleiches gemerktes Projekt wie die Profi-Ansicht),
   5 Schritte links, Haken aus dem echten Plan. Schritt 1 ist echt; Schritte 2–5 zeigen bis G2–G5 „Wird gerade gebaut –
-  bis dahin in der Profi-Ansicht“ mit Link. Die Attrappe-Bausteine der Schritte 2–5 bleiben als Vorlage im Ordner.
+  bis dahin in der Profi-Ansicht“ mit Link. Die Attrappe der Schritte 2–5 bleibt nur in Git (Commit 8f3a7b2, Draft-PR #213) als Vorlage – nicht im Modul.
 - **Idee** (`POST plan/draft/idea`) bekommt zwei freiwillige Felder:
   - `kind`: `trailer|explainer|short|music` → Zeile „Kind of film“ im Auftrag. Anderes → `studio_idea_invalid`.
   - `shots_per_scene`: nur `1` erlaubt (sonst `studio_idea_invalid`). Dann: Auftrag verlangt genau einen Shot je Szene,

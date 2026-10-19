@@ -18,7 +18,7 @@ export interface Draft {
   scenes: DraftScene[]
 }
 export interface DraftBook { id: string; title: string; entities: number; chapters: { id: string; title: string; scenes: number }[] }
-export interface ApplyResult { mode: "new" | "append"; scenes: number; shots: number; elements_new: number; elements_reused: number }
+export interface ApplyResult { mode: "new" | "append" | "replace"; scenes: number; shots: number; elements_new: number; elements_reused: number }
 export type IdeaLength = "30" | "60" | "120"
 export const IDEA_LENGTHS: IdeaLength[] = ["30", "60", "120"]
 
@@ -30,5 +30,8 @@ export const draftApi = {
   books: (pid: string) => api.get<{ books: DraftBook[] }>(`${base(pid)}/books`),
   book: (pid: string, book_id: string, chapter_ids: string[]) =>
     api.post<{ draft: Draft; truncated: number }>(`${base(pid)}/book`, { book_id, chapter_ids }),
-  apply: (pid: string, draft: Draft) => api.post<ApplyResult>(`${base(pid)}/apply`, { draft }),
+  apply: (pid: string, draft: Draft, replace = false) => api.post<ApplyResult>(`${base(pid)}/apply`, replace ? { draft, replace: true } : { draft }),
+  /** G1: geführter Weg – ein Bild je Szene, mit Filmart */
+  ideaGuided: (pid: string, body: { idea: string; length: IdeaLength; style: string; kind: string; shots_per_scene: 1 }) =>
+    api.post<{ draft: Draft }>(`${base(pid)}/idea`, body),
 }

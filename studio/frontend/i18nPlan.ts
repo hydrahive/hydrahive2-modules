@@ -5,6 +5,7 @@ import { deliver_de, deliver_en } from "./i18nDeliver"
 import { draft_de, draft_en } from "./i18nDraft"
 import { free_de, free_en } from "./i18nFree"
 import { guide_de, guide_en } from "./i18nGuide"
+import { guided_de, guided_en } from "./i18nGuided"
 import { jobs_de, jobs_en } from "./i18nJobs"
 import { subtitles_de, subtitles_en } from "./i18nSubtitles"
 import { translate_de, translate_en } from "./i18nTranslate"
@@ -23,6 +24,7 @@ export const plan_de = {
   ...photo_de,
   ...cut_de,
   ...guide_de,
+  ...guided_de,
   ...draft_de,
   ...free_de,
   ...deliver_de,
@@ -152,6 +154,7 @@ export const plan_en: typeof plan_de = {
   ...photo_en,
   ...cut_en,
   ...guide_en,
+  ...guided_en,
   ...draft_en,
   ...free_en,
   ...deliver_en,

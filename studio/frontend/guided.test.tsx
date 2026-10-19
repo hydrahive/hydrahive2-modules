@@ -94,7 +94,8 @@ describe("G1 – Oberfläche", () => {
     expect(buttons(out)).toEqual(["guided.add_scene"])                                  // Pfeile/Löschen nur mit aria-label
     expect(out.match(/aria-label="guided\.delete_scene"/g)?.length).toBe(2)
     expect(out).toMatch(/aria-label="guided\.up"[^>]*disabled=""|disabled=""[^>]*aria-label="guided\.up"/)
-    expect(out).toContain("guided.saved")
+    expect(out.match(/guided\.saved/g)?.length).toBe(1)                                // nur an der gespeicherten Karte
+    expect(out.indexOf("guided.saved")).toBeLessThan(out.indexOf('data-guided-card="b"'))
     expect(out).toContain("guided.story_title:{\"count\":2}")
   })
 

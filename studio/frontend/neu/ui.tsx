@@ -1,7 +1,7 @@
-/** ATTRAPPE „Geführtes Studio“: gemeinsame Bausteine (großer Knopf, Gesichter, Kopf eines Schritts). */
+/** Geführter Weg: gemeinsame Bausteine (großer Knopf, kleiner Knopf, Kopf eines Schritts, Hinweis). */
 import type { ReactNode } from "react"
-import { Loader2, MapPin, User } from "lucide-react"
-import type { Person } from "./mockData"
+import { Loader2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 export function BigButton({ children, onClick, busy, disabled, tone = "main", cost }: {
   children: ReactNode; onClick: () => void; busy?: boolean; disabled?: boolean; tone?: "main" | "plain" | "danger"; cost?: string
@@ -29,41 +29,13 @@ export function SmallButton({ children, onClick, disabled, label }: { children: 
 }
 
 export function StepHead({ n, title, text }: { n: number; title: string; text: string }) {
+  const { t } = useTranslation("studio")
   return (
     <header className="mb-5">
-      <div className="text-xs font-black uppercase tracking-[0.2em] text-[#3ddc97]">Schritt {n} von 5</div>
+      <div className="text-xs font-black uppercase tracking-[0.2em] text-[#3ddc97]">{t("guided.step_of", { n })}</div>
       <h1 className="mt-1 text-3xl font-black text-[#f2f6fc]">{title}</h1>
       <p className="mt-2 max-w-2xl text-base leading-relaxed text-[#b4bfd2]">{text}</p>
     </header>
-  )
-}
-
-export function Face({ p, size = 28 }: { p: Person; size?: number }) {
-  const pic = p.state === "passt" || p.state === "probe" ? p.probe : p.photo
-  return pic
-    ? <img src={pic} alt={p.name} title={p.name} style={{ width: size, height: size }} className="rounded-full border-2 border-[#0b111b] object-cover" />
-    : <span title={p.name || "?"} style={{ width: size, height: size }}
-        className="grid place-items-center rounded-full border-2 border-[#0b111b] bg-[#2a364b] text-[11px] font-black text-[#e8eef8]">
-        {p.kind === "ort" ? <MapPin size={size * 0.55} /> : <User size={size * 0.55} />}
-      </span>
-}
-
-/** „Mit dabei“: wer in dieser Szene vorkommt – anklickbar an/aus */
-export function CastChips({ people, cast, onToggle }: { people: Person[]; cast: string[]; onToggle?: (id: string) => void }) {
-  if (!people.length) return null
-  return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-xs text-[#8d9ab0]">Mit dabei:</span>
-      {people.map((p) => {
-        const on = cast.includes(p.id)
-        return (
-          <button key={p.id} type="button" onClick={() => onToggle?.(p.id)} aria-pressed={on} disabled={!onToggle}
-            className={`flex items-center gap-1 rounded-full py-0.5 pl-0.5 pr-2 text-xs font-semibold ${on ? "bg-[#3ddc97]/15 text-[#c9f7e2]" : "bg-transparent text-[#5f6d84] line-through"}`}>
-            <Face p={p} size={20} /> {p.name || "ohne Namen"}
-          </button>
-        )
-      })}
-    </div>
   )
 }
 
