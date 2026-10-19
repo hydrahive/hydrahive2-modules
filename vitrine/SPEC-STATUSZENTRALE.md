@@ -191,7 +191,7 @@ steht sie aber **24 Stunden** lang, bis Till sie als gelesen markiert.
 - Statuszentrale nicht verfügbar → Karte ohne zweite Zeile (Test)
 - Seite weiter ruhig: Firefox < 5 % eines Kerns über 60 s
 
-## S4 — Zuhause + Anordnung (Entwurf 19.10.2026, Entscheidungen Till 19.10.)
+## S4 — Zuhause + Anordnung (Entscheidungen Till 19.10.2026; abgenommen am Gehäuse am 19.10.2026, vitrine 0.10.0)
 
 S3 ist abgenommen. S4 bringt zwei Dinge: einen Bereich **Zuhause** mit den Home-Assistant-Favoriten und eine
 **Einstellungsseite**, auf der Till festlegt, welche Bereiche in welcher Reihenfolge erscheinen. Ziel laut Till:
@@ -249,6 +249,14 @@ aufgeräumt, nicht vollgestopft. Weiterhin **nur lesen**, keine Schalter.
 - Kein Schalten in Home Assistant (kommt erst mit „Knöpfe mit PIN“).
 - Keine eigene Favoritenliste in der Vitrine: Die Auswahl passiert über die Räume, die Favoriten selbst pflegt Till im
   HA-Modul.
+
+### Abnahme S4 (19.10.2026, vitrine 0.10.0)
+- Till: „klappt“ – Zuhause stimmt, Bereiche im Cockpit ausgeschaltet (15:12 gespeichert: Aufgaben und
+  „Wartet auf Till“ aus), am Gehäuse übernommen.
+- Gemessen auf .2: Zuhause mit 4 Räumen (Wohnzimmer 22,4 °C/53 %, Küche 23,1 °C/52 %, Schlafzimmer 22,1 °C/55 %,
+  Alex Zimmer grau „seit 13 h“); `/data` liefert das gespeicherte `layout`; 0 × `flip_done`; Firefox 0,8 % eines Kerns.
+- Reihenfolge der Räume = Reihenfolge der Favoriten im HA-Modul (erster Favorit eines Raums zählt). Alex Zimmer steht vor
+  Küche, weil die Steckdose dort Favorit Nr. 4 ist – zum Umsortieren die Favoriten im HA-Modul ordnen.
 
 ### Akzeptanz S4
 - Zuhause zeigt die Räume mit echten Werten von .2 (Abgleich mit HA). Alex Zimmer grau mit „nicht erreichbar seit …“.
