@@ -5,7 +5,7 @@ export type ElementKind = "character" | "place" | "object"
 export const ELEMENT_KINDS: ElementKind[] = ["character", "place", "object"]
 export const CAMERA_KEYS = ["shot", "lens", "light", "weather", "time", "mood"] as const
 export type CameraKey = (typeof CAMERA_KEYS)[number]
-export const MODEL_KEYS = ["video", "image", "voice", "music", "text"] as const
+export const MODEL_KEYS = ["video", "image", "voice", "music", "text", "vision"] as const
 export const ASPECTS = ["16:9", "9:16", "1:1", "4:3", "21:9"] as const
 export const LANGUAGES = ["de", "en", "fr", "es", "it", "nl", "pl", "pt", "tr", "uk", "ru", "sv", "da", "no", "fi", "cs", "ja", "zh"] as const
 

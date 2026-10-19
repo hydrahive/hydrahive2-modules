@@ -16,6 +16,7 @@ from hydrahive.projects._config_io import list_for_user
 from . import library, media, overview, plan, render, voice_provider, waveform
 from ._guard import guard
 from .draft_routes import router as draft_router
+from .element_routes import router as element_router
 from .music_routes import router as music_router
 from .plan_routes import router as plan_router
 from .shot_routes import router as shot_router
@@ -97,6 +98,7 @@ def get_overview(project_id: str, auth: Auth) -> dict:
 
 
 router.include_router(draft_router)
+router.include_router(element_router)                 # vor plan_router: /elements/from-image vor /elements/{id}
 router.include_router(music_router)
 router.include_router(plan_router)
 router.include_router(shot_router)

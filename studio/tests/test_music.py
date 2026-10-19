@@ -79,8 +79,8 @@ def test_provider_errors_and_bad_audio(client, auth_headers, ws, monkeypatch) ->
     for fake, code in ((FakeMusic(error="no_key"), "no_key"), (FakeMusic(error="empty_answer"), "empty_answer"),
                        (FakeMusic(data=b"<html>kaputt"), "bad_audio")):
         monkeypatch.setattr("backend.music_provider.generate", fake)
-        client.post(M, headers=auth_headers, json={"description": "x", "seconds": 10})
-        job = wait_job(client, auth_headers, TARGET)
+        started = client.post(M, headers=auth_headers, json={"description": "x", "seconds": 10}).json()
+        job = wait_job(client, auth_headers, TARGET, job_id=started["id"])
         assert (job["status"], job["error"]) == ("failed", code)
     d = ws / "studio/media/music"
     assert not d.exists() or not [p for p in d.iterdir() if p.suffix != ".json"]
@@ -120,7 +120,6 @@ def test_real_provider_reads_the_stream(monkeypatch) -> None:
 
     import httpx
     import hydrahive.llm._config as cfg
-
     from backend import music_provider
     audio = b"ID3" + bytes(range(256)) * 40
     b64 = base64.b64encode(audio).decode()
