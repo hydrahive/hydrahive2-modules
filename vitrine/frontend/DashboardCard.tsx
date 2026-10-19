@@ -4,7 +4,7 @@ import type { VitrineConfig } from "./api"
 import { dashboardErrors, parseRepos } from "./rules"
 
 const field = "rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1.5 text-sm text-[#e8eef8]"
-const DEFAULT = { tasks_user: "till", github_project: "Hydrahive DEV", github_repos: ["hydrahive/hydrahive2", "hydrahive/hydrahive2-modules"] }
+const DEFAULT = { tasks_user: "till", github_project: "Hydrahive DEV", github_repos: ["hydrahive/hydrahive2.0", "hydrahive/hydrahive2-modules"] }
 
 /** Statuszentrale (S2): wessen Tasks, welches Projekt liefert den GitHub-Zugang (Token bleibt im Backend), welche Repos. */
 export function DashboardCard({ config, onChange }: { config: VitrineConfig; onChange: (c: VitrineConfig) => void }) {

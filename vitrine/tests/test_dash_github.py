@@ -144,3 +144,26 @@ def test_zwischenspeicher_begrenzt():
         gh._done[("r", i, "a" * 40)] = ("green", True)
     gh.open_prs(["hydrahive/hydrahive2"], TOKEN, fetch=Fake(_routes([{"status": "completed", "conclusion": "success"}])))
     assert len(gh._done) <= 201
+
+
+def test_ein_repo_404_andere_bleiben():
+    """Abnahme 19.10.: falscher Repo-Name → 404 hat die ganze Liste geleert."""
+    def f(m, u, h, t):
+        if "/repos/x/kaputt/" in u:
+            return 404, {"message": "Not Found"}
+        return Fake(_routes([{"status": "completed", "conclusion": "success"}]))(m, u, h, t)
+    r = gh.open_prs(["x/kaputt", "hydrahive/hydrahive2"], TOKEN, fetch=f)
+    assert [p["number"] for p in r["prs"]] == [7, 8]
+    assert r["error"] == "GitHub nicht erreichbar: kaputt"
+
+
+def test_alle_repos_404():
+    r = gh.open_prs(["x/a", "x/b"], TOKEN, fetch=lambda *a: (404, None))
+    assert r["prs"] == [] and r["error"] == "GitHub nicht erreichbar"
+
+
+def test_standard_repos_sind_die_echten():
+    """Kern-Repo heißt hydrahive2.0 (git remote), nicht hydrahive2."""
+    from renderer import config
+    repos = config.DEFAULTS["dashboard"]["github_repos"]
+    assert repos == ["hydrahive/hydrahive2.0", "hydrahive/hydrahive2-modules"] and all(gh.valid_repo(r) for r in repos)

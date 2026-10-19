@@ -86,4 +86,6 @@ User=${KIOSK}
 Session=hydrahive-vitrine-kiosk
 Relogin=true
 EOF
+# --- laufenden Kiosk-Firefox beenden: die Sitzungsschleife startet ihn sofort neu → neue Seite nach Modul-Update ---
+pkill -u "${KIOSK}" -f "firefox --kiosk" 2>/dev/null || true
 echo "Vitrine-Kiosk eingerichtet (Nutzer ${KIOSK}, Sitzung hydrahive-vitrine-kiosk) – wirksam nach Neustart von sddm"

@@ -16,7 +16,7 @@ DEFAULTS: dict = {
     "message_seconds": 15,      # Standard-Dauer einer Einblendung (5–120); Fehler bleiben länger
     "dashboard_return_seconds": 120,   # Dashboard → zurück zum Video nach so vielen Sekunden ohne Eingabe (30–1800)
     "dashboard": {"tasks_user": "till", "github_project": "Hydrahive DEV",          # Statuszentrale S2
-                  "github_repos": ["hydrahive/hydrahive2", "hydrahive/hydrahive2-modules"]},
+                  "github_repos": ["hydrahive/hydrahive2.0", "hydrahive/hydrahive2-modules"]},
 }
 _USER = re.compile(r"^[A-Za-z0-9_.@-]{1,64}$")
 _REPO = re.compile(r"^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$")

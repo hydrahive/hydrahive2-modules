@@ -106,7 +106,15 @@ def test_schema_dashboard_lehnt_ab():
     _p.importorskip("pydantic")
     from pydantic import ValidationError
     from backend.schemas import Config
-    assert Config().dump()["dashboard"]["github_repos"] == ["hydrahive/hydrahive2", "hydrahive/hydrahive2-modules"]
+    assert Config().dump()["dashboard"]["github_repos"] == ["hydrahive/hydrahive2.0", "hydrahive/hydrahive2-modules"]
     for bad in ({"github_repos": ["a/b/c"]}, {"tasks_user": "a b"}, {"github_project": ""}, {"token": "x"}):
         with _p.raises(ValidationError):
             Config(dashboard=bad)
+
+
+def test_installer_startet_kiosk_firefox_neu():
+    """Abnahme 19.10.: nach dem Update lief die alte Seite weiter – Installer muss Firefox neu starten."""
+    from pathlib import Path
+    s = (Path(__file__).resolve().parents[1] / "extension" / "kiosk-install.sh").read_text()
+    assert 'pkill -u "${KIOSK}" -f "firefox --kiosk"' in s
+    assert s.index("pkill -u") > s.index('cat > "${HOME_DIR}/vitrine/start.html"'), "erst neue Startseite, dann Neustart"
