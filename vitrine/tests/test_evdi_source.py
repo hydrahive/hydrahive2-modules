@@ -114,8 +114,13 @@ def test_drain_holt_ab_ohne_jpeg():
     f = FakeEvdi()
     s = _src(f)
     s.drain()
-    grabs = f.calls.count("grab")
-    assert s.ready and s.last_jpeg is None
+    assert s.ready and f.calls.count("grab") == 1, "Bild wird abgeholt (sonst blockiert Xorg)"
     f.color = (1, 2, 3)
     s.drain()
-    assert s.last_jpeg is None
+    assert f.calls.count("grab") == 2 and s.last_jpeg is None, "aber kein JPEG gebaut"
+
+
+def test_drain_vor_dem_ersten_modus_holt_nichts():
+    f = FakeEvdi(modes=())
+    _src(f).drain()
+    assert "grab" not in f.calls
