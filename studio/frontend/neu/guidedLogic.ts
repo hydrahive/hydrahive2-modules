@@ -42,7 +42,7 @@ export function doneSteps(plan: Plan | null): Record<StepId, boolean> {
     1: scenes.length > 0,
     2: scenes.length > 0 && castOpen(plan?.elements ?? []) === 0,
     3: all((s) => s.shots.some((x) => x.image_rel)),
-    4: all((s) => s.shots.some((x) => x.video_rel)),
+    4: all((s) => s.shots.length > 0 && s.shots.every((x) => motionState(x) === "moving" || motionState(x) === "still")),
     5: false,
   }
 }
@@ -106,4 +106,18 @@ export function castToggle(s: Shot, id: string): { element_ids: string[]; exclud
 /** Gesicht einer Figur: freigegebenes Probebild, sonst erstes Foto, sonst nichts. */
 export function faceOf(e: PlanElement): string {
   return (e.approved && e.probe_rel) || e.references[0] || ""
+}
+
+// ---- G4 Bewegung ----------------------------------------------------------------------------------------------
+export type MotionState = "no_image" | "open" | "still" | "moving"
+
+export function motionState(s: Shot): MotionState {
+  if (s.video_rel) return "moving"
+  if (!s.image_rel) return "no_image"
+  return s.still ? "still" : "open"
+}
+
+/** Wie viele Bilder warten noch auf Bewegung (mit Bild, ohne Clip, nicht als Standbild gelassen)? */
+export function motionLeft(plan: Plan | null): number {
+  return imageCards(plan).filter((c) => motionState(c.shot) === "open").length
 }

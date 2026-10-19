@@ -43,6 +43,8 @@ export interface Shot {
   cast?: string[]
   /** G3: „Mit dabei“ abgewählt – gilt auch, wenn der Name im Text steht */
   excluded_ids?: string[]
+  /** G4: „Als Standbild lassen“ – kein Clip, das Bild steht im Film */
+  still?: boolean
 }
 
 export type BatchKind = "decompose_all" | "images_all" | "videos_all" | "speech_all"
