@@ -17,7 +17,7 @@ const s = (lang: "de" | "en") => studioI18n[lang].studio as unknown as Record<st
 
 describe("C3 – Reihenfolge der Arbeit", () => {
   it("Schritt X von 6 und der nächste Reiter", () => {
-    expect(WORKSPACES.map((w) => w.id)).toEqual(["plan", "generate", "edit", "audio", "subtitles", "deliver"])
+    expect([...WORKSPACES]).toEqual(["plan", "generate", "edit", "audio", "subtitles", "deliver"])
     expect(stepOf("plan")).toBe(1)
     expect(stepOf("deliver")).toBe(6)
     expect(nextWorkspace("plan")).toBe("generate")
@@ -104,7 +104,7 @@ describe("C3 – Texte", () => {
     for (const lang of ["de", "en"] as const) {
       for (const k of ["intro_step", "intro_next", "costs_badge", "costs_hint", "costs_hint_default"]) expect(s(lang)[k], `${lang} ${k}`).toBeTruthy()
       const ws = s(lang).ws as Record<string, string>
-      for (const w of WORKSPACES) expect(ws[w.id], `${lang} ws.${w.id}`).toBeTruthy()
+      for (const w of WORKSPACES) expect(ws[w], `${lang} ws.${w}`).toBeTruthy()
     }
   })
 })
