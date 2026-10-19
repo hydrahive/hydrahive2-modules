@@ -1139,6 +1139,24 @@ Input-Material übergeben“. Er schaut es morgens an; gemergt wird erst nach se
   Bibliothek; Fortschritt je Datei; Fehler je Datei mit Text. Im Baustein unter „Referenzbilder“ ein Knopf
   „Bild hochladen …“ neben „Bild aus der Bibliothek hinzufügen“, Ablegen auf die Referenzbilder geht auch.
 
+**7b im Detail**
+- **Vorlage = Format + Qualität.** Format: `screenplay` (wie im Drehbuch, Standard), `16:9`, `9:16`, `1:1`.
+  Qualität: `preview` (480p), `standard` (720p, Standard), `high` (1080p). Die Zahl ist immer die **kürzere Seite**,
+  die längere ergibt sich aus dem Format und wird auf eine gerade Zahl gerundet (16:9 → 854×480, 1280×720,
+  1920×1080; 9:16 umgekehrt; 1:1 → 480², 720², 1080²; 4:3 und 21:9 aus dem Drehbuch genauso).
+  Hinweis: Quadrat „Standard“ ist damit 720×720 (in 4d war 1:1 fest 1080×1080) – wer 1080 will, wählt „Hoch“.
+- **Qualität wirkt auch auf die Kodierung:** Vorschau crf 28 (schnell, klein), Standard crf 23, Hoch crf 20.
+- **Einpassen:** wie bisher `scale … decrease` + `pad` schwarz – nichts wird abgeschnitten, auch nicht bei 9:16 aus
+  einem 16:9-Schnitt. Platzhalter-Schrift und Umbruch richten sich nach der Ausgabegröße.
+- **API:** `POST …/render` mit `{aspect?, quality?, subtitles?}`; unbekannter Wert → 400 `studio_render_bad_preset`.
+  Ohne Angaben genau wie bisher: Format des Drehbuchs, Standard.
+- **Begleitdatei/Liste:** zusätzlich `aspect` (tatsächliches Format, z. B. „9:16“, auch bei „wie im Drehbuch“) und
+  `quality`. Ältere Filme ohne diese Felder zeigen nur die Größe.
+- **Oberfläche (Reiter „Ausgabe“):** zwei Auswahlfelder „Format“ und „Qualität“ über dem Knopf, darunter
+  „Ergebnis: 720×1280“. Jeder fertige Film nennt Format und Qualität („9:16 · Standard 720p“). Der Name beim
+  Herunterladen enthält Format und Größe, z. B. `film-202610190812-9x16-720p.mp4`. Die Auswahl merkt sich der
+  Browser je Projekt nicht – sie startet immer bei „wie im Drehbuch“ / „Standard“.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
