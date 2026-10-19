@@ -315,6 +315,69 @@ nichts am Server.
 ### Bewusst nicht in S5
 - Kein automatisches Blättern, keine Wischgesten (kein Touch), keine Seitennamen.
 
+## S6 — Chat am Gehäuse (Entscheidungen Till 19.10.2026)
+
+Am Gehäuse mit Hydra schreiben: Eingabe über eine Bluetooth-Tastatur (Koppeln: eigener Task), Antwort am Display.
+Till hat **Option B** gewählt: Chat mit dem **vollen Buddy** (alle Werkzeuge), weil im Haushalt nur 2 Personen sind.
+
+### Ausgangslage (Code 19.10. geprüft)
+- Der Kern hat den Weg schon: `hydrahive.communication.router.handle_incoming(IncomingEvent)`, genutzt von Discord,
+  WhatsApp und Mail. Erst der Butler, dann der Buddy (`primary_agent_for`). Je `(agent, channel, external_user_id)` eine
+  **dauerhafte Session** (`_session_lookup.find_or_create`). Die Antwort wird vor der Rückgabe mit den Secrets des
+  Besitzers **geschwärzt**. Läuft die Session schon → `SessionAlreadyRunning`.
+- Openbox im Kiosk ist abgesichert (0.11.2): kein Menü, kein Terminal, keine Tastenkürzel.
+
+### Seite „Chat“
+- **Eigene Seite** mit eigenem Knubbel (immer ganz rechts, Zeichen „💬“ nur wenn die Schrift es kann, sonst „Chat“).
+  Nicht Teil der Seitenzuordnung 1–3. Im Cockpit an/aus (`chat_enabled`, Standard an).
+- Aufbau hochkant: Verlauf oben (die letzten 20 Beiträge, neueste unten, scrollt mit), Eingabezeile unten über „Zurück“.
+- **Tippen holt den Chat:** Eine Buchstaben-/Zahlentaste auf einer anderen Seite wechselt zur Chat-Seite, der Buchstabe
+  landet im Feld. Enter schickt ab, Escape leert das Feld.
+- Während Hydra antwortet: „Hydra denkt …“, Eingabe gesperrt. Fehler → rote Zeile (z. B. „Hydra antwortet noch“).
+- Antwort **am Stück** (sobald fertig). Darstellung als **reiner Text** (Absätze, Listen als Zeilen), nur `textContent`.
+  Streaming (Wort für Wort) kommt später als eigene Etappe.
+
+### Weg der Nachricht
+- `POST /api/module-device/vitrine/chat?k=…` (Kiosk-Schlüssel + localhost wie S1–S5, Rate-Limit des Kerns).
+  Körper nur `{"text": "…"}`, 1–2000 Zeichen nach Trimmen, sonst 422. Ruft
+  `handle_incoming(IncomingEvent(channel="vitrine", external_user_id="gehaeuse", target_username=<Besitzer>,
+  sender_name="Gehäuse", text=…))`. Antwort `{"reply": "…"}` (gekürzt auf 8000 Zeichen).
+  Läuft der Chat schon → 409 `{"code": "busy"}`. Kein Agent/Fehler → 503 `{"code": "unavailable"}`.
+- `GET /api/module-device/vitrine/chat?k=…` → die letzten 20 Beiträge der Gehäuse-Session (nur Rolle user/assistant
+  und deren Text, keine Werkzeug-Aufrufe, geschwärzt und gekürzt wie oben). Fehlt die Session → leere Liste.
+- **Eigene Session** „Gehäuse“ (Till, 19.10.): getrennt von Tills Cockpit-Chat. Besitzer = `tasks_user` (Standard `till`).
+- Kanal `vitrine` erscheint in HydraHive wie andere Kanäle (Session-Titel „vitrine: Gehäuse“).
+
+### Rückkehr zum Video
+- Wie bisher nach 2 min ohne Eingabe (Till, 19.10.). Tippen zählt als Eingabe (X-Leerlauf).
+- **Während Hydra antwortet** zählt die Zeit nicht: Das Backend legt für die Dauer des Aufrufs `chat_busy` (mit Zeitstempel)
+  in den Datenordner; der Dienst bleibt im Dashboard, solange die Datei frisch ist (höchstens 10 min, dann gilt sie als
+  verwaist). Danach beginnen die 2 min neu.
+
+### Sicherheit
+- Erste Kiosk-Route, die einen **Agenten mit allen Werkzeugen** startet – bewusst so entschieden (2 Personen, Option B).
+- Schutz bleibt: Kiosk-Schlüssel + direkte Verbindung von 127.0.0.1, Rate-Limit, Openbox ohne Menü, Firefox nur 127.0.0.1.
+- Ausgabe vom Kern geschwärzt, Länge begrenzt. Keine Dateien, keine Bilder, keine Links zum Anklicken.
+- Später (eigene Etappe „Knöpfe mit PIN“): optional PIN vor dem Chat.
+
+### Akzeptanz S6
+- Tastatur gekoppelt → auf Seite 1 tippen → Chat-Seite mit dem Buchstaben im Feld; Enter → „Hydra denkt …“ → Antwort.
+- Session „vitrine: Gehäuse“ ist getrennt von Tills Cockpit-Chat; nach Neustart des Dienstes ist der Verlauf noch da.
+- Lange Antwort (> 2 min Denkzeit) → kein Zurück zum Video währenddessen; danach 2 min Ruhe → Video.
+- Route: ohne/falscher Schlüssel, andere Adresse → 404; leerer/zu langer Text → 422; zweite Nachricht während einer
+  laufenden → 409 (Tests). Secret in der Antwort erscheint geschwärzt (Test).
+- Seite ohne `innerHTML`; Firefox < 5 % eines Kerns im Leerlauf.
+
+### Bewusst nicht in S6
+- Streaming (folgt), Sprache (später über das Voice-Modul), Bilder/Dateien, mehrere Gespräche, PIN.
+
+### Entscheidungen S6 (Till, 19.10.2026)
+1. Option B: voller Buddy am Gehäuse.
+2. Eigene Seite „Chat“ mit eigenem Knubbel.
+3. Eigene Session „Gehäuse“, getrennt vom Cockpit-Chat.
+4. Antwort zuerst am Stück; Streaming als spätere Etappe.
+5. Zurück zum Video nach 2 min ohne Eingabe; nicht während Hydra antwortet.
+
 ## Bewusst nicht (V1 der Statuszentrale)
 
 - keine Aktionen mit Folgen (Merge, Dienste, Update, Zonen, Schalter) – kommen später nur mit PIN
@@ -336,7 +399,8 @@ nichts am Server.
 3. **S3 Meldungen:** Hinweis auf den Karten, Neu + Verlauf (24 h) in der Statuszentrale, Knopf „Gelesen“ (Details: Abschnitt S3)
 4. **S4 Zuhause + Anordnung:** HA-Favoriten je Raum, Einstellungsseite (an/aus, Reihenfolge, Einstellungen je Bereich)
 5. **S5 Seiten:** Bereiche fest auf Seiten 1–3, Knubbel unten zum Blättern
-6. danach (eigene Specs): Chat/Sprache, Knöpfe mit PIN
+6. **S6 Chat:** eigene Seite, BT-Tastatur, voller Buddy in eigener Session, Antwort am Stück
+7. danach: Streaming im Chat, Sprache, Knöpfe mit PIN
 
 ## Akzeptanzkriterien
 
