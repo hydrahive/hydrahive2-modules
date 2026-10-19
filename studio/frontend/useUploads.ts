@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { describeApi, needsDescription } from "./elementPhotoLogic"
+import { afterPhoto, describeApi } from "./elementPhotoLogic"
 import { planApi, type PlanElement } from "./planApi"
 import { errorText } from "./planLogic"
 import { uploadApi, uploadSummary } from "./uploadLogic"
@@ -46,7 +46,7 @@ export function useUploads(projectId: string, p: PlanState, reloadLibrary: () =>
         saved = await uploadApi.reference(projectId, elementId, file)
       }, t("upload_reference_done"))
       reloadLibrary()
-      if (ok && saved && needsDescription(saved)) void describe(elementId, null)   // erstes Foto: gleich beschreiben (C2)
+      if (ok) void afterPhoto(saved, () => describe(elementId, null))   // erstes Foto: gleich beschreiben (C2)
     } finally { setBusy(false) }
   }, [projectId, p, reloadLibrary, t, describe])
 

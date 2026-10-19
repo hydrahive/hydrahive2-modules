@@ -22,11 +22,30 @@ def _el(eid, name, **kw):
     ("Nah: Hydra, im Regen.", ["h"]),
     ("Kapitän Ole winkt", ["o"]),                # mehrteiliger Name
     ("Ole winkt", []),                           # nur ein Teil des Namens zählt nicht
+    ("Kapitän Müller winkt", []),                # erstes Wort allein reicht auch nicht
+    ("die Superhydra kommt", []),                # Wortanfang zählt auch
+    ("Kapitän  Ole", ["o"]),                     # mehrere Leerzeichen
     ("", []),
 ])
 def test_names_in_text(text, found) -> None:
     els = [_el("h", "Hydra"), _el("l", "Leuchtturm", kind="place"), _el("o", "Kapitän Ole")]
     assert cast.named(text, els) == found
+
+
+def test_empty_names_never_match() -> None:
+    assert cast.named("Hydra fliegt", [_el("x", ""), _el("y", "   ")]) == []
+
+
+def test_name_with_special_characters() -> None:
+    assert cast.named("Dr. Who (alt) kommt", [_el("d", "Dr. Who (alt)")]) == ["d"]
+    assert cast.named("DrX Who", [_el("d", "Dr. Who")]) == []
+
+
+def test_cast_drops_deleted_and_duplicates() -> None:
+    els = [_el("h", "Hydra")]
+    scene = {"title": "Hydra am Meer", "description": "Hydra wartet", "element_ids": []}
+    shot = {"prompt": "Hydra fliegt", "speech": "", "element_ids": ["h", "weg"]}
+    assert cast.of_shot(scene, shot, els) == ["h"]
 
 
 def test_cast_of_shot_merges_ticked_and_named() -> None:
@@ -58,6 +77,15 @@ def test_named_element_goes_into_the_image(client, auth_headers, ws, provider) -
     call = provider.calls[0]
     assert "Hydra: Drache mit drei Köpfen" in call["prompt"] and "grüne Schuppen" in call["prompt"]
     assert len(call["references"]) == 1
+
+
+def test_name_only_in_scene_brings_the_photo(client, auth_headers, ws, provider) -> None:
+    """Hydra steht nur im Titel der Szene – das Foto geht trotzdem mit (die Szene zählt auch für die Vorlagen)."""
+    _, sc, shot = _setup(client, auth_headers, ws, prompt="Wellen schlagen")
+    client.put(f"{P}/scenes/{sc['id']}", headers=auth_headers, json={"title": "Hydra am Meer"})
+    client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=auth_headers, json={})
+    _wait(client, auth_headers, sc["id"], shot["id"])
+    assert len(provider.calls[0]["references"]) == 1 and "Hydra" in provider.calls[0]["prompt"]
 
 
 def test_unnamed_element_stays_out(client, auth_headers, ws, provider) -> None:
@@ -121,6 +149,8 @@ def test_describe_answer_in_code_fence_and_too_long(client, auth_headers, ws, vi
     hydra, _, _ = _setup(client, auth_headers, ws, prompt="x")
     r = client.post(f"{P}/elements/{hydra['id']}/describe", headers=auth_headers, json={})
     assert r.status_code == 200 and len(r.json()["description"]) == 4000
+    vision.answer = json.dumps({"description": "kurz", "style_anchor": "z" * 3000})
+    assert len(client.post(f"{P}/elements/{hydra['id']}/describe", headers=auth_headers, json={}).json()["style_anchor"]) == 2000
 
 
 def test_describe_uses_model_from_screenplay(client, auth_headers, ws, vision) -> None:
@@ -183,3 +213,14 @@ def test_prompt_names_the_kind(kind, word) -> None:
     from backend import describe
     p = describe.prompt_for({"kind": kind, "name": "Hydra"})
     assert f"die {word} „Hydra“" in p and "JSON" in p
+
+
+@pytest.mark.parametrize("answer", [{"description": "   "}, {"description": 5}, {"description": "ok", "style_anchor": ["x"]}])
+def test_describe_odd_answers(client, auth_headers, ws, vision, answer) -> None:
+    vision.answer = json.dumps(answer)
+    hydra, _, _ = _setup(client, auth_headers, ws, prompt="x")
+    r = client.post(f"{P}/elements/{hydra['id']}/describe", headers=auth_headers, json={})
+    if answer.get("description") == "ok":
+        assert r.status_code == 200 and r.json()["style_anchor"] == ""
+    else:
+        assert r.status_code == 502 and r.json()["detail"]["code"] == "studio_describe_failed"

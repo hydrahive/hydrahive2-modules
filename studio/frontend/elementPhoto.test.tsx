@@ -6,7 +6,7 @@ const post = vi.fn((..._a: unknown[]) => Promise.resolve({}))
 vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() => {})), post: (...a: unknown[]) => post(...a), put: vi.fn(), delete: vi.fn() } }))
 vi.mock("@/shared/files", () => ({ fileUrl: (p: string) => `/f${p}` }))
 import type { LibraryItem } from "./api"
-import { castNames, describeApi, needsDescription } from "./elementPhotoLogic"
+import { afterPhoto, castNames, describeApi, needsDescription } from "./elementPhotoLogic"
 import { ElementForm } from "./ElementForm"
 import { ElementPhoto } from "./ElementPhoto"
 import { MediaActions } from "./MediaActions"
@@ -32,6 +32,21 @@ describe("C2 – Logik", () => {
     expect(needsDescription(el({ references: ["a.png"], description: "x" }))).toBe(false)
     expect(needsDescription(el({ references: ["a.png"], style_anchor: "x" }))).toBe(false)
     expect(needsDescription(el())).toBe(false)
+  })
+
+  it("nach dem Foto: beschreiben nur, wenn nötig", async () => {
+    const d = vi.fn()
+    expect(await afterPhoto(el({ references: ["a.png"] }), d)).toBe(true)
+    expect(d).toHaveBeenCalledTimes(1)
+    expect(await afterPhoto(el({ references: ["a.png"], description: "schon da" }), d)).toBe(false)
+    expect(await afterPhoto(null, d)).toBe(false)
+    expect(d).toHaveBeenCalledTimes(1)
+  })
+
+  it("Hochladen ruft danach afterPhoto mit dem gespeicherten Baustein", () => {
+    const src = Object.values(import.meta.glob("./useUploads.ts", { query: "?raw", import: "default", eager: true })).join("")
+    expect(src).toMatch(/saved = await uploadApi\.reference\(/)
+    expect(src).toMatch(/if \(ok\) void afterPhoto\(saved, \(\) => describe\(elementId, null\)\)/)
   })
 
   it("API: beschreiben und aus Bibliotheksbild anlegen", () => {

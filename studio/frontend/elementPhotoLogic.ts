@@ -22,3 +22,10 @@ export function castNames(cast: string[] | undefined, elements: PlanElement[]): 
 export function needsDescription(e: PlanElement): boolean {
   return e.references.length > 0 && !e.description.trim() && !e.style_anchor.trim()
 }
+
+/** Nach dem Hochladen eines Fotos (C2): gleich beschreiben lassen, wenn noch nichts eingetragen ist. */
+export async function afterPhoto(saved: PlanElement | null, describe: () => Promise<void> | void): Promise<boolean> {
+  if (!saved || !needsDescription(saved)) return false
+  await describe()
+  return true
+}

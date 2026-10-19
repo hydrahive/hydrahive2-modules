@@ -8,7 +8,7 @@ from __future__ import annotations
 import base64
 import json
 
-from . import _clean, plan, vision_provider
+from . import plan, vision_provider
 from ._store import project_root, safe_rel
 
 KIND_WORD = {"character": "Figur", "place": "Ort", "object": "Gegenstand"}
@@ -33,10 +33,10 @@ def parse(raw: str) -> dict:
         data = json.loads(s)
     except ValueError as e:
         raise plan.PlanError("studio_describe_failed", 502) from e
-    desc = _clean.text(data.get("description"), 4000) if isinstance(data, dict) else ""
-    if not desc:
+    desc = data.get("description") if isinstance(data, dict) else None
+    if not isinstance(desc, str) or not desc.strip():
         raise plan.PlanError("studio_describe_failed", 502)
-    return {"description": desc, "style_anchor": _clean.text(data.get("style_anchor"), 2000)}
+    return {"description": desc, "style_anchor": data.get("style_anchor") or ""}   # Länge und Typ prüft save_element
 
 
 def _image_url(pid: str, el: dict) -> str:
@@ -63,6 +63,6 @@ async def describe(pid: str, el_id: str) -> dict:
 def from_image(pid: str, data: dict) -> dict:
     """Neuen Baustein mit einem Bild aus dem Projekt als Vorlage anlegen (Bibliothek → „Als Figur anlegen …“)."""
     rel = safe_rel(pid, data.get("rel"), plan.IMAGE_EXT)
-    if not rel or data.get("kind") not in _clean.ELEMENT_KINDS or not _clean.text(data.get("name"), 200):
+    if not rel:                                   # Art und Name prüft save_element (studio_element_invalid)
         raise plan.PlanError("studio_element_invalid")
-    return plan.save_element(pid, {"kind": data["kind"], "name": data["name"], "references": [rel]})
+    return plan.save_element(pid, {"kind": data.get("kind"), "name": data.get("name"), "references": [rel]})
