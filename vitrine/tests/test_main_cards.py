@@ -16,9 +16,9 @@ def test_karten_werden_ins_bild_gelegt(tmp_path, monkeypatch):
     seen = []
     orig = cards.Cards.render
 
-    def spy(self, msgs, now):
+    def spy(self, msgs, now, hint=False):
         seen.append([m["text"] for m in msgs])
-        return orig(self, msgs, now)
+        return orig(self, msgs, now, hint=hint)
 
     monkeypatch.setattr(cards.Cards, "render", spy)
     inbox.post(tmp_path, "Hallo Vitrine", seconds=60)
@@ -31,7 +31,7 @@ def test_karten_werden_ins_bild_gelegt(tmp_path, monkeypatch):
 def test_ohne_nachrichten_keine_kartenarbeit(tmp_path, monkeypatch):
     from renderer import cards
     calls = []
-    monkeypatch.setattr(cards.Cards, "render", lambda self, m, now: calls.append(1))
+    monkeypatch.setattr(cards.Cards, "render", lambda self, m, now, hint=False: calls.append(1))
     r = _runner(tmp_path, [Program(video=None)], Uhr(dt.datetime(2026, 10, 15, 12)), [], [])
     r.inbox_every = 0
     r.run(max_frames=3)
@@ -72,3 +72,25 @@ def test_leiste_zeigt_agenten_und_wird_rot(tmp_path, monkeypatch):
                     program=lambda now: Program(video=None), now=lambda: dt.datetime(2026, 10, 15, 12), check_every=99)
     r.run(max_frames=2)
     assert seen[0] == ("Hydra läuft  ·  1 Agent aktiv  ·  2 Fehler/h", True)
+
+
+def test_hinweis_nur_wenn_dashboard_bereit(tmp_path, monkeypatch):
+    """S3: zweite Zeile „Maus bewegen für Details“ nur, wenn die Statuszentrale bereit ist (state.dashboard)."""
+    from renderer import cards
+    from test_main_dashboard import FakeDash, SentDisplay
+    from test_main_dashboard import _runner as dash_runner
+    hints = []
+    orig = cards.Cards.render
+
+    def spy(self, msgs, now, hint=False):
+        hints.append(hint)
+        return orig(self, msgs, now, hint=hint)
+    monkeypatch.setattr(cards.Cards, "render", spy)
+    inbox.post(tmp_path, "Hallo", seconds=60)
+    long_idle = 10 ** 9                                   # Maus lange nicht bewegt → Video bleibt, Dashboard „bereit“
+    for dash, erwartet in ((FakeDash([long_idle]), True), (FakeDash([long_idle], fail_after=-1), False), (None, False)):
+        hints.clear()
+        r = dash_runner(tmp_path, dash, SentDisplay())
+        r.inbox_every = 0
+        r.run(max_frames=3)
+        assert hints and set(hints) == {erwartet}, (r.state.get("dashboard"), hints)

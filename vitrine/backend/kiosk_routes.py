@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, ConfigDict, Field
 
 from hydrahive.settings import settings
-from renderer import config
+from renderer import config, inbox
 
 from . import dash_data, kiosk
 
@@ -38,3 +39,16 @@ def kiosk_back() -> None:
 def kiosk_data(response: Response) -> dict:
     response.headers["Cache-Control"] = "no-store"
     return dash_data.build(_data(), config.load(_data())["dashboard"])
+
+
+class ReadIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(pattern=r"^[0-9a-f]{12}$")
+
+
+@device_router.post("/read", status_code=status.HTTP_204_NO_CONTENT)
+def kiosk_read(body: ReadIn) -> None:
+    """S3: Meldung als gelesen markieren – neben „Zurück“ die einzige ändernde Kiosk-Route."""
+    if not inbox.mark_read(_data(), body.id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "not_found"})
+    dash_data.invalidate("messages")
