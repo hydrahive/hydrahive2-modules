@@ -72,7 +72,7 @@ V1 = **Statuszentrale**, nur lesen:
 - Karten (Einblendungen) bekommen eine zweite Zeile „🖱 Maus bewegen für Details“, aber nur wenn das Dashboard verfügbar ist.
 - Im Dashboard steht die Meldung oben, mit Knopf „Gelesen“ (entfernt die Karte). Das ist der **einzige** Knopf, der etwas ändert.
 
-## S2 — Statuszentrale mit Daten (Entwurf 19.10.2026)
+## S2 — Statuszentrale mit Daten (freigegeben von Till am 19.10.2026)
 
 S1 ist abgenommen (Till, 19.10.): Maus → Dashboard, „Zurück“, Rückkehr nach 2 min. S2 ersetzt die Platzhalter-Seite durch
 die echte Statuszentrale. Weiterhin **nur lesen**.
@@ -86,10 +86,17 @@ die echte Statuszentrale. Weiterhin **nur lesen**.
 | Aufgaben | offene + laufende Tasks (Zahl), die 5 wichtigsten Titel (Priorität, dann Alter) | Tabelle `module_tasks` des Besitzers (s. u.) – nur wenn das Modul `tasks` installiert ist |
 | Rechner | Last, RAM, GPU-Temperatur, freier Platz `/`, Laufzeit | wie die Status-Leiste (`renderer/sysinfo.py`) + `shutil.disk_usage`, `/proc/uptime` |
 | Mining | Rechner an/aus, geschätzt €/Tag jetzt | Tabellen `module_mining_*` – nur wenn das Modul `mining` installiert ist |
+| Wartet auf Till | offene PRs von hydrahive2 + hydrahive2-modules (Nummer, Titel, CI grün/rot/läuft, „mergebar“) | GitHub-REST, nur lesend, mit dem Token des Projekts „Hydrahive DEV“ (s. u.) |
 | Uhr | Uhrzeit, Datum, Feiertag | Browser + Vitrine-Programm |
 
-**Nicht in S2:** „Was wartet auf Till“ (PRs, CI). Auf .2 ist `gh` für den HydraHive-Nutzer nicht angemeldet, und ein eigener
-GitHub-Zugang für die Vitrine wäre ein neuer Zugangsweg → eigene Entscheidung (siehe Entscheidungen S2).
+### GitHub („Wartet auf Till“)
+- Token: der Git-Token des HydraHive-Projekts **Hydrahive DEV** (am 19.10. auf .2 geprüft: hinterlegt für die Repos
+  hydrahive2 und hydrahive2-modules; HydraHive gibt ihn den Projekt-Agenten als `GH_TOKEN`). Projekt im Cockpit wählbar.
+- Der Token hat Schreibrechte (Push/Merge). Die Vitrine nutzt ihn **nur für GET** auf `api.github.com`, feste Pfade
+  (`/repos/<owner>/<repo>/pulls?state=open`, Check-Runs des Head-Commits), höchstens 1× pro Minute, Zeitlimit 10 s.
+- Der Token verlässt das Backend nie (nicht in der Antwort, nicht im Log, nicht im Cockpit). Repos fest auf
+  `hydrahive/hydrahive2` und `hydrahive/hydrahive2-modules` (im Cockpit änderbar, nur `owner/repo`-Form).
+- Fehlt der Token oder antwortet GitHub nicht → Bereich zeigt „GitHub nicht erreichbar“, Rest unverändert.
 
 ### Wem gehören die Tasks?
 Der Kiosk hat keinen Nutzer. Die Tasks kommen vom **Besitzer** der Vitrine: einstellbar im Cockpit (Feld „Tasks von“,
@@ -116,10 +123,10 @@ Auswahl der HydraHive-Nutzer, Standard = der Admin, der zuletzt die Vitrine-Eins
 - Ein Secret in einer Fehlermeldung erscheint geschwärzt (Test)
 - Seite ruhig: Firefox < 5 % eines Kerns (gemessen 60 s); Backend-Last durch `data` vernachlässigbar (Zwischenspeicher)
 
-### Entscheidungen S2 (offen, Till)
-1. Tasks von welchem Nutzer? (Vorschlag: einstellbar, Standard `till`)
-2. Mining-Bereich zeigen? (Vorschlag: ja, wenn installiert)
-3. „Was wartet auf Till“ (PRs/CI): später mit eigenem, nur lesenden GitHub-Zugang – oder weglassen?
+### Entscheidungen S2 (Till, 19.10.2026)
+1. Tasks vom Nutzer **till** (im Cockpit änderbar).
+2. Mining-Bereich **ja**, wenn das Modul installiert ist.
+3. „Wartet auf Till“ **ja**, mit dem Token des Projekts **Hydrahive DEV** (nur lesend genutzt).
 
 ## Bewusst nicht (V1 der Statuszentrale)
 
