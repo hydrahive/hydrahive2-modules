@@ -50,16 +50,34 @@ def _context(idea: str, length: str, style: str, kind: str = "") -> str:
 
 
 def parse_answer(raw: str) -> dict | None:
-    """JSON-Objekt aus der Antwort; toleriert Zäune und Text davor/danach. Unbrauchbar → None."""
+    """JSON-Objekt aus der Antwort; toleriert Zäune und Text davor/danach. Unbrauchbar → None.
+    L3: Fehlen am Ende nur schließende Klammern (lokale KI vergisst oft die letzte „}“), werden sie ergänzt."""
     t = (raw or "").strip()
     start, end = t.find("{"), t.rfind("}")
     if start == -1 or end <= start:
         return None
-    try:
-        data = json.loads(t[start:end + 1])
-    except json.JSONDecodeError:
-        return None
-    return data if isinstance(data, dict) else None
+    for candidate in (t[start:end + 1], _closed(t[start:end + 1])):     # beginnt mit „{“ → gültig heißt Objekt
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
+def _closed(t: str) -> str:
+    """Hängt die am Ende fehlenden schließenden Klammern an (Klammern in Texten zählen nicht). Passt etwas nicht
+    zusammen, bleibt das Ergebnis ungültiges JSON und fällt bei json.loads durch."""
+    stack, in_str, esc = [], False, False
+    for ch in t:
+        if in_str:
+            esc, in_str = (False, True) if esc else (ch == "\\", ch != '"')
+        elif ch == '"':
+            in_str = True
+        elif ch in "{[":
+            stack.append("}" if ch == "{" else "]")
+        elif ch in "}]" and stack:
+            stack.pop()
+    return t + "".join(reversed(stack))
 
 
 def _check(data: dict) -> tuple[str, str, str, str, bool]:
@@ -89,18 +107,29 @@ async def draft(pid: str, data: dict) -> dict:
     system = SYSTEM_PROMPT.replace("{shots}", SHOTS_ONE if single else SHOTS_NORMAL)
     messages = [{"role": "system", "content": system}, {"role": "user", "content": _context(idea, length, style, kind)}]
     model = plan.get_head(pid)["models"]["text"] or None
+    out = await _ask(pid, messages, model, style) or await _ask(pid, messages, model, style)   # L3: einmal neu fragen
+    if out is None:
+        raise plan.PlanError("studio_idea_failed", 502)
+    return {"draft": one_shot(out) if single else out}
+
+
+async def _ask(pid: str, messages: list[dict], model: str | None, style: str) -> dict | None:
+    """Eine Anfrage; None = unbrauchbare Antwort (z. B. bei lokaler KI abgeschnitten). LLM-Fehler wird nicht wiederholt."""
     try:
         raw = await llm_client.complete(messages, model=model, temperature=0.8, max_tokens=8000)
     except Exception as e:
         logger.warning("Studio-Idee: LLM-Fehler (Projekt %s): %s", pid, e)
         raise plan.PlanError("studio_idea_failed", 502) from e
-    answer = parse_answer(raw)
     try:
-        if answer is None:
-            raise _draft.DraftInvalid("answer")
-        head = {"title": answer.get("title"), "logline": answer.get("logline"), "style": style or answer.get("style")}
-        out = _draft.clean({**answer, "head": head}, strict=False, max_scenes=MAX_SCENES, durations=SHOT_SECONDS)
-    except _draft.DraftInvalid as e:
+        return _usable(raw, style)
+    except _draft.DraftInvalid:
         logger.warning("Studio-Idee: unbrauchbare Antwort (Projekt %s): %s", pid, text(raw, 200))
-        raise plan.PlanError("studio_idea_failed", 502) from e
-    return {"draft": one_shot(out) if single else out}
+        return None
+
+
+def _usable(raw: str, style: str) -> dict:
+    answer = parse_answer(raw)
+    if answer is None:
+        raise _draft.DraftInvalid("answer")
+    head = {"title": answer.get("title"), "logline": answer.get("logline"), "style": style or answer.get("style")}
+    return _draft.clean({**answer, "head": head}, strict=False, max_scenes=MAX_SCENES, durations=SHOT_SECONDS)

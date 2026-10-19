@@ -1,5 +1,6 @@
 """Bild-Anbieter für das Studio: OpenRouter-Bild-Schnittstelle (`/api/v1/images`), Spec „Bauplan Etappe 3“.
 
+Lokale Modelle (`local:…`) gehen über local_image an den Kern (Bauplan L).
 Übernommen vom Vorbild atelier/backend/generate.py (gleicher Aufruf mit Referenzbildern und optionalem Seed), aber als
 eigene Kopie, weil das Atelier in Etappe 8 entfällt. Schlüssel und Standardmodell kommen aus dem Kern. Fehler tragen
 nur einen Code; den Text für Menschen liefert das Frontend.
@@ -13,6 +14,8 @@ import math
 import re
 
 import httpx
+
+from . import local_image
 
 logger = logging.getLogger("hhmod_studio.image")
 
@@ -55,7 +58,14 @@ def nearest_aspect(wanted: str, accepted: str) -> str | None:
     return "auto" if "auto" in opts else None
 
 
+def _local_parts():
+    return local_image._parts()
+
+
 def request_image(*, model: str, prompt: str, references: list[str], aspect_ratio: str, seed: int | None = None) -> bytes:
+    if local_image.is_local(model):                 # Bauplan L: lokales Modell (ComfyUI) über den Kern, kein Schlüssel
+        return local_image.request(_local_parts(), ProviderError, model=model, prompt=prompt, references=references,
+                                   aspect_ratio=aspect_ratio, seed=seed)
     from hydrahive.llm._config import openrouter_key
     key = openrouter_key()
     if not key:
