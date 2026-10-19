@@ -22,12 +22,14 @@ interface Props {
   /** „Aus dem Ton heraushören …“ (6b); während es läuft, ist die Liste gesperrt (der Auftrag ersetzt sie). */
   onHear: () => void
   hearing: boolean
+  /** Sprache des Films? Nur dann gibt es „Aus den Sprechtexten“ und „Heraushören“ (6c). */
+  original?: boolean
 }
 
 const btn = "flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 text-[11px] font-bold text-[#c3ccdd] hover:border-[#46617f] disabled:opacity-40"
 
 /** Reiter „Untertitel“, links: alle Einträge (Zeit, Text), Bearbeiten, Erzeugen aus den Sprechtexten, Herunterladen. */
-export function SubtitleList({ cues, selected, time, hasSpeech, busy, save, canUndo, canRedo, onSelect, onChange, onAction, onFromSpeech, onExport, onHear, hearing }: Props) {
+export function SubtitleList({ cues, selected, time, hasSpeech, busy, save, canUndo, canRedo, onSelect, onChange, onAction, onFromSpeech, onExport, onHear, hearing, original = true }: Props) {
   const { t } = useTranslation("studio")
   const sel = cues.find((c) => c.id === selected) ?? null
   const free = !hearing
@@ -45,7 +47,8 @@ export function SubtitleList({ cues, selected, time, hasSpeech, busy, save, canU
   )
   return (
     <section className="flex h-full min-h-0 flex-col" data-sub-list>
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-[#2a364b] p-2">
+      <div className="flex flex-wrap items-center gap-1 border-b border-[#2a364b] px-2 py-1.5">
+        {original && <>
         <button type="button" onClick={onFromSpeech} disabled={busy || hearing || !hasSpeech} data-sub-from-speech title={t("sub_from_speech_hint")}
           className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-2.5 py-1 text-[11px] font-black text-[#08111c] disabled:opacity-40">
           {busy ? <Loader2 size={12} className="animate-spin" /> : <MessageSquareText size={12} />} {t("sub_from_speech")}
@@ -53,6 +56,7 @@ export function SubtitleList({ cues, selected, time, hasSpeech, busy, save, canU
         <button type="button" onClick={onHear} disabled={busy || hearing} data-sub-hear className={btn} title={t("hear_open_hint")}>
           {hearing ? <Loader2 size={12} className="animate-spin" /> : <Ear size={12} />} {t("hear_open")}
         </button>
+        </>}
         {(["srt", "vtt"] as const).map((f) => (
           <button key={f} type="button" onClick={() => onExport(f)} disabled={!cues.length} data-sub-export={f} className={btn} title={t("sub_export_hint")}>
             <Download size={12} /> {t(`sub_export_${f}`)}
@@ -64,12 +68,12 @@ export function SubtitleList({ cues, selected, time, hasSpeech, busy, save, canU
         </span>
       </div>
       {hearing && <p className="flex items-center gap-1.5 px-3 pt-2 text-[11px] text-[#69d7ff]" data-sub-hearing><Loader2 size={11} className="animate-spin" /> {t("hear_running")}</p>}
-      {!hasSpeech && !cues.length && <p className="px-3 pt-2 text-[11px] leading-relaxed text-[#8d9ab0]">{t("sub_no_speech_hint")}</p>}
-      <div className="flex flex-wrap gap-1.5 border-b border-[#2a364b] p-2">
+      {original && !hasSpeech && !cues.length && <p className="px-3 pt-2 text-[11px] leading-relaxed text-[#8d9ab0]">{t("sub_no_speech_hint")}</p>}
+      <div className="flex flex-wrap gap-1 border-b border-[#2a364b] px-2 py-1.5">
         {tool("add", Plus)}{tool("split", Scissors)}{tool("join", Combine)}{tool("delete", Trash2)}{tool("undo", Undo2)}{tool("redo", Redo2)}
       </div>
       <div className="px-3 pt-2 text-[10px] font-bold uppercase tracking-wide text-[#68758a]">{t("sub_count", { count: cues.length })}</div>
-      {!cues.length ? <p className="p-3 text-xs leading-relaxed text-[#8d9ab0]">{t("sub_empty")}</p> : (
+      {!cues.length ? <p className="p-3 text-xs leading-relaxed text-[#8d9ab0]">{t(original ? "sub_empty" : "sub_empty_other")}</p> : (
         <ol className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
           {cues.map((c, i) => (
             <li key={c.id} data-sub-cue={c.id} aria-current={c.id === selected ? "true" : undefined} onClick={() => onSelect(c.id)}

@@ -6,9 +6,9 @@ Alle Projekt-Routen prüfen Mitgliedschaft (fremdes oder unbekanntes Projekt →
 from __future__ import annotations
 
 import asyncio
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 from hydrahive.projects._config_io import list_for_user
@@ -19,8 +19,10 @@ from .draft_routes import router as draft_router
 from .music_routes import router as music_router
 from .plan_routes import router as plan_router
 from .shot_routes import router as shot_router
+from .subtitle_routes import list_router as subtitle_list_router
 from .subtitle_routes import router as subtitle_router
 from .timeline_routes import router as timeline_router
+from .upload_routes import router as upload_router
 
 router = APIRouter()
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
@@ -38,10 +40,12 @@ async def get_library(project_id: str, auth: Auth) -> dict:
 
 
 @router.post("/projects/{project_id}/render", status_code=202)
-def post_render(project_id: str, auth: Auth) -> dict:
+def post_render(project_id: str, auth: Auth, data: Annotated[Any, Body()] = None) -> dict:
     guard(auth[0], project_id)
     try:
-        return render.start(project_id)
+        body = data if isinstance(data, dict) else {}
+        return render.start(project_id, with_subtitles=body.get("subtitles") is True, aspect=body.get("aspect"),
+                            quality=body.get("quality"))
     except plan.PlanError as e:
         raise coded(e.status, e.code)
 
@@ -79,5 +83,7 @@ router.include_router(draft_router)
 router.include_router(music_router)
 router.include_router(plan_router)
 router.include_router(shot_router)
+router.include_router(subtitle_list_router)
 router.include_router(subtitle_router)
 router.include_router(timeline_router)
+router.include_router(upload_router)

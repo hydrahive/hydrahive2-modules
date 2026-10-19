@@ -77,18 +77,22 @@ def _prune(pid: str) -> None:
 
 
 def start(pid: str, kind: str, target: str, scene_id: str, work: Callable[..., dict], *,
-          busy_code: str = "studio_job_running", progress: dict | None = None) -> dict:
+          busy_code: str = "studio_job_running", progress: dict | None = None, status: str = "running",
+          info: dict | None = None) -> dict:
     """Auftrag anlegen und im Hintergrund ausführen. `work` liefert das Ergebnis (dict) oder wirft JobFailed.
 
-    Mit `progress` ist es ein Sammelauftrag: `work(Progress)` meldet Fortschritt und prüft `cancelled()`."""
+    Mit `progress` ist es ein Sammelauftrag: `work(Progress)` meldet Fortschritt und prüft `cancelled()`.
+    `status="queued"`: wartet zuerst (Film in der Warteschlange, 7c); `info`: Angaben für die Anzeige."""
     with _lock:
         if (pid, target) in _running:
             raise plan.PlanError(busy_code, 409)
         _running.add((pid, target))
-    job = {"id": new_id(), "kind": kind, "target": target, "scene_id": scene_id, "status": "running",
+    job = {"id": new_id(), "kind": kind, "target": target, "scene_id": scene_id, "status": status,
            "error": None, "result": None, "created_at": _stamp(), "finished_at": None}
     if progress is not None:
         job["progress"] = progress
+    if info is not None:
+        job["info"] = info
     try:
         _save(pid, job)
     except Exception:
@@ -122,11 +126,11 @@ def start(pid: str, kind: str, target: str, scene_id: str, work: Callable[..., d
 
 
 def cancel(pid: str, job_id: str) -> dict:
-    """Abbruch anfordern; der laufende Schritt wird noch fertig. Nur laufende Sammelaufträge."""
+    """Abbruch anfordern; der laufende Schritt wird noch fertig. Nur laufende oder wartende Sammelaufträge."""
     job = next((j for j in list_jobs(pid) if j["id"] == job_id), None) if is_id(job_id) else None
     if job is None:
         raise plan.PlanError("studio_not_found", 404)
-    if job.get("status") == "running" and "progress" in job:
+    if job.get("status") in ("running", "queued") and "progress" in job:
         _cancel.add(job_id)
     return job
 

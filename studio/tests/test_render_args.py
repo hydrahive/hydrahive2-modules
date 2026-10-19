@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from backend import render_args as ra
 
 BASE = Path("/proj")
@@ -12,12 +11,6 @@ BASE = Path("/proj")
 
 def _c(kind, start, t_in, t_out, media="", label="x"):
     return {"kind": kind, "start": start, "in": t_in, "out": t_out, "media_rel": media, "label": label}
-
-
-@pytest.mark.parametrize(("aspect", "size"), [("16:9", (1280, 720)), ("9:16", (720, 1280)), ("1:1", (1080, 1080)),
-                                              ("4:3", (960, 720)), ("21:9", (1680, 720)), ("unsinn", (1280, 720))])
-def test_size_from_aspect(aspect, size) -> None:
-    assert ra.frame_size(aspect) == size
 
 
 def test_segments_with_gaps_and_kinds() -> None:
@@ -88,7 +81,8 @@ def test_no_text_file_no_drawtext() -> None:
     assert "drawtext" not in cmd[cmd.index("-filter_complex") + 1]
 
 
-@pytest.mark.parametrize(("size", "chars"), [((720, 1280), 120), ((1280, 720), 120), ((1080, 1080), 60), ((960, 720), 30)])
+@pytest.mark.parametrize(("size", "chars"), [((720, 1280), 120), ((1280, 720), 120), ((1080, 1080), 60), ((960, 720), 30),
+                                               ((480, 854), 120), ((854, 480), 60), ((1080, 1920), 120), ((480, 480), 60)])
 def test_text_fits_the_frame(size, chars) -> None:
     """Schrift nach der kürzeren Seite; Zeilen so umbrochen, dass sie in 90 % der Breite passen (DejaVu ≈ 0,6 × Größe)."""
     fs = ra.font_size(size)

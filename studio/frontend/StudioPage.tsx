@@ -42,9 +42,7 @@ import { MusicForm } from "./MusicForm"
 import { useMusic } from "./useMusic"
 import { MixInspector } from "./MixInspector"
 import { editing, filmWs, useCutWorkspace } from "./useCutWorkspace"
-import { useSubtitleTab } from "./useSubtitleTab"
-import { useSubtitles } from "./useSubtitles"
-import { useHear } from "./useHear"
+import { useSubtitleWorkspace } from "./useSubtitleWorkspace"
 import { clipsOf, findClip } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
 import { useDraft } from "./useDraft"
@@ -54,6 +52,7 @@ import { useGuide } from "./useGuide"
 import { WorkspaceIntro } from "./WorkspaceIntro"
 import { useJobs } from "./useJobs"
 import { useShots } from "./useShots"
+import { useUploads } from "./useUploads"
 import { useStudioState } from "./useStudioState"
 import type { Workspace } from "./workspaces"
 
@@ -69,15 +68,13 @@ export function StudioPage() {
   const mixing = workspace === "audio"
   const { cut, every, mixer, cp, waves, ed } = useCutWorkspace(lib.projectId, workspace)
   const editKeys = (a: Parameters<typeof editAction>[0]) => { const x = editAction(a); if (x) ed.run(x); return !!x }
-  const changeWs = (w: Workspace) => {                                            // verlassen → sofort speichern
-    if (editing(workspace) && !editing(w)) void ed.flush(); if (workspace === "subtitles" && w !== "subtitles") void sub.flush(); setWorkspace(w) }
+  const changeWs = (w: Workspace) => { if (editing(workspace) && !editing(w)) void ed.flush(); if (workspace === "subtitles" && w !== "subtitles") void sub.flush(); setWorkspace(w) }   // verlassen → sofort speichern
   // Im Reiter „Schneiden“ steuern die Tasten Film und Schnitt. Ist ein Medium aus der Bibliothek gewählt, spielt die
   // Vorschau das Medium – dann bleibt das Abspielen bei ihm, Teilen/Löschen/Rückgängig wirken weiter auf den Schnitt.
   const subbing = workspace === "subtitles"
   const p = usePlan(lib.projectId, workspace === "plan" || workspace === "generate" || workspace === "deliver" || subbing)  // Format, Sprache
-  const sub = useSubtitles(lib.projectId, p.plan?.screenplay.language ?? "", subbing, cp.time, (x) => cut.setNotice(x))
-  const hear = useHear(lib.projectId, p.plan?.screenplay.language ?? "", subbing, sub.flush, () => void sub.reload(), (x) => cut.setNotice(x))
-  const st = useSubtitleTab(sub, hear, { time: cp.time, view: followView(cut.view, cp.time, cp.total), onSeek: cp.seek, plan: p.plan })
+  const { st, sub } = useSubtitleWorkspace(lib.projectId, subbing, p.plan, { time: cp.time, view: followView(cut.view, cp.time, cp.total),
+    onSeek: cp.seek }, (x) => cut.setNotice(x))
   const s = useStudioState(lib.items, workspace, changeWs, (item) => (subbing ? (item ? { edit: st.keys } : { ...cp, edit: st.keys })
     : !editing(workspace) ? null : item ? { edit: editKeys, toggleSnap: ed.toggleSnap } : { ...cp, edit: editKeys, toggleSnap: ed.toggleSnap }))
   const planning = s.workspace === "plan"
@@ -88,7 +85,9 @@ export function StudioPage() {
   const nextStamp = `${p.rev}:${cut.timeline?.revision ?? ""}:${every.length}`
   if (nextStamp !== stamp) setStamp(nextStamp)                   // beim Rendern abgeglichen, kein Effect nötig
   const plan = { ...p, select: (x: Parameters<typeof p.select>[0]) => { s.clearMedia(); p.select(x) } }   // Auswahl im Drehbuch löst das Medium ab
-  const library = <LibraryPanel items={lib.items} loading={lib.loading} error={lib.error} truncated={lib.truncated} selected={s.mediaId} onSelect={s.selectMedia} />
+  const up = useUploads(lib.projectId, p, () => void lib.reload(), (x) => (shotsWs ? p.setNotice(x) : cut.setNotice(x)))
+  const library = <LibraryPanel items={lib.items} loading={lib.loading} error={lib.error} truncated={lib.truncated} selected={s.mediaId}
+    onSelect={s.selectMedia} onUpload={lib.projectId ? up.library : undefined} uploading={up.busy} />
   const jobs = useJobs(lib.projectId, shotsWs || delivering, () => { void p.reload(); void lib.reload(); void guide.reload() })   // fertig → Shot + Bibliothek + Fortschritt neu
   const sh = useShots(plan, lib.projectId, () => void jobs.reload())
   const bt = useBatch(plan, lib.projectId, jobs.jobs, () => void jobs.reload())
@@ -119,8 +118,10 @@ export function StudioPage() {
         <WorkspaceIntro workspace={s.workspace} open={guide.introOpen} onToggle={guide.toggleIntro} />
         {delivering ? (
           <div className="min-h-0 flex-1">
-            <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} job={dv.job}
-              busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")} />
+            <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} queue={dv.queue} cancelling={dv.cancelling} onCancel={dv.cancel} error={p.error}
+              busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")}
+              subtitleLanguages={dv.subtitleLanguages} withSubtitles={dv.withSubtitles} onWithSubtitles={dv.setWithSubtitles}
+              preset={dv.preset} onPreset={dv.setPreset} />
           </div>
         ) : <>
         <div className="flex min-h-0 flex-col" style={{ flex: `${100 - s.layout.timeline} 1 0` }}>
@@ -157,7 +158,7 @@ export function StudioPage() {
             </div>
             <Splitter dir="x" label={t("resize_inspector")} onDrag={(d) => s.drag("inspector", d)} />
             <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
-              {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} />
+              {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} upload={up} />
                 : freeOpen ? <FreeForm form={fr.form} catalog={imageCatalog} images={lib.items.filter((i) => i.kind === "image")} job={freeJob}
                     busy={p.busy} onChange={fr.setForm} onRun={() => void fr.run()} />
                 : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} /> : <GenerateHint />)
@@ -198,7 +199,7 @@ export function StudioPage() {
         {sh.confirm && <DecomposeDialog count={sh.confirm.count} busy={sh.busy !== null} onConfirm={() => void sh.confirmReplace()} onClose={sh.closeConfirm} />}
         {p.dialog?.kind === "delete" && <DeleteDialog name={p.dialog.name} busy={p.busy} onConfirm={p.confirmDelete} onClose={() => p.setDialog(null)} />}
         {s.toast && <div className={toastCls} data-studio-toast>{t("toast_later", { action: t(`action.${s.toast}`) })}</div>}
-        {shotsWs && p.notice && <div className={toastCls} data-plan-notice>{p.notice}</div>}
+        {(shotsWs || delivering) && p.notice && <div className={toastCls} data-plan-notice>{p.notice}</div>}
         {filmWs(s.workspace) && cut.notice && <div className={toastCls} data-cut-notice>{cut.notice}</div>}
       </div>
     </CockpitShell>

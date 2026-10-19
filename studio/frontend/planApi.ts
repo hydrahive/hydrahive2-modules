@@ -47,7 +47,7 @@ export interface BatchPreview { count: number; model: string }
 
 export interface Job {
   id: string
-  kind: "image" | "video" | "speech" | "free_images" | "render" | "music" | "transcribe" | BatchKind
+  kind: "image" | "video" | "speech" | "free_images" | "render" | "music" | "transcribe" | "translate" | BatchKind
   target: string
   scene_id: string
   status: "queued" | "running" | "done" | "failed" | "cancelled"
@@ -56,6 +56,8 @@ export interface Job {
   created_at: string
   finished_at: string | null
   progress?: { total: number; done: number; failed: number; current: string }
+  /** Angaben für die Anzeige, z. B. Vorlage eines Films (7c) */
+  info?: { aspect?: string; quality?: string; subtitles?: boolean }
 }
 
 export interface Scene {

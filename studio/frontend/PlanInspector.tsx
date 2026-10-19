@@ -7,13 +7,14 @@ import { SceneForm } from "./SceneForm"
 import { ShotForm } from "./ShotForm"
 import type { PlanState } from "./usePlan"
 import type { ShotsState } from "./useShots"
-import type { Job } from "./planApi"
+import type { Job, PlanElement } from "./planApi"
 import { latestJob } from "./jobLogic"
 import { useModelCatalogs } from "./modelCatalog"
 import { useVoices } from "./useVoices"
 
 /** Planen, rechts: Formular des Gewählten. `key` mit `rev` setzt das Formular nach dem Speichern auf die frischen Daten. */
-export function PlanInspector({ p, shots, images, jobs = [] }: { p: PlanState; shots?: ShotsState; images: LibraryItem[]; jobs?: Job[] }) {
+export function PlanInspector({ p, shots, images, jobs = [], upload }: { p: PlanState; shots?: ShotsState; images: LibraryItem[]; jobs?: Job[];
+  upload?: { busy: boolean; reference: (elementId: string, file: File, pending: Partial<PlanElement> | null) => void } }) {
   const { t } = useTranslation("studio")
   const { plan, selection: sel } = p
   const catalogs = useModelCatalogs(sel?.kind === "head")          // erst laden, wenn das Drehbuch-Formular offen ist
@@ -36,7 +37,8 @@ export function PlanInspector({ p, shots, images, jobs = [] }: { p: PlanState; s
     const el = plan.elements.find((e) => e.id === sel.id)
     if (el) {
       body = <ElementForm key={`${el.id}-${p.rev}`} element={el} base={plan.base} images={images} busy={p.busy}
-        onSave={(e) => void p.saveElement(el.id, e)} onDelete={() => p.setDialog({ kind: "delete", target: "element", id: el.id, name: el.name })} />
+        onSave={(e) => void p.saveElement(el.id, e)} onDelete={() => p.setDialog({ kind: "delete", target: "element", id: el.id, name: el.name })}
+        onUploadReference={upload ? (f, pending) => upload.reference(el.id, f, pending) : undefined} uploading={upload?.busy} />
     }
   } else if (plan && sel?.kind === "shot" && shots) {
     const scene = sceneOf(plan, sel)

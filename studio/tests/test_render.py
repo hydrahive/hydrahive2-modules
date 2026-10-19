@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 from _render_helpers import (
@@ -63,26 +64,30 @@ def test_empty_timeline(client, auth_headers, ws) -> None:
     assert client.get(f"{R}/renders", headers=auth_headers).json() == {"renders": []}
 
 
-def test_only_one_render_at_a_time(client, auth_headers, ws, monkeypatch) -> None:
+def test_second_click_waits_in_line(client, auth_headers, ws, monkeypatch) -> None:
+    """7c: ein zweiter Klick ist kein Fehler mehr, der Film wartet (Platz 2)."""
     import threading
 
     from backend import render
     gate = threading.Event()
-    monkeypatch.setattr(render, "_run_ffmpeg", lambda cmd, seconds, progress: gate.wait(5) and None)
+    monkeypatch.setattr(render, "_run_ffmpeg", lambda cmd, seconds, progress, **_: gate.wait(5) and None)
     b = ws / "studio/media/images"
     b.mkdir(parents=True)
     (b / "x.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\0" * 32)
     put_timeline(client, auth_headers, [clip("image", 0, 0, 2, "studio/media/images/x.png")])
     assert client.post(f"{R}/render", headers=auth_headers, json={}).status_code == 202
     r = client.post(f"{R}/render", headers=auth_headers, json={})
-    assert r.status_code == 409 and r.json()["detail"]["code"] == "studio_render_running"
+    assert r.status_code == 202 and r.json()["status"] == "queued" and r.json()["position"] == 2
     gate.set()
+    end = time.time() + 10                                                            # beide fertig, bevor ffmpeg zurückkommt
+    while time.time() < end and any(j["status"] in ("queued", "running") for j in client.get(f"{R}/plan/jobs", headers=auth_headers).json()["jobs"]):
+        time.sleep(0.05)
 
 
 def test_ffmpeg_failure_is_failed_job(client, auth_headers, ws, monkeypatch) -> None:
     from backend import render
 
-    def boom(cmd, seconds, progress):
+    def boom(cmd, seconds, progress, **_):
         raise render.RenderFailed()
     monkeypatch.setattr(render, "_run_ffmpeg", boom)
     b = ws / "studio/media/images"
@@ -130,7 +135,7 @@ def test_placeholder_text_file_is_wrapped(client, auth_headers, ws, monkeypatch)
     from backend import render
     seen: list[str] = []
 
-    def fake(cmd, seconds, progress):
+    def fake(cmd, seconds, progress, **_):
         graph = cmd[cmd.index("-filter_complex") + 1]
         path = graph.split("textfile='", 1)[1].split("'", 1)[0]
         seen.append(Path(path).read_text(encoding="utf-8"))

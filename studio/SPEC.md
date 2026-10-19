@@ -164,7 +164,7 @@ Am Ende gibt es für Medien **nur noch „Studio“**, damit die Leiste oben lee
 | 4 | Schneiden: Zeitleiste mit Spuren, ziehen, trimmen, teilen, Einrasten, Rückgängig, Übersichtsleiste, Proxies | Schnitt im Studio |
 | 5 | Ton: Tonspuren, Mixer, Wellenform, Pegel, Musik und Sprache auf der Zeitleiste | Vertonen im Studio |
 | 6 | Untertitel: aus Sprechtexten oder herausgehört, Spur, Übersetzen, SRT/WebVTT als Dateien (nie eingebrannt) | Untertitel und Übersetzung |
-| 7 | Ausgabe: Render-Vorlagen, Warteschlange im Hintergrund, Ergebnisse in der Bibliothek | fertige Videos aus dem Studio |
+| 7 | Ausgabe: eigenes Material hochladen (auch Referenzbilder für Figuren), Vorlagen (Format, Qualität), Warteschlange | fertige Videos aus dem Studio |
 | 8 | Übernahme alter Daten, Nachfolger für die Agenten-Werkzeuge, alte Module und Kern-Reiter „Media“ entfernen | nur noch „Studio“ |
 | später | Text-Schnitt über Transkript (Descript-Prinzip), Vertonung in Zielsprache, Farbe, Effekte, Übergänge | |
 
@@ -1089,6 +1089,90 @@ Wyoming liefert keine Zeiten. (Die schlechte Erkennung in der Probe lag an der e
 - **Fehlercodes im Auftrag:** `no_key`, `provider_rejected`, `provider_unreachable`, `empty_answer`,
   `no_speech_found` (kein Abschnitt mit Sprache), `render_failed` (Ton mischen), `changed`.
   Vor dem Start: `studio_subtitles_no_audio` (weder Video noch Sprachclip auf der Zeitleiste).
+
+### Bauplan 6c – Übersetzen und Untertitel im Film (19.10.)
+
+- **Sprachen im Reiter:** Oben im Reiter „Untertitel“ eine Auswahl der Sprache: zuerst die Sprache des Films
+  („Original“), dann jede Sprache, für die es schon Untertitel gibt. Jede Sprache wird für sich bearbeitet,
+  gespeichert und heruntergeladen (wie 6a).
+- **„Übersetzen …“:** Dialog mit Zielsprache (alle Sprachen außer der Ausgangssprache), Anzahl der Untertitel, Text-Modell
+  (aus dem Drehbuch, sonst Standard des Servers), Kosten-Hinweis („Text-KI, meist unter 1 Cent“). Gibt es die Zielsprache
+  schon, „ersetzt die N vorhandenen Untertitel“ (`replace`).
+- **Übersetzt wird Eintrag für Eintrag:** Die Zeiten bleiben genau gleich, nur der Text ändert sich. Die Text-KI bekommt
+  eine nummerierte Liste (Kontext des ganzen Films, damit Namen und Ton einheitlich bleiben) und antwortet als JSON-Liste
+  in derselben Reihenfolge. Je Aufruf höchstens 80 Einträge; fehlt in der Antwort ein Eintrag oder passt die Anzahl
+  nicht, wird dieser Block einmal neu angefragt, sonst bricht der Auftrag ab (`bad_answer`) – lieber nichts als falsch
+  zugeordnete Zeilen. Zeilen werden neu umbrochen: passt der Text in 2 × 42 Zeichen wie in 6a, sonst in zwei
+  ausgewogene, etwas längere Zeilen – die Zeiten bleiben, also wird kein Wort weggelassen (erst ab 200 Zeichen gekürzt). Quelle `translation`, `from` = Ausgangssprache.
+- **Auftrag** `translate` (Ziel `subtitles:<projekt>:<zielsprache>`, `studio_subtitles_running`). Wird die
+  Zielsprache währenddessen geändert, wird nicht überschrieben (`changed`). Fehler: `provider_failed` (Text-KI nicht
+  erreichbar/abgelehnt), `bad_answer`, `changed`. Vor dem Start: `studio_subtitles_empty` (Ausgangssprache leer),
+  `studio_subtitles_same_language`.
+- **Im Film als abschaltbare Spur (nicht eingebrannt):** Im Reiter „Ausgabe“ ein Kästchen „Untertitel mitliefern
+  (abschaltbar, nicht ins Bild)“. Dann kommen alle vorhandenen Sprachen als eigene Untertitelspuren in die MP4
+  (`mov_text`, je Spur die Sprache als ISO-639-2, z. B. `ger`, `eng`; die Filmsprache ist die Standardspur). Ohne
+  Kästchen bleibt der Film wie bisher. Eingebrannt wird nie. Die Begleitdatei des Films nennt die Sprachen.
+
+## Bauplan Etappe 7 – Ausgabe und eigenes Material (19.10.)
+
+**Till (19.10., vor dem Schlafen):** „mache 7 fertig“ und „für Charaktere Bilder hochladen können, also mehr
+Input-Material übergeben“. Er schaut es morgens an; gemergt wird erst nach seinem OK.
+
+| Schritt | Inhalt | danach kann man |
+|---|---|---|
+| **7a** | **Eigenes Material hochladen:** Bilder, Videos und Ton in die Bibliothek („Hochgeladen“). Bei Figuren, Orten und Gegenständen: **Referenzbilder direkt hochladen** (bisher nur aus der Bibliothek wählbar). Ziehen einer Datei aus dem Dateimanager auf die Bibliothek bzw. auf die Referenzbilder geht auch. | eigene Fotos von Figuren, eigene Videos und Ton verwenden |
+| **7b** | **Vorlagen für die Ausgabe:** Format wählen (wie im Drehbuch, 16:9, 9:16 Hochformat, 1:1 Quadrat) und Qualität (Vorschau 480p, Standard 720p, Hoch 1080p). Bild wird eingepasst (schwarzer Rand), nichts abgeschnitten. Name und Begleitdatei nennen Vorlage und Größe. | denselben Schnitt fürs Handy und für den Bildschirm ausgeben |
+| **7c** | **Warteschlange:** mehrere Filme nacheinander (z. B. 16:9 und 9:16), Liste „wartet / läuft / fertig / Fehler“, Abbrechen wartender Filme. Höchstens 5 in der Schlange, immer nur einer gleichzeitig (ffmpeg braucht den Rechner). | mehrere Fassungen auf einmal anstoßen und weiterarbeiten |
+
+**7a im Detail**
+- **Ablage:** `studio/media/uploads/<id>.<endung>` + Begleitdatei (ursprünglicher Name, Art, Größe, Länge bei Video/Ton,
+  Zeit). Bibliotheksquelle `studio_upload` („Studio · Hochgeladen“). Endungen wie die Bibliothek (Bild: png, jpg, jpeg,
+  webp, gif; Video: mp4, mov, webm, mkv, m4v; Ton: mp3, wav, m4a, ogg, flac, aac, opus). Der Name wird nie als Pfad
+  benutzt.
+- **Prüfung:** Endung muss zur Art passen, Inhalt wird geprüft (Bild: Signatur; Video/Ton: ffprobe findet die Spur),
+  sonst `studio_upload_invalid`. Leer → `studio_upload_empty`. Grenzen: Bild 25 MB, Ton 200 MB, Video 2 GB
+  (`studio_upload_too_large`, 413), es wird beim Schreiben gezählt. Höchstens 20 Dateien je Anfrage.
+- **Referenzbild für einen Baustein:** `POST …/plan/elements/{id}/references` mit einem Bild → landet unter
+  `studio/media/uploads/` und wird an die Referenzen angehängt (höchstens 8, `studio_references_full`). Entfernen wie
+  bisher über das Kreuz. Die Bilder gehen wie die übrigen Referenzen an die Bild-KI (generate.reference_urls).
+- **Oberfläche:** In der Bibliothek ein Knopf „Hochladen …“ (Dateiauswahl, mehrere) und Ablegen von Dateien auf die
+  Bibliothek; Fortschritt je Datei; Fehler je Datei mit Text. Im Baustein unter „Referenzbilder“ ein Knopf
+  „Bild hochladen …“ neben „Bild aus der Bibliothek hinzufügen“, Ablegen auf die Referenzbilder geht auch.
+
+**7b im Detail**
+- **Vorlage = Format + Qualität.** Format: `screenplay` (wie im Drehbuch, Standard), `16:9`, `9:16`, `1:1`.
+  Qualität: `preview` (480p), `standard` (720p, Standard), `high` (1080p). Die Zahl ist immer die **kürzere Seite**,
+  die längere ergibt sich aus dem Format und wird auf eine gerade Zahl gerundet (16:9 → 854×480, 1280×720,
+  1920×1080; 9:16 umgekehrt; 1:1 → 480², 720², 1080²; 4:3 und 21:9 aus dem Drehbuch genauso).
+  Hinweis: Quadrat „Standard“ ist damit 720×720 (in 4d war 1:1 fest 1080×1080) – wer 1080 will, wählt „Hoch“.
+- **Qualität wirkt auch auf die Kodierung:** Vorschau crf 28 (schnell, klein), Standard crf 23, Hoch crf 20.
+- **Einpassen:** wie bisher `scale … decrease` + `pad` schwarz – nichts wird abgeschnitten, auch nicht bei 9:16 aus
+  einem 16:9-Schnitt. Platzhalter-Schrift und Umbruch richten sich nach der Ausgabegröße.
+- **API:** `POST …/render` mit `{aspect?, quality?, subtitles?}`; unbekannter Wert → 400 `studio_render_bad_preset`.
+  Ohne Angaben genau wie bisher: Format des Drehbuchs, Standard.
+- **Begleitdatei/Liste:** zusätzlich `aspect` (tatsächliches Format, z. B. „9:16“, auch bei „wie im Drehbuch“) und
+  `quality`. Ältere Filme ohne diese Felder zeigen nur die Größe.
+- **Oberfläche (Reiter „Ausgabe“):** zwei Auswahlfelder „Format“ und „Qualität“ über dem Knopf, darunter
+  „Ergebnis: 720×1280“. Jeder fertige Film nennt Format und Qualität („9:16 · Standard 720p“). Der Name beim
+  Herunterladen enthält Format und Größe, z. B. `film-202610190812-9x16-720p.mp4`. Die Auswahl merkt sich der
+  Browser je Projekt nicht – sie startet immer bei „wie im Drehbuch“ / „Standard“.
+
+**7c im Detail**
+- **Jeder Klick auf „Film als MP4 erzeugen“ ist ein eigener Auftrag** mit seiner Vorlage (Format, Qualität,
+  Untertitel) und dem Schnitt **so, wie er beim Klicken war**. Er geht in die Warteschlange; Format und Qualität bleiben
+  frei, man kann sofort die nächste Fassung anstoßen.
+- **Ein Film zur Zeit – auf dem ganzen Server**, in der Reihenfolge der Klicks (eigene FIFO, kein Semaphor: dessen
+  Reihenfolge ist nicht garantiert). ffmpeg braucht den Rechner; zwei Projekte warten aufeinander.
+- **Höchstens 5 je Projekt** (wartend + laufend), sonst 409 `studio_render_queue_full`. Der Knopf ist dann gesperrt
+  mit Hinweis. `studio_render_running` entfällt.
+- **Status:** `queued` („wartet“) → `running` („läuft · 40 %“) → `done` („fertig“) / `failed` („Fehler: …“) /
+  `cancelled` („abgebrochen“). Der Auftrag trägt `info` = {aspect, quality, subtitles} für die Anzeige.
+- **Abbrechen:** wartende Filme sofort (Platz wird frei), **auch der laufende** (ffmpeg wird beendet, die halbe Datei
+  gelöscht) – über `POST …/plan/jobs/{id}/cancel` wie bei Sammelaufträgen. Erledigte kann man nicht abbrechen.
+- **Neustart des Servers:** wartende und laufende Filme werden wie andere Aufträge als „unterbrochen“ markiert.
+- **Oberfläche:** unter dem Knopf die Liste „Warteschlange“ (die letzten 6 Film-Aufträge, älteste oben): Vorlage,
+  Zustand, Knopf „Abbrechen“ bei wartend/laufend. Meldung nach dem Klick: „Film wird erzeugt.“ bzw. „Film ist in der
+  Warteschlange (Platz 2).“ Die Liste „Fertige Filme“ lädt nach jedem fertigen Film neu.
 
 ## Grundregeln (wie immer)
 

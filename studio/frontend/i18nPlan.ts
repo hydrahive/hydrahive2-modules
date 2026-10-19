@@ -7,12 +7,16 @@ import { free_de, free_en } from "./i18nFree"
 import { guide_de, guide_en } from "./i18nGuide"
 import { jobs_de, jobs_en } from "./i18nJobs"
 import { subtitles_de, subtitles_en } from "./i18nSubtitles"
+import { translate_de, translate_en } from "./i18nTranslate"
+import { upload_de, upload_en } from "./i18nUpload"
 import { models_de, models_en } from "./i18nModels"
 
 export const plan_de = {
   ...cam_de,
   ...jobs_de,
   ...subtitles_de,
+  ...translate_de,
+  ...upload_de,
   ...cut_de,
   ...guide_de,
   ...draft_de,
@@ -97,7 +101,15 @@ export const plan_de = {
     studio_subtitles_too_long: "Der Film ist länger als 60 Minuten. So lange Filme können noch nicht angehört werden.",
     studio_subtitles_cloud_model: "Für das Heraushören ist ein lokales Modell eingestellt. In der Admin-Konsole unter KI-Modelle ein Cloud-Modell für Transkription wählen.",
     studio_subtitles_not_empty: "Es gibt schon Untertitel. Sie würden ersetzt.",
+    studio_subtitles_same_language: "Ausgangs- und Zielsprache sind gleich.",
+    studio_upload_invalid: "Diese Datei ist kein lesbares Bild, Video oder Ton.",
+    studio_upload_empty: "Die Datei ist leer.",
+    studio_upload_too_large: "Die Datei ist zu groß (Bild bis 25 MB, Ton bis 200 MB, Video bis 2 GB).",
+    studio_upload_too_many: "Höchstens 20 Dateien auf einmal.",
+    studio_references_full: "Es sind schon 8 Referenzbilder da.",
     studio_music_needs_text: "Bitte beschreiben, wie die Musik klingen soll.",
+    studio_speech_needs_text: "Der Shot hat noch keinen Sprechtext. Bitte zuerst einen Text eintragen.",
+    studio_media_not_found: "Diese Datei gibt es nicht mehr. Bitte die Bibliothek neu laden.",
     studio_music_invalid: "Die Länge muss zwischen 5 und 180 Sekunden liegen.",
     studio_variant_unknown: "Dieses Bild gehört nicht zu diesem Shot.",
     studio_video_needs_image: "Für ein Video braucht der Shot zuerst ein Bild.",
@@ -125,6 +137,8 @@ export const plan_en: typeof plan_de = {
   ...cam_en,
   ...jobs_en,
   ...subtitles_en,
+  ...translate_en,
+  ...upload_en,
   ...cut_en,
   ...guide_en,
   ...draft_en,
@@ -209,7 +223,15 @@ export const plan_en: typeof plan_de = {
     studio_subtitles_too_long: "The film is longer than 60 minutes. Films that long cannot be listened to yet.",
     studio_subtitles_cloud_model: "A local model is set for listening. Choose a cloud model for transcription in the admin console under AI models.",
     studio_subtitles_not_empty: "There are already subtitles. They would be replaced.",
+    studio_subtitles_same_language: "Source and target language are the same.",
+    studio_upload_invalid: "This file is not a readable image, video or sound.",
+    studio_upload_empty: "The file is empty.",
+    studio_upload_too_large: "The file is too large (image up to 25 MB, sound up to 200 MB, video up to 2 GB).",
+    studio_upload_too_many: "At most 20 files at once.",
+    studio_references_full: "There are already 8 reference images.",
     studio_music_needs_text: "Please describe how the music should sound.",
+    studio_speech_needs_text: "The shot has no speech text yet. Please enter a text first.",
+    studio_media_not_found: "This file no longer exists. Please reload the library.",
     studio_music_invalid: "The length must be between 5 and 180 seconds.",
     studio_variant_unknown: "This image does not belong to this shot.",
     studio_video_needs_image: "A video needs an image for the shot first.",
