@@ -11,6 +11,8 @@ import re
 AREAS = ("messages", "home", "hydra", "tasks", "github", "machine", "mining")
 MESSAGES_MAX = (1, 5)
 MAX_ROOMS, ROOM_LEN = 20, 60
+PAGES = (1, 3)
+DEFAULT_PAGES = {"messages": 1, "home": 1, "hydra": 1, "tasks": 2, "github": 2, "machine": 2, "mining": 2}   # S5
 _USER = re.compile(r"^[A-Za-z0-9_.@-]{1,64}$")
 _REPO = re.compile(r"^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$")
 _ROOM = re.compile(r"^[^<>&\"\x00-\x1f]{1,%d}$" % ROOM_LEN)
@@ -19,6 +21,7 @@ DEFAULTS: dict = {
     "tasks_user": "till", "github_project": "Hydrahive DEV",
     "github_repos": ["hydrahive/hydrahive2.0", "hydrahive/hydrahive2-modules"],
     "order": list(AREAS), "hidden": [], "messages_max": 3, "home_rooms": [], "mining_in_machine": True,
+    "pages": dict(DEFAULT_PAGES),
 }
 S2_KEYS = {"tasks_user", "github_project", "github_repos"}
 
@@ -30,6 +33,10 @@ def _repos_ok(repos) -> bool:
 
 def _ids_ok(v, unique: bool = True) -> bool:
     return isinstance(v, list) and all(isinstance(x, str) and x in AREAS for x in v) and (not unique or len(set(v)) == len(v))
+
+
+def _pages_ok(p) -> bool:
+    return isinstance(p, dict) and all(k in AREAS and type(v) is int and PAGES[0] <= v <= PAGES[1] for k, v in p.items())
 
 
 def layout_ok(d) -> bool:
@@ -44,7 +51,8 @@ def layout_ok(d) -> bool:
             and type(mm) is int and MESSAGES_MAX[0] <= mm <= MESSAGES_MAX[1]
             and isinstance(rooms, list) and len(rooms) <= MAX_ROOMS
             and all(isinstance(r, str) and _ROOM.fullmatch(r) for r in rooms)
-            and type(d.get("mining_in_machine", True)) is bool)
+            and type(d.get("mining_in_machine", True)) is bool
+            and _pages_ok(d.get("pages", {})))
 
 
 def normalize(d: dict | None) -> dict:
@@ -53,4 +61,5 @@ def normalize(d: dict | None) -> dict:
     if d and layout_ok(d):
         out.update(copy.deepcopy(d))
     out["order"] = list(out["order"]) + [a for a in AREAS if a not in out["order"]]
+    out["pages"] = {**DEFAULT_PAGES, **out.get("pages", {})}
     return out

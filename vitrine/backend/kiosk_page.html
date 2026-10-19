@@ -17,7 +17,9 @@ h2{font-size:34px;margin:0 0 8px;color:#69d7ff;font-weight:normal}
 #zu-voll{font-size:32px;color:#8d9ab0;text-align:center}
 #offline{display:none;font-size:44px;color:#ff6b6b;text-align:center;padding:26px}
 body.offline #offline{display:block}body.offline section{opacity:.35}
-#unten{margin-top:auto;display:flex;justify-content:space-between;align-items:center}
+#unten{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:20px}
+#knubbel{display:flex;gap:6px}
+#knubbel button{font-size:44px;line-height:1;min-width:72px;min-height:72px;padding:0;border:none;background:none;color:#69d7ff}
 button{font-size:48px;padding:24px 60px;border-radius:20px;border:3px solid #69d7ff;background:#151c2b;color:#e8eef8}
 .meldung{border-left:10px solid #69d7ff;padding:6px 0 10px 18px;margin:10px 0}
 .meldung.error{border-color:#ff6b6b}.meldung.warning{border-color:#ffd166}.meldung.success{border-color:#5ee08a}
@@ -43,7 +45,7 @@ button{font-size:48px;padding:24px 60px;border-radius:20px;border:3px solid #69d
 <section id="b-machine"><h2>Rechner</h2><div class="reihe klein" id="r-werte"></div><div class="klein" id="r-mining"></div></section>
 </div>
 <div id="zu-voll"></div>
-<div id="unten"><span class="klein" id="stand"></span><button id="zurueck">Zurück zum Video</button></div>
+<div id="unten"><span class="klein" id="stand"></span><nav id="knubbel"></nav><button id="zurueck">Zurück zum Video</button></div>
 <script>
 "use strict";
 const k = "__KEY__";
@@ -145,14 +147,24 @@ function renderHome(h) {
     row.append(n, v); el.appendChild(row);
   }
 }
+// S5: feste Seiten. Belegt = Bereich eingeschaltet und mit Daten (area() hat ihn nicht versteckt). Nie selbst blättern;
+// nach der Rückkehrzeit ohne Eingabe zurück auf Seite 1 (Statuszentrale startet nach dem Video wieder vorn).
+let curPage = 1, lastInput = Date.now();
+for (const ev of ["mousemove", "mousedown", "keydown"]) document.addEventListener(ev, () => { lastInput = Date.now(); });
 function arrange(lay) {
-  const box = $("bereiche"), hidden = new Set(lay.hidden || []);
-  for (const id of lay.order || []) { const s = $("b-" + id); box.insertBefore(s, null); }
+  const box = $("bereiche"), hidden = new Set(lay.hidden || []), pages = lay.pages || {}, order = lay.order || [];
+  for (const id of order) { const s = $("b-" + id); box.insertBefore(s, null); }
   for (const id of hidden) $("b-" + id).style.display = "none";
-  // nie zu voll: von unten ganze Bereiche ausblenden, bis alles passt. Platz = Bildschirm − Rand oben/unten (2×30)
-  // − Kopf − Fußzeile − Abstände zwischen den Blöcken (body gap 18). Der Hinweis braucht nur Platz, wenn etwas fehlt.
+  const pageOf = (id) => pages[id] || 1;
+  const used = [...new Set(order.filter((id) => $("b-" + id).style.display !== "none").map(pageOf))].sort();
+  if (Date.now() - lastInput > (lay.return_seconds || 120) * 1000) curPage = 1;
+  if (!used.includes(curPage)) curPage = used.length ? used[0] : 1;
+  for (const id of order) if (pageOf(id) !== curPage) $("b-" + id).style.display = "none";
+  knubbel(used);
+  // nie zu voll – je Seite: von unten ganze Bereiche ausblenden, bis alles passt. Platz = Bildschirm − Rand (2×30)
+  // − Kopf − Fußzeile − Abstände (body gap 18). Der Hinweis braucht nur Platz, wenn etwas fehlt.
   const GAP = 18, NOTE = 38;
-  const shown = () => (lay.order || []).filter((id) => $("b-" + id).style.display !== "none");
+  const shown = () => order.filter((id) => $("b-" + id).style.display !== "none");
   const total = () => shown().reduce((sum, id, i) => sum + $("b-" + id).getBoundingClientRect().height + (i ? GAP : 0), 0);
   const room = window.innerHeight - 60 - $("kopf").getBoundingClientRect().height - $("unten").getBoundingClientRect().height - 3 * GAP;
   let cut = 0;
@@ -162,14 +174,27 @@ function arrange(lay) {
   $("zu-voll").style.display = cut ? "" : "none";
   $("zu-voll").textContent = cut ? cut + (cut === 1 ? " Bereich" : " Bereiche") + " ausgeblendet (zu voll)" : "";
 }
-let busy = false;
+function knubbel(used) {
+  const nav = $("knubbel"); nav.replaceChildren();
+  nav.style.display = used.length > 1 ? "" : "none";
+  if (used.length < 2) return;
+  for (const p of used) {
+    const b = document.createElement("button");
+    b.textContent = p === curPage ? "●" : "○";
+    b.title = "Seite " + p;
+    b.onclick = () => { curPage = p; lastInput = Date.now(); if (lastData) render(lastData); };
+    nav.appendChild(b);
+  }
+}
+let busy = false, lastData = null;
 async function load() {
   if (busy) return;
   busy = true;
   try {
     const r = await fetch("data?k=" + encodeURIComponent(k), {cache: "no-store"});
     if (!r.ok) throw new Error(r.status);
-    render(await r.json());
+    lastData = await r.json();
+    render(lastData);
     document.body.classList.remove("offline");
   } catch (e) {
     document.body.classList.add("offline");

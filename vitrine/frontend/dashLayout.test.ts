@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { AREAS, DEFAULT_DASHBOARD, layoutErrors, moveArea, normalizeDashboard, parseRepos, toggleIn } from "./dashLayout"
+import { AREAS, DEFAULT_DASHBOARD, byPage, layoutErrors, moveArea, moveInPage, normalizeDashboard, parseRepos, toggleIn } from "./dashLayout"
 
 describe("Anordnung der Statuszentrale", () => {
   it("ergänzt alte S2-Einstellung um Standards", () => {
@@ -29,6 +29,28 @@ describe("Anordnung der Statuszentrale", () => {
     expect(layoutErrors({ ...ok, home_rooms: Array(21).fill("a") })).toContain("home_rooms")
     expect(layoutErrors({ ...ok, tasks_user: "a b" })).toContain("tasks_user")
     expect(layoutErrors({ ...ok, github_repos: ["a/.."] })).toContain("github_repos")
+  })
+
+  it("Seiten: Voreinstellung, Ergänzung, Prüfung", () => {
+    expect(normalizeDashboard({}).pages).toEqual({ messages: 1, home: 1, hydra: 1, tasks: 2, github: 2, machine: 2, mining: 2 })
+    expect(normalizeDashboard({ pages: { home: 3 } as never }).pages.home).toBe(3)
+    expect(normalizeDashboard({ pages: { home: 3 } as never }).pages.messages).toBe(1)
+    const ok = normalizeDashboard({})
+    expect(layoutErrors({ ...ok, pages: { ...ok.pages, home: 4 } })).toContain("pages")
+    expect(layoutErrors({ ...ok, pages: { ...ok.pages, home: 0 } })).toContain("pages")
+    expect(layoutErrors({ ...ok, pages: { ...ok.pages, home: 1.5 } })).toContain("pages")
+    expect(layoutErrors({ ...ok, pages: { ...ok.pages, laser: 1 } as never })).toContain("pages")
+    expect(layoutErrors({ ...ok, pages: { ...ok.pages, mining: 3 } })).toEqual([])
+  })
+
+  it("Cockpit-Liste nach Seite, Pfeile innerhalb der Seite", () => {
+    const d = normalizeDashboard({ order: ["machine", "messages", "tasks", "home", "hydra", "github", "mining"] })
+    expect(byPage(d)).toEqual(["messages", "home", "hydra", "machine", "tasks", "github", "mining"])
+    const up = moveInPage(d, "home", -1)
+    expect(byPage({ ...d, order: up })).toEqual(["home", "messages", "hydra", "machine", "tasks", "github", "mining"])
+    expect(moveInPage(d, "messages", -1)).toBe(d.order)
+    expect(moveInPage(d, "hydra", 1)).toBe(d.order)
+    expect(moveInPage(d, "machine", -1)).toBe(d.order)
   })
 
   it("verschiebt und bleibt an den Rändern", () => {

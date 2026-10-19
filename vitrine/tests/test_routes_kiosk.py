@@ -68,14 +68,15 @@ def test_daten_mit_schluessel_festes_schema(client, key, monkeypatch):
     monkeypatch.setattr(kiosk, "LOCAL", frozenset({"testclient"}))
     seen = {}
 
-    def fake_build(data_dir, cfg):
-        seen["cfg"] = cfg
+    def fake_build(data_dir, cfg, return_seconds=120):
+        seen["cfg"], seen["ret"] = cfg, return_seconds
         return {k: None for k in dash_data.AREAS} | {"updated": "12:00:00"}
     monkeypatch.setattr(dash_data, "build", fake_build)
     r = client.get(f"{D}/data", params={"k": key})
     assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
     assert set(r.json()) == set(dash_data.AREAS) | {"updated"}
     assert seen["cfg"]["github_project"] == "Hydrahive DEV" and seen["cfg"]["tasks_user"] == "till"
+    assert seen["ret"] == 120, "Rückkehrzeit kommt aus dashboard_return_seconds"
 
 
 def test_daten_ohne_schluessel_oder_fremde_adresse_404(client, key, monkeypatch):
