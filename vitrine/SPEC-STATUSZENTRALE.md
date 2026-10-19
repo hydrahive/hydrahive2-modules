@@ -72,6 +72,55 @@ V1 = **Statuszentrale**, nur lesen:
 - Karten (Einblendungen) bekommen eine zweite Zeile „🖱 Maus bewegen für Details“, aber nur wenn das Dashboard verfügbar ist.
 - Im Dashboard steht die Meldung oben, mit Knopf „Gelesen“ (entfernt die Karte). Das ist der **einzige** Knopf, der etwas ändert.
 
+## S2 — Statuszentrale mit Daten (Entwurf 19.10.2026)
+
+S1 ist abgenommen (Till, 19.10.): Maus → Dashboard, „Zurück“, Rückkehr nach 2 min. S2 ersetzt die Platzhalter-Seite durch
+die echte Statuszentrale. Weiterhin **nur lesen**.
+
+### Daten (Quellen am 19.10. auf .2 geprüft)
+
+| Bereich | Inhalt | Quelle |
+|---|---|---|
+| Meldung | die neueste sichtbare Karte (Titel, Volltext, Art) | `<daten>/inbox` (wie die Karten) |
+| Hydra | Dienst läuft/Fehler, laufende Agenten (Anzahl), Fehler der letzten Stunde: je Quelle Anzahl + letzter Text | `hydrahive.runner.concurrency.active_count()`, Tabelle `errors_log` (wie `notify.py`) |
+| Aufgaben | offene + laufende Tasks (Zahl), die 5 wichtigsten Titel (Priorität, dann Alter) | Tabelle `module_tasks` des Besitzers (s. u.) – nur wenn das Modul `tasks` installiert ist |
+| Rechner | Last, RAM, GPU-Temperatur, freier Platz `/`, Laufzeit | wie die Status-Leiste (`renderer/sysinfo.py`) + `shutil.disk_usage`, `/proc/uptime` |
+| Mining | Rechner an/aus, geschätzt €/Tag jetzt | Tabellen `module_mining_*` – nur wenn das Modul `mining` installiert ist |
+| Uhr | Uhrzeit, Datum, Feiertag | Browser + Vitrine-Programm |
+
+**Nicht in S2:** „Was wartet auf Till“ (PRs, CI). Auf .2 ist `gh` für den HydraHive-Nutzer nicht angemeldet, und ein eigener
+GitHub-Zugang für die Vitrine wäre ein neuer Zugangsweg → eigene Entscheidung (siehe Entscheidungen S2).
+
+### Wem gehören die Tasks?
+Der Kiosk hat keinen Nutzer. Die Tasks kommen vom **Besitzer** der Vitrine: einstellbar im Cockpit (Feld „Tasks von“,
+Auswahl der HydraHive-Nutzer, Standard = der Admin, der zuletzt die Vitrine-Einstellungen gespeichert hat).
+
+### Route + Sicherheit
+- `GET /api/module-device/vitrine/data?k=…` — gleiche Prüfung wie S1 (Kiosk-Schlüssel + direkte Verbindung von 127.0.0.1,
+  Rate-Limit des Kerns). Antwort ist eine **feste Liste** von Feldern (Schema im Backend), nichts Freies.
+- Texte (Task-Titel, Fehlermeldungen, Karten) laufen durch die Secret-Schwärzung (`credentials.redaction.scrub`, wie
+  `notify.py`) und werden gekürzt (Titel 80, Fehler 140 Zeichen). Keine Chat-Inhalte, keine Session-Titel, keine Pfade aus
+  Tracebacks.
+- Fehlt ein Modul (tasks, mining) oder eine Quelle scheitert, fehlt nur dieser Bereich (`null`), die Route antwortet trotzdem.
+- Die Daten werden im Backend höchstens alle 5 s neu berechnet (Zwischenspeicher), egal wie oft die Seite fragt.
+
+### Seite
+- Statische HTML-Seite aus dem Modul (`backend/kiosk_page.html`, CSS + kleines Skript, keine externen Dateien), lädt
+  `data` alle 5 s. Hochkant 1080×1920, Schrift vom Sofa lesbar (Zahlen ≥ 64 px, Text ≥ 32 px).
+- Knopf „Zurück zum Video“ unten (wie S1). Keine weiteren Knöpfe.
+- Fehlt die Verbindung zum Backend: Hinweis „HydraHive antwortet nicht“ statt leerer Felder.
+
+### Akzeptanz S2
+- Alle Bereiche zeigen echte Werte von .2 (Abgleich mit Cockpit/Tasks/Mining-Seite)
+- Route: ohne/falscher Schlüssel, andere Adresse → 404 (Tests); fehlendes tasks-/mining-Modul → Bereich `null` (Tests)
+- Ein Secret in einer Fehlermeldung erscheint geschwärzt (Test)
+- Seite ruhig: Firefox < 5 % eines Kerns (gemessen 60 s); Backend-Last durch `data` vernachlässigbar (Zwischenspeicher)
+
+### Entscheidungen S2 (offen, Till)
+1. Tasks von welchem Nutzer? (Vorschlag: einstellbar, Standard `till`)
+2. Mining-Bereich zeigen? (Vorschlag: ja, wenn installiert)
+3. „Was wartet auf Till“ (PRs/CI): später mit eigenem, nur lesenden GitHub-Zugang – oder weglassen?
+
 ## Bewusst nicht (V1 der Statuszentrale)
 
 - keine Aktionen mit Folgen (Merge, Dienste, Update, Zonen, Schalter) – kommen später nur mit PIN
