@@ -137,3 +137,17 @@ def test_nachts_weckt_die_maus_auch(tmp_path):
     r.mode_every, r.dashboard_repeat = 0, 0
     r.run(max_frames=4)
     assert JPEG_A in disp.jpegs
+
+
+def test_chat_antwort_haelt_dashboard_im_dienst(tmp_path):
+    """S6: Leerlauf weit über der Rückkehrzeit, aber Hydra antwortet (chat_busy) → Dienst bleibt im Dashboard."""
+    (tmp_path / "chat_busy.json").write_text(json.dumps({"since": time.time()}))
+    dash, disp = FakeDash([0, 500_000], jpegs=[JPEG_A]), SentDisplay()
+    r = _runner(tmp_path, dash, disp)
+    r.dashboard_repeat = 0
+    r.run(max_frames=6)
+    st = json.loads((tmp_path / "state.json").read_text())
+    assert st["mode"] == "dashboard"
+    (tmp_path / "chat_busy.json").unlink()
+    r.run(max_frames=12)
+    assert json.loads((tmp_path / "state.json").read_text())["mode"] == "video", "Antwort fertig → zurück zum Video"

@@ -142,3 +142,63 @@ def test_gelesen_ohne_schluessel_oder_fremde_adresse_404(client, key, data, monk
     assert client.post(f"{D}/read", params={"k": "x" * 64}, json={"id": m["id"]}).status_code == 404
     assert client.post(f"{D}/read", json={"id": m["id"]}).status_code in (404, 422)
     assert inbox.recent(data)[0][0]["id"] == m["id"], "bleibt ungelesen"
+
+
+# --- S6 Chat -------------------------------------------------------------------------------------------------------
+
+def test_chat_schickt_ueber_den_kern_weg(client, key, data, kiosk_local, monkeypatch):
+    from hydrahive.communication import router
+    seen = []
+
+    async def fake(event):
+        seen.append(event)
+        return "Hallo vom Buddy"
+    monkeypatch.setattr(router, "handle_incoming", fake)
+    r = client.post(f"{D}/chat", params={"k": key}, json={"text": "Hallo Hydra"})
+    assert r.status_code == 200 and r.json() == {"reply": "Hallo vom Buddy"}
+    [e] = seen
+    assert (e.channel, e.external_user_id, e.target_username, e.text) == ("vitrine", "gehaeuse", "till", "Hallo Hydra")
+
+
+@pytest.mark.parametrize("body", [{}, {"text": ""}, {"text": "   "}, {"text": "x" * 2001}, {"text": "x", "agent": "a"},
+                                  {"text": 5}, []])
+def test_chat_kaputter_koerper_422(client, key, kiosk_local, body):
+    assert client.post(f"{D}/chat", params={"k": key}, json=body).status_code == 422
+
+
+def test_chat_busy_409_und_fehler_503(client, key, data, kiosk_local, monkeypatch):
+    from hydrahive.communication import router
+
+    async def busy(event):
+        raise RuntimeError("Session läuft bereits — Nachricht ignoriert")
+    monkeypatch.setattr(router, "handle_incoming", busy)
+    r = client.post(f"{D}/chat", params={"k": key}, json={"text": "x"})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "busy"
+
+    async def kaputt(event):
+        raise RuntimeError("weg")
+    monkeypatch.setattr(router, "handle_incoming", kaputt)
+    r = client.post(f"{D}/chat", params={"k": key}, json={"text": "x"})
+    assert r.status_code == 503 and r.json()["detail"]["code"] == "unavailable"
+
+
+def test_chat_ohne_schluessel_oder_fremde_adresse_404(client, key, data, monkeypatch):
+    from hydrahive.communication import router
+    calls = []
+
+    async def fake(event):
+        calls.append(event)
+        return "x"
+    monkeypatch.setattr(router, "handle_incoming", fake)
+    assert client.post(f"{D}/chat", params={"k": key}, json={"text": "x"}).status_code == 404          # nicht localhost
+    assert client.get(f"{D}/chat", params={"k": key}).status_code == 404
+    from backend import kiosk
+    monkeypatch.setattr(kiosk, "LOCAL", frozenset({"testclient"}))
+    assert client.post(f"{D}/chat", params={"k": "x" * 64}, json={"text": "x"}).status_code == 404
+    assert client.get(f"{D}/chat", params={"k": "x" * 64}).status_code == 404
+    assert calls == [], "kein Agent-Aufruf ohne gültigen Zugang"
+
+
+def test_chat_verlauf_leer_ohne_session(client, key, data, kiosk_local):
+    r = client.get(f"{D}/chat", params={"k": key})
+    assert r.status_code == 200 and r.json() == {"messages": []}

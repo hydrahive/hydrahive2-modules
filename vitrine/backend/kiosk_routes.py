@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from hydrahive.settings import settings
 from renderer import config, inbox
 
-from . import dash_data, kiosk
+from . import chat, dash_data, kiosk
 
 device_router = APIRouter()
 
@@ -53,3 +53,29 @@ def kiosk_read(body: ReadIn) -> None:
     if not inbox.mark_read(_data(), body.id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "not_found"})
     dash_data.invalidate("messages")
+
+
+class ChatIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    text: str = Field(min_length=1, max_length=chat.TEXT_MAX)
+
+
+@device_router.post("/chat")
+def kiosk_chat(body: ChatIn) -> dict:
+    """S6: Nachricht an Tills Buddy (eigene Session „Gehäuse“, Kern-Weg der Kanäle). Antwort am Stück."""
+    user = config.load(_data())["dashboard"]["tasks_user"]
+    try:
+        return {"reply": chat.send(user, body.text, data_dir=_data())}
+    except chat.ChatInvalid:
+        raise HTTPException(422, detail={"code": "invalid"}) from None
+    except chat.ChatBusy:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail={"code": "busy"}) from None
+    except chat.ChatUnavailable:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail={"code": "unavailable"}) from None
+
+
+@device_router.get("/chat")
+def kiosk_chat_history(response: Response) -> dict:
+    response.headers["Cache-Control"] = "no-store"
+    user = config.load(_data())["dashboard"]["tasks_user"]
+    return {"messages": chat.history(user)}
