@@ -66,3 +66,13 @@ def test_kiosk_schleifen_enden_mit_der_sitzung():
     text = "\n".join(_lines("kiosk-session.sh"))
     assert re.search(r"trap .*kill.*EXIT|trap .*EXIT.*kill", text), "trap räumt beim Ende auf"
     assert "xset q" in text or "xdpyinfo" in text, "Schleife endet, wenn ihr X-Server weg ist"
+
+
+def test_startseite_nicht_in_verstecktem_ordner():
+    """Firefox (Snap) darf versteckte Ordner im Home nicht lesen – am 19.10.2026 auf .2: ~/.vitrine/start.html →
+    „Zugriff auf die Datei wurde verweigert“; dieselbe Datei in ~/vitrine/ lädt die Kiosk-Seite (HTTP 200)."""
+    text = "\n".join(_lines("kiosk-install.sh")) + "\n".join(_lines("kiosk-session.sh"))
+    uses = [ln for ln in text.splitlines() if "/.vitrine" in ln and not ln.lstrip().startswith("rm ")]
+    assert not uses, f"Startseite nicht in einem Punkt-Ordner (nur Aufräumen erlaubt): {uses}"
+    assert "${HOME_DIR}/vitrine" in text and "${HOME}/vitrine/start.html" in text
+    assert "file:///home/hydrahive-kiosk/vitrine/*" in text, "Richtlinie erlaubt genau diesen Ordner"

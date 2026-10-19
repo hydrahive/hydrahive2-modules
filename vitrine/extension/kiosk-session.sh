@@ -5,7 +5,8 @@
 set -u
 exec >"${HOME}/kiosk.log" 2>&1
 
-START="file://${HOME}/.vitrine/start.html"              # leitet auf die Kiosk-Seite weiter (Schlüssel nicht in ps)
+START="file://${HOME}/vitrine/start.html"   # leitet auf die Kiosk-Seite weiter (Schlüssel nicht in ps). KEIN Punkt-Ordner:
+#                                          Firefox-Snap darf versteckte Ordner im Home nicht lesen (19.10. auf .2).
 SERVICE_USER="$(cat /etc/hydrahive2-vitrine/service-user 2>/dev/null || echo hydrahive)"
 
 xhost "+SI:localuser:${SERVICE_USER}" >/dev/null      # nur der Vitrine-Dienst darf Leerlauf/Zeiger abfragen

@@ -37,13 +37,14 @@ systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || true
 # Argument (sonst sieht sie jeder per ps), sondern über eine lokale Startseite, die weiterleitet.
 install -d -m 755 "${CONF}"
 printf '%s\n' "${SERVICE_USER}" > "${CONF}/service-user"
-install -d -m 700 -o "${KIOSK}" -g "${KIOSK}" "${HOME_DIR}/.vitrine"
+install -d -m 700 -o "${KIOSK}" -g "${KIOSK}" "${HOME_DIR}/vitrine"
 _esc="$(printf '%s' "${URL}" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g')"   # HTML-Attribut
-(umask 077 && cat > "${HOME_DIR}/.vitrine/start.html" <<EOF
+(umask 077 && cat > "${HOME_DIR}/vitrine/start.html" <<EOF
 <!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${_esc}"><body style="background:#0b1220">
 EOF
 )
-chown "${KIOSK}:${KIOSK}" "${HOME_DIR}/.vitrine/start.html"
+chown "${KIOSK}:${KIOSK}" "${HOME_DIR}/vitrine/start.html"
+rm -rf "${HOME_DIR}/.vitrine"                       # alte Ablage bis 0.7.2 (Firefox-Snap durfte sie nicht lesen)
 install -m 755 "${MODULE_ROOT}/extension/kiosk-session.sh" "${CONF}/kiosk-session.sh"
 mkdir -p "$(dirname "${SESSION}")"
 cat > "${SESSION}" <<EOF
@@ -69,7 +70,7 @@ chown "${KIOSK}:${KIOSK}" "${HOME_DIR}/firefox/user.js"
 mkdir -p /etc/firefox/policies
 cat > /etc/firefox/policies/policies.json <<'EOF'
 {"policies": {
-  "WebsiteFilter": {"Block": ["<all_urls>"], "Exceptions": ["http://127.0.0.1/*", "http://127.0.0.1:*/*", "file:///home/hydrahive-kiosk/.vitrine/*"]},
+  "WebsiteFilter": {"Block": ["<all_urls>"], "Exceptions": ["http://127.0.0.1/*", "http://127.0.0.1:*/*", "file:///home/hydrahive-kiosk/vitrine/*"]},
   "DisableAppUpdate": true, "DisableTelemetry": true, "DontCheckDefaultBrowser": true,
   "OverrideFirstRunPage": "", "OverridePostUpdatePage": "", "DisableDeveloperTools": true
 }}
