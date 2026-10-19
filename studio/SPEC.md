@@ -1378,6 +1378,49 @@ fliegen in G6 raus.
 - **Haken Schritt 4:** jede Szene hat ein Video **oder** ist Standbild. Unten: „N noch ohne Bewegung – sie erscheinen
   dann als Standbild.“
 
+#### Bauplan G5 – Film (19.10.)
+
+**Ein Auftrag „Film machen“** (`POST projects/{pid}/film`, Auftrag `film`, besetzt → `studio_film_running`), der die
+vorhandenen Bausteine **nacheinander** im Server abarbeitet – der Browser startet nur einen Auftrag und zeigt den Fortschritt:
+
+1. **Erzählstimme** (wenn `voice: true`): je Shot ohne Sprechtext → Sprechtext = Kartentext (Szenenbeschreibung bzw.
+   Bildbeschreibung bei mehreren Shots); fehlt die Sprache → `speech.work` je Shot. Shots mit eigenem Sprechtext
+   bleiben unverändert.
+2. **Zeitleiste neu aus dem Drehbuch** (`timeline.from_plan(replace=True)`, Musik bleibt). Ist die Zeitleiste in der
+   Profi-Ansicht von Hand geändert worden (Revision ≠ die beim letzten „Film machen“ gemerkte), bricht der Auftrag vorher
+   mit `studio_film_edited` ab; der Browser fragt dann im eigenen Dialog „Neu zusammensetzen“ (`rebuild: true`) oder
+   „So lassen“ (`rebuild: false` = Zeitleiste unverändert benutzen).
+3. **Musik** (wenn `music: true` und A2 leer): Beschreibung aus Titel + Logline + Filmart, Länge = Filmlänge (5–180 s);
+   Clip auf A2 ab 0, zu lang → gekürzt mit 2 s Ausblende (gleiche Regeln wie 5c-2). Liegt schon Musik auf A2, bleibt sie.
+4. **Untertitel** (wenn `subtitles: true`): aus den Sprechtexten in der Filmsprache (`subtitle_speech.from_speech`,
+   ersetzen). Ohne Sprechtexte → übersprungen (Hinweis im Ergebnis), kein Fehler. Nie eingebrannt (wie 6c).
+5. **Ausgabe** (`render`), Format aus dem Drehbuch, Qualität Standard, mit Untertitel-Spur wenn gewählt.
+
+- Fortschritt: `{total: 5, done, current: "voice|timeline|music|subtitles|render"}`, Abbrechen wie üblich (der laufende
+  Schritt wird noch fertig, die Ausgabe wird abgebrochen). Teilfehler (eine Stimme scheitert) brechen nicht ab, das
+  Ergebnis zählt sie (`failed`). Schlägt die Musik fehl → Film ohne Musik, Hinweis. Schlägt die Ausgabe fehl → Auftrag `failed`.
+- Ergebnis: `{rel, duration, music: bool, subtitles: bool, voice_failed: n, notes: [...]}`; gemerkt wird die Revision
+  der Zeitleiste nach Schritt 2 in `studio/film.json` (für die Prüfung „von Hand geändert“).
+- **Vorschau vor dem Erzeugen:** im Browser aus den Karten (Clip bzw. Bild je Szene, Szenenleiste zum Springen,
+  „Abspielen“ / „Anhalten“). Nach dem Erzeugen spielt der echte Film (`<video>` mit Steuerung).
+- **„Film herunterladen“** = Datei des jüngsten Films (vorhandene Liste `renders`), darunter „Frühere Filme“ (aufklappbar).
+- **Kosten am Knopf:** „kostet“ mit den beteiligten Modellen (Musik, Stimme) – nur wenn Musik oder Stimme gewählt ist.
+- **Haken Schritt 5:** es gibt mindestens einen fertigen Film.
+- Tests: alle Anbieter und ffmpeg ersetzt (vorhandene Hilfen), keine echte Erzeugung.
+
+#### Bauplan G6 – Umstellen (19.10.)
+
+- **Wege:** `/studio` = geführter Weg (Menüpunkt „Studio“ bleibt), `/studio/profi` = bisherige Oberfläche,
+  `/studio/neu` leitet auf `/studio` weiter (Lesezeichen der Testphase).
+- **Wechsel:** geführter Weg → „Zur Profi-Ansicht“ (`/studio/profi`); Profi-Ansicht → Knopf „Zum geführten Weg“ in der
+  Kopfzeile (`/studio`). Beide merken dasselbe Projekt (gleicher Speicher-Schlüssel, schon so).
+- **Hilfe der Profi-Ansicht** („So geht’s“) öffnet sich **nicht** mehr von selbst beim ersten Besuch – der geführte Weg
+  ist die Einführung. Über den Knopf „So geht’s“ bleibt sie erreichbar.
+- **Kurzhilfe im geführten Weg:** ein „?“-Knopf oben rechts im Schritt öffnet „So geht’s“ in 5 Sätzen (je Schritt einer)
+  im eigenen Dialog; öffnet sich beim allerersten Besuch einmal von selbst (eigener Schlüssel `hh.studio.guided-seen.v1`).
+- **Manifest-Beschreibung** neu: geführter Weg in 5 Schritten + Profi-Ansicht.
+- **Alte E2E-Skripte** rufen `/studio` → auf `/studio/profi` umstellen; alle grün (ohne Erzeugung).
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.

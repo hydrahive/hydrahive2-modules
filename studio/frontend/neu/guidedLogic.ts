@@ -43,7 +43,7 @@ export function doneSteps(plan: Plan | null): Record<StepId, boolean> {
     2: scenes.length > 0 && castOpen(plan?.elements ?? []) === 0,
     3: all((s) => s.shots.some((x) => x.image_rel)),
     4: all((s) => s.shots.length > 0 && s.shots.every((x) => motionState(x) === "moving" || motionState(x) === "still")),
-    5: false,
+    5: false,                                   // Film fertig: aus der Liste der Filme (GuidedPage)
   }
 }
 
@@ -120,4 +120,44 @@ export function motionState(s: Shot): MotionState {
 /** Wie viele Bilder warten noch auf Bewegung (mit Bild, ohne Clip, nicht als Standbild gelassen)? */
 export function motionLeft(plan: Plan | null): number {
   return imageCards(plan).filter((c) => motionState(c.shot) === "open").length
+}
+
+// ---- G5 Film --------------------------------------------------------------------------------------------------
+export interface FilmExtras { music: boolean; voice: boolean; subtitles: boolean }
+export interface PreviewFrame { kind: "image" | "video"; rel: string; seconds: number; text: string }
+
+/** Vorschau vor dem Erzeugen: je Karte der Clip, sonst das Bild; Karten ohne Bild fallen weg. */
+export function previewFrames(plan: Plan | null): PreviewFrame[] {
+  return imageCards(plan).flatMap((c): PreviewFrame[] => c.shot.video_rel
+    ? [{ kind: "video", rel: c.shot.video_rel, seconds: c.shot.duration, text: c.text }]
+    : c.shot.image_rel ? [{ kind: "image", rel: c.shot.image_rel, seconds: c.shot.duration, text: c.text }] : [])
+}
+
+export function filmBody(x: FilmExtras, rebuild?: boolean): FilmExtras & { rebuild?: boolean } {
+  return { music: x.music, voice: x.voice, subtitles: x.subtitles, ...(rebuild === undefined ? {} : { rebuild }) }
+}
+
+/** Modelle, die beim Erzeugen Geld kosten (für das Zeichen „kostet“); leer = Standard des Servers. */
+export function filmCosts(plan: Plan | null, x: FilmExtras): string[] {
+  const m = plan?.screenplay.models
+  return [...(x.music ? [m?.music ?? ""] : []), ...(x.voice ? [m?.voice ?? ""] : [])]
+}
+
+/** Hinweise eines fertigen Films (Musik fehlgeschlagen, keine Sprechtexte, Stimmen fehlgeschlagen). */
+export function filmNotes(job: Job | null): string[] {
+  const r = (job?.status === "done" ? job.result : null) as { notes?: string[]; voice_failed?: number } | null
+  if (!r) return []
+  return [...(r.notes ?? []), ...((r.voice_failed ?? 0) > 0 ? ["voice_failed"] : [])]
+}
+
+// ---- G6 -------------------------------------------------------------------------------------------------------
+const GUIDED_SEEN = "hh.studio.guided-seen.v1"
+
+/** Allererster Besuch des geführten Wegs in diesem Browser? Merkt sich die Antwort; ohne Speicher nie. */
+export function firstGuidedVisit(store: Pick<Storage, "getItem" | "setItem"> | undefined = globalThis.localStorage): boolean {
+  try {
+    if (!store || store.getItem(GUIDED_SEEN)) return false
+    store.setItem(GUIDED_SEEN, "1")
+    return true
+  } catch { return false }
 }
