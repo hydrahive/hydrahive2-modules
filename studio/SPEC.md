@@ -1090,6 +1090,29 @@ Wyoming liefert keine Zeiten. (Die schlechte Erkennung in der Probe lag an der e
   `no_speech_found` (kein Abschnitt mit Sprache), `render_failed` (Ton mischen), `changed`.
   Vor dem Start: `studio_subtitles_no_audio` (weder Video noch Sprachclip auf der Zeitleiste).
 
+### Bauplan 6c – Übersetzen und Untertitel im Film (19.10.)
+
+- **Sprachen im Reiter:** Oben im Reiter „Untertitel“ eine Auswahl der Sprache: zuerst die Sprache des Films
+  („Original“), dann jede Sprache, für die es schon Untertitel gibt. Jede Sprache wird für sich bearbeitet,
+  gespeichert und heruntergeladen (wie 6a).
+- **„Übersetzen …“:** Dialog mit Zielsprache (alle Sprachen außer der Ausgangssprache), Anzahl der Untertitel, Text-Modell
+  (aus dem Drehbuch, sonst Standard des Servers), Kosten-Hinweis („Text-KI, meist unter 1 Cent“). Gibt es die Zielsprache
+  schon, „ersetzt die N vorhandenen Untertitel“ (`replace`).
+- **Übersetzt wird Eintrag für Eintrag:** Die Zeiten bleiben genau gleich, nur der Text ändert sich. Die Text-KI bekommt
+  eine nummerierte Liste (Kontext des ganzen Films, damit Namen und Ton einheitlich bleiben) und antwortet als JSON-Liste
+  in derselben Reihenfolge. Je Aufruf höchstens 80 Einträge; fehlt in der Antwort ein Eintrag oder passt die Anzahl
+  nicht, wird dieser Block einmal neu angefragt, sonst bricht der Auftrag ab (`bad_answer`) – lieber nichts als falsch
+  zugeordnete Zeilen. Zu lange Zeilen werden wie in 6a umbrochen (≤ 2 Zeilen à 42 Zeichen; was nicht passt, wird
+  auf 200 Zeichen gekürzt). Quelle `translation`, `from` = Ausgangssprache.
+- **Auftrag** `translate` (Ziel `subtitles:<projekt>:<zielsprache>`, `studio_subtitles_running`). Wird die
+  Zielsprache währenddessen geändert, wird nicht überschrieben (`changed`). Fehler: `provider_failed` (Text-KI nicht
+  erreichbar/abgelehnt), `bad_answer`, `changed`. Vor dem Start: `studio_subtitles_empty` (Ausgangssprache leer),
+  `studio_subtitles_same_language`.
+- **Im Film als abschaltbare Spur (nicht eingebrannt):** Im Reiter „Ausgabe“ ein Kästchen „Untertitel mitliefern
+  (abschaltbar, nicht ins Bild)“. Dann kommen alle vorhandenen Sprachen als eigene Untertitelspuren in die MP4
+  (`mov_text`, je Spur die Sprache als ISO-639-2, z. B. `ger`, `eng`; die Filmsprache ist die Standardspur). Ohne
+  Kästchen bleibt der Film wie bisher. Eingebrannt wird nie. Die Begleitdatei des Films nennt die Sprachen.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
