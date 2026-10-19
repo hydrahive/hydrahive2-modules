@@ -86,7 +86,7 @@ die echte Statuszentrale. Weiterhin **nur lesen**.
 | Aufgaben | offene + laufende Tasks (Zahl), die 5 wichtigsten Titel (Priorität, dann Alter) | Tabelle `module_tasks` des Besitzers (s. u.) – nur wenn das Modul `tasks` installiert ist |
 | Rechner | Last, RAM, GPU-Temperatur, freier Platz `/`, Laufzeit | wie die Status-Leiste (`renderer/sysinfo.py`) + `shutil.disk_usage`, `/proc/uptime` |
 | Mining | Rechner an/aus, geschätzt €/Tag jetzt | Tabellen `module_mining_*` – nur wenn das Modul `mining` installiert ist |
-| Wartet auf Till | offene PRs von hydrahive2 + hydrahive2-modules (Nummer, Titel, CI grün/rot/läuft, „mergebar“) | GitHub-REST, nur lesend, mit dem Token des Projekts „Hydrahive DEV“ (s. u.) |
+| Wartet auf Till | offene PRs von hydrahive2.0 + hydrahive2-modules (Nummer, Titel, CI grün/rot/läuft, „mergebar“) | GitHub-REST, nur lesend, mit dem Token des Projekts „Hydrahive DEV“ (s. u.) |
 | Uhr | Uhrzeit, Datum, Feiertag | Browser + Vitrine-Programm |
 
 ### GitHub („Wartet auf Till“)
@@ -95,8 +95,10 @@ die echte Statuszentrale. Weiterhin **nur lesen**.
 - Der Token hat Schreibrechte (Push/Merge). Die Vitrine nutzt ihn **nur für GET** auf `api.github.com`, feste Pfade
   (`/repos/<owner>/<repo>/pulls?state=open`, Check-Runs des Head-Commits), höchstens 1× pro Minute, Zeitlimit 10 s.
 - Der Token verlässt das Backend nie (nicht in der Antwort, nicht im Log, nicht im Cockpit). Repos fest auf
-  `hydrahive/hydrahive2` und `hydrahive/hydrahive2-modules` (im Cockpit änderbar, nur `owner/repo`-Form).
-- Fehlt der Token oder antwortet GitHub nicht → Bereich zeigt „GitHub nicht erreichbar“, Rest unverändert.
+  `hydrahive/hydrahive2.0` und `hydrahive/hydrahive2-modules` (im Cockpit änderbar, nur `owner/repo`-Form).
+- Fehlt der Token oder antwortet GitHub nicht → Bereich zeigt „GitHub nicht erreichbar“, Rest unverändert. Scheitert nur
+  ein Repo, bleiben die PRs der anderen stehen und der Hinweis nennt das Repo (Abnahme 19.10.: falscher Repo-Name → 404).
+- Nach einem Modul-Update startet der Installer den Kiosk-Firefox neu, damit die neue Seite geladen wird (Abnahme 19.10.).
 
 ### Wem gehören die Tasks?
 Der Kiosk hat keinen Nutzer. Die Tasks kommen vom **Besitzer** der Vitrine: einstellbar im Cockpit (Feld „Tasks von“,
