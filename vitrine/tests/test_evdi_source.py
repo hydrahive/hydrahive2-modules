@@ -49,6 +49,7 @@ class FakeEvdi:
             on_mode(*self.modes.pop(0))
 
     def grab(self, h):
+        self.calls.append("grab")
         b, g, r = self.color[2], self.color[1], self.color[0]
         self.buf[:] = bytes([b, g, r, 0]) * (len(self.buf) // 4)
 
@@ -107,3 +108,19 @@ def test_kein_geraet_anlegbar_unavailable():
     f.add = lambda: -1
     with pytest.raises(es.EvdiUnavailable, match="Modul"):
         _src(f)
+
+
+def test_drain_holt_ab_ohne_jpeg():
+    f = FakeEvdi()
+    s = _src(f)
+    s.drain()
+    assert s.ready and f.calls.count("grab") == 1, "Bild wird abgeholt (sonst blockiert Xorg)"
+    f.color = (1, 2, 3)
+    s.drain()
+    assert f.calls.count("grab") == 2 and s.last_jpeg is None, "aber kein JPEG gebaut"
+
+
+def test_drain_vor_dem_ersten_modus_holt_nichts():
+    f = FakeEvdi(modes=())
+    _src(f).drain()
+    assert "grab" not in f.calls

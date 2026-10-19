@@ -108,3 +108,21 @@ def test_kurzer_status_bleibt_unveraendert():
     o = scene.Overlay(W, H)
     font, text = o.fit_status("Hydra läuft  ·  Last 0.5")
     assert text == "Hydra läuft  ·  Last 0.5" and font.size == int(38 * W / 1080)
+
+
+def test_hinweis_zeile_nur_wenn_dashboard_bereit():
+    """S3: „Maus bewegen für Details“ als zusätzliche Zeile – ohne Hinweis bleibt die Karte wie bisher."""
+    c = cards.Cards(W, H)
+    ohne = _alpha_rows(c.render([_msg()], now=105.0))
+    mit = _alpha_rows(c.render([_msg()], now=105.0, hint=True))
+    assert min(mit) < min(ohne), "Karte mit Hinweis ist höher"
+    assert max(mit) == max(ohne), "Unterkante bleibt über der Status-Leiste"
+    assert (min(ohne) - min(mit)) >= c.line_h - 8
+
+
+def test_hinweis_text_ohne_unbekanntes_zeichen():
+    """DejaVu kann 🖱 nicht (gleiche Box wie ein unbekanntes Zeichen) – auf dem Display kein Kästchen."""
+    assert cards.HINT == "Maus bewegen für Details"
+    c = cards.Cards(W, H)
+    tofu = c.font.getmask("\uffff").getbbox()
+    assert all(c.font.getmask(ch).getbbox() != tofu for ch in cards.HINT if not ch.isspace())

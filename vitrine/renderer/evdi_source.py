@@ -65,6 +65,13 @@ class EvdiSource:
         """Nur Ereignisse abarbeiten (ohne Bild) – nötig, damit xrandr beim Einschalten nicht hängt."""
         self._lib.events(self._h, self._on_mode)
 
+    def drain(self) -> None:
+        """Bild abholen, aber nichts damit tun. Nötig auch wenn das Dashboard gerade nicht gezeigt wird: Ohne Abholen wartet
+        Xorg bei jedem Bildwechsel bis zum Timeout (flip_done, 10 s) – gemessen am 19.10.2026 auf .2, X hing bis 20 s."""
+        self._lib.events(self._h, self._on_mode)
+        if self.ready:
+            self._lib.grab(self._h)
+
     def next_jpeg(self, cursor: tuple[int, int] | None = None) -> bytes | None:
         """Neues JPEG, wenn sich Bild oder Zeigerposition geändert haben, sonst None (auch vor dem ersten Modus)."""
         self._lib.events(self._h, self._on_mode)

@@ -30,6 +30,8 @@ export interface Night {
   mode: "dim" | "off"
 }
 
+import type { DashboardCfg } from "./rules"
+
 export interface VitrineConfig {
   rules: Rule[]
   default_videos: string[]
@@ -41,6 +43,8 @@ export interface VitrineConfig {
   message_seconds: number
   /** Dashboard → zurück zum Video nach so vielen Sekunden ohne Eingabe, 30–1800 (Standard 120). */
   dashboard_return_seconds: number
+  /** Statuszentrale S2: Tasks von, Projekt mit GitHub-Token (nur lesend), Repos owner/repo. */
+  dashboard: DashboardCfg
 }
 
 export interface VideoFile {

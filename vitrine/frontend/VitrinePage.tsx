@@ -8,6 +8,7 @@ import { ruleErrors, type Template } from "./rules"
 import { StatusCard } from "./StatusCard"
 import { VideoList } from "./VideoList"
 import { RuleList } from "./RuleList"
+import { DashboardCard } from "./DashboardCard"
 import { SettingsCard } from "./SettingsCard"
 import { MessagesCard } from "./MessagesCard"
 
@@ -69,6 +70,7 @@ export function VitrinePage() {
           {config && <>
             <RuleList rules={config.rules} templates={templates} videos={videos} onChange={(rules) => setConfig({ ...config, rules })} />
             <SettingsCard config={config} onChange={setConfig} />
+            <DashboardCard config={config} onChange={setConfig} />
           </>}
           <VideoList videos={videos} onChange={loadVideos} />
         </div>

@@ -72,6 +72,117 @@ V1 = **Statuszentrale**, nur lesen:
 - Karten (Einblendungen) bekommen eine zweite Zeile „🖱 Maus bewegen für Details“, aber nur wenn das Dashboard verfügbar ist.
 - Im Dashboard steht die Meldung oben, mit Knopf „Gelesen“ (entfernt die Karte). Das ist der **einzige** Knopf, der etwas ändert.
 
+## S2 — Statuszentrale mit Daten (freigegeben von Till am 19.10.2026, abgenommen am Gehäuse am 19.10.2026, vitrine 0.8.1)
+
+S1 ist abgenommen (Till, 19.10.): Maus → Dashboard, „Zurück“, Rückkehr nach 2 min. S2 ersetzt die Platzhalter-Seite durch
+die echte Statuszentrale. Weiterhin **nur lesen**.
+
+### Daten (Quellen am 19.10. auf .2 geprüft)
+
+| Bereich | Inhalt | Quelle |
+|---|---|---|
+| Meldung | die neueste sichtbare Karte (Titel, Volltext, Art) | `<daten>/inbox` (wie die Karten) |
+| Hydra | Dienst läuft/Fehler, laufende Agenten (Anzahl), Fehler der letzten Stunde: je Quelle Anzahl + letzter Text | `hydrahive.runner.concurrency.active_count()`, Tabelle `errors_log` (wie `notify.py`) |
+| Aufgaben | offene + laufende Tasks (Zahl), die 5 wichtigsten Titel (Priorität, dann Alter) | Tabelle `module_tasks` des Besitzers (s. u.) – nur wenn das Modul `tasks` installiert ist |
+| Rechner | Last, RAM, GPU-Temperatur, freier Platz `/`, Laufzeit | wie die Status-Leiste (`renderer/sysinfo.py`) + `shutil.disk_usage`, `/proc/uptime` |
+| Mining | Rechner an/aus, geschätzt €/Tag jetzt | Tabellen `module_mining_*` – nur wenn das Modul `mining` installiert ist |
+| Wartet auf Till | offene PRs von hydrahive2.0 + hydrahive2-modules (Nummer, Titel, CI grün/rot/läuft, „mergebar“) | GitHub-REST, nur lesend, mit dem Token des Projekts „Hydrahive DEV“ (s. u.) |
+| Uhr | Uhrzeit, Datum, Feiertag | Browser + Vitrine-Programm |
+
+### GitHub („Wartet auf Till“)
+- Token: der Git-Token des HydraHive-Projekts **Hydrahive DEV** (am 19.10. auf .2 geprüft: hinterlegt für die Repos
+  hydrahive2 und hydrahive2-modules; HydraHive gibt ihn den Projekt-Agenten als `GH_TOKEN`). Projekt im Cockpit wählbar.
+- Der Token hat Schreibrechte (Push/Merge). Die Vitrine nutzt ihn **nur für GET** auf `api.github.com`, feste Pfade
+  (`/repos/<owner>/<repo>/pulls?state=open`, Check-Runs des Head-Commits), höchstens 1× pro Minute, Zeitlimit 10 s.
+- Der Token verlässt das Backend nie (nicht in der Antwort, nicht im Log, nicht im Cockpit). Repos fest auf
+  `hydrahive/hydrahive2.0` und `hydrahive/hydrahive2-modules` (im Cockpit änderbar, nur `owner/repo`-Form).
+- Fehlt der Token oder antwortet GitHub nicht → Bereich zeigt „GitHub nicht erreichbar“, Rest unverändert. Scheitert nur
+  ein Repo, bleiben die PRs der anderen stehen und der Hinweis nennt das Repo (Abnahme 19.10.: falscher Repo-Name → 404).
+- Nach einem Modul-Update startet der Installer den Kiosk-Firefox neu, damit die neue Seite geladen wird (Abnahme 19.10.).
+
+### Wem gehören die Tasks?
+Der Kiosk hat keinen Nutzer. Die Tasks kommen vom **Besitzer** der Vitrine: einstellbar im Cockpit (Feld „Tasks von“,
+Auswahl der HydraHive-Nutzer, Standard = der Admin, der zuletzt die Vitrine-Einstellungen gespeichert hat).
+
+### Route + Sicherheit
+- `GET /api/module-device/vitrine/data?k=…` — gleiche Prüfung wie S1 (Kiosk-Schlüssel + direkte Verbindung von 127.0.0.1,
+  Rate-Limit des Kerns). Antwort ist eine **feste Liste** von Feldern (Schema im Backend), nichts Freies.
+- Texte (Task-Titel, Fehlermeldungen, Karten) laufen durch die Secret-Schwärzung (`credentials.redaction.scrub`, wie
+  `notify.py`) und werden gekürzt (Titel 80, Fehler 140 Zeichen). Keine Chat-Inhalte, keine Session-Titel, keine Pfade aus
+  Tracebacks.
+- Fehlt ein Modul (tasks, mining) oder eine Quelle scheitert, fehlt nur dieser Bereich (`null`), die Route antwortet trotzdem.
+- Die Daten werden im Backend höchstens alle 5 s neu berechnet (Zwischenspeicher), egal wie oft die Seite fragt.
+
+### Seite
+- Statische HTML-Seite aus dem Modul (`backend/kiosk_page.html`, CSS + kleines Skript, keine externen Dateien), lädt
+  `data` alle 5 s. Hochkant 1080×1920, Schrift vom Sofa lesbar (Zahlen ≥ 64 px, Text ≥ 32 px).
+- Knopf „Zurück zum Video“ unten (wie S1). Keine weiteren Knöpfe.
+- Fehlt die Verbindung zum Backend: Hinweis „HydraHive antwortet nicht“ statt leerer Felder.
+
+### Akzeptanz S2
+- Alle Bereiche zeigen echte Werte von .2 (Abgleich mit Cockpit/Tasks/Mining-Seite)
+- Route: ohne/falscher Schlüssel, andere Adresse → 404 (Tests); fehlendes tasks-/mining-Modul → Bereich `null` (Tests)
+- Ein Secret in einer Fehlermeldung erscheint geschwärzt (Test)
+- Seite ruhig: Firefox < 5 % eines Kerns (gemessen 60 s); Backend-Last durch `data` vernachlässigbar (Zwischenspeicher)
+
+### Entscheidungen S2 (Till, 19.10.2026)
+1. Tasks vom Nutzer **till** (im Cockpit änderbar).
+2. Mining-Bereich **ja**, wenn das Modul installiert ist.
+3. „Wartet auf Till“ **ja**, mit dem Token des Projekts **Hydrahive DEV** (nur lesend genutzt).
+
+## S3 — Meldungen mit Verlauf (Entscheidung Till 19.10.2026: Option C)
+
+S2 ist abgenommen (Till, 19.10.: „alles lesbar und plausibel“; Firefox 0,5 % eines Kerns über 60 s). S3 sorgt dafür, dass
+eine Meldung nicht verloren geht: Auf dem Video bleibt die Karte wie heute (15 s, Fehler 10 min). In der Statuszentrale
+steht sie aber **24 Stunden** lang, bis Till sie als gelesen markiert.
+
+### Ausgangslage (Code am 19.10. geprüft)
+- `renderer/inbox.py`: eine Datei je Meldung, gleiche Meldung binnen 60 s wird gezählt (×2), höchstens 3 sichtbar,
+  höchstens 100 Dateien. `active()` **löscht** abgelaufene Karten sofort, deshalb gibt es heute keinen Rückblick.
+- Cockpit: `DELETE /messages/{id}` (Admin) entfernt eine Meldung.
+- `state.dashboard` = „bereit“ / „nicht verfügbar: …“ / „aus“ (`play_dashboard`).
+
+### Lebensdauer einer Meldung
+| Zeit | Video (Karte) | Statuszentrale |
+|---|---|---|
+| bis `expires` (wie heute) | sichtbar, höchstens 3 | unter **Neu** |
+| danach bis 24 h nach `created` | weg | unter **Neu**, solange ungelesen; sonst unter **Verlauf** |
+| älter als 24 h | – | gelöscht (beim nächsten Lesen der Ablage) |
+
+- Neues Feld `read` (Zeit oder `null`) in der Meldungsdatei. Alte Dateien ohne das Feld gelten als ungelesen.
+- **Gelesen** heißt: `read` wird gesetzt, und die Karte verschwindet auch sofort vom Video. Löschen kann weiterhin nur
+  das Cockpit.
+- Kommt dieselbe Meldung nach dem Lesen erneut (Zählung binnen 60 s), ist sie wieder ungelesen (`read = null`, Zähler +1).
+- Der Ordner bleibt auf 100 Dateien begrenzt (die ältesten fallen raus), egal ob gelesen.
+
+### Karte auf dem Video
+- Zweite Zeile „🖱 Maus bewegen für Details“, **nur** wenn die Statuszentrale verfügbar ist
+  (`state.dashboard == "bereit"`). Sonst bleibt die Karte wie heute.
+
+### Statuszentrale
+- Oben **Neu (n)**: ungelesene Meldungen der letzten 24 h, neueste zuerst, höchstens 5 mit Volltext (Titel, Art, Uhrzeit,
+  ×Zähler), darunter „+ n weitere“. Je Meldung ein Knopf **Gelesen**.
+- Darunter **Verlauf**: gelesene Meldungen der letzten 24 h, höchstens 10, je eine Zeile (Uhrzeit, Titel/Text gekürzt).
+- Keine Meldung → der Bereich zeigt „Keine neuen Meldungen“, und der Verlauf ist nur sichtbar, wenn er Einträge hat.
+- Kein „Alle gelesen“ (bewusst; kann später kommen).
+
+### Daten + Route
+- `/data` liefert statt `message` den Bereich `messages` = `{"new": [...], "new_count": n, "history": [...]}`. Je Eintrag
+  `id`, `title`, `text`, `kind`, `count`, `time` (HH:MM). Texte wie in S2 geschwärzt und gekürzt (Titel 80; Volltext höchstens
+  280 wie in der Ablage). Zwischenspeicher wie S2 (5 s), wird nach „Gelesen“ sofort verworfen.
+- Neu: `POST /api/module-device/vitrine/read?k=…`, gleiche Prüfung wie S1/S2 (Kiosk-Schlüssel + direkte Verbindung
+  von 127.0.0.1, Rate-Limit des Kerns). Körper nur `{"id": "<12 Hex-Zeichen>"}` (alles andere → 422). Die ID wird nur
+  verglichen, nie zu einem Pfad. Unbekannte ID → 404. Antwort 204.
+- „Gelesen“ und „Zurück“ bleiben die **einzigen** Kiosk-Routen, die etwas ändern.
+
+### Akzeptanz S3
+- Meldung abschicken (Cockpit oder Werkzeug) → Karte auf dem Video mit Zeile „Maus bewegen …“; Maus → steht unter Neu
+- Nach Ablauf der Karte steht sie weiter unter Neu; „Gelesen“ → in den Verlauf, Zähler sinkt, Karte (falls noch da) weg
+- 24 h alte Meldungen verschwinden (Test mit fester Uhr); gleiche Meldung nach dem Lesen → wieder Neu, ×2
+- Route `read`: ohne/falscher Schlüssel, andere Adresse → 404; kaputter Körper → 422; unbekannte ID → 404 (Tests)
+- Statuszentrale nicht verfügbar → Karte ohne zweite Zeile (Test)
+- Seite weiter ruhig: Firefox < 5 % eines Kerns über 60 s
+
 ## Bewusst nicht (V1 der Statuszentrale)
 
 - keine Aktionen mit Folgen (Merge, Dienste, Update, Zonen, Schalter) – kommen später nur mit PIN
@@ -90,7 +201,7 @@ V1 = **Statuszentrale**, nur lesen:
 
 1. **S1 Umschalten:** EVDI-Quelle im Dienst, Kiosk-Sitzung, Leerlauf-Abfrage, 2-min-Rückkehr, Platzhalter-Seite. Abnahme am Gehäuse
 2. **S2 Statuszentrale:** Daten-Route mit Kiosk-Schlüssel, Dashboard-Seite, Cockpit-Einstellung Rückkehrzeit
-3. **S3 Meldungen:** Hinweis auf den Karten, Volltext oben, Knopf „Gelesen“
+3. **S3 Meldungen:** Hinweis auf den Karten, Neu + Verlauf (24 h) in der Statuszentrale, Knopf „Gelesen“ (Details: Abschnitt S3)
 4. danach (eigene Specs): Home Assistant, Chat/Sprache, Knöpfe mit PIN
 
 ## Akzeptanzkriterien

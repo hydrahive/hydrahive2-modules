@@ -10,6 +10,8 @@ COLORS = {"info": (105, 215, 255, 255), "success": (90, 220, 140, 255),
 LABELS = {"info": "Info", "success": "Erledigt", "warning": "Warnung", "error": "Fehler"}
 FADE = 0.4
 MAX_LINES = 3
+HINT = "Maus bewegen für Details"          # S3; ohne 🖱 – DejaVu hat das Zeichen nicht (Kästchen auf dem Display)
+HINT_COLOR = (141, 154, 176, 255)
 
 
 class Cards:
@@ -55,12 +57,13 @@ class Cards:
         a = min(1.0, max(0.0, (now - m["created"]) / FADE))
         return min(a, max(0.0, (m["expires"] - now) / FADE))
 
-    def render(self, messages: list[dict], now: float) -> Image.Image:
+    def render(self, messages: list[dict], now: float, hint: bool = False) -> Image.Image:
+        """hint: zusätzliche Zeile HINT (nur wenn die Statuszentrale bereit ist – entscheidet der Dienst)."""
         img = Image.new("RGBA", (self.w, self.h), (0, 0, 0, 0))
         y = self.bottom
         for m in messages:                                   # neueste zuerst → unten nach oben stapeln
             lines = self.wrap(m.get("text", ""))
-            height = self.pad * 2 + self.line_h * (len(lines) + 1)
+            height = self.pad * 2 + self.line_h * (len(lines) + 1 + int(hint))
             a = self._alpha(m, now)
             if a <= 0:
                 continue
@@ -75,6 +78,8 @@ class Cards:
             dr.text((tx, self.pad), self.headline(m), font=self.title_font, fill=COLORS.get(m.get("kind"), COLORS["info"]))
             for i, line in enumerate(lines):
                 dr.text((tx, self.pad + self.line_h * (i + 1)), line, font=self.font, fill=(235, 240, 248, 255))
+            if hint:
+                dr.text((tx, self.pad + self.line_h * (len(lines) + 1)), HINT, font=self.font, fill=HINT_COLOR)
             if a < 1:
                 card.putalpha(card.getchannel("A").point(lambda v: int(v * a)))
             img.alpha_composite(card, (0, max(0, top)))

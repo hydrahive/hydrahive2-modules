@@ -46,3 +46,33 @@ def test_kiosk_fehler_bricht_den_dienst_nicht():
 def test_shell_syntax():
     for f in sorted(EXT.glob("*.sh")):
         subprocess.run(["bash", "-n", str(f)], check=True)
+
+
+def test_kiosk_ueberwachung_fragt_monitore_nicht_neu_ab():
+    """Ein schlichtes `xrandr` lässt den X-Server alle Ausgänge neu abfragen; bei EVDI setzt das jedes Mal die EDID neu
+    (am 19.10.2026 auf .2: Meldung „Edid property set“ alle 3 s, X hing zeitweise > 10 s). Die Dauer-Prüfung muss
+    `xrandr --current` nehmen; ein volles `xrandr` nur beim Einschalten."""
+    lines = _lines("kiosk-session.sh")
+    ok = next(ln for ln in lines if ln.lstrip().startswith("output_ok()"))
+    assert "xrandr --current" in ok
+    loop = "\n".join(lines[lines.index(next(ln for ln in lines if ln.startswith("while x_alive; do"))):])
+    assert "output_ok" in loop and "sleep" in loop
+
+
+def test_kiosk_schleifen_enden_mit_der_sitzung():
+    """Am 19.10.2026 auf .2: nach `systemctl restart sddm` lief die Firefox-Schleife der alten Sitzung weiter (Elternprozess
+    war die verwaiste Unterschale) und startete Firefox mit dem gelöschten Xauthority der alten Sitzung. Die Sitzung muss
+    ihre Hintergrund-Schleifen beim Ende mitnehmen."""
+    text = "\n".join(_lines("kiosk-session.sh"))
+    assert re.search(r"trap .*kill.*EXIT|trap .*EXIT.*kill", text), "trap räumt beim Ende auf"
+    assert "xset q" in text or "xdpyinfo" in text, "Schleife endet, wenn ihr X-Server weg ist"
+
+
+def test_startseite_nicht_in_verstecktem_ordner():
+    """Firefox (Snap) darf versteckte Ordner im Home nicht lesen – am 19.10.2026 auf .2: ~/.vitrine/start.html →
+    „Zugriff auf die Datei wurde verweigert“; dieselbe Datei in ~/vitrine/ lädt die Kiosk-Seite (HTTP 200)."""
+    text = "\n".join(_lines("kiosk-install.sh")) + "\n".join(_lines("kiosk-session.sh"))
+    uses = [ln for ln in text.splitlines() if "/.vitrine" in ln and not ln.lstrip().startswith("rm ")]
+    assert not uses, f"Startseite nicht in einem Punkt-Ordner (nur Aufräumen erlaubt): {uses}"
+    assert "${HOME_DIR}/vitrine" in text and "${HOME}/vitrine/start.html" in text
+    assert "file:///home/hydrahive-kiosk/vitrine/*" in text, "Richtlinie erlaubt genau diesen Ordner"
