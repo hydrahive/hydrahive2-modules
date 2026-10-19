@@ -106,7 +106,7 @@ export function StudioPage() {
     p.select({ kind: "shot", sceneId: c.scene_id, id: c.shot_id })
   }
   const md = useMediaTools({ projectId: lib.projectId, item: s.item, clearMedia: s.clearMedia, reloadAll: () => [lib, p, guide, cut, dv].forEach((x) => void x.reload()),
-    openElement: (id) => { s.setWorkspace("plan"); void p.reload(); p.select({ kind: "element", id }) }, notice: (x) => (shotsWs || delivering ? p.setNotice(x) : cut.setNotice(x)) })
+    openElement: (id) => { s.setWorkspace("plan"); void p.reload(); p.select({ kind: "element", id }) }, notice: (x) => (shotsWs || delivering ? p.setNotice(x) : cut.setNotice(x)), planNotice: p.setNotice })
   const reload = () => { void lib.reload(); void guide.reload(); if (shotsWs) void p.reload(); if (editing(s.workspace)) void cut.reload() }
   const mu = useMusic(lib.projectId, editing(s.workspace), ed.addMusic, (x) => cut.setNotice(x), () => void lib.reload())
   const selShot = p.selection?.kind === "shot" ? p.selection : null

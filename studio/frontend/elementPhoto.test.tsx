@@ -134,3 +134,11 @@ describe("C2 – Texte", () => {
     }
   })
 })
+
+describe("C2 – Meldung nach „Als Ort anlegen …“ landet in „Planen“", () => {
+  it("useMediaTools gibt planNotice an das Anlegen weiter (nicht die Meldung des Reiters, der gleich verlassen wird)", () => {
+    const src = Object.values(import.meta.glob(["./useMediaTools.tsx", "./StudioPage.tsx"], { query: "?raw", import: "default", eager: true })).join("\n")
+    expect(src).toMatch(/useElementFromImage\(projectId, \(id\) => \{ clearMedia\(\); openElement\(id\) \}, planNotice\)/)
+    expect(src).toMatch(/planNotice: p\.setNotice/)
+  })
+})

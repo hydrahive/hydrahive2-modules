@@ -18,7 +18,11 @@ export function useElementFromImage(projectId: string, open: (elementId: string)
       setTarget(null)
       open(el.id)
       notice(t("media_as_done", { name }))
-      try { await describeApi.describe(projectId, el.id); open(el.id) } catch (e) { notice(errorText(t, e)) }   // Bild bleibt Vorlage, auch ohne Text
+      try {                                                         // Bild bleibt Vorlage, auch ohne Text
+        await describeApi.describe(projectId, el.id)
+        open(el.id)
+        notice(t("photo_described"))
+      } catch (e) { notice(errorText(t, e)) }
     } catch (e) { notice(errorText(t, e)) } finally { setBusy(false) }
   }
   const dialog = target

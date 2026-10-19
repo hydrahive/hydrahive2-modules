@@ -12,12 +12,14 @@ interface Deps {
   /** Baustein in „Planen“ öffnen */
   openElement: (id: string) => void
   notice: (text: string) => void
+  /** Meldungen nach „Als Figur/Ort anlegen“ – dort, wohin gesprungen wird (Planen) */
+  planNotice: (text: string) => void
 }
 
 /** Werkzeuge an Dateien (C1, C2): Löschen mit Rückfrage, Figur/Ort aus Bild – Dialoge in einem Stück für StudioPage. */
-export function useMediaTools({ projectId, item, clearMedia, reloadAll, openElement, notice }: Deps) {
+export function useMediaTools({ projectId, item, clearMedia, reloadAll, openElement, notice, planNotice }: Deps) {
   const del = useMediaDelete(projectId, (rel) => { if (item?.rel === rel) clearMedia(); reloadAll() }, notice)
-  const fromImage = useElementFromImage(projectId, (id) => { clearMedia(); openElement(id) }, notice)
+  const fromImage = useElementFromImage(projectId, (id) => { clearMedia(); openElement(id) }, planNotice)
   return {
     ask: del.ask, askItem: del.askItem, createElement: fromImage.ask,
     dialogs: <>{del.dialog}{fromImage.dialog}</>,
