@@ -5,7 +5,8 @@ vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Re
 vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() => {})), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }))
 vi.mock("@/shared/files", () => ({ fileUrl: (p: string) => `/f${p}` }))
 import { Costs } from "./Costs"
-import { HowTo, HOWTO } from "./HowTo"
+import { HowTo } from "./HowTo"
+import { HOWTO } from "./guideLogic"
 import { firstVisit, nextWorkspace, stepOf } from "./guideLogic"
 import { studioI18n } from "./i18n"
 import { WorkspaceIntro } from "./WorkspaceIntro"
@@ -61,6 +62,22 @@ describe("C3 – „So geht’s“ vollständig", () => {
       for (const x of HOWTO) expect(h[x.key]?.title && h[x.key]?.text, `${lang} ${x.key}`).toBeTruthy()
       for (const k of ["delete", "files", "costs"]) expect(m[k]?.title && m[k]?.text, `${lang} ${k}`).toBeTruthy()
       expect(String(h.photo.text)).toMatch(lang === "de" ? /Foto/ : /photo/)
+    }
+  })
+})
+
+describe("C3 – die Anleitung nennt nur Knöpfe, die es wirklich gibt", () => {
+  it("jedes zitierte „…“ in „So geht’s“ ist ein Text der Oberfläche (de und en)", () => {
+    for (const lang of ["de", "en"] as const) {
+      const all: string[] = []
+      const walk = (v: unknown) => { if (typeof v === "string") all.push(v); else if (v && typeof v === "object") Object.values(v).forEach(walk) }
+      const st = s(lang)
+      walk(Object.fromEntries(Object.entries(st).filter(([k]) => k !== "howto" && k !== "howto_more")))
+      const texts = all.map((x) => x.replace(/\{\{[^}]+\}\}/g, "…"))
+      const steps = JSON.stringify([st.howto, st.howto_more])
+      const quoted = [...steps.matchAll(lang === "de" ? /„([^“]+)“/g : /“([^”]+)”/g)].map((m) => m[1])
+      const unknown = quoted.filter((q) => !texts.some((x) => x === q || x === `${q} …` || x.replace(" …", "") === q.replace(" …", "")))
+      expect(unknown, lang).toEqual([])
     }
   })
 })

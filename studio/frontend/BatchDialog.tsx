@@ -2,6 +2,7 @@ import { Layers, Loader2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { BatchKind, BatchPreview } from "./planApi"
 import { Backdrop } from "./StudioDialogs"
+import { Costs } from "./Costs"
 
 interface Props {
   kind: BatchKind
@@ -32,7 +33,8 @@ export function BatchDialog({ kind, preview, busy, onRun, onClose }: Props) {
             <button type="button" onClick={onRun} disabled={busy} data-batch-run
               className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-50">
               {busy ? <Loader2 size={13} className="animate-spin" /> : <Layers size={13} />} {t("batch_run")}
-            </button>
+             <Costs model={preview?.model} />
+        </button>
           )}
         </div>
       </div>

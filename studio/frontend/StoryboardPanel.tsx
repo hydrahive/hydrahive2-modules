@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { fileUrl } from "@/shared/files"
 import type { Scene } from "./planApi"
 import { fileOf, sceneDuration } from "./planLogic"
+import { Costs } from "./Costs"
 
 interface Props {
   scene: Scene | null
@@ -41,7 +42,8 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
           <button type="button" onClick={onDecompose} disabled={running} data-storyboard-decompose title={t("decompose_hint")}
             className="flex shrink-0 items-center gap-1.5 rounded-[4px] border border-[#46617f] px-2 py-0.5 font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
             {running ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} {running ? t("decompose_running") : t("decompose")}
-          </button>
+           <Costs />
+        </button>
         )}
       </div>
       {!scene ? <p className="p-3 text-xs text-[#68758a]">{t("storyboard_pick_scene")}</p> : (

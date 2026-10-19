@@ -5,19 +5,22 @@ import { jobText } from "./jobLogic"
 import type { Job, Shot } from "./planApi"
 import { fileOf } from "./planLogic"
 import { Label } from "./formParts"
+import { Costs } from "./Costs"
 
 interface Props {
   shot: Shot
   base: string
   job: Job | null
   onGenerate: () => void
+  /** C3: Modell aus dem Drehbuch für den Kosten-Hinweis (leer = Standard des Servers) */
+  model?: string
   onChoose: (rel: string) => void
   /** C1: Variante löschen (Rückfrage übernimmt der Aufrufer) */
   onDelete?: (rel: string) => void
 }
 
 /** Bild des Shots: erzeugen (Auftrag im Hintergrund), Varianten ansehen und eine wählen. */
-export function ShotImage({ shot, base, job, onGenerate, onChoose, onDelete }: Props) {
+export function ShotImage({ shot, base, job, onGenerate, model, onChoose, onDelete }: Props) {
   const { t } = useTranslation("studio")
   const running = job?.status === "running" || job?.status === "queued"
   const error = jobText(t, job)
@@ -47,7 +50,8 @@ export function ShotImage({ shot, base, job, onGenerate, onChoose, onDelete }: P
         className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#46617f] py-1.5 text-xs font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
         {running ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
         {running ? t("image_running") : variants.length ? t("image_again") : t("image_generate")}
-      </button>
+       <Costs model={model} />
+        </button>
       {error && <p className="rounded-[4px] border border-[#ff6b8a]/40 bg-[#ff6b8a]/10 px-2 py-1.5 text-[11px] leading-relaxed text-[#ff6b8a]" data-shot-error>{error}</p>}
     </div>
   )

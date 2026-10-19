@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { IDEA_LENGTHS, type IdeaLength } from "./draftApi"
 import { ideaValid, MAX_IDEA, MAX_STYLE } from "./draftLogic"
 import { fieldCls, Label } from "./formParts"
+import { Costs } from "./Costs"
 
 interface Props {
   idea: string
@@ -52,6 +53,7 @@ export function IdeaForm({ idea, length, style, busy, error, onIdea, onLength, o
         <button type="button" onClick={onRun} disabled={busy || !ideaValid(idea, style)} data-idea-run
           className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-50">
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} {t("idea_run")}
+         <Costs />
         </button>
       </div>
     </div>

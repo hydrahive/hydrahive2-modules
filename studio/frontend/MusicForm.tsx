@@ -6,6 +6,7 @@ import { jobText } from "./jobLogic"
 import { MUSIC_MAX, MUSIC_MIN, type MusicDefaults, type MusicRequest } from "./musicLogic"
 import type { Job } from "./planApi"
 import { Backdrop } from "./StudioDialogs"
+import { Costs } from "./Costs"
 
 interface Props { defaults: MusicDefaults | null; job: Job | null; busy: boolean; onRun: (r: MusicRequest) => void; onClose: () => void }
 
@@ -60,6 +61,7 @@ function Body({ d, job, busy, onRun, onClose }: { d: MusicDefaults } & Omit<Prop
           onClick={() => onRun({ description: text.trim(), seconds, ...(target ? { scene_id: target } : {}) })}
           className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-40">
           {busy ? <Loader2 size={12} className="animate-spin" /> : <Music size={12} />} {t("music_run")}
+         <Costs model={d.model} />
         </button>
       </div>
     </div>

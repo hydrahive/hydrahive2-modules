@@ -118,7 +118,7 @@ export function StudioPage() {
           workspace={s.workspace} onWorkspace={s.setWorkspace} onCommand={() => s.setDialog("command")} onHelp={() => s.setDialog("help")} running={jobs.running}
           batch={shotsWs && bt.active ? <BatchStatus job={bt.active} cancelling={bt.cancelling} onCancel={bt.cancel} /> : undefined}
           progress={<ProgressBar overview={guide.overview} onGo={s.setWorkspace} />} />
-        <WorkspaceIntro workspace={s.workspace} open={guide.introOpen} onToggle={guide.toggleIntro} />
+        <WorkspaceIntro workspace={s.workspace} open={guide.introOpen} onToggle={guide.toggleIntro} onGo={s.setWorkspace} />
         {delivering ? (
           <div className="min-h-0 flex-1">
             <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} queue={dv.queue} cancelling={dv.cancelling} onCancel={dv.cancel} error={p.error}

@@ -57,3 +57,31 @@ export function setIntroOpen(ws: Workspace, open: boolean, store: Storage | unde
     store?.setItem(INTRO_KEY, JSON.stringify({ ...all, [ws]: open }))
   } catch { /* nicht merken */ }
 }
+
+/** „Schritt X von 6“ (C3): Platz des Reiters in der Reihenfolge der Arbeit (1-basiert). */
+export function stepOf(ws: Workspace): number {
+  return WORKSPACES.indexOf(ws) + 1
+}
+
+/** Nächster Reiter in der Reihenfolge der Arbeit; null nach „Ausgabe“. */
+export function nextWorkspace(ws: Workspace): Workspace | null {
+  return WORKSPACES[WORKSPACES.indexOf(ws) + 1] ?? null
+}
+
+const SEEN_KEY = "hh.studio.howto-seen.v1"
+
+/** Allererster Besuch in diesem Browser? Merkt sich die Antwort; ohne Speicher nie (Hilfe nicht aufdrängen). */
+export function firstVisit(store: Pick<Storage, "getItem" | "setItem"> | undefined = globalThis.localStorage): boolean {
+  try {
+    if (!store || store.getItem(SEEN_KEY)) return false
+    store.setItem(SEEN_KEY, "1")
+    return true
+  } catch { return false }
+}
+
+/** Der ganze Weg vom Drehbuch bis zur fertigen Datei (C3), je Schritt mit dem Reiter, in den „So geht’s“ springt. */
+export const HOWTO: { key: string; ws: Workspace }[] = [
+  { key: "film", ws: "plan" }, { key: "photo", ws: "plan" }, { key: "shots", ws: "plan" },
+  { key: "images", ws: "generate" }, { key: "videos", ws: "generate" }, { key: "cut", ws: "edit" },
+  { key: "audio", ws: "audio" }, { key: "subtitles", ws: "subtitles" }, { key: "deliver", ws: "deliver" },
+]

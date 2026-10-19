@@ -45,7 +45,7 @@ describe("B3 – Freies Bild: Formular", () => {
   it("Beschreibung, Modell, Format, Anzahl 1–4, Kostenhinweis; „Bilder erzeugen“ erst mit Beschreibung", () => {
     const out = html(<FreeForm form={FORM} catalog={null} images={[]} job={null} busy={false} onChange={noop} onRun={noop} />)
     for (const k of ["free_title", "free_prompt", "free_count", "f.aspect", "free_cost"]) expect(out).toContain(k)
-    expect(buttons(out)).toEqual(["1", "2", "3", "4", 'free_run:{"count":1}'])
+    expect(buttons(out)).toEqual(["1", "2", "3", "4", 'free_run:{"count":1} costs_badge'])   // C3: Zeichen „kostet“
     expect(out).toMatch(/<button[^>]*disabled=""[^>]*data-free-run/)
     const filled = html(<FreeForm form={{ ...FORM, prompt: "kite", count: 3 }} catalog={null} images={[]} job={null} busy={false} onChange={noop} onRun={noop} />)
     expect(filled).not.toMatch(/<button[^>]*disabled=""[^>]*data-free-run/)
