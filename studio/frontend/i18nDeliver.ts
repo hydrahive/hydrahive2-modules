@@ -1,7 +1,18 @@
 /** Texte für den Reiter „Ausgabe“ (4d). Ohne Terminal- oder Datei-Hinweise. */
 export const deliver_de = {
   deliver_empty: "Die Zeitleiste ist noch leer. Leg im Reiter „Schneiden“ zuerst Clips an – zum Beispiel mit „Aus dem Drehbuch übernehmen“.",
-  deliver_summary: "Film: {{length}} min · {{clips}} Clips · {{width}}×{{height}} (Format des Drehbuchs)",
+  deliver_summary: "Film: {{length}} min · {{clips}} Clips",
+  deliver_aspect_label: "Format",
+  deliver_quality_label: "Qualität",
+  deliver_aspect: {
+    screenplay: "Wie im Drehbuch ({{aspect}})",
+    "16:9": "16:9 Querformat (Bildschirm, YouTube)",
+    "9:16": "9:16 Hochformat (Handy, Reels, Shorts)",
+    "1:1": "1:1 Quadrat",
+  },
+  deliver_quality: { preview: "Vorschau 480p", standard: "Standard 720p", high: "Hoch 1080p" },
+  deliver_result: "Ergebnis: {{width}}×{{height}}. Das Bild wird eingepasst, nichts wird abgeschnitten – freie Ränder bleiben schwarz.",
+  deliver_film_preset: "{{aspect}} · {{quality}}",
   deliver_placeholders_one: "{{count}} Clip hat noch kein Bild oder Video und erscheint als schwarze Karte mit seinem Namen.",
   deliver_placeholders_other: "{{count}} Clips haben noch kein Bild oder Video und erscheinen als schwarze Karten mit ihrem Namen.",
   deliver_hint: "Der Film entsteht auf dem Server, das kostet nichts. Videos behalten ihren Ton, Musik und Sprache von den Tonspuren werden dazugemischt.",
@@ -17,12 +28,24 @@ export const deliver_de = {
   deliver_err: {
     studio_render_empty: "Die Zeitleiste ist leer – es gibt nichts auszugeben.",
     studio_render_running: "Es wird schon ein Film erzeugt. Bitte warten, bis er fertig ist.",
+    studio_render_bad_preset: "Dieses Format oder diese Qualität gibt es nicht. Bitte neu auswählen.",
   },
 }
 
 export const deliver_en: typeof deliver_de = {
   deliver_empty: "The timeline is still empty. First add clips in the “Edit” tab – for example with “Take over from the screenplay”.",
-  deliver_summary: "Film: {{length}} min · {{clips}} clips · {{width}}×{{height}} (format of the screenplay)",
+  deliver_summary: "Film: {{length}} min · {{clips}} clips",
+  deliver_aspect_label: "Format",
+  deliver_quality_label: "Quality",
+  deliver_aspect: {
+    screenplay: "As in the screenplay ({{aspect}})",
+    "16:9": "16:9 landscape (screen, YouTube)",
+    "9:16": "9:16 portrait (phone, Reels, Shorts)",
+    "1:1": "1:1 square",
+  },
+  deliver_quality: { preview: "Preview 480p", standard: "Standard 720p", high: "High 1080p" },
+  deliver_result: "Result: {{width}}×{{height}}. The picture is fitted in, nothing is cut off – free edges stay black.",
+  deliver_film_preset: "{{aspect}} · {{quality}}",
   deliver_placeholders_one: "{{count}} clip has no image or video yet and appears as a black card with its name.",
   deliver_placeholders_other: "{{count}} clips have no image or video yet and appear as black cards with their names.",
   deliver_hint: "The film is created on the server, at no cost. Videos keep their sound, music and voice from the sound tracks are mixed in.",
@@ -38,5 +61,6 @@ export const deliver_en: typeof deliver_de = {
   deliver_err: {
     studio_render_empty: "The timeline is empty – there is nothing to export.",
     studio_render_running: "A film is already being created. Please wait until it is done.",
+    studio_render_bad_preset: "This format or quality does not exist. Please choose again.",
   },
 }

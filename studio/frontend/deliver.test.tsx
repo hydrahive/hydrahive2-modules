@@ -5,7 +5,7 @@ vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Re
 vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() => {})), post: vi.fn(() => new Promise(() => {})) } }))
 vi.mock("@/shared/files", () => ({ fileUrl: (p: string) => `/f${p}` }))
 import { DeliverPanel } from "./DeliverPanel"
-import { deliverSummary, filmSize, minutes } from "./deliverLogic"
+import { deliverSummary, minutes, outputSize } from "./deliverLogic"
 import type { Job } from "./planApi"
 import type { RenderItem } from "./renderApi"
 import type { TimelineClip } from "./timelineApi"
@@ -26,9 +26,9 @@ describe("4d – Ausgabe: Übersicht", () => {
     expect(deliverSummary([c("video", 0, 4), c("image", 5, 3), c("placeholder", 8, 2), c("placeholder", 10, 1, true)]))
       .toEqual({ seconds: 11, clips: 4, placeholders: 2, missing: 1 })
     expect(deliverSummary([])).toEqual({ seconds: 0, clips: 0, placeholders: 0, missing: 0 })
-    expect(filmSize("9:16")).toEqual([720, 1280])
-    expect(filmSize("21:9")).toEqual([1680, 720])
-    expect(filmSize("kaputt")).toEqual([1280, 720])
+    expect(outputSize("screenplay", "standard", "9:16")).toEqual([720, 1280])
+    expect(outputSize("screenplay", "standard", "21:9")).toEqual([1680, 720])
+    expect(outputSize("screenplay", "standard", "kaputt")).toEqual([1280, 720])
     expect(minutes(75.4)).toBe("1:15")
     expect(minutes(9)).toBe("0:09")
     expect(minutes(12.5)).toBe("0:12")
@@ -47,7 +47,8 @@ describe("4d – Ausgabe: Reiter", () => {
 
   it("mit Clips: Übersicht, Hinweis bei Platzhaltern, Knopf frei", () => {
     const out = html(<DeliverPanel clips={[c("video", 0, 4), c("placeholder", 4, 2)]} renders={[]} job={null} {...base} aspect="9:16" />)
-    expect(out).toContain('deliver_summary:{"length":"0:06","clips":2,"width":720,"height":1280}')
+    expect(out).toContain('deliver_summary:{"length":"0:06","clips":2}')
+    expect(out).toContain('deliver_result:{"width":720,"height":1280}')
     expect(out).toContain('deliver_placeholders:{"count":1}')
     expect(buttons(out)).toContain("deliver_run")
     expect(out).not.toMatch(/<button[^>]*disabled=""[^>]*data-deliver-run/)

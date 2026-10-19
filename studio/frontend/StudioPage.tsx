@@ -120,7 +120,8 @@ export function StudioPage() {
           <div className="min-h-0 flex-1">
             <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} job={dv.job}
               busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")}
-              subtitleLanguages={dv.subtitleLanguages} withSubtitles={dv.withSubtitles} onWithSubtitles={dv.setWithSubtitles} />
+              subtitleLanguages={dv.subtitleLanguages} withSubtitles={dv.withSubtitles} onWithSubtitles={dv.setWithSubtitles}
+              preset={dv.preset} onPreset={dv.setPreset} />
           </div>
         ) : <>
         <div className="flex min-h-0 flex-col" style={{ flex: `${100 - s.layout.timeline} 1 0` }}>

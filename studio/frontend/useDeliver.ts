@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { DEFAULT_PRESET, type Preset } from "./deliverLogic"
 import { latestOnly } from "./latestOnly"
 import type { Job } from "./planApi"
 import { renderApi, type RenderItem } from "./renderApi"
@@ -19,6 +20,7 @@ export function useDeliver(p: PlanState, projectId: string, active: boolean, job
   const wasRunning = useRef(false)
   const [subLangs, setSubLangs] = useState<string[]>([])                           // Sprachen mit Untertiteln (6c)
   const [withSubs, setWithSubs] = useState(false)
+  const [preset, setPreset] = useState<Preset>(DEFAULT_PRESET)                     // Vorlage (7b), startet immer beim Standard
 
   const load = useCallback(async () => {
     if (!projectId) { setRenders([]); return }
@@ -54,7 +56,7 @@ export function useDeliver(p: PlanState, projectId: string, active: boolean, job
 
   return {
     renders: loadedFor === projectId ? renders : null, job,                      // anderes Projekt → erst laden
-    start: () => p.act(() => renderApi.start(projectId, withSubs && subLangs.length > 0), t("notice_render_started"), () => reloadJobs()),
-    subtitleLanguages: subLangs, withSubtitles: withSubs, setWithSubtitles: setWithSubs,
+    start: () => p.act(() => renderApi.start(projectId, { ...preset, subtitles: withSubs && subLangs.length > 0 }), t("notice_render_started"), () => reloadJobs()),
+    subtitleLanguages: subLangs, withSubtitles: withSubs, setWithSubtitles: setWithSubs, preset, setPreset,
   }
 }

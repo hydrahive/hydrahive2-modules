@@ -1,7 +1,8 @@
 import { ArrowRight, Download, Film, Loader2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { fileUrl } from "@/shared/files"
-import { deliverSummary, filmSize, minutes } from "./deliverLogic"
+import { DEFAULT_PRESET, deliverSummary, downloadName, minutes, presetLabel, type Preset } from "./deliverLogic"
+import { DeliverPreset } from "./DeliverPreset"
 import { jobText } from "./jobLogic"
 import type { Job } from "./planApi"
 import type { RenderItem } from "./renderApi"
@@ -20,14 +21,16 @@ interface Props {
   subtitleLanguages?: string[]
   withSubtitles?: boolean
   onWithSubtitles?: (on: boolean) => void
+  /** Vorlage (7b): Format + Qualität */
+  preset?: Preset
+  onPreset?: (p: Preset) => void
 }
 
-/** Reiter „Ausgabe“ (4d): Film als MP4 erzeugen, fertige Filme ansehen und herunterladen. */
+/** Reiter „Ausgabe“ (4d, 7b): Vorlage wählen, Film als MP4 erzeugen, fertige Filme ansehen und herunterladen. */
 export function DeliverPanel({ clips, aspect, renders, job, busy, onRender, onCut, subtitleLanguages = [], withSubtitles = false,
-  onWithSubtitles }: Props) {
+  onWithSubtitles, preset = DEFAULT_PRESET, onPreset }: Props) {
   const { t } = useTranslation("studio")
   const sum = deliverSummary(clips)
-  const [w, h] = filmSize(aspect)
   const running = job?.status === "running" || job?.status === "queued"
   return (
     <section className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-4 text-xs text-[#c3ccdd]" data-studio-panel="deliver">
@@ -41,11 +44,12 @@ export function DeliverPanel({ clips, aspect, renders, job, busy, onRender, onCu
           </>
         ) : (
           <>
-            <p className="text-sm text-[#e8eef8]">{t("deliver_summary", { length: minutes(sum.seconds), clips: sum.clips, width: w, height: h })}</p>
+            <p className="text-sm text-[#e8eef8]">{t("deliver_summary", { length: minutes(sum.seconds), clips: sum.clips })}</p>
             {sum.placeholders > 0 && <p className="text-[#ffb86b]">{t("deliver_placeholders", { count: sum.placeholders })}</p>}
             <p className="text-[#8d9ab0]">{t("deliver_hint")}</p>
           </>
         )}
+        <DeliverPreset preset={preset} screenplay={aspect} disabled={running} onChange={onPreset} />
         {subtitleLanguages.length ? (
           <label className="flex cursor-pointer items-center gap-2 text-[#c3ccdd]">
             <input type="checkbox" checked={withSubtitles} onChange={(e) => onWithSubtitles?.(e.target.checked)} data-deliver-subtitles className="accent-[#69d7ff]" />
@@ -69,9 +73,10 @@ export function DeliverPanel({ clips, aspect, renders, job, busy, onRender, onCu
               <figcaption className="space-y-1">
                 <p className="text-[#e8eef8]">{(r.created_at || "").slice(0, 16).replace("T", " ")}</p>
                 <p className="text-[#8d9ab0]">{t("deliver_film_info", { length: minutes(r.duration ?? 0), width: r.width, height: r.height })}</p>
+                {presetLabel(t, r) && <p className="text-[#8d9ab0]" data-deliver-preset>{presetLabel(t, r)}</p>}
                 {!!r.subtitles?.length && <p className="text-[#8d9ab0]">{t("deliver_film_subtitles", { names: r.subtitles.map((l) => t(`lang.${l}`)).join(", ") })}</p>}
                 {!!r.missing && <p className="text-[#ffb86b]">{t("deliver_missing", { count: r.missing })}</p>}
-                <a href={fileUrl(r.abs)} download={`film-${(r.created_at || r.name).slice(0, 16).replace(/[^0-9]/g, "")}.mp4`}
+                <a href={fileUrl(r.abs)} download={downloadName(r)}
                   className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 font-bold text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940]">
                   <Download size={12} /> {t("deliver_download")}
                 </a>

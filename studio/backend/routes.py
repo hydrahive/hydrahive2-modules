@@ -43,7 +43,9 @@ async def get_library(project_id: str, auth: Auth) -> dict:
 def post_render(project_id: str, auth: Auth, data: Annotated[Any, Body()] = None) -> dict:
     guard(auth[0], project_id)
     try:
-        return render.start(project_id, with_subtitles=isinstance(data, dict) and data.get("subtitles") is True)
+        body = data if isinstance(data, dict) else {}
+        return render.start(project_id, with_subtitles=body.get("subtitles") is True, aspect=body.get("aspect"),
+                            quality=body.get("quality"))
     except plan.PlanError as e:
         raise coded(e.status, e.code)
 

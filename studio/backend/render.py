@@ -14,7 +14,16 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import jobs, mix, plan, render_args, subtitle_format, subtitles, timeline
+from . import (
+    jobs,
+    mix,
+    plan,
+    render_args,
+    render_preset,
+    subtitle_format,
+    subtitles,
+    timeline,
+)
 from ._sources import AUDIO_EXT, IMAGE_EXT, VIDEO_EXT
 from ._store import is_id, new_id, project_root, read_json, root, safe_rel, write_json
 
@@ -92,13 +101,18 @@ def _subtitle_files(pid: str, td: Path) -> list[dict]:
     return out
 
 
-def start(pid: str, *, with_subtitles: bool = False) -> dict:
+def start(pid: str, *, with_subtitles: bool = False, aspect=None, quality=None) -> dict:
+    """`aspect`/`quality`: Vorlage (7b); None = Format des Drehbuchs bzw. Standard. Unbekannt → studio_render_bad_preset."""
+    head = plan.get_head(pid)
+    try:
+        preset = render_preset.resolve(aspect, quality, head["aspect_ratio"])
+    except ValueError as e:
+        raise plan.PlanError("studio_render_bad_preset") from e
     tl = timeline.load(pid)
     clips = timeline.clips_of(tl)
     if not clips and not _audio(pid, tl):          # nur gelöschter Ton ergäbe einen Film der Länge 0
         raise plan.PlanError("studio_render_empty")
-    head = plan.get_head(pid)
-    size = render_args.frame_size(head["aspect_ratio"])
+    size = preset["size"]
 
     def work(progress: jobs.Progress) -> dict:
         sound = _audio(pid, tl)
@@ -117,7 +131,8 @@ def start(pid: str, *, with_subtitles: bool = False) -> dict:
                     texts[i].write_text(render_args.wrap(render_args.label_text(s["label"]), size), encoding="utf-8")
             subs = _subtitle_files(pid, Path(td)) if with_subtitles else []
             cmd = render_args.command(segs, project_root(pid), tmp, size=size, fps=tl["fps"], text_files=texts, audio=sound,
-                                      mixer=mix.Mixer.of(tl), subtitles=subs, default_language=head["language"])
+                                      mixer=mix.Mixer.of(tl), subtitles=subs, default_language=head["language"],
+                                      crf=preset["crf"])
             try:
                 _run_ffmpeg(cmd, seconds, lambda f: progress.set(done=round(f * 100)))
                 tmp.replace(out_dir / name)
@@ -125,7 +140,8 @@ def start(pid: str, *, with_subtitles: bool = False) -> dict:
                 raise jobs.JobFailed("render_failed") from e
             finally:
                 tmp.unlink(missing_ok=True)
-        meta = {"duration": seconds, "width": size[0], "height": size[1], "fps": tl["fps"], "revision": tl["revision"],
+        meta = {"duration": seconds, "width": size[0], "height": size[1], "aspect": preset["aspect"], "quality": preset["quality"],
+                "fps": tl["fps"], "revision": tl["revision"],
                 "clips": len(timeline.all_clips(tl)), "missing": render_args.missing_count(segs) + lost,
                 "subtitles": [x["language"] for x in subs],
                 "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
@@ -151,7 +167,7 @@ def _list(pid: str) -> list[tuple[str, dict]]:
 def list_renders(pid: str) -> dict:
     base = project_root(pid)
     return {"renders": [{"rel": f"{RENDER_DIR}/{n}", "abs": str(base / RENDER_DIR / n), "name": n,
-                         **{k: m.get(k) for k in ("duration", "width", "height", "created_at", "missing", "clips")},
+                         **{k: m.get(k) for k in ("duration", "width", "height", "aspect", "quality", "created_at", "missing", "clips")},
                          "subtitles": m.get("subtitles") or []}
                         for n, m in _list(pid)]}
 
