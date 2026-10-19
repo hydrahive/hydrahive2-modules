@@ -34,4 +34,6 @@ def of_shot(scene: dict, shot: dict, elements: list[dict]) -> list[str]:
     ticked = [x for x in shot.get("element_ids") or [] if x in known]
     scene_text = " ".join(str(scene.get(k) or "") for k in ("title", "description"))
     shot_text = " ".join(str(shot.get(k) or "") for k in ("prompt", "speech"))
-    return list(dict.fromkeys([*ticked, *named(scene_text, elements), *named(shot_text, elements)]))
+    out = list(dict.fromkeys([*ticked, *named(scene_text, elements), *named(shot_text, elements)]))
+    gone = set(shot.get("excluded_ids") or [])                     # G3: abgewählt schlägt angehakt und genannt
+    return [x for x in out if x not in gone]

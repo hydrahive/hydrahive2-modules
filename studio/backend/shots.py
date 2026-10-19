@@ -5,7 +5,7 @@ from . import _clean, plan
 from ._store import is_id, project_lock, read_json, write_json
 
 MAX_SHOTS = 50
-EDITABLE = ("shot", "prompt", "element_ids", "duration", "speech", "voice")      # Status und Medien ändert nur das Erzeugen (Etappe 3)
+EDITABLE = ("shot", "prompt", "element_ids", "excluded_ids", "duration", "speech", "voice")      # Status und Medien ändert nur das Erzeugen (Etappe 3)
 
 
 def load_scene(pid: str, scene_id: str) -> dict:
