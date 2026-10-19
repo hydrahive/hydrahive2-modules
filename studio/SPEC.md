@@ -1291,6 +1291,28 @@ Katalog → am Knopf steht Modellname + „kostet“ (wie heute), keine erfunden
 E2E 1600/1280 nur über sichtbare Texte → alte E2E grün → PR → Tills OK). Die Attrappe-Bilder (`frontend/neu/bilder/`)
 fliegen in G6 raus.
 
+#### Bauplan G1 – Gerüst + Schritt „Idee“ (19.10.)
+
+- **Seite** `/studio/neu` wird echt: Projektwahl oben links (gleiches gemerktes Projekt wie die Profi-Ansicht),
+  5 Schritte links, Haken aus dem echten Plan. Schritt 1 ist echt; Schritte 2–5 zeigen bis G2–G5 „Wird gerade gebaut –
+  bis dahin in der Profi-Ansicht“ mit Link. Die Attrappe-Bausteine der Schritte 2–5 bleiben als Vorlage im Ordner.
+- **Idee** (`POST plan/draft/idea`) bekommt zwei freiwillige Felder:
+  - `kind`: `trailer|explainer|short|music` → Zeile „Kind of film“ im Auftrag. Anderes → `studio_idea_invalid`.
+  - `shots_per_scene`: nur `1` erlaubt (sonst `studio_idea_invalid`). Dann: Auftrag verlangt genau einen Shot je Szene,
+    der Entwurf wird auf 1 Shot je Szene gekürzt; eine Szene ohne Shot bekommt einen aus ihrer Beschreibung.
+- **Übernehmen** (`POST plan/draft/apply`) bekommt `replace: true`: Entwurf zuerst vollständig prüfen, dann alle Szenen
+  löschen (Bilder/Clips bleiben in der Sammlung), Titel und Logline des Entwurfs **überschreiben**. Ohne `replace` wie
+  bisher (anhängen, gefüllte Kopf-Felder bleiben). Ungültiger Entwurf mit `replace` → nichts gelöscht.
+- **Ablauf im Browser:** „Geschichte vorschlagen“ = Idee → sofort übernehmen (kein Vorschau-Zwischenschritt). Gibt es
+  schon Szenen, fragt ein eigener Dialog „Ersetzen“ / „Hinten anhängen“ / „Abbrechen“. Format (quer/hoch) und die Idee
+  werden im Drehbuch-Kopf gespeichert (`aspect_ratio`, `description`), damit Schritt 1 beim Wiederkommen gefüllt ist.
+- **Karten:** Text = Szenenbeschreibung (sonst Titel). Speichern beim Verlassen des Felds, Anzeige „Gespeichert“.
+  Hat die Szene genau einen Shot, wird dessen Bildbeschreibung mit dem neuen Text ersetzt (damit Bild und Karte
+  zusammenpassen); bei mehreren Shots bleiben deren Beschreibungen. „Szene hinzufügen“ legt Szene + einen Shot an,
+  Titel aus den ersten Wörtern. Löschen und Verschieben über die vorhandenen Wege.
+- **Kosten:** „Geschichte vorschlagen“ trägt das Zeichen „kostet“ mit dem Text-Modell im Hinweis (kein erfundener Preis).
+- **Texte** de/en in `i18nGuided.ts` (`guided.*`).
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
