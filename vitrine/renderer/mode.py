@@ -4,6 +4,8 @@ Regeln (SPEC-STATUSZENTRALE.md, Till 18.10.2026):
 - Eingabe an .2 (Leerlauf < 1 s) weckt das Dashboard, auch nachts – aber nur, wenn es verfügbar ist.
 - Zurück zum Video nach `return_after` Sekunden ohne Eingabe oder auf Wunsch („Zurück“-Knopf, Datei mode.json).
 - Nach „Zurück“ weckt erst eine **neue** Eingabe wieder (sonst würde der Klick auf den Knopf sofort zurückholen).
+- S6: Solange Hydra im Chat antwortet (Datei chat_busy.json, höchstens 10 min frisch), zählt die Ruhezeit nicht. Die
+  Antwort weckt das Dashboard aber nicht, und „Zurück“ gilt weiterhin.
 """
 from __future__ import annotations
 
@@ -15,6 +17,7 @@ WAKE_MS = 1000
 BACK_GRACE = 0.5        # Eingaben bis 0,5 s nach „Zurück“ zählen noch zum Klick selbst (Leerlauf ist auf ms gerundet)
 RETURN_DEFAULT, RETURN_RANGE = 120, (30, 1800)
 _FILE = "mode.json"
+CHAT_BUSY_FILE, CHAT_BUSY_MAX = "chat_busy.json", 600
 
 
 def return_seconds(config: dict) -> int:
@@ -29,7 +32,8 @@ class Mode:
         self.current = "video"
         self._blocked_since: float | None = None      # Zeitpunkt von „Zurück“: ältere Eingaben wecken nicht
 
-    def update(self, *, idle_ms: int | None, available: bool, now: float, back_requested: bool = False) -> str:
+    def update(self, *, idle_ms: int | None, available: bool, now: float, back_requested: bool = False,
+               chat_busy: bool = False) -> str:
         if not available or idle_ms is None:
             self.current = "video"
             return self.current
@@ -38,13 +42,22 @@ class Mode:
             self.current, self._blocked_since = "video", now
             return self.current
         if self.current == "dashboard":
-            if idle_ms >= self.return_after * 1000:
+            if idle_ms >= self.return_after * 1000 and not chat_busy:
                 self.current = "video"
             return self.current
         fresh = idle_ms < WAKE_MS and (self._blocked_since is None or last_input > self._blocked_since + BACK_GRACE)
         if fresh:
             self.current, self._blocked_since = "dashboard", None
         return self.current
+
+
+def chat_busy(data_dir: Path, *, now: float) -> bool:
+    """Antwortet Hydra gerade im Chat am Gehäuse? Datei vom Backend; älter als 10 min oder kaputt → nein (verwaist)."""
+    try:
+        since = float(json.loads((data_dir / CHAT_BUSY_FILE).read_text())["since"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+    return 0 <= now - since <= CHAT_BUSY_MAX
 
 
 def request_back(data_dir: Path) -> None:

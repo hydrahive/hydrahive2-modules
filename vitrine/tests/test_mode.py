@@ -81,3 +81,40 @@ def test_zurueck_datei_wird_einmal_gelesen(tmp_path):
     assert mode.take_back_request(tmp_path) is False
     (tmp_path / "mode.json").write_text("kaputt")
     assert mode.take_back_request(tmp_path) is False
+
+
+# --- S6: nicht zurück zum Video, solange Hydra im Chat antwortet ---------------------------------------------------
+
+def test_chat_antwort_haelt_das_dashboard():
+    m = mode.Mode(return_after=120)
+    assert m.update(idle_ms=0, available=True, now=1000.0) == "dashboard"
+    assert m.update(idle_ms=200_000, available=True, now=1200.0, chat_busy=True) == "dashboard", "Hydra antwortet noch"
+    assert m.update(idle_ms=200_000, available=True, now=1201.0) == "video", "Antwort fertig → Ruhezeit zählt wieder"
+
+
+def test_chat_antwort_weckt_das_video_nicht():
+    m = mode.Mode(return_after=120)
+    assert m.update(idle_ms=500_000, available=True, now=1000.0, chat_busy=True) == "video"
+
+
+def test_zurueck_knopf_gilt_auch_waehrend_der_antwort():
+    m = mode.Mode(return_after=120)
+    m.update(idle_ms=0, available=True, now=1000.0)
+    assert m.update(idle_ms=5_000, available=True, now=1005.0, back_requested=True, chat_busy=True) == "video"
+
+
+def test_chat_busy_datei(tmp_path):
+    import json
+    assert mode.chat_busy(tmp_path, now=1000.0) is False
+    (tmp_path / "chat_busy.json").write_text(json.dumps({"since": 900.0}))
+    assert mode.chat_busy(tmp_path, now=1000.0) is True
+    assert mode.chat_busy(tmp_path, now=900.0 + mode.CHAT_BUSY_MAX + 1) is False, "verwaist nach 10 min"
+    (tmp_path / "chat_busy.json").write_text("kaputt")
+    assert mode.chat_busy(tmp_path, now=1000.0) is False
+    (tmp_path / "chat_busy.json").write_text(json.dumps({"since": 2000.0}))
+    assert mode.chat_busy(tmp_path, now=1000.0) is False, "Zeit in der Zukunft gilt nicht"
+
+
+def test_chat_busy_dateiname_wie_im_backend():
+    from backend import chat
+    assert chat.BUSY_FILE == mode.CHAT_BUSY_FILE

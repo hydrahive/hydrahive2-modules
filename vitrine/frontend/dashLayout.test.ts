@@ -53,6 +53,11 @@ describe("Anordnung der Statuszentrale", () => {
     expect(moveInPage(d, "machine", -1)).toBe(d.order)
   })
 
+  it("Chat ist standardmäßig an und bleibt beim Ergänzen erhalten", () => {
+    expect(normalizeDashboard({}).chat_enabled).toBe(true)
+    expect(normalizeDashboard({ chat_enabled: false }).chat_enabled).toBe(false)
+  })
+
   it("verschiebt und bleibt an den Rändern", () => {
     const o = [...AREAS]
     expect(moveArea(o, "home", -1).slice(0, 2)).toEqual(["home", "messages"])

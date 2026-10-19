@@ -104,3 +104,10 @@ def test_schema_streng_wie_dienst(bad):
     from backend.schemas import Config
     with pytest.raises(ValidationError):
         Config(dashboard=dict(S2, **bad))
+
+
+def test_chat_schalter():
+    assert dl.normalize({})["chat_enabled"] is True
+    assert dl.normalize(dict(S2, chat_enabled=False))["chat_enabled"] is False
+    assert dl.layout_ok(dict(S2, chat_enabled="ja")) is False
+    assert dl.layout_ok(dict(S2, chat_enabled=1)) is False

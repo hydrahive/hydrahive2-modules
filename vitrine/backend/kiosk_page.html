@@ -14,6 +14,12 @@ h2{font-size:34px;margin:0 0 8px;color:#69d7ff;font-weight:normal}
 #bereiche{display:flex;flex-direction:column;gap:18px;min-height:0}
 .raum{display:flex;justify-content:space-between;gap:24px;font-size:34px;margin:4px 0}
 .raum .werte{color:#e8eef8;white-space:nowrap}.raum.aus,.raum.aus .werte{color:#8d9ab0}.raum.warn .werte{color:#ffd166}
+#chat{display:flex;flex-direction:column;gap:14px;flex:1;min-height:0}
+#c-verlauf{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;min-height:0}
+.c-user,.c-hydra{font-size:34px;white-space:pre-wrap;padding:14px 20px;border-radius:18px;max-width:88%}
+.c-user{align-self:flex-end;background:#1d3a52}.c-hydra{align-self:flex-start;background:#151c2b;border:2px solid #24304a}
+#c-eingabe{font-size:36px;padding:16px 20px;border-radius:16px;border:3px solid #69d7ff;background:#0d1420;color:#e8eef8}
+#c-status{font-size:32px;color:#ffd166;min-height:40px}
 #zu-voll{font-size:32px;color:#8d9ab0;text-align:center}
 #offline{display:none;font-size:44px;color:#ff6b6b;text-align:center;padding:26px}
 body.offline #offline{display:block}body.offline section{opacity:.35}
@@ -44,6 +50,8 @@ button{font-size:48px;padding:24px 60px;border-radius:20px;border:3px solid #69d
   <div class="klein" id="mi-rigs"></div></section>
 <section id="b-machine"><h2>Rechner</h2><div class="reihe klein" id="r-werte"></div><div class="klein" id="r-mining"></div></section>
 </div>
+<div id="chat" style="display:none"><div id="c-verlauf"></div><div id="c-status"></div>
+  <input id="c-eingabe" maxlength="2000" autocomplete="off" placeholder="Einfach lostippen … (Enter schickt)"></div>
 <div id="zu-voll"></div>
 <div id="unten"><span class="klein" id="stand"></span><nav id="knubbel"></nav><button id="zurueck">Zurück zum Video</button></div>
 <script>
@@ -157,10 +165,12 @@ function arrange(lay) {
   for (const id of hidden) $("b-" + id).style.display = "none";
   const pageOf = (id) => pages[id] || 1;
   const used = [...new Set(order.filter((id) => $("b-" + id).style.display !== "none").map(pageOf))].sort();
-  if (Date.now() - lastInput > (lay.return_seconds || 120) * 1000) curPage = 1;
+  if (Date.now() - lastInput > (lay.return_seconds || 120) * 1000) { curPage = 1; if (chatOn && !chatSending) chatShow(false); }
+  if (chatOn && !chatEnabled(lay)) chatShow(false);
   if (!used.includes(curPage)) curPage = used.length ? used[0] : 1;
   for (const id of order) if (pageOf(id) !== curPage) $("b-" + id).style.display = "none";
-  knubbel(used);
+  knubbel(used, chatEnabled(lay));
+  if (chatOn) { for (const id of order) $("b-" + id).style.display = "none"; $("zu-voll").style.display = "none"; return; }
   // nie zu voll – je Seite: von unten ganze Bereiche ausblenden, bis alles passt. Platz = Bildschirm − Rand (2×30)
   // − Kopf − Fußzeile − Abstände (body gap 18). Der Hinweis braucht nur Platz, wenn etwas fehlt.
   const GAP = 18, NOTE = 38;
@@ -174,16 +184,23 @@ function arrange(lay) {
   $("zu-voll").style.display = cut ? "" : "none";
   $("zu-voll").textContent = cut ? cut + (cut === 1 ? " Bereich" : " Bereiche") + " ausgeblendet (zu voll)" : "";
 }
-function knubbel(used) {
+function knubbel(used, withChat) {
   const nav = $("knubbel"); nav.replaceChildren();
-  nav.style.display = used.length > 1 ? "" : "none";
-  if (used.length < 2) return;
+  nav.style.display = used.length + (withChat ? 1 : 0) > 1 ? "" : "none";
+  if (used.length + (withChat ? 1 : 0) < 2) return;
   for (const p of used) {
     const b = document.createElement("button");
-    b.textContent = p === curPage ? "●" : "○";
+    b.textContent = !chatOn && p === curPage ? "●" : "○";
     b.title = "Seite " + p;
-    b.onclick = () => { curPage = p; lastInput = Date.now(); if (lastData) render(lastData); };
+    b.onclick = () => { curPage = p; lastInput = Date.now(); chatShow(false); };
     nav.appendChild(b);
+  }
+  if (withChat) {
+    const c = document.createElement("button");
+    c.textContent = chatOn ? "●" : "Chat";
+    c.title = "Chat mit Hydra";
+    c.onclick = () => { lastInput = Date.now(); chatShow(true); };
+    nav.appendChild(c);
   }
 }
 let busy = false, lastData = null;
