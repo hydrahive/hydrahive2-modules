@@ -1466,7 +1466,7 @@ Workflow `flux2-klein-image.json` (Spec `docs/specs/local-video-backends.md`, Na
 |---|---|
 | L1 | **Lokale Bildmodelle.** Ist das Bildmodell `local:<backend>/<workflow>`, geht der Auftrag über den Kern (`resolve_local_workflow(…, "image")` + `run_local_media`) statt an OpenRouter: Text, Startwert, Vorlagen (dieselben, höchstens 3), Größe aus dem Format (kürzere Seite 768, auf 16 teilbar). Gilt für Bild machen, Bild ändern, Probebild und freie Bilder. Kein Schlüssel nötig. Fehler: Backend weg/kaputt → `provider_unreachable`, Workflow fehlt → `provider_rejected`, kein Bild → `empty_answer` (bestehende Texte). |
 | L2 | **Kosten.** Lokale Modelle kosten nichts – die Kostenanzeige zeigt bei `local:`-Modellen nichts an (wie schon im Frontend bei Modellen ohne Preis). |
-| L3 | **Drehbuch-Antwort wiederholen.** Ist die Antwort der Text-KI beim „Geschichte vorschlagen“ unbrauchbar (kein gültiges JSON), wird **einmal** neu gefragt, bevor der Fehler kommt (wie beim Übersetzen). |
+| L3 | **Drehbuch-Antwort retten oder wiederholen.** Fehlen am Ende der Antwort nur schließende Klammern (gemma4 lokal: 2 von 3 Antworten), werden sie ergänzt. Ist die Antwort trotzdem unbrauchbar, wird **einmal** neu gefragt, bevor der Fehler kommt. Probe mit gemma4: vorher 3 von 5 brauchbar, danach 5 von 5 (12–33 s). |
 
 Nicht im Umfang: lokale Videos (Wan läuft, aber Minuten je Clip – eigener Schritt), lokale Musik, Untertitel-Zeiten lokal.
 
