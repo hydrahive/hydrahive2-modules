@@ -16,6 +16,9 @@ export const DEFAULT_PRESET: Preset = { aspect: "screenplay", quality: "standard
 
 type T = (k: string, o?: Record<string, unknown>) => string
 
+/** Text-Schlüssel eines Formats: „9:16“ → „9x16“ (i18next liest „:“ sonst als Namespace-Trenner). */
+export const aspectKey = (a: string) => `deliver_aspect.${a.replace(":", "x")}`
+
 const even = (x: number) => Math.round(x / 2) * 2
 
 /** Ausgabegröße: kürzere Seite = Qualität, längere aus dem Format (gerade gerundet); „screenplay“ nimmt das Drehbuch. */

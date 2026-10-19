@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import { ASPECTS, outputSize, QUALITIES, type Aspect, type Preset, type Quality } from "./deliverLogic"
+import { ASPECTS, aspectKey, outputSize, QUALITIES, type Aspect, type Preset, type Quality } from "./deliverLogic"
 
 interface Props {
   preset: Preset
@@ -22,7 +22,7 @@ export function DeliverPreset({ preset, screenplay, disabled = false, onChange }
           <span className="text-[11px] font-bold text-[#8d9ab0]">{t("deliver_aspect_label")}</span>
           <select value={preset.aspect} disabled={disabled} data-deliver-aspect className={field}
             onChange={(e) => onChange?.({ ...preset, aspect: e.target.value as Aspect })}>
-            {ASPECTS.map((a) => <option key={a} value={a}>{a === "screenplay" ? t("deliver_aspect.screenplay", { aspect: screenplay }) : t(`deliver_aspect.${a}`)}</option>)}
+            {ASPECTS.map((a) => <option key={a} value={a}>{a === "screenplay" ? t("deliver_aspect.screenplay", { aspect: screenplay }) : t(aspectKey(a))}</option>)}
           </select>
         </label>
         <label className="flex flex-col gap-1">

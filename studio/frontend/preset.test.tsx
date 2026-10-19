@@ -7,7 +7,8 @@ vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() =
 vi.mock("@/shared/files", () => ({ fileUrl: (p: string) => `/f${p}` }))
 import { DeliverPanel } from "./DeliverPanel"
 import { DeliverPreset } from "./DeliverPreset"
-import { ASPECTS, QUALITIES, downloadName, outputSize, presetLabel } from "./deliverLogic"
+import i18next from "i18next"
+import { ASPECTS, QUALITIES, aspectKey, downloadName, outputSize, presetLabel } from "./deliverLogic"
 import { studioI18n } from "./i18n"
 import { renderApi, type RenderItem } from "./renderApi"
 import type { TimelineClip } from "./timelineApi"
@@ -101,7 +102,7 @@ describe("7b – Texte", () => {
   it("de/en: alle Formate, Qualitäten und der Fehler studio_render_bad_preset", () => {
     for (const lang of ["de", "en"] as const) {
       const s = studioI18n[lang].studio as unknown as Record<string, unknown> & { deliver_aspect: Record<string, string>; deliver_quality: Record<string, string>; deliver_err: Record<string, string> }
-      for (const a of ASPECTS) expect(s.deliver_aspect[a], `${lang} ${a}`).toBeTruthy()
+      for (const a of ASPECTS) expect(s.deliver_aspect[aspectKey(a).split(".")[1]], `${lang} ${a}`).toBeTruthy()
       for (const q of QUALITIES) expect(s.deliver_quality[q], `${lang} ${q}`).toBeTruthy()
       expect(s.deliver_err.studio_render_bad_preset).toBeTruthy()
       for (const k of ["deliver_result", "deliver_film_preset", "deliver_aspect_label", "deliver_quality_label"]) expect(s[k], `${lang} ${k}`).toBeTruthy()
@@ -139,5 +140,18 @@ describe("7b – Vorlagen: Auswahl bedienen", () => {
     expect(out).toMatch(/<select[^>]*disabled=""[^>]*data-deliver-aspect/)
     expect(out).toMatch(/<select[^>]*disabled=""[^>]*data-deliver-quality/)
     expect(html(<DeliverPanel {...base} aspect="16:9" />)).not.toMatch(/<select[^>]*disabled=""/)
+  })
+})
+
+describe("7b – Texte mit echtem i18next (Doppelpunkt im Format)", () => {
+  it("jedes Format zeigt seinen vollen Text, nicht nur die Zahl nach dem „:“", async () => {
+    const inst = i18next.createInstance()
+    await inst.init({ lng: "de", resources: studioI18n, ns: ["studio"], defaultNS: "studio", interpolation: { escapeValue: false } })
+    const t = inst.getFixedT("de", "studio")
+    expect(t(aspectKey("9:16"))).toBe("9:16 Hochformat (Handy, Reels, Shorts)")
+    expect(t(aspectKey("16:9"))).toContain("16:9 Querformat")
+    expect(t(aspectKey("1:1"))).toBe("1:1 Quadrat")
+    expect(t("deliver_aspect.screenplay", { aspect: "4:3" })).toBe("Wie im Drehbuch (4:3)")
+    expect(t("deliver_film_preset", { aspect: "9:16", quality: t("deliver_quality.preview") })).toBe("9:16 · Vorschau 480p")
   })
 })

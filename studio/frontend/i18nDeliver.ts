@@ -4,11 +4,12 @@ export const deliver_de = {
   deliver_summary: "Film: {{length}} min · {{clips}} Clips",
   deliver_aspect_label: "Format",
   deliver_quality_label: "Qualität",
+  // Schlüssel ohne Doppelpunkt: i18next liest „:“ als Namespace-Trenner (aspectKey in deliverLogic.ts)
   deliver_aspect: {
     screenplay: "Wie im Drehbuch ({{aspect}})",
-    "16:9": "16:9 Querformat (Bildschirm, YouTube)",
-    "9:16": "9:16 Hochformat (Handy, Reels, Shorts)",
-    "1:1": "1:1 Quadrat",
+    "16x9": "16:9 Querformat (Bildschirm, YouTube)",
+    "9x16": "9:16 Hochformat (Handy, Reels, Shorts)",
+    "1x1": "1:1 Quadrat",
   },
   deliver_quality: { preview: "Vorschau 480p", standard: "Standard 720p", high: "Hoch 1080p" },
   deliver_result: "Ergebnis: {{width}}×{{height}}. Das Bild wird eingepasst, nichts wird abgeschnitten – freie Ränder bleiben schwarz.",
@@ -39,9 +40,9 @@ export const deliver_en: typeof deliver_de = {
   deliver_quality_label: "Quality",
   deliver_aspect: {
     screenplay: "As in the screenplay ({{aspect}})",
-    "16:9": "16:9 landscape (screen, YouTube)",
-    "9:16": "9:16 portrait (phone, Reels, Shorts)",
-    "1:1": "1:1 square",
+    "16x9": "16:9 landscape (screen, YouTube)",
+    "9x16": "9:16 portrait (phone, Reels, Shorts)",
+    "1x1": "1:1 square",
   },
   deliver_quality: { preview: "Preview 480p", standard: "Standard 720p", high: "High 1080p" },
   deliver_result: "Result: {{width}}×{{height}}. The picture is fitted in, nothing is cut off – free edges stay black.",
