@@ -10,7 +10,7 @@ from _timeline_helpers import _code
 def test_empty_until_saved_and_nothing_created(client, auth_headers, ws) -> None:
     r = client.get(f"{S}/de", headers=auth_headers)
     assert r.status_code == 200
-    assert r.json() == {"language": "de", "source": "", "revision": 0, "cues": []}
+    assert r.json() == {"language": "de", "source": "", "revision": 0, "cues": []}             # kein „from“ ohne Übersetzung
     assert not (ws / "studio/subtitles").exists()
 
 

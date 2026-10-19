@@ -84,8 +84,10 @@ def load(pid: str, lang: str) -> dict:
     except plan.PlanError:
         cues = []
     rev = raw.get("revision")
+    origin = raw.get("from") if raw.get("from") in _clean.LANGUAGES else ""
     return {"language": lang, "source": raw.get("source") if raw.get("source") in SOURCES else "manual",
-            "revision": rev if isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0 else 0, "cues": cues}
+            "revision": rev if isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0 else 0, "cues": cues,
+            **({"from": origin} if origin else {})}
 
 
 def write(pid: str, lang: str, cues: list[dict], revision: Any, source: str, *, origin: str = "") -> dict:

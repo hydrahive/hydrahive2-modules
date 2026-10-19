@@ -43,7 +43,7 @@ def test_translate_keeps_times_and_order(client, auth_headers, ws) -> None:
     assert job["status"] == "done", job
     assert job["result"] == {"count": 3, "from": "de", "language": "en"}
     en = client.get(f"{S}/en", headers=auth_headers).json()
-    assert en["source"] == "translation" and en["revision"] == 1
+    assert en["source"] == "translation" and en["revision"] == 1 and en["from"] == "de"
     assert [(c["start"], c["end"]) for c in en["cues"]] == [(c["start"], c["end"]) for c in de]
     assert [c["text"] for c in en["cues"]] == ["There he is at last.", "Old Ole is coming home.", "Yes."]
     assert client.get(f"{S}/de", headers=auth_headers).json()["cues"] == de                # Original unverändert

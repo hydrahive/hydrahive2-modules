@@ -66,6 +66,24 @@ def test_render_with_subtitles(client, auth_headers, ws) -> None:
 
 
 @needs_ffmpeg
+def test_render_with_music_and_subtitles(client, auth_headers, ws) -> None:
+    """Die Untertitel-Eingaben kommen nach Bild, Ton und Musik – die Zählung der Eingänge muss stimmen."""
+    from _render_helpers import make_audio, put_tracks
+    img = make_image(ws, "a.png", "160x90")
+    m = make_audio(ws, "m.wav", 2, freq=220)
+    put_tracks(client, auth_headers, [clip("image", 0, 0, 2, img)], [], [{**clip("audio", 0, 0, 2, m), "kind": "audio"}])
+    put(client, auth_headers, [cue(1, 0.2, 1.2, "Mit Musik")])
+    client.post(f"{R}/render", headers=auth_headers, json={"subtitles": True})
+    job = wait_render(client, auth_headers)
+    assert job["status"] == "done", job
+    f = ws / job["result"]["rel"]
+    assert [s["codec_type"] for s in _streams(f)] == ["video", "audio", "subtitle"]
+    srt = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(f), "-map", "0:s:0", "-f", "srt", "-"], capture_output=True, text=True,
+                         timeout=30, check=True).stdout
+    assert "Mit Musik" in srt
+
+
+@needs_ffmpeg
 def test_render_without_the_box_has_no_subtitles(client, auth_headers, ws) -> None:
     img = make_image(ws, "a.png", "160x90")
     put_timeline(client, auth_headers, [clip("image", 0, 0, 2, img)])

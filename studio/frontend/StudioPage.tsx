@@ -42,9 +42,7 @@ import { MusicForm } from "./MusicForm"
 import { useMusic } from "./useMusic"
 import { MixInspector } from "./MixInspector"
 import { editing, filmWs, useCutWorkspace } from "./useCutWorkspace"
-import { useSubtitleTab } from "./useSubtitleTab"
-import { useSubtitles } from "./useSubtitles"
-import { useHear } from "./useHear"
+import { useSubtitleWorkspace } from "./useSubtitleWorkspace"
 import { clipsOf, findClip } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
 import { useDraft } from "./useDraft"
@@ -75,9 +73,8 @@ export function StudioPage() {
   // Vorschau das Medium – dann bleibt das Abspielen bei ihm, Teilen/Löschen/Rückgängig wirken weiter auf den Schnitt.
   const subbing = workspace === "subtitles"
   const p = usePlan(lib.projectId, workspace === "plan" || workspace === "generate" || workspace === "deliver" || subbing)  // Format, Sprache
-  const sub = useSubtitles(lib.projectId, p.plan?.screenplay.language ?? "", subbing, cp.time, (x) => cut.setNotice(x))
-  const hear = useHear(lib.projectId, p.plan?.screenplay.language ?? "", subbing, sub.flush, () => void sub.reload(), (x) => cut.setNotice(x))
-  const st = useSubtitleTab(sub, hear, { time: cp.time, view: followView(cut.view, cp.time, cp.total), onSeek: cp.seek, plan: p.plan })
+  const { st, sub } = useSubtitleWorkspace(lib.projectId, subbing, p.plan, { time: cp.time, view: followView(cut.view, cp.time, cp.total),
+    onSeek: cp.seek }, (x) => cut.setNotice(x))
   const s = useStudioState(lib.items, workspace, changeWs, (item) => (subbing ? (item ? { edit: st.keys } : { ...cp, edit: st.keys })
     : !editing(workspace) ? null : item ? { edit: editKeys, toggleSnap: ed.toggleSnap } : { ...cp, edit: editKeys, toggleSnap: ed.toggleSnap }))
   const planning = s.workspace === "plan"
@@ -120,7 +117,8 @@ export function StudioPage() {
         {delivering ? (
           <div className="min-h-0 flex-1">
             <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} job={dv.job}
-              busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")} />
+              busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")}
+              subtitleLanguages={dv.subtitleLanguages} withSubtitles={dv.withSubtitles} onWithSubtitles={dv.setWithSubtitles} />
           </div>
         ) : <>
         <div className="flex min-h-0 flex-col" style={{ flex: `${100 - s.layout.timeline} 1 0` }}>

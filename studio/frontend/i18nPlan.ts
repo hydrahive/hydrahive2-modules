@@ -7,12 +7,14 @@ import { free_de, free_en } from "./i18nFree"
 import { guide_de, guide_en } from "./i18nGuide"
 import { jobs_de, jobs_en } from "./i18nJobs"
 import { subtitles_de, subtitles_en } from "./i18nSubtitles"
+import { translate_de, translate_en } from "./i18nTranslate"
 import { models_de, models_en } from "./i18nModels"
 
 export const plan_de = {
   ...cam_de,
   ...jobs_de,
   ...subtitles_de,
+  ...translate_de,
   ...cut_de,
   ...guide_de,
   ...draft_de,
@@ -97,6 +99,7 @@ export const plan_de = {
     studio_subtitles_too_long: "Der Film ist länger als 60 Minuten. So lange Filme können noch nicht angehört werden.",
     studio_subtitles_cloud_model: "Für das Heraushören ist ein lokales Modell eingestellt. In der Admin-Konsole unter KI-Modelle ein Cloud-Modell für Transkription wählen.",
     studio_subtitles_not_empty: "Es gibt schon Untertitel. Sie würden ersetzt.",
+    studio_subtitles_same_language: "Ausgangs- und Zielsprache sind gleich.",
     studio_music_needs_text: "Bitte beschreiben, wie die Musik klingen soll.",
     studio_music_invalid: "Die Länge muss zwischen 5 und 180 Sekunden liegen.",
     studio_variant_unknown: "Dieses Bild gehört nicht zu diesem Shot.",
@@ -125,6 +128,7 @@ export const plan_en: typeof plan_de = {
   ...cam_en,
   ...jobs_en,
   ...subtitles_en,
+  ...translate_en,
   ...cut_en,
   ...guide_en,
   ...draft_en,
@@ -209,6 +213,7 @@ export const plan_en: typeof plan_de = {
     studio_subtitles_too_long: "The film is longer than 60 minutes. Films that long cannot be listened to yet.",
     studio_subtitles_cloud_model: "A local model is set for listening. Choose a cloud model for transcription in the admin console under AI models.",
     studio_subtitles_not_empty: "There are already subtitles. They would be replaced.",
+    studio_subtitles_same_language: "Source and target language are the same.",
     studio_music_needs_text: "Please describe how the music should sound.",
     studio_music_invalid: "The length must be between 5 and 180 seconds.",
     studio_variant_unknown: "This image does not belong to this shot.",
