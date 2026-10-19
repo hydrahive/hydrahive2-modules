@@ -29,6 +29,7 @@ describe("G4 – Logik", () => {
     expect(motionState(shot({ still: true }))).toBe("still")
     expect(motionState(shot({ video_rel: "v.mp4" }))).toBe("moving")
     expect(motionState(shot({ video_rel: "v.mp4", still: true }))).toBe("moving")       // Video gewinnt
+    expect(motionState(shot({ video_rel: "v.mp4", image_rel: null }))).toBe("moving")  // Bild gelöscht, Clip noch da
   })
 
   it("übrig = mit Bild, ohne Video, kein Standbild", () => {
@@ -73,7 +74,8 @@ describe("G4 – Oberfläche", () => {
   it("ohne Bild: Hinweis, keine Knöpfe", () => {
     const out = card(shot({ image_rel: null }))
     expect(out).toContain("guided.need_image")
-    expect(buttons(out)).toEqual([])
+    expect(out).not.toContain("<button")
+    expect(out).not.toContain('class="flex flex-wrap gap-2"')                          // keine leere Knopfzeile
   })
 
   it("läuft: Hinweis; Fehler: Text + Knöpfe bleiben", () => {
@@ -81,6 +83,8 @@ describe("G4 – Oberfläche", () => {
     const out = card(shot(), [job({ status: "failed", error: "video_failed" })])
     expect(out).toContain("job_err.video_failed")
     expect(buttons(out)).toContain("guided.move costs_badge")
+    // altes fehlgeschlagenes Video stört nicht, wenn inzwischen eins da ist
+    expect(card(shot({ video_rel: "studio/media/videos/v.mp4" }), [job({ status: "failed", error: "video_failed" })])).not.toContain("job_err.video_failed")
   })
 
   it("Kopf: Sammelknopf je nach Stand, Fortschritt mit Anhalten", () => {
