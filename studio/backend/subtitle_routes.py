@@ -7,10 +7,18 @@ from fastapi import APIRouter, Body, Depends
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import plan, subtitle_format, subtitle_hear, subtitle_speech, subtitles
+from . import (
+    plan,
+    subtitle_format,
+    subtitle_hear,
+    subtitle_speech,
+    subtitle_translate,
+    subtitles,
+)
 from ._guard import guard
 
 router = APIRouter(prefix="/projects/{project_id}/subtitles/{lang}")
+list_router = APIRouter(prefix="/projects/{project_id}/subtitles")
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
 
 
@@ -51,6 +59,18 @@ def from_audio(project_id: str, lang: str, auth: Auth, data: Annotated[Any, Body
     guard(auth[0], project_id)
     replace = isinstance(data, dict) and data.get("replace") is True
     return _run(subtitle_hear.start, project_id, lang, replace=replace)
+
+
+@router.post("/translate", status_code=202)
+def translate(project_id: str, lang: str, auth: Auth, data: Annotated[Any, Body()] = None) -> dict:
+    guard(auth[0], project_id)
+    return _run(subtitle_translate.start, project_id, lang, data)
+
+
+@list_router.get("")
+def list_languages(project_id: str, auth: Auth) -> dict:
+    guard(auth[0], project_id)
+    return subtitles.languages(project_id)
 
 
 @router.get("/export")

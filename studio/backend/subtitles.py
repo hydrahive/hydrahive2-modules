@@ -88,13 +88,22 @@ def load(pid: str, lang: str) -> dict:
             "revision": rev if isinstance(rev, int) and not isinstance(rev, bool) and rev >= 0 else 0, "cues": cues}
 
 
-def write(pid: str, lang: str, cues: list[dict], revision: Any, source: str) -> dict:
+def write(pid: str, lang: str, cues: list[dict], revision: Any, source: str, *, origin: str = "") -> dict:
     current = load(pid, lang)["revision"]
     if revision != current or isinstance(revision, bool):
         raise plan.PlanError("studio_subtitles_conflict", 409)
-    out = {"language": lang, "source": source, "revision": current + 1, "cues": cues}
+    out = {"language": lang, "source": source, "revision": current + 1, "cues": cues, **({"from": origin} if origin else {})}
     write_json(root(pid, create=True) / "subtitles" / f"{lang}.json", out)
     return out
+
+
+def languages(pid: str) -> dict:
+    """Sprache des Films zuerst (auch ohne Untertitel), dann alle Sprachen mit gespeicherten Untertiteln."""
+    film = plan.get_head(pid)["language"]
+    d = root(pid) / "subtitles"
+    found = sorted(p.stem for p in d.glob("*.json") if p.stem in _clean.LANGUAGES) if d.is_dir() else []
+    return {"film": film, "languages": [{"language": lang, "count": len(load(pid, lang)["cues"])}
+                                        for lang in dict.fromkeys([film, *found])]}
 
 
 def save(pid: str, lang: str, data: Any) -> dict:

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from . import mix_args
 from .mix import Mixer
+from .subtitle_format import subtitle_args
 
 SIZES = {"16:9": (1280, 720), "9:16": (720, 1280), "1:1": (1080, 1080), "4:3": (960, 720), "21:9": (1680, 720)}
 DEFAULT_SIZE = SIZES["16:9"]
@@ -131,7 +132,8 @@ def _media(base: Path, rel: str) -> str:
 
 
 def command(segs: list[dict], base: Path, out: Path, *, size: tuple[int, int], fps: int,
-            text_files: dict[int, Path] | None = None, audio: list[dict] | None = None, mixer: Mixer | None = None) -> list[str]:
+            text_files: dict[int, Path] | None = None, audio: list[dict] | None = None, mixer: Mixer | None = None,
+            subtitles: list[dict] | None = None, default_language: str = "") -> list[str]:
     """`text_files`: je Platzhalter-Abschnitt (Index) eine Datei mit label_text(); ohne Datei keine Schrift.
     `audio`: Teile aus audio_parts(); `mixer`: Mischpult (5b). Ohne beides bleibt der Graph genau wie in 4d."""
     w, h = size
@@ -170,7 +172,9 @@ def command(segs: list[dict], base: Path, out: Path, *, size: tuple[int, int], f
     graph.append(f"{''.join(pairs)}concat=n={len(segs)}:v=1:a=1[v][{'a0' if extra_graph else 'a'}]")
     args += extra_args
     graph += extra_graph
-    args += ["-filter_complex", ";".join(graph), "-map", "[v]", "-map", "[a]",
+    sub_in, sub_map = subtitle_args(subtitles or [], n_in + extra_args.count("-i"), default_language)
+    args += sub_in
+    args += ["-filter_complex", ";".join(graph), "-map", "[v]", "-map", "[a]", *sub_map,
              "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p", "-r", str(fps),
              "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart",
              "-progress", "pipe:1", "-nostats", str(out)]

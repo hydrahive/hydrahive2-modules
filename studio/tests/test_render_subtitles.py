@@ -37,8 +37,9 @@ def test_command_adds_subtitle_tracks_after_everything_else() -> None:
 
 def test_iso_codes() -> None:
     from backend._clean import LANGUAGES
-    assert all(len(ra.iso639_2(lang)) == 3 for lang in LANGUAGES)
-    assert ra.iso639_2("de") == "ger" and ra.iso639_2("zh") == "chi" and ra.iso639_2("uk") == "ukr"
+    from backend.subtitle_format import iso639_2
+    assert all(len(iso639_2(lang)) == 3 and iso639_2(lang) != "und" for lang in LANGUAGES)
+    assert iso639_2("de") == "ger" and iso639_2("zh") == "chi" and iso639_2("uk") == "ukr" and iso639_2("xx") == "und"
 
 
 @needs_ffmpeg

@@ -61,9 +61,13 @@ def test_lines_are_wrapped_and_cut(client, auth_headers, ws) -> None:
         client.post(T, headers=auth_headers, json={"from": "de"})
         assert _wait(client, auth_headers)["status"] == "done"
     cues = client.get(f"{S}/en", headers=auth_headers).json()["cues"]
-    assert all(len(line) <= 42 for line in cues[0]["text"].split("\n")) and cues[0]["text"].count("\n") <= 1
-    assert len(cues[1]["text"]) <= 200
-    assert cues[2]["text"] == "Yes\nindeed"
+    lines = cues[0]["text"].split("\n")
+    assert len(lines) == 2 and " ".join(lines) == long and abs(len(lines[0]) - len(lines[1])) < 15   # kein Wort weg, ausgewogen
+    assert len(cues[1]["text"]) <= 200 and cues[1]["text"].count("\n") <= 1
+    short = "There he is at last."
+    assert cues[2]["text"] == "Yes indeed"                                 # Umbruch neu gesetzt, nicht übernommen
+    from backend.subtitle_translate import fit
+    assert fit(short) == short and fit("a " * 30).count("\n") == 1 and all(len(x) <= 42 for x in fit("a " * 30).split("\n"))
 
 
 def test_wrong_count_is_asked_again_once_then_fails(client, auth_headers, ws) -> None:

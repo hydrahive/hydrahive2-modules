@@ -1102,8 +1102,8 @@ Wyoming liefert keine Zeiten. (Die schlechte Erkennung in der Probe lag an der e
   eine nummerierte Liste (Kontext des ganzen Films, damit Namen und Ton einheitlich bleiben) und antwortet als JSON-Liste
   in derselben Reihenfolge. Je Aufruf höchstens 80 Einträge; fehlt in der Antwort ein Eintrag oder passt die Anzahl
   nicht, wird dieser Block einmal neu angefragt, sonst bricht der Auftrag ab (`bad_answer`) – lieber nichts als falsch
-  zugeordnete Zeilen. Zu lange Zeilen werden wie in 6a umbrochen (≤ 2 Zeilen à 42 Zeichen; was nicht passt, wird
-  auf 200 Zeichen gekürzt). Quelle `translation`, `from` = Ausgangssprache.
+  zugeordnete Zeilen. Zeilen werden neu umbrochen: passt der Text in 2 × 42 Zeichen wie in 6a, sonst in zwei
+  ausgewogene, etwas längere Zeilen – die Zeiten bleiben, also wird kein Wort weggelassen (erst ab 200 Zeichen gekürzt). Quelle `translation`, `from` = Ausgangssprache.
 - **Auftrag** `translate` (Ziel `subtitles:<projekt>:<zielsprache>`, `studio_subtitles_running`). Wird die
   Zielsprache währenddessen geändert, wird nicht überschrieben (`changed`). Fehler: `provider_failed` (Text-KI nicht
   erreichbar/abgelehnt), `bad_answer`, `changed`. Vor dem Start: `studio_subtitles_empty` (Ausgangssprache leer),
