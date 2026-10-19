@@ -53,7 +53,7 @@ export interface BatchPreview { count: number; model: string }
 
 export interface Job {
   id: string
-  kind: "image" | "video" | "speech" | "probe" | "free_images" | "render" | "music" | "transcribe" | "translate" | BatchKind
+  kind: "image" | "video" | "speech" | "probe" | "film" | "free_images" | "render" | "music" | "transcribe" | "translate" | BatchKind
   target: string
   scene_id: string
   status: "queued" | "running" | "done" | "failed" | "cancelled"

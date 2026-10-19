@@ -13,7 +13,7 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 from hydrahive.projects._config_io import list_for_user
 
-from . import library, media, overview, plan, render, voice_provider, waveform
+from . import film, library, media, overview, plan, render, voice_provider, waveform
 from ._guard import guard
 from .draft_routes import router as draft_router
 from .element_routes import router as element_router
@@ -47,6 +47,16 @@ def post_render(project_id: str, auth: Auth, data: Annotated[Any, Body()] = None
         body = data if isinstance(data, dict) else {}
         return render.start(project_id, with_subtitles=body.get("subtitles") is True, aspect=body.get("aspect"),
                             quality=body.get("quality"))
+    except plan.PlanError as e:
+        raise coded(e.status, e.code)
+
+
+@router.post("/projects/{project_id}/film", status_code=202)
+def post_film(project_id: str, auth: Auth, data: Annotated[Any, Body()] = None) -> dict:
+    """G5: „Film machen“ – Stimme, Zeitleiste, Musik, Untertitel, Ausgabe in einem Auftrag."""
+    guard(auth[0], project_id)
+    try:
+        return film.start(project_id, data)
     except plan.PlanError as e:
         raise coded(e.status, e.code)
 
