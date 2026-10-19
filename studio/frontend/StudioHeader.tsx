@@ -1,4 +1,4 @@
-import { Command, HelpCircle, Loader2, RefreshCw } from "lucide-react"
+import { Command, Footprints, HelpCircle, Loader2, RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { StudioProject } from "./api"
 import { WORKSPACES, type Workspace } from "./workspaces"
@@ -52,6 +52,10 @@ export function StudioHeader({ projects, projectId, onProject, onReload, workspa
         className="flex items-center gap-1.5 rounded-[4px] border border-[#2a364b] px-2 py-1 text-[11px] text-[#8d9ab0] hover:text-[#e8eef8]">
         <Command size={12} /> {t("command_hint")}
       </button>
+      <a href="/studio" data-studio-action="guided"
+        className="flex items-center gap-1 rounded-[4px] border border-[#69d7ff]/60 px-2 py-1 text-[11px] font-bold text-[#69d7ff] hover:bg-[#1c2940]">
+        <Footprints size={13} /> {t("guided.to_guided")}
+      </a>
       <button type="button" onClick={onHelp} data-studio-action="help"
         className="flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 text-[11px] font-bold text-[#c3ccdd] hover:text-[#e8eef8]">
         <HelpCircle size={13} /> {t("howto_title")}

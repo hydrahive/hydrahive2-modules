@@ -149,3 +149,15 @@ export function filmNotes(job: Job | null): string[] {
   if (!r) return []
   return [...(r.notes ?? []), ...((r.voice_failed ?? 0) > 0 ? ["voice_failed"] : [])]
 }
+
+// ---- G6 -------------------------------------------------------------------------------------------------------
+const GUIDED_SEEN = "hh.studio.guided-seen.v1"
+
+/** Allererster Besuch des geführten Wegs in diesem Browser? Merkt sich die Antwort; ohne Speicher nie. */
+export function firstGuidedVisit(store: Pick<Storage, "getItem" | "setItem"> | undefined = globalThis.localStorage): boolean {
+  try {
+    if (!store || store.getItem(GUIDED_SEEN)) return false
+    store.setItem(GUIDED_SEEN, "1")
+    return true
+  } catch { return false }
+}

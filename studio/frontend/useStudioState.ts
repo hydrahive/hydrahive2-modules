@@ -4,7 +4,6 @@ import { loadLayout, saveLayout, dragLayout, type StudioLayout } from "./layout"
 import { actionFor, type ShortcutAction } from "./shortcuts"
 import { usePlayer } from "./usePlayer"
 import type { Workspace } from "./workspaces"
-import { firstVisit } from "./guideLogic"
 
 const FPS = 25
 
@@ -27,7 +26,7 @@ export function useStudioState(items: LibraryItem[], workspace: Workspace, setWo
   const [snap, setSnap] = useState(true)
   const [mediaId, setMediaId] = useState<string | null>(null)
   const [layout, setLayout] = useState<StudioLayout>(() => loadLayout())
-  const [dialog, setDialog] = useState<"help" | "command" | null>(() => (firstVisit() ? "help" : null))   // C3: erster Besuch → Hilfe
+  const [dialog, setDialog] = useState<"help" | "command" | null>(null)   // G6: kein Aufgehen von selbst – der geführte Weg führt ein
   const [toast, setToast] = useState<string | null>(null)
 
   const item = items.find((i) => i.id === mediaId) ?? null

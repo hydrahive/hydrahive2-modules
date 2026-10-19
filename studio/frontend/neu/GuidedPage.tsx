@@ -1,9 +1,11 @@
 /** Geführter Weg des Studios (studio/SPEC.md „Bauplan G“): Idee → Figuren & Orte → Bilder → Bewegung → Film. */
-import { ArrowLeft, ArrowRight, Check, Clapperboard, Film, ImageIcon, Lightbulb, Users } from "lucide-react"
+import { useState } from "react"
+import { ArrowLeft, ArrowRight, Check, Clapperboard, CircleHelp, Film, ImageIcon, Lightbulb, Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
-import { castOpen, doneSteps, missingImages, motionLeft, STEP_IDS, type StepId } from "./guidedLogic"
+import { castOpen, doneSteps, firstGuidedVisit, missingImages, motionLeft, STEP_IDS, type StepId } from "./guidedLogic"
+import { GuidedHelp } from "./GuidedHelp"
 import { StepCastLive } from "./StepCastLive"
 import { StepClipsLive } from "./StepClipsLive"
 import { StepFilmLive } from "./StepFilmLive"
@@ -17,7 +19,7 @@ import { useGuided, type GuidedState } from "./useGuided"
 
 const ICONS: Record<StepId, typeof Lightbulb> = { 1: Lightbulb, 2: Users, 3: ImageIcon, 4: Clapperboard, 5: Film }
 
-function Steps({ g, filmDone }: { g: GuidedState; filmDone: boolean }) {
+function Steps({ g, filmDone, onHelp }: { g: GuidedState; filmDone: boolean; onHelp: () => void }) {
   const { t } = useTranslation("studio")
   const done = { ...doneSteps(g.plan), 5: filmDone }
   const title = g.plan?.screenplay.title
@@ -30,6 +32,9 @@ function Steps({ g, filmDone }: { g: GuidedState; filmDone: boolean }) {
           {(g.projects ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </label>
+      <button type="button" onClick={onHelp} className="mb-3 flex items-center gap-1.5 self-start rounded-[6px] border border-[#2a364b] px-2.5 py-1.5 text-xs font-bold text-[#c3ccdd] hover:bg-[#1c2940]">
+        <CircleHelp size={14} /> {t("guided.help_open")}
+      </button>
       <div className="mb-1 text-xs font-black uppercase tracking-[0.2em] text-[#8d9ab0]">{t("guided.mine")}</div>
       <div className="mb-3 line-clamp-2 text-base font-bold leading-snug text-[#f2f6fc]">{title || t("guided.new_film")}</div>
       {STEP_IDS.map((n) => {
@@ -51,7 +56,7 @@ function Steps({ g, filmDone }: { g: GuidedState; filmDone: boolean }) {
       <div className="mt-auto space-y-2 border-t border-[#1c2433] pt-3 text-xs text-[#8d9ab0]">
         <p>{t("guided.costs_text")}</p>
         <p>{t("guided.pro_text")}</p>
-        <a href="/studio" className="font-semibold text-[#69d7ff] underline">{t("guided.pro_link")}</a>
+        <a href="/studio/profi" className="font-semibold text-[#69d7ff] underline">{t("guided.pro_link")}</a>
       </div>
     </nav>
   )
@@ -82,6 +87,7 @@ function Footer({ g }: { g: GuidedState }) {
 export function GuidedPage() {
   const { t } = useTranslation("studio")
   const g = useGuided(t)
+  const [help, setHelp] = useState(firstGuidedVisit)
   const c = useCast(g, t, g.step === 2)
   const im = useImages(g, g.step === 3)
   const cl = useClips(g, g.step === 4)
@@ -90,7 +96,7 @@ export function GuidedPage() {
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
       <CockpitTopbar active="/studio" context={t("title")} />
       <div className="flex min-h-0 flex-1 text-[#e8eef8]" data-guided-root>
-        <Steps g={g} filmDone={f.films.length > 0} />
+        <Steps g={g} filmDone={f.films.length > 0} onHelp={() => setHelp(true)} />
         <div className="flex min-w-0 flex-1 flex-col">
           <main className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
             <div className="mx-auto max-w-6xl">
@@ -104,6 +110,7 @@ export function GuidedPage() {
           <Footer g={g} />
         </div>
       </div>
+      {help && <GuidedHelp onClose={() => setHelp(false)} />}
     </CockpitShell>
   )
 }
