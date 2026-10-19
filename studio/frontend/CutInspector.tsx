@@ -9,7 +9,7 @@ import type { TimelineClip } from "./timelineApi"
 const round = (n: number) => Math.round(n * 100) / 100
 
 /** Eigenschaften eines Clips der Zeitleiste; Platzhalter springen zum Shot ins „Planen“. */
-export function CutInspector({ clip, onPlan, media = null, onAppend, mix, onUnbind, onDeleteMedia }: {
+export function CutInspector({ clip, onPlan, media = null, onAppend, mix, onUnbind, onDeleteMedia, onCreateElement }: {
   clip: TimelineClip | null
   onPlan: (c: TimelineClip) => void
   /** Tonclip (5b): Lautstärke und Blenden einstellen. */
@@ -21,9 +21,11 @@ export function CutInspector({ clip, onPlan, media = null, onAppend, mix, onUnbi
   onAppend?: () => void
   /** C1: gewähltes Medium löschen (Rückfrage) */
   onDeleteMedia?: (item: LibraryItem) => void
+  /** C2: Bild als Vorlage für neue Figur/neuen Ort */
+  onCreateElement?: (item: LibraryItem, kind: "character" | "place") => void
 }) {
   const { t } = useTranslation("studio")
-  if (!clip && media) return <MediaAppend media={media} onAppend={onAppend} onDelete={onDeleteMedia} />
+  if (!clip && media) return <MediaAppend media={media} onAppend={onAppend} onDelete={onDeleteMedia} onCreate={onCreateElement} />
   return (
     <section className="flex h-full min-h-0 flex-col overflow-y-auto p-3" data-studio-panel="inspector">
       <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("properties")}</h2>
@@ -62,8 +64,8 @@ export function CutInspector({ clip, onPlan, media = null, onAppend, mix, onUnbi
   )
 }
 
-function MediaAppend({ media, onAppend, onDelete }: { media: Pick<LibraryItem, "kind" | "name"> & Partial<LibraryItem>; onAppend?: () => void
-  onDelete?: (item: LibraryItem) => void }) {
+function MediaAppend({ media, onAppend, onDelete, onCreate }: { media: Pick<LibraryItem, "kind" | "name"> & Partial<LibraryItem>; onAppend?: () => void
+  onDelete?: (item: LibraryItem) => void; onCreate?: (item: LibraryItem, kind: "character" | "place") => void }) {
   const { t } = useTranslation("studio")
   const ok = media.kind === "image" || media.kind === "video"
   const sound = media.kind === "music" || media.kind === "audio"
@@ -80,7 +82,8 @@ function MediaAppend({ media, onAppend, onDelete }: { media: Pick<LibraryItem, "
           <p className="mt-2 text-[10px] leading-relaxed text-[#68758a]">{t(sound ? "cut_append_sound_hint" : "cut_append_hint")}</p>
         </>
       ) : <p className="mt-3 rounded-[4px] border border-[#46617f] bg-[#111827] px-2.5 py-2 text-[11px] leading-relaxed text-[#8d9ab0]">{t("cut_not_on_timeline")}</p>}
-      {onDelete && media.rel && <MediaActions item={media as LibraryItem} onDelete={() => onDelete(media as LibraryItem)} />}
+      {onDelete && media.rel && <MediaActions item={media as LibraryItem} onDelete={() => onDelete(media as LibraryItem)}
+        onCreateElement={onCreate && ((k) => onCreate(media as LibraryItem, k))} />}
     </section>
   )
 }

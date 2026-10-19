@@ -51,11 +51,11 @@ describe("Studio 2b – Shots", () => {
     expect(html(<StoryboardPanel scene={null} base="/w" selected={null} busy={null} {...SB} />)).not.toContain("data-storyboard-decompose")
   })
 
-  it("Shot-Formular: Kamera aus Vorgaben, nur Bausteine der Szene, Dauer, Löschen; Status nur lesbar", () => {
+  it("Shot-Formular: Kamera aus Vorgaben, alle Bausteine zum Anhaken (C2), Dauer, Löschen; Status nur lesbar", () => {
     const out = html(<ShotForm shot={shot("a", { shot: "closeup", element_ids: ["e1"], status: "image_ready" })} index={0}
       elements={[el("e1", "Mira"), el("e2", "Ole")]} sceneElementIds={["e1"]} presets={["closeup", "wide"]} busy={false} onSave={noop} onDelete={noop} />)
     expect(out).toMatch(/<option value="closeup" selected="">cam\.shot\.closeup<\/option>/)
-    expect(attr(out, "data-shot-element")).toEqual(["e1"])
+    expect(attr(out, "data-shot-element")).toEqual(["e1", "e2"])
     expect(out).toMatch(/data-shot-element="e1"[^>]*checked/)
     expect(out).toContain('value="5"')
     expect(out).toContain("shot_status.image_ready")

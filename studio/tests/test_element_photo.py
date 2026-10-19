@@ -176,3 +176,10 @@ def test_element_from_library_rejects(client, auth_headers, ws, body) -> None:
     r = client.post(f"{P}/elements/from-image", headers=auth_headers, json=body)
     assert r.status_code == 400
     assert client.get(P, headers=auth_headers).json()["elements"] == []
+
+
+@pytest.mark.parametrize(("kind", "word"), [("character", "Figur"), ("place", "Ort"), ("object", "Gegenstand")])
+def test_prompt_names_the_kind(kind, word) -> None:
+    from backend import describe
+    p = describe.prompt_for({"kind": kind, "name": "Hydra"})
+    assert f"die {word} „Hydra“" in p and "JSON" in p

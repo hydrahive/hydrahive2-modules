@@ -11,7 +11,7 @@ import json
 from . import _clean, plan, vision_provider
 from ._store import project_root, safe_rel
 
-KIND_WORD = {"character": "Figur", "place": "Ort", "item": "Gegenstand"}
+KIND_WORD = {"character": "Figur", "place": "Ort", "object": "Gegenstand"}
 MIME = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "gif": "image/gif"}
 CODES = {"no_key": ("studio_describe_no_key", 400)}
 

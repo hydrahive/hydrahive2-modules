@@ -39,6 +39,8 @@ export interface Shot {
   speech?: string
   voice?: string
   voice_rel?: string | null
+  /** C2: wer im Bild ist – angehakt oder im Text genannt (vom Server berechnet, nur Anzeige) */
+  cast?: string[]
 }
 
 export type BatchKind = "decompose_all" | "images_all" | "videos_all" | "speech_all"

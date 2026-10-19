@@ -9,6 +9,7 @@ import { jobs_de, jobs_en } from "./i18nJobs"
 import { subtitles_de, subtitles_en } from "./i18nSubtitles"
 import { translate_de, translate_en } from "./i18nTranslate"
 import { media_de, media_en } from "./i18nMedia"
+import { photo_de, photo_en } from "./i18nPhoto"
 import { upload_de, upload_en } from "./i18nUpload"
 import { models_de, models_en } from "./i18nModels"
 
@@ -19,6 +20,7 @@ export const plan_de = {
   ...translate_de,
   ...upload_de,
   ...media_de,
+  ...photo_de,
   ...cut_de,
   ...guide_de,
   ...draft_de,
@@ -63,7 +65,6 @@ export const plan_de = {
   decompose_replace_run: "Neu zerlegen",
   notice_decomposed_one: "{{count}} Shot angelegt.",
   notice_decomposed_other: "{{count}} Shots angelegt.",
-  shot_no_elements: "Diese Szene hat noch keine Bausteine. Wähle sie in der Szene aus.",
   shot_status: { planned: "Geplant", image_ready: "Bild fertig", video_processing: "Video läuft", done: "Fertig", failed: "Fehlgeschlagen" },
   save: "Speichern",
   saved: "Gespeichert",
@@ -121,13 +122,14 @@ export const plan_de = {
     ...free_de.free_err,
     ...deliver_de.deliver_err,
     ...media_de.media_err,
+    ...photo_de.photo_err,
   },
   f: {
     title: "Titel", logline: "Kurzbeschreibung", description: "Beschreibung", aspect: "Bildformat", duration: "Standard-Dauer (s)",
     models: "Modelle", models_hint: "„Standard“ nimmt das Modell aus den Einstellungen des Servers.", style: "Stil", palette: "Farben (z. B. #1a2b3c, #ffcc00)",
     location: "Ort", time_of_day: "Tageszeit", camera: "Kamera", dialogues: "Dialoge", speaker: "Sprecher", narrator: "Erzähler",
     line: "Text", emotion: "Tonfall (optional)", add_dialogue: "Dialog hinzufügen", kind: "Art", name: "Name",
-    style_anchor: "Aussehen (bleibt in jedem Bild gleich)", references: "Referenzbilder", add_reference: "Bild aus der Bibliothek hinzufügen",
+    style_anchor: "Aussehen (bleibt in jedem Bild gleich)", add_reference: "Foto aus der Bibliothek nehmen …",
     status: "Stand",
     shot_duration: "Dauer (s)",
     shot_prompt: "Was ist zu sehen (Beschreibung für die KI)",
@@ -142,6 +144,7 @@ export const plan_en: typeof plan_de = {
   ...translate_en,
   ...upload_en,
   ...media_en,
+  ...photo_en,
   ...cut_en,
   ...guide_en,
   ...draft_en,
@@ -186,7 +189,6 @@ export const plan_en: typeof plan_de = {
   decompose_replace_run: "Split again",
   notice_decomposed_one: "{{count}} shot created.",
   notice_decomposed_other: "{{count}} shots created.",
-  shot_no_elements: "This scene has no elements yet. Pick them in the scene.",
   shot_status: { planned: "Planned", image_ready: "Image ready", video_processing: "Video running", done: "Done", failed: "Failed" },
   save: "Save",
   saved: "Saved",
@@ -244,13 +246,14 @@ export const plan_en: typeof plan_de = {
     ...free_en.free_err,
     ...deliver_en.deliver_err,
     ...media_en.media_err,
+    ...photo_en.photo_err,
   },
   f: {
     title: "Title", logline: "Logline", description: "Description", aspect: "Aspect ratio", duration: "Default duration (s)",
     models: "Models", models_hint: "“Default” uses the model from the server settings.", style: "Style", palette: "Colours (e.g. #1a2b3c, #ffcc00)",
     location: "Location", time_of_day: "Time of day", camera: "Camera", dialogues: "Dialogues", speaker: "Speaker", narrator: "Narrator",
     line: "Line", emotion: "Tone (optional)", add_dialogue: "Add dialogue", kind: "Kind", name: "Name",
-    style_anchor: "Look (stays the same in every image)", references: "Reference images", add_reference: "Add image from the library",
+    style_anchor: "Look (stays the same in every image)", add_reference: "Take a photo from the library …",
     status: "Status",
     shot_duration: "Duration (s)",
     shot_prompt: "What is seen (description for the AI)",
