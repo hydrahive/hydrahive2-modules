@@ -1248,6 +1248,95 @@ Hilfetexte nicht möglich.“ → „Mache das alles, damit man arbeiten kann.�
 - **Neuling-Prüfung (E2E):** leeres Projekt, nur sichtbare Texte: Hydra mit Foto anlegen → Szene mit Shot „Hydra …“ →
   Bild erzeugen → ein zweites Bild → das erste löschen → auf die Zeitleiste → Film erzeugen → herunterladen.
 
+## Neuentwurf: geführter Weg (19.10.) – erst Attrappe, dann bauen
+
+Till nach Etappe C: „Ich blicke immer noch nicht durch.“ Ein Neuling: „Was um Himmels willen muss ich da tun?“ Der alte
+Media-Ablauf (5 nummerierte Schritte links, in der Mitte nur einer, ein großer Knopf) war für beide verständlicher.
+Entwurf und Recherche: `_work/scratch/studio-neuentwurf.md` (Workspace).
+
+**Attrappe** unter `/studio/neu` (Ordner `frontend/neu/`, nur Oberfläche mit Beispieldaten, kein Server, keine Kosten):
+1. **Idee** – eine Frage, Art/Länge/Format als Knöpfe, „Geschichte vorschlagen“ → Szenen als Karten (ändern, löschen, verschieben).
+2. **Figuren & Orte** – Foto geben → Probebild daneben → „Passt“ / „Anderes Probebild“ / „Anderes Foto“ / „Kein Foto“.
+3. **Bilder** – je Szene eine Karte mit Bild, „Mit dabei: [Gesichter]“, „Anderes Bild machen“, „Dieses Bild wegwerfen“, Pfeile.
+4. **Bewegung** – aus dem gezeigten Bild ein Clip, oder „Als Standbild lassen“.
+5. **Film** – ganzer Film am Stück, Schalter Musik/Erzählstimme/Untertitel, „Film erzeugen“, „Film herunterladen“.
+
+Regeln: ein Schritt = eine Aufgabe = ein Hauptknopf; nur die Wörter Szene, Figur/Ort, Bild, Clip, Film; Löschen an der
+Karte; Kosten in Cent am Knopf; „Weiter“ geht auch mit Lücken. Die heutige Oberfläche bleibt als „Profi-Ansicht“.
+Gebaut wird erst nach dem Test mit dem Neuling; die Attrappe wird dann ersetzt, nicht erweitert.
+
+### Bauplan G – Geführter Weg echt bauen (19.10., Till: „das können wir als Grund benutzen“)
+
+Die Attrappe (`frontend/neu/`) wird Schritt für Schritt echt. Sie bleibt Grundlage für Aussehen und Texte; jede Etappe
+ersetzt die Beispieldaten eines Schritts durch die echten Funktionen. Server-Bausteine gibt es fast alle schon.
+
+**Grundsatz:** Eine Karte im geführten Weg = **ein Shot**. Der Text auf der Karte ist der deutsche Szenentext, der Prompt
+bleibt unsichtbar. Für den geführten Weg bittet die KI um **genau einen Shot je Szene**; die Profi-Ansicht kann weiter
+zerlegen. Hat eine Szene schon mehrere Shots (aus der Profi-Ansicht), zeigt der Weg je Shot eine Karte („Szene 2 · Teil 1“).
+Beide Ansichten arbeiten auf denselben Daten.
+
+| Etappe | Schritt | Vorhanden | Neu |
+|---|---|---|---|
+| **G1** | Gerüst + Idee | `draft/idea`, `draft/apply`, Szenen anlegen/ändern/löschen, `order`, `overview` | Projektwahl im Weg; Idee mit `shots_per_scene=1` und Länge 30/60/120 s; Vorschlag wird direkt übernommen (bei vorhandenen Szenen erst fragen: ersetzen oder anhängen); Haken links aus `overview`; Karten speichern sofort |
+| **G2** | Figuren & Orte | Bausteine, Foto als Referenz (`references`), Foto beschreiben (`describe`) | **Probebild**: ein Bild der Figur aus Foto + Beschreibung (Auftrag wie freies Bild, Ablage am Baustein `probe_rel`); `approved` am Baustein („Passt“); „Kein Foto“ = Beschreibung reicht |
+| **G3** | Bilder | Bild je Shot, „für alle“, Varianten + Wahl, Medien löschen, Mit-im-Bild | Karten-Ansicht mit Pfeilen über die Varianten; „Dieses Bild wegwerfen“ = Variante löschen; Probebilder freigegebener Figuren gehen als Referenz mit |
+| **G4** | Bewegung | Video je Shot, „für alle“ | `still: true` am Shot („Als Standbild lassen“, zählt als fertig, „für alle“ überspringt ihn); „Bewegung wegwerfen“ |
+| **G5** | Film | Zeitleiste aus Drehbuch, Musik, Sprache je Shot, Untertitel aus Sprechtext, Ausgabe-Warteschlange, Herunterladen | Ein Knopf „Film erzeugen“ = Zeitleiste neu aus dem Plan (nur wenn in der Profi-Ansicht nicht von Hand geschnitten – sonst fragen) + gewählte Extras + Ausgabe; Abspieler aus der Zeitleiste |
+| **G6** | Start | – | `/studio` öffnet den geführten Weg, die heutige Oberfläche heißt „Profi-Ansicht“ (`/studio/profi`); Anleitung „So geht’s“ auf 5 Schritte gekürzt |
+
+**Kosten:** Bild-, Musik- und Text-Richtwerte wie bisher. Für Clip und Stimme gibt es keinen verlässlichen Preis im
+Katalog → am Knopf steht Modellname + „kostet“ (wie heute), keine erfundene Cent-Zahl. Sammelknöpfe nennen die Anzahl.
+
+**Je Etappe der übliche Ablauf** (Bauplan-Nachtrag → rote Tests → Code → Mutanten → Gegenprobe → Version → hydratest →
+E2E 1600/1280 nur über sichtbare Texte → alte E2E grün → PR → Tills OK). Die Attrappe-Bilder (`frontend/neu/bilder/`)
+fliegen in G6 raus.
+
+#### Bauplan G1 – Gerüst + Schritt „Idee“ (19.10.)
+
+- **Seite** `/studio/neu` wird echt: Projektwahl oben links (gleiches gemerktes Projekt wie die Profi-Ansicht),
+  5 Schritte links, Haken aus dem echten Plan. Schritt 1 ist echt; Schritte 2–5 zeigen bis G2–G5 „Wird gerade gebaut –
+  bis dahin in der Profi-Ansicht“ mit Link. Die Attrappe der Schritte 2–5 bleibt nur in Git (Commit 8f3a7b2, Draft-PR #213) als Vorlage – nicht im Modul.
+- **Idee** (`POST plan/draft/idea`) bekommt zwei freiwillige Felder:
+  - `kind`: `trailer|explainer|short|music` → Zeile „Kind of film“ im Auftrag. Anderes → `studio_idea_invalid`.
+  - `shots_per_scene`: nur `1` erlaubt (sonst `studio_idea_invalid`). Dann: Auftrag verlangt genau einen Shot je Szene,
+    der Entwurf wird auf 1 Shot je Szene gekürzt; eine Szene ohne Shot bekommt einen aus ihrer Beschreibung.
+- **Übernehmen** (`POST plan/draft/apply`) bekommt `replace: true`: Entwurf zuerst vollständig prüfen, dann alle Szenen
+  löschen (Bilder/Clips bleiben in der Sammlung), Titel und Logline des Entwurfs **überschreiben**. Ohne `replace` wie
+  bisher (anhängen, gefüllte Kopf-Felder bleiben). Ungültiger Entwurf mit `replace` → nichts gelöscht.
+- **Ablauf im Browser:** „Geschichte vorschlagen“ = Idee → sofort übernehmen (kein Vorschau-Zwischenschritt). Gibt es
+  schon Szenen, fragt ein eigener Dialog „Ersetzen“ / „Hinten anhängen“ / „Abbrechen“. Format (quer/hoch) und die Idee
+  werden im Drehbuch-Kopf gespeichert (`aspect_ratio`, `description`), damit Schritt 1 beim Wiederkommen gefüllt ist.
+- **Karten:** Text = Szenenbeschreibung (sonst Titel). Speichern beim Verlassen des Felds, Anzeige „Gespeichert“.
+  Hat die Szene genau einen Shot, wird dessen Bildbeschreibung mit dem neuen Text ersetzt (damit Bild und Karte
+  zusammenpassen); bei mehreren Shots bleiben deren Beschreibungen. „Szene hinzufügen“ legt Szene + einen Shot an,
+  Titel aus den ersten Wörtern. Löschen und Verschieben über die vorhandenen Wege.
+- **Kosten:** „Geschichte vorschlagen“ trägt das Zeichen „kostet“ mit dem Text-Modell im Hinweis (kein erfundener Preis).
+- **Texte** de/en in `i18nGuided.ts` (`guided.*`).
+
+#### Bauplan G2 – Figuren & Orte mit Probebild (19.10.)
+
+- **Baustein bekommt** `probe_rel` (Probebild, nur aus `studio/media/probes/`, sonst leer), `approved: bool` („Passt“)
+  und `no_photo: bool` („Kein Foto – die KI erfindet …“). Beim Speichern aus der Profi-Ansicht bleiben die Felder,
+  wenn sie nicht mitgeschickt werden (Teil-Update wie bisher über `{**el, …}` im Browser – Server übernimmt fehlende Felder
+  aus dem gespeicherten Baustein).
+- **Probebild erzeugen:** `POST plan/elements/{id}/probe` (202, Auftrag `probe`, Ziel = Baustein-ID, besetzt →
+  `studio_probe_running`). Bild-Modell aus dem Drehbuch, Format 16:9, Vorlage = Fotos des Bausteins (höchstens 3).
+  Auftrag (englisch): Look + „character sheet / portrait of NAME: Beschreibung … neutral background, full figure“
+  (Ort: „establishing view of NAME …“). Ohne Foto und ohne Beschreibung → `studio_probe_nothing`. Ablage
+  `studio/media/probes/<id>.<ext>` + `.json` (prompt, model, element_id). Ein neues Probebild setzt `approved=false`.
+  Das alte Probebild bleibt in der Sammlung (Quelle `studio_probe`, löschbar).
+- **Freigabe:** `PUT plan/elements/{id}` mit `approved: true` nur, wenn es ein Probebild gibt (sonst `studio_probe_missing`).
+- **Wirkung in G3:** Bei einem freigegebenen Baustein geht das Probebild **als erste Vorlage** in jedes Bild (vor den
+  Fotos; zusammen höchstens 3 Vorlagen je Bild).
+- **Foto ersetzen** („Anderes Foto“): Vorlagen leeren, Probebild leeren, `approved=false`; dann neues Foto hochladen.
+- **Ablauf im Browser:** Foto hineinziehen/klicken → hochladen → ist die Beschreibung leer, Beschreibung aus dem Foto
+  (vorhandenes `describe`) → Probebild-Auftrag → Karte zeigt „Die KI zeichnet ein Probebild …“, bis der Auftrag fertig ist.
+  „Kein Foto“ setzt `no_photo`, zeigt Beschreibung (änderbar) und „Probebild zeigen“ (optional).
+- **Karten** auch für Gegenstände („+ Gegenstand“ nicht nötig – nur wenn die Geschichte einen enthält).
+  Name und Beschreibung speichern beim Verlassen des Felds. Löschen über den eigenen Dialog.
+- **Haken Schritt 2:** es gibt Szenen, und jeder Baustein ist `approved` oder `no_photo`. Ohne Bausteine → Haken, wenn
+  es Szenen gibt (eine Geschichte ohne Figuren ist erlaubt).
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.

@@ -6,6 +6,7 @@ Namens werden wiederverwendet. Erst wird der ganze Entwurf geprüft, dann geschr
 from __future__ import annotations
 
 from . import _draft, plan, shots
+from ._store import project_lock
 
 
 def _elements(pid: str, draft: dict) -> tuple[dict[str, str], int, int]:
@@ -24,23 +25,35 @@ def _elements(pid: str, draft: dict) -> tuple[dict[str, str], int, int]:
     return ids, new, reused
 
 
-def _head(pid: str, head: dict) -> None:
+def _head(pid: str, head: dict, *, replace: bool = False) -> None:
     cur = plan.get_head(pid)
     patch: dict = {k: head[k] for k in ("title", "logline", "description") if head[k] and not cur[k]}
+    if replace:                                                       # G1: neue Geschichte = neuer Titel
+        patch.update({k: head[k] for k in ("title", "logline") if head[k]})
     if head["style"] and not cur["look"]["style"]:
         patch["look"] = {**cur["look"], "style": head["style"]}
     if patch:
         plan.save_head(pid, patch)
 
 
-def apply(pid: str, data) -> dict:
+def apply(pid: str, data, *, replace: bool = False) -> dict:
+    """`replace` (G1): erst alles prüfen, dann die bisherigen Szenen löschen (Medien bleiben in der Sammlung)."""
     try:
         draft = _draft.clean(data, strict=True)
     except _draft.DraftInvalid as e:
         raise plan.PlanError("studio_draft_invalid") from e
-    mode = "append" if plan.list_scenes(pid) else "new"
+    with project_lock(pid):
+        return _apply(pid, draft, replace)
+
+
+def _apply(pid: str, draft: dict, replace: bool) -> dict:
+    old = plan.list_scenes(pid)
+    mode = ("replace" if replace else "append") if old else "new"
+    if replace:
+        for sc in old:
+            plan.delete_scene(pid, sc["id"])
     ids, new, reused = _elements(pid, draft)
-    _head(pid, draft["head"])
+    _head(pid, draft["head"], replace=replace)
     total = 0
 
     def mapped(keys: list[str]) -> list[str]:

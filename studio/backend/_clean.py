@@ -12,6 +12,7 @@ MODEL_KEYS = ("video", "image", "voice", "music", "text", "vision")
 LANGUAGES = ("de", "en", "fr", "es", "it", "nl", "pl", "pt", "tr", "uk", "ru", "sv", "da", "no", "fi", "cs", "ja", "zh")
 CAMERA_KEYS = ("shot", "lens", "light", "weather", "time", "mood")
 VARIANT_DIRS = ("studio/media/images/", "studio/media/free/")
+PROBE_DIR = "studio/media/probes/"                                  # Probebilder der Bausteine (G2)
 VOICE_DIR = "studio/media/voice/"                                   # erzeugte Sprache je Shot (5c)    # Bilder des Studios: je Shot erzeugt oder frei (B3)
 
 
@@ -110,4 +111,13 @@ def element(el_id: str, data: dict, references: list[str]) -> dict:
         "style_anchor": text(data.get("style_anchor"), 2000),
         "palette": palette(data.get("palette")),
         "references": references[:8],
+        # G2: Probebild + Freigabe + „Kein Foto“. Probebild nur aus dem eigenen Ordner, Freigabe nur mit Probebild.
+        "probe_rel": probe(data.get("probe_rel")),
+        "approved": data.get("approved") is True and bool(probe(data.get("probe_rel"))),
+        "no_photo": data.get("no_photo") is True,
     }
+
+
+def probe(v: Any) -> str:
+    ok = isinstance(v, str) and v.startswith(PROBE_DIR) and "/" not in v[len(PROBE_DIR):] and ".." not in v and len(v) <= 200
+    return v if ok else ""

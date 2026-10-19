@@ -5,6 +5,7 @@ import { deliver_de, deliver_en } from "./i18nDeliver"
 import { draft_de, draft_en } from "./i18nDraft"
 import { free_de, free_en } from "./i18nFree"
 import { guide_de, guide_en } from "./i18nGuide"
+import { guided_de, guided_en, guided_err_de, guided_err_en } from "./i18nGuided"
 import { jobs_de, jobs_en } from "./i18nJobs"
 import { subtitles_de, subtitles_en } from "./i18nSubtitles"
 import { translate_de, translate_en } from "./i18nTranslate"
@@ -23,6 +24,7 @@ export const plan_de = {
   ...photo_de,
   ...cut_de,
   ...guide_de,
+  ...guided_de,
   ...draft_de,
   ...free_de,
   ...deliver_de,
@@ -127,6 +129,7 @@ export const plan_de = {
     ...free_de.free_err,
     ...deliver_de.deliver_err,
     ...media_de.media_err,
+    ...guided_err_de,
     ...photo_de.photo_err,
   },
   f: {
@@ -152,6 +155,7 @@ export const plan_en: typeof plan_de = {
   ...photo_en,
   ...cut_en,
   ...guide_en,
+  ...guided_en,
   ...draft_en,
   ...free_en,
   ...deliver_en,
@@ -256,6 +260,7 @@ export const plan_en: typeof plan_de = {
     ...free_en.free_err,
     ...deliver_en.deliver_err,
     ...media_en.media_err,
+    ...guided_err_en,
     ...photo_en.photo_err,
   },
   f: {

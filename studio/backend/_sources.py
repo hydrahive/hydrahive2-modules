@@ -109,6 +109,7 @@ def studio(root: Path, make) -> list[dict]:
         meta = sidecar(p)
         out.append(make(p, "audio", "ai", "studio_voice", {**meta, "prompt": meta.get("text")}, name=(meta.get("text") or "")[:60] or None))
     out += [make(p, "image", "ai", "studio_free", sidecar(p)) for p in files(root, "studio/media/free", IMAGE_EXT)]
+    out += [make(p, "image", "ai", "studio_probe", sidecar(p)) for p in files(root, "studio/media/probes", IMAGE_EXT)]   # G2
     for p in files(root, "studio/media/uploads", IMAGE_EXT | VIDEO_EXT | AUDIO_EXT):      # eigenes Material (7a)
         meta = sidecar(p)
         kind = "image" if ext(p) in IMAGE_EXT else "video" if ext(p) in VIDEO_EXT else "audio"

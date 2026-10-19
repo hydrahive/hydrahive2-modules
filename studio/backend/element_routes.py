@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, Depends
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import describe, plan
+from . import describe, plan, probe
 from ._guard import guard
 
 router = APIRouter(prefix="/projects/{project_id}/plan/elements")
@@ -21,6 +21,16 @@ def from_image(project_id: str, data: Data, auth: Auth) -> dict:
     guard(auth[0], project_id)
     try:
         return describe.from_image(project_id, data)
+    except plan.PlanError as e:
+        raise coded(e.status, e.code)
+
+
+@router.post("/{element_id}/probe", status_code=202)
+def make_probe(project_id: str, element_id: str, auth: Auth) -> dict:
+    """Probebild des Bausteins erzeugen (G2) – so sieht er im Film aus."""
+    guard(auth[0], project_id)
+    try:
+        return probe.start(project_id, element_id)
     except plan.PlanError as e:
         raise coded(e.status, e.code)
 

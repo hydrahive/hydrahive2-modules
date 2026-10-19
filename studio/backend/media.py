@@ -13,7 +13,7 @@ from ._sources import AUDIO_EXT, IMAGE_EXT, VIDEO_EXT
 from ._store import project_lock, project_root, read_json, write_json
 
 OWN_DIRS = ("studio/media/images/", "studio/media/videos/", "studio/media/voice/", "studio/media/music/",
-            "studio/media/free/", "studio/media/uploads/", "studio/renders/")
+            "studio/media/free/", "studio/media/uploads/", "studio/renders/", "studio/media/probes/")
 EXTS = IMAGE_EXT | VIDEO_EXT | AUDIO_EXT
 
 
@@ -50,7 +50,8 @@ def usage(pid: str, rel) -> dict:
             if isinstance(s, dict) and isinstance(rel, str) and _shot_uses(s, rel):
                 used_shots.append({"scene_id": sc["id"], "shot_id": s.get("id"), "label": f"{sc.get('title') or ''} · Shot {i + 1}"})
     clips = sum(1 for c in timeline.all_clips(timeline.load(pid)) if c.get("media_rel") == rel) if isinstance(rel, str) else 0
-    elements = [{"id": e["id"], "name": e.get("name") or ""} for e in plan.list_elements(pid) if rel in (e.get("references") or [])]
+    elements = [{"id": e["id"], "name": e.get("name") or ""} for e in plan.list_elements(pid)
+                if rel in (e.get("references") or []) or (isinstance(rel, str) and rel and e.get("probe_rel") == rel)]
     return {"own": is_own(rel), "shots": used_shots, "clips": clips, "elements": elements}
 
 
@@ -82,8 +83,11 @@ def delete(pid: str, rel) -> dict:
             shots.save_shots(pid, raw, [_clean_shot(s, rel) if isinstance(s, dict) and _shot_uses(s, rel) else s
                                         for s in raw.get("shots") or []])
         for e in plan.list_elements(pid):
-            if rel in (e.get("references") or []):
+            if rel in (e.get("references") or []) or e.get("probe_rel") == rel:
                 path = plan.root(pid) / "elements" / e["id"] / "element.json"
                 data = read_json(path, {})
-                write_json(path, {**data, "references": [r for r in data.get("references") or [] if r != rel]})
+                out = {**data, "references": [r for r in data.get("references") or [] if r != rel]}
+                if data.get("probe_rel") == rel:                         # G2: Probebild weg → Freigabe weg
+                    out.update(probe_rel="", approved=False)
+                write_json(path, out)
     return {"deleted": rel}
