@@ -2,11 +2,17 @@
 
 Ein Wächter-Thread beendet ffmpeg bei Zeitüberschreitung oder Abbruch – auch wenn ffmpeg nichts ausgibt (z. B. bei
 einer kaputten Bilddatei); die Prüfung im Lese-Schleife allein griff dann nie. Ausgelagert aus render.py.
+
+Stirbt der eigene Prozess (Dienst-Neustart mit KillMode=process, abgebrochener Testlauf), stirbt der Wächter mit – ffmpeg
+lief dann als Waise weiter (19.10.2026 auf .2: 24 Stück, je ~97 % CPU, 8 h). Deshalb bekommt ffmpeg unter Linux
+PR_SET_PDEATHSIG: der Kernel schickt SIGKILL, sobald der startende Thread endet.
 """
 from __future__ import annotations
 
+import ctypes
 import logging
 import shutil
+import signal
 import subprocess
 import threading
 import time
@@ -15,6 +21,11 @@ from collections.abc import Callable
 from . import jobs, render_args
 
 logger = logging.getLogger("hhmod_studio.render")
+_PR_SET_PDEATHSIG = 1
+try:                                          # beim Import holen: im Kind nach fork nichts mehr nachladen (dlopen-Sperre)
+    _prctl = ctypes.CDLL(None, use_errno=True).prctl
+except (OSError, AttributeError):             # kein Linux/libc → ohne Schutz wie bisher
+    _prctl = None
 WATCH = 0.25                                  # so oft prüft der Wächter Zeitgrenze und Abbruch
 
 
@@ -29,6 +40,12 @@ def has_audio(path) -> bool:
         return bool(out.stdout.strip())
     except (OSError, subprocess.SubprocessError):
         return False
+
+
+def _die_with_parent() -> None:
+    """Läuft im Kindprozess vor exec: Tod des startenden Threads → SIGKILL. run() wartet im selben Thread auf ffmpeg."""
+    if _prctl is not None:
+        _prctl(_PR_SET_PDEATHSIG, int(signal.SIGKILL), 0, 0, 0)
 
 
 def _watch(proc: subprocess.Popen, limit: float, stop: Callable[[], bool] | None, why: list[str]) -> None:
@@ -49,7 +66,8 @@ def run(cmd: list[str], seconds: float, progress: Callable[[float], None], stop:
     if not shutil.which(cmd[0]):
         raise RenderFailed()
     try:
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                preexec_fn=_die_with_parent)  # noqa: PLW1509 – nur prctl, keine Threads/Locks
     except OSError as e:
         raise RenderFailed() from e
     why: list[str] = []
