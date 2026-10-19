@@ -66,7 +66,7 @@ export function usePlan(projectId: string, active: boolean) {
 
   const pid = projectId
   return {
-    plan, preview, selection, select: setSelection, rev, busy, error, notice, dialog, setDialog, act, projectId: pid,
+    plan, preview, selection, select: setSelection, rev, busy, error, notice, setNotice, dialog, setDialog, act, projectId: pid,
     reload: () => load(pid),
     saveHead: (h: Parameters<typeof planApi.saveHead>[1]) => act(() => planApi.saveHead(pid, h), t("notice_saved")),
     saveScene: (id: string, s: Parameters<typeof planApi.saveScene>[2]) => act(() => planApi.saveScene(pid, id, s), t("notice_saved")),

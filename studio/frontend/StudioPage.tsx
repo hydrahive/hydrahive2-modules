@@ -52,6 +52,7 @@ import { useGuide } from "./useGuide"
 import { WorkspaceIntro } from "./WorkspaceIntro"
 import { useJobs } from "./useJobs"
 import { useShots } from "./useShots"
+import { useUploads } from "./useUploads"
 import { useStudioState } from "./useStudioState"
 import type { Workspace } from "./workspaces"
 
@@ -67,8 +68,7 @@ export function StudioPage() {
   const mixing = workspace === "audio"
   const { cut, every, mixer, cp, waves, ed } = useCutWorkspace(lib.projectId, workspace)
   const editKeys = (a: Parameters<typeof editAction>[0]) => { const x = editAction(a); if (x) ed.run(x); return !!x }
-  const changeWs = (w: Workspace) => {                                            // verlassen → sofort speichern
-    if (editing(workspace) && !editing(w)) void ed.flush(); if (workspace === "subtitles" && w !== "subtitles") void sub.flush(); setWorkspace(w) }
+  const changeWs = (w: Workspace) => { if (editing(workspace) && !editing(w)) void ed.flush(); if (workspace === "subtitles" && w !== "subtitles") void sub.flush(); setWorkspace(w) }   // verlassen → sofort speichern
   // Im Reiter „Schneiden“ steuern die Tasten Film und Schnitt. Ist ein Medium aus der Bibliothek gewählt, spielt die
   // Vorschau das Medium – dann bleibt das Abspielen bei ihm, Teilen/Löschen/Rückgängig wirken weiter auf den Schnitt.
   const subbing = workspace === "subtitles"
@@ -85,7 +85,9 @@ export function StudioPage() {
   const nextStamp = `${p.rev}:${cut.timeline?.revision ?? ""}:${every.length}`
   if (nextStamp !== stamp) setStamp(nextStamp)                   // beim Rendern abgeglichen, kein Effect nötig
   const plan = { ...p, select: (x: Parameters<typeof p.select>[0]) => { s.clearMedia(); p.select(x) } }   // Auswahl im Drehbuch löst das Medium ab
-  const library = <LibraryPanel items={lib.items} loading={lib.loading} error={lib.error} truncated={lib.truncated} selected={s.mediaId} onSelect={s.selectMedia} />
+  const up = useUploads(lib.projectId, p, () => void lib.reload(), (x) => (shotsWs ? p.setNotice(x) : cut.setNotice(x)))
+  const library = <LibraryPanel items={lib.items} loading={lib.loading} error={lib.error} truncated={lib.truncated} selected={s.mediaId}
+    onSelect={s.selectMedia} onUpload={lib.projectId ? up.library : undefined} uploading={up.busy} />
   const jobs = useJobs(lib.projectId, shotsWs || delivering, () => { void p.reload(); void lib.reload(); void guide.reload() })   // fertig → Shot + Bibliothek + Fortschritt neu
   const sh = useShots(plan, lib.projectId, () => void jobs.reload())
   const bt = useBatch(plan, lib.projectId, jobs.jobs, () => void jobs.reload())
@@ -155,7 +157,7 @@ export function StudioPage() {
             </div>
             <Splitter dir="x" label={t("resize_inspector")} onDrag={(d) => s.drag("inspector", d)} />
             <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
-              {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} />
+              {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} upload={up} />
                 : freeOpen ? <FreeForm form={fr.form} catalog={imageCatalog} images={lib.items.filter((i) => i.kind === "image")} job={freeJob}
                     busy={p.busy} onChange={fr.setForm} onRun={() => void fr.run()} />
                 : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} /> : <GenerateHint />)

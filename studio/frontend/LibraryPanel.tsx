@@ -1,10 +1,11 @@
-import { useState } from "react"
-import { AudioLines, Film, Image, Loader2, Music, Search, User } from "lucide-react"
+import { useRef, useState } from "react"
+import { AudioLines, Film, Image, Loader2, Music, Search, Upload, User } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { MEDIA_MIME } from "./cutDnd"
 import { fileUrl } from "@/shared/files"
 import type { LibraryItem, MediaKind } from "./api"
 import { FILTERS, grouped, visible, type Filter } from "./libraryView"
+import { acceptFor, filesFromDrop, isFileDrag } from "./uploadLogic"
 
 const ICON: Record<MediaKind, typeof Film> = { video: Film, image: Image, audio: AudioLines, music: Music, element: User }
 
@@ -15,20 +16,39 @@ interface Props {
   truncated: boolean
   selected: string | null
   onSelect: (id: string) => void
+  /** Eigenes Material hochladen (7a); ohne: nur ansehen */
+  onUpload?: (files: File[]) => void
+  uploading?: boolean
 }
 
 /** Bibliothek: echte Medien des Projekts – eine Liste für alles, Filter, Suche, Ordner nach Herkunft. */
-export function LibraryPanel({ items, loading, error, truncated, selected, onSelect }: Props) {
+export function LibraryPanel({ items, loading, error, truncated, selected, onSelect, onUpload, uploading = false }: Props) {
   const { t } = useTranslation("studio")
   const [filter, setFilter] = useState<Filter>("all")
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [over, setOver] = useState(false)
   const [query, setQuery] = useState("")
   const groups = grouped(visible(items, filter, query))
   return (
-    <section className="flex h-full min-h-0 flex-col" data-studio-panel="library">
+    <section className={`flex h-full min-h-0 flex-col ${over ? "outline outline-2 -outline-offset-2 outline-[#69d7ff]" : ""}`} data-studio-panel="library"
+      onDragOver={(e) => { if (onUpload && isFileDrag(e.dataTransfer)) { e.preventDefault(); setOver(true) } }}
+      onDragLeave={(e) => { if (e.currentTarget === e.target) setOver(false) }}
+      onDrop={(e) => { if (!onUpload || !isFileDrag(e.dataTransfer)) return; e.preventDefault(); setOver(false); onUpload(filesFromDrop(e.dataTransfer)) }}>
       <div className="flex items-center justify-between px-3 pt-2">
         <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("library")}</h2>
         <span className="text-[10px] text-[#68758a]" data-library-count={items.length}>{t("library_count", { count: items.length })}</span>
       </div>
+      {onUpload && (
+        <div className="px-3 pt-2">
+          <input ref={fileInput} type="file" multiple accept={acceptFor("library")} hidden
+            onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ""; if (f.length) onUpload(f) }} />
+          <button type="button" onClick={() => fileInput.current?.click()} disabled={uploading} data-library-upload title={t("upload_drop_hint")}
+            className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-dashed border-[#46617f] px-2 py-1 text-[11px] font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
+            {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} {t(uploading ? "upload_running" : "upload_open")}
+          </button>
+          <p className="pt-1 text-[10px] text-[#68758a]">{t("upload_drop_hint")}</p>
+        </div>
+      )}
       <div className="flex flex-wrap gap-1 px-3 pt-2">
         {FILTERS.map((f) => (
           <button key={f} type="button" data-library-filter={f} aria-pressed={f === filter} onClick={() => setFilter(f)}
