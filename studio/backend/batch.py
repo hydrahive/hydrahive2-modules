@@ -42,7 +42,7 @@ def _steps(pid: str, kind: str) -> list[tuple[str, str | None, str]]:
             elif kind == "images_all":
                 want = not s.get("image_rel")
             else:
-                want = bool(s.get("image_rel")) and not s.get("video_rel")
+                want = bool(s.get("image_rel")) and not s.get("video_rel") and s.get("still") is not True   # G4
             if want:
                 out.append((scene["id"], s["id"], f"{title} · Shot {i}"))
     return out

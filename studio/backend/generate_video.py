@@ -66,7 +66,7 @@ def _work(pid: str, scene_id: str, shot_id: str) -> dict:
         write_json(target.with_name(name + ".json"), {"prompt": prompt, "model": model, "duration": duration,
                                                       "source_image": image_rel, "shot_id": shot_id, "scene_id": scene_id,
                                                       "created_at": created})
-        _set_shot(pid, scene_id, shot_id, status="done", video_rel=rel)
+        _set_shot(pid, scene_id, shot_id, status="done", video_rel=rel, still=False)    # G4: doch bewegt
         return {"video_rel": rel, "model": model, "duration": duration}
 
 

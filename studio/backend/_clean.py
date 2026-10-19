@@ -76,6 +76,7 @@ def shot(v: Any, order: int, elements: set[str]) -> dict:
         "prompt": text(v.get("prompt"), 2000), "element_ids": ids(v.get("element_ids"), elements),
         "excluded_ids": ids(v.get("excluded_ids"), elements),           # G3: „Mit dabei“ abgewählt (auch wenn genannt)
         "duration": num(v.get("duration"), 1, 60, 5), "status": status,
+        "still": v.get("still") is True,                                # G4: „Als Standbild lassen“
         "image_rel": v["image_rel"] if isinstance(v.get("image_rel"), str) else None,
         "video_rel": v["video_rel"] if isinstance(v.get("video_rel"), str) else None,
         "variants": [x for x in (v.get("variants") if isinstance(v.get("variants"), list) else [])

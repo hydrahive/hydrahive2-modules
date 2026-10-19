@@ -39,7 +39,7 @@ def test_still_flag(client, auth_headers, ws) -> None:
 
 
 def test_batch_skips_stills(client, auth_headers, ws, video) -> None:
-    (s1, x1), (s2, x2) = _scenes(client, auth_headers, ws, 2)
+    (s1, x1), (s2, _) = _scenes(client, auth_headers, ws, 2)
     client.put(f"{P}/scenes/{s1}/shots/{x1}", headers=auth_headers, json={"still": True})
     assert client.get(f"{P}/batch/videos_all", headers=auth_headers).json()["count"] == 1
     job = client.post(f"{P}/batch/videos_all", headers=auth_headers).json()
