@@ -18,6 +18,8 @@ interface Props {
   queue?: Job[]
   cancelling?: string | null
   onCancel?: (id: string) => void
+  /** Fehler der letzten Aktion (z. B. Warteschlange voll) – sonst sähe man im Reiter „Ausgabe“ nichts */
+  error?: string | null
   busy: boolean
   onRender: () => void
   onCut: () => void
@@ -31,7 +33,7 @@ interface Props {
 }
 
 /** Reiter „Ausgabe“ (4d, 7b): Vorlage wählen, Film als MP4 erzeugen, fertige Filme ansehen und herunterladen. */
-export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = null, onCancel = () => {}, busy, onRender, onCut,
+export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = null, onCancel = () => {}, error = null, busy, onRender, onCut,
   subtitleLanguages = [], withSubtitles = false, onWithSubtitles, preset = DEFAULT_PRESET, onPreset }: Props) {
   const { t } = useTranslation("studio")
   const sum = deliverSummary(clips)
@@ -65,6 +67,7 @@ export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = 
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Film size={13} />} {t("deliver_run")}
         </button>
         {full && <p className="text-[#ffb86b]" data-queue-full>{t("queue_full", { max: QUEUE_MAX })}</p>}
+        {error && <p className="text-[#ff6b8a]" data-deliver-error>{error}</p>}
         <RenderQueue jobs={queue} cancelling={cancelling} onCancel={onCancel} />
       </div>
       <h3 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("deliver_films")}</h3>

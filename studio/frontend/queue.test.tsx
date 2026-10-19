@@ -96,6 +96,19 @@ describe("7c – Reiter „Ausgabe“", () => {
   })
 })
 
+describe("7c – Rückmeldungen im Reiter „Ausgabe“", () => {
+  it("Fehler der letzten Aktion steht im Reiter (z. B. Warteschlange voll)", () => {
+    expect(html(<DeliverPanel {...base} error="Es warten schon 5 Filme." />)).toMatch(/data-deliver-error[^>]*>Es warten schon 5 Filme\./)
+    expect(html(<DeliverPanel {...base} />)).not.toContain("data-deliver-error")
+  })
+
+  it("StudioPage zeigt Meldungen auch im Reiter „Ausgabe“ und reicht den Fehler weiter", () => {
+    const src = Object.values(import.meta.glob("./StudioPage.tsx", { query: "?raw", import: "default", eager: true })).join("")
+    expect(src).toMatch(/\(shotsWs \|\| delivering\) && p\.notice/)
+    expect(src).toMatch(/<DeliverPanel[^>]*error=\{p\.error\}/)
+  })
+})
+
 describe("7c – Texte", () => {
   it("de/en vorhanden, auch der Fehler studio_render_queue_full", () => {
     for (const lang of ["de", "en"] as const) {

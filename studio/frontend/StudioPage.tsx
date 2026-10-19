@@ -118,7 +118,7 @@ export function StudioPage() {
         <WorkspaceIntro workspace={s.workspace} open={guide.introOpen} onToggle={guide.toggleIntro} />
         {delivering ? (
           <div className="min-h-0 flex-1">
-            <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} queue={dv.queue} cancelling={dv.cancelling} onCancel={dv.cancel}
+            <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} queue={dv.queue} cancelling={dv.cancelling} onCancel={dv.cancel} error={p.error}
               busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")}
               subtitleLanguages={dv.subtitleLanguages} withSubtitles={dv.withSubtitles} onWithSubtitles={dv.setWithSubtitles}
               preset={dv.preset} onPreset={dv.setPreset} />
@@ -199,7 +199,7 @@ export function StudioPage() {
         {sh.confirm && <DecomposeDialog count={sh.confirm.count} busy={sh.busy !== null} onConfirm={() => void sh.confirmReplace()} onClose={sh.closeConfirm} />}
         {p.dialog?.kind === "delete" && <DeleteDialog name={p.dialog.name} busy={p.busy} onConfirm={p.confirmDelete} onClose={() => p.setDialog(null)} />}
         {s.toast && <div className={toastCls} data-studio-toast>{t("toast_later", { action: t(`action.${s.toast}`) })}</div>}
-        {shotsWs && p.notice && <div className={toastCls} data-plan-notice>{p.notice}</div>}
+        {(shotsWs || delivering) && p.notice && <div className={toastCls} data-plan-notice>{p.notice}</div>}
         {filmWs(s.workspace) && cut.notice && <div className={toastCls} data-cut-notice>{cut.notice}</div>}
       </div>
     </CockpitShell>
