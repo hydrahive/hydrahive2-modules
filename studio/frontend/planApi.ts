@@ -56,6 +56,8 @@ export interface Job {
   created_at: string
   finished_at: string | null
   progress?: { total: number; done: number; failed: number; current: string }
+  /** Angaben für die Anzeige, z. B. Vorlage eines Films (7c) */
+  info?: { aspect?: string; quality?: string; subtitles?: boolean }
 }
 
 export interface Scene {

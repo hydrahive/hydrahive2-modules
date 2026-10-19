@@ -16,11 +16,17 @@ export interface RenderItem {
   clips: number | null
   /** Sprachen der Untertitelspuren im Film (6c; abschaltbar, nicht eingebrannt) */
   subtitles?: string[]
+  /** Vorlage (7b): tatsächliches Format und Qualität; ältere Filme ohne */
+  aspect?: string | null
+  quality?: string | null
 }
+
+export interface RenderStart { aspect: string; quality: string; subtitles: boolean }
 
 const base = (pid: string) => `/modules/studio/projects/${encodeURIComponent(pid)}`
 
 export const renderApi = {
-  start: (pid: string, subtitles = false) => api.post<Job>(`${base(pid)}/render`, subtitles ? { subtitles: true } : {}),
+  start: (pid: string, o: RenderStart) => api.post<Job & { position?: number }>(`${base(pid)}/render`,
+    { aspect: o.aspect, quality: o.quality, ...(o.subtitles ? { subtitles: true } : {}) }),
   list: (pid: string) => api.get<{ renders: RenderItem[] }>(`${base(pid)}/renders`),
 }
