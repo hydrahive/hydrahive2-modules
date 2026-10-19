@@ -114,3 +114,75 @@ def test_holt_auch_im_videomodus_bilder_ab():
         assert src.grabs == 0, "kein JPEG im Hintergrund"
     finally:
         d.close()
+
+
+class StuckX:
+    """Nachbau des Hängers vom 19.10.2026 13:44 auf .2: Xorg steckt im EVDI-Bildwechsel (drm_crtc_commit_wait) und
+    antwortet auf XQueryPointer erst, wenn der EVDI-Thread weiter Bilder abholt. Fragt der EVDI-Thread selbst nach dem
+    Zeiger, warten beide aufeinander."""
+
+    def __init__(self, src, need=5):
+        self.src, self.need = src, need
+        self.calls = 0
+
+    def pointer(self):
+        self.calls += 1
+        start = self.src.grabs + self.src.drains
+        end = time.monotonic() + 3.0
+        while self.src.grabs + self.src.drains < start + self.need:     # X wartet auf weitere Abholungen
+            if time.monotonic() > end:
+                raise TimeoutError("X hängt – EVDI hat nicht weiter abgeholt")
+            time.sleep(0.002)
+        return (100 + self.calls, 200)
+
+
+def test_zeigerabfrage_blockiert_nie_das_bildabholen():
+    src = FakeSrc()
+    ptr = StuckX(src)
+    d = _dash(src, pointer=ptr)
+    try:
+        d.set_active(True)
+        assert _wait(lambda: ptr.calls >= 3, t=4.0), "Zeiger wird abgefragt"
+        before = src.grabs
+        assert _wait(lambda: src.grabs >= before + 20, t=2.0), "EVDI holt weiter ab, auch während X auf ihn wartet"
+        assert d.reason is None
+    finally:
+        d.close()
+
+
+def test_zeiger_kommt_ins_bild():
+    src = FakeSrc()
+    seen = []
+    orig = src.next_jpeg
+
+    def next_jpeg(cursor=None):
+        seen.append(cursor)
+        return orig(cursor=cursor)
+    src.next_jpeg = next_jpeg
+
+    class Ptr:
+        def pointer(self):
+            return (321, 654)
+    d = _dash(src, pointer=Ptr())
+    try:
+        d.set_active(True)
+        assert _wait(lambda: (321, 654) in seen)
+    finally:
+        d.close()
+
+
+def test_ohne_dashboard_wird_der_zeiger_nicht_abgefragt():
+    src = FakeSrc()
+
+    class Ptr:
+        calls = 0
+
+        def pointer(self):
+            Ptr.calls += 1
+            return (1, 1)
+    d = _dash(src, pointer=Ptr())
+    try:
+        assert _wait(lambda: src.drains >= 10)
+        assert Ptr.calls == 0, "im Videomodus keine X-Abfragen für den Zeiger"
+    finally:
+        d.close()
