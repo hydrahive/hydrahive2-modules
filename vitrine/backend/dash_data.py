@@ -1,5 +1,6 @@
-"""Zusammenbau der Statuszentrale (S2): ruft die Quellen, schwärzt jeden Text, hält ein festes Schema und einen
-Zwischenspeicher (lokal 5 s, GitHub 60 s). Fehlt/scheitert eine Quelle → Bereich None, der Rest bleibt.
+"""Zusammenbau der Statuszentrale (S2/S4): ruft die Quellen, schwärzt jeden Text, hält ein festes Schema und einen
+Zwischenspeicher (lokal 5 s, GitHub und Zuhause 60 s). Fehlt/scheitert eine Quelle → Bereich None, der Rest bleibt.
+`layout` (Reihenfolge, ausgeblendete Bereiche) kommt bei jedem Abruf frisch aus der Einstellung – ohne Zwischenspeicher.
 """
 from __future__ import annotations
 
@@ -9,8 +10,9 @@ import time
 from typing import Any, Callable
 
 log = logging.getLogger(__name__)
-AREAS = ("messages", "hydra", "tasks", "machine", "mining", "github", "holiday")
-TTL = {"github": 60.0}
+AREAS = ("messages", "home", "hydra", "tasks", "machine", "mining", "github", "holiday")
+TTL = {"github": 60.0, "home": 60.0}
+LAYOUT_KEYS = ("order", "hidden", "messages_max", "mining_in_machine")
 TTL_DEFAULT = 5.0
 
 
@@ -32,9 +34,11 @@ def github_source(cfg: dict) -> Callable[[], dict]:
 
 
 def default_sources(data_dir, cfg: dict) -> dict[str, Callable[[], Any]]:
-    from . import dash_sources as ds
-    return {"messages": lambda: ds.messages(data_dir), "hydra": ds.hydra,
-            "tasks": lambda: ds.tasks(cfg.get("tasks_user") or "till"), "machine": ds.machine,
+    from . import dash_home, dash_sources as ds
+    user = cfg.get("tasks_user") or "till"
+    return {"messages": lambda: ds.messages(data_dir, new_max=int(cfg.get("messages_max") or ds.NEW_MAX)),
+            "home": lambda: dash_home.home(user, rooms=list(cfg.get("home_rooms") or [])), "hydra": ds.hydra,
+            "tasks": lambda: ds.tasks(user), "machine": ds.machine,
             "mining": ds.mining, "github": github_source(cfg), "holiday": lambda: _holiday(data_dir)}
 
 
@@ -73,7 +77,7 @@ class Builder:
                  redact: Callable[[str], str] | None = None, clock: Callable[[], float] = time.monotonic):
         self._sources, self._clock = sources, clock
         self._secrets = secrets or (lambda: set())
-        self._redact = redact or _hh_redact
+        self._redact = redact or (lambda t: _hh_redact(t))   # spät nachschlagen (Tests ersetzen _hh_redact)
         self._cache: dict[str, tuple[float, Any]] = {}
         self._lock = threading.Lock()
 
@@ -118,9 +122,13 @@ def invalidate(name: str) -> None:
 
 
 def build(data_dir, cfg: dict) -> dict:
-    key = (str(data_dir), cfg.get("tasks_user"), cfg.get("github_project"), tuple(cfg.get("github_repos") or ()))
+    """Builder je Datenquellen-Einstellung; reine Anordnung (order/hidden/mining_in_machine) braucht keinen neuen."""
+    key = (str(data_dir), cfg.get("tasks_user"), cfg.get("github_project"), tuple(cfg.get("github_repos") or ()),
+           cfg.get("messages_max"), tuple(cfg.get("home_rooms") or ()))
     b = _builders.get(key)
     if b is None:
         _builders.clear()
         b = _builders[key] = Builder(default_sources(data_dir, cfg), secrets=_hh_secrets(cfg.get("tasks_user") or "till"))
-    return b.get()
+    out = b.get()
+    out["layout"] = {k: cfg[k] for k in LAYOUT_KEYS if k in cfg}
+    return out

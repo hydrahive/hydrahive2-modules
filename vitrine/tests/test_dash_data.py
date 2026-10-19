@@ -4,7 +4,7 @@ from __future__ import annotations
 from backend import dash_data as dd
 
 SECRET = "geheim-token-123456"
-KEYS = {"messages", "hydra", "tasks", "machine", "mining", "github", "holiday", "updated"}
+KEYS = {"messages", "home", "hydra", "tasks", "machine", "mining", "github", "holiday", "updated"}
 
 
 class Src:
@@ -43,7 +43,7 @@ def _build(src, now=1000.0):
 
 
 def test_schema_vollstaendig_auch_wenn_alles_fehlt():
-    src = Src(**{k: OSError("weg") for k in ("messages", "hydra", "tasks", "machine", "mining", "github", "holiday")})
+    src = Src(**{k: OSError("weg") for k in ("messages", "home", "hydra", "tasks", "machine", "mining", "github", "holiday")})
     r = _build(src).get()
     assert set(r) == KEYS and all(r[k] is None for k in KEYS - {"updated"})
 
@@ -105,3 +105,44 @@ def test_invalidate_holt_bereich_sofort_neu():
     b.invalidate("messages")
     b.get()
     assert src.calls["messages"] == 2 and src.calls["tasks"] == 1
+
+
+def test_layout_und_home_bereich_im_schema(monkeypatch):
+    """S4: /data liefert immer die normalisierte Anordnung und den Bereich home (TTL 60 s)."""
+    from renderer import dash_layout
+    assert "home" in dd.AREAS and dd.TTL["home"] == 60.0
+    cfg = dash_layout.normalize(dict(tasks_user="till", github_project="P", github_repos=[], order=["home", "messages"],
+                                     hidden=["mining"], messages_max=2))
+    seen = {}
+    monkeypatch.setattr(dd, "default_sources", lambda data_dir, c: (seen.setdefault("cfg", c), {})[1])
+    monkeypatch.setattr(dd, "_hh_secrets", lambda user: (lambda: set()))
+    monkeypatch.setattr(dd, "_hh_redact", lambda s: s)
+    dd._builders.clear()
+    r = dd.build("/tmp/x", cfg)
+    dd._builders.clear()
+    assert r["layout"] == {"order": cfg["order"], "hidden": ["mining"], "messages_max": 2, "mining_in_machine": True}
+    assert seen["cfg"]["messages_max"] == 2
+
+
+def test_neue_anordnung_wirkt_ohne_neuen_zwischenspeicher(monkeypatch):
+    """Nur Reihenfolge geändert → gleicher Builder (Daten-Cache bleibt), Layout trotzdem neu."""
+    from renderer import dash_layout
+    base = dict(tasks_user="till", github_project="P", github_repos=[])
+    calls = []
+    monkeypatch.setattr(dd, "default_sources", lambda data_dir, c: (calls.append(1), {})[1])
+    monkeypatch.setattr(dd, "_hh_secrets", lambda user: (lambda: set()))
+    monkeypatch.setattr(dd, "_hh_redact", lambda s: s)
+    dd._builders.clear()
+    a = dd.build("/tmp/x", dash_layout.normalize(dict(base, order=["home"])))
+    b = dd.build("/tmp/x", dash_layout.normalize(dict(base, order=["tasks"])))
+    dd._builders.clear()
+    assert len(calls) == 1 and a["layout"]["order"][0] == "home" and b["layout"]["order"][0] == "tasks"
+
+
+def test_meldungen_hoechstens_n_aus_einstellung(tmp_path):
+    from backend import dash_sources as ds
+    from renderer import inbox
+    for i in range(6):
+        inbox.post(tmp_path, f"m{i}", now=1000.0 + i)
+    r = ds.messages(tmp_path, now=1010.0, new_max=2)
+    assert len(r["new"]) == 2 and r["new_count"] == 6

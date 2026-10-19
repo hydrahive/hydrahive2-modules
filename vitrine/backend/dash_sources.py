@@ -53,11 +53,11 @@ def _msg(m: dict) -> dict:
             "time": time.strftime("%H:%M", time.localtime(float(m.get("created") or 0)))}
 
 
-def messages(data_dir: Path, *, now: float | None = None) -> dict:
-    """S3: ungelesene (Volltext, höchstens NEW_MAX) und gelesene (Verlauf, höchstens HISTORY_MAX) der letzten 24 h."""
+def messages(data_dir: Path, *, now: float | None = None, new_max: int = NEW_MAX) -> dict:
+    """S3/S4: ungelesene (Volltext, höchstens new_max) und gelesene (Verlauf, höchstens HISTORY_MAX) der letzten 24 h."""
     from renderer import inbox
     new, history = inbox.recent(data_dir, now=now)
-    return {"new": [_msg(m) for m in new[:NEW_MAX]], "new_count": len(new), "history": [_msg(m) for m in history[:HISTORY_MAX]]}
+    return {"new": [_msg(m) for m in new[:new_max]], "new_count": len(new), "history": [_msg(m) for m in history[:HISTORY_MAX]]}
 
 
 def hydra(*, connect=_hh_db, active: Callable[[], int] | None = None, service: Callable[[], str] | None = None,

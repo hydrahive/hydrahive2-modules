@@ -119,3 +119,12 @@ def preview() -> FileResponse:
     if not p.is_file():
         raise HTTPException(status_code=404, detail={"code": "vitrine_no_preview"})
     return FileResponse(p, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+
+
+@router.get("/home-rooms")
+def home_rooms() -> dict:
+    """S4: Raumnamen der HA-Favoriten des Besitzers für die Auswahl im Cockpit (keine Werte, keine Entity-IDs)."""
+    from . import dash_home
+    user = config.load(data_dir())["dashboard"]["tasks_user"]
+    h = dash_home.home(user, rooms=[])
+    return {"rooms": [r["room"] for r in h["rooms"]] if h else [], "available": h is not None}

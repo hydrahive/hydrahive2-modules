@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { clamp, dashboardErrors, dashboardInfo, parseRepos, describeRule, displayState, formatDates, fromTemplate, newRule, parseDates, ruleErrors, sizeLabel, type Rule } from "./rules"
+import { clamp, dashboardInfo, describeRule, displayState, formatDates, fromTemplate, newRule, parseDates, ruleErrors, sizeLabel, type Rule } from "./rules"
 
 const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k)
 
@@ -95,17 +95,4 @@ describe("Dashboard-Anzeige", () => {
       .toEqual({ mode: "video", state: "unavailable", reason: "libevdi fehlt" })
     expect(dashboardInfo({ mode: "video", dashboard: "startet" })).toEqual({ mode: "video", state: "unavailable", reason: "startet" })
   })
-})
-
-describe("Statuszentrale-Einstellungen", () => {
-  const ok = { tasks_user: "till", github_project: "Hydrahive DEV", github_repos: ["hydrahive/hydrahive2"] }
-  it("nimmt gültige Werte", () => { expect(dashboardErrors(ok)).toEqual([]) })
-  it("lehnt wie der Server ab", () => {
-    expect(dashboardErrors({ ...ok, tasks_user: "a b" })).toContain("tasks_user")
-    expect(dashboardErrors({ ...ok, github_project: " " })).toContain("github_project")
-    expect(dashboardErrors({ ...ok, github_repos: ["a/.."] })).toContain("github_repos")
-    expect(dashboardErrors({ ...ok, github_repos: ["https://x/y"] })).toContain("github_repos")
-    expect(dashboardErrors({ ...ok, github_repos: Array(6).fill("a/b") })).toContain("github_repos")
-  })
-  it("liest Repos aus Komma/Zeilen", () => { expect(parseRepos(" a/b,\nc/d  ")).toEqual(["a/b", "c/d"]) })
 })

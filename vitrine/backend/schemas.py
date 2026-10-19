@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from renderer import calendar, calendar_extra, config
+from renderer import calendar, calendar_extra, config, dash_layout
 
 _VIDEO = re.compile(r"^[a-z0-9][a-z0-9._-]{0,120}\.(mp4|webm|mkv|mov)$")
 _HM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -29,17 +29,26 @@ class Night(BaseModel):
 
 
 class Dashboard(BaseModel):
+    """Statuszentrale (S2 + S4). Prüfung in renderer.dash_layout – eine Wahrheit für Server und Dienst."""
     model_config = ConfigDict(extra="forbid")
     tasks_user: str = "till"
     github_project: str = "Hydrahive DEV"
-    github_repos: list[str] = Field(default_factory=lambda: list(config.DEFAULTS["dashboard"]["github_repos"]))
+    github_repos: list[str] = Field(default_factory=lambda: list(dash_layout.DEFAULTS["github_repos"]))
+    order: list[str] = Field(default_factory=lambda: list(dash_layout.AREAS))
+    hidden: list[str] = Field(default_factory=list)
+    messages_max: int = 3
+    home_rooms: list[str] = Field(default_factory=list)
+    mining_in_machine: bool = True
 
     @model_validator(mode="after")
     def _ok(self):
         self.github_project = self.github_project.strip()
-        if not config.dashboard_ok(self.model_dump()):
-            raise ValueError("Statuszentrale: Nutzername, Projekt oder Repo (owner/repo) ungültig")
+        if not dash_layout.layout_ok(self.model_dump()):
+            raise ValueError("Statuszentrale: Einstellung ungültig (Nutzer, Projekt, Repo, Bereiche, Räume oder Grenzen)")
         return self
+
+    def full(self) -> dict:
+        return dash_layout.normalize(self.model_dump())
 
 
 class Config(BaseModel):
@@ -85,6 +94,7 @@ class Config(BaseModel):
     def dump(self) -> dict:
         d = self.model_dump()
         d["night"] = self.night.model_dump(by_alias=True)
+        d["dashboard"] = self.dashboard.full()
         return d
 
 

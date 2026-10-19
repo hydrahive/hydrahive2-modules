@@ -29,3 +29,15 @@ def test_nachricht_ungueltig_422(client, admin, data, body):
 @pytest.mark.parametrize("mid", ["../etwas", "ZZZ", "abc"])
 def test_bestaetigen_nur_gueltige_ids(client, admin, data, mid):
     assert client.delete(f"{B}/messages/{mid}", headers=admin).status_code in (404, 422)
+
+
+def test_raeume_fuer_einstellungen_nur_admin_nur_namen(client, admin, data, monkeypatch):
+    """S4: Cockpit holt die Raumnamen der HA-Favoriten für die Auswahl – keine Werte, keine Entity-IDs."""
+    from backend import dash_home
+    monkeypatch.setattr(dash_home, "home", lambda user, rooms: {"rooms": [
+        {"room": "Wohnzimmer", "temp": "22,4 °C"}, {"room": "Küche", "temp": None}], "error": None})
+    assert client.get(f"{B}/home-rooms", headers=_h(client, "nutzer")).status_code == 403
+    r = client.get(f"{B}/home-rooms", headers=admin)
+    assert r.status_code == 200 and r.json() == {"rooms": ["Wohnzimmer", "Küche"], "available": True}
+    monkeypatch.setattr(dash_home, "home", lambda user, rooms: None)
+    assert client.get(f"{B}/home-rooms", headers=admin).json() == {"rooms": [], "available": False}
