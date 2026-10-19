@@ -42,7 +42,17 @@ def save_element(pid: str, data: dict, el_id: str | None = None) -> dict:
     if data.get("kind") not in _clean.ELEMENT_KINDS or not _clean.text(data.get("name"), 200):
         raise PlanError("studio_element_invalid")
     refs = [r for r in (safe_rel(pid, x, IMAGE_EXT) for x in (data.get("references") or [])) if r]
-    el = _clean.element(el_id or new_id(), data, list(dict.fromkeys(refs)))
+    old = read_json(root(pid) / "elements" / el_id / "element.json", {}) if el_id else {}
+    # G2: Felder des geführten Wegs bleiben, wenn sie nicht mitgeschickt werden (Profi-Ansicht kennt sie nicht)
+    keep = {k: old[k] for k in ("probe_rel", "approved", "no_photo") if isinstance(old, dict) and k in old and k not in data}
+    merged = {**data, **keep}
+    if merged.get("approved") is True and not safe_rel(pid, merged.get("probe_rel"), IMAGE_EXT):
+        if data.get("approved") is True:
+            raise PlanError("studio_probe_missing")
+        merged["approved"] = False
+    if merged.get("probe_rel") and not safe_rel(pid, merged.get("probe_rel"), IMAGE_EXT):
+        merged["probe_rel"] = ""
+    el = _clean.element(el_id or new_id(), merged, list(dict.fromkeys(refs)))
     write_json(root(pid, create=True) / "elements" / el["id"] / "element.json", el)
     return el
 

@@ -54,7 +54,8 @@ def reference_urls(pid: str, shot: dict, scene: dict | None = None) -> list[str]
     """Vorlage-Fotos der Bausteine im Bild als data:-URLs (nur echte Bilder im Projekt, höchstens 3)."""
     urls: list[str] = []
     for e in _cast(pid, scene or {}, shot):
-        for rel in e.get("references") or []:
+        first = [e["probe_rel"]] if e.get("approved") and e.get("probe_rel") else []      # G2: Probebild zuerst
+        for rel in first + list(e.get("references") or []):
             if not safe_rel(pid, rel, plan.IMAGE_EXT):
                 continue
             ext = rel.rsplit(".", 1)[-1].lower()

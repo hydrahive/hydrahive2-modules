@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import time
 
-from _gen_helpers import PNG, P, provider  # noqa: F401  (Fixture)
+from _gen_helpers import PNG, FakeProvider, P
 from conftest import MOD_PREFIX, OTHER_PROJECT_ID
+
+pytest_plugins = ["_gen_helpers"]                 # Fixture `provider`
 
 
 def _el(client, h, ws, *, refs: bool = True, desc: str = "five friendly heads", kind: str = "character", name: str = "Hydra") -> dict:
@@ -83,7 +85,6 @@ def test_probe_unknown_or_foreign(client, auth_headers, ws) -> None:
 
 
 def test_probe_busy(client, auth_headers, ws, monkeypatch) -> None:
-    from _gen_helpers import FakeProvider
     monkeypatch.setattr("backend.image_provider.request_image", FakeProvider(delay=0.5))
     el = _el(client, auth_headers, ws)
     assert client.post(f"{P}/elements/{el['id']}/probe", headers=auth_headers).status_code == 202
@@ -93,7 +94,6 @@ def test_probe_busy(client, auth_headers, ws, monkeypatch) -> None:
 
 
 def test_probe_failure_is_shown(client, auth_headers, ws, monkeypatch) -> None:
-    from _gen_helpers import FakeProvider
     monkeypatch.setattr("backend.image_provider.request_image", FakeProvider(error="no_key"))
     el = _el(client, auth_headers, ws)
     client.post(f"{P}/elements/{el['id']}/probe", headers=auth_headers)
@@ -147,7 +147,6 @@ def test_no_photo_flag_and_bool_only(client, auth_headers, ws) -> None:
 def test_approved_probe_goes_first_into_shot_images(client, auth_headers, ws, monkeypatch) -> None:
     import base64
 
-    from _gen_helpers import FakeProvider
     other_png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR42mP4z8AAAAMBAQAY3Y2wAAAAAElFTkSuQmCC")
     provider = FakeProvider(result=other_png)                                         # Probebild ≠ Foto
     monkeypatch.setattr("backend.image_provider.request_image", provider)
@@ -209,7 +208,10 @@ def test_probe_rel_rules(client, auth_headers, ws) -> None:
     (ws / "studio/media/probes/sub").mkdir(parents=True)
     (ws / "studio/media/probes/sub/x.png").write_bytes(PNG)
     el = _el(client, auth_headers, ws)
-    put = lambda body: client.put(f"{P}/elements/{el['id']}", headers=auth_headers, json={**el, **body})  # noqa: E731
+
+    def put(body: dict):
+        return client.put(f"{P}/elements/{el['id']}", headers=auth_headers, json={**el, **body})
+
     assert put({"probe_rel": "studio/media/probes/sub/x.png"}).json()["probe_rel"] == ""          # kein Unterordner
     assert put({"probe_rel": "studio/media/probes/fehlt.png"}).json()["probe_rel"] == ""          # Datei muss da sein
     (ws / "studio/media/probes/da.png").write_bytes(PNG)
@@ -235,7 +237,6 @@ def test_probe_is_always_wide(client, auth_headers, ws, provider) -> None:
 
 
 def test_probe_bad_image(client, auth_headers, ws, monkeypatch) -> None:
-    from _gen_helpers import FakeProvider
     monkeypatch.setattr("backend.image_provider.request_image", FakeProvider(result=b"kein bild"))
     el = _el(client, auth_headers, ws)
     client.post(f"{P}/elements/{el['id']}/probe", headers=auth_headers)

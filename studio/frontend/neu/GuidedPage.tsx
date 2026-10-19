@@ -4,9 +4,11 @@ import { ArrowLeft, ArrowRight, Check, Clapperboard, Construction, Film, ImageIc
 import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
-import { doneSteps, STEP_IDS, type StepId } from "./guidedLogic"
+import { castOpen, doneSteps, STEP_IDS, type StepId } from "./guidedLogic"
 import { StepHead } from "./ui"
+import { StepCastLive } from "./StepCastLive"
 import { StepIdeaLive } from "./StepIdeaLive"
+import { useCast } from "./useCast"
 import { useGuided, type GuidedState } from "./useGuided"
 
 const ICONS: Record<StepId, typeof Lightbulb> = { 1: Lightbulb, 2: Users, 3: ImageIcon, 4: Clapperboard, 5: Film }
@@ -71,7 +73,8 @@ function Soon({ n }: { n: StepId }) {
 function Footer({ g }: { g: GuidedState }) {
   const { t } = useTranslation("studio")
   const next = (g.step + 1) as StepId
-  const gap = g.step === 1 && !g.plan?.scenes.length ? t("guided.gap.1") : ""
+  const open = castOpen(g.plan?.elements ?? [])
+  const gap = g.step === 1 && !g.plan?.scenes.length ? t("guided.gap.1") : g.step === 2 && open ? t("guided.gap.2", { count: open }) : ""
   return (
     <footer className="flex items-center gap-4 border-t border-[#1c2433] bg-[#0b111b] px-8 py-4">
       {g.step > 1 ? <button type="button" onClick={() => g.setStep((g.step - 1) as StepId)} className="flex items-center gap-2 text-sm font-semibold text-[#c3ccdd] hover:text-white"><ArrowLeft size={16} /> {t("guided.back")}</button> : <span />}
@@ -89,6 +92,7 @@ function Footer({ g }: { g: GuidedState }) {
 export function GuidedPage() {
   const { t } = useTranslation("studio")
   const g = useGuided(t)
+  const c = useCast(g, t, g.step === 2)
   return (
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
       <CockpitTopbar active="/studio" context={t("title")} />
@@ -99,7 +103,7 @@ export function GuidedPage() {
             <div className="mx-auto max-w-6xl">
               {g.projects && g.projects.length === 0
                 ? <p className="rounded-[10px] border border-[#2a364b] p-6 text-base text-[#c3ccdd]">{t("guided.no_project")}</p>
-                : g.step === 1 ? <StepIdeaLive g={g} /> : <Soon n={g.step} />}
+                : g.step === 1 ? <StepIdeaLive g={g} /> : g.step === 2 ? <StepCastLive g={g} c={c} /> : <Soon n={g.step} />}
             </div>
           </main>
           <Footer g={g} />
