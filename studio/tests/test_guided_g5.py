@@ -144,3 +144,70 @@ def test_bad_options_and_empty(client, auth_headers, ws) -> None:
 
 def test_foreign_project(client, auth_headers) -> None:
     assert client.post(f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/film", headers=auth_headers, json={}).status_code == 404
+
+
+@needs_ffmpeg
+def test_music_does_not_count_as_hand_cut(client, auth_headers, ws, voice, music) -> None:
+    """Die Musik ändert die Zeitleiste – das ist kein Schnitt von Hand: der nächste Film fragt nicht."""
+    _film(client, auth_headers, ws)
+    client.post(f"{R}/film", headers=auth_headers, json={"music": True})
+    assert _wait_film(client, auth_headers)["status"] == "done"
+    r = client.post(f"{R}/film", headers=auth_headers, json={})
+    assert r.status_code == 202, r.text
+    _wait_film(client, auth_headers)
+
+
+@needs_ffmpeg
+def test_subtitles_only_when_wanted(client, auth_headers, ws, voice, music) -> None:
+    _film(client, auth_headers, ws, speech="Hallo.")
+    client.post(f"{R}/film", headers=auth_headers, json={"subtitles": False})
+    job = _wait_film(client, auth_headers)
+    assert job["result"]["subtitles"] is False
+    langs = client.get(f"{R}/subtitles", headers=auth_headers).json()["languages"]
+    assert all(x["count"] == 0 for x in langs)                                         # keine Untertitel angelegt
+
+
+@needs_ffmpeg
+def test_film_busy_and_queue_freed(client, auth_headers, ws, voice, music, monkeypatch) -> None:
+    from backend import render_queue
+    _film(client, auth_headers, ws)
+    slow = FakeSlow()
+    monkeypatch.setattr("backend._film_steps.add_voice", slow)
+    assert client.post(f"{R}/film", headers=auth_headers, json={"voice": True}).status_code == 202
+    r = client.post(f"{R}/film", headers=auth_headers, json={"voice": True})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "studio_film_running"
+    _wait_film(client, auth_headers)
+    assert render_queue.pending(PROJECT_ID) == 0                                       # Platz in der Warteschlange frei
+
+
+class FakeSlow:
+    def __call__(self, pid, progress) -> int:
+        time.sleep(0.5)
+        return 0
+
+
+@needs_ffmpeg
+def test_voice_text_for_several_shots_and_no_double(client, auth_headers, ws, voice, music) -> None:
+    (s0, _), _ = _film(client, auth_headers, ws)
+    client.post(f"{P}/scenes/{s0}/shots", headers=auth_headers, json={"prompt": "Zweites Bild", "duration": 2})
+    client.post(f"{R}/film", headers=auth_headers, json={"voice": True})
+    _wait_film(client, auth_headers)
+    sc = next(s for s in client.get(P, headers=auth_headers).json()["scenes"] if s["id"] == s0)
+    assert [x["speech"] for x in sc["shots"]] == ["p0", "Zweites Bild"]                # mehrere Bilder: Bildbeschreibung
+    n = len(voice.calls)
+    client.post(f"{R}/film", headers=auth_headers, json={"voice": True})
+    _wait_film(client, auth_headers)
+    assert len(voice.calls) == n                                                       # schon vertont → nicht nochmal
+
+
+@needs_ffmpeg
+def test_long_music_is_cut_and_fades(client, auth_headers, ws, voice, monkeypatch) -> None:
+    from _music_helpers import FakeMusic
+    from _voice_helpers import wav
+    monkeypatch.setattr("backend.music_provider.generate", FakeMusic(data=wav(9.0)))
+    monkeypatch.setattr("backend.music_provider.server_default_model", lambda: "server/lyria")
+    _film(client, auth_headers, ws)                                                    # Film 4 s → Musik 5 s (Minimum)
+    client.post(f"{R}/film", headers=auth_headers, json={"music": True})
+    _wait_film(client, auth_headers)
+    a2 = next(t for t in client.get(f"{R}/timeline", headers=auth_headers).json()["tracks"] if t["id"] == "A2")["clips"][0]
+    assert a2["out"] == 5 and a2["fade_out"] == 2

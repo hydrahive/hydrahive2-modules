@@ -48,6 +48,7 @@ describe("G5 – Logik", () => {
     expect(filmNotes(job({ status: "done", result: { notes: ["music_failed"], voice_failed: 2 } }))).toEqual(["music_failed", "voice_failed"])
     expect(filmNotes(job({ status: "done", result: { notes: [], voice_failed: 0 } }))).toEqual([])
     expect(filmNotes(null)).toEqual([])
+    expect(filmNotes(job({ status: "running", result: { notes: ["music_failed"], voice_failed: 1 } }))).toEqual([])   // nur fertige
   })
 })
 
