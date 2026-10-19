@@ -76,3 +76,40 @@ describe("C4 – Texte", () => {
     }
   })
 })
+
+type El = { type?: unknown; props: Record<string, unknown> & { children?: unknown } }
+const find = (node: unknown, ok: (e: El) => boolean, out: El[] = []): El[] => {
+  if (Array.isArray(node)) node.forEach((n) => find(n, ok, out))
+  else if (node && typeof node === "object" && "props" in node) {
+    const el = node as El
+    if (ok(el)) out.push(el)
+    find(el.props.children, ok, out)
+  }
+  return out
+}
+
+describe("C4 – Farbfelder bedienen", () => {
+  it("Feld ändern, × entfernt genau diese Farbe, „+ Farbe“ hängt an; bei 12 kein „+“", () => {
+    const onChange = vi.fn()
+    const tree = ColorPick({ label: "Farben", colors: ["#111111", "#222222", "#333333"], onChange })
+    const inputs = find(tree, (e) => e.type === "input")
+    ;(inputs[1].props.onChange as (e: unknown) => void)({ target: { value: "#00ff00" } })
+    expect(onChange).toHaveBeenLastCalledWith(["#111111", "#00ff00", "#333333"])
+    ;(find(tree, (e) => e.props["data-color-remove"] !== undefined)[1].props.onClick as () => void)()
+    expect(onChange).toHaveBeenLastCalledWith(["#111111", "#333333"])
+    ;(find(tree, (e) => e.props["data-color-add"] !== undefined)[0].props.onClick as () => void)()
+    expect(onChange).toHaveBeenLastCalledWith(["#111111", "#222222", "#333333", "#888888"])
+    expect(html(<ColorPick label="F" colors={Array(12).fill("#000000")} onChange={noop} />)).not.toContain("data-color-add")
+    expect(colorRemove(["#1", "#2", "#3"], 2)).toEqual(["#1", "#2"])
+  })
+
+  it("Baustein und Kopf übernehmen die Farbe (Speichern wird möglich)", async () => {
+    const { ElementForm } = await import("./ElementForm")
+    const { HeadForm } = await import("./HeadForm")
+    for (const [name, src] of Object.entries(import.meta.glob(["./ElementForm.tsx", "./HeadForm.tsx"], { query: "?raw", import: "default", eager: true }))) {
+      const s = String(src)
+      expect(s, name).toMatch(name.includes("Element") ? /onChange=\{\(c\) => set\("palette", c\)\}/ : /onChange=\{\(c\) => set\("look", \{ \.\.\.h\.look, palette: c \}\)\}/)
+    }
+    void ElementForm; void HeadForm
+  })
+})
