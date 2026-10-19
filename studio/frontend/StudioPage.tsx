@@ -118,7 +118,7 @@ export function StudioPage() {
         <WorkspaceIntro workspace={s.workspace} open={guide.introOpen} onToggle={guide.toggleIntro} />
         {delivering ? (
           <div className="min-h-0 flex-1">
-            <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} job={dv.job}
+            <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} queue={dv.queue} cancelling={dv.cancelling} onCancel={dv.cancel}
               busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")}
               subtitleLanguages={dv.subtitleLanguages} withSubtitles={dv.withSubtitles} onWithSubtitles={dv.setWithSubtitles}
               preset={dv.preset} onPreset={dv.setPreset} />

@@ -15,7 +15,7 @@ const noop = () => {}
 const html = (el: React.ReactElement) => renderToStaticMarkup(el).replace(/&quot;/g, '"')
 const clip: TimelineClip = { id: "c", kind: "video", start: 0, in: 0, out: 4, media_rel: "x", scene_id: "", shot_id: "", label: "l" }
 let n = 0
-const job = (p: Partial<Job> & { info?: Record<string, unknown> }): Job => ({ id: `j${++n}`, kind: "render", target: "render:x", scene_id: "", status: "queued",
+const job = (p: Partial<Job>): Job => ({ id: `j${++n}`, kind: "render", target: "render:x", scene_id: "", status: "queued",
   error: null, result: null, created_at: `2026-10-19T01:0${n % 10}:00.000000Z`, finished_at: null,
   progress: { total: 100, done: 0, failed: 0, current: "" }, info: { aspect: "9:16", quality: "preview", subtitles: false }, ...p } as Job)
 const base = { clips: [clip], renders: [], busy: false, onRender: noop, onCut: noop, aspect: "16:9" }
@@ -81,14 +81,14 @@ describe("7c – Warteschlange: Liste", () => {
 
 describe("7c – Reiter „Ausgabe“", () => {
   it("während ein Film läuft: Knopf und Auswahl frei (nächste Fassung anstoßen), Liste sichtbar", () => {
-    const out = html(<DeliverPanel {...base} job={null} queue={[job({ status: "running" }), job({ status: "queued" })]} cancelling={null} onCancel={noop} />)
+    const out = html(<DeliverPanel {...base} queue={[job({ status: "running" }), job({ status: "queued" })]} cancelling={null} onCancel={noop} />)
     expect(out).not.toMatch(/<button[^>]*disabled=""[^>]*data-deliver-run/)
     expect(out).not.toMatch(/<select[^>]*disabled=""/)
     expect(out).toContain("queue_title")
   })
 
   it("Schlange voll: Knopf gesperrt mit Hinweis", () => {
-    const out = html(<DeliverPanel {...base} job={null} queue={Array.from({ length: 5 }, () => job({ status: "queued" }))} cancelling={null} onCancel={noop} />)
+    const out = html(<DeliverPanel {...base} queue={Array.from({ length: 5 }, () => job({ status: "queued" }))} cancelling={null} onCancel={noop} />)
     expect(out).toMatch(/<button[^>]*disabled=""[^>]*data-deliver-run/)
     expect(out).toContain('queue_full:{"max":5}')
   })

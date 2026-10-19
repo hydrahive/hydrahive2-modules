@@ -26,7 +26,7 @@ export interface RenderStart { aspect: string; quality: string; subtitles: boole
 const base = (pid: string) => `/modules/studio/projects/${encodeURIComponent(pid)}`
 
 export const renderApi = {
-  start: (pid: string, o: RenderStart) => api.post<Job>(`${base(pid)}/render`,
+  start: (pid: string, o: RenderStart) => api.post<Job & { position?: number }>(`${base(pid)}/render`,
     { aspect: o.aspect, quality: o.quality, ...(o.subtitles ? { subtitles: true } : {}) }),
   list: (pid: string) => api.get<{ renders: RenderItem[] }>(`${base(pid)}/renders`),
 }

@@ -6,7 +6,6 @@ import time
 
 import pytest
 from _render_helpers import R, clip, needs_ffmpeg, put_timeline
-from conftest import PROJECT_ID
 
 
 def _image_timeline(client, h, ws, n: int = 1) -> None:
@@ -39,7 +38,7 @@ class FakeFfmpeg:
         self.lock = threading.Lock()
         self.open = False                                   # nach dem Test: nichts mehr aufhalten
 
-    def __call__(self, cmd, seconds, progress):
+    def __call__(self, cmd, seconds, progress, stop=None):
         graph = cmd[cmd.index("-filter_complex") + 1]
         size = graph.split("scale=", 1)[1].split(":force", 1)[0]
         gate = threading.Event()
@@ -49,7 +48,10 @@ class FakeFfmpeg:
             self.calls.append(size)
             self.gates.append(gate)
         while not gate.wait(0.05):
-            progress(0.4)                                   # Fortschritt melden – hier greift auch das Abbrechen
+            if stop and stop():                             # wie der Wächter in render_ffmpeg
+                from backend import jobs
+                raise jobs.Cancelled()
+            progress(0.4)
         open(cmd[-1], "wb").close()
 
     def release(self, i: int) -> None:
@@ -215,7 +217,8 @@ def test_cancel_while_waiting_leaves_the_line() -> None:
     second, _ = render_queue.enter("c1")
 
     class P:
-        job = {"id": "x" * 32, "status": "queued"}
+        def __init__(self) -> None:
+            self.job = {"id": "x" * 32, "status": "queued"}
 
         def set(self, **_) -> None:
             pass
@@ -246,4 +249,22 @@ def test_real_ffmpeg_is_stopped_on_cancel(tmp_path) -> None:
     assert time.monotonic() - start < 10
     time.sleep(0.3)
     import subprocess
-    assert str(tmp_path / "o.mp4") not in subprocess.run(["ps", "-eo", "args"], capture_output=True, text=True).stdout
+    assert str(tmp_path / "o.mp4") not in subprocess.run(["ps", "-eo", "args"], capture_output=True, text=True, check=False).stdout
+
+
+def test_silent_ffmpeg_hits_the_time_limit(monkeypatch) -> None:
+    """Gibt ffmpeg nichts aus (z. B. kaputtes Bild), greift die Zeitgrenze trotzdem (Wächter, nicht die Lese-Schleife)."""
+    from backend import render, render_args
+    monkeypatch.setattr(render_args, "time_limit", lambda seconds: 1)
+    start = time.monotonic()
+    with pytest.raises(render.RenderFailed):
+        render._run_ffmpeg(["sleep", "30"], 10, lambda f: None)
+    assert time.monotonic() - start < 4
+
+
+def test_silent_ffmpeg_can_be_cancelled() -> None:
+    from backend import jobs, render
+    start = time.monotonic()
+    with pytest.raises(jobs.Cancelled):
+        render._run_ffmpeg(["sleep", "30"], 10, lambda f: None, stop=lambda: True)
+    assert time.monotonic() - start < 3

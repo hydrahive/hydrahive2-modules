@@ -71,7 +71,7 @@ def test_preset_reaches_ffmpeg(client, auth_headers, ws, monkeypatch) -> None:
     from backend import render
     seen: list[list[str]] = []
 
-    def fake(cmd, seconds, progress):
+    def fake(cmd, seconds, progress, **_):
         seen.append(cmd)
         raise render.RenderFailed()
     monkeypatch.setattr(render, "_run_ffmpeg", fake)
@@ -105,7 +105,7 @@ def test_real_film_portrait_from_landscape(client, auth_headers, ws) -> None:
 def test_without_preset_like_before(client, auth_headers, ws, monkeypatch) -> None:
     """Ohne Angaben: Format des Drehbuchs, Standard (wie 4d); Begleitdatei nennt das tatsächliche Format."""
     from backend import render
-    monkeypatch.setattr(render, "_run_ffmpeg", lambda cmd, seconds, progress: (cmd[-1] and open(cmd[-1], "wb").close()))
+    monkeypatch.setattr(render, "_run_ffmpeg", lambda cmd, seconds, progress, **_: (cmd[-1] and open(cmd[-1], "wb").close()))
     client.put(f"{R}/plan/screenplay", headers=auth_headers, json={"aspect_ratio": "21:9"})
     _image_timeline(client, auth_headers, ws)
     assert client.post(f"{R}/render", headers=auth_headers, json={}).status_code == 202

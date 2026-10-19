@@ -18,7 +18,7 @@ const html = (el: React.ReactElement) => renderToStaticMarkup(el).replace(/&quot
 const clip: TimelineClip = { id: "c", kind: "video", start: 0, in: 0, out: 4, media_rel: "x", scene_id: "", shot_id: "", label: "l" }
 const R = (p: Partial<RenderItem>): RenderItem => ({ rel: "studio/renders/a.mp4", abs: "/w/studio/renders/a.mp4", name: "a.mp4", duration: 12.5,
   width: 720, height: 1280, created_at: "2026-10-19T08:12:00Z", missing: 0, clips: 3, ...p })
-const base = { clips: [clip], renders: [], job: null, busy: false, onRender: noop, onCut: noop }
+const base = { clips: [clip], renders: [], busy: false, onRender: noop, onCut: noop }
 
 describe("7b – Vorlagen: Größen wie auf dem Server", () => {
   it("kürzere Seite = Qualität, längere aus dem Format, gerade gerundet; „wie im Drehbuch“ nimmt das Drehbuch", () => {
@@ -134,12 +134,13 @@ describe("7b – Vorlagen: Auswahl bedienen", () => {
     expect(onChange).toHaveBeenLastCalledWith({ aspect: "screenplay", quality: "preview" })
   })
 
-  it("während ein Film entsteht, sind beide Felder gesperrt", () => {
-    const out = html(<DeliverPanel {...base} aspect="16:9" job={{ id: "j", kind: "render", target: "render:x", scene_id: "", status: "running", error: null,
-      result: null, created_at: "x", finished_at: null, progress: { total: 100, done: 10, failed: 0, current: "" } }} />)
-    expect(out).toMatch(/<select[^>]*disabled=""[^>]*data-deliver-aspect/)
-    expect(out).toMatch(/<select[^>]*disabled=""[^>]*data-deliver-quality/)
-    expect(html(<DeliverPanel {...base} aspect="16:9" />)).not.toMatch(/<select[^>]*disabled=""/)
+  it("7c: während ein Film entsteht, bleiben beide Felder frei (nächste Fassung anstoßen); gesperrt nur, wenn verlangt", () => {
+    const out = html(<DeliverPanel {...base} aspect="16:9" queue={[{ id: "j", kind: "render", target: "render:x", scene_id: "", status: "running", error: null,
+      result: null, created_at: "x", finished_at: null, progress: { total: 100, done: 10, failed: 0, current: "" } }]} />)
+    expect(out).not.toMatch(/<select[^>]*disabled=""/)
+    const locked = html(<DeliverPreset preset={{ aspect: "1:1", quality: "high" }} screenplay="16:9" disabled />)
+    expect(locked).toMatch(/<select[^>]*disabled=""[^>]*data-deliver-aspect/)
+    expect(locked).toMatch(/<select[^>]*disabled=""[^>]*data-deliver-quality/)
   })
 })
 

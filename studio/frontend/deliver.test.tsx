@@ -39,34 +39,34 @@ describe("4d – Ausgabe: Übersicht", () => {
 
 describe("4d – Ausgabe: Reiter", () => {
   it("leere Zeitleiste: Hinweis und Knopf „Zum Schneiden“, „Film als MP4 erzeugen“ gesperrt", () => {
-    const out = html(<DeliverPanel clips={[]} renders={[]} job={null} {...base} />)
+    const out = html(<DeliverPanel clips={[]} renders={[]} {...base} />)
     expect(out).toContain("deliver_empty")
     expect(buttons(out)).toContain("soon_to_cut")
     expect(out).toMatch(/<button[^>]*disabled=""[^>]*data-deliver-run/)
   })
 
   it("mit Clips: Übersicht, Hinweis bei Platzhaltern, Knopf frei", () => {
-    const out = html(<DeliverPanel clips={[c("video", 0, 4), c("placeholder", 4, 2)]} renders={[]} job={null} {...base} aspect="9:16" />)
+    const out = html(<DeliverPanel clips={[c("video", 0, 4), c("placeholder", 4, 2)]} renders={[]} {...base} aspect="9:16" />)
     expect(out).toContain('deliver_summary:{"length":"0:06","clips":2}')
     expect(out).toContain('deliver_result:{"width":720,"height":1280}')
     expect(out).toContain('deliver_placeholders:{"count":1}')
     expect(buttons(out)).toContain("deliver_run")
     expect(out).not.toMatch(/<button[^>]*disabled=""[^>]*data-deliver-run/)
     expect(out).toContain("deliver_none")
-    expect(html(<DeliverPanel clips={[c("video", 0, 4)]} renders={[]} job={null} {...base} />)).not.toContain("deliver_placeholders")
+    expect(html(<DeliverPanel clips={[c("video", 0, 4)]} renders={[]} {...base} />)).not.toContain("deliver_placeholders")
   })
 
-  it("läuft: Fortschritt in Prozent, Knopf gesperrt; fehlgeschlagen: Meldung", () => {
-    const run = html(<DeliverPanel clips={[c("video", 0, 4)]} renders={[]} job={job({})} {...base} />)
-    expect(run).toContain('deliver_running:{"percent":40}')
-    expect(run).toMatch(/<button[^>]*disabled=""[^>]*data-deliver-run/)
-    const failed = html(<DeliverPanel clips={[c("video", 0, 4)]} renders={[]} job={job({ status: "failed", error: "render_failed" })} {...base} />)
+  it("läuft: Fortschritt in Prozent in der Warteschlange; fehlgeschlagen: Meldung (7c: Knopf bleibt frei)", () => {
+    const run = html(<DeliverPanel clips={[c("video", 0, 4)]} renders={[]} queue={[job({})]} {...base} />)
+    expect(run).toContain('queue_status.running:{"percent":40}')
+    expect(run).not.toMatch(/<button[^>]*disabled=""[^>]*data-deliver-run/)
+    const failed = html(<DeliverPanel clips={[c("video", 0, 4)]} renders={[]} queue={[job({ status: "failed", error: "render_failed" })]} {...base} />)
     expect(failed).toContain("job_err.render_failed")
   })
 
   it("fertige Filme: neueste oben, Abspieler, „Herunterladen“ als Link mit download, Hinweis bei fehlenden Medien", () => {
     const out = html(<DeliverPanel clips={[c("video", 0, 4)]} renders={[R({}), R({ rel: "studio/renders/b.mp4", abs: "/w/b.mp4", name: "b.mp4", missing: 2 })]}
-      job={null} {...base} />)
+      {...base} />)
     expect((out.match(/data-deliver-film=/g) || []).length).toBe(2)
     expect(out).toContain('<video')
     expect(out).toMatch(/<a[^>]*href="\/f\/w\/studio\/renders\/a.mp4"[^>]*download="[^"]+\.mp4"/)
@@ -93,7 +93,7 @@ describe("Quellen der Bibliothek", () => {
 
 describe("4d – Liste lädt", () => {
   it("solange die Liste noch nicht da ist: „Lädt …“ statt „Noch kein Film“", () => {
-    const out = html(<DeliverPanel clips={[c("video", 0, 4)]} renders={null} job={null} {...base} />)
+    const out = html(<DeliverPanel clips={[c("video", 0, 4)]} renders={null} {...base} />)
     expect(out).toContain("loading")
     expect(out).not.toContain("deliver_none")
   })

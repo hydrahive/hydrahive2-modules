@@ -107,7 +107,7 @@ describe("6c – Ausgabe: Untertitel mitliefern (abschaltbar, nicht eingebrannt)
   const R = (p: Partial<RenderItem>): RenderItem => ({ rel: "studio/renders/a.mp4", abs: "/w/a.mp4", name: "a.mp4", duration: 12, width: 1280, height: 720,
     created_at: "2026-10-18T10:00:00Z", missing: 0, clips: 3, subtitles: [], ...p })
   const clip = { id: "c", kind: "image" as const, start: 0, in: 0, out: 4, media_rel: "x", scene_id: "", shot_id: "", label: "l" }
-  const panel = (p: Partial<React.ComponentProps<typeof DeliverPanel>> = {}) => html(<DeliverPanel clips={[clip]} aspect="16:9" renders={[]} job={null}
+  const panel = (p: Partial<React.ComponentProps<typeof DeliverPanel>> = {}) => html(<DeliverPanel clips={[clip]} aspect="16:9" renders={[]}
     busy={false} onRender={noop} onCut={noop} subtitleLanguages={["de", "en"]} withSubtitles={false} onWithSubtitles={noop} {...p} />)
   it("Kästchen mit den Sprachen, aus/an", () => {
     const off = panel()
