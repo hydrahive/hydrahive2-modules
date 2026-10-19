@@ -22,6 +22,7 @@ from .shot_routes import router as shot_router
 from .subtitle_routes import list_router as subtitle_list_router
 from .subtitle_routes import router as subtitle_router
 from .timeline_routes import router as timeline_router
+from .upload_routes import router as upload_router
 
 router = APIRouter()
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
@@ -83,3 +84,4 @@ router.include_router(shot_router)
 router.include_router(subtitle_list_router)
 router.include_router(subtitle_router)
 router.include_router(timeline_router)
+router.include_router(upload_router)
