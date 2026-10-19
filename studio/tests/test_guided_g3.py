@@ -21,12 +21,12 @@ def _cast(client, h, sc_id: str) -> list[str]:
     return sc["shots"][0]["cast"]
 
 
-def test_excluded_removes_named_character(client, auth_headers, ws) -> None:
+def test_cast_is_what_is_ticked(client, auth_headers, ws) -> None:
+    """H2: genannt reicht nicht mehr; angehakt = im Bild."""
     hydra, mira, sc, shot = _setup(client, auth_headers)
-    assert sorted(_cast(client, auth_headers, sc["id"])) == sorted([hydra["id"], mira["id"]])   # beide im Text genannt
-    r = client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers, json={"excluded_ids": [mira["id"]]})
-    assert r.status_code == 200 and r.json()["excluded_ids"] == [mira["id"]]
-    assert _cast(client, auth_headers, sc["id"]) == [hydra["id"]]                          # Mira raus, obwohl genannt
+    assert _cast(client, auth_headers, sc["id"]) == []
+    client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers, json={"element_ids": [mira["id"], hydra["id"]]})
+    assert sorted(_cast(client, auth_headers, sc["id"])) == sorted([hydra["id"], mira["id"]])
 
 
 def test_excluded_beats_ticked(client, auth_headers, ws) -> None:
@@ -54,9 +54,10 @@ def test_deleted_element_leaves_excluded(client, auth_headers, ws) -> None:
 
 def test_excluded_leaves_prompt_and_references(client, auth_headers, ws, provider) -> None:
     (ws / "f.png").write_bytes(PNG)
-    _, mira, sc, shot = _setup(client, auth_headers)
+    hydra, mira, sc, shot = _setup(client, auth_headers)
     client.put(f"{P}/elements/{mira['id']}", headers=auth_headers, json={**mira, "references": ["f.png"]})
-    client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers, json={"excluded_ids": [mira["id"]]})
+    client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers,
+               json={"element_ids": [hydra["id"], mira["id"]], "excluded_ids": [mira["id"]]})
     client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=auth_headers)
     end = time.time() + 5
     while not provider.calls and time.time() < end:

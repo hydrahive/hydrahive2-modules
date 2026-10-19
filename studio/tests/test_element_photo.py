@@ -5,6 +5,7 @@ import json
 
 import pytest
 from _gen_helpers import PNG, P, _wait
+
 from backend import cast
 
 pytest_plugins = ["_gen_helpers"]                 # Fixture `provider`
@@ -48,11 +49,12 @@ def test_cast_drops_deleted_and_duplicates() -> None:
     assert cast.of_shot(scene, shot, els) == ["h"]
 
 
-def test_cast_of_shot_merges_ticked_and_named() -> None:
+def test_cast_of_shot_only_ticked() -> None:
+    """H2: nur angehakt zählt – genannte Namen (Szene, Shot, Sprechtext) holen niemanden mehr ins Bild."""
     els = [_el("h", "Hydra"), _el("l", "Leuchtturm"), _el("m", "Mira")]
     scene = {"title": "Sturm am Leuchtturm", "description": "", "element_ids": []}
     shot = {"prompt": "Nahaufnahme", "speech": "Hydra ruft", "element_ids": ["m"]}
-    assert cast.of_shot(scene, shot, els) == ["m", "l", "h"]       # angehakt zuerst, dann Szene, dann Shot – ohne Doppelte
+    assert cast.of_shot(scene, shot, els) == ["m"]
 
 
 def _setup(client, h, ws, *, prompt: str, ref: bool = True):
@@ -69,23 +71,24 @@ def _setup(client, h, ws, *, prompt: str, ref: bool = True):
     return hydra, sc, shot
 
 
-def test_named_element_goes_into_the_image(client, auth_headers, ws, provider) -> None:
-    """Hydra steht nur im Shot-Text – trotzdem bekommt die Bild-KI Beschreibung, Aussehen und Foto."""
+def test_named_but_not_ticked_stays_out(client, auth_headers, ws, provider) -> None:
+    """H2: Hydra steht nur im Shot-Text, ist aber nicht angehakt – keine Beschreibung, kein Foto (der Text bleibt)."""
     _, sc, shot = _setup(client, auth_headers, ws, prompt="Hydra fliegt über das Meer")
     client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=auth_headers, json={})
     assert _wait(client, auth_headers, sc["id"], shot["id"])["status"] == "done"
     call = provider.calls[0]
-    assert "Hydra: Drache mit drei Köpfen" in call["prompt"] and "grüne Schuppen" in call["prompt"]
-    assert len(call["references"]) == 1
+    assert "Drache mit drei Köpfen" not in call["prompt"] and call["references"] == []
 
 
-def test_name_only_in_scene_brings_the_photo(client, auth_headers, ws, provider) -> None:
-    """Hydra steht nur im Titel der Szene – das Foto geht trotzdem mit (die Szene zählt auch für die Vorlagen)."""
-    _, sc, shot = _setup(client, auth_headers, ws, prompt="Wellen schlagen")
-    client.put(f"{P}/scenes/{sc['id']}", headers=auth_headers, json={"title": "Hydra am Meer"})
+def test_ticked_brings_description_and_photo(client, auth_headers, ws, provider) -> None:
+    """Angehakt am Bild: Beschreibung, Aussehen und Foto gehen mit."""
+    hydra, sc, shot = _setup(client, auth_headers, ws, prompt="Wellen schlagen")
+    client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers, json={"element_ids": [hydra["id"]]})
     client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=auth_headers, json={})
     _wait(client, auth_headers, sc["id"], shot["id"])
-    assert len(provider.calls[0]["references"]) == 1 and "Hydra" in provider.calls[0]["prompt"]
+    call = provider.calls[0]
+    assert "Hydra: Drache mit drei Köpfen" in call["prompt"] and "grüne Schuppen" in call["prompt"]
+    assert len(call["references"]) == 1
 
 
 def test_unnamed_element_stays_out(client, auth_headers, ws, provider) -> None:
@@ -106,7 +109,10 @@ def test_ticked_without_scene_still_counts(client, auth_headers, ws, provider) -
 
 
 def test_plan_shows_cast_per_shot(client, auth_headers, ws) -> None:
-    hydra, sc, _ = _setup(client, auth_headers, ws, prompt="Hydra fliegt")
+    hydra, sc, sh = _setup(client, auth_headers, ws, prompt="Hydra fliegt")
+    shot = next(s for s in client.get(P, headers=auth_headers).json()["scenes"] if s["id"] == sc["id"])["shots"][0]
+    assert shot["cast"] == []                                                          # genannt ≠ im Bild (H2)
+    client.put(f"{P}/scenes/{sc['id']}/shots/{sh['id']}", headers=auth_headers, json={"element_ids": [hydra["id"]]})
     shot = next(s for s in client.get(P, headers=auth_headers).json()["scenes"] if s["id"] == sc["id"])["shots"][0]
     assert shot["cast"] == [hydra["id"]]
 
