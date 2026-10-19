@@ -61,6 +61,23 @@ describe("6c – Auswahl der Sprache im Reiter", () => {
   })
 })
 
+describe("6c – Liste in einer Übersetzung", () => {
+  it("nur im Original: „Aus den Sprechtexten“ und „Heraushören“; in einer Übersetzung eigener Leer-Hinweis", async () => {
+    const { SubtitleList } = await import("./SubtitleList")
+    const list = (original: boolean, cues: { id: string; start: number; end: number; text: string }[] = []) => html(
+      <SubtitleList cues={cues} selected={null} time={0} hasSpeech busy={false} save="saved" canUndo={false} canRedo={false} onSelect={noop}
+        onChange={noop} onAction={noop} onFromSpeech={noop} onExport={noop} onHear={noop} hearing={false} original={original} />)
+    const orig = list(true), other = list(false)
+    expect(orig).toContain("data-sub-from-speech")
+    expect(orig).toContain("data-sub-hear")
+    expect(orig).toContain("sub_empty")
+    expect(other).not.toContain("data-sub-from-speech")
+    expect(other).not.toContain("data-sub-hear")
+    expect(other).toContain("sub_empty_other")
+    expect(other).toContain('data-sub-export="srt"')
+  })
+})
+
 describe("6c – Dialog „Übersetzen“", () => {
   const dlg = (p: Partial<React.ComponentProps<typeof TranslateDialog>> = {}) =>
     html(<TranslateDialog list={LIST} from="de" count={3} model="" job={null} busy={false} onRun={noop} onClose={noop} {...p} />)

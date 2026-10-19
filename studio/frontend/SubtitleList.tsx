@@ -47,7 +47,7 @@ export function SubtitleList({ cues, selected, time, hasSpeech, busy, save, canU
   )
   return (
     <section className="flex h-full min-h-0 flex-col" data-sub-list>
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-[#2a364b] p-2">
+      <div className="flex flex-wrap items-center gap-1 border-b border-[#2a364b] px-2 py-1.5">
         {original && <>
         <button type="button" onClick={onFromSpeech} disabled={busy || hearing || !hasSpeech} data-sub-from-speech title={t("sub_from_speech_hint")}
           className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-2.5 py-1 text-[11px] font-black text-[#08111c] disabled:opacity-40">
@@ -69,7 +69,7 @@ export function SubtitleList({ cues, selected, time, hasSpeech, busy, save, canU
       </div>
       {hearing && <p className="flex items-center gap-1.5 px-3 pt-2 text-[11px] text-[#69d7ff]" data-sub-hearing><Loader2 size={11} className="animate-spin" /> {t("hear_running")}</p>}
       {original && !hasSpeech && !cues.length && <p className="px-3 pt-2 text-[11px] leading-relaxed text-[#8d9ab0]">{t("sub_no_speech_hint")}</p>}
-      <div className="flex flex-wrap gap-1.5 border-b border-[#2a364b] p-2">
+      <div className="flex flex-wrap gap-1 border-b border-[#2a364b] px-2 py-1.5">
         {tool("add", Plus)}{tool("split", Scissors)}{tool("join", Combine)}{tool("delete", Trash2)}{tool("undo", Undo2)}{tool("redo", Redo2)}
       </div>
       <div className="px-3 pt-2 text-[10px] font-bold uppercase tracking-wide text-[#68758a]">{t("sub_count", { count: cues.length })}</div>
