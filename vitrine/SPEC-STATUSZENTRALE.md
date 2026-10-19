@@ -271,6 +271,45 @@ aufgeräumt, nicht vollgestopft. Weiterhin **nur lesen**, keine Schalter.
 3. Einstellungsseite statt fester Anordnung, ohne freien Editor. Voreinstellungen: Mining in „Rechner“, höchstens 3
    Meldungen unter „Neu“.
 
+## S5 — Seiten (Entscheidung Till 19.10.2026: Option B, feste Seiten)
+
+S4 ist abgenommen. Bisher blendet die Statuszentrale bei Platzmangel ganze Bereiche aus. S5 verteilt die Bereiche auf
+**feste Seiten**, die Till im Cockpit zuordnet. Unten sitzen Knubbel zum Blättern. Weiterhin nur lesen: Blättern ändert
+nichts am Server.
+
+### Seiten
+- Jeder Bereich bekommt eine **Seite 1–3** (Einstellung `pages`, Bereich → Seite). An/aus und Reihenfolge bleiben; die
+  Reihenfolge gilt innerhalb der Seite.
+- Voreinstellung: **Seite 1** Meldungen, Zuhause, Hydra · **Seite 2** Aufgaben, Wartet auf Till, Rechner, Mining.
+- Belegt sind nur Seiten mit mindestens einem eingeschalteten Bereich, der Daten hat. Leere Seiten gibt es nicht;
+  ist die gewählte Seite leer geworden, zeigt die Seite die nächste belegte.
+- „Nie zu voll“ gilt **je Seite** (wie S4): Passt eine Seite nicht, werden dort ganze Bereiche von unten ausgeblendet,
+  mit Hinweis.
+- Alte Einstellung ohne `pages` → Voreinstellung.
+
+### Knubbel
+- Unten zwischen „Stand“ und „Zurück zum Video“: ein Knubbel je belegter Seite (● aktuelle, ○ andere), groß genug fürs
+  Trackpad (mindestens 64 px Klickfläche). Nur sichtbar, wenn mehr als eine Seite belegt ist.
+- Klick auf einen Knubbel wechselt sofort die Seite (im Browser, ohne Anfrage an den Server).
+- **Nie automatisch blättern.**
+- **Zurück auf Seite 1**, wenn so lange keine Maus-/Klick-Eingabe kam wie die Rückkehrzeit zum Video
+  (`dashboard_return_seconds`, wird mit `layout` geliefert). So beginnt die Statuszentrale nach jedem Video wieder vorn.
+
+### Cockpit
+- In „Statuszentrale anpassen“ je Bereich eine Auswahl „Seite 1 / 2 / 3“. Die Liste zeigt die Bereiche nach Seite
+  gruppiert (Überschrift „Seite 1“ …), die Pfeile verschieben innerhalb der Gesamtreihenfolge.
+- Prüfung im Server und Browser (eine Regel wie S4): Schlüssel nur bekannte Bereiche, Werte 1–3.
+
+### Akzeptanz S5
+- Voreinstellung: Seite 1 Meldungen/Zuhause/Hydra, Knubbel ● ○ unten; Klick → Seite 2 mit Rechner (+ Mining).
+- Im Cockpit einen Bereich auf Seite 3 legen → binnen 10 s drei Knubbel am Gehäuse.
+- 2 min ohne Eingabe → Video; nächste Mausbewegung → Statuszentrale auf Seite 1.
+- Ungültige Seitenzuordnung wird abgelehnt (Server und Browser), alte Config bleibt gültig (Tests).
+- Seite blättert nicht von selbst (Test). Firefox < 5 % eines Kerns.
+
+### Bewusst nicht in S5
+- Kein automatisches Blättern, keine Wischgesten (kein Touch), keine Seitennamen.
+
 ## Bewusst nicht (V1 der Statuszentrale)
 
 - keine Aktionen mit Folgen (Merge, Dienste, Update, Zonen, Schalter) – kommen später nur mit PIN
@@ -291,7 +330,8 @@ aufgeräumt, nicht vollgestopft. Weiterhin **nur lesen**, keine Schalter.
 2. **S2 Statuszentrale:** Daten-Route mit Kiosk-Schlüssel, Dashboard-Seite, Cockpit-Einstellung Rückkehrzeit
 3. **S3 Meldungen:** Hinweis auf den Karten, Neu + Verlauf (24 h) in der Statuszentrale, Knopf „Gelesen“ (Details: Abschnitt S3)
 4. **S4 Zuhause + Anordnung:** HA-Favoriten je Raum, Einstellungsseite (an/aus, Reihenfolge, Einstellungen je Bereich)
-5. danach (eigene Specs): Chat/Sprache, Knöpfe mit PIN
+5. **S5 Seiten:** Bereiche fest auf Seiten 1–3, Knubbel unten zum Blättern
+6. danach (eigene Specs): Chat/Sprache, Knöpfe mit PIN
 
 ## Akzeptanzkriterien
 
