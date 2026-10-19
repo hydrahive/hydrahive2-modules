@@ -271,7 +271,7 @@ aufgeräumt, nicht vollgestopft. Weiterhin **nur lesen**, keine Schalter.
 3. Einstellungsseite statt fester Anordnung, ohne freien Editor. Voreinstellungen: Mining in „Rechner“, höchstens 3
    Meldungen unter „Neu“.
 
-## S5 — Seiten (Entscheidung Till 19.10.2026: Option B, feste Seiten)
+## S5 — Seiten (Entscheidung Till 19.10.2026: Option B, feste Seiten; abgenommen am Gehäuse am 19.10.2026, vitrine 0.11.0)
 
 S4 ist abgenommen. Bisher blendet die Statuszentrale bei Platzmangel ganze Bereiche aus. S5 verteilt die Bereiche auf
 **feste Seiten**, die Till im Cockpit zuordnet. Unten sitzen Knubbel zum Blättern. Weiterhin nur lesen: Blättern ändert
@@ -306,6 +306,11 @@ nichts am Server.
 - 2 min ohne Eingabe → Video; nächste Mausbewegung → Statuszentrale auf Seite 1.
 - Ungültige Seitenzuordnung wird abgelehnt (Server und Browser), alte Config bleibt gültig (Tests).
 - Seite blättert nicht von selbst (Test). Firefox < 5 % eines Kerns.
+
+### Abnahme S5 (19.10.2026, vitrine 0.11.0)
+- Till: Rechner und Mining im Cockpit auf Seite 3 gelegt → drei Knubbel; Klick auf den dritten zeigt Rechner + Mining;
+  nach dem Video startet die Statuszentrale wieder auf Seite 1. „Beides passt.“
+- Gemessen auf .2: `layout.pages` kommt an (machine/mining = 3), `return_seconds` 120, 0 Fehler, 0 × `flip_done`.
 
 ### Bewusst nicht in S5
 - Kein automatisches Blättern, keine Wischgesten (kein Touch), keine Seitennamen.
