@@ -33,3 +33,14 @@ export function downloadName(item: Pick<LibraryItem, "name" | "rel">): string {
   const stem = (item.name || "").replace(/[\\/:*?"<>|]+/g, "-").trim()
   return stem ? `${stem}${ext}` : file
 }
+
+/** Ablauf „Löschen“ (C1) ohne React: Verwendung holen → Rückfrage zeigen → löschen → neu laden + Meldung.
+ *  `show(usage)` öffnet bzw. füllt die Rückfrage, `fail(e)` meldet einen Fehler. */
+export const deleteFlow = {
+  ask: (pid: string, rel: string, show: (u: MediaUsage) => void, fail: (e: unknown) => void) =>
+    mediaApi.usage(pid, rel).then(show, fail),
+  confirm: async (pid: string, rel: string, done: (rel: string) => void) => {
+    await mediaApi.remove(pid, rel)
+    done(rel)
+  },
+}

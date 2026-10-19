@@ -115,6 +115,7 @@ def test_delete_render_and_upload(client, auth_headers, ws) -> None:
 
 
 @pytest.mark.parametrize("rel", ["atelier/images/x.png", "tonstudio/clips/a.mp3", "studio/plan.json", "studio/media/../plan.json",
+                                 "studio/media/images/sub/x.png", "studio/media/images/x.json", "studio/media/images/.x.png",
                                  "/etc/passwd", "studio/media/images/../../screenplay.json", "studio/scenes/x.json", ""])
 def test_only_own_media(client, auth_headers, ws, rel) -> None:
     (ws / "atelier/images").mkdir(parents=True, exist_ok=True)
@@ -159,9 +160,14 @@ def test_busy_shot_409(client, auth_headers, ws, provider) -> None:
 
 
 def test_foreign_project(client, auth_headers) -> None:
+    """Die Datei liegt im fremden Projekt wirklich – nur der Wächter darf sie schützen."""
+    from hydrahive.projects._paths import ensure_workspace
+    other = ensure_workspace(OTHER_PROJECT_ID)
+    rel = _img(other, "images", "d" * 32 + ".png")
     o = f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/media"
-    assert client.delete(o, headers=auth_headers, params={"rel": "studio/media/images/x.png"}).status_code == 404
-    assert client.get(f"{o}/usage", headers=auth_headers, params={"rel": "studio/media/images/x.png"}).status_code == 404
+    assert client.delete(o, headers=auth_headers, params={"rel": rel}).status_code == 404
+    assert client.get(f"{o}/usage", headers=auth_headers, params={"rel": rel}).status_code == 404
+    assert (other / rel).exists()
 
 
 def test_library_marks_deletable(client, auth_headers, ws) -> None:
@@ -170,3 +176,39 @@ def test_library_marks_deletable(client, auth_headers, ws) -> None:
     (ws / "atelier/images/x.png").write_bytes(PNG)
     items = {i["rel"]: i for i in client.get(f"{MOD_PREFIX}/projects/{PROJECT_ID}/library", headers=auth_headers).json()["items"]}
     assert items[own]["deletable"] is True and items["atelier/images/x.png"]["deletable"] is False
+
+
+@pytest.mark.parametrize("rel", ["studio/media/images/sub/x.png", "studio/media/images/x.json"])
+def test_existing_but_not_media_is_kept(client, auth_headers, ws, rel) -> None:
+    """Auch wenn die Datei existiert: Unterordner und andere Endungen (z. B. Begleitdateien) sind tabu."""
+    (ws / rel).parent.mkdir(parents=True, exist_ok=True)
+    (ws / rel).write_bytes(PNG)
+    r = client.delete(M, headers=auth_headers, params={"rel": rel})
+    assert r.status_code == 403 and r.json()["detail"]["code"] == "studio_media_not_own"
+    assert (ws / rel).exists()
+
+
+def test_symlink_inside_project_is_not_deleted(client, auth_headers, ws) -> None:
+    """Verknüpfung auf eine Datei im Projekt: weder die Verknüpfung noch das Ziel verschwindet."""
+    import os
+    target = _img(ws, "images", "t" * 32 + ".png")
+    link = ws / "studio/media/images" / ("l" * 32 + ".png")
+    os.symlink(ws / target, link)
+    r = client.delete(M, headers=auth_headers, params={"rel": f"studio/media/images/{link.name}"})
+    assert r.status_code == 404
+    assert link.is_symlink() and (ws / target).exists()
+    link.unlink()
+
+
+def test_deleting_the_image_keeps_status_if_video_exists(client, auth_headers, ws, provider) -> None:
+    _, sc, shot = _shot(client, auth_headers, ws)
+    client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=auth_headers, json={})
+    _wait(client, auth_headers, sc["id"], shot["id"])
+    video = _img(ws, "videos", "w" * 32 + ".mp4")
+    path = ws / f"studio/scenes/{sc['id']}.json"
+    data = json.loads(path.read_text())
+    data["shots"][0].update(video_rel=video, status="done")
+    path.write_text(json.dumps(data))
+    client.delete(M, headers=auth_headers, params={"rel": data["shots"][0]["image_rel"]})
+    after = _first_shot(client, auth_headers, sc["id"])
+    assert after["image_rel"] is None and after["video_rel"] == video and after["status"] == "done"

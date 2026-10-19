@@ -10,7 +10,8 @@ import type { LibraryItem } from "./api"
 import { FreeGallery } from "./FreeGallery"
 import { MediaActions } from "./MediaActions"
 import { MediaDeleteDialog } from "./MediaDeleteDialog"
-import { mediaApi, downloadName as mediaDownloadName, usageLines } from "./mediaLogic"
+import { deleteFlow, mediaApi, downloadName as mediaDownloadName, usageLines } from "./mediaLogic"
+import { ShotForm } from "./ShotForm"
 import { studioI18n } from "./i18n"
 import type { Shot } from "./planApi"
 import { ShotImage } from "./ShotImage"
@@ -23,6 +24,40 @@ const item = (p: Partial<LibraryItem> = {}): LibraryItem => ({ id: "i", kind: "i
   abs: "/w/studio/media/images/a.png", size: 10, created_at: "2026-10-19T08:00:00Z", deletable: true, ...p })
 const shot = (p: Partial<Shot> = {}): Shot => ({ id: "s", shot: "wide", prompt: "x", element_ids: [], duration: 5, status: "image_ready",
   image_rel: "studio/media/images/a.png", video_rel: null, variants: ["studio/media/images/a.png", "studio/media/images/b.png"], ...p } as Shot)
+
+type El = { props: Record<string, unknown> & { children?: unknown } }
+const find = (node: unknown, attr: string, out: El[] = []): El[] => {
+  if (Array.isArray(node)) node.forEach((n) => find(n, attr, out))
+  else if (node && typeof node === "object" && "props" in node) {
+    const el = node as El
+    if (el.props[attr] !== undefined) out.push(el)
+    find(el.props.children, attr, out)
+  }
+  return out
+}
+
+describe("C1 – Ablauf ohne React", () => {
+  it("fragt erst die Verwendung, löscht erst nach Bestätigung, lädt danach neu", async () => {
+    get.mockImplementationOnce(() => Promise.resolve({ own: true, shots: [], clips: 3, elements: [] }))
+    const show = vi.fn(), fail = vi.fn(), done = vi.fn()
+    del.mockClear()
+    await deleteFlow.ask("p1", "studio/media/free/f.png", show, fail)
+    expect(show).toHaveBeenCalledWith({ own: true, shots: [], clips: 3, elements: [] })
+    expect(del).not.toHaveBeenCalled()
+    await deleteFlow.confirm("p1", "studio/media/free/f.png", done)
+    expect(del).toHaveBeenCalledTimes(1)
+    expect(done).toHaveBeenCalledWith("studio/media/free/f.png")
+    get.mockImplementationOnce(() => Promise.reject(new Error("weg")))
+    await deleteFlow.ask("p1", "x", show, fail)
+    expect(fail).toHaveBeenCalled()
+  })
+
+  it("Hook nutzt den Ablauf (Verwendung → Rückfrage)", () => {
+    const src = Object.values(import.meta.glob("./useMediaDelete.tsx", { query: "?raw", import: "default", eager: true })).join("")
+    expect(src).toMatch(/deleteFlow\.ask\(projectId, rel, setUsage,/)
+    expect(src).toMatch(/deleteFlow\.confirm\(projectId, target\.rel, onDone\)/)
+  })
+})
 
 describe("C1 – Logik", () => {
   it("Rückfrage nennt, wo die Datei benutzt wird", () => {
@@ -95,6 +130,17 @@ describe("C1 – Löschen am Shot, bei freien Bildern und fertigen Filmen", () =
     expect((out.match(/data-shot-variant-delete=/g) || []).length).toBe(2)
     expect(out).toContain('aria-label="image_delete"')
     expect(html(<ShotImage shot={shot()} base="/w" job={null} onGenerate={noop} onChoose={noop} />)).not.toContain("data-shot-variant-delete")
+    const tree = ShotImage({ shot: shot(), base: "/w", job: null, onGenerate: noop, onChoose: noop, onDelete })
+    const crosses = find(tree, "data-shot-variant-delete")
+    ;(crosses[1].props.onClick as () => void)()
+    expect(onDelete).toHaveBeenLastCalledWith("studio/media/images/b.png")                   // das Kreuz löscht SEINE Variante
+  })
+
+  it("Shot-Formular reicht Löschen an Bild und Video weiter", () => {
+    const out = html(<ShotForm shot={shot({ video_rel: "studio/media/videos/v.mp4" })} index={0} elements={[]} sceneElementIds={[]} presets={[]} busy={false}
+      onSave={noop} onDelete={noop} base="/w" onGenerate={noop} onChoose={noop} onVideo={noop} onDeleteMedia={noop} />)
+    expect(out).toContain("data-shot-variant-delete")
+    expect(out).toContain("data-shot-video-delete")
   })
 
   it("Video am Shot: „Video löschen …“", () => {

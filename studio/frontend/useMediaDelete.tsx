@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { MediaDeleteDialog } from "./MediaDeleteDialog"
-import { mediaApi, type MediaUsage } from "./mediaLogic"
+import { deleteFlow, type MediaUsage } from "./mediaLogic"
 import { errorText } from "./planLogic"
 
 /** Löschen einer Datei (C1) für alle Stellen gleich: Rückfrage mit Verwendung, löschen, danach alles neu laden. */
@@ -13,14 +13,13 @@ export function useMediaDelete(projectId: string, onDone: (rel: string) => void,
 
   const ask = (rel: string, name: string) => {
     setTarget({ rel, name }); setUsage(null)
-    mediaApi.usage(projectId, rel).then(setUsage, (e) => { setTarget(null); notice(errorText(t, e)) })
+    void deleteFlow.ask(projectId, rel, setUsage, (e) => { setTarget(null); notice(errorText(t, e)) })
   }
   const confirm = async () => {
     if (!target) return
     setBusy(true)
     try {
-      await mediaApi.remove(projectId, target.rel)
-      onDone(target.rel)
+      await deleteFlow.confirm(projectId, target.rel, onDone)
       notice(t("media_deleted"))
       setTarget(null)
     } catch (e) { notice(errorText(t, e)) } finally { setBusy(false) }
