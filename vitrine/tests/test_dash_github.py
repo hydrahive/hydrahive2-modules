@@ -30,9 +30,10 @@ PRS = [{"number": 7, "title": "feat: tolles Ding", "head": {"sha": "abc123"}, "d
        {"number": 8, "title": "wip", "head": {"sha": "def456"}, "draft": True, "html_url": "u"}]
 
 
-def _routes(runs7, runs8=None):
+def _routes(runs7, runs8=None, m7=True, m8=None):
     return {"/pulls?": (200, PRS), "/commits/abc123/check-runs": (200, {"check_runs": runs7}),
-            "/commits/def456/check-runs": (200, {"check_runs": runs8 or []})}
+            "/commits/def456/check-runs": (200, {"check_runs": runs8 or []}),
+            "/pulls/7": (200, {"mergeable": m7}), "/pulls/8": (200, {"mergeable": m8})}
 
 
 def test_token_aus_projekt_wie_im_kern():
@@ -55,6 +56,12 @@ def test_prs_mit_ci_status():
     assert r["error"] is None
     assert [(p["number"], p["ci"], p["draft"]) for p in r["prs"]] == [(7, "green", False), (8, "running", True)]
     assert r["prs"][0]["repo"] == "hydrahive2"
+    assert [p["mergeable"] for p in r["prs"]] == [True, None], "None = GitHub rechnet noch"
+
+
+def test_mergebar_false_bei_konflikt():
+    r = gh.open_prs(["hydrahive/hydrahive2"], TOKEN, fetch=Fake(_routes([], m7=False)))
+    assert r["prs"][0]["mergeable"] is False
 
 
 @pytest.mark.parametrize("runs,expect", [
@@ -111,3 +118,29 @@ def test_echter_abrufer_folgt_keiner_weiterleitung():
     opener = gh._opener()
     assert any(isinstance(h, gh._NoRedirect) for h in opener.handlers)
     assert not any(type(h) is urllib.request.HTTPRedirectHandler for h in opener.handlers)
+
+
+@pytest.fixture(autouse=True)
+def _leer():
+    gh.reset_cache()
+    yield
+    gh.reset_cache()
+
+
+def test_fertige_prs_werden_nicht_erneut_abgefragt():
+    """Gleicher Token wie die Agenten (5000/h): pro Commit nur einmal Details holen, solange CI fertig + mergebar bekannt."""
+    f = Fake(_routes([{"status": "completed", "conclusion": "success"}], [{"status": "queued", "conclusion": None}]))
+    gh.open_prs(["hydrahive/hydrahive2"], TOKEN, fetch=f)
+    n = len(f.calls)
+    gh.open_prs(["hydrahive/hydrahive2"], TOKEN, fetch=f)
+    second = [c[1] for c in f.calls[n:]]
+    assert any("/pulls?" in u for u in second), "Liste wird immer geholt"
+    assert not any("abc123" in u or u.endswith("/pulls/7") for u in second), "PR 7 fertig → aus Zwischenspeicher"
+    assert any("def456" in u for u in second), "PR 8 läuft noch → erneut"
+
+
+def test_zwischenspeicher_begrenzt():
+    for i in range(250):
+        gh._done[("r", i, "a" * 40)] = ("green", True)
+    gh.open_prs(["hydrahive/hydrahive2"], TOKEN, fetch=Fake(_routes([{"status": "completed", "conclusion": "success"}])))
+    assert len(gh._done) <= 201

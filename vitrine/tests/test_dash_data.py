@@ -4,7 +4,7 @@ from __future__ import annotations
 from backend import dash_data as dd
 
 SECRET = "geheim-token-123456"
-KEYS = {"message", "hydra", "tasks", "machine", "mining", "github", "updated"}
+KEYS = {"message", "hydra", "tasks", "machine", "mining", "github", "holiday", "updated"}
 
 
 class Src:
@@ -29,6 +29,7 @@ class Src:
                                                 "top": [{"title": f"t {SECRET}", "priority": "high", "status": "open"}]}),
             "machine": lambda: self.get("machine", {"load": 0.5, "ram": 30, "gpu": 50, "disk_free_pct": 60, "uptime_h": 3}),
             "mining": lambda: self.get("mining", None),
+            "holiday": lambda: self.get("holiday", "Tag der Deutschen Einheit"),
             "github": lambda: self.get("github", {"prs": [{"repo": "r", "number": 1, "title": f"pr {SECRET}",
                                                           "draft": False, "ci": "green"}], "error": None}),
         }
@@ -40,7 +41,7 @@ def _build(src, now=1000.0):
 
 
 def test_schema_vollstaendig_auch_wenn_alles_fehlt():
-    src = Src(**{k: OSError("weg") for k in ("message", "hydra", "tasks", "machine", "mining", "github")})
+    src = Src(**{k: OSError("weg") for k in ("message", "hydra", "tasks", "machine", "mining", "github", "holiday")})
     r = _build(src).get()
     assert set(r) == KEYS and all(r[k] is None for k in KEYS - {"updated"})
 

@@ -43,14 +43,31 @@ def test_nur_von_localhost(host, ok):
     assert kiosk.local_ok(host) is ok
 
 
-def test_platzhalter_seite_ohne_daten_mit_zurueck_knopf():
+def test_seite_ohne_daten_nur_data_und_zurueck():
     from backend import kiosk
     html = kiosk.page("SCHLUESSEL")
-    assert "<button" in html and "Zurück" in html and "SCHLUESSEL" in html
-    assert "fetch(\"back?k=" in html                  # relativ zu /api/module-device/vitrine/kiosk
-    for verboten in ("/api/modules/", "token", "session", "authorization"):   # S1: keine Daten-Abfragen, keine Zugänge
-        assert verboten not in html.lower()
-    assert html.count("fetch(") == 1, "einzige Anfrage: Zurück-Knopf"
+    assert "<button" in html and "Zurück zum Video" in html and "SCHLUESSEL" in html
+    assert 'fetch("back?k=' in html and 'fetch("data?k=' in html     # relativ zu /api/module-device/vitrine/kiosk
+    assert html.count("fetch(") == 2, "nur Daten + Zurück"
+    for verboten in ("/api/modules/", "authorization", "innerhtml", "outerhtml", "insertadjacenthtml", "document.write",
+                     "eval(", "<script src", "<link", "http://", "https://"):
+        assert verboten not in html.lower(), verboten
+    assert html.count("<button") == 1, "keine weiteren Knöpfe"
+    assert "HydraHive antwortet nicht" in html
+
+
+def test_seite_schluessel_wird_escaped():
+    from backend import kiosk
+    html = kiosk.page('a"</script><script>alert(1)//')
+    assert "</script><script>alert(1)" not in html
+
+
+def test_seite_fuer_sofa_lesbar():
+    import re
+    from backend import kiosk
+    html = kiosk.page("K")
+    sizes = [int(x) for x in re.findall(r"font-size:(\d+)px", html)]
+    assert sizes and min(sizes) >= 32
 
 
 def test_status_enthaelt_modus_und_dashboard(tmp_path):
@@ -65,3 +82,31 @@ def test_zurueck_schreibt_wunsch(tmp_path):
     from backend import kiosk
     kiosk.back(tmp_path)
     assert mode.take_back_request(tmp_path) is True
+
+
+def test_config_dashboard_standard_und_pruefung(tmp_path):
+    from renderer import config
+    assert config.load(tmp_path)["dashboard"]["github_project"] == "Hydrahive DEV"
+    for bad in ({"tasks_user": "../x", "github_project": "P", "github_repos": []},
+                {"tasks_user": "till", "github_project": "P", "github_repos": ["a/.."]},
+                {"tasks_user": "till", "github_project": "P", "github_repos": ["https://evil/x"]},
+                {"tasks_user": "till", "github_project": " ", "github_repos": []},
+                {"tasks_user": "till", "github_project": "P", "github_repos": ["a/b"] * 6},
+                {"tasks_user": "till", "github_project": "P", "github_repos": [], "token": "x"}):
+        (tmp_path / "config.json").write_text(json.dumps({"dashboard": bad}))
+        assert config.load(tmp_path)["dashboard"]["tasks_user"] == "till"
+        assert config.load(tmp_path)["dashboard"]["github_project"] == "Hydrahive DEV", bad
+    good = {"tasks_user": "anna", "github_project": "X", "github_repos": ["o/r"]}
+    (tmp_path / "config.json").write_text(json.dumps({"dashboard": good}))
+    assert config.load(tmp_path)["dashboard"] == good
+
+
+def test_schema_dashboard_lehnt_ab():
+    import pytest as _p
+    _p.importorskip("pydantic")
+    from pydantic import ValidationError
+    from backend.schemas import Config
+    assert Config().dump()["dashboard"]["github_repos"] == ["hydrahive/hydrahive2", "hydrahive/hydrahive2-modules"]
+    for bad in ({"github_repos": ["a/b/c"]}, {"tasks_user": "a b"}, {"github_project": ""}, {"token": "x"}):
+        with _p.raises(ValidationError):
+            Config(dashboard=bad)

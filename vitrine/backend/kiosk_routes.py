@@ -2,12 +2,13 @@
 mit Rate-Limit und der Prüfung `kiosk_auth` vor jeder Route (siehe hydrahive/api/module_devices.py)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse
 
 from hydrahive.settings import settings
+from renderer import config
 
-from . import kiosk
+from . import dash_data, kiosk
 
 device_router = APIRouter()
 
@@ -31,3 +32,9 @@ def kiosk_page(k: str = Query(..., max_length=256)) -> HTMLResponse:
 @device_router.post("/back", status_code=status.HTTP_204_NO_CONTENT)
 def kiosk_back() -> None:
     kiosk.back(_data())
+
+
+@device_router.get("/data")
+def kiosk_data(response: Response) -> dict:
+    response.headers["Cache-Control"] = "no-store"
+    return dash_data.build(_data(), config.load(_data())["dashboard"])

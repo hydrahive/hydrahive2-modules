@@ -58,6 +58,13 @@ def _urllib_fetch(method: str, url: str, headers: dict, timeout: float) -> tuple
         return e.code, None
 
 
+_done: dict[tuple[str, int, str], tuple[str, bool]] = {}   # (repo, PR, sha) → (CI, mergebar), nur wenn endgültig
+
+
+def reset_cache() -> None:
+    _done.clear()
+
+
 def ci_state(runs: list[dict]) -> str:
     if not runs:
         return "none"
@@ -71,6 +78,16 @@ def ci_state(runs: list[dict]) -> str:
 def _cut(s, n: int) -> str:
     s = " ".join(str(s or "").split())
     return s if len(s) <= n else s[: n - 1] + "…"
+
+
+def _details(fetch: Fetch, base: str, num: int, sha: str, headers: dict) -> tuple[str, bool | None]:
+    runs: list = []
+    if re.fullmatch(r"[0-9a-fA-F]{6,64}", sha):
+        c, body = fetch("GET", f"{base}/commits/{sha}/check-runs?per_page=50", headers, TIMEOUT)
+        runs = body.get("check_runs", []) if c == 200 and isinstance(body, dict) else []
+    c, detail = fetch("GET", f"{base}/pulls/{num}", headers, TIMEOUT)   # mergeable gibt es nur im Einzelabruf
+    merge = detail.get("mergeable") if c == 200 and isinstance(detail, dict) else None
+    return ci_state(runs), merge if isinstance(merge, bool) else None
 
 
 def open_prs(repos: list[str], token: str | None, *, fetch: Fetch = _urllib_fetch) -> dict:
@@ -91,14 +108,15 @@ def open_prs(repos: list[str], token: str | None, *, fetch: Fetch = _urllib_fetc
             for p in prs:
                 if len(out) >= MAX_PRS:
                     break
+                num = int(p.get("number") or 0)
                 sha = str((p.get("head") or {}).get("sha") or "")
-                runs: list = []
-                if re.fullmatch(r"[0-9a-fA-F]{6,64}", sha):
-                    c, body = fetch("GET", f"{base}/commits/{sha}/check-runs?per_page=50", headers, TIMEOUT)
-                    runs = body.get("check_runs", []) if c == 200 and isinstance(body, dict) else []
-                out.append({"repo": repo.split("/")[1], "number": int(p.get("number") or 0),
-                            "title": _cut(p.get("title"), TITLE_MAX), "draft": bool(p.get("draft")),
-                            "ci": ci_state(runs)})
+                ci, merge = _done.get((repo, num, sha)) or _details(fetch, base, num, sha, headers)
+                if ci in ("green", "red", "none") and merge is not None:
+                    if len(_done) > 200:
+                        _done.clear()
+                    _done[(repo, num, sha)] = (ci, merge)
+                out.append({"repo": repo.split("/")[1], "number": num, "title": _cut(p.get("title"), TITLE_MAX),
+                            "draft": bool(p.get("draft")), "ci": ci, "mergeable": merge})
     except (OSError, ValueError, TimeoutError) as e:
         log.warning("Statuszentrale: GitHub-Abruf fehlgeschlagen (%s)", type(e).__name__)
         return {"prs": out, "error": ERR_NET}

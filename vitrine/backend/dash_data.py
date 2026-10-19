@@ -9,7 +9,7 @@ import time
 from typing import Any, Callable
 
 log = logging.getLogger(__name__)
-AREAS = ("message", "hydra", "tasks", "machine", "mining", "github")
+AREAS = ("message", "hydra", "tasks", "machine", "mining", "github", "holiday")
 TTL = {"github": 60.0}
 TTL_DEFAULT = 5.0
 
@@ -35,7 +35,13 @@ def default_sources(data_dir, cfg: dict) -> dict[str, Callable[[], Any]]:
     from . import dash_sources as ds
     return {"message": lambda: ds.message(data_dir), "hydra": ds.hydra,
             "tasks": lambda: ds.tasks(cfg.get("tasks_user") or "till"), "machine": ds.machine,
-            "mining": ds.mining, "github": github_source(cfg)}
+            "mining": ds.mining, "github": github_source(cfg), "holiday": lambda: _holiday(data_dir)}
+
+
+def _holiday(data_dir) -> str | None:
+    from . import state
+    h = state.program_info(data_dir).get("holiday")
+    return str(h) if h else None
 
 
 def _hh_secrets(user: str) -> Callable[[], set[str]]:
