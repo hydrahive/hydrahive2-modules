@@ -4,7 +4,7 @@ from __future__ import annotations
 from backend import dash_data as dd
 
 SECRET = "geheim-token-123456"
-KEYS = {"message", "hydra", "tasks", "machine", "mining", "github", "holiday", "updated"}
+KEYS = {"messages", "hydra", "tasks", "machine", "mining", "github", "holiday", "updated"}
 
 
 class Src:
@@ -22,7 +22,9 @@ class Src:
 
     def sources(self):
         return {
-            "message": lambda: self.get("message", {"title": "T", "text": f"x {SECRET}", "kind": "info"}),
+            "messages": lambda: self.get("messages", {"new": [{"id": "a" * 12, "title": "T", "text": f"x {SECRET}",
+                                                              "kind": "info", "count": 1, "time": "12:00"}],
+                                                      "new_count": 1, "history": []}),
             "hydra": lambda: self.get("hydra", {"service": "active", "agents": 1, "errors_last_hour": 1,
                                                 "errors": [{"source": "llm", "count": 1, "last": f"fail {SECRET}"}]}),
             "tasks": lambda: self.get("tasks", {"open": 1, "in_progress": 0,
@@ -41,7 +43,7 @@ def _build(src, now=1000.0):
 
 
 def test_schema_vollstaendig_auch_wenn_alles_fehlt():
-    src = Src(**{k: OSError("weg") for k in ("message", "hydra", "tasks", "machine", "mining", "github", "holiday")})
+    src = Src(**{k: OSError("weg") for k in ("messages", "hydra", "tasks", "machine", "mining", "github", "holiday")})
     r = _build(src).get()
     assert set(r) == KEYS and all(r[k] is None for k in KEYS - {"updated"})
 
@@ -53,8 +55,9 @@ def test_secret_ueberall_geschwaerzt():
 
 
 def test_mustererkennung_greift_auch():
-    r = _build(Src(message={"title": "", "text": "key ghp_X", "kind": "info"})).get()
-    assert "ghp_X" not in r["message"]["text"]
+    r = _build(Src(messages={"new": [{"id": "b" * 12, "title": "", "text": "key ghp_X", "kind": "info", "count": 1,
+                                      "time": "1"}], "new_count": 1, "history": []})).get()
+    assert "ghp_X" not in r["messages"]["new"][0]["text"]
 
 
 def test_lokale_bereiche_5s_github_60s_zwischengespeichert():
@@ -92,3 +95,13 @@ def test_github_quelle_bekommt_token_nicht_ins_ergebnis(monkeypatch):
     r = dd.Builder({"github": fn}, secrets=lambda: set(), redact=lambda s: s, clock=lambda: 0.0).get()
     assert seen == {"tok": token, "repos": ["hydrahive/hydrahive2"]}
     assert token not in repr(r)
+
+
+def test_invalidate_holt_bereich_sofort_neu():
+    src = Src()
+    t = [1000.0]
+    b = dd.Builder(src.sources(), secrets=lambda: set(), redact=lambda s: s, clock=lambda: t[0])
+    b.get()
+    b.invalidate("messages")
+    b.get()
+    assert src.calls["messages"] == 2 and src.calls["tasks"] == 1

@@ -9,7 +9,7 @@ import time
 from typing import Any, Callable
 
 log = logging.getLogger(__name__)
-AREAS = ("message", "hydra", "tasks", "machine", "mining", "github", "holiday")
+AREAS = ("messages", "hydra", "tasks", "machine", "mining", "github", "holiday")
 TTL = {"github": 60.0}
 TTL_DEFAULT = 5.0
 
@@ -33,7 +33,7 @@ def github_source(cfg: dict) -> Callable[[], dict]:
 
 def default_sources(data_dir, cfg: dict) -> dict[str, Callable[[], Any]]:
     from . import dash_sources as ds
-    return {"message": lambda: ds.message(data_dir), "hydra": ds.hydra,
+    return {"messages": lambda: ds.messages(data_dir), "hydra": ds.hydra,
             "tasks": lambda: ds.tasks(cfg.get("tasks_user") or "till"), "machine": ds.machine,
             "mining": ds.mining, "github": github_source(cfg), "holiday": lambda: _holiday(data_dir)}
 
@@ -96,6 +96,11 @@ class Builder:
         self._cache[name] = (now, val)
         return val
 
+    def invalidate(self, name: str) -> None:
+        """Bereich beim nächsten get() neu holen (nach „Gelesen“)."""
+        with self._lock:
+            self._cache.pop(name, None)
+
     def get(self) -> dict:
         with self._lock:
             now, extra = self._clock(), set()
@@ -105,6 +110,11 @@ class Builder:
 
 
 _builders: dict[tuple, Builder] = {}
+
+
+def invalidate(name: str) -> None:
+    for b in list(_builders.values()):
+        b.invalidate(name)
 
 
 def build(data_dir, cfg: dict) -> dict:

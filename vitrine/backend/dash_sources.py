@@ -16,6 +16,7 @@ from typing import Callable
 
 log = logging.getLogger(__name__)
 TITLE_MAX, ERROR_MAX, TOP_TASKS = 80, 140, 5
+NEW_MAX, HISTORY_MAX = 5, 10
 _PRIO = "CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END"
 
 
@@ -46,13 +47,17 @@ def safe(fn: Callable):
         return None
 
 
-def message(data_dir: Path) -> dict | None:
+def _msg(m: dict) -> dict:
+    return {"id": str(m["id"]), "title": _cut(m.get("title"), TITLE_MAX), "text": str(m.get("text") or ""),
+            "kind": m.get("kind") or "info", "count": int(m.get("count") or 1),
+            "time": time.strftime("%H:%M", time.localtime(float(m.get("created") or 0)))}
+
+
+def messages(data_dir: Path, *, now: float | None = None) -> dict:
+    """S3: ungelesene (Volltext, höchstens NEW_MAX) und gelesene (Verlauf, höchstens HISTORY_MAX) der letzten 24 h."""
     from renderer import inbox
-    msgs = inbox.visible(data_dir)
-    if not msgs:
-        return None
-    m = max(msgs, key=lambda x: x.get("created", 0))
-    return {"title": m.get("title") or "", "text": m.get("text") or "", "kind": m.get("kind") or "info"}
+    new, history = inbox.recent(data_dir, now=now)
+    return {"new": [_msg(m) for m in new[:NEW_MAX]], "new_count": len(new), "history": [_msg(m) for m in history[:HISTORY_MAX]]}
 
 
 def hydra(*, connect=_hh_db, active: Callable[[], int] | None = None, service: Callable[[], str] | None = None,

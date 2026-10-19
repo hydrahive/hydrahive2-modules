@@ -48,11 +48,14 @@ def test_seite_ohne_daten_nur_data_und_zurueck():
     html = kiosk.page("SCHLUESSEL")
     assert "<button" in html and "Zurück zum Video" in html and "SCHLUESSEL" in html
     assert 'fetch("back?k=' in html and 'fetch("data?k=' in html     # relativ zu /api/module-device/vitrine/kiosk
-    assert html.count("fetch(") == 2, "nur Daten + Zurück"
+    assert 'fetch("read?k=' in html                                  # S3: Gelesen
+    assert html.count("fetch(") == 3, "nur Daten, Zurück, Gelesen"
     for verboten in ("/api/modules/", "authorization", "innerhtml", "outerhtml", "insertadjacenthtml", "document.write",
                      "eval(", "<script src", "<link", "http://", "https://"):
         assert verboten not in html.lower(), verboten
-    assert html.count("<button") == 1, "keine weiteren Knöpfe"
+    assert html.count("<button") == 1, "fest im HTML nur „Zurück“; „Gelesen“ entsteht je Meldung per createElement"
+    assert 'createElement("button")' in html and "Gelesen" in html and "Keine neuen Meldungen" in html
+    assert "Verlauf" in html and "weitere" in html
     assert "HydraHive antwortet nicht" in html
 
 

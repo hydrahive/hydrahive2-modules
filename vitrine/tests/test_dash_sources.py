@@ -135,14 +135,26 @@ def test_rechner_werte(monkeypatch):
     assert r == {"load": 1.5, "ram": 40, "gpu": 55, "disk_free_pct": 25, "uptime_h": 25}
 
 
-def test_meldung_neueste_sichtbare(tmp_path):
+def test_meldungen_neu_und_verlauf(tmp_path):
     from renderer import inbox
-    assert ds.message(tmp_path) is None
-    inbox.post(tmp_path, "erste", title="A", kind="info")
-    time.sleep(0.01)
-    inbox.post(tmp_path, "zweite", title="B", kind="error")
-    m = ds.message(tmp_path)
-    assert m["title"] in ("A", "B") and m["kind"] in ("info", "error") and set(m) == {"title", "text", "kind"}
+    assert ds.messages(tmp_path, now=1000.0) == {"new": [], "new_count": 0, "history": []}
+    ids = [inbox.post(tmp_path, f"m{i}", title=f"T{i}", kind="error" if i == 0 else "info", seconds=5,
+                      now=1000.0 + i)["id"] for i in range(8)]
+    inbox.mark_read(tmp_path, ids[0], now=1010.0)
+    r = ds.messages(tmp_path, now=1020.0)
+    assert r["new_count"] == 7 and len(r["new"]) == ds.NEW_MAX == 5
+    assert [m["title"] for m in r["new"]] == ["T7", "T6", "T5", "T4", "T3"]
+    assert [m["title"] for m in r["history"]] == ["T0"] and r["history"][0]["kind"] == "error"
+    assert set(r["new"][0]) == {"id", "title", "text", "kind", "count", "time"}
+    import time as _t
+    assert r["new"][0]["time"] == _t.strftime("%H:%M", _t.localtime(1007.0))
+
+
+def test_meldungen_verlauf_hoechstens_zehn(tmp_path):
+    from renderer import inbox
+    for i in range(15):
+        inbox.mark_read(tmp_path, inbox.post(tmp_path, f"m{i}", now=1000.0 + i)["id"], now=1100.0)
+    assert len(ds.messages(tmp_path, now=1200.0)["history"]) == ds.HISTORY_MAX == 10
 
 
 def test_quelle_mit_fehler_wird_none(tmp_path):
