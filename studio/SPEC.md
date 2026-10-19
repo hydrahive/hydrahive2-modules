@@ -1224,6 +1224,18 @@ Hilfetexte nicht möglich.“ → „Mache das alles, damit man arbeiten kann.�
 - **Aus der Bibliothek:** Beim gewählten Bild gibt es „Als Figur anlegen …“ und „Als Ort anlegen …“ → Name abfragen →
   Baustein mit diesem Foto, danach automatisch beschreiben und in „Planen“ öffnen.
 
+**C3 im Detail – eine Anleitung, die führt**
+- **„So geht’s“ vollständig:** alle 6 Reiter in der Reihenfolge der Arbeit, ein Schritt je Absatz, dazu „Figur mit
+  Foto“, „Etwas löschen“, „Dateien hoch- und herunterladen“, „Was kostet Geld“. Jeder Schritt springt in den passenden
+  Reiter. Die Hilfe öffnet sich beim allerersten Besuch einmal von selbst (je Browser gemerkt).
+- **Kurzhilfe je Reiter:** „Schritt X von 6 – …“ als Überschrift, darunter der bisherige Text und ein Knopf
+  „Weiter zu „…““ zum nächsten Reiter (in „Ausgabe“: keiner).
+- **Kosten am Knopf:** Knöpfe, die beim Anbieter Geld kosten, tragen ein kleines Zeichen „kostet“ und im Hinweis das
+  Modell („Kostet beim Anbieter – Modell: …“). Feste Cent-Beträge nur, wo sie gemessen sind (Foto beschreiben,
+  Heraushören, Musik); für Bild und Video gibt es keine verlässlichen Preise im Katalog → keine erfundenen Zahlen.
+- **Alle Knöpfe benannt:** Jeder Knopf hat sichtbaren Text oder `aria-label` + `title` (Test über alle .tsx). Der
+  Papierkorb der Zeitleiste heißt „Clip entfernen (Datei bleibt)“.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
