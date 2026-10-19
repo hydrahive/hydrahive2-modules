@@ -37,6 +37,7 @@ class FakeFfmpeg:
         self.gates: list[threading.Event] = []
         self.lock = threading.Lock()
         self.open = False                                   # nach dem Test: nichts mehr aufhalten
+        self.silent = False                                 # wie ffmpeg, das lange nichts ausgibt: nur der Wächter (stop) greift
 
     def __call__(self, cmd, seconds, progress, stop=None):
         graph = cmd[cmd.index("-filter_complex") + 1]
@@ -47,12 +48,13 @@ class FakeFfmpeg:
         with self.lock:
             self.calls.append(size)
             self.gates.append(gate)
+        open(cmd[-1], "wb").close()                         # wie ffmpeg: die (halbe) Ausgabedatei entsteht sofort
         while not gate.wait(0.05):
             if stop and stop():                             # wie der Wächter in render_ffmpeg
                 from backend import jobs
                 raise jobs.Cancelled()
-            progress(0.4)
-        open(cmd[-1], "wb").close()
+            if not self.silent:
+                progress(0.4)
 
     def release(self, i: int) -> None:
         _until(lambda: len(self.gates) > i)
@@ -120,7 +122,9 @@ def test_cancel_waiting_film(client, auth_headers, ws, fake) -> None:
         fake.release(i)
 
 
-def test_cancel_running_film(client, auth_headers, ws, fake) -> None:
+@pytest.mark.parametrize("silent", [False, True])
+def test_cancel_running_film(client, auth_headers, ws, fake, silent) -> None:
+    fake.silent = silent
     _image_timeline(client, auth_headers, ws)
     first = client.post(f"{R}/render", headers=auth_headers, json={"quality": "preview"}).json()
     second = client.post(f"{R}/render", headers=auth_headers, json={"quality": "standard"}).json()
@@ -268,3 +272,51 @@ def test_silent_ffmpeg_can_be_cancelled() -> None:
     with pytest.raises(jobs.Cancelled):
         render._run_ffmpeg(["sleep", "30"], 10, lambda f: None, stop=lambda: True)
     assert time.monotonic() - start < 3
+
+
+def test_failing_ffmpeg_is_a_failure() -> None:
+    """ffmpeg endet mit Fehlercode (ohne Zeitgrenze/Abbruch) → RenderFailed, nicht stillschweigend „fertig“."""
+    from backend import render
+    with pytest.raises(render.RenderFailed):
+        render._run_ffmpeg(["false"], 10, lambda f: None)
+
+
+def test_place_is_freed_if_the_job_cannot_be_created(client, auth_headers, ws, monkeypatch) -> None:
+    from backend import jobs, render_queue
+
+    def broken(*a, **k):
+        raise OSError("Platte voll")
+    _image_timeline(client, auth_headers, ws)
+    monkeypatch.setattr(jobs, "start", broken)
+    with pytest.raises(OSError):
+        client.post(f"{R}/render", headers=auth_headers, json={})
+    assert render_queue.pending("test-project-studio") == 0
+
+
+def test_next_film_starts_right_away() -> None:
+    """Ist ein Film fertig, startet der nächste sofort (Benachrichtigung), nicht erst beim nächsten Nachsehen."""
+    from backend import render_queue
+
+    class P:
+        def __init__(self) -> None:
+            self.job = {"id": "y" * 32, "status": "queued"}
+
+        def set(self, **_) -> None:
+            pass
+
+        def cancelled(self) -> bool:
+            return False
+    first, _ = render_queue.enter("n1")
+    second, _ = render_queue.enter("n1")
+    started: list[float] = []
+
+    def wait() -> None:
+        with render_queue.turn(second, P()):
+            started.append(time.monotonic())
+    th = threading.Thread(target=wait)
+    th.start()
+    time.sleep(0.5)                                                                    # wartet sicher schon
+    freed = time.monotonic()
+    render_queue.leave(first)
+    th.join(5)
+    assert started and started[0] - freed < 0.1

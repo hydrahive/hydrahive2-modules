@@ -129,7 +129,7 @@ def _render(pid: str, tl: dict, clips: list[dict], head: dict, preset: dict, wit
                                   mixer=mix.Mixer.of(tl), subtitles=subs, default_language=head["language"],
                                   crf=preset["crf"])
         try:
-            _run_ffmpeg(cmd, seconds, step)
+            _run_ffmpeg(cmd, seconds, step, stop=progress.cancelled)
             tmp.replace(out_dir / name)
         except RenderFailed as e:
             raise jobs.JobFailed("render_failed") from e

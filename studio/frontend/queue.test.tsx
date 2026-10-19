@@ -31,6 +31,7 @@ describe("7c – Warteschlange: Logik", () => {
     expect(queueFull(Array.from({ length: 5 }, () => job({ status: "queued" })))).toBe(true)
     expect(queueFull([...Array.from({ length: 4 }, () => job({ status: "queued" })), job({ status: "done" }), job({ status: "failed" })])).toBe(false)
     expect(queueFull([...Array.from({ length: 4 }, () => job({ status: "queued" })), job({ status: "running" })])).toBe(true)
+    expect(queueFull([...Array.from({ length: 4 }, () => job({ status: "queued" })), job({ kind: "image", status: "running" })])).toBe(false)   // nur Filme
   })
 
   it("Meldung nach dem Klick: läuft sofort oder Platz in der Warteschlange", () => {
@@ -38,6 +39,7 @@ describe("7c – Warteschlange: Logik", () => {
     expect(startedNotice(t, { status: "running", position: 1 })).toBe("notice_render_started")
     expect(startedNotice(t, { status: "queued", position: 3 })).toBe('notice_render_queued:{"position":3}')
     expect(startedNotice(t, {})).toBe("notice_render_started")
+    expect(startedNotice(t, { status: "queued", position: 1 })).toBe("notice_render_started")                    // gleich dran
   })
 })
 
@@ -61,7 +63,7 @@ describe("7c – Warteschlange: Liste", () => {
   it("Abbrechen ruft den richtigen Auftrag; während des Abbrechens gesperrt", () => {
     const onCancel = vi.fn()
     const q = job({ id: "wartet", status: "queued" })
-    const tree = RenderQueue({ jobs: [q], cancelling: null, onCancel }) as React.ReactElement
+    const tree = RenderQueue({ jobs: [job({ id: "fertig", status: "done" }), q], cancelling: null, onCancel }) as React.ReactElement
     const find = (node: unknown): { props: Record<string, unknown> } | null => {
       if (!node || typeof node !== "object") return null
       if (Array.isArray(node)) { for (const x of node) { const f = find(x); if (f) return f } return null }
