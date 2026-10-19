@@ -62,12 +62,13 @@ function render(d) {
     fill("t-list", d.tasks.top, (t) => [(PRIO[t.priority] || "·") + " " + t.title, t.status === "in_progress" ? "warn" : ""]);
   }
   if (area("github", d.github)) {
-    if (d.github.error) fill("g-list", [d.github.error], (t) => [t, "aus"]);
-    else if (!d.github.prs.length) fill("g-list", ["Nichts offen ✓"], (t) => [t, "ok"]);
+    const g = d.github.error ? [d.github.error] : [];
+    if (!d.github.prs.length) fill("g-list", g.length ? g : ["Nichts offen ✓"], (t) => [t, g.length ? "aus" : "ok"]);
     else fill("g-list", d.github.prs, (p) => [
       p.repo.replace("hydrahive2-", "") + " #" + p.number + " " + CI[p.ci][0] + (p.mergeable === false ? " · Konflikt" : "")
         + (p.draft ? " · Entwurf" : "") + " — " + p.title,
       p.mergeable === false ? "err" : CI[p.ci][1]]);
+    if (d.github.prs.length && g.length) line($("g-list"), g[0], "aus");
   }
   if (area("mining", d.mining)) {
     $("mi-eur").textContent = d.mining.eur_day == null ? "–" : d.mining.eur_day.toFixed(2).replace(".", ",");

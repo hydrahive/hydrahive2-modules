@@ -96,6 +96,7 @@ def open_prs(repos: list[str], token: str | None, *, fetch: Fetch = _urllib_fetc
     headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
                "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "hydrahive-vitrine"}
     out: list[dict] = []
+    failed: list[str] = []
     try:
         for repo in repos:
             if not valid_repo(repo):
@@ -104,7 +105,9 @@ def open_prs(repos: list[str], token: str | None, *, fetch: Fetch = _urllib_fetc
             base = f"{API}/repos/{repo}"
             code, prs = fetch("GET", f"{base}/pulls?state=open&per_page=20", headers, TIMEOUT)
             if code != 200 or not isinstance(prs, list):
-                return {"prs": out, "error": ERR_NET}
+                log.warning("Statuszentrale: GitHub antwortet %s für ein Repo", code)
+                failed.append(repo.split("/")[1])
+                continue
             for p in prs:
                 if len(out) >= MAX_PRS:
                     break
@@ -120,4 +123,6 @@ def open_prs(repos: list[str], token: str | None, *, fetch: Fetch = _urllib_fetc
     except (OSError, ValueError, TimeoutError) as e:
         log.warning("Statuszentrale: GitHub-Abruf fehlgeschlagen (%s)", type(e).__name__)
         return {"prs": out, "error": ERR_NET}
+    if failed:
+        return {"prs": out, "error": ERR_NET if len(failed) == len(repos) else f"{ERR_NET}: {', '.join(failed)}"}
     return {"prs": out, "error": None}
