@@ -191,6 +191,78 @@ steht sie aber **24 Stunden** lang, bis Till sie als gelesen markiert.
 - Statuszentrale nicht verfügbar → Karte ohne zweite Zeile (Test)
 - Seite weiter ruhig: Firefox < 5 % eines Kerns über 60 s
 
+## S4 — Zuhause + Anordnung (Entwurf 19.10.2026, Entscheidungen Till 19.10.)
+
+S3 ist abgenommen. S4 bringt zwei Dinge: einen Bereich **Zuhause** mit den Home-Assistant-Favoriten und eine
+**Einstellungsseite**, auf der Till festlegt, welche Bereiche in welcher Reihenfolge erscheinen. Ziel laut Till:
+aufgeräumt, nicht vollgestopft. Weiterhin **nur lesen**, keine Schalter.
+
+### Ausgangslage (am 19.10. auf .2 geprüft)
+- HA-Modul 1.0.4 ist installiert, URL und Token stehen in den System-Einstellungen. Till hat 12 Favoriten in
+  `module_homeassistant_favorites`: 4 Thermometer (Temperatur, Luftfeuchte, Batterie) und 1 Steckdose (Energie),
+  in HA den Räumen Wohnzimmer, Schlafzimmer, Küche und Alex Zimmer zugeordnet. Alex Zimmer ist seit etwa 13 h nicht
+  erreichbar.
+- Platz: Mit 5 langen Meldungen reicht die Seite bis 1890 von 1920 px (S3-Messung).
+
+### Bereich „Zuhause“
+- Eine Zeile **je Raum** (HA-Bereich), sortiert wie die Favoriten. Inhalt: Temperatur, Luftfeuchte und sonst den ersten
+  weiteren Wert kurz am Ende (z. B. Energie).
+- **Batterie** nur, wenn unter 20 %. Dann steht „Batterie 15 %“ in Gelb.
+- **Nicht erreichbar** (alle Werte des Raums `unavailable`/`unknown`): graue Zeile „nicht erreichbar seit 13 h“.
+  Sind nur einzelne Werte weg, werden sie weggelassen.
+- Favoriten ohne Raum kommen unter „Sonstiges“.
+- Quelle: die Favoriten des Besitzers der Statuszentrale (`tasks_user`, Standard `till`) aus der Tabelle, und die Werte
+  über den **Client des HA-Moduls** (`hhmod_homeassistant.client.render_template`), mit **einem** festen Template für
+  alle Favoriten (Name, Raum, Art, Wert, Einheit, letzte Änderung). Die Entity-IDs werden vorher geprüft
+  (`^[a-z_]+\.[a-z0-9_]+$`). Die Vitrine hält **keinen eigenen HA-Zugang**, Token und Adresse bleiben im HA-Modul.
+- Ist das HA-Modul nicht geladen, fehlt die Tabelle oder antwortet HA nicht → Bereich `null` (S2-Regel), bzw.
+  „Home Assistant nicht erreichbar“.
+- Zwischenspeicher **60 s** (Raumtemperaturen ändern sich langsam, HA wird geschont).
+
+### Einstellungsseite „Statuszentrale anpassen“ (Cockpit, Vitrine-Seite)
+- Liste der Bereiche: **Meldungen, Zuhause, Hydra, Aufgaben, Wartet auf Till, Rechner, Mining**. Je Bereich ein
+  Schalter an/aus und Pfeile hoch/runter für die Reihenfolge. Uhr/Datum oben und „Zurück zum Video“ unten sind fest.
+- Einstellungen je Bereich (nur diese, keine freien Texte):
+
+| Bereich | Einstellung | Standard |
+|---|---|---|
+| Meldungen | höchstens n unter „Neu“ voll anzeigen (1–5) | **3** |
+| Zuhause | Räume: alle oder eine Auswahl (Haken je Raum, aus den Favoriten) | alle |
+| Aufgaben | Aufgaben von (Nutzer) | `till` (wie S2) |
+| Wartet auf Till | Projekt mit GitHub-Zugang, Repos | wie S2 |
+| Mining | eigener Bereich oder **in der Zeile „Rechner“** | **in „Rechner“** |
+
+- Standard-Reihenfolge: Meldungen, Zuhause, Hydra, Aufgaben, Wartet auf Till, Rechner (mit Mining).
+- **Speichern wirkt sofort**: Die Seite am Gehäuse holt ihre Anordnung mit den Daten (`/data` bekommt `layout`) und baut
+  sich danach auf. Keine eigene Vorschau im Cockpit.
+- Prüfung im Server und im Browser (eine Regel): bekannte Bereichs-IDs, jede höchstens einmal, Grenzen wie oben.
+  Unbekannte oder alte Einträge → Standard. Alte `config.json` (S2: nur `tasks_user`, `github_project`, `github_repos`)
+  bleibt gültig und wird ergänzt.
+
+### Nie zu voll
+- Passt nicht alles auf 1920 px, blendet die Seite **von unten** ganze Bereiche aus und zeigt klein
+  „n Bereiche ausgeblendet (zu voll)“ über „Zurück“. Nichts wird abgeschnitten oder überlappt.
+- Messung im Headless-Browser bei 1080×1920 mit vollen Daten (5 Meldungen, 4 Räume, 5 PRs, 5 Aufgaben) gehört zur Abnahme.
+
+### Bewusst nicht in S4
+- Kein freier Layout-Editor (Ziehen, Größen, Spalten), keine frei eingegebenen Texte oder HTML auf der Seite.
+- Kein Schalten in Home Assistant (kommt erst mit „Knöpfe mit PIN“).
+- Keine eigene Favoritenliste in der Vitrine: Die Auswahl passiert über die Räume, die Favoriten selbst pflegt Till im
+  HA-Modul.
+
+### Akzeptanz S4
+- Zuhause zeigt die Räume mit echten Werten von .2 (Abgleich mit HA). Alex Zimmer grau mit „nicht erreichbar seit …“.
+- Bereich im Cockpit ausschalten oder verschieben → binnen 10 s am Gehäuse so zu sehen.
+- Ohne HA-Modul oder ohne Favoriten-Tabelle → Zuhause `null`, Rest unverändert (Tests).
+- Ungültige Einstellungen werden abgelehnt (Server und Browser), alte Config bleibt gültig (Tests).
+- Volle Seite: nichts läuft über 1920 px, der Hinweis „ausgeblendet“ erscheint (Headless-Test). Firefox < 5 % eines Kerns.
+
+### Entscheidungen S4 (Till, 19.10.2026)
+1. Zuhause = Option A, nur anzeigen, mit Tills HA-Favoriten.
+2. Aufgeräumt: eine Zeile je Raum, Batterie nur bei wenig Ladung, nicht erreichbar grau.
+3. Einstellungsseite statt fester Anordnung, ohne freien Editor. Voreinstellungen: Mining in „Rechner“, höchstens 3
+   Meldungen unter „Neu“.
+
 ## Bewusst nicht (V1 der Statuszentrale)
 
 - keine Aktionen mit Folgen (Merge, Dienste, Update, Zonen, Schalter) – kommen später nur mit PIN
@@ -210,7 +282,8 @@ steht sie aber **24 Stunden** lang, bis Till sie als gelesen markiert.
 1. **S1 Umschalten:** EVDI-Quelle im Dienst, Kiosk-Sitzung, Leerlauf-Abfrage, 2-min-Rückkehr, Platzhalter-Seite. Abnahme am Gehäuse
 2. **S2 Statuszentrale:** Daten-Route mit Kiosk-Schlüssel, Dashboard-Seite, Cockpit-Einstellung Rückkehrzeit
 3. **S3 Meldungen:** Hinweis auf den Karten, Neu + Verlauf (24 h) in der Statuszentrale, Knopf „Gelesen“ (Details: Abschnitt S3)
-4. danach (eigene Specs): Home Assistant, Chat/Sprache, Knöpfe mit PIN
+4. **S4 Zuhause + Anordnung:** HA-Favoriten je Raum, Einstellungsseite (an/aus, Reihenfolge, Einstellungen je Bereich)
+5. danach (eigene Specs): Chat/Sprache, Knöpfe mit PIN
 
 ## Akzeptanzkriterien
 
