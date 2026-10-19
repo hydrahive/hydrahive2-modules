@@ -57,7 +57,7 @@ def test_render_with_subtitles(client, auth_headers, ws) -> None:
     f = ws / job["result"]["rel"]
     subs = [s for s in _streams(f) if s["codec_type"] == "subtitle"]
     assert [(s["codec_name"], s["tags"]["language"], s["disposition"]["default"]) for s in subs] == [("mov_text", "ger", 1), ("mov_text", "eng", 0)]
-    srt = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(f), "-map", "0:s:1", "-f", "srt", "-"], capture_output=True, text=True, timeout=30).stdout
+    srt = subprocess.run(["ffmpeg", "-loglevel", "error", "-i", str(f), "-map", "0:s:1", "-f", "srt", "-"], capture_output=True, text=True, timeout=30, check=True).stdout
     assert "Hello world" in srt and "00:00:00,500 --> 00:00:01,500" in srt
     meta = json.loads((ws / f"{job['result']['rel']}.json").read_text())
     assert meta["subtitles"] == ["de", "en"]
