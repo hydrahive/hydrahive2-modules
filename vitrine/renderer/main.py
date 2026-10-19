@@ -154,7 +154,7 @@ class Runner:
                     msgs, in_t = inbox.visible(self.data), t0
                 layers = [overlay.render(time.localtime(), st, preview.headline(prog), alert)]
                 if msgs:
-                    layers.append(card_layer.render(msgs, time.time()))
+                    layers.append(card_layer.render(msgs, time.time(), hint=self.state.get("dashboard") == "bereit"))
                 try:
                     jpeg = src.next(layers)
                 except StopIteration:

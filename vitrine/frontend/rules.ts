@@ -183,3 +183,17 @@ export function dashboardInfo(st: { mode?: string | null; dashboard?: string | n
   if (d === "bereit") return { mode, state: "ready", reason: null }
   return { mode, state: "unavailable", reason: d.replace(/^nicht verfügbar:\s*/, "") }
 }
+
+/** Statuszentrale (S2): gleiche Prüfung wie renderer/config.dashboard_ok – Fehlerschlüssel für die Anzeige. */
+export interface DashboardCfg { tasks_user: string; github_project: string; github_repos: string[] }
+const USER_RE = /^[A-Za-z0-9_.@-]{1,64}$/
+const REPO_RE = /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/
+export function dashboardErrors(d: DashboardCfg): string[] {
+  const errs: string[] = []
+  if (!USER_RE.test(d.tasks_user)) errs.push("tasks_user")
+  if (!d.github_project.trim() || d.github_project.length > 100) errs.push("github_project")
+  const bad = d.github_repos.length > 5 || d.github_repos.some((r) => !REPO_RE.test(r) || r.split("/").some((p) => p === "." || p === ".."))
+  if (bad) errs.push("github_repos")
+  return errs
+}
+export const parseRepos = (s: string): string[] => s.split(/[\s,]+/).map((x) => x.trim()).filter(Boolean)

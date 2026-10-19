@@ -1,8 +1,9 @@
 """Dashboard-Quelle für den Dienst: eigener Thread besitzt das EVDI-Gerät, dazu die Leerlaufzeit des Kiosk-X-Servers.
 
-Warum ein Thread (gemessen am 18.10.2026 auf .2): Solange niemand die EVDI-Ereignisse abarbeitet, **hängt** `xrandr` beim
-Einschalten des Ausgangs. Der Thread verarbeitet sie daher immer – auch im Video- und Nachtmodus – und holt Bilder nur,
-wenn das Dashboard gerade gezeigt wird (`set_active(True)`).
+Warum ein Thread (gemessen auf .2): Solange niemand die EVDI-Ereignisse abarbeitet, hängt `xrandr` (18.10.); solange
+niemand die Bilder abholt, wartet Xorg bei jedem Bildwechsel bis zum Timeout (19.10.: 0/s → Xorg dauerhaft blockiert,
+20/s → praktisch nie, 0,9 % CPU). Der Thread holt deshalb immer ~20×/s ab – auch im Video- und Nachtmodus – und baut nur
+im Dashboard-Modus (`set_active(True)`) JPEGs daraus.
 """
 from __future__ import annotations
 
@@ -14,7 +15,7 @@ from typing import Callable
 from .evdi_source import EvdiSource, EvdiUnavailable
 
 log = logging.getLogger("vitrine.dashboard")
-IDLE_TICK = 0.05          # Ereignisse ~20×/s abarbeiten (kostet praktisch nichts)
+IDLE_TICK = 0.05          # im Hintergrund ~20×/s Ereignisse + Bild abholen (0,9 % CPU gemessen)
 RETRY_OPEN = 30.0
 
 
@@ -76,7 +77,7 @@ class Dashboard:
                         with self._lock:
                             self._fresh, self.last_jpeg = j, j
                 else:
-                    self._src.poll_events()
+                    self._src.drain()
                 self.reason = None if self._src.ready else "Kiosk hat den Bildschirm noch nicht eingeschaltet"
             except OSError as e:
                 log.warning("EVDI-Fehler: %s", e)
