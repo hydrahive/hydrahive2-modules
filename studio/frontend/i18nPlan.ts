@@ -8,6 +8,7 @@ import { guide_de, guide_en } from "./i18nGuide"
 import { jobs_de, jobs_en } from "./i18nJobs"
 import { subtitles_de, subtitles_en } from "./i18nSubtitles"
 import { translate_de, translate_en } from "./i18nTranslate"
+import { media_de, media_en } from "./i18nMedia"
 import { upload_de, upload_en } from "./i18nUpload"
 import { models_de, models_en } from "./i18nModels"
 
@@ -17,6 +18,7 @@ export const plan_de = {
   ...subtitles_de,
   ...translate_de,
   ...upload_de,
+  ...media_de,
   ...cut_de,
   ...guide_de,
   ...draft_de,
@@ -109,7 +111,6 @@ export const plan_de = {
     studio_references_full: "Es sind schon 8 Referenzbilder da.",
     studio_music_needs_text: "Bitte beschreiben, wie die Musik klingen soll.",
     studio_speech_needs_text: "Der Shot hat noch keinen Sprechtext. Bitte zuerst einen Text eintragen.",
-    studio_media_not_found: "Diese Datei gibt es nicht mehr. Bitte die Bibliothek neu laden.",
     studio_music_invalid: "Die Länge muss zwischen 5 und 180 Sekunden liegen.",
     studio_variant_unknown: "Dieses Bild gehört nicht zu diesem Shot.",
     studio_video_needs_image: "Für ein Video braucht der Shot zuerst ein Bild.",
@@ -119,6 +120,7 @@ export const plan_de = {
     ...draft_de.draft_err,
     ...free_de.free_err,
     ...deliver_de.deliver_err,
+    ...media_de.media_err,
   },
   f: {
     title: "Titel", logline: "Kurzbeschreibung", description: "Beschreibung", aspect: "Bildformat", duration: "Standard-Dauer (s)",
@@ -139,6 +141,7 @@ export const plan_en: typeof plan_de = {
   ...subtitles_en,
   ...translate_en,
   ...upload_en,
+  ...media_en,
   ...cut_en,
   ...guide_en,
   ...draft_en,
@@ -231,7 +234,6 @@ export const plan_en: typeof plan_de = {
     studio_references_full: "There are already 8 reference images.",
     studio_music_needs_text: "Please describe how the music should sound.",
     studio_speech_needs_text: "The shot has no speech text yet. Please enter a text first.",
-    studio_media_not_found: "This file no longer exists. Please reload the library.",
     studio_music_invalid: "The length must be between 5 and 180 seconds.",
     studio_variant_unknown: "This image does not belong to this shot.",
     studio_video_needs_image: "A video needs an image for the shot first.",
@@ -241,6 +243,7 @@ export const plan_en: typeof plan_de = {
     ...draft_en.draft_err,
     ...free_en.free_err,
     ...deliver_en.deliver_err,
+    ...media_en.media_err,
   },
   f: {
     title: "Title", logline: "Logline", description: "Description", aspect: "Aspect ratio", duration: "Default duration (s)",

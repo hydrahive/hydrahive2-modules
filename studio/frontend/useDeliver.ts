@@ -60,6 +60,7 @@ export function useDeliver(p: PlanState, projectId: string, active: boolean, job
   }, [doneKey, load, onDone])
 
   return {
+    reload: load,
     renders: loadedFor === projectId ? renders : null, queue,                     // anderes Projekt → erst laden
     start: () => p.act(() => renderApi.start(projectId, { ...preset, subtitles: withSubs && subLangs.length > 0 }),
       () => notice.current, (r) => { notice.current = startedNotice(t, r as { status?: string; position?: number }); reloadJobs() }),

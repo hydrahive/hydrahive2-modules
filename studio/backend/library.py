@@ -9,6 +9,7 @@ from pathlib import Path
 from hydrahive.projects._paths import workspace_path
 
 from . import _sources
+from . import media as media_rules
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ def _entry(root: Path, p: Path, kind: str, origin: str, source: str, meta: dict,
         "kind": kind, "origin": origin, "source": source, "rel": rel, "abs": str(p),
         "name": (name or "").strip() or p.stem, "size": st.st_size, "mtime": st.st_mtime,
         "created_at": _created(p, meta),
+        "deletable": media_rules.is_own(rel),                                      # nur eigene Dateien (C1)
     }
     for key in ("prompt", "model"):
         if isinstance(meta.get(key), str) and meta[key].strip():

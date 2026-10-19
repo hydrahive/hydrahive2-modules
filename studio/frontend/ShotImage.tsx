@@ -1,4 +1,4 @@
-import { ImagePlus, Loader2 } from "lucide-react"
+import { ImagePlus, Loader2, X } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { fileUrl } from "@/shared/files"
 import { jobText } from "./jobLogic"
@@ -12,10 +12,12 @@ interface Props {
   job: Job | null
   onGenerate: () => void
   onChoose: (rel: string) => void
+  /** C1: Variante löschen (Rückfrage übernimmt der Aufrufer) */
+  onDelete?: (rel: string) => void
 }
 
 /** Bild des Shots: erzeugen (Auftrag im Hintergrund), Varianten ansehen und eine wählen. */
-export function ShotImage({ shot, base, job, onGenerate, onChoose }: Props) {
+export function ShotImage({ shot, base, job, onGenerate, onChoose, onDelete }: Props) {
   const { t } = useTranslation("studio")
   const running = job?.status === "running" || job?.status === "queued"
   const error = jobText(t, job)
@@ -27,11 +29,17 @@ export function ShotImage({ shot, base, job, onGenerate, onChoose }: Props) {
       {variants.length > 0 ? (
         <div className="grid grid-cols-4 gap-1">
           {variants.map((v) => (
-            <button key={v} type="button" onClick={() => onChoose(v)} data-shot-variant={v} aria-pressed={v === shot.image_rel}
-              title={t("image_choose")}
-              className={`aspect-video overflow-hidden rounded-[3px] border ${v === shot.image_rel ? "border-[#69d7ff]" : "border-transparent hover:border-[#46617f]"}`}>
-              <img src={fileUrl(fileOf(base, v))} alt="" loading="lazy" className="h-full w-full object-cover" />
-            </button>
+            <span key={v} className="relative">
+              <button type="button" onClick={() => onChoose(v)} data-shot-variant={v} aria-pressed={v === shot.image_rel}
+                title={t("image_choose")}
+                className={`block aspect-video w-full overflow-hidden rounded-[3px] border ${v === shot.image_rel ? "border-[#69d7ff]" : "border-transparent hover:border-[#46617f]"}`}>
+                <img src={fileUrl(fileOf(base, v))} alt="" loading="lazy" className="h-full w-full object-cover" />
+              </button>
+              {onDelete && (
+                <button type="button" onClick={() => onDelete(v)} data-shot-variant-delete={v} aria-label={t("image_delete")} title={t("image_delete")}
+                  className="absolute right-0.5 top-0.5 rounded bg-black/75 p-0.5 text-[#e8eef8] hover:text-[#ff6b8a]"><X size={11} /></button>
+              )}
+            </span>
           ))}
         </div>
       ) : <p className="text-[11px] text-[#68758a]">{t("image_none")}</p>}

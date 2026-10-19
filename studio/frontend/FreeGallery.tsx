@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Film, Link2 } from "lucide-react"
+import { Film, Link2, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { fileUrl } from "@/shared/files"
 import type { LibraryItem } from "./api"
@@ -13,23 +13,25 @@ interface Props {
   busy: boolean
   onAssign: (sceneId: string, shotId: string, rel: string) => void
   onTimeline: (rel: string) => void
+  /** C1: freies Bild löschen */
+  onDelete?: (item: LibraryItem) => void
 }
 
 /** Mitte bei „Freies Bild“: alle freien Bilder, neueste zuerst – einem Shot zuweisen oder auf die Zeitleiste legen. */
-export function FreeGallery({ items, plan, busy, onAssign, onTimeline }: Props) {
+export function FreeGallery({ items, plan, busy, onAssign, onTimeline, onDelete }: Props) {
   const { t } = useTranslation("studio")
   const list = freeImages(items)
   const choices = shotChoices(plan)
   if (!list.length) return <p className="max-w-sm text-center text-xs leading-relaxed text-[#8d9ab0]" data-free-none>{t("free_none")}</p>
   return (
     <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(220px,1fr))] content-start gap-3 self-start" data-free-gallery>
-      {list.map((i) => <Card key={i.id} item={i} choices={choices} busy={busy} onAssign={onAssign} onTimeline={onTimeline} />)}
+      {list.map((i) => <Card key={i.id} item={i} choices={choices} busy={busy} onAssign={onAssign} onTimeline={onTimeline} onDelete={onDelete} />)}
       {!choices.length && <p className="col-span-full text-[11px] text-[#68758a]">{t("free_no_shots")}</p>}
     </div>
   )
 }
 
-function Card({ item, choices, busy, onAssign, onTimeline }: { item: LibraryItem; choices: ReturnType<typeof shotChoices> } & Omit<Props, "items" | "plan">) {
+function Card({ item, choices, busy, onAssign, onTimeline, onDelete }: { item: LibraryItem; choices: ReturnType<typeof shotChoices> } & Omit<Props, "items" | "plan">) {
   const { t } = useTranslation("studio")
   const [target, setTarget] = useState("")
   const btn = "flex flex-1 items-center justify-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 text-[11px] font-bold text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-40"
@@ -52,6 +54,12 @@ function Card({ item, choices, busy, onAssign, onTimeline }: { item: LibraryItem
       <button type="button" onClick={() => onTimeline(item.rel)} disabled={busy} className={`${btn} w-full`}>
         <Film size={11} /> {t("free_timeline")}
       </button>
+      {onDelete && (
+        <button type="button" onClick={() => onDelete(item)} disabled={busy} data-free-delete={item.rel}
+          className="flex w-full items-center justify-center gap-1 rounded-[4px] px-2 py-1 text-[11px] text-[#8d9ab0] hover:text-[#ff6b8a] disabled:opacity-40">
+          <Trash2 size={11} /> {t("media_delete")}
+        </button>
+      )}
     </figure>
   )
 }

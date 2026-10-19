@@ -26,11 +26,13 @@ interface Props {
   voices?: string[] | null
   speechJob?: Job | null
   onSpeech?: () => void
+  /** C1: Bild/Video des Shots löschen (mit Rückfrage) */
+  onDeleteMedia?: (rel: string) => void
 }
 
 /** Planen, rechts: ein Shot (Kamera, Beschreibung, Bausteine der Szene, Dauer). Status und Medien ändert das Erzeugen. */
 export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy, onSave, onDelete, base = "", job = null, onGenerate, onChoose, videoJob = null, onVideo,
-  voices = [], speechJob = null, onSpeech }: Props) {
+  voices = [], speechJob = null, onSpeech, onDeleteMedia }: Props) {
   const { t } = useTranslation("studio")
   const [s, setS] = useState(shot)
   const dirty = JSON.stringify(s) !== JSON.stringify(shot)
@@ -39,8 +41,8 @@ export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy
   return (
     <div className="mt-3 space-y-3 text-xs" data-plan-form="shot">
       <p className="font-bold text-[#e8eef8]">{t("shot", { n: index + 1 })}</p>
-      {onGenerate && onChoose && <ShotImage shot={shot} base={base} job={job} onGenerate={onGenerate} onChoose={onChoose} />}
-      {onVideo && <ShotVideo shot={shot} base={base} job={videoJob} onGenerate={onVideo} />}
+      {onGenerate && onChoose && <ShotImage shot={shot} base={base} job={job} onGenerate={onGenerate} onChoose={onChoose} onDelete={onDeleteMedia} />}
+      {onVideo && <ShotVideo shot={shot} base={base} job={videoJob} onGenerate={onVideo} onDelete={onDeleteMedia} />}
       <div className="grid grid-cols-2 gap-2">
         <label className="block"><Label>{t("f.camera")}</Label>
           <select value={s.shot} onChange={(e) => setS({ ...s, shot: e.target.value })} className={fieldCls}>

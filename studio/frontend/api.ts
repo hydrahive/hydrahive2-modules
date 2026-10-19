@@ -3,7 +3,7 @@ import { api } from "@/shared/api-client"
 /** Medienart in der Studio-Bibliothek (Backend: backend/library.py). */
 export type MediaKind = "video" | "image" | "audio" | "music" | "element"
 export type Origin = "ai" | "upload"
-export type Source = "atelier" | "videoeditor" | "tonstudio" | "studio" | "studio_free" | "studio_render" | "studio_voice"
+export type Source = "atelier" | "videoeditor" | "tonstudio" | "studio" | "studio_free" | "studio_render" | "studio_voice" | "studio_music" | "studio_upload"
 
 export interface LibraryItem {
   id: string
@@ -19,6 +19,8 @@ export interface LibraryItem {
   prompt?: string
   model?: string
   thumb_abs?: string
+  /** Eigene Datei des Studios – darf gelöscht werden (C1). Atelier, Video-Editor, Tonstudio: nein. */
+  deletable?: boolean
 }
 
 export interface StudioProject {

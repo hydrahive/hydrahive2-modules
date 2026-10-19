@@ -1174,6 +1174,36 @@ Input-Material übergeben“. Er schaut es morgens an; gemergt wird erst nach se
   Zustand, Knopf „Abbrechen“ bei wartend/laufend. Meldung nach dem Klick: „Film wird erzeugt.“ bzw. „Film ist in der
   Warteschlange (Platz 2).“ Die Liste „Fertige Filme“ lädt nach jedem fertigen Film neu.
 
+## Bauplan Etappe C – Bedienbar, Teil 2 (19.10.)
+
+**Till (19.10.):** „Ich verstehe das ganze Studio nicht … ich kann Sachen generieren, die ich nicht will, und kann sie
+nicht mehr löschen, Vorlagen von Orten oder Figuren per Bild übergeben geht nicht … ohne genaue Beschreibungen und
+Hilfetexte nicht möglich.“ → „Mache das alles, damit man arbeiten kann.“ Rundgang + Befunde:
+`_work/scratch/studio-bedienbarkeit-2.md`. **Etappe 8 wartet, bis C fertig ist.**
+
+| Schritt | Inhalt |
+|---|---|
+| **C1** | Löschen und Herunterladen überall |
+| **C2** | Figur/Ort aus einem Foto (KI beschreibt, Foto wirkt automatisch) |
+| **C3** | Anleitung, die führt (Hilfe vollständig, Schritt X von 6, Beschriftungen, Kosten am Knopf) |
+| **C4** | Aufräumen (ein Weg zum Shot, „Gespeichert“ als Text, Farbwähler, Einzelbild erklärt) + Neuling-E2E |
+
+**C1 im Detail**
+- **Was gelöscht werden darf:** nur Dateien des Studios – `studio/media/{images,videos,voice,music,free,uploads}/` und
+  `studio/renders/` (jeweils mit Begleitdatei). Dateien aus Atelier, Video-Editor, Tonstudio bleiben unangetastet
+  (gehören den alten Modulen bis Etappe 8); dort gibt es nur „Herunterladen“.
+- **Wo es benutzt wird** (`GET …/media/usage?rel=`): Shots (Bild, Variante, Video, Sprache), Zeitleiste (Clips),
+  Bausteine (Referenzbild). Die Rückfrage nennt das: „Wird benutzt: 2 Shots, 1 Clip, Figur Hydra.“
+- **Löschen** (`DELETE …/media?rel=`): Datei + Begleitdatei weg; danach aufgeräumt: aus Varianten raus (gewähltes Bild
+  → nächste Variante oder keins), `video_rel`/`voice_rel` am Shot leer, Referenz aus Bausteinen raus. Clips auf der
+  Zeitleiste bleiben und werden beim Laden wie bisher zu Platzhaltern bzw. stummen Tonclips (nichts geht verloren).
+  Läuft gerade ein Auftrag für einen betroffenen Shot → 409 `studio_media_busy`. Fremde Pfade → 403
+  `studio_media_not_own`, fehlend → 404 `studio_media_not_found`.
+- **Oberfläche:** Bibliothek → Medium wählen → rechts „Herunterladen“ (Link mit Dateinamen) und „Löschen …“ (eigener
+  Dialog mit Verwendung; bei fremden Quellen statt Löschen der Satz „Gehört zum Atelier – dort löschen.“). Am Shot:
+  jede Variante und das Video mit „×“ (gleicher Dialog). Freie Bilder und fertige Filme: „Löschen …“.
+- Danach lädt die Bibliothek, das Drehbuch und die Zeitleiste neu.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.

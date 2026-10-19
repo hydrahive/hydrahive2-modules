@@ -45,6 +45,7 @@ import { editing, filmWs, useCutWorkspace } from "./useCutWorkspace"
 import { useSubtitleWorkspace } from "./useSubtitleWorkspace"
 import { clipsOf, findClip } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
+import { useMediaDelete } from "./useMediaDelete"
 import { useDraft } from "./useDraft"
 import { useFree } from "./useFree"
 import { useModelCatalogs } from "./modelCatalog"
@@ -104,6 +105,8 @@ export function StudioPage() {
     s.setWorkspace("plan")
     p.select({ kind: "shot", sceneId: c.scene_id, id: c.shot_id })
   }
+  const md = useMediaDelete(lib.projectId, (rel) => { if (s.item?.rel === rel) s.clearMedia(); [lib, p, guide, cut, dv].forEach((x) => void x.reload()) },
+    (x) => (shotsWs || delivering ? p.setNotice(x) : cut.setNotice(x)))   // C1: nach dem Löschen alles neu laden
   const reload = () => { void lib.reload(); void guide.reload(); if (shotsWs) void p.reload(); if (editing(s.workspace)) void cut.reload() }
   const mu = useMusic(lib.projectId, editing(s.workspace), ed.addMusic, (x) => cut.setNotice(x), () => void lib.reload())
   const selShot = p.selection?.kind === "shot" ? p.selection : null
@@ -121,7 +124,7 @@ export function StudioPage() {
             <DeliverPanel clips={every} aspect={p.plan?.screenplay.aspect_ratio ?? "16:9"} renders={dv.renders} queue={dv.queue} cancelling={dv.cancelling} onCancel={dv.cancel} error={p.error}
               busy={p.busy} onRender={() => void dv.start()} onCut={() => s.setWorkspace("edit")}
               subtitleLanguages={dv.subtitleLanguages} withSubtitles={dv.withSubtitles} onWithSubtitles={dv.setWithSubtitles}
-              preset={dv.preset} onPreset={dv.setPreset} />
+              preset={dv.preset} onPreset={dv.setPreset} onDeleteFilm={(r) => md.ask(r.rel, (r.created_at || r.name).slice(0, 16).replace("T", " "))} />
           </div>
         ) : <>
         <div className="flex min-h-0 flex-col" style={{ flex: `${100 - s.layout.timeline} 1 0` }}>
@@ -143,7 +146,7 @@ export function StudioPage() {
             <div className="min-w-0 flex-1">
               {freeOpen
                 ? <div className="flex h-full min-h-0 justify-center overflow-y-auto p-3" data-studio-panel="preview">
-                    <FreeGallery items={lib.items} plan={p.plan} busy={p.busy} onAssign={(sc, sh, rel) => void fr.assign(sc, sh, rel)} onTimeline={(rel) => void fr.timeline(rel)} />
+                    <FreeGallery items={lib.items} plan={p.plan} busy={p.busy} onAssign={(sc, sh, rel) => void fr.assign(sc, sh, rel)} onTimeline={(rel) => void fr.timeline(rel)} onDelete={md.askItem} />
                   </div>
                 : shotsWs && !s.item
                 ? <PlanCenter plan={p.plan} selection={p.selection} atelier={!!guide.overview?.atelier} books={books} busy={p.busy}
@@ -158,16 +161,16 @@ export function StudioPage() {
             </div>
             <Splitter dir="x" label={t("resize_inspector")} onDrag={(d) => s.drag("inspector", d)} />
             <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
-              {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} upload={up} />
+              {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} upload={up} onDeleteMedia={md.ask} />
                 : freeOpen ? <FreeForm form={fr.form} catalog={imageCatalog} images={lib.items.filter((i) => i.kind === "image")} job={freeJob}
                     busy={p.busy} onChange={fr.setForm} onRun={() => void fr.run()} />
-                : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} /> : <GenerateHint />)
+                : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} onDeleteMedia={md.ask} /> : <GenerateHint />)
                 : mixing && !s.item ? <MixInspector clip={cut.clip} onChange={(v) => cut.clip && ed.onClipMix(cut.clip.id, v)} />
                 : editing(s.workspace) ? <CutInspector clip={s.item ? null : cut.clip} onPlan={toPlan} media={s.item}
                     mix={cut.clip?.kind === "audio" ? (v) => cut.clip && ed.onClipMix(cut.clip.id, v) : undefined}
-                    onUnbind={() => cut.clip && ed.unbindVoice(cut.clip.id)}
+                    onUnbind={() => cut.clip && ed.unbindVoice(cut.clip.id)} onDeleteMedia={md.askItem}
                     onAppend={() => { const k = appendNotice(s.item, ed.addMedia); if (k) { s.clearMedia(); cut.setNotice(t(k)) } }} />
-                : <MediaInfo item={s.item} />}
+                : <MediaInfo item={s.item} onDelete={md.askItem} />}
             </div>
           </div>
         </div>
@@ -195,6 +198,7 @@ export function StudioPage() {
         <DraftDialog d={dr} append={!!p.plan?.scenes.length} />
         {bt.dialog && <BatchDialog kind={bt.dialog.kind} preview={bt.dialog.preview} busy={p.busy} onRun={() => void bt.run()} onClose={bt.close} />}
         {st.dialog}
+        {md.dialog}
         {cut.confirm && <FromPlanDialog count={cut.clips.length} busy={cut.busy} onConfirm={cut.confirmReplace} onClose={cut.closeConfirm} />}
         {sh.confirm && <DecomposeDialog count={sh.confirm.count} busy={sh.busy !== null} onConfirm={() => void sh.confirmReplace()} onClose={sh.closeConfirm} />}
         {p.dialog?.kind === "delete" && <DeleteDialog name={p.dialog.name} busy={p.busy} onConfirm={p.confirmDelete} onClose={() => p.setDialog(null)} />}

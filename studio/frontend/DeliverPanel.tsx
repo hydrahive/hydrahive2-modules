@@ -1,4 +1,4 @@
-import { ArrowRight, Download, Film, Loader2 } from "lucide-react"
+import { ArrowRight, Download, Film, Loader2, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { fileUrl } from "@/shared/files"
 import { DEFAULT_PRESET, deliverSummary, downloadName, minutes, presetLabel, type Preset } from "./deliverLogic"
@@ -20,6 +20,8 @@ interface Props {
   onCancel?: (id: string) => void
   /** Fehler der letzten Aktion (z. B. Warteschlange voll) – sonst sähe man im Reiter „Ausgabe“ nichts */
   error?: string | null
+  /** C1: fertigen Film löschen */
+  onDeleteFilm?: (r: RenderItem) => void
   busy: boolean
   onRender: () => void
   onCut: () => void
@@ -33,7 +35,7 @@ interface Props {
 }
 
 /** Reiter „Ausgabe“ (4d, 7b): Vorlage wählen, Film als MP4 erzeugen, fertige Filme ansehen und herunterladen. */
-export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = null, onCancel = () => {}, error = null, busy, onRender, onCut,
+export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = null, onCancel = () => {}, error = null, onDeleteFilm, busy, onRender, onCut,
   subtitleLanguages = [], withSubtitles = false, onWithSubtitles, preset = DEFAULT_PRESET, onPreset }: Props) {
   const { t } = useTranslation("studio")
   const sum = deliverSummary(clips)
@@ -87,6 +89,10 @@ export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = 
                   className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 font-bold text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940]">
                   <Download size={12} /> {t("deliver_download")}
                 </a>
+                {onDeleteFilm && (
+                  <button type="button" onClick={() => onDeleteFilm(r)} data-deliver-delete={r.rel}
+                    className="ml-1.5 inline-flex items-center gap-1 rounded-[4px] px-2 py-1 text-[#8d9ab0] hover:text-[#ff6b8a]"><Trash2 size={12} /> {t("media_delete")}</button>
+                )}
               </figcaption>
             </figure>
           ))}

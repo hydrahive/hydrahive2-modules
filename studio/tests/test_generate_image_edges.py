@@ -162,3 +162,20 @@ def test_jobs_in_the_same_second_keep_their_order(ws, monkeypatch) -> None:
     stamps = [j["created_at"] for j in reversed(mine)]
     assert stamps == sorted(set(stamps)), stamps  # streng aufsteigend, keine zwei gleich
     assert [j["id"] for j in mine] == list(reversed(ids))
+
+
+def test_start_answer_is_the_state_at_start(ws) -> None:
+    """Die Antwort auf den Start zeigt „running“, auch wenn der Auftrag sofort fertig ist (war zufällig „done“)."""
+    import threading
+
+    from backend import jobs
+    gate = threading.Event()
+
+    def work() -> dict:
+        gate.set()
+        return {}
+    job = jobs.start(PROJECT_ID, "image", "z" * 32, "", work)
+    gate.wait(5)
+    import time
+    time.sleep(0.2)                                  # der Thread ist sicher fertig
+    assert job["status"] == "running"
