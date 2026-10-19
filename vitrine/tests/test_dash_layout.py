@@ -64,3 +64,43 @@ def test_schema_prueft_gleich():
     for bad in ({"messages_max": 9}, {"order": ["x"]}, {"hidden": ["x"]}, {"token": "x"}):
         with pytest.raises(ValidationError):
             Config(dashboard=dict(S2, **bad))
+
+
+def test_seiten_voreinstellung():
+    d = dl.normalize({})
+    assert d["pages"] == {"messages": 1, "home": 1, "hydra": 1, "tasks": 2, "github": 2, "machine": 2, "mining": 2}
+
+
+def test_seiten_teilweise_wird_ergaenzt():
+    d = dl.normalize(dict(S2, pages={"home": 3}))
+    assert d["pages"]["home"] == 3 and d["pages"]["messages"] == 1 and set(d["pages"]) == set(dl.AREAS)
+
+
+@pytest.mark.parametrize("pages", [{"home": 0}, {"home": 4}, {"home": True}, {"home": "2"}, {"laser": 1}, [1, 2], {"home": 1.0}])
+def test_seiten_ungueltig(pages):
+    assert dl.layout_ok(dict(S2, pages=pages)) is False
+
+
+def test_alte_s4_config_ohne_seiten(tmp_path):
+    (tmp_path / "config.json").write_text(json.dumps({"dashboard": dict(S2, order=list(dl.AREAS), hidden=["tasks"])}))
+    d = config.load(tmp_path)["dashboard"]
+    assert d["hidden"] == ["tasks"] and d["pages"]["machine"] == 2
+
+
+def test_schema_seiten():
+    pytest.importorskip("pydantic")
+    from pydantic import ValidationError
+    from backend.schemas import Config
+    assert Config(dashboard=dict(S2, pages={"mining": 3})).dump()["dashboard"]["pages"]["mining"] == 3
+    with pytest.raises(ValidationError):
+        Config(dashboard=dict(S2, pages={"mining": 9}))
+
+
+@pytest.mark.parametrize("bad", [{"pages": {"home": True}}, {"pages": {"home": 1.0}}, {"messages_max": True}, {"messages_max": 3.0}])
+def test_schema_streng_wie_dienst(bad):
+    """Pydantic würde true/1.0 still in 1 umwandeln – das Schema muss so streng sein wie dash_layout."""
+    pytest.importorskip("pydantic")
+    from pydantic import ValidationError
+    from backend.schemas import Config
+    with pytest.raises(ValidationError):
+        Config(dashboard=dict(S2, **bad))

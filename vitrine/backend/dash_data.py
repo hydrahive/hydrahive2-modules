@@ -12,7 +12,7 @@ from typing import Any, Callable
 log = logging.getLogger(__name__)
 AREAS = ("messages", "home", "hydra", "tasks", "machine", "mining", "github", "holiday")
 TTL = {"github": 60.0, "home": 60.0}
-LAYOUT_KEYS = ("order", "hidden", "messages_max", "mining_in_machine")
+LAYOUT_KEYS = ("order", "hidden", "messages_max", "mining_in_machine", "pages")
 TTL_DEFAULT = 5.0
 
 
@@ -121,7 +121,7 @@ def invalidate(name: str) -> None:
         b.invalidate(name)
 
 
-def build(data_dir, cfg: dict) -> dict:
+def build(data_dir, cfg: dict, *, return_seconds: int = 120) -> dict:
     """Builder je Datenquellen-Einstellung; reine Anordnung (order/hidden/mining_in_machine) braucht keinen neuen."""
     key = (str(data_dir), cfg.get("tasks_user"), cfg.get("github_project"), tuple(cfg.get("github_repos") or ()),
            cfg.get("messages_max"), tuple(cfg.get("home_rooms") or ()))
@@ -130,5 +130,5 @@ def build(data_dir, cfg: dict) -> dict:
         _builders.clear()
         b = _builders[key] = Builder(default_sources(data_dir, cfg), secrets=_hh_secrets(cfg.get("tasks_user") or "till"))
     out = b.get()
-    out["layout"] = {k: cfg[k] for k in LAYOUT_KEYS if k in cfg}
+    out["layout"] = {**{k: cfg[k] for k in LAYOUT_KEYS if k in cfg}, "return_seconds": int(return_seconds)}
     return out

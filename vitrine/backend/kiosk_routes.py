@@ -38,7 +38,8 @@ def kiosk_back() -> None:
 @device_router.get("/data")
 def kiosk_data(response: Response) -> dict:
     response.headers["Cache-Control"] = "no-store"
-    return dash_data.build(_data(), config.load(_data())["dashboard"])
+    cfg = config.load(_data())
+    return dash_data.build(_data(), cfg["dashboard"], return_seconds=cfg["dashboard_return_seconds"])
 
 
 class ReadIn(BaseModel):

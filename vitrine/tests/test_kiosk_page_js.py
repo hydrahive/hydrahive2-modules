@@ -32,7 +32,7 @@ class El {
 }
 const byId = {};
 const document = { body: new El("body"), getElementById(id) { return byId[id] || (byId[id] = new El("div", id)); },
-                   createElement(t) { return new El(t); } };
+                   createElement(t) { return new El(t); }, addEventListener() {} };
 const window = { innerHeight: 1920 };
 const AREA_IDS = ["messages", "home", "hydra", "tasks", "github", "machine", "mining"];
 const main = document.getElementById("bereiche");

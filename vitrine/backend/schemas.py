@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
 
 from renderer import calendar, calendar_extra, config, dash_layout
 
@@ -36,9 +36,10 @@ class Dashboard(BaseModel):
     github_repos: list[str] = Field(default_factory=lambda: list(dash_layout.DEFAULTS["github_repos"]))
     order: list[str] = Field(default_factory=lambda: list(dash_layout.AREAS))
     hidden: list[str] = Field(default_factory=list)
-    messages_max: int = 3
+    messages_max: StrictInt = 3
     home_rooms: list[str] = Field(default_factory=list)
     mining_in_machine: bool = True
+    pages: dict[str, StrictInt] = Field(default_factory=lambda: dict(dash_layout.DEFAULT_PAGES))
 
     @model_validator(mode="after")
     def _ok(self):
