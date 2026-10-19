@@ -63,7 +63,8 @@ def test_empty_timeline(client, auth_headers, ws) -> None:
     assert client.get(f"{R}/renders", headers=auth_headers).json() == {"renders": []}
 
 
-def test_only_one_render_at_a_time(client, auth_headers, ws, monkeypatch) -> None:
+def test_second_click_waits_in_line(client, auth_headers, ws, monkeypatch) -> None:
+    """7c: ein zweiter Klick ist kein Fehler mehr, der Film wartet (Platz 2)."""
     import threading
 
     from backend import render
@@ -75,7 +76,7 @@ def test_only_one_render_at_a_time(client, auth_headers, ws, monkeypatch) -> Non
     put_timeline(client, auth_headers, [clip("image", 0, 0, 2, "studio/media/images/x.png")])
     assert client.post(f"{R}/render", headers=auth_headers, json={}).status_code == 202
     r = client.post(f"{R}/render", headers=auth_headers, json={})
-    assert r.status_code == 409 and r.json()["detail"]["code"] == "studio_render_running"
+    assert r.status_code == 202 and r.json()["status"] == "queued" and r.json()["position"] == 2
     gate.set()
 
 
