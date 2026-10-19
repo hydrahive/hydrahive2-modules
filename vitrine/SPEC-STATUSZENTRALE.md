@@ -72,6 +72,62 @@ V1 = **Statuszentrale**, nur lesen:
 - Karten (Einblendungen) bekommen eine zweite Zeile „🖱 Maus bewegen für Details“, aber nur wenn das Dashboard verfügbar ist.
 - Im Dashboard steht die Meldung oben, mit Knopf „Gelesen“ (entfernt die Karte). Das ist der **einzige** Knopf, der etwas ändert.
 
+## S2 — Statuszentrale mit Daten (freigegeben von Till am 19.10.2026)
+
+S1 ist abgenommen (Till, 19.10.): Maus → Dashboard, „Zurück“, Rückkehr nach 2 min. S2 ersetzt die Platzhalter-Seite durch
+die echte Statuszentrale. Weiterhin **nur lesen**.
+
+### Daten (Quellen am 19.10. auf .2 geprüft)
+
+| Bereich | Inhalt | Quelle |
+|---|---|---|
+| Meldung | die neueste sichtbare Karte (Titel, Volltext, Art) | `<daten>/inbox` (wie die Karten) |
+| Hydra | Dienst läuft/Fehler, laufende Agenten (Anzahl), Fehler der letzten Stunde: je Quelle Anzahl + letzter Text | `hydrahive.runner.concurrency.active_count()`, Tabelle `errors_log` (wie `notify.py`) |
+| Aufgaben | offene + laufende Tasks (Zahl), die 5 wichtigsten Titel (Priorität, dann Alter) | Tabelle `module_tasks` des Besitzers (s. u.) – nur wenn das Modul `tasks` installiert ist |
+| Rechner | Last, RAM, GPU-Temperatur, freier Platz `/`, Laufzeit | wie die Status-Leiste (`renderer/sysinfo.py`) + `shutil.disk_usage`, `/proc/uptime` |
+| Mining | Rechner an/aus, geschätzt €/Tag jetzt | Tabellen `module_mining_*` – nur wenn das Modul `mining` installiert ist |
+| Wartet auf Till | offene PRs von hydrahive2 + hydrahive2-modules (Nummer, Titel, CI grün/rot/läuft, „mergebar“) | GitHub-REST, nur lesend, mit dem Token des Projekts „Hydrahive DEV“ (s. u.) |
+| Uhr | Uhrzeit, Datum, Feiertag | Browser + Vitrine-Programm |
+
+### GitHub („Wartet auf Till“)
+- Token: der Git-Token des HydraHive-Projekts **Hydrahive DEV** (am 19.10. auf .2 geprüft: hinterlegt für die Repos
+  hydrahive2 und hydrahive2-modules; HydraHive gibt ihn den Projekt-Agenten als `GH_TOKEN`). Projekt im Cockpit wählbar.
+- Der Token hat Schreibrechte (Push/Merge). Die Vitrine nutzt ihn **nur für GET** auf `api.github.com`, feste Pfade
+  (`/repos/<owner>/<repo>/pulls?state=open`, Check-Runs des Head-Commits), höchstens 1× pro Minute, Zeitlimit 10 s.
+- Der Token verlässt das Backend nie (nicht in der Antwort, nicht im Log, nicht im Cockpit). Repos fest auf
+  `hydrahive/hydrahive2` und `hydrahive/hydrahive2-modules` (im Cockpit änderbar, nur `owner/repo`-Form).
+- Fehlt der Token oder antwortet GitHub nicht → Bereich zeigt „GitHub nicht erreichbar“, Rest unverändert.
+
+### Wem gehören die Tasks?
+Der Kiosk hat keinen Nutzer. Die Tasks kommen vom **Besitzer** der Vitrine: einstellbar im Cockpit (Feld „Tasks von“,
+Auswahl der HydraHive-Nutzer, Standard = der Admin, der zuletzt die Vitrine-Einstellungen gespeichert hat).
+
+### Route + Sicherheit
+- `GET /api/module-device/vitrine/data?k=…` — gleiche Prüfung wie S1 (Kiosk-Schlüssel + direkte Verbindung von 127.0.0.1,
+  Rate-Limit des Kerns). Antwort ist eine **feste Liste** von Feldern (Schema im Backend), nichts Freies.
+- Texte (Task-Titel, Fehlermeldungen, Karten) laufen durch die Secret-Schwärzung (`credentials.redaction.scrub`, wie
+  `notify.py`) und werden gekürzt (Titel 80, Fehler 140 Zeichen). Keine Chat-Inhalte, keine Session-Titel, keine Pfade aus
+  Tracebacks.
+- Fehlt ein Modul (tasks, mining) oder eine Quelle scheitert, fehlt nur dieser Bereich (`null`), die Route antwortet trotzdem.
+- Die Daten werden im Backend höchstens alle 5 s neu berechnet (Zwischenspeicher), egal wie oft die Seite fragt.
+
+### Seite
+- Statische HTML-Seite aus dem Modul (`backend/kiosk_page.html`, CSS + kleines Skript, keine externen Dateien), lädt
+  `data` alle 5 s. Hochkant 1080×1920, Schrift vom Sofa lesbar (Zahlen ≥ 64 px, Text ≥ 32 px).
+- Knopf „Zurück zum Video“ unten (wie S1). Keine weiteren Knöpfe.
+- Fehlt die Verbindung zum Backend: Hinweis „HydraHive antwortet nicht“ statt leerer Felder.
+
+### Akzeptanz S2
+- Alle Bereiche zeigen echte Werte von .2 (Abgleich mit Cockpit/Tasks/Mining-Seite)
+- Route: ohne/falscher Schlüssel, andere Adresse → 404 (Tests); fehlendes tasks-/mining-Modul → Bereich `null` (Tests)
+- Ein Secret in einer Fehlermeldung erscheint geschwärzt (Test)
+- Seite ruhig: Firefox < 5 % eines Kerns (gemessen 60 s); Backend-Last durch `data` vernachlässigbar (Zwischenspeicher)
+
+### Entscheidungen S2 (Till, 19.10.2026)
+1. Tasks vom Nutzer **till** (im Cockpit änderbar).
+2. Mining-Bereich **ja**, wenn das Modul installiert ist.
+3. „Wartet auf Till“ **ja**, mit dem Token des Projekts **Hydrahive DEV** (nur lesend genutzt).
+
 ## Bewusst nicht (V1 der Statuszentrale)
 
 - keine Aktionen mit Folgen (Merge, Dienste, Update, Zonen, Schalter) – kommen später nur mit PIN
