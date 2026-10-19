@@ -30,7 +30,7 @@ export interface Night {
   mode: "dim" | "off"
 }
 
-import type { DashboardCfg } from "./rules"
+import type { DashboardCfg } from "./dashLayout"
 
 export interface VitrineConfig {
   rules: Rule[]
@@ -43,7 +43,7 @@ export interface VitrineConfig {
   message_seconds: number
   /** Dashboard → zurück zum Video nach so vielen Sekunden ohne Eingabe, 30–1800 (Standard 120). */
   dashboard_return_seconds: number
-  /** Statuszentrale S2: Tasks von, Projekt mit GitHub-Token (nur lesend), Repos owner/repo. */
+  /** Statuszentrale S2/S4: Tasks von, GitHub (nur lesend), Anordnung und Einstellungen je Bereich. */
   dashboard: DashboardCfg
 }
 
@@ -88,6 +88,7 @@ export const vitrineApi = {
   messages: () => api.get<VitrineMessage[]>(`${BASE}/messages`),
   sendMessage: (m: { text: string; title?: string; kind: MessageKind; seconds?: number }) =>
     api.post<VitrineMessage>(`${BASE}/messages`, m),
+  homeRooms: () => api.get<{ rooms: string[]; available: boolean }>(`${BASE}/home-rooms`),
   dismiss: (id: string) => api.delete<void>(`${BASE}/messages/${encodeURIComponent(id)}`),
   simulate: (at: string) => api.post<Simulation>(`${BASE}/simulate`, { at }),
   /** Display zeigt 30 s das Programm dieses Zeitpunkts. */

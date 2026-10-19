@@ -11,6 +11,10 @@ h2{font-size:34px;margin:0 0 8px;color:#69d7ff;font-weight:normal}
 .reihe{display:flex;gap:34px;align-items:baseline;flex-wrap:wrap}
 .ok{color:#5ee08a}.warn{color:#ffd166}.err{color:#ff6b6b}.aus{color:#8d9ab0}
 #b-messages{flex:0 1 auto;min-height:0;overflow:hidden}
+#bereiche{display:flex;flex-direction:column;gap:18px;min-height:0}
+.raum{display:flex;justify-content:space-between;gap:24px;font-size:34px;margin:4px 0}
+.raum .werte{color:#e8eef8;white-space:nowrap}.raum.aus,.raum.aus .werte{color:#8d9ab0}.raum.warn .werte{color:#ffd166}
+#zu-voll{font-size:32px;color:#8d9ab0;text-align:center}
 #offline{display:none;font-size:44px;color:#ff6b6b;text-align:center;padding:26px}
 body.offline #offline{display:block}body.offline section{opacity:.35}
 #unten{margin-top:auto;display:flex;justify-content:space-between;align-items:center}
@@ -24,8 +28,10 @@ button{font-size:48px;padding:24px 60px;border-radius:20px;border:3px solid #69d
 </style>
 <div id="kopf"><div id="uhr"></div><div id="datum"></div><div id="feiertag"></div></div>
 <div id="offline">HydraHive antwortet nicht</div>
+<div id="bereiche">
 <section id="b-messages"><h2 id="m-kopf">Neu</h2><div id="m-neu"></div><div class="klein" id="m-mehr"></div>
   <div id="m-verlauf-box"><h2>Verlauf (24 h)</h2><div id="m-verlauf"></div></div></section>
+<section id="b-home"><h2>Zuhause</h2><div id="z-list"></div></section>
 <section id="b-hydra"><h2>Hydra</h2><div class="reihe"><span class="zahl" id="h-agents"></span><span class="klein">Agenten laufen</span>
   <span class="zahl" id="h-errors"></span><span class="klein">Fehler (1 h)</span><span class="klein" id="h-service"></span></div>
   <div id="h-list"></div></section>
@@ -34,7 +40,9 @@ button{font-size:48px;padding:24px 60px;border-radius:20px;border:3px solid #69d
 <section id="b-github"><h2>Wartet auf Till</h2><div id="g-list"></div></section>
 <section id="b-mining"><h2>Mining</h2><div class="reihe"><span class="zahl" id="mi-eur"></span><span class="klein">€/Tag jetzt</span></div>
   <div class="klein" id="mi-rigs"></div></section>
-<section id="b-machine"><h2>Rechner</h2><div class="reihe klein" id="r-werte"></div></section>
+<section id="b-machine"><h2>Rechner</h2><div class="reihe klein" id="r-werte"></div><div class="klein" id="r-mining"></div></section>
+</div>
+<div id="zu-voll"></div>
 <div id="unten"><span class="klein" id="stand"></span><button id="zurueck">Zurück zum Video</button></div>
 <script>
 "use strict";
@@ -76,7 +84,7 @@ function renderMessages(ms) {
   const neu = $("m-neu"); neu.replaceChildren();
   if (!ms.new.length) line(neu, "Keine neuen Meldungen", "ok");
   for (const m of ms.new) neu.appendChild(meldung(m));
-  const mehr = ms.new_count - ms.new.length;
+  const mehr = ms.new_count - ms.new.length;  // new ist schon auf messages_max gekürzt (Server)
   $("m-mehr").textContent = mehr > 0 ? "+ " + mehr + " weitere" : "";
   $("m-verlauf-box").style.display = ms.history.length ? "" : "none";
   fill("m-verlauf", ms.history, (m) => [m.time + "  " + (m.title ? m.title + ": " : "") + m.text, "aus"]);
@@ -108,17 +116,51 @@ function render(d) {
       p.mergeable === false ? "err" : CI[p.ci][1]]);
     if (d.github.prs.length && g.length) line($("g-list"), g[0], "aus");
   }
-  if (area("mining", d.mining)) {
-    $("mi-eur").textContent = d.mining.eur_day == null ? "–" : d.mining.eur_day.toFixed(2).replace(".", ",");
-    $("mi-rigs").textContent = d.mining.rigs.map((r) => (r.mining ? "● " : "○ ") + r.name).join("   ");
-  }
+  const lay = d.layout || {}, inMachine = lay.mining_in_machine !== false;
+  const eur = (mi) => mi.eur_day == null ? "–" : mi.eur_day.toFixed(2).replace(".", ",");
+  const rigs = (mi) => mi.rigs.map((r) => (r.mining ? "● " : "○ ") + r.name).join("   ");
+  if (area("mining", inMachine ? null : d.mining)) { $("mi-eur").textContent = eur(d.mining); $("mi-rigs").textContent = rigs(d.mining); }
   if (area("machine", d.machine)) {
     const m = d.machine, w = [];
     w.push("Last " + m.load); if (m.ram != null) w.push("RAM " + m.ram + " %"); if (m.gpu != null) w.push("GPU " + m.gpu + " °C");
     w.push("frei " + m.disk_free_pct + " %"); w.push("läuft " + m.uptime_h + " h");
     $("r-werte").textContent = w.join("   ·   ");
+    $("r-mining").textContent = inMachine && d.mining ? "Mining " + eur(d.mining) + " €/Tag   " + rigs(d.mining) : "";
   }
+  if (area("home", d.home)) renderHome(d.home);
   $("stand").textContent = "Stand " + d.updated;
+  arrange(lay);
+}
+function renderHome(h) {
+  const el = $("z-list"); el.replaceChildren();
+  if (h.error) return line(el, h.error, "aus");
+  if (!h.rooms.length) return line(el, "Keine Favoriten im Home-Assistant-Modul", "aus");
+  for (const r of h.rooms) {
+    const row = document.createElement("div");
+    const vals = r.offline_h != null ? ["nicht erreichbar seit " + r.offline_h + " h"]
+      : [r.temp, r.hum, r.extra, r.battery_low ? "Batterie " + r.battery_low : null].filter(Boolean);
+    row.className = "raum" + (r.offline_h != null ? " aus" : r.battery_low ? " warn" : "");
+    const n = document.createElement("span"); n.textContent = r.room;
+    const v = document.createElement("span"); v.className = "werte"; v.textContent = vals.join("   ");
+    row.append(n, v); el.appendChild(row);
+  }
+}
+function arrange(lay) {
+  const box = $("bereiche"), hidden = new Set(lay.hidden || []);
+  for (const id of lay.order || []) { const s = $("b-" + id); box.insertBefore(s, null); }
+  for (const id of hidden) $("b-" + id).style.display = "none";
+  // nie zu voll: von unten ganze Bereiche ausblenden, bis alles passt. Platz = Bildschirm − Rand oben/unten (2×30)
+  // − Kopf − Fußzeile − Abstände zwischen den Blöcken (body gap 18). Der Hinweis braucht nur Platz, wenn etwas fehlt.
+  const GAP = 18, NOTE = 38;
+  const shown = () => (lay.order || []).filter((id) => $("b-" + id).style.display !== "none");
+  const total = () => shown().reduce((sum, id, i) => sum + $("b-" + id).getBoundingClientRect().height + (i ? GAP : 0), 0);
+  const room = window.innerHeight - 60 - $("kopf").getBoundingClientRect().height - $("unten").getBoundingClientRect().height - 3 * GAP;
+  let cut = 0;
+  while (shown().length > 1 && total() > room - (cut ? NOTE + GAP : 0)) {
+    $("b-" + shown().pop()).style.display = "none"; cut += 1;
+  }
+  $("zu-voll").style.display = cut ? "" : "none";
+  $("zu-voll").textContent = cut ? cut + (cut === 1 ? " Bereich" : " Bereiche") + " ausgeblendet (zu voll)" : "";
 }
 let busy = false;
 async function load() {

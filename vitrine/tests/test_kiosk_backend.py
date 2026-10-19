@@ -101,7 +101,8 @@ def test_config_dashboard_standard_und_pruefung(tmp_path):
         assert config.load(tmp_path)["dashboard"]["github_project"] == "Hydrahive DEV", bad
     good = {"tasks_user": "anna", "github_project": "X", "github_repos": ["o/r"]}
     (tmp_path / "config.json").write_text(json.dumps({"dashboard": good}))
-    assert config.load(tmp_path)["dashboard"] == good
+    got = config.load(tmp_path)["dashboard"]
+    assert {k: got[k] for k in good} == good and got["messages_max"] == 3, "S2-Config gültig, um S4-Standards ergänzt"
 
 
 def test_schema_dashboard_lehnt_ab():
