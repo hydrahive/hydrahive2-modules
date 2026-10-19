@@ -9,10 +9,13 @@ from renderer.evdi_source import EvdiUnavailable
 
 class FakeSrc:
     def __init__(self, fail_after=None):
-        self.polls, self.grabs, self.ready, self.closed, self.fail_after = 0, 0, True, False, fail_after
+        self.polls, self.grabs, self.drains, self.ready, self.closed, self.fail_after = 0, 0, 0, True, False, fail_after
 
     def poll_events(self):
         self.polls += 1
+
+    def drain(self):
+        self.drains += 1
 
     def next_jpeg(self, cursor=None):
         self.grabs += 1
@@ -46,7 +49,7 @@ def test_inaktiv_nur_ereignisse_keine_bilder():
     src = FakeSrc()
     d = _dash(src)
     try:
-        assert _wait(lambda: src.polls >= 5)
+        assert _wait(lambda: src.drains >= 5)
         assert src.grabs == 0 and d.take_frame() is None
         assert _wait(d.available) and d.idle_ms() == 42
     finally:
@@ -93,9 +96,21 @@ def test_nicht_verfuegbar_solange_kiosk_den_bildschirm_nicht_eingeschaltet_hat()
     src.ready = False
     d = _dash(src)
     try:
-        assert _wait(lambda: src.polls >= 3)
+        assert _wait(lambda: src.drains >= 3)
         assert not d.available() and "Kiosk" in (d.reason or "")
         src.ready = True
         assert _wait(d.available)
+    finally:
+        d.close()
+
+
+def test_holt_auch_im_videomodus_bilder_ab():
+    """Ohne Abholen wartet Xorg bei jedem Bildwechsel bis zum Timeout (flip_done, 10 s) – gemessen am 19.10.2026 auf .2:
+    0/s → Xorg 40/40 Proben blockiert; 20/s → 1/40, CPU 0,9 %. Im Video-Modus wird abgeholt, aber kein JPEG gebaut."""
+    src = FakeSrc()
+    d = _dash(src)
+    try:
+        assert _wait(lambda: src.drains >= 5)
+        assert src.grabs == 0, "kein JPEG im Hintergrund"
     finally:
         d.close()

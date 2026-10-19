@@ -1,0 +1,106 @@
+<!doctype html><html lang="de"><meta charset="utf-8"><title>Statuszentrale</title>
+<style>
+html,body{margin:0;height:100%;background:#0b1220;color:#e8eef8;font-family:"DejaVu Sans",sans-serif;cursor:default}
+body{display:flex;flex-direction:column;box-sizing:border-box;padding:36px 44px;gap:22px;overflow:hidden}
+#kopf{text-align:center}#uhr{font-size:150px;font-weight:bold;line-height:1}#datum{font-size:40px;color:#8d9ab0}
+#feiertag{font-size:40px;color:#ffd166;min-height:48px}
+section{background:#151c2b;border-radius:22px;padding:18px 28px;border:2px solid #24304a}
+h2{font-size:34px;margin:0 0 8px;color:#69d7ff;font-weight:normal}
+.zahl{font-size:64px;font-weight:bold}.klein{font-size:32px;color:#b7c2d6}
+.zeile{font-size:32px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:4px 0}
+.reihe{display:flex;gap:34px;align-items:baseline;flex-wrap:wrap}
+.ok{color:#5ee08a}.warn{color:#ffd166}.err{color:#ff6b6b}.aus{color:#8d9ab0}
+#offline{display:none;font-size:44px;color:#ff6b6b;text-align:center;padding:26px}
+body.offline #offline{display:block}body.offline section{opacity:.35}
+#unten{margin-top:auto;display:flex;justify-content:space-between;align-items:center}
+button{font-size:48px;padding:24px 60px;border-radius:20px;border:3px solid #69d7ff;background:#151c2b;color:#e8eef8}
+</style>
+<div id="kopf"><div id="uhr"></div><div id="datum"></div><div id="feiertag"></div></div>
+<div id="offline">HydraHive antwortet nicht</div>
+<section id="b-message"><h2>Neueste Meldung</h2><div class="zeile" id="m-titel"></div><div class="klein" id="m-text"></div></section>
+<section id="b-hydra"><h2>Hydra</h2><div class="reihe"><span class="zahl" id="h-agents"></span><span class="klein">Agenten laufen</span>
+  <span class="zahl" id="h-errors"></span><span class="klein">Fehler (1 h)</span><span class="klein" id="h-service"></span></div>
+  <div id="h-list"></div></section>
+<section id="b-tasks"><h2>Aufgaben</h2><div class="reihe"><span class="zahl" id="t-open"></span><span class="klein">offen</span>
+  <span class="zahl" id="t-run"></span><span class="klein">laufen</span></div><div id="t-list"></div></section>
+<section id="b-github"><h2>Wartet auf Till</h2><div id="g-list"></div></section>
+<section id="b-mining"><h2>Mining</h2><div class="reihe"><span class="zahl" id="mi-eur"></span><span class="klein">€/Tag jetzt</span></div>
+  <div class="klein" id="mi-rigs"></div></section>
+<section id="b-machine"><h2>Rechner</h2><div class="reihe klein" id="r-werte"></div></section>
+<div id="unten"><span class="klein" id="stand"></span><button id="zurueck">Zurück zum Video</button></div>
+<script>
+"use strict";
+const k = "__KEY__";
+const $ = (id) => document.getElementById(id);
+function line(parent, text, cls) {
+  const d = document.createElement("div");
+  d.className = "zeile" + (cls ? " " + cls : "");
+  d.textContent = text;
+  parent.appendChild(d);
+}
+function fill(id, items, fmt) {
+  const el = $(id);
+  el.replaceChildren();
+  for (const it of items) { const [t, c] = fmt(it); line(el, t, c); }
+}
+function area(name, v) { $("b-" + name).style.display = v == null ? "none" : ""; return v != null; }
+const CI = {green: ["✓ CI grün", "ok"], red: ["✗ CI rot", "err"], running: ["… CI läuft", "warn"], none: ["– keine CI", "aus"]};
+const PRIO = {high: "‼", medium: "•", low: "·"};
+function render(d) {
+  $("feiertag").textContent = d.holiday || "";
+  if (area("message", d.message)) { $("m-titel").textContent = d.message.title || d.message.kind; $("m-text").textContent = d.message.text; }
+  if (area("hydra", d.hydra)) {
+    $("h-agents").textContent = d.hydra.agents;
+    $("h-errors").textContent = d.hydra.errors_last_hour;
+    $("h-errors").className = "zahl " + (d.hydra.errors_last_hour ? "err" : "ok");
+    $("h-service").textContent = d.hydra.service === "active" ? "Dienst läuft" : "Dienst: " + d.hydra.service;
+    $("h-service").className = "klein " + (d.hydra.service === "active" ? "ok" : "err");
+    fill("h-list", d.hydra.errors, (e) => [e.source + " ×" + e.count + ": " + e.last, "err"]);
+  }
+  if (area("tasks", d.tasks)) {
+    $("t-open").textContent = d.tasks.open; $("t-run").textContent = d.tasks.in_progress;
+    fill("t-list", d.tasks.top, (t) => [(PRIO[t.priority] || "·") + " " + t.title, t.status === "in_progress" ? "warn" : ""]);
+  }
+  if (area("github", d.github)) {
+    const g = d.github.error ? [d.github.error] : [];
+    if (!d.github.prs.length) fill("g-list", g.length ? g : ["Nichts offen ✓"], (t) => [t, g.length ? "aus" : "ok"]);
+    else fill("g-list", d.github.prs, (p) => [
+      p.repo.replace("hydrahive2-", "") + " #" + p.number + " " + CI[p.ci][0] + (p.mergeable === false ? " · Konflikt" : "")
+        + (p.draft ? " · Entwurf" : "") + " — " + p.title,
+      p.mergeable === false ? "err" : CI[p.ci][1]]);
+    if (d.github.prs.length && g.length) line($("g-list"), g[0], "aus");
+  }
+  if (area("mining", d.mining)) {
+    $("mi-eur").textContent = d.mining.eur_day == null ? "–" : d.mining.eur_day.toFixed(2).replace(".", ",");
+    $("mi-rigs").textContent = d.mining.rigs.map((r) => (r.mining ? "● " : "○ ") + r.name).join("   ");
+  }
+  if (area("machine", d.machine)) {
+    const m = d.machine, w = [];
+    w.push("Last " + m.load); if (m.ram != null) w.push("RAM " + m.ram + " %"); if (m.gpu != null) w.push("GPU " + m.gpu + " °C");
+    w.push("frei " + m.disk_free_pct + " %"); w.push("läuft " + m.uptime_h + " h");
+    $("r-werte").textContent = w.join("   ·   ");
+  }
+  $("stand").textContent = "Stand " + d.updated;
+}
+let busy = false;
+async function load() {
+  if (busy) return;
+  busy = true;
+  try {
+    const r = await fetch("data?k=" + encodeURIComponent(k), {cache: "no-store"});
+    if (!r.ok) throw new Error(r.status);
+    render(await r.json());
+    document.body.classList.remove("offline");
+  } catch (e) {
+    document.body.classList.add("offline");
+  } finally { busy = false; }
+}
+function tick() {
+  const d = new Date();
+  $("uhr").textContent = d.toLocaleTimeString("de-DE", {hour: "2-digit", minute: "2-digit"});
+  $("datum").textContent = d.toLocaleDateString("de-DE", {weekday: "long", day: "numeric", month: "long"});
+}
+tick(); setInterval(tick, 1000);
+load(); setInterval(load, 5000);
+$("zurueck").onclick = () => fetch("back?k=" + encodeURIComponent(k), {method: "POST"});
+</script></html>

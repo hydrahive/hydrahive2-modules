@@ -4,9 +4,9 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from renderer import calendar, calendar_extra
+from renderer import calendar, calendar_extra, config
 
 _VIDEO = re.compile(r"^[a-z0-9][a-z0-9._-]{0,120}\.(mp4|webm|mkv|mov)$")
 _HM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -28,6 +28,20 @@ class Night(BaseModel):
         return v
 
 
+class Dashboard(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tasks_user: str = "till"
+    github_project: str = "Hydrahive DEV"
+    github_repos: list[str] = Field(default_factory=lambda: list(config.DEFAULTS["dashboard"]["github_repos"]))
+
+    @model_validator(mode="after")
+    def _ok(self):
+        self.github_project = self.github_project.strip()
+        if not config.dashboard_ok(self.model_dump()):
+            raise ValueError("Statuszentrale: Nutzername, Projekt oder Repo (owner/repo) ungültig")
+        return self
+
+
 class Config(BaseModel):
     rules: list[dict] = Field(default_factory=list, max_length=100)
     default_videos: list[str] = Field(default_factory=list, max_length=50)
@@ -36,6 +50,7 @@ class Config(BaseModel):
     fps: int = Field(24, ge=12, le=30)                       # Bildrate; Grenzen wie renderer.config.FPS_RANGE
     message_seconds: int = Field(15, ge=5, le=120)           # Standard-Dauer einer Einblendung
     dashboard_return_seconds: int = Field(120, ge=30, le=1800)  # Dashboard → Video nach so vielen s ohne Eingabe
+    dashboard: Dashboard = Field(default_factory=Dashboard)
 
     @field_validator("rules")
     @classmethod
