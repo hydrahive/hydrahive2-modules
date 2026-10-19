@@ -1,8 +1,8 @@
-"""Wer ist im Bild? (Spec „C2 im Detail“): angehakte Bausteine + Bausteine, deren Name im Text vorkommt.
+"""Wer ist im Bild? (Spec „Bauplan H“, H2): genau die am Bild angehakten Bausteine – Figuren, dann Orte, dann Dinge.
 
-Damit wirkt ein Foto an „Hydra“, sobald „Hydra“ im Shot, im Sprechtext oder in Titel/Beschreibung der Szene steht –
-ohne dass man Häkchen an zwei Stellen setzen muss. Verglichen wird das ganze Wort, ohne Groß/Klein; mehrteilige Namen
-(„Kapitän Ole“) müssen ganz vorkommen.
+Früher (C2) kamen auch alle Bausteine dazu, deren Name irgendwo im Text stand. In echten Projekten holte das Dutzende
+Begriffe („Agent“, „Session“ …) und fremde Figuren ins Bild – das Ergebnis war Würfeln. `named` bleibt als Hilfe, um
+beim Anlegen einer Geschichte Häkchen vorzuschlagen (sichtbar, abwählbar).
 """
 from __future__ import annotations
 
@@ -28,12 +28,13 @@ def named(text: str, elements: list[dict]) -> list[str]:
     return out
 
 
+_ORDER = {"character": 0, "place": 1, "object": 2}
+
+
 def of_shot(scene: dict, shot: dict, elements: list[dict]) -> list[str]:
-    """Angehakt (Shot) → genannt in der Szene → genannt im Shot; ohne Doppelte, nur vorhandene Bausteine."""
-    known = {e["id"] for e in elements}
-    ticked = [x for x in shot.get("element_ids") or [] if x in known]
-    scene_text = " ".join(str(scene.get(k) or "") for k in ("title", "description"))
-    shot_text = " ".join(str(shot.get(k) or "") for k in ("prompt", "speech"))
-    out = list(dict.fromkeys([*ticked, *named(scene_text, elements), *named(shot_text, elements)]))
-    gone = set(shot.get("excluded_ids") or [])                     # G3: abgewählt schlägt angehakt und genannt
-    return [x for x in out if x not in gone]
+    """Angehakte, vorhandene Bausteine des Shots ohne Doppelte; Figuren vor Orten vor Dingen (H2). `scene` bleibt
+    im Aufruf, damit die Schnittstelle gleich bleibt."""
+    kind = {e["id"]: e.get("kind") for e in elements}
+    gone = set(shot.get("excluded_ids") or [])
+    ticked = [x for x in dict.fromkeys(shot.get("element_ids") or []) if x in kind and x not in gone]
+    return sorted(ticked, key=lambda x: _ORDER.get(kind[x], 3))

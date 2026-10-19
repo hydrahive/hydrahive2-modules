@@ -10,8 +10,8 @@ import logging
 from datetime import datetime, timezone
 
 from . import image_provider, jobs, plan
+from ._image_request import _MIME, MAX_REFERENCES
 from ._store import new_id, project_root, root, safe_rel, write_json
-from .generate import _MIME, MAX_REFERENCES
 
 logger = logging.getLogger("hhmod_studio.free_images")
 

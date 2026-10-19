@@ -21,7 +21,7 @@ const plan = (elements: PlanElement[], scenes: Scene[] = [scene]): Plan => ({ ba
   screenplay: { title: "", logline: "", description: "", aspect_ratio: "16:9", default_duration: 5, models: {} as Plan["screenplay"]["models"],
     look: { style: "", palette: [] }, scene_order: scenes.map((s) => s.id) } })
 const card = (e: PlanElement, jobs: Job[] = [], uploading = false) => html(<PersonCard el={e} base="/w" jobs={jobs} uploading={uploading} busy={false} imageModel="m/bild"
-  onName={noop} onDescription={noop} onPhoto={noop} onProbe={noop} onApprove={noop} onReopen={noop} onNoPhoto={noop} onOtherPhoto={noop} onDelete={noop} />)
+  onName={noop} onDescription={noop} onPhoto={noop} onProbe={noop} onApprove={noop} onReopen={noop} onNoPhoto={noop} onOtherPhoto={noop} onDelete={noop} onRedescribe={noop} />)
 
 describe("G2 – Logik", () => {
   it("Zustand einer Figur: leer → läuft → Probe → passt; ohne Foto; Fehler", () => {

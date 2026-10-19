@@ -25,15 +25,16 @@ SYSTEM_PROMPT = (
     "AI-generated film. Reply ONLY with one JSON object, no prose, no markdown fences:\n"
     '{"title": "...", "logline": "...", '
     '"elements": [{"key": "<short unique id>", "kind": "character|place|object", "name": "...", '
-    '"description": "<visual look in ENGLISH>"}], '
+    '"description": "<visual look only, no pose or place>"}], '
     '"scenes": [{"title": "...", "description": "...", "location": "...", "time_of_day": "...", '
     '"element_keys": ["<keys of elements in this scene>"], '
-    '"shots": [{"shot": "<one of the allowed shot keys>", "prompt": "<vivid, self-contained ENGLISH video prompt>", '
+    '"shots": [{"shot": "<one of the allowed shot keys>", "prompt": "<what is seen in this shot>", '
     '"element_keys": ["..."], "duration": <seconds, integer 3-10>}]}]}\n'
     "Rules: 2-8 scenes, {shots} per scene, the sum of all shot durations close to the target length. Title, "
-    "logline, scene texts and names in the language of the idea. Prompts in English; each prompt fully describes what "
-    "is seen (setting, characters by their looks, action, light, mood) so a video model needs no extra context. Keep "
-    "looks consistent across shots. Use only element keys you defined."
+    "logline, scene texts, names, descriptions and prompts all in the language of the idea. Each shot prompt says what "
+    "is seen (action, place, light, mood) and names only characters from the elements list, by name – never invent "
+    "other people or creatures, never describe a character's looks there (the looks come from the elements list). "
+    "Put every element that is visible in a shot into that shot's element_keys. Use only element keys you defined."
 )
 SHOTS_NORMAL, SHOTS_ONE = "2-5 shots", "exactly 1 shot"             # G1: geführter Weg = ein Bild je Szene
 
@@ -73,10 +74,12 @@ def _check(data: dict) -> tuple[str, str, str, str, bool]:
 
 
 def one_shot(out: dict) -> dict:
-    """Geführter Weg (G1): genau ein Shot je Szene – der erste; fehlt er, aus der Szenenbeschreibung."""
+    """Geführter Weg (G1): genau ein Shot je Szene – der erste; fehlt er, aus der Szenenbeschreibung.
+    H7: Die Figuren der Szene sind am Bild angehakt (sichtbar und abwählbar), sonst kämen sie nicht ins Bild."""
     for sc in out["scenes"]:
-        first = sc["shots"][:1] or [{"shot": "", "prompt": sc["description"] or sc["title"], "element_keys": list(sc["element_keys"]),
+        first = sc["shots"][:1] or [{"shot": "", "prompt": sc["description"] or sc["title"], "element_keys": [],
                                      "duration": 5}]
+        first[0]["element_keys"] = list(dict.fromkeys([*first[0]["element_keys"], *sc["element_keys"]]))
         sc["shots"] = first
     return out
 

@@ -1,6 +1,7 @@
 """Planungsdaten des Studios: Drehbuch-Kopf, Szenen (mit Shots), Bausteine (Spec „Bauplan Etappe 2“)."""
 from __future__ import annotations
 
+import secrets
 import shutil
 from datetime import datetime, timezone
 
@@ -46,6 +47,9 @@ def save_element(pid: str, data: dict, el_id: str | None = None) -> dict:
     # G2: Felder des geführten Wegs bleiben, wenn sie nicht mitgeschickt werden (Profi-Ansicht kennt sie nicht)
     keep = {k: old[k] for k in ("probe_rel", "approved", "no_photo") if isinstance(old, dict) and k in old and k not in data}
     merged = {**data, **keep}
+    # H4: Startwert bleibt für immer (nie vom Browser überschrieben); fehlt er (neu oder ältere Daten), wird er gewürfelt
+    old_seed = old.get("seed") if isinstance(old, dict) else None
+    merged["seed"] = old_seed if type(old_seed) is int else secrets.randbelow(2**31)
     if merged.get("approved") is True and not safe_rel(pid, merged.get("probe_rel"), IMAGE_EXT):
         if data.get("approved") is True:
             raise PlanError("studio_probe_missing")

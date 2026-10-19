@@ -96,11 +96,11 @@ export function variantStep(s: Shot, dir: -1 | 1): string | null {
   return v[i < 0 ? 0 : (i + dir + v.length) % v.length]
 }
 
-/** „Mit dabei“ antippen: weg → ausschließen; dazu → anhaken und nicht mehr ausschließen. */
+/** „Mit dabei“ antippen (H2: im Bild = angehakt): weg → abhaken; dazu → anhaken. Alte Ausschlüsse werden aufgeräumt. */
 export function castToggle(s: Shot, id: string): { element_ids: string[]; excluded_ids: string[] } {
   const ids = s.element_ids.filter((x) => x !== id)
   const ex = (s.excluded_ids ?? []).filter((x) => x !== id)
-  return (s.cast ?? []).includes(id) ? { element_ids: ids, excluded_ids: [...ex, id] } : { element_ids: [...ids, id], excluded_ids: ex }
+  return (s.cast ?? []).includes(id) ? { element_ids: ids, excluded_ids: ex } : { element_ids: [...ids, id], excluded_ids: ex }
 }
 
 /** Gesicht einer Figur: freigegebenes Probebild, sonst erstes Foto, sonst nichts. */

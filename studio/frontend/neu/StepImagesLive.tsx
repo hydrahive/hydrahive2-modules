@@ -61,7 +61,8 @@ export function StepImagesLive({ g, im }: { g: GuidedState; im: ImageActions }) 
         {cards.map((c) => (
           <ImageCard key={c.shot.id} card={c} base={g.plan?.base ?? ""} format={g.plan?.screenplay.aspect_ratio ?? "16:9"}
             elements={g.plan?.elements ?? []} jobs={im.jobs} busy={g.busy} model={model}
-            onMake={() => void im.make(c)} onFlip={(d) => im.flip(c, d)} onDrop={() => im.setDropping(c)} onCast={(id) => im.cast(c, id)} />
+            onMake={() => void im.make(c)} onFlip={(d) => im.flip(c, d)} onDrop={() => im.setDropping(c)} onCast={(id) => im.cast(c, id)}
+            onChange={(text) => void im.change(c, text)} />
         ))}
       </div>
       {im.dropping && <DeleteDialog name={t("guided.drop_question", { n: im.dropping.n })} busy={g.busy} onConfirm={im.confirmDrop} onClose={() => im.setDropping(null)} />}

@@ -117,6 +117,8 @@ def element(el_id: str, data: dict, references: list[str]) -> dict:
         "probe_rel": probe(data.get("probe_rel")),
         "approved": data.get("approved") is True and bool(probe(data.get("probe_rel"))),
         "no_photo": data.get("no_photo") is True,
+        # H4: fester Startwert je Baustein – gleiche Figur, gleicher Würfel (wie Atelier). Gesetzt nur von plan.save_element.
+        "seed": data.get("seed"),
     }
 
 

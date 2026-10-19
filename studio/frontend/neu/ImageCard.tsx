@@ -1,5 +1,6 @@
 /** G3: Karte einer Szene im Schritt „Bilder“ – Bild im Filmformat, blättern, anderes Bild, wegwerfen, „Mit dabei“. */
-import { ChevronLeft, ChevronRight, ImageIcon, Loader2, RefreshCw, Sparkles, Trash2 } from "lucide-react"
+import { useState } from "react"
+import { ChevronLeft, ChevronRight, ImageIcon, Loader2, PenLine, RefreshCw, Sparkles, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { fileUrl } from "@/shared/files"
 import { Costs } from "../Costs"
@@ -21,6 +22,8 @@ interface Props {
   onFlip: (dir: -1 | 1) => void
   onDrop: () => void
   onCast: (id: string) => void
+  /** H6: gezeigtes Bild gezielt ändern */
+  onChange: (text: string) => void
 }
 
 export function Face({ el, base, size = 20 }: { el: PlanElement; base: string; size?: number }) {
@@ -30,8 +33,9 @@ export function Face({ el, base, size = 20 }: { el: PlanElement; base: string; s
     : <span style={{ width: size, height: size }} className="grid place-items-center rounded-full bg-[#2a364b] text-[10px] font-black text-[#e8eef8]">{el.name.slice(0, 1).toUpperCase()}</span>
 }
 
-export function ImageCard({ card, base, format, elements, jobs, busy, model, onMake, onFlip, onDrop, onCast }: Props) {
+export function ImageCard({ card, base, format, elements, jobs, busy, model, onMake, onFlip, onDrop, onCast, onChange }: Props) {
   const { t } = useTranslation("studio")
+  const [change, setChange] = useState("")
   const s = card.shot
   const running = shotBusy(jobs, s.id)
   const last = latestJob(jobs, s.id, "image")
@@ -72,6 +76,20 @@ export function ImageCard({ card, base, format, elements, jobs, busy, model, onM
               </button>
             )
           })}
+        </div>
+      )}
+      {s.image_rel && (
+        <div className="space-y-1.5 rounded-[8px] bg-[#080b11] p-2">
+          <textarea value={change} onChange={(e) => setChange(e.target.value)} rows={2} maxLength={1000} aria-label={t("guided.change_label")}
+            placeholder={t("guided.change_placeholder")}
+            className="w-full resize-none rounded-[6px] border border-[#2a364b] bg-[#0e1420] p-2 text-sm text-[#e8eef8] outline-none focus:border-[#69d7ff]" />
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" data-guided-change disabled={busy || running || !change.trim()} onClick={() => { onChange(change.trim()); setChange("") }}
+              className="inline-flex items-center gap-2 rounded-[8px] bg-[#3ddc97] px-3 py-1.5 text-sm font-bold text-[#04140d] hover:bg-[#5ee6aa] disabled:opacity-50">
+              <PenLine size={14} /> {t("guided.change_image")}<Costs model={model || undefined} />
+            </button>
+            <span className="text-xs text-[#8d9ab0]">{t("guided.change_hint")}</span>
+          </div>
         </div>
       )}
       {failed && <p className="rounded-[8px] border border-[#ffb86b]/40 bg-[#ffb86b]/10 px-2 py-1.5 text-xs text-[#ffd9ad]">{jobText(t, last)}</p>}

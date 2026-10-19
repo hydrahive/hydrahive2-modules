@@ -1421,6 +1421,37 @@ vorhandenen Bausteine **nacheinander** im Server abarbeitet – der Browser star
 - **Manifest-Beschreibung** neu: geführter Weg in 5 Schritten + Profi-Ansicht.
 - **Alte E2E-Skripte** rufen `/studio` → auf `/studio/profi` umstellen; alle grün (ohne Erzeugung).
 
+## Bauplan H – Bilder wie im Atelier: berechenbar statt Würfeln (19.10.)
+
+**Anlass (Till, 19.10.):** „Wie Bowling mit verbundenen Augen – Kugel schmeißen und hoffen. Im Verlauf wird alles
+durcheinandergewürfelt; aus Hydra wurde ein anderer animierter Charakter, Hydra saß als Zuhörerin auf einem Stuhl.
+In Media ging Charaktere erstellen und Bilder erzeugen viel flüssiger und brachte die gewünschten Ergebnisse.“
+An einem Tag ≈ 30 € verbraucht, viel davon fürs Neu-Würfeln.
+
+**Befund in Tills Projekt** (nur gelesen):
+1. *Foto-Beschreibung übernimmt die Situation:* „Hydra sitzt auf einem bequemen Sessel und schaut auf einen
+   Bildschirm“ steht als Aussehen in jedem Bild-Auftrag → Hydra sitzt immer.
+2. *Namen einsammeln:* 18 Bausteine („Agent“, „Session“, „Buddy“ …) kommen automatisch ins Bild, sobald das Wort im
+   Text steht. Aufträge bis 2.300 Zeichen, Hydra erst ab Zeichen 900; „Buddy“ ohne Foto → erfundene Figur.
+3. *Die Geschichten-KI erfindet Figuren im Bildtext:* „a holographic female AI professor“ steht fest in allen 7
+   Kapiteln (englisch, unsichtbar), Hydra ist nirgends angehakt.
+4. *Kein fester Startwert, kein Bearbeiten:* Jeder Klick würfelt neu; man kann ein gutes Bild nicht gezielt ändern.
+
+**Grundsatz (wie Atelier):** Ins Bild kommt nur, was der Nutzer sieht und gewählt hat. Gleiche Figur = gleiche
+Vorlage + gleicher Startwert. Ändern statt neu würfeln.
+
+| # | Änderung |
+|---|---|
+| H1 | **Aussehen statt Situation.** Foto-Beschreibung: nur dauerhafte Merkmale (Gestalt, Farben, Gesicht, Kleidung/Material), ausdrücklich OHNE Haltung, Tätigkeit, Ort, Möbel, Hintergrund, Kamera. Sichtbar und änderbar als „So sieht {Name} aus“ auf der Karte (Schritt 2). Bestehende Beschreibungen bleiben; Knopf „Aus dem Foto neu beschreiben“. |
+| H2 | **Nur angehakt.** `cast.of_shot` = angehakte Bausteine des Shots, sonst nichts (kein Namens-Einsammeln aus Text). Reihenfolge: Figuren vor Orten vor Gegenständen. `excluded_ids` bleibt für ältere Daten wirkungslos erhalten. |
+| H3 | **Figur vorne, Text kurz.** Auftrag = Look → je Figur „Name: Aussehen“ → Ort → Szenentext des Nutzers → Kamera. Gegenstände nur, wenn angehakt. Ohne die Shot-Beschreibung der KI, wenn der Nutzer einen eigenen Text hat (siehe H5). |
+| H4 | **Fester Startwert je Figur.** Baustein bekommt `seed` (beim Anlegen zufällig, bleibt). Bild-Auftrag nimmt den Startwert der ersten Figur (wie Atelier `_resolve_seed`). „Anderes Bild“ nimmt bewusst einen neuen. |
+| H5 | **Dein Text zählt.** Kartentext (deutsch, sichtbar) = Bildbeschreibung. Die Geschichten-KI schreibt keine eigenen Figuren in den Bildtext mehr: Auftrag verlangt, dass Bildbeschreibungen nur Figuren aus der Figurenliste beim Namen nennen, und der Bildtext ist in der Sprache der Idee (= sichtbarer Kartentext, kein zweiter versteckter Text). |
+| H6 | **„Bild ändern“.** Je Karte ein Feld „Was soll anders sein?“ → Auftrag mit dem gezeigten Bild als erster Vorlage + Änderungswunsch + Figuren-Vorlagen (höchstens 3). Ergebnis als neue Variante, das alte bleibt (Pfeile). |
+| H7 | **Wer ist im Bild – sichtbar und wählbar.** Schritt 1: nach „Geschichte vorschlagen“ hakt die KI die Figuren je Szene an (aus `element_keys`), sichtbar als Gesichter. Schritt 3: „Mit dabei“ = genau die angehakten; antippen = an/aus. |
+
+Nicht im Umfang: echte Erzeugung in Tests (Guthaben fast leer) – alle Tests mit ersetztem Anbieter.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.

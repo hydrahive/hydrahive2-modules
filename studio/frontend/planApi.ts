@@ -90,6 +90,8 @@ export interface PlanElement {
   probe_rel?: string
   approved?: boolean
   no_photo?: boolean
+  /** H4: fester Startwert (vom Server, bleibt) */
+  seed?: number | null
 }
 
 export interface Plan {
@@ -136,7 +138,9 @@ export const planApi = {
   orderShots: (pid: string, sid: string, shot_ids: string[]) => api.put<{ shots: Shot[] }>(`${base(pid)}/scenes/${one(sid)}/shots/order`, { shot_ids }),
   decompose: (pid: string, sid: string, replace: boolean) =>
     api.post<{ shots: Shot[]; count: number }>(`${base(pid)}/scenes/${one(sid)}/decompose`, replace ? { replace: true } : {}),
-  generateImage: (pid: string, sid: string, id: string) => api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/image`, {}),
+  /** H4/H6: `fresh` = anderes Bild mit neuem Startwert; `change` = gezeigtes Bild gezielt ändern */
+  generateImage: (pid: string, sid: string, id: string, body: { fresh?: boolean; change?: string } = {}) =>
+    api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/image`, body),
   generateVideo: (pid: string, sid: string, id: string) => api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/video`, {}),
   generateSpeech: (pid: string, sid: string, id: string) => api.post<Job>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}/speech`, {}),
   voices: (pid: string) => api.get<{ model: string; voices: string[] }>(`/modules/studio/projects/${encodeURIComponent(pid)}/voices`),
