@@ -43,6 +43,7 @@ describe("G3 – Logik", () => {
     expect(shotBusy([job({ kind: "video" })], "x1")).toBe(false)
     expect(shotBusy([job({ kind: "images_all", target: "batch:p", progress: { total: 2, done: 0, failed: 0, current: "", current_shot: "x1" } })], "x1")).toBe(true)
     expect(shotBusy([job({ kind: "images_all", target: "batch:p", status: "done", progress: { total: 2, done: 2, failed: 0, current: "", current_shot: "x1" } })], "x1")).toBe(false)
+    expect(shotBusy([job({ kind: "images_all", target: "batch:p", progress: { total: 2, done: 0, failed: 0, current: "", current_shot: "anderer" } })], "x1")).toBe(false)
   })
 
   it("Blättern: zyklisch durch die Varianten", () => {
@@ -52,6 +53,7 @@ describe("G3 – Logik", () => {
     expect(variantStep(shot({ variants: ["a", "b", "c"], image_rel: "c" }), 1)).toBe("a")
     expect(variantStep(shot({ variants: ["a"], image_rel: "a" }), 1)).toBeNull()
     expect(variantStep(shot({ variants: ["a", "b"], image_rel: "zz" }), 1)).toBe("a")
+    expect(variantStep(shot({ variants: ["a", "b", "c"], image_rel: "zz" }), -1)).toBe("a")          // unbekannt → das erste
   })
 
   it("Mit dabei an/aus: weg → ausgeschlossen; dazu → angehakt und nicht mehr ausgeschlossen", () => {
@@ -101,6 +103,9 @@ describe("G3 – Oberfläche", () => {
     const out = card(shot(), [job({ status: "failed", error: "no_key" })])
     expect(out).toContain("job_err.no_key")
     expect(buttons(out)).toContain("guided.image_retry costs_badge")
+    // ein altes fehlgeschlagenes Bild stört nicht mehr, sobald eins da ist
+    const later = card(shot({ image_rel: "studio/media/images/a.png", variants: ["studio/media/images/a.png"] }), [job({ status: "failed", error: "no_key" })])
+    expect(later).not.toContain("job_err.no_key")
   })
 
   it("Mit dabei: alle Figuren, angehakte gedrückt, Namen sichtbar", () => {

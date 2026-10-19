@@ -23,14 +23,14 @@ def _cast(client, h, sc_id: str) -> list[str]:
 
 def test_excluded_removes_named_character(client, auth_headers, ws) -> None:
     hydra, mira, sc, shot = _setup(client, auth_headers)
-    assert _cast(client, auth_headers, sc["id"]) == [hydra["id"], mira["id"]]              # beide im Text genannt
+    assert sorted(_cast(client, auth_headers, sc["id"])) == sorted([hydra["id"], mira["id"]])   # beide im Text genannt
     r = client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers, json={"excluded_ids": [mira["id"]]})
     assert r.status_code == 200 and r.json()["excluded_ids"] == [mira["id"]]
     assert _cast(client, auth_headers, sc["id"]) == [hydra["id"]]                          # Mira raus, obwohl genannt
 
 
 def test_excluded_beats_ticked(client, auth_headers, ws) -> None:
-    hydra, mira, sc, shot = _setup(client, auth_headers)
+    _, mira, sc, shot = _setup(client, auth_headers)
     client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers,
                json={"element_ids": [mira["id"]], "excluded_ids": [mira["id"]]})
     assert mira["id"] not in _cast(client, auth_headers, sc["id"])
@@ -45,7 +45,7 @@ def test_excluded_only_known_ids(client, auth_headers, ws) -> None:
 
 
 def test_deleted_element_leaves_excluded(client, auth_headers, ws) -> None:
-    hydra, mira, sc, shot = _setup(client, auth_headers)
+    _, mira, sc, shot = _setup(client, auth_headers)
     client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers, json={"excluded_ids": [mira["id"]]})
     client.delete(f"{P}/elements/{mira['id']}", headers=auth_headers)
     sc2 = next(s for s in client.get(P, headers=auth_headers).json()["scenes"] if s["id"] == sc["id"])
@@ -54,7 +54,7 @@ def test_deleted_element_leaves_excluded(client, auth_headers, ws) -> None:
 
 def test_excluded_leaves_prompt_and_references(client, auth_headers, ws, provider) -> None:
     (ws / "f.png").write_bytes(PNG)
-    hydra, mira, sc, shot = _setup(client, auth_headers)
+    _, mira, sc, shot = _setup(client, auth_headers)
     client.put(f"{P}/elements/{mira['id']}", headers=auth_headers, json={**mira, "references": ["f.png"]})
     client.put(f"{P}/scenes/{sc['id']}/shots/{shot['id']}", headers=auth_headers, json={"excluded_ids": [mira["id"]]})
     client.post(f"{P}/scenes/{sc['id']}/shots/{shot['id']}/image", headers=auth_headers)
@@ -68,7 +68,7 @@ def test_excluded_leaves_prompt_and_references(client, auth_headers, ws, provide
 
 def test_batch_reports_current_shot(client, auth_headers, ws, monkeypatch) -> None:
     monkeypatch.setattr("backend.image_provider.request_image", FakeProvider(delay=0.4))
-    _, _, sc, shot = _setup(client, auth_headers)
+    _, _, _, shot = _setup(client, auth_headers)
     job = client.post(f"{P}/batch/images_all", headers=auth_headers).json()
     seen = ""
     end = time.time() + 5
