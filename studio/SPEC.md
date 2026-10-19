@@ -1313,6 +1313,30 @@ fliegen in G6 raus.
 - **Kosten:** „Geschichte vorschlagen“ trägt das Zeichen „kostet“ mit dem Text-Modell im Hinweis (kein erfundener Preis).
 - **Texte** de/en in `i18nGuided.ts` (`guided.*`).
 
+#### Bauplan G2 – Figuren & Orte mit Probebild (19.10.)
+
+- **Baustein bekommt** `probe_rel` (Probebild, nur aus `studio/media/probes/`, sonst leer), `approved: bool` („Passt“)
+  und `no_photo: bool` („Kein Foto – die KI erfindet …“). Beim Speichern aus der Profi-Ansicht bleiben die Felder,
+  wenn sie nicht mitgeschickt werden (Teil-Update wie bisher über `{**el, …}` im Browser – Server übernimmt fehlende Felder
+  aus dem gespeicherten Baustein).
+- **Probebild erzeugen:** `POST plan/elements/{id}/probe` (202, Auftrag `probe`, Ziel = Baustein-ID, besetzt →
+  `studio_probe_running`). Bild-Modell aus dem Drehbuch, Format 16:9, Vorlage = Fotos des Bausteins (höchstens 3).
+  Auftrag (englisch): Look + „character sheet / portrait of NAME: Beschreibung … neutral background, full figure“
+  (Ort: „establishing view of NAME …“). Ohne Foto und ohne Beschreibung → `studio_probe_nothing`. Ablage
+  `studio/media/probes/<id>.<ext>` + `.json` (prompt, model, element_id). Ein neues Probebild setzt `approved=false`.
+  Das alte Probebild bleibt in der Sammlung (Quelle `studio_probe`, löschbar).
+- **Freigabe:** `PUT plan/elements/{id}` mit `approved: true` nur, wenn es ein Probebild gibt (sonst `studio_probe_missing`).
+- **Wirkung in G3:** Bei einem freigegebenen Baustein geht das Probebild **als erste Vorlage** in jedes Bild (vor den
+  Fotos; zusammen höchstens 3 Vorlagen je Bild).
+- **Foto ersetzen** („Anderes Foto“): Vorlagen leeren, Probebild leeren, `approved=false`; dann neues Foto hochladen.
+- **Ablauf im Browser:** Foto hineinziehen/klicken → hochladen → ist die Beschreibung leer, Beschreibung aus dem Foto
+  (vorhandenes `describe`) → Probebild-Auftrag → Karte zeigt „Die KI zeichnet ein Probebild …“, bis der Auftrag fertig ist.
+  „Kein Foto“ setzt `no_photo`, zeigt Beschreibung (änderbar) und „Probebild zeigen“ (optional).
+- **Karten** auch für Gegenstände („+ Gegenstand“ nicht nötig – nur wenn die Geschichte einen enthält).
+  Name und Beschreibung speichern beim Verlassen des Felds. Löschen über den eigenen Dialog.
+- **Haken Schritt 2:** es gibt Szenen, und jeder Baustein ist `approved` oder `no_photo`. Ohne Bausteine → Haken, wenn
+  es Szenen gibt (eine Geschichte ohne Figuren ist erlaubt).
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
