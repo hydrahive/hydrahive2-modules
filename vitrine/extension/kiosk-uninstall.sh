@@ -14,6 +14,7 @@ rm -f /usr/share/xsessions/hydrahive-vitrine-kiosk.desktop
 rm -f /etc/modules-load.d/hydrahive2-vitrine-evdi.conf /etc/modprobe.d/hydrahive2-vitrine-evdi.conf
 rm -f /etc/ssh/sshd_config.d/50-hydrahive2-vitrine-kiosk.conf
 rm -f /etc/firefox/policies/policies.json
+_kiosk_running="$(loginctl list-sessions --no-legend 2>/dev/null | grep -c " ${KIOSK} ")"
 if id "${KIOSK}" >/dev/null 2>&1; then
   loginctl terminate-user "${KIOSK}" 2>/dev/null
   sleep 2
@@ -22,5 +23,6 @@ if id "${KIOSK}" >/dev/null 2>&1; then
   userdel -r "${KIOSK}" 2>/dev/null
 fi
 rm -rf "${CONF}"
-systemctl restart sddm 2>/dev/null || true
+# sddm nur neu starten, wenn gerade die Kiosk-Sitzung läuft (sonst unnötig den Anmeldebildschirm neu laden)
+if [ "${_kiosk_running}" != 0 ]; then systemctl restart sddm 2>/dev/null || true; fi
 echo "Vitrine-Kiosk entfernt (Anmeldebildschirm wie vorher)"

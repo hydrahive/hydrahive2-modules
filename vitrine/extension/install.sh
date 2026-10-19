@@ -50,14 +50,21 @@ elif command -v apt-get >/dev/null && command -v sddm >/dev/null && command -v f
   [ -s "${DATA}/kiosk.key" ] || (umask 077 && head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "${DATA}/kiosk.key")
   _port="${HH_PORT:-$(systemctl show hydrahive2 -p Environment --value 2>/dev/null | tr ' ' '\n' | sed -n 's/^HH_PORT=//p')}"
   _url="http://127.0.0.1:${_port:-8001}/api/module-device/vitrine/kiosk?k=$(cat "${DATA}/kiosk.key")"
-  # Nur `sudo -n bash` ist erlaubt (sudoers des Installers) – alles Root-Seitige läuft darüber.
+  # Nur `sudo -n bash` ist erlaubt (sudoers des Installers). Der HydraHive-Dienst läuft mit ProtectHome=read-only, und
+  # sudo erbt das → Kiosk-Teil (legt /home/hydrahive-kiosk an) über systemd-run außerhalb der Sandbox (am Gerät belegt).
   _before="$(sudo -n bash -c 'cat /etc/sddm.conf' 2>/dev/null || true)"
-  sudo -n bash "${MODULE_ROOT}/extension/kiosk-install.sh" "${MODULE_ROOT}" "${USER_NAME}" "${_url}"
-  sudo -n bash -c "install -m 755 '${MODULE_ROOT}/extension/kiosk-uninstall.sh' /etc/hydrahive2-vitrine/kiosk-uninstall.sh"
-  [ "${_before}" != "$(sudo -n bash -c 'cat /etc/sddm.conf')" ] && KIOSK_RESTART_SDDM=1
-  KIOSK_ENV="Environment=VITRINE_KIOSK_DISPLAY=:0
+  if sudo -n bash -c "systemd-run --quiet --wait --pipe --collect /bin/bash '${MODULE_ROOT}/extension/kiosk-install.sh' '${MODULE_ROOT}' '${USER_NAME}' '${_url}'"; then
+    sudo -n bash -c "install -m 755 '${MODULE_ROOT}/extension/kiosk-uninstall.sh' /etc/hydrahive2-vitrine/kiosk-uninstall.sh"
+    [ "${_before}" != "$(sudo -n bash -c 'cat /etc/sddm.conf')" ] && KIOSK_RESTART_SDDM=1
+    KIOSK_ENV="Environment=VITRINE_KIOSK_DISPLAY=:0
 SupplementaryGroups=video
 BindReadOnlyPaths=-/tmp/.X11-unix"
+  else
+    # Kiosk gescheitert → halb Eingerichtetes zurücknehmen, Vitrine-Dienst trotzdem einrichten (Video läuft weiter)
+    echo "Vitrine-Kiosk: Kiosk-Einrichtung fehlgeschlagen – Rückbau, Display zeigt weiter Videos" >&2
+    sudo -n bash -c "systemd-run --quiet --wait --pipe --collect /bin/bash '${MODULE_ROOT}/extension/kiosk-uninstall.sh'" || true
+    KIOSK_ENV=""
+  fi
 else
   echo "Vitrine-Kiosk: nicht eingerichtet (braucht apt, sddm und Firefox)"
 fi
