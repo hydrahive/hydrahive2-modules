@@ -1,4 +1,4 @@
-import { Loader2, Save, Trash2 } from "lucide-react"
+import { Check, Loader2, Save, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 export const fieldCls = "mt-1 w-full rounded-[4px] border border-[#46617f] bg-[#111827] px-2 py-1 text-xs text-[#e8eef8] outline-none focus:border-[#69d7ff]"
@@ -26,14 +26,18 @@ export function FormActions({ busy, dirty, onSave, onDelete }: { busy: boolean; 
   const { t } = useTranslation("studio")
   return (
     <div className="flex items-center gap-2 pt-1">
-      <button type="button" onClick={onSave} disabled={busy || !dirty} data-plan-save
-        className="flex flex-1 items-center justify-center gap-1.5 rounded-[4px] bg-[#69d7ff] py-1.5 text-xs font-black text-[#08111c] disabled:opacity-40">
-        {busy ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} {dirty ? t("save") : t("saved")}
-      </button>
+      {dirty || busy ? (
+        <button type="button" onClick={onSave} disabled={busy || !dirty} data-plan-save
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[4px] bg-[#69d7ff] py-1.5 text-xs font-black text-[#08111c] disabled:opacity-40">
+          {busy ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} {t("save")}
+        </button>
+      ) : (
+        <span className="flex flex-1 items-center gap-1.5 py-1.5 text-xs text-[#7ee2a8]" data-plan-saved><Check size={13} /> {t("saved")}</span>
+      )}
       {onDelete && (
-        <button type="button" onClick={onDelete} disabled={busy} data-plan-delete title={t("delete")} aria-label={t("delete")}
-          className="rounded-[4px] border border-[#2a364b] p-1.5 text-[#ff6b8a] hover:border-[#ff6b8a] disabled:opacity-40">
-          <Trash2 size={13} />
+        <button type="button" onClick={onDelete} disabled={busy} data-plan-delete
+          className="flex items-center gap-1 rounded-[4px] border border-[#ff6b8a]/50 px-2 py-1.5 text-xs font-bold text-[#ff6b8a] hover:bg-[#ff6b8a]/10 disabled:opacity-40">
+          <Trash2 size={13} /> {t("form_delete")}
         </button>
       )}
     </div>
