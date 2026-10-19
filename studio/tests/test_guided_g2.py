@@ -144,7 +144,13 @@ def test_no_photo_flag_and_bool_only(client, auth_headers, ws) -> None:
     assert client.put(f"{P}/elements/{el['id']}", headers=auth_headers, json={**el, "no_photo": "ja"}).json()["no_photo"] is False
 
 
-def test_approved_probe_goes_first_into_shot_images(client, auth_headers, ws, provider) -> None:
+def test_approved_probe_goes_first_into_shot_images(client, auth_headers, ws, monkeypatch) -> None:
+    import base64
+
+    from _gen_helpers import FakeProvider
+    other_png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR42mP4z8AAAAMBAQAY3Y2wAAAAAElFTkSuQmCC")
+    provider = FakeProvider(result=other_png)                                         # Probebild ≠ Foto
+    monkeypatch.setattr("backend.image_provider.request_image", provider)
     el = _el(client, auth_headers, ws)
     client.post(f"{P}/elements/{el['id']}/probe", headers=auth_headers)
     _wait(client, auth_headers, el["id"])
@@ -162,8 +168,9 @@ def test_approved_probe_goes_first_into_shot_images(client, auth_headers, ws, pr
     client.put(f"{P}/elements/{el['id']}", headers=auth_headers, json={**cur, "approved": True})
     refs = refs_of_next_image()
     probe = (ws / cur["probe_rel"]).read_bytes()
-    import base64
+    assert probe == other_png
     assert len(refs) == 2 and refs[0].endswith(base64.b64encode(probe).decode())    # Probebild zuerst, dann das Foto
+    assert refs[1].endswith(base64.b64encode(PNG).decode()) and refs[0] != refs[1]
 
 
 def test_media_delete_clears_probe(client, auth_headers, ws, provider) -> None:
@@ -178,3 +185,60 @@ def test_media_delete_clears_probe(client, auth_headers, ws, provider) -> None:
     assert r.status_code == 200, r.text
     after = _get(client, auth_headers, el["id"])
     assert after["probe_rel"] == "" and after["approved"] is False
+
+
+def test_other_photo_resets_everything(client, auth_headers, ws, provider) -> None:
+    el = _el(client, auth_headers, ws)
+    client.post(f"{P}/elements/{el['id']}/probe", headers=auth_headers)
+    _wait(client, auth_headers, el["id"])
+    cur = _get(client, auth_headers, el["id"])
+    client.put(f"{P}/elements/{el['id']}", headers=auth_headers, json={**cur, "approved": True})
+    out = client.put(f"{P}/elements/{el['id']}", headers=auth_headers, json={**cur, "references": [], "probe_rel": "", "approved": False}).json()
+    assert out["references"] == [] and out["probe_rel"] == "" and out["approved"] is False
+
+
+def test_foreign_element_is_guarded(client, auth_headers, other_headers, ws) -> None:
+    """Das fremde Projekt hat einen echten Baustein – trotzdem 404 für Nicht-Mitglieder, kein Auftrag."""
+    other = f"{MOD_PREFIX}/projects/{OTHER_PROJECT_ID}/plan"
+    el = client.post(f"{other}/elements", headers=other_headers, json={"kind": "character", "name": "Fremd", "description": "x"}).json()
+    r = client.post(f"{other}/elements/{el['id']}/probe", headers=auth_headers)
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "studio_project_not_found"
+
+
+def test_probe_rel_rules(client, auth_headers, ws) -> None:
+    (ws / "studio/media/probes/sub").mkdir(parents=True)
+    (ws / "studio/media/probes/sub/x.png").write_bytes(PNG)
+    el = _el(client, auth_headers, ws)
+    put = lambda body: client.put(f"{P}/elements/{el['id']}", headers=auth_headers, json={**el, **body})  # noqa: E731
+    assert put({"probe_rel": "studio/media/probes/sub/x.png"}).json()["probe_rel"] == ""          # kein Unterordner
+    assert put({"probe_rel": "studio/media/probes/fehlt.png"}).json()["probe_rel"] == ""          # Datei muss da sein
+    (ws / "studio/media/probes/da.png").write_bytes(PNG)
+    assert put({"probe_rel": "studio/media/probes/da.png"}).json()["probe_rel"] == "studio/media/probes/da.png"
+    assert put({"probe_rel": "studio/media/probes/da.png", "approved": "ja"}).json()["approved"] is False   # nur echtes true
+    r = put({"probe_rel": "studio/media/probes/fehlt.png", "approved": True})
+    assert r.status_code == 400 and r.json()["detail"]["code"] == "studio_probe_missing"
+
+
+def test_approved_without_probe_on_disk_falls_back(client, auth_headers, ws) -> None:
+    """Freigabe ohne Probebild kann nicht in der Datei stehen bleiben – auch nicht über _clean allein."""
+    from backend import _clean
+    out = _clean.element("e" * 32, {"kind": "character", "name": "X", "approved": True, "probe_rel": ""}, [])
+    assert out["approved"] is False
+
+
+def test_probe_is_always_wide(client, auth_headers, ws, provider) -> None:
+    client.put(f"{P}/screenplay", headers=auth_headers, json={"aspect_ratio": "9:16"})
+    el = _el(client, auth_headers, ws)
+    client.post(f"{P}/elements/{el['id']}/probe", headers=auth_headers)
+    _wait(client, auth_headers, el["id"])
+    assert provider.calls[0]["aspect_ratio"] == "16:9"
+
+
+def test_probe_bad_image(client, auth_headers, ws, monkeypatch) -> None:
+    from _gen_helpers import FakeProvider
+    monkeypatch.setattr("backend.image_provider.request_image", FakeProvider(result=b"kein bild"))
+    el = _el(client, auth_headers, ws)
+    client.post(f"{P}/elements/{el['id']}/probe", headers=auth_headers)
+    job = _wait(client, auth_headers, el["id"])
+    assert job["status"] == "failed" and job["error"] == "bad_image"
+    assert not (ws / "studio/media/probes").exists() or not any((ws / "studio/media/probes").iterdir())

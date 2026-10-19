@@ -35,6 +35,12 @@ describe("G2 – Logik", () => {
     expect(castState(el({ references: ["a.png"] }), [job({ status: "failed", error: "no_key" })])).toBe("failed")
     expect(castState(el({ references: ["a.png"] }), [job({ target: "anderer" })])).toBe("photo")    // fremder Auftrag zählt nicht
     expect(castState(el({ references: ["a.png"] }), [job({ kind: "image" })])).toBe("photo")
+    expect(castState(el({ approved: true }), [])).toBe("empty")                                    // Freigabe ohne Probebild zählt nicht
+    // ein altes fehlgeschlagenes Probebild verdeckt kein fertiges
+    expect(castState(el({ probe_rel: "p.png" }), [job({ status: "failed", error: "no_key" })])).toBe("probe")
+    // der jüngste Auftrag zählt
+    expect(castState(el({ references: ["a.png"] }), [job({ status: "failed", created_at: "2026-10-19T09:00:00Z" }),
+      job({ status: "running", created_at: "2026-10-19T11:00:00Z" })])).toBe("busy")
   })
 
   it("offen = weder passt noch ohne Foto; Haken Schritt 2", () => {
@@ -54,6 +60,14 @@ describe("G2 – Oberfläche", () => {
     expect(out).toContain('accept=".png,.jpg,.jpeg,.webp,.gif"')
     expect(buttons(out)).toContain("guided.no_photo:{\"what\":\"guided.the_character\"}")
     expect(out).toContain('aria-label="guided.delete_entry:{"name":"Hydra"}"')
+  })
+
+  it("Foto da, noch kein Probebild: Foto zu sehen, Feld zum Tauschen, „Probebild zeigen“ (kostet)", () => {
+    const out = card(el({ references: ["fotos/h.png"] }))
+    expect(out).toContain('src="/f/w/fotos/h.png"')
+    expect(out).toContain("guided.photo_drop")
+    expect(buttons(out)).toContain("guided.probe_show costs_badge")
+    expect(buttons(card(el()))).not.toContain("guided.probe_show costs_badge")                   // ohne Foto noch nicht
   })
 
   it("läuft: Wartehinweis, keine Knöpfe zum Freigeben", () => {
