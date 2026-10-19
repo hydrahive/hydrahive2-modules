@@ -17,7 +17,7 @@ export function runningJobs(jobs: Job[]): number {
 }
 
 const KNOWN = new Set(["no_key", "provider_rejected", "provider_unreachable", "empty_answer", "bad_image", "interrupted", "shot_gone",
-  "video_failed", "timeout", "bad_url", "too_big", "bad_video", "image_gone", "render_failed", "bad_audio", "no_text"])
+  "video_failed", "timeout", "bad_url", "too_big", "bad_video", "image_gone", "render_failed", "bad_audio", "no_text", "element_gone"])
 
 const MUSIC_OWN = new Set(["no_key", "provider_rejected", "empty_answer", "bad_audio"])     // eigene Texte für Musik
 const TRANSLATE_OWN = new Set(["provider_failed", "bad_answer", "changed"])

@@ -1,6 +1,6 @@
 /** Geführter Weg (G1): rein, ohne DOM – damit testbar. Eine Karte = eine Szene (mit genau einem Shot im Normalfall). */
 import type { IdeaLength } from "../draftApi"
-import type { Plan, Scene } from "../planApi"
+import type { Job, Plan, PlanElement, Scene } from "../planApi"
 
 export type FilmKind = "trailer" | "explainer" | "short" | "music"
 export const FILM_KINDS: FilmKind[] = ["trailer", "explainer", "short", "music"]
@@ -40,9 +40,27 @@ export function doneSteps(plan: Plan | null): Record<StepId, boolean> {
   const all = (fn: (s: Scene) => boolean) => scenes.length > 0 && scenes.every(fn)
   return {
     1: scenes.length > 0,
-    2: false,
+    2: scenes.length > 0 && castOpen(plan?.elements ?? []) === 0,
     3: all((s) => s.shots.some((x) => x.image_rel)),
     4: all((s) => s.shots.some((x) => x.video_rel)),
     5: false,
   }
+}
+
+export type CastState = "empty" | "photo" | "busy" | "failed" | "probe" | "approved" | "no_photo"
+
+/** Zustand einer Figur/eines Orts im Schritt 2 – aus dem Baustein und seinem jüngsten Probebild-Auftrag. */
+export function castState(el: PlanElement, jobs: Job[]): CastState {
+  const job = jobs.filter((j) => j.kind === "probe" && j.target === el.id).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+  if (job && (job.status === "running" || job.status === "queued")) return "busy"
+  if (el.approved && el.probe_rel) return "approved"
+  if (el.probe_rel) return "probe"
+  if (job?.status === "failed") return "failed"
+  if (el.no_photo) return "no_photo"
+  return el.references.length ? "photo" : "empty"
+}
+
+/** Wie viele sind noch nicht fertig (weder „Passt“ noch „Kein Foto“)? */
+export function castOpen(elements: PlanElement[]): number {
+  return elements.filter((e) => !(e.approved && e.probe_rel) && !e.no_photo).length
 }

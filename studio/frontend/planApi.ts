@@ -49,7 +49,7 @@ export interface BatchPreview { count: number; model: string }
 
 export interface Job {
   id: string
-  kind: "image" | "video" | "speech" | "free_images" | "render" | "music" | "transcribe" | "translate" | BatchKind
+  kind: "image" | "video" | "speech" | "probe" | "free_images" | "render" | "music" | "transcribe" | "translate" | BatchKind
   target: string
   scene_id: string
   status: "queued" | "running" | "done" | "failed" | "cancelled"
@@ -82,6 +82,10 @@ export interface PlanElement {
   style_anchor: string
   palette: string[]
   references: string[]
+  /** G2: Probebild (so sieht der Baustein im Film aus), Freigabe „Passt“, „Kein Foto – die KI erfindet …“ */
+  probe_rel?: string
+  approved?: boolean
+  no_photo?: boolean
 }
 
 export interface Plan {
@@ -119,6 +123,8 @@ export const planApi = {
   deleteScene: (pid: string, id: string) => api.delete<{ deleted: string }>(`${base(pid)}/scenes/${one(id)}`),
   addElement: (pid: string, data: Partial<PlanElement>) => api.post<PlanElement>(`${base(pid)}/elements`, data),
   saveElement: (pid: string, id: string, data: Partial<PlanElement>) => api.put<PlanElement>(`${base(pid)}/elements/${one(id)}`, data),
+  /** G2: Probebild des Bausteins erzeugen */
+  probe: (pid: string, id: string) => api.post<Job>(`${base(pid)}/elements/${one(id)}/probe`, {}),
   deleteElement: (pid: string, id: string) => api.delete<{ deleted: string }>(`${base(pid)}/elements/${one(id)}`),
   addShot: (pid: string, sid: string, data: Partial<Shot>) => api.post<Shot>(`${base(pid)}/scenes/${one(sid)}/shots`, data),
   saveShot: (pid: string, sid: string, id: string, data: Partial<Shot>) => api.put<Shot>(`${base(pid)}/scenes/${one(sid)}/shots/${one(id)}`, data),

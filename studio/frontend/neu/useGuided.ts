@@ -49,6 +49,7 @@ export function useGuided(t: T) {
     setBusy(true); setError(null)
     try { await fn(); await reload(pid) } catch (e) { setError(errorText(t, e)) } finally { setBusy(false) }
   }
+  const reloadPlan = () => reload(pid)
 
   /** Idee → Geschichte → gleich übernehmen (G1: kein Vorschau-Zwischenschritt) */
   const write = async (replace: boolean) => {
@@ -98,7 +99,7 @@ export function useGuided(t: T) {
   return {
     projects, pid, setPid, plan, step, setStep, idea, setIdea, kind, setKind, length, setLength,
     busy, writing, error, saved, asking, setAsking, deleting, setDeleting,
-    startSuggest, write, setFormat, changeText, addScene, move, confirmDelete,
+    startSuggest, write, setFormat, changeText, addScene, move, confirmDelete, run, reload: reloadPlan,
   }
 }
 
