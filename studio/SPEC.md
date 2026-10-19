@@ -1408,6 +1408,19 @@ vorhandenen Bausteine **nacheinander** im Server abarbeitet – der Browser star
 - **Haken Schritt 5:** es gibt mindestens einen fertigen Film.
 - Tests: alle Anbieter und ffmpeg ersetzt (vorhandene Hilfen), keine echte Erzeugung.
 
+#### Bauplan G6 – Umstellen (19.10.)
+
+- **Wege:** `/studio` = geführter Weg (Menüpunkt „Studio“ bleibt), `/studio/profi` = bisherige Oberfläche,
+  `/studio/neu` leitet auf `/studio` weiter (Lesezeichen der Testphase).
+- **Wechsel:** geführter Weg → „Zur Profi-Ansicht“ (`/studio/profi`); Profi-Ansicht → Knopf „Zum geführten Weg“ in der
+  Kopfzeile (`/studio`). Beide merken dasselbe Projekt (gleicher Speicher-Schlüssel, schon so).
+- **Hilfe der Profi-Ansicht** („So geht’s“) öffnet sich **nicht** mehr von selbst beim ersten Besuch – der geführte Weg
+  ist die Einführung. Über den Knopf „So geht’s“ bleibt sie erreichbar.
+- **Kurzhilfe im geführten Weg:** ein „?“-Knopf oben rechts im Schritt öffnet „So geht’s“ in 5 Sätzen (je Schritt einer)
+  im eigenen Dialog; öffnet sich beim allerersten Besuch einmal von selbst (eigener Schlüssel `hh.studio.guided-seen.v1`).
+- **Manifest-Beschreibung** neu: geführter Weg in 5 Schritten + Profi-Ansicht.
+- **Alte E2E-Skripte** rufen `/studio` → auf `/studio/profi` umstellen; alle grün (ohne Erzeugung).
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
