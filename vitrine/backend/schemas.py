@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator, model_validator
 
 from renderer import calendar, calendar_extra, config, dash_layout
 
@@ -40,6 +40,7 @@ class Dashboard(BaseModel):
     home_rooms: list[str] = Field(default_factory=list)
     mining_in_machine: bool = True
     pages: dict[str, StrictInt] = Field(default_factory=lambda: dict(dash_layout.DEFAULT_PAGES))
+    chat_enabled: StrictBool = True
 
     @model_validator(mode="after")
     def _ok(self):

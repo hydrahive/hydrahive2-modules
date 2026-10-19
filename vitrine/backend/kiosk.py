@@ -37,4 +37,7 @@ def back(data_dir: Path) -> None:
 def page(key: str) -> str:
     """Statuszentrale (S2): statische Seite aus dem Modul; der Schlüssel wird als JS-String eingesetzt (json + </ entschärft)."""
     k = json.dumps(key)[1:-1].replace("</", "<\\/")
-    return (Path(__file__).with_name("kiosk_page.html")).read_text(encoding="utf-8").replace("__KEY__", k)
+    here = Path(__file__).parent
+    chat_js = (here / "kiosk_chat.js").read_text(encoding="utf-8").replace("</", "<\\/")
+    html = (here / "kiosk_page.html").read_text(encoding="utf-8").replace("__KEY__", k)
+    return html.replace("</script></html>", "\n" + chat_js + "</script></html>", 1)

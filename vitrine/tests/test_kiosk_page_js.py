@@ -19,7 +19,9 @@ DOM = r"""
 class El {
   constructor(tag, id) { this.tag = tag; this.id = id || ""; this.children = []; this._text = ""; this.className = "";
                          this.style = {display: ""}; this.disabled = false; this.onclick = null; this.parent = null;
-                         this.classList = {add() {}, remove() {}}; this.h = 100; }
+                         this.classList = {add() {}, remove() {}}; this.h = 100; this.value = ""; this.scrollTop = 0;
+                         this.scrollHeight = 0; }
+  focus() {}
   getBoundingClientRect() { return {top: 0, bottom: this.h, height: this.h}; }
   insertBefore(c, ref) { this.children = this.children.filter((x) => x !== c); const i = this.children.indexOf(ref);
                          c.parent = this; if (i < 0) this.children.push(c); else this.children.splice(i, 0, c); return c; }

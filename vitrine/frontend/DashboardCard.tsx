@@ -50,6 +50,11 @@ export function DashboardCard({ config, onChange }: { config: VitrineConfig; onC
           )
         })}
       </ol>
+      <label className="flex items-center gap-2 rounded-[4px] border border-[#2a364b] bg-[#0d1420] p-2 text-sm text-[#e8eef8]">
+        <input type="checkbox" checked={d.chat_enabled} onChange={() => set({ chat_enabled: !d.chat_enabled })} />
+        {t("dash_chat")}
+        <span className="text-xs text-[#718097]">{t("dash_chat_hint")}</span>
+      </label>
       {errs.length > 0 && <p className="text-xs text-rose-300">{t("dash_invalid")}</p>}
     </section>
   )

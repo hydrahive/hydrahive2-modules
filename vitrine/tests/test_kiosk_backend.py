@@ -49,7 +49,10 @@ def test_seite_ohne_daten_nur_data_und_zurueck():
     assert "<button" in html and "Zurück zum Video" in html and "SCHLUESSEL" in html
     assert 'fetch("back?k=' in html and 'fetch("data?k=' in html     # relativ zu /api/module-device/vitrine/kiosk
     assert 'fetch("read?k=' in html                                  # S3: Gelesen
-    assert html.count("fetch(") == 3, "nur Daten, Zurück, Gelesen"
+    assert html.count('fetch("chat?k=') == 2                          # S6: Verlauf lesen + Nachricht schicken
+    assert html.count("fetch(") == 5, "nur Daten, Zurück, Gelesen, Chat-Verlauf, Chat-Senden"
+    import re
+    assert set(re.findall(r'fetch\("([a-z]+)\?k=', html)) == {"data", "back", "read", "chat"}, "keine weiteren Ziele"
     for verboten in ("/api/modules/", "authorization", "innerhtml", "outerhtml", "insertadjacenthtml", "document.write",
                      "eval(", "<script src", "<link", "http://", "https://"):
         assert verboten not in html.lower(), verboten

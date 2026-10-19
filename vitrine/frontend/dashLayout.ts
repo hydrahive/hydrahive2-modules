@@ -13,6 +13,8 @@ export interface DashboardCfg {
   mining_in_machine: boolean
   /** S5: Bereich → Seite 1–3. */
   pages: Record<AreaId, number>
+  /** S6: Chat-Seite am Gehäuse. */
+  chat_enabled: boolean
 }
 
 export const DEFAULT_PAGES: Record<AreaId, number> = { messages: 1, home: 1, hydra: 1, tasks: 2, github: 2, machine: 2, mining: 2 }
@@ -21,6 +23,7 @@ export const DEFAULT_DASHBOARD: DashboardCfg = {
   tasks_user: "till", github_project: "Hydrahive DEV",
   github_repos: ["hydrahive/hydrahive2.0", "hydrahive/hydrahive2-modules"],
   order: [...AREAS], hidden: [], messages_max: 3, home_rooms: [], mining_in_machine: true, pages: { ...DEFAULT_PAGES },
+  chat_enabled: true,
 }
 
 const USER_RE = /^[A-Za-z0-9_.@-]{1,64}$/
