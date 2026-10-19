@@ -1337,6 +1337,27 @@ fliegen in G6 raus.
 - **Haken Schritt 2:** es gibt Szenen, und jeder Baustein ist `approved` oder `no_photo`. Ohne Bausteine → Haken, wenn
   es Szenen gibt (eine Geschichte ohne Figuren ist erlaubt).
 
+#### Bauplan G3 – Bilder (19.10.)
+
+- **Karte je Shot** (Normalfall: eine je Szene). Mehrere Shots einer Szene → je Shot eine Karte „Szene 2 · Teil 1“.
+  Text = Szenenbeschreibung (bei mehreren Shots: Bildbeschreibung des Shots). Bild im Filmformat (quer/hoch).
+- **Knöpfe:** „Bild machen“ (kostet) ohne Bild; mit Bild „Anderes Bild machen“ (kostet) und „Dieses Bild wegwerfen“.
+  Pfeile ‹ › blättern durch die Varianten, das gezeigte Bild ist das gewählte (`variant`), „Bild X von N“.
+  Wegwerfen löscht die Datei über den vorhandenen Weg (`DELETE media`) mit eigener Rückfrage; danach rückt das jüngste
+  übrige Bild nach (vorhandene Regel in `media._clean_shot`).
+- **Sammelknopf:** „Alle Bilder machen“ bzw. „Die fehlenden N Bilder machen“ (vorhandener Sammelauftrag `images_all`),
+  Fortschritt „N von M fertig“ + „Anhalten“ (vorhandenes Abbrechen). Läuft weiter, auch wenn man den Schritt verlässt.
+- **„Mit dabei:“** Gesichter (Probebild, sonst erstes Foto, sonst Anfangsbuchstabe) der Bausteine, die im Bild sind
+  (`cast` vom Server). Antippen nimmt eine Figur dazu oder weg:
+  - dazu: ID in `element_ids` des Shots;
+  - weg: neues Shot-Feld `excluded_ids` (Server). `cast.of_shot` lässt ausgeschlossene weg – auch wenn der Name im
+    Text steht. Antippen einer ausgeschlossenen nimmt sie aus `excluded_ids` und setzt sie in `element_ids`.
+  - `excluded_ids` wird wie `element_ids` geprüft (nur vorhandene Bausteine) und ist änderbar (`EDITABLE`).
+- **Läuft/Fehler je Karte:** jüngster Auftrag `image` des Shots (läuft → Schleier „Bild entsteht …“; fehlgeschlagen →
+  Text aus `jobText` + „Noch einmal versuchen“). Im Sammelauftrag zeigt die Karte, deren Szene gerade dran ist, „Bild entsteht …“.
+- **Haken Schritt 3:** jede Szene hat ein Bild (schon in G1). Unten: „N Szenen ohne Bild – du kannst trotzdem weiter“.
+- **Ohne Szenen:** „Noch keine Szenen. Geh zurück zu Schritt 1 · Idee“ mit Knopf.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
