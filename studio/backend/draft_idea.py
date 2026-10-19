@@ -50,16 +50,34 @@ def _context(idea: str, length: str, style: str, kind: str = "") -> str:
 
 
 def parse_answer(raw: str) -> dict | None:
-    """JSON-Objekt aus der Antwort; toleriert Zäune und Text davor/danach. Unbrauchbar → None."""
+    """JSON-Objekt aus der Antwort; toleriert Zäune und Text davor/danach. Unbrauchbar → None.
+    L3: Fehlen am Ende nur schließende Klammern (lokale KI vergisst oft die letzte „}“), werden sie ergänzt."""
     t = (raw or "").strip()
     start, end = t.find("{"), t.rfind("}")
     if start == -1 or end <= start:
         return None
-    try:
-        data = json.loads(t[start:end + 1])
-    except json.JSONDecodeError:
-        return None
-    return data if isinstance(data, dict) else None
+    for candidate in (t[start:end + 1], _closed(t[start:end + 1])):     # beginnt mit „{“ → gültig heißt Objekt
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
+def _closed(t: str) -> str:
+    """Hängt die am Ende fehlenden schließenden Klammern an (Klammern in Texten zählen nicht). Passt etwas nicht
+    zusammen, bleibt das Ergebnis ungültiges JSON und fällt bei json.loads durch."""
+    stack, in_str, esc = [], False, False
+    for ch in t:
+        if in_str:
+            esc, in_str = (False, True) if esc else (ch == "\\", ch != '"')
+        elif ch == '"':
+            in_str = True
+        elif ch in "{[":
+            stack.append("}" if ch == "{" else "]")
+        elif ch in "}]" and stack:
+            stack.pop()
+    return t + "".join(reversed(stack))
 
 
 def _check(data: dict) -> tuple[str, str, str, str, bool]:

@@ -181,7 +181,7 @@ def _good() -> str:
 
 
 def test_l3_unusable_answer_is_asked_again_once(client, auth_headers, ws) -> None:
-    llm = AsyncMock(side_effect=[_good()[:-3], _good()])                            # erste Antwort abgeschnitten
+    llm = AsyncMock(side_effect=[_good()[:200], _good()])                           # erste Antwort mitten im Text abgebrochen
     with patch("backend.draft_idea.llm_client.complete", new=llm):
         r = client.post(f"{D}/idea", headers=auth_headers, json={"idea": "x", "length": "30"})
     assert r.status_code == 200, r.text
@@ -218,6 +218,8 @@ def test_l3_brackets_in_strings_dont_count() -> None:
     from backend.draft_idea import parse_answer
     raw = '{"title": "Der {Turm] und \\"[das\\" Meer", "scenes": [{"title": "a}"}]'
     assert parse_answer(raw) == {"title": 'Der {Turm] und "[das" Meer', "scenes": [{"title": "a}"}]}
+    raw = '{"title": "Der [Turm", "scenes": [{"title": "{Meer"}]'                     # öffnende Klammern im Text
+    assert parse_answer(raw) == {"title": "Der [Turm", "scenes": [{"title": "{Meer"}]}
 
 
 def test_l3_broken_inside_stays_broken() -> None:
