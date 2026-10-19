@@ -80,3 +80,13 @@ describe("7a – Baustein: Referenzbild hochladen", () => {
     expect(pendingElement(EL, EL, "")).toBeNull()                           // nichts geändert → nichts vorher speichern
   })
 })
+
+describe("7a – im Studio verdrahtet", () => {
+  it("Planen reicht das Hochladen an den Baustein weiter (sonst fehlt der Knopf)", async () => {
+    const files = import.meta.glob(["./StudioPage.tsx"], { query: "?raw", import: "default", eager: true })
+    const src = Object.values(files)[0] as string
+    const planning = src.match(/planning && !s\.item \? <PlanInspector[^>]*>/)?.[0] ?? ""
+    expect(planning).toContain("upload={up}")
+    expect(src).toMatch(/<LibraryPanel[^>]*onUpload=/)
+  })
+})

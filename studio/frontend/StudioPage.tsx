@@ -157,7 +157,7 @@ export function StudioPage() {
             </div>
             <Splitter dir="x" label={t("resize_inspector")} onDrag={(d) => s.drag("inspector", d)} />
             <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
-              {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} />
+              {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} upload={up} />
                 : freeOpen ? <FreeForm form={fr.form} catalog={imageCatalog} images={lib.items.filter((i) => i.kind === "image")} job={freeJob}
                     busy={p.busy} onChange={fr.setForm} onRun={() => void fr.run()} />
                 : generating && !s.item ? (selShot ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} /> : <GenerateHint />)
