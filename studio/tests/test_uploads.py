@@ -98,6 +98,24 @@ def test_reference_image_for_an_element(client, auth_headers, ws) -> None:
     assert len(next(e for e in client.get(P, headers=auth_headers).json()["elements"] if e["id"] == ole["id"])["references"]) == 8
 
 
+@needs_ffmpeg
+def test_reference_must_be_an_image_even_if_a_good_video(client, auth_headers, ws) -> None:
+    v = (ws / make_video(ws, "clip.mp4", 1)).read_bytes()
+    ole = client.post(f"{P}/elements", headers=auth_headers, json={"kind": "character", "name": "Ole"}).json()
+    assert _code(client.post(f"{P}/elements/{ole['id']}/references", headers=auth_headers, files=_files(("ok.mp4", v)))) == "400 studio_upload_invalid"
+
+
+def test_names_are_cleaned(client, auth_headers, ws) -> None:
+    from backend.uploads import clean_name
+    assert clean_name("C:\\Users\\Till\\Bilder\\ole.png") == "ole.png"
+    assert clean_name("../../x/ole.png") == "ole.png"
+    assert clean_name("") == "Datei" and len(clean_name("a" * 300 + ".png")) == 120
+    out = client.post(U, headers=auth_headers, files=_files(("C:\\fotos\\mira.png", png()))).json()["files"][0]
+    assert out["name"] == "mira.png" and "fotos" not in out["rel"]
+    meta = json.loads((ws / f"{out['rel']}.json").read_text())
+    assert meta["name"] == "mira.png"
+
+
 def test_reference_rules(client, auth_headers, ws) -> None:
     ole = client.post(f"{P}/elements", headers=auth_headers, json={"kind": "character", "name": "Ole"}).json()
     R = f"{P}/elements/{ole['id']}/references"
