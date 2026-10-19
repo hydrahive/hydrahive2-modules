@@ -202,3 +202,34 @@ def test_l3_llm_error_is_not_repeated(client, auth_headers, ws) -> None:
         r = client.post(f"{D}/idea", headers=auth_headers, json={"idea": "x", "length": "30"})
     assert r.status_code == 502 and llm.await_count == 1
 
+
+
+# --- L3b fehlende Klammern am Ende ergänzen (lokale KI vergisst oft die letzte „}“) -----------------------------------
+
+def test_l3_missing_closing_brackets_are_added() -> None:
+    from backend.draft_idea import parse_answer
+    good = json.loads(_good())
+    for cut in (1, 2, 3):                                                            # „}“, „]}“, „}]}“ fehlen
+        assert parse_answer(_good()[:-cut]) == good, cut
+    assert parse_answer("Hier:\n```json\n" + _good()[:-1] + "\n```") == good           # Text/Zaun davor und danach
+
+
+def test_l3_brackets_in_strings_dont_count() -> None:
+    from backend.draft_idea import parse_answer
+    raw = '{"title": "Der {Turm] und \\"[das\\" Meer", "scenes": [{"title": "a}"}]'
+    assert parse_answer(raw) == {"title": 'Der {Turm] und "[das" Meer', "scenes": [{"title": "a}"}]}
+
+
+def test_l3_broken_inside_stays_broken() -> None:
+    from backend.draft_idea import parse_answer
+    assert parse_answer('{"title": "T", "scenes": [{"title": "a" "b"}]}') is None    # Komma fehlt mitten drin
+    assert parse_answer('{"title": "T", "scenes": [}') is None                       # falsche Klammer
+    assert parse_answer('{"title": "unfertig') is None                               # mitten im Text abgebrochen
+    assert parse_answer("[1, 2]") is None                                            # kein Objekt
+
+
+def test_l3_repaired_answer_needs_no_second_question(client, auth_headers, ws) -> None:
+    llm = AsyncMock(return_value=_good()[:-2])
+    with patch("backend.draft_idea.llm_client.complete", new=llm):
+        r = client.post(f"{D}/idea", headers=auth_headers, json={"idea": "x", "length": "30"})
+    assert r.status_code == 200 and llm.await_count == 1
