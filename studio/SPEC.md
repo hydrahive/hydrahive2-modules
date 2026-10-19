@@ -1157,6 +1157,23 @@ Input-Material übergeben“. Er schaut es morgens an; gemergt wird erst nach se
   Herunterladen enthält Format und Größe, z. B. `film-202610190812-9x16-720p.mp4`. Die Auswahl merkt sich der
   Browser je Projekt nicht – sie startet immer bei „wie im Drehbuch“ / „Standard“.
 
+**7c im Detail**
+- **Jeder Klick auf „Film als MP4 erzeugen“ ist ein eigener Auftrag** mit seiner Vorlage (Format, Qualität,
+  Untertitel) und dem Schnitt **so, wie er beim Klicken war**. Er geht in die Warteschlange; Format und Qualität bleiben
+  frei, man kann sofort die nächste Fassung anstoßen.
+- **Ein Film zur Zeit – auf dem ganzen Server**, in der Reihenfolge der Klicks (eigene FIFO, kein Semaphor: dessen
+  Reihenfolge ist nicht garantiert). ffmpeg braucht den Rechner; zwei Projekte warten aufeinander.
+- **Höchstens 5 je Projekt** (wartend + laufend), sonst 409 `studio_render_queue_full`. Der Knopf ist dann gesperrt
+  mit Hinweis. `studio_render_running` entfällt.
+- **Status:** `queued` („wartet“) → `running` („läuft · 40 %“) → `done` („fertig“) / `failed` („Fehler: …“) /
+  `cancelled` („abgebrochen“). Der Auftrag trägt `info` = {aspect, quality, subtitles} für die Anzeige.
+- **Abbrechen:** wartende Filme sofort (Platz wird frei), **auch der laufende** (ffmpeg wird beendet, die halbe Datei
+  gelöscht) – über `POST …/plan/jobs/{id}/cancel` wie bei Sammelaufträgen. Erledigte kann man nicht abbrechen.
+- **Neustart des Servers:** wartende und laufende Filme werden wie andere Aufträge als „unterbrochen“ markiert.
+- **Oberfläche:** unter dem Knopf die Liste „Warteschlange“ (die letzten 6 Film-Aufträge, älteste oben): Vorlage,
+  Zustand, Knopf „Abbrechen“ bei wartend/laufend. Meldung nach dem Klick: „Film wird erzeugt.“ bzw. „Film ist in der
+  Warteschlange (Platz 2).“ Die Liste „Fertige Filme“ lädt nach jedem fertigen Film neu.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
