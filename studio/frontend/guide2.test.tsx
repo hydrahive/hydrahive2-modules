@@ -167,9 +167,8 @@ describe("C3 – Modell im Kosten-Hinweis kommt aus dem Drehbuch", () => {
 })
 
 describe("C3 – im Studio verdrahtet", () => {
-  it("Kurzhilfe bekommt den Reiterwechsel; Hilfe öffnet sich beim ersten Besuch", () => {
+  it("Kurzhilfe bekommt den Reiterwechsel (G6: Hilfe öffnet sich nicht mehr von selbst – der geführte Weg führt ein)", () => {
     const src = Object.values(import.meta.glob(["./StudioPage.tsx", "./useStudioState.ts"], { query: "?raw", import: "default", eager: true })).join("\n")
     expect(src).toMatch(/<WorkspaceIntro[^>]*onGo=\{s\.setWorkspace\}/)
-    expect(src).toMatch(/useState<"help" \| "command" \| null>\(\(\) => \(firstVisit\(\) \? "help" : null\)\)/)
   })
 })
