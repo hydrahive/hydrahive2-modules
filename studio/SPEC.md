@@ -1265,6 +1265,32 @@ Regeln: ein Schritt = eine Aufgabe = ein Hauptknopf; nur die Wörter Szene, Figu
 Karte; Kosten in Cent am Knopf; „Weiter“ geht auch mit Lücken. Die heutige Oberfläche bleibt als „Profi-Ansicht“.
 Gebaut wird erst nach dem Test mit dem Neuling; die Attrappe wird dann ersetzt, nicht erweitert.
 
+### Bauplan G – Geführter Weg echt bauen (19.10., Till: „das können wir als Grund benutzen“)
+
+Die Attrappe (`frontend/neu/`) wird Schritt für Schritt echt. Sie bleibt Grundlage für Aussehen und Texte; jede Etappe
+ersetzt die Beispieldaten eines Schritts durch die echten Funktionen. Server-Bausteine gibt es fast alle schon.
+
+**Grundsatz:** Eine Karte im geführten Weg = **ein Shot**. Der Text auf der Karte ist der deutsche Szenentext, der Prompt
+bleibt unsichtbar. Für den geführten Weg bittet die KI um **genau einen Shot je Szene**; die Profi-Ansicht kann weiter
+zerlegen. Hat eine Szene schon mehrere Shots (aus der Profi-Ansicht), zeigt der Weg je Shot eine Karte („Szene 2 · Teil 1“).
+Beide Ansichten arbeiten auf denselben Daten.
+
+| Etappe | Schritt | Vorhanden | Neu |
+|---|---|---|---|
+| **G1** | Gerüst + Idee | `draft/idea`, `draft/apply`, Szenen anlegen/ändern/löschen, `order`, `overview` | Projektwahl im Weg; Idee mit `shots_per_scene=1` und Länge 30/60/120 s; Vorschlag wird direkt übernommen (bei vorhandenen Szenen erst fragen: ersetzen oder anhängen); Haken links aus `overview`; Karten speichern sofort |
+| **G2** | Figuren & Orte | Bausteine, Foto als Referenz (`references`), Foto beschreiben (`describe`) | **Probebild**: ein Bild der Figur aus Foto + Beschreibung (Auftrag wie freies Bild, Ablage am Baustein `probe_rel`); `approved` am Baustein („Passt“); „Kein Foto“ = Beschreibung reicht |
+| **G3** | Bilder | Bild je Shot, „für alle“, Varianten + Wahl, Medien löschen, Mit-im-Bild | Karten-Ansicht mit Pfeilen über die Varianten; „Dieses Bild wegwerfen“ = Variante löschen; Probebilder freigegebener Figuren gehen als Referenz mit |
+| **G4** | Bewegung | Video je Shot, „für alle“ | `still: true` am Shot („Als Standbild lassen“, zählt als fertig, „für alle“ überspringt ihn); „Bewegung wegwerfen“ |
+| **G5** | Film | Zeitleiste aus Drehbuch, Musik, Sprache je Shot, Untertitel aus Sprechtext, Ausgabe-Warteschlange, Herunterladen | Ein Knopf „Film erzeugen“ = Zeitleiste neu aus dem Plan (nur wenn in der Profi-Ansicht nicht von Hand geschnitten – sonst fragen) + gewählte Extras + Ausgabe; Abspieler aus der Zeitleiste |
+| **G6** | Start | – | `/studio` öffnet den geführten Weg, die heutige Oberfläche heißt „Profi-Ansicht“ (`/studio/profi`); Anleitung „So geht’s“ auf 5 Schritte gekürzt |
+
+**Kosten:** Bild-, Musik- und Text-Richtwerte wie bisher. Für Clip und Stimme gibt es keinen verlässlichen Preis im
+Katalog → am Knopf steht Modellname + „kostet“ (wie heute), keine erfundene Cent-Zahl. Sammelknöpfe nennen die Anzahl.
+
+**Je Etappe der übliche Ablauf** (Bauplan-Nachtrag → rote Tests → Code → Mutanten → Gegenprobe → Version → hydratest →
+E2E 1600/1280 nur über sichtbare Texte → alte E2E grün → PR → Tills OK). Die Attrappe-Bilder (`frontend/neu/bilder/`)
+fliegen in G6 raus.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
