@@ -1,6 +1,6 @@
 /** ATTRAPPE Schritt 2 „Figuren & Orte“: Foto geben → Probebild ansehen → „Passt“. */
 import { Check, ImagePlus, Loader2, MapPin, RefreshCw, Trash2, User, Wand2 } from "lucide-react"
-import type { Person } from "./mockData"
+import { ct, type Person } from "./mockData"
 import { BigButton, SmallButton, StepHead } from "./ui"
 import type { Guided } from "./useGuidedMock"
 
@@ -42,7 +42,7 @@ function PersonCard({ p, g }: { p: Person; g: Guided }) {
           {p.state === "probe" ? (
             <div className="flex flex-wrap gap-2">
               <BigButton onClick={() => g.patchPerson(p.id, { state: "passt" })}><Check size={16} /> Passt</BigButton>
-              <BigButton tone="plain" onClick={() => void g.retryProbe(p.id, p.probe)} cost="≈ 1,5 ct"><RefreshCw size={16} /> Anderes Probebild</BigButton>
+              <BigButton tone="plain" onClick={() => void g.retryProbe(p.id, p.probe)} cost={ct(1.5)}><RefreshCw size={16} /> Anderes Probebild</BigButton>
               <BigButton tone="plain" onClick={() => g.patchPerson(p.id, { state: "leer", photo: undefined, probe: undefined })}>Anderes Foto</BigButton>
             </div>
           ) : (

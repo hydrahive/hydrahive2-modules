@@ -66,7 +66,7 @@ export const suggestedCast = (): Person[] => [
 
 /** Richtwerte wie im echten Studio (Bild ≈ 1,5 ct, Musik ≈ 4 ct). Clip und Stimme: Beispielwerte der Attrappe. */
 export const COST = { image: 1.5, clip: 30, music: 4, voice: 1 }
-export const ct = (v: number) => `≈ ${v.toLocaleString("de-DE", { maximumFractionDigits: 1 })} ct`
+export const ct = (v: number) => `≈ ${v.toLocaleString("de-DE", { maximumFractionDigits: 1 })} Cent`
 
 /** Wartezeit der Attrappe statt echter Erzeugung */
 export const fake = (ms = 1400) => new Promise<void>((r) => setTimeout(r, ms))

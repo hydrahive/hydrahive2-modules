@@ -31,7 +31,7 @@ export function StepIdea({ g }: { g: Guided }) {
           <button type="button" className={pill(g.format === "hoch")} onClick={() => g.setFormat("hoch")}>▯ Handy (hoch)</button>
         </div>
         <div className="flex flex-wrap items-center gap-3 pt-1">
-          <BigButton onClick={() => void g.writeStory()} busy={g.writing} disabled={!g.idea.trim()} cost="≈ 0,2 ct">
+          <BigButton onClick={() => void g.writeStory()} busy={g.writing} disabled={!g.idea.trim()} cost="≈ 0,2 Cent">
             <Sparkles size={16} /> {g.scenes.length ? "Neue Geschichte vorschlagen" : "Geschichte vorschlagen"}
           </BigButton>
           {!g.scenes.length && <BigButton tone="plain" onClick={g.addScene}><Plus size={16} /> Selbst Szenen schreiben</BigButton>}

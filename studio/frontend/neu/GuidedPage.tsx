@@ -40,7 +40,7 @@ function Steps({ g }: { g: Guided }) {
         )
       })}
       <div className="mt-auto space-y-2 border-t border-[#1c2433] pt-3 text-xs text-[#8d9ab0]">
-        <p><span className="rounded-full bg-[#1c2940] px-1.5 py-0.5 font-semibold text-[#e8eef8]">≈ 1,5 ct</span> an einem Knopf heißt: Das kostet etwa so viele Cent. Alles andere ist kostenlos.</p>
+        <p><span className="rounded-full bg-[#1c2940] px-1.5 py-0.5 font-semibold text-[#e8eef8]">≈ 1,5 Cent</span> an einem Knopf heißt: Das kostet ungefähr so viel. Alles andere ist kostenlos.</p>
         <p>Alles, was du hier machst, landet auch in der Profi-Ansicht – dort kannst du genauer schneiden.</p>
         <a href="/studio" className="font-semibold text-[#69d7ff] underline">Zur Profi-Ansicht</a>
       </div>

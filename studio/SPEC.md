@@ -1248,6 +1248,23 @@ Hilfetexte nicht möglich.“ → „Mache das alles, damit man arbeiten kann.�
 - **Neuling-Prüfung (E2E):** leeres Projekt, nur sichtbare Texte: Hydra mit Foto anlegen → Szene mit Shot „Hydra …“ →
   Bild erzeugen → ein zweites Bild → das erste löschen → auf die Zeitleiste → Film erzeugen → herunterladen.
 
+## Neuentwurf: geführter Weg (19.10.) – erst Attrappe, dann bauen
+
+Till nach Etappe C: „Ich blicke immer noch nicht durch.“ Ein Neuling: „Was um Himmels willen muss ich da tun?“ Der alte
+Media-Ablauf (5 nummerierte Schritte links, in der Mitte nur einer, ein großer Knopf) war für beide verständlicher.
+Entwurf und Recherche: `_work/scratch/studio-neuentwurf.md` (Workspace).
+
+**Attrappe** unter `/studio/neu` (Ordner `frontend/neu/`, nur Oberfläche mit Beispieldaten, kein Server, keine Kosten):
+1. **Idee** – eine Frage, Art/Länge/Format als Knöpfe, „Geschichte vorschlagen“ → Szenen als Karten (ändern, löschen, verschieben).
+2. **Figuren & Orte** – Foto geben → Probebild daneben → „Passt“ / „Anderes Probebild“ / „Anderes Foto“ / „Kein Foto“.
+3. **Bilder** – je Szene eine Karte mit Bild, „Mit dabei: [Gesichter]“, „Anderes Bild machen“, „Dieses Bild wegwerfen“, Pfeile.
+4. **Bewegung** – aus dem gezeigten Bild ein Clip, oder „Als Standbild lassen“.
+5. **Film** – ganzer Film am Stück, Schalter Musik/Erzählstimme/Untertitel, „Film erzeugen“, „Film herunterladen“.
+
+Regeln: ein Schritt = eine Aufgabe = ein Hauptknopf; nur die Wörter Szene, Figur/Ort, Bild, Clip, Film; Löschen an der
+Karte; Kosten in Cent am Knopf; „Weiter“ geht auch mit Lücken. Die heutige Oberfläche bleibt als „Profi-Ansicht“.
+Gebaut wird erst nach dem Test mit dem Neuling; die Attrappe wird dann ersetzt, nicht erweitert.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.
