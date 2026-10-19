@@ -5,65 +5,19 @@ dann der Shot, zuletzt Kamera und Licht. So bleibt das Gleichbleibende vorn und 
 """
 from __future__ import annotations
 
-import base64
 from datetime import datetime, timezone
 
-from . import _clean, cast, image_provider, jobs, plan, presets, shots
-from ._clean import CAMERA_KEYS
-from ._store import new_id, project_lock, project_root, root, safe_rel, write_json
+from . import _clean, _image_request, image_provider, jobs, plan, shots
+from ._store import new_id, project_lock, root, safe_rel, write_json
 
-MAX_REFERENCES = 3           # mehr nehmen manche Modelle nicht an (HTTP 400)
 MAX_VARIANTS = 8
 MEDIA_DIR = "studio/media/images"
-_MIME = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "gif": "image/gif"}
 
 
-def _cast(pid: str, scene: dict, shot: dict) -> list[dict]:
-    """Bausteine im Bild: angehakt oder im Text genannt (C2), in dieser Reihenfolge."""
-    els = plan.list_elements(pid)
-    by_id = {e["id"]: e for e in els}
-    return [by_id[i] for i in cast.of_shot(scene, shot, els)]
-
-
-def build_prompt(pid: str, scene: dict, shot: dict) -> str:
-    head = plan.get_head(pid)
-    parts: list[str] = []
-    if head["look"]["style"]:
-        parts.append(head["look"]["style"])
-    cast_ = _cast(pid, scene, shot)
-    palette = list(head["look"]["palette"])
-    for e in cast_:
-        desc = e.get("description") or ""
-        parts.append(f"{e['name']}: {desc}" if desc else e["name"])
-        if e.get("style_anchor"):
-            parts.append(e["style_anchor"])
-        palette += [c for c in e.get("palette") or [] if c not in palette]
-    if palette:
-        parts.append("color palette: " + ", ".join(palette[:12]))
-    if shot.get("prompt"):
-        parts.append(shot["prompt"])
-    if shot.get("shot"):
-        parts.append(presets.phrase_for("shot", shot["shot"]) or "")
-    cam = scene.get("camera") or {}
-    parts += [presets.phrase_for(k, cam[k]) or "" for k in CAMERA_KEYS if k != "shot" and cam.get(k)]
-    # Teile enden oft schon mit einem Satzzeichen (z. B. Beschreibungen aus der KI) – nicht doppelt setzen.
-    return ". ".join(t for t in (p.strip().rstrip(".").strip() for p in parts) if t)
-
-
-def reference_urls(pid: str, shot: dict, scene: dict | None = None) -> list[str]:
-    """Vorlage-Fotos der Bausteine im Bild als data:-URLs (nur echte Bilder im Projekt, höchstens 3)."""
-    urls: list[str] = []
-    for e in _cast(pid, scene or {}, shot):
-        first = [e["probe_rel"]] if e.get("approved") and e.get("probe_rel") else []      # G2: Probebild zuerst
-        for rel in first + list(e.get("references") or []):
-            if not safe_rel(pid, rel, plan.IMAGE_EXT):
-                continue
-            ext = rel.rsplit(".", 1)[-1].lower()
-            data = base64.b64encode((project_root(pid) / rel).read_bytes()).decode("ascii")
-            urls.append(f"data:{_MIME.get(ext, 'image/png')};base64,{data}")
-            if len(urls) >= MAX_REFERENCES:
-                return urls
-    return urls
+# Auftrag, Vorlagen und Startwert: _image_request (Bauplan H). Die Namen bleiben hier für bestehende Aufrufer.
+build_prompt = _image_request.build_prompt
+reference_urls = _image_request.reference_urls
+_cast = _image_request.cast_of
 
 
 def _find(scene: dict, shot_id: str) -> dict:
@@ -73,15 +27,19 @@ def _find(scene: dict, shot_id: str) -> dict:
     raise plan.PlanError("studio_not_found", 404)
 
 
-def _work(pid: str, scene_id: str, shot_id: str) -> dict:
+def _work(pid: str, scene_id: str, shot_id: str, *, change: str = "", fresh: bool = False) -> dict:
     scene = shots.load_scene(pid, scene_id)
     shot = _find(scene, shot_id)
     head = plan.get_head(pid)
     model = head["models"]["image"] or image_provider.server_default_model()
-    prompt = build_prompt(pid, scene, shot)
+    base = shot.get("image_rel") or "" if change else ""
+    if change and not safe_rel(pid, base, plan.IMAGE_EXT):
+        raise jobs.JobFailed("image_gone")
+    prompt = _image_request.build_prompt(pid, scene, shot, change)
+    seed = _image_request.seed_of(pid, scene, shot, fresh=fresh)
     try:
-        raw = image_provider.request_image(model=model, prompt=prompt, references=reference_urls(pid, shot, scene),
-                                           aspect_ratio=head["aspect_ratio"])
+        raw = image_provider.request_image(model=model, prompt=prompt, aspect_ratio=head["aspect_ratio"], seed=seed,
+                                           references=_image_request.reference_urls(pid, shot, scene, base_image=base))
     except image_provider.ProviderError as e:
         raise jobs.JobFailed(str(e)) from e
     ext = image_provider.image_kind(raw)
@@ -92,8 +50,9 @@ def _work(pid: str, scene_id: str, shot_id: str) -> dict:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(raw)
     created = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    write_json(target.with_name(target.name + ".json"), {"prompt": prompt, "model": model, "shot_id": shot_id,
-                                                         "scene_id": scene_id, "created_at": created})
+    write_json(target.with_name(target.name + ".json"), {"prompt": prompt, "model": model, "shot_id": shot_id, "seed": seed,
+                                                         "scene_id": scene_id, "created_at": created,
+                                                         **({"change": change, "from": base} if change else {})})
     _attach(pid, scene_id, shot_id, rel)
     return {"image_rel": rel, "model": model}
 
@@ -113,9 +72,17 @@ def _attach(pid: str, scene_id: str, shot_id: str, rel: str) -> None:
     raise jobs.JobFailed("shot_gone")
 
 
-def start_image(pid: str, scene_id: str, shot_id: str) -> dict:
-    _find(shots.load_scene(pid, scene_id), shot_id)       # 404 vor dem Auftrag
-    return jobs.start(pid, "image", shot_id, scene_id, lambda: _work(pid, scene_id, shot_id))
+def start_image(pid: str, scene_id: str, shot_id: str, data: dict | None = None) -> dict:
+    """`fresh`: anderes Bild mit neuem Startwert (H4). `change`: gezeigtes Bild gezielt ändern (H6)."""
+    data = data if isinstance(data, dict) else {}
+    shot = _find(shots.load_scene(pid, scene_id), shot_id)       # 404 vor dem Auftrag
+    change = ""
+    if "change" in data:
+        if not shot.get("image_rel"):
+            raise plan.PlanError("studio_change_needs_image")
+        change = _image_request.check_change(data["change"])
+    fresh = data.get("fresh") is True
+    return jobs.start(pid, "image", shot_id, scene_id, lambda: _work(pid, scene_id, shot_id, change=change, fresh=fresh))
 
 
 def assign(pid: str, scene_id: str, shot_id: str, rel) -> dict:

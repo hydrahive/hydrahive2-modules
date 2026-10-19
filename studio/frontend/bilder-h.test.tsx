@@ -51,7 +51,7 @@ describe("H – Bild: nur angehakte, gezielt ändern", () => {
     const out = card(shot())
     expect(out).toContain('aria-label="guided.change_label"')
     expect(buttons(out)).toEqual(expect.arrayContaining(["guided.change_image costs_badge", "guided.another_image costs_badge"]))
-    expect(out).toMatch(/<button[^>]*disabled=""[^>]*data-guided-change/)                         // ohne Text gesperrt
+    expect(out).toMatch(/<button(?=[^>]*data-guided-change)(?=[^>]*disabled="")[^>]*>/)              // ohne Text gesperrt
   })
 
   it("ohne Bild: kein Ändern-Feld", () => {

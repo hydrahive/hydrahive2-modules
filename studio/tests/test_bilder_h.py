@@ -119,6 +119,7 @@ def test_h4_element_gets_fixed_seed(client, auth_headers, ws) -> None:
 def test_h4_image_uses_seed_of_first_character(client, auth_headers, ws, provider) -> None:
     ort = _el(client, auth_headers, ws, "Hörsaal", kind="place")
     h = _el(client, auth_headers, ws, "Hydra")
+    assert ort["seed"] != h["seed"]
     sc, sh = _shot(client, auth_headers, "x", ticked=[ort["id"], h["id"]])
     _image(client, auth_headers, sc, sh)
     _image(client, auth_headers, sc, sh)
@@ -143,7 +144,7 @@ def test_h4_no_character_no_seed(client, auth_headers, ws, provider) -> None:
 def test_h5_idea_prompt_forbids_invented_characters(client, auth_headers, ws) -> None:
     from backend import draft_idea
     s = draft_idea.SYSTEM_PROMPT
-    assert "only" in s and "characters from the elements list" in s
+    assert "only" in s and "characters from the elements list" in s and "never invent" in s
     assert "in the language of the idea" in s and "Prompts in English" not in s
 
 
@@ -186,3 +187,38 @@ def test_h6_change_needs_image_and_text(client, auth_headers, ws, provider) -> N
     for bad in ("", "   ", "x" * 1001, 5):
         r = client.post(f"{P}/scenes/{sc['id']}/shots/{sh['id']}/image", headers=auth_headers, json={"change": bad})
         assert r.status_code == 400 and r.json()["detail"]["code"] == "studio_change_invalid", bad
+
+
+def test_h4_seed_comes_from_character_not_place(client, auth_headers, ws, provider) -> None:
+    """Der Ort steht in der Liste VOR der Figur nicht – trotzdem zählt der Startwert der Figur, nie der des Orts."""
+    ort = _el(client, auth_headers, ws, "Hörsaal", kind="place")
+    sc, sh = _shot(client, auth_headers, "leerer Saal", ticked=[ort["id"]])
+    _image(client, auth_headers, sc, sh)
+    assert provider.calls[0]["seed"] is None                                          # nur Ort → kein Startwert
+
+
+def test_h4_fresh_only_with_real_true(client, auth_headers, ws, provider) -> None:
+    h = _el(client, auth_headers, ws, "Hydra")
+    sc, sh = _shot(client, auth_headers, "x", ticked=[h["id"]])
+    _image(client, auth_headers, sc, sh, {"fresh": "ja"})
+    assert provider.calls[0]["seed"] == h["seed"]
+
+
+def test_h4_seed_cannot_be_set_from_outside(client, auth_headers, ws) -> None:
+    for bad in (True, -1, 2**31, "5", 1.5):
+        h = client.post(f"{P}/elements", headers=auth_headers, json={"kind": "character", "name": "X", "seed": bad}).json()
+        assert type(h["seed"]) is int and 0 <= h["seed"] < 2**31 and h["seed"] is not True, bad
+
+
+def test_h6_at_most_three_references(client, auth_headers, ws, monkeypatch) -> None:
+    fake = FakeProvider(result=OTHER_PNG)
+    monkeypatch.setattr("backend.image_provider.request_image", fake)
+    a = _el(client, auth_headers, ws, "Hydra", photo=True)
+    b = _el(client, auth_headers, ws, "Mira", photo=True)
+    c = _el(client, auth_headers, ws, "Ole", photo=True)
+    sc, sh = _shot(client, auth_headers, "alle drei", ticked=[a["id"], b["id"], c["id"]])
+    _image(client, auth_headers, sc, sh)
+    assert len(fake.calls[0]["references"]) == 3
+    client.post(f"{P}/scenes/{sc['id']}/shots/{sh['id']}/image", headers=auth_headers, json={"change": "alle lachen"})
+    _wait(client, auth_headers, sh["id"])
+    assert len(fake.calls[1]["references"]) == 3                                       # gezeigtes Bild + 2 Fotos

@@ -59,9 +59,9 @@ async def decompose(project_id: str, scene_id: str, data: Data, auth: Auth) -> d
 
 
 @router.post("/shots/{shot_id}/image", status_code=202)
-def generate_image(project_id: str, scene_id: str, shot_id: str, auth: Auth) -> dict:
+def generate_image(project_id: str, scene_id: str, shot_id: str, auth: Auth, data: Annotated[Any, Body()] = None) -> dict:
     guard(auth[0], project_id)
-    return _run(generate.start_image, project_id, scene_id, shot_id)
+    return _run(generate.start_image, project_id, scene_id, shot_id, data)
 
 
 @router.put("/shots/{shot_id}/variant")

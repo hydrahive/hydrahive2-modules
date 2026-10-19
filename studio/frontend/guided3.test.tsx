@@ -56,8 +56,8 @@ describe("G3 – Logik", () => {
     expect(variantStep(shot({ variants: ["a", "b", "c"], image_rel: "zz" }), -1)).toBe("a")          // unbekannt → das erste
   })
 
-  it("Mit dabei an/aus: weg → ausgeschlossen; dazu → angehakt und nicht mehr ausgeschlossen", () => {
-    expect(castToggle(shot({ cast: ["h"], element_ids: ["h"] }), "h")).toEqual({ element_ids: [], excluded_ids: ["h"] })
+  it("Mit dabei an/aus (H2: im Bild = angehakt): weg → abgehakt; dazu → angehakt und nicht mehr ausgeschlossen", () => {
+    expect(castToggle(shot({ cast: ["h"], element_ids: ["h"] }), "h")).toEqual({ element_ids: [], excluded_ids: [] })
     expect(castToggle(shot({ cast: [], excluded_ids: ["h"] }), "h")).toEqual({ element_ids: ["h"], excluded_ids: [] })
     expect(castToggle(shot({ cast: [] }), "m")).toEqual({ element_ids: ["m"], excluded_ids: [] })
   })
@@ -71,7 +71,7 @@ describe("G3 – Logik", () => {
 
 const card = (s: Shot, jobs: Job[] = [], format = "16:9") => html(<ImageCard card={{ n: 2, part: 0, text: "Hydra im Wald", sceneId: "s1", shot: s }}
   base="/w" format={format} elements={[el(), el({ id: "m", name: "Mira" })]} jobs={jobs} busy={false} model="m/bild"
-  onMake={noop} onFlip={noop} onDrop={noop} onCast={noop} />)
+  onMake={noop} onFlip={noop} onDrop={noop} onCast={noop} onChange={noop} />)
 
 describe("G3 – Oberfläche", () => {
   it("ohne Bild: „Noch kein Bild“, „Bild machen“ (kostet), Nummer + Text", () => {

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 
 from . import plan, vision_provider
 from ._store import project_root, safe_rel
@@ -17,11 +18,27 @@ CODES = {"no_key": ("studio_describe_no_key", 400)}
 
 
 def prompt_for(el: dict) -> str:
+    """H1: nur das dauerhafte Aussehen – die Situation auf dem Foto darf nicht in jedes Bild wandern."""
     word = KIND_WORD.get(el.get("kind"), "Figur")
-    return (f"Das Foto zeigt die {word} „{el.get('name') or ''}“ für einen Film. Antworte NUR mit JSON: "
-            '{"description": "<2–4 Sätze auf Deutsch: wer oder was das ist, Wirkung, Rolle>", '
-            '"style_anchor": "<feste Merkmale auf Englisch, kommagetrennt, die in jedem Bild gleich bleiben müssen: '
-            'Gestalt, Gesicht/Form, Farben, Kleidung bzw. Material und Bauweise>"}. Keine Erklärungen.')
+    return (f"Das Foto zeigt die {word} „{el.get('name') or ''}“ für einen Film. Beschreibe NUR, wie sie dauerhaft aussieht: "
+            "Gestalt, Gesicht bzw. Form, Farben, Fell/Haut/Material, Kleidung. Beschreibe NICHT, was auf dem Foto gerade "
+            "passiert: keine Haltung (sitzt, steht, liegt), keine Tätigkeit, keinen Ort, keine Möbel, keinen Hintergrund, "
+            "keine Kamera. Antworte NUR mit JSON: "
+            '{"description": "<1–3 Sätze auf Deutsch, nur Aussehen>", '
+            '"style_anchor": "<feste Merkmale auf Englisch, kommagetrennt, die in jedem Bild gleich bleiben müssen>"}. '
+            "Keine Erklärungen.")
+
+
+# H1: Sätze, die eine Situation beschreiben, fliegen raus – auch wenn die Bild-KI sich nicht an den Auftrag hält.
+_SITUATION = re.compile(r"\b(sitzt|sitzen|steht|stehen|liegt|liegen|schaut|schauen|blickt|hält|lehnt|Sessel|Stuhl|Sofa|"
+                        r"Tisch|Schreibtisch|Bildschirm|Monitor|Zimmer|Raum|Hintergrund|Regal|Fenster|im Bild|auf dem Foto)\b",
+                        re.IGNORECASE)
+
+
+def looks_only(text: str) -> str:
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    kept = [s for s in sentences if s and not _SITUATION.search(s)]
+    return " ".join(kept) or (sentences[0] if sentences else "")
 
 
 def parse(raw: str) -> dict:
@@ -36,7 +53,7 @@ def parse(raw: str) -> dict:
     desc = data.get("description") if isinstance(data, dict) else None
     if not isinstance(desc, str) or not desc.strip():
         raise plan.PlanError("studio_describe_failed", 502)
-    return {"description": desc, "style_anchor": data.get("style_anchor") or ""}   # Länge und Typ prüft save_element
+    return {"description": looks_only(desc), "style_anchor": data.get("style_anchor") or ""}   # Länge/Typ prüft save_element
 
 
 def _image_url(pid: str, el: dict) -> str:

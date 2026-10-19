@@ -12,7 +12,9 @@ export function useImages(g: GuidedState, active: boolean) {
   const batch = js.jobs.find((j) => j.kind === "images_all" && (j.status === "running" || j.status === "queued")) ?? null
 
   const after = async (fn: () => Promise<unknown>) => { await g.run(fn); await js.reload() }
-  const make = (c: ImageCardData) => after(() => planApi.generateImage(g.pid, c.sceneId, c.shot.id))
+  // „Bild machen“ = fester Startwert der Figur; „Anderes Bild machen“ = bewusst neu gewürfelt (H4)
+  const make = (c: ImageCardData) => after(() => planApi.generateImage(g.pid, c.sceneId, c.shot.id, c.shot.image_rel ? { fresh: true } : {}))
+  const change = (c: ImageCardData, text: string) => after(() => planApi.generateImage(g.pid, c.sceneId, c.shot.id, { change: text }))
   const all = () => after(() => planApi.batchStart(g.pid, "images_all"))
   const stop = () => batch ? after(() => planApi.cancelJob(g.pid, batch.id)) : Promise.resolve()
   const flip = (c: ImageCardData, dir: -1 | 1) => {
@@ -27,7 +29,7 @@ export function useImages(g: GuidedState, active: boolean) {
     void g.run(() => mediaApi.remove(g.pid, rel))
       .then(() => setDropping(null))
   }
-  return { jobs: js.jobs, batch, dropping, setDropping, make, all, stop, flip, cast, confirmDrop }
+  return { jobs: js.jobs, batch, dropping, setDropping, make, change, all, stop, flip, cast, confirmDrop }
 }
 
 export type ImageActions = ReturnType<typeof useImages>

@@ -39,6 +39,8 @@ export function useCast(g: GuidedState, t: T, active: boolean) {
     if (ok) await probe(e.id)
   }
 
+  const redescribe = (id: string) => g.run(() => describeApi.describe(g.pid, id))
+
   const add = (kind: "character" | "place") => void g.run(() =>
     planApi.addElement(g.pid, { kind, name: t(kind === "place" ? "guided.new_place" : "guided.new_character"), description: "", references: [] }))
 
@@ -50,7 +52,7 @@ export function useCast(g: GuidedState, t: T, active: boolean) {
 
   return {
     jobs: jobsState.jobs, uploading, deleting, setDeleting, open: castOpen(g.plan?.elements ?? []),
-    save, probe, photo, add, confirmDelete, errorOf: (e: unknown) => errorText(t, e),
+    save, probe, photo, add, confirmDelete, redescribe, errorOf: (e: unknown) => errorText(t, e),
   }
 }
 

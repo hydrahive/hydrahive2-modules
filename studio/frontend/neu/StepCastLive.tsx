@@ -39,7 +39,8 @@ export function StepCastLive({ g, c }: { g: GuidedState; c: CastActions }) {
             onName={(name) => c.save(e, { name })} onDescription={(description) => c.save(e, { description })}
             onPhoto={(f) => void c.photo(e, f)} onProbe={() => void c.probe(e.id)} onApprove={() => c.save(e, { approved: true })}
             onReopen={() => c.save(e, { approved: false })} onNoPhoto={(v) => c.save(e, { no_photo: v })}
-            onOtherPhoto={() => c.save(e, { references: [], probe_rel: "", approved: false })} onDelete={() => c.setDeleting(e)} />
+            onOtherPhoto={() => c.save(e, { references: [], probe_rel: "", approved: false })} onDelete={() => c.setDeleting(e)}
+            onRedescribe={() => void c.redescribe(e.id)} />
         ))}
       </div>
       {c.deleting && <DeleteDialog name={c.deleting.name} busy={g.busy} onConfirm={c.confirmDelete} onClose={() => c.setDeleting(null)} />}

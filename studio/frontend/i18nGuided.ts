@@ -152,6 +152,13 @@ export const guided_de = {
       "5": "Film: Wähl Musik, Stimme und Untertitel, dann „Film erzeugen“ und herunterladen.",
     },
     help_close: "Los geht’s",
+    looks: "So sieht {{name}} aus",
+    looks_hint: "Nur das Aussehen – nicht was sie tut oder wo sie ist. Das steht bei jeder Szene.",
+    redescribe: "Aus dem Foto neu beschreiben",
+    change_label: "Was soll anders sein?",
+    change_placeholder: "z. B. Hydra steht vorne an der Tafel und erklärt",
+    change_image: "Bild ändern",
+    change_hint: "Das Bild bleibt, nur das wird geändert. Das alte findest du mit den Pfeilen.",
     gap: {
       "1": "Noch keine Szenen – lass dir eine Geschichte vorschlagen oder schreib selbst.",
       "2": "{{count}} noch nicht fertig – du kannst trotzdem weiter.",
@@ -163,6 +170,8 @@ export const guided_de = {
 
 export const guided_err_de = {
   studio_film_running: "Der Film entsteht gerade schon. Bitte warten, bis er fertig ist.",
+  studio_change_invalid: "Bitte kurz schreiben, was anders sein soll (höchstens 1.000 Zeichen).",
+  studio_change_needs_image: "Zum Ändern braucht die Szene zuerst ein Bild.",
   studio_film_invalid: "Die Auswahl für den Film ist ungültig. Bitte die Seite neu laden.",
   studio_film_edited: "Der Film wurde in der Profi-Ansicht von Hand geschnitten.",
   studio_probe_running: "Für diese Figur entsteht gerade schon ein Probebild. Bitte kurz warten.",
@@ -172,6 +181,8 @@ export const guided_err_de = {
 
 export const guided_err_en: typeof guided_err_de = {
   studio_film_running: "The film is already being made. Please wait until it is done.",
+  studio_change_invalid: "Please write briefly what should be different (at most 1,000 characters).",
+  studio_change_needs_image: "The scene needs a picture first before it can be changed.",
   studio_film_invalid: "The film options are invalid. Please reload the page.",
   studio_film_edited: "The film was cut by hand in the pro view.",
   studio_probe_running: "A test picture for this character is already being drawn. Please wait a moment.",
@@ -331,6 +342,13 @@ export const guided_en: typeof guided_de = {
       "5": "Film: Choose music, voice and subtitles, then “Make film” and download it.",
     },
     help_close: "Let's go",
+    looks: "This is how {{name}} looks",
+    looks_hint: "Only the looks – not what it does or where it is. That goes with each scene.",
+    redescribe: "Describe again from the photo",
+    change_label: "What should be different?",
+    change_placeholder: "e.g. Hydra stands at the board in front and explains",
+    change_image: "Change picture",
+    change_hint: "The picture stays, only this changes. The old one is still there with the arrows.",
     gap: {
       "1": "No scenes yet – let the AI suggest a story or write it yourself.",
       "2": "{{count}} not done yet – you can still go on.",

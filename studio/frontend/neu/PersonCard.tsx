@@ -27,6 +27,8 @@ interface Props {
   onNoPhoto: (v: boolean) => void
   onOtherPhoto: () => void
   onDelete: () => void
+  /** H1: Aussehen aus dem Foto neu beschreiben (nur Aussehen, ohne Situation) */
+  onRedescribe: () => void
 }
 
 const ICON = { character: User, place: MapPin, object: Package }
@@ -72,6 +74,15 @@ export function PersonCard(p: Props) {
           </label>
           {photo && <button type="button" className={main} onClick={p.onProbe} disabled={p.busy}><Wand2 size={16} /> {t("guided.probe_show")}<Costs model={p.imageModel || undefined} /></button>}
           <button type="button" className={plain} onClick={() => p.onNoPhoto(true)} disabled={p.busy}><Wand2 size={16} /> {t("guided.no_photo", { what })}</button>
+        </div>
+      )}
+
+      {photo && state !== "busy" && (
+        <div className="space-y-1 rounded-[10px] bg-[#080b11] p-3" data-guided-looks>
+          <Field key={`l:${p.el.description}`} value={p.el.description} label={t("guided.looks", { name: p.el.name })} rows={2}
+            placeholder={t("guided.description_placeholder")} onSave={p.onDescription} />
+          <p className="text-xs text-[#8d9ab0]">{t("guided.looks_hint")}</p>
+          <SmallButton onClick={p.onRedescribe} disabled={p.busy}>{t("guided.redescribe")}<Costs model={undefined} /></SmallButton>
         </div>
       )}
 
