@@ -125,3 +125,51 @@ describe("C3 – Texte", () => {
     }
   })
 })
+
+type El = { props: Record<string, unknown> & { children?: unknown } }
+const find = (node: unknown, attr: string, out: El[] = []): El[] => {
+  if (Array.isArray(node)) node.forEach((n) => find(n, attr, out))
+  else if (node && typeof node === "object" && "props" in node) {
+    const el = node as El
+    if (el.props[attr] !== undefined) out.push(el)
+    find(el.props.children, attr, out)
+  }
+  return out
+}
+
+describe("C3 – Klicks führen an die richtige Stelle", () => {
+  it("„Weiter zu …“ öffnet den nächsten Reiter", () => {
+    const onGo = vi.fn()
+    const tree = WorkspaceIntro({ workspace: "audio", open: true, onToggle: noop, onGo })
+    ;(find(tree, "data-intro-next")[0].props.onClick as () => void)()
+    expect(onGo).toHaveBeenCalledWith("subtitles")
+  })
+  it("jeder Schritt in „So geht’s“ springt in seinen Reiter", () => {
+    const onGo = vi.fn()
+    const tree = HowTo({ onGo })
+    for (const b of find(tree, "data-howto-go")) (b.props.onClick as () => void)()
+    expect(onGo.mock.calls.map((c) => c[0])).toEqual(HOWTO.map((h) => h.ws))
+  })
+})
+
+describe("C3 – Modell im Kosten-Hinweis kommt aus dem Drehbuch", () => {
+  it("Shot-Formular reicht Bild-, Video- und Sprachmodell weiter", async () => {
+    const { ShotForm } = await import("./ShotForm")
+    const shot = { id: "s", shot: "", prompt: "", element_ids: [], duration: 5, status: "image_ready", image_rel: "a.png", video_rel: null, variants: ["a.png"], speech: "Hallo" }
+    const out = html(<ShotForm shot={shot as never} index={0} elements={[]} presets={[]} busy={false} onSave={noop} onDelete={noop} base="/w"
+      onGenerate={noop} onChoose={noop} onVideo={noop} onSpeech={noop} models={{ image: "m/bild", video: "m/video", voice: "m/stimme" }} />)
+    for (const m of ["m/bild", "m/video", "m/stimme"]) expect(out).toContain(`costs_hint:{"model":"${m}"}`)
+  })
+  it("Planen gibt die Modelle des Drehbuchs an das Shot-Formular", () => {
+    const src = Object.values(import.meta.glob("./PlanInspector.tsx", { query: "?raw", import: "default", eager: true })).join("")
+    expect(src).toMatch(/<ShotForm[\s\S]*models=\{plan\.screenplay\.models\}/)
+  })
+})
+
+describe("C3 – im Studio verdrahtet", () => {
+  it("Kurzhilfe bekommt den Reiterwechsel; Hilfe öffnet sich beim ersten Besuch", () => {
+    const src = Object.values(import.meta.glob(["./StudioPage.tsx", "./useStudioState.ts"], { query: "?raw", import: "default", eager: true })).join("\n")
+    expect(src).toMatch(/<WorkspaceIntro[^>]*onGo=\{s\.setWorkspace\}/)
+    expect(src).toMatch(/useState<"help" \| "command" \| null>\(\(\) => \(firstVisit\(\) \? "help" : null\)\)/)
+  })
+})
