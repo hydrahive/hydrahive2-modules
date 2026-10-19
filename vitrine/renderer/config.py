@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 
 DEFAULTS: dict = {
@@ -14,7 +15,23 @@ DEFAULTS: dict = {
     "fps": 24,                  # Bildrate (12–30); Atelier-Videos haben 24
     "message_seconds": 15,      # Standard-Dauer einer Einblendung (5–120); Fehler bleiben länger
     "dashboard_return_seconds": 120,   # Dashboard → zurück zum Video nach so vielen Sekunden ohne Eingabe (30–1800)
+    "dashboard": {"tasks_user": "till", "github_project": "Hydrahive DEV",          # Statuszentrale S2
+                  "github_repos": ["hydrahive/hydrahive2.0", "hydrahive/hydrahive2-modules"]},
 }
+_USER = re.compile(r"^[A-Za-z0-9_.@-]{1,64}$")
+_REPO = re.compile(r"^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$")
+
+
+def dashboard_ok(d) -> bool:
+    """Gemeinsame Prüfung für load() und das PUT-Schema (eine Wahrheit)."""
+    if not isinstance(d, dict) or set(d) != {"tasks_user", "github_project", "github_repos"}:
+        return False
+    repos = d["github_repos"]
+    return (isinstance(d["tasks_user"], str) and bool(_USER.fullmatch(d["tasks_user"]))
+            and isinstance(d["github_project"], str) and 0 < len(d["github_project"].strip()) <= 100
+            and isinstance(repos, list) and len(repos) <= 5
+            and all(isinstance(r, str) and _REPO.fullmatch(r) and not any(x in (".", "..") for x in r.split("/"))
+                    for r in repos))
 FPS_RANGE, MESSAGE_RANGE, RETURN_RANGE = (12, 30), (5, 120), (30, 1800)
 
 
@@ -44,6 +61,8 @@ def load(data_dir: Path) -> dict:
         out["message_seconds"] = raw["message_seconds"]
     if _int_in(raw.get("dashboard_return_seconds"), *RETURN_RANGE):
         out["dashboard_return_seconds"] = raw["dashboard_return_seconds"]
+    if dashboard_ok(raw.get("dashboard")):
+        out["dashboard"] = copy.deepcopy(raw["dashboard"])
     return out
 
 

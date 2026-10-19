@@ -16,11 +16,21 @@ def test_ablegen_und_lesen(tmp_path):
     assert not list((tmp_path / "inbox").glob("*.tmp"))
 
 
-def test_abgelaufene_verschwinden_und_werden_geloescht(tmp_path):
+def test_abgelaufene_verschwinden_vom_video_bleiben_aber_24h(tmp_path):
+    """S3: abgelaufen = weg vom Video, aber 24 h unter „Neu“ in der Statuszentrale (vorher sofort gelöscht)."""
     inbox.post(tmp_path, "kurz", seconds=5, now=1000.0)
     assert inbox.visible(tmp_path, now=1004.0)
     assert inbox.visible(tmp_path, now=1006.0) == []
-    assert list((tmp_path / "inbox").iterdir()) == []
+    new, hist = inbox.recent(tmp_path, now=1006.0)
+    assert [m["text"] for m in new] == ["kurz"] and hist == []
+    assert len(list((tmp_path / "inbox").glob("*.json"))) == 1
+
+
+def test_nach_24h_geloescht(tmp_path):
+    inbox.post(tmp_path, "alt", seconds=5, now=1000.0)
+    assert inbox.recent(tmp_path, now=1000.0 + inbox.KEEP_SECONDS - 1)[0]
+    assert inbox.recent(tmp_path, now=1000.0 + inbox.KEEP_SECONDS + 1) == ([], [])
+    assert list((tmp_path / "inbox").glob("*.json")) == []
 
 
 def test_fehler_bleibt_ohne_dauer_zehn_minuten(tmp_path):
@@ -86,7 +96,51 @@ def test_ordner_begrenzt(tmp_path):
 
 def test_bestaetigen_entfernt(tmp_path):
     m = inbox.post(tmp_path, "weg damit", kind="error", now=1.0)
-    assert inbox.dismiss(tmp_path, m["id"]) is True
-    assert inbox.active(tmp_path, now=2.0) == []
-    assert inbox.dismiss(tmp_path, m["id"]) is False
-    assert inbox.dismiss(tmp_path, "../config") is False
+    assert inbox.dismiss(tmp_path, m["id"], now=2.0) is True
+    assert inbox.active(tmp_path, now=2.0) == [] and inbox.recent(tmp_path, now=2.0) == ([], []), "Cockpit löscht ganz"
+    assert inbox.dismiss(tmp_path, m["id"], now=2.0) is False
+    assert inbox.dismiss(tmp_path, "../config", now=2.0) is False
+
+
+def test_gelesen_geht_in_den_verlauf_und_vom_video(tmp_path):
+    a = inbox.post(tmp_path, "erste", kind="error", now=1000.0)
+    inbox.post(tmp_path, "zweite", now=1001.0)
+    assert inbox.mark_read(tmp_path, a["id"], now=1002.0) is True
+    assert [m["text"] for m in inbox.visible(tmp_path, now=1003.0)] == ["zweite"], "gelesen → sofort weg vom Video"
+    new, hist = inbox.recent(tmp_path, now=1003.0)
+    assert [m["text"] for m in new] == ["zweite"] and [m["text"] for m in hist] == ["erste"]
+    assert hist[0]["read"] == 1002.0
+
+
+def test_gelesen_unbekannt_oder_pfad(tmp_path):
+    inbox.post(tmp_path, "x", now=1.0)
+    assert inbox.mark_read(tmp_path, "0" * 12, now=2.0) is False
+    assert inbox.mark_read(tmp_path, "../config", now=2.0) is False
+    assert inbox.mark_read(tmp_path, "", now=2.0) is False, "leere ID darf nichts treffen"
+    m = inbox.recent(tmp_path, now=2.0)[0][0]
+    assert inbox.mark_read(tmp_path, m["id"][:6], now=2.0) is False, "nur die volle ID"
+    assert inbox.recent(tmp_path, now=2.0)[1] == []
+
+
+def test_gleiche_meldung_nach_dem_lesen_wieder_neu(tmp_path):
+    m = inbox.post(tmp_path, "Backup kaputt", kind="error", now=1000.0)
+    inbox.mark_read(tmp_path, m["id"], now=1010.0)
+    again = inbox.post(tmp_path, "Backup kaputt", kind="error", now=1020.0)
+    assert again["id"] == m["id"] and again["count"] == 2 and again["read"] is None
+    new, hist = inbox.recent(tmp_path, now=1021.0)
+    assert [x["id"] for x in new] == [m["id"]] and hist == []
+
+
+def test_alte_datei_ohne_read_gilt_als_ungelesen(tmp_path):
+    (tmp_path / "inbox").mkdir()
+    (tmp_path / "inbox" / "0000001000.000000-abcdefabcdef.json").write_text(json.dumps(
+        {"id": "abcdefabcdef", "text": "alt", "title": "", "kind": "info", "count": 1, "created": 1000.0,
+         "expires": 1015.0, "source": ""}))
+    new, hist = inbox.recent(tmp_path, now=1100.0)
+    assert [m["id"] for m in new] == ["abcdefabcdef"] and hist == []
+
+
+def test_recent_neueste_zuerst(tmp_path):
+    for i in range(4):
+        inbox.post(tmp_path, f"m{i}", now=1000.0 + i)
+    assert [m["text"] for m in inbox.recent(tmp_path, now=1010.0)[0]] == ["m3", "m2", "m1", "m0"]
