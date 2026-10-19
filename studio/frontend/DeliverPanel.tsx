@@ -16,10 +16,15 @@ interface Props {
   busy: boolean
   onRender: () => void
   onCut: () => void
+  /** Sprachen mit Untertiteln (6c); mitliefern als abschaltbare Spuren, nie eingebrannt */
+  subtitleLanguages?: string[]
+  withSubtitles?: boolean
+  onWithSubtitles?: (on: boolean) => void
 }
 
 /** Reiter „Ausgabe“ (4d): Film als MP4 erzeugen, fertige Filme ansehen und herunterladen. */
-export function DeliverPanel({ clips, aspect, renders, job, busy, onRender, onCut }: Props) {
+export function DeliverPanel({ clips, aspect, renders, job, busy, onRender, onCut, subtitleLanguages = [], withSubtitles = false,
+  onWithSubtitles }: Props) {
   const { t } = useTranslation("studio")
   const sum = deliverSummary(clips)
   const [w, h] = filmSize(aspect)
@@ -41,6 +46,12 @@ export function DeliverPanel({ clips, aspect, renders, job, busy, onRender, onCu
             <p className="text-[#8d9ab0]">{t("deliver_hint")}</p>
           </>
         )}
+        {subtitleLanguages.length ? (
+          <label className="flex cursor-pointer items-center gap-2 text-[#c3ccdd]">
+            <input type="checkbox" checked={withSubtitles} onChange={(e) => onWithSubtitles?.(e.target.checked)} data-deliver-subtitles className="accent-[#69d7ff]" />
+            {t("deliver_subtitles", { names: subtitleLanguages.map((l) => t(`lang.${l}`)).join(", ") })}
+          </label>
+        ) : <p className="text-[#68758a]">{t("deliver_subtitles_none")}</p>}
         <button type="button" onClick={onRender} disabled={busy || running || !sum.clips} data-deliver-run
           className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-50">
           {running ? <Loader2 size={13} className="animate-spin" /> : <Film size={13} />} {t("deliver_run")}
@@ -58,6 +69,7 @@ export function DeliverPanel({ clips, aspect, renders, job, busy, onRender, onCu
               <figcaption className="space-y-1">
                 <p className="text-[#e8eef8]">{(r.created_at || "").slice(0, 16).replace("T", " ")}</p>
                 <p className="text-[#8d9ab0]">{t("deliver_film_info", { length: minutes(r.duration ?? 0), width: r.width, height: r.height })}</p>
+                {!!r.subtitles?.length && <p className="text-[#8d9ab0]">{t("deliver_film_subtitles", { names: r.subtitles.map((l) => t(`lang.${l}`)).join(", ") })}</p>}
                 {!!r.missing && <p className="text-[#ffb86b]">{t("deliver_missing", { count: r.missing })}</p>}
                 <a href={fileUrl(r.abs)} download={`film-${(r.created_at || r.name).slice(0, 16).replace(/[^0-9]/g, "")}.mp4`}
                   className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 font-bold text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940]">

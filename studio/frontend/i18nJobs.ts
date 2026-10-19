@@ -77,6 +77,9 @@ export const jobs_de = {
     no_speech_found_hear: "Im Ton wurde nichts Gesprochenes gefunden.",
     changed_hear: "Die Untertitel wurden geändert, während der Ton angehört wurde. Damit nichts verloren geht, wurden sie nicht ersetzt. Bitte erneut starten.",
     render_failed_hear: "Der Ton des Films konnte nicht vorbereitet werden. Bitte erneut versuchen.",
+    provider_failed_translate: "Die Text-KI war nicht erreichbar oder hat abgelehnt. Bitte später erneut versuchen oder im Drehbuch unter „Modelle“ ein anderes Text-Modell eintragen.",
+    bad_answer_translate: "Die Text-KI hat keine passende Übersetzung geliefert. Damit keine Zeilen vertauscht werden, wurde nichts gespeichert. Bitte erneut versuchen.",
+    changed_translate: "Die Untertitel in der Zielsprache wurden während des Übersetzens geändert. Damit nichts verloren geht, wurden sie nicht ersetzt.",
     no_text: "Der Shot hat keinen Sprechtext mehr.",
   },
 }
@@ -158,6 +161,9 @@ export const jobs_en: typeof jobs_de = {
     no_speech_found_hear: "Nothing spoken was found in the sound.",
     changed_hear: "The subtitles were changed while the sound was being listened to. So that nothing is lost, they were not replaced. Please start again.",
     render_failed_hear: "The film's sound could not be prepared. Please try again.",
+    provider_failed_translate: "The text AI could not be reached or refused. Please try again later or enter a different text model in the screenplay under “Models”.",
+    bad_answer_translate: "The text AI did not return a matching translation. So that no lines get mixed up, nothing was saved. Please try again.",
+    changed_translate: "The subtitles in the target language were changed while translating. So that nothing is lost, they were not replaced.",
     no_text: "The shot has no speech text any more.",
   },
 }

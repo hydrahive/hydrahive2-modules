@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { latestOnly } from "./latestOnly"
 import type { Job } from "./planApi"
 import { renderApi, type RenderItem } from "./renderApi"
+import { translateApi } from "./translateLogic"
 import type { PlanState } from "./usePlan"
 
 const POLL_MS = 1500
@@ -16,6 +17,8 @@ export function useDeliver(p: PlanState, projectId: string, active: boolean, job
   const job = jobs.find((j) => j.kind === "render") ?? null
   const running = job?.status === "running" || job?.status === "queued"
   const wasRunning = useRef(false)
+  const [subLangs, setSubLangs] = useState<string[]>([])                           // Sprachen mit Untertiteln (6c)
+  const [withSubs, setWithSubs] = useState(false)
 
   const load = useCallback(async () => {
     if (!projectId) { setRenders([]); return }
@@ -27,9 +30,12 @@ export function useDeliver(p: PlanState, projectId: string, active: boolean, job
 
   useEffect(() => {
     if (!active) return
-    const id = window.setTimeout(() => { void load(); reloadJobs() }, 0)
+    const id = window.setTimeout(() => {
+      void load(); reloadJobs()
+      translateApi.languages(projectId).then((l) => setSubLangs(l.languages.filter((x) => x.count > 0).map((x) => x.language)), () => setSubLangs([]))
+    }, 0)
     return () => window.clearTimeout(id)
-  }, [active, load, reloadJobs])
+  }, [active, load, reloadJobs, projectId])
 
   // Fortschritt öfter nachfragen als die allgemeinen Aufträge; am Ende Liste neu laden
   useEffect(() => {
@@ -48,6 +54,7 @@ export function useDeliver(p: PlanState, projectId: string, active: boolean, job
 
   return {
     renders: loadedFor === projectId ? renders : null, job,                      // anderes Projekt → erst laden
-    start: () => p.act(() => renderApi.start(projectId), t("notice_render_started"), () => reloadJobs()),
+    start: () => p.act(() => renderApi.start(projectId, withSubs && subLangs.length > 0), t("notice_render_started"), () => reloadJobs()),
+    subtitleLanguages: subLangs, withSubtitles: withSubs, setWithSubtitles: setWithSubs,
   }
 }
