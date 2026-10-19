@@ -37,7 +37,8 @@ def test_resolve_screenplay_and_defaults() -> None:
 
 
 @pytest.mark.parametrize(("aspect", "quality"), [("4:3", None), ("21:9", "standard"), ("x", None), (None, "ultra"),
-                                                  (169, None), (None, 720), ("", None), (None, "")])
+                                                  (169, None), (None, 720), ("", None), (None, ""), (None, ["high"]),
+                                                  (["9:16"], None)])
 def test_resolve_rejects(aspect, quality) -> None:
     """Wählbar sind nur „wie im Drehbuch“, 16:9, 9:16, 1:1 und die drei Qualitäten."""
     with pytest.raises(ValueError):
@@ -57,7 +58,8 @@ def _image_timeline(client, h, ws) -> None:
     put_timeline(client, h, [clip("image", 0, 0, 2, "studio/media/images/x.png")])
 
 
-@pytest.mark.parametrize("body", [{"aspect": "4:3"}, {"quality": "ultra"}, {"aspect": 1}, {"quality": None, "aspect": []}])
+@pytest.mark.parametrize("body", [{"aspect": "4:3"}, {"quality": "ultra"}, {"aspect": 1}, {"quality": None, "aspect": []},
+                                  {"quality": {"a": 1}}])
 def test_bad_preset_400(client, auth_headers, ws, body) -> None:
     _image_timeline(client, auth_headers, ws)
     r = client.post(f"{R}/render", headers=auth_headers, json=body)

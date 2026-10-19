@@ -30,7 +30,7 @@ def resolve(aspect, quality, screenplay_aspect: str) -> dict:
         aspect = "screenplay"
     if quality is None:
         quality = DEFAULT_QUALITY
-    if not isinstance(aspect, str) or aspect not in ASPECTS or not isinstance(quality, str) or quality not in QUALITIES:
+    if aspect not in ASPECTS or not isinstance(quality, str) or quality not in QUALITIES:   # Liste o. Ä. nie als Schlüssel
         raise ValueError("unbekannte Vorlage")
     real = screenplay_aspect if aspect == "screenplay" else aspect
     if real not in RATIOS:

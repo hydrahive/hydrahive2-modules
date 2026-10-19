@@ -6,6 +6,7 @@ const post = vi.fn((..._a: unknown[]) => new Promise(() => {}))
 vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() => {})), post: (...a: unknown[]) => post(...a) } }))
 vi.mock("@/shared/files", () => ({ fileUrl: (p: string) => `/f${p}` }))
 import { DeliverPanel } from "./DeliverPanel"
+import { DeliverPreset } from "./DeliverPreset"
 import { ASPECTS, QUALITIES, downloadName, outputSize, presetLabel } from "./deliverLogic"
 import { studioI18n } from "./i18n"
 import { renderApi, type RenderItem } from "./renderApi"
@@ -81,6 +82,8 @@ describe("7b – Vorlagen: Reiter „Ausgabe“", () => {
     const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k)
     expect(presetLabel(t, { aspect: "1:1", quality: "preview" })).toBe('deliver_film_preset:{"aspect":"1:1","quality":"deliver_quality.preview"}')
     expect(presetLabel(t, {})).toBe("")
+    expect(presetLabel(t, { aspect: "9:16" })).toBe("")
+    expect(presetLabel(t, { quality: "high" })).toBe("")
   })
 })
 
@@ -104,5 +107,37 @@ describe("7b – Texte", () => {
       for (const k of ["deliver_result", "deliver_film_preset", "deliver_aspect_label", "deliver_quality_label"]) expect(s[k], `${lang} ${k}`).toBeTruthy()
       expect(s.deliver_aspect.screenplay).toContain("{{aspect}}")
     }
+  })
+})
+
+type El = { type: unknown; props: Record<string, unknown> & { children?: unknown } }
+const selects = (node: unknown, out: El[] = []): El[] => {
+  if (Array.isArray(node)) node.forEach((n) => selects(n, out))
+  else if (node && typeof node === "object" && "props" in node) {
+    const el = node as El
+    if (el.type === "select") out.push(el)
+    selects(el.props.children, out)
+  }
+  return out
+}
+
+describe("7b – Vorlagen: Auswahl bedienen", () => {
+  it("Format ändern behält die Qualität und umgekehrt", () => {
+    const onChange = vi.fn()
+    const tree = DeliverPreset({ preset: { aspect: "screenplay", quality: "high" }, screenplay: "16:9", onChange })
+    const [aspect, quality] = selects(tree)
+    expect(aspect.props["data-deliver-aspect"]).toBe(true)
+    ;(aspect.props.onChange as (e: unknown) => void)({ target: { value: "9:16" } })
+    expect(onChange).toHaveBeenLastCalledWith({ aspect: "9:16", quality: "high" })
+    ;(quality.props.onChange as (e: unknown) => void)({ target: { value: "preview" } })
+    expect(onChange).toHaveBeenLastCalledWith({ aspect: "screenplay", quality: "preview" })
+  })
+
+  it("während ein Film entsteht, sind beide Felder gesperrt", () => {
+    const out = html(<DeliverPanel {...base} aspect="16:9" job={{ id: "j", kind: "render", target: "render:x", scene_id: "", status: "running", error: null,
+      result: null, created_at: "x", finished_at: null, progress: { total: 100, done: 10, failed: 0, current: "" } }} />)
+    expect(out).toMatch(/<select[^>]*disabled=""[^>]*data-deliver-aspect/)
+    expect(out).toMatch(/<select[^>]*disabled=""[^>]*data-deliver-quality/)
+    expect(html(<DeliverPanel {...base} aspect="16:9" />)).not.toMatch(/<select[^>]*disabled=""/)
   })
 })
