@@ -49,6 +49,7 @@ class FakeEvdi:
             on_mode(*self.modes.pop(0))
 
     def grab(self, h):
+        self.calls.append("grab")
         b, g, r = self.color[2], self.color[1], self.color[0]
         self.buf[:] = bytes([b, g, r, 0]) * (len(self.buf) // 4)
 
@@ -107,3 +108,14 @@ def test_kein_geraet_anlegbar_unavailable():
     f.add = lambda: -1
     with pytest.raises(es.EvdiUnavailable, match="Modul"):
         _src(f)
+
+
+def test_drain_holt_ab_ohne_jpeg():
+    f = FakeEvdi()
+    s = _src(f)
+    s.drain()
+    grabs = f.calls.count("grab")
+    assert s.ready and s.last_jpeg is None
+    f.color = (1, 2, 3)
+    s.drain()
+    assert s.last_jpeg is None
