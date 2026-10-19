@@ -66,6 +66,8 @@ export const guide_de = {
   costs_badge: "kostet",
   costs_hint: "Kostet beim KI-Anbieter Geld – Modell: {{model}}",
   costs_hint_default: "Kostet beim KI-Anbieter Geld – Modell: Standard des Servers",
+  costs_local_badge: "lokal",
+  costs_local_hint: "Läuft auf deinem eigenen Rechner und kostet nichts – Modell: {{model}}",
 }
 
 export const guide_en: typeof guide_de = {
@@ -134,4 +136,6 @@ export const guide_en: typeof guide_de = {
   costs_badge: "costs",
   costs_hint: "Costs money at the AI provider – model: {{model}}",
   costs_hint_default: "Costs money at the AI provider – model: server default",
+  costs_local_badge: "local",
+  costs_local_hint: "Runs on your own computer and costs nothing – model: {{model}}",
 }
