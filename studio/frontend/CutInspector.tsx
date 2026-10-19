@@ -2,12 +2,14 @@ import { AlertTriangle, ArrowRight, ListPlus } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ClipMixForm } from "./ClipMixForm"
 import { clipLength } from "./cutLogic"
+import type { LibraryItem } from "./api"
+import { MediaActions } from "./MediaActions"
 import type { TimelineClip } from "./timelineApi"
 
 const round = (n: number) => Math.round(n * 100) / 100
 
 /** Eigenschaften eines Clips der Zeitleiste; Platzhalter springen zum Shot ins „Planen“. */
-export function CutInspector({ clip, onPlan, media = null, onAppend, mix, onUnbind }: {
+export function CutInspector({ clip, onPlan, media = null, onAppend, mix, onUnbind, onDeleteMedia }: {
   clip: TimelineClip | null
   onPlan: (c: TimelineClip) => void
   /** Tonclip (5b): Lautstärke und Blenden einstellen. */
@@ -15,11 +17,13 @@ export function CutInspector({ clip, onPlan, media = null, onAppend, mix, onUnbi
   /** An einen Shot gebundene Sprache (5c) lösen. */
   onUnbind?: () => void
   /** Gewähltes Medium der Bibliothek (4b): an die Zeitleiste anhängen. */
-  media?: { kind: string; name: string } | null
+  media?: (Pick<LibraryItem, "kind" | "name"> & Partial<LibraryItem>) | null
   onAppend?: () => void
+  /** C1: gewähltes Medium löschen (Rückfrage) */
+  onDeleteMedia?: (item: LibraryItem) => void
 }) {
   const { t } = useTranslation("studio")
-  if (!clip && media) return <MediaAppend media={media} onAppend={onAppend} />
+  if (!clip && media) return <MediaAppend media={media} onAppend={onAppend} onDelete={onDeleteMedia} />
   return (
     <section className="flex h-full min-h-0 flex-col overflow-y-auto p-3" data-studio-panel="inspector">
       <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("properties")}</h2>
@@ -58,7 +62,8 @@ export function CutInspector({ clip, onPlan, media = null, onAppend, mix, onUnbi
   )
 }
 
-function MediaAppend({ media, onAppend }: { media: { kind: string; name: string }; onAppend?: () => void }) {
+function MediaAppend({ media, onAppend, onDelete }: { media: Pick<LibraryItem, "kind" | "name"> & Partial<LibraryItem>; onAppend?: () => void
+  onDelete?: (item: LibraryItem) => void }) {
   const { t } = useTranslation("studio")
   const ok = media.kind === "image" || media.kind === "video"
   const sound = media.kind === "music" || media.kind === "audio"
@@ -75,6 +80,7 @@ function MediaAppend({ media, onAppend }: { media: { kind: string; name: string 
           <p className="mt-2 text-[10px] leading-relaxed text-[#68758a]">{t(sound ? "cut_append_sound_hint" : "cut_append_hint")}</p>
         </>
       ) : <p className="mt-3 rounded-[4px] border border-[#46617f] bg-[#111827] px-2.5 py-2 text-[11px] leading-relaxed text-[#8d9ab0]">{t("cut_not_on_timeline")}</p>}
+      {onDelete && media.rel && <MediaActions item={media as LibraryItem} onDelete={() => onDelete(media as LibraryItem)} />}
     </section>
   )
 }

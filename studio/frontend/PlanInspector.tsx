@@ -13,8 +13,10 @@ import { useModelCatalogs } from "./modelCatalog"
 import { useVoices } from "./useVoices"
 
 /** Planen, rechts: Formular des Gewählten. `key` mit `rev` setzt das Formular nach dem Speichern auf die frischen Daten. */
-export function PlanInspector({ p, shots, images, jobs = [], upload }: { p: PlanState; shots?: ShotsState; images: LibraryItem[]; jobs?: Job[];
-  upload?: { busy: boolean; reference: (elementId: string, file: File, pending: Partial<PlanElement> | null) => void } }) {
+export function PlanInspector({ p, shots, images, jobs = [], upload, onDeleteMedia }: { p: PlanState; shots?: ShotsState; images: LibraryItem[]; jobs?: Job[];
+  upload?: { busy: boolean; reference: (elementId: string, file: File, pending: Partial<PlanElement> | null) => void }
+  /** C1: Bild/Video eines Shots löschen (Rückfrage) */
+  onDeleteMedia?: (rel: string, name: string) => void }) {
   const { t } = useTranslation("studio")
   const { plan, selection: sel } = p
   const catalogs = useModelCatalogs(sel?.kind === "head")          // erst laden, wenn das Drehbuch-Formular offen ist
@@ -50,7 +52,8 @@ export function PlanInspector({ p, shots, images, jobs = [], upload }: { p: Plan
         base={plan.base} job={latestJob(jobs, shot.id, "image")} videoJob={latestJob(jobs, shot.id, "video")}
         onGenerate={() => void shots.generateImage(shot.id)} onVideo={() => void shots.generateVideo(shot.id)}
         onChoose={(rel) => void shots.chooseVariant(shot.id, rel)}
-        voices={voices} speechJob={latestJob(jobs, shot.id, "speech")} onSpeech={() => void shots.generateSpeech(shot.id)} />
+        voices={voices} speechJob={latestJob(jobs, shot.id, "speech")} onSpeech={() => void shots.generateSpeech(shot.id)}
+        onDeleteMedia={onDeleteMedia && ((rel) => onDeleteMedia(rel, `${scene.title || t("untitled")} · ${t("shot", { n: index + 1 })}`))} />
     }
   }
   return (

@@ -1,4 +1,4 @@
-import { Film, Loader2 } from "lucide-react"
+import { Film, Loader2, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { fileUrl } from "@/shared/files"
 import { jobText } from "./jobLogic"
@@ -11,10 +11,12 @@ interface Props {
   base: string
   job: Job | null
   onGenerate: () => void
+  /** C1: Video löschen */
+  onDelete?: (rel: string) => void
 }
 
 /** Video des Shots: aus dem gewählten Bild erzeugen (Auftrag im Hintergrund), fertiges Video abspielen. */
-export function ShotVideo({ shot, base, job, onGenerate }: Props) {
+export function ShotVideo({ shot, base, job, onGenerate, onDelete }: Props) {
   const { t } = useTranslation("studio")
   const running = job?.status === "running" || job?.status === "queued" || shot.status === "video_processing"
   const error = jobText(t, job)
@@ -25,6 +27,10 @@ export function ShotVideo({ shot, base, job, onGenerate }: Props) {
       {video && (
         <video src={fileUrl(video)} poster={shot.image_rel ? fileUrl(fileOf(base, shot.image_rel)) : undefined} controls preload="metadata"
           className="aspect-video w-full rounded-[3px] bg-black" data-shot-video-player />
+      )}
+      {video && onDelete && shot.video_rel && !running && (
+        <button type="button" onClick={() => onDelete(shot.video_rel as string)} data-shot-video-delete
+          className="flex items-center gap-1 text-[11px] text-[#8d9ab0] hover:text-[#ff6b8a]"><Trash2 size={11} /> {t("video_delete")}</button>
       )}
       {!shot.image_rel && <p className="text-[11px] text-[#68758a]">{t("video_needs_image")}</p>}
       <button type="button" onClick={onGenerate} disabled={running || !shot.image_rel} data-shot-video-generate

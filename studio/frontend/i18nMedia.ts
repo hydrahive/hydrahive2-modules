@@ -1,0 +1,48 @@
+/** Texte für Löschen und Herunterladen (C1). Ohne Terminal- oder Datei-Hinweise. */
+export const media_de = {
+  media_download: "Herunterladen",
+  media_delete: "Löschen …",
+  media_delete_question: "„{{name}}“ endgültig löschen?",
+  media_used_shots_one: "Wird benutzt in {{count}} Shot: {{names}}",
+  media_used_shots_other: "Wird benutzt in {{count}} Shots: {{names}}",
+  media_used_clips_one: "Liegt {{count}}-mal auf der Zeitleiste",
+  media_used_clips_other: "Liegt {{count}}-mal auf der Zeitleiste",
+  media_used_elements_one: "Ist Vorlage-Bild von {{names}}",
+  media_used_elements_other: "Ist Vorlage-Bild von {{count}} Bausteinen: {{names}}",
+  media_delete_after: "Nach dem Löschen: Shots nehmen ihr nächstes Bild (oder keins), auf der Zeitleiste bleibt an der Stelle eine schwarze Karte, die du ersetzen oder entfernen kannst.",
+  media_unused: "Die Datei wird nirgends benutzt.",
+  media_usage_loading: "Prüfe, wo die Datei benutzt wird …",
+  media_not_own: "Diese Datei gehört zu „{{source}}“ und kann nur dort gelöscht werden.",
+  media_deleted: "Gelöscht.",
+  image_delete: "Dieses Bild löschen",
+  video_delete: "Video löschen …",
+  media_err: {
+    studio_media_busy: "Für diesen Shot läuft gerade ein Auftrag. Bitte warten, bis er fertig ist, dann löschen.",
+    studio_media_not_own: "Diese Datei gehört nicht zum Studio und kann hier nicht gelöscht werden.",
+    studio_media_not_found: "Diese Datei gibt es nicht mehr. Bitte die Bibliothek neu laden.",
+  },
+}
+
+export const media_en: typeof media_de = {
+  media_download: "Download",
+  media_delete: "Delete …",
+  media_delete_question: "Delete “{{name}}” for good?",
+  media_used_shots_one: "Used in {{count}} shot: {{names}}",
+  media_used_shots_other: "Used in {{count}} shots: {{names}}",
+  media_used_clips_one: "Is on the timeline {{count}} time",
+  media_used_clips_other: "Is on the timeline {{count}} times",
+  media_used_elements_one: "Is a reference image of {{names}}",
+  media_used_elements_other: "Is a reference image of {{count}} building blocks: {{names}}",
+  media_delete_after: "After deleting: shots take their next image (or none); on the timeline a black card stays in its place, which you can replace or remove.",
+  media_unused: "The file is not used anywhere.",
+  media_usage_loading: "Checking where the file is used …",
+  media_not_own: "This file belongs to “{{source}}” and can only be deleted there.",
+  media_deleted: "Deleted.",
+  image_delete: "Delete this image",
+  video_delete: "Delete video …",
+  media_err: {
+    studio_media_busy: "A job is running for this shot right now. Please wait until it is done, then delete.",
+    studio_media_not_own: "This file does not belong to the studio and cannot be deleted here.",
+    studio_media_not_found: "This file no longer exists. Please reload the library.",
+  },
+}

@@ -33,7 +33,8 @@ const KNOWN = new Set(["studio_plan_exists", "studio_nothing_to_import", "studio
   "studio_subtitles_invalid", "studio_subtitles_conflict", "studio_subtitles_not_empty", "studio_subtitles_empty",
   "studio_subtitles_running", "studio_subtitles_no_audio", "studio_subtitles_no_speech", "studio_subtitles_cloud_model",
   "studio_subtitles_same_language", "studio_subtitles_too_long",
-  "studio_upload_invalid", "studio_upload_empty", "studio_upload_too_large", "studio_upload_too_many"])
+  "studio_upload_invalid", "studio_upload_empty", "studio_upload_too_large", "studio_upload_too_many",
+  "studio_media_busy", "studio_media_not_own"])
 
 /** Fehlertext: bekannte Fehlercodes des Studios übersetzt, sonst die Meldung, sonst ein Standardtext. */
 export function errorText(t: (k: string) => string, e: unknown): string {
