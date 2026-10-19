@@ -18,15 +18,15 @@ function ClipCard({ s, i, g }: { s: Scene; i: number; g: Guided }) {
         {pic ? <img src={pic} alt={`Szene ${i + 1}`} style={s.clip === "done" ? motion : undefined} className="h-full w-full object-cover" />
           : <div className="grid h-full place-items-center p-4 text-center text-sm text-[#8d9ab0]">Noch kein Bild – zurück zu Schritt 3.</div>}
         {s.clip === "busy" && <div className="absolute inset-0 grid place-items-center bg-black/60 text-sm text-white"><span className="flex items-center gap-2"><Loader2 className="animate-spin" size={18} /> Bild wird bewegt … (1–2 Minuten)</span></div>}
-        {s.clip === "done" && <span className="absolute left-2 top-2 rounded-full bg-[#3ddc97] px-2 py-0.5 text-xs font-bold text-[#04140d]">▶ bewegt · 5 s</span>}
-        {s.clip === "still" && <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-xs font-bold text-white">Standbild · 4 s</span>}
+        {s.clip === "done" && <span className="absolute left-2 top-2 rounded-full bg-[#3ddc97] px-2 py-0.5 text-xs font-bold text-[#04140d]">✓ bewegt sich · 5 Sek.</span>}
+        {s.clip === "still" && <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-xs font-bold text-white">Standbild · 4 Sek.</span>}
       </div>
       {pic && (
         <div className="flex flex-wrap gap-2">
           {(s.clip === "none" || s.clip === "still") && <BigButton onClick={() => void g.makeClip(s.id)} cost={ct(COST.clip)}><Clapperboard size={16} /> Bewegen</BigButton>}
           {s.clip === "none" && <SmallButton onClick={() => g.patchScene(s.id, { clip: "still" })}><Pause size={14} /> Als Standbild lassen</SmallButton>}
           {s.clip === "done" && <>
-            <SmallButton onClick={() => void g.makeClip(s.id)}><RefreshCw size={14} /> Noch einmal ({ct(COST.clip)})</SmallButton>
+            <SmallButton onClick={() => void g.makeClip(s.id)}><RefreshCw size={14} /> Neu bewegen ({ct(COST.clip)})</SmallButton>
             <SmallButton onClick={() => g.patchScene(s.id, { clip: "none" })}><Trash2 size={14} /> Bewegung wegwerfen</SmallButton>
           </>}
         </div>
@@ -40,7 +40,7 @@ export function StepClips({ g }: { g: Guided }) {
   return (
     <div>
       <style>{MOTION_CSS}</style>
-      <StepHead n={4} title="Bewegung" text="Jetzt wird aus jedem Bild ein kurzer bewegter Clip. Das kostet mehr als ein Bild – du kannst eine Szene auch als Standbild lassen." />
+      <StepHead n={4} title="Bewegung" text={`Jetzt wird aus jedem Bild ein kurzer bewegter Clip (5 Sekunden, ${ct(COST.clip)} je Szene). Du kannst eine Szene auch als Standbild lassen – das ist kostenlos.`} />
       {open > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <BigButton onClick={() => void g.makeAllClips()} cost={ct(open * COST.clip)}><Clapperboard size={16} /> {open === g.scenes.length ? "Alle bewegen" : `Die übrigen ${open} bewegen`}</BigButton>

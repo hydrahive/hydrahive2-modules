@@ -1,6 +1,6 @@
 /** ATTRAPPE „Geführtes Studio“: gemeinsame Bausteine (großer Knopf, Gesichter, Kopf eines Schritts). */
 import type { ReactNode } from "react"
-import { Loader2 } from "lucide-react"
+import { Loader2, MapPin, User } from "lucide-react"
 import type { Person } from "./mockData"
 
 export function BigButton({ children, onClick, busy, disabled, tone = "main", cost }: {
@@ -44,7 +44,7 @@ export function Face({ p, size = 28 }: { p: Person; size?: number }) {
     ? <img src={pic} alt={p.name} title={p.name} style={{ width: size, height: size }} className="rounded-full border-2 border-[#0b111b] object-cover" />
     : <span title={p.name || "?"} style={{ width: size, height: size }}
         className="grid place-items-center rounded-full border-2 border-[#0b111b] bg-[#2a364b] text-[11px] font-black text-[#e8eef8]">
-        {(p.name || "?").slice(0, 1).toUpperCase()}
+        {p.kind === "ort" ? <MapPin size={size * 0.55} /> : <User size={size * 0.55} />}
       </span>
 }
 

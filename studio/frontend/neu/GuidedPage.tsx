@@ -22,7 +22,7 @@ function Steps({ g }: { g: Guided }) {
   return (
     <nav aria-label="Schritte" className="flex w-64 shrink-0 flex-col gap-1 border-r border-[#1c2433] bg-[#0b111b] p-4">
       <div className="mb-1 text-xs font-black uppercase tracking-[0.2em] text-[#8d9ab0]">Dein Film</div>
-      <div className="mb-3 truncate text-base font-bold text-[#f2f6fc]">{g.idea ? g.idea.split(/[.:!?]/)[0] : "Neuer Film"}</div>
+      <div className="mb-3 line-clamp-2 text-base font-bold leading-snug text-[#f2f6fc]" title={g.idea}>{g.idea ? g.idea.split(/[.:!?,]/)[0] : "Neuer Film"}</div>
       {STEPS.map(({ n, title, hint, Icon }) => {
         const active = g.step === n
         const done = n < 5 ? missing(g, n) === null : g.film === "done"
@@ -40,6 +40,7 @@ function Steps({ g }: { g: Guided }) {
         )
       })}
       <div className="mt-auto space-y-2 border-t border-[#1c2433] pt-3 text-xs text-[#8d9ab0]">
+        <p><span className="rounded-full bg-[#1c2940] px-1.5 py-0.5 font-semibold text-[#e8eef8]">≈ 1,5 ct</span> an einem Knopf heißt: Das kostet etwa so viele Cent. Alles andere ist kostenlos.</p>
         <p>Alles, was du hier machst, landet auch in der Profi-Ansicht – dort kannst du genauer schneiden.</p>
         <a href="/studio" className="font-semibold text-[#69d7ff] underline">Zur Profi-Ansicht</a>
       </div>

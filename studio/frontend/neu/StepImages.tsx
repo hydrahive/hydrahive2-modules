@@ -34,7 +34,7 @@ function ImageCard({ s, i, g }: { s: Scene; i: number; g: Guided }) {
         {s.images.length === 0
           ? <BigButton onClick={() => void g.makeImage(s.id)} busy={s.imageBusy} cost={ct(COST.image)}><Sparkles size={16} /> Bild machen</BigButton>
           : <>
-              <SmallButton onClick={() => void g.makeImage(s.id)} disabled={s.imageBusy}><RefreshCw size={14} /> Noch eins ({ct(COST.image)})</SmallButton>
+              <SmallButton onClick={() => void g.makeImage(s.id)} disabled={s.imageBusy}><RefreshCw size={14} /> Anderes Bild machen ({ct(COST.image)})</SmallButton>
               <SmallButton onClick={() => g.dropImage(s.id)}><Trash2 size={14} /> Dieses Bild wegwerfen</SmallButton>
             </>}
       </div>
@@ -46,7 +46,7 @@ export function StepImages({ g }: { g: Guided }) {
   const open = g.scenes.filter((s) => !s.images.length && !s.imageBusy).length
   return (
     <div>
-      <StepHead n={3} title="Bilder" text="Für jede Szene entsteht ein Bild. Gefällt es nicht, mach noch eins – mit den Pfeilen blätterst du, das gezeigte Bild kommt in den Film." />
+      <StepHead n={3} title="Bilder" text="Für jede Szene entsteht ein Bild. Gefällt dir eins nicht, lass ein anderes machen oder wirf es weg. Hast du mehrere, blätterst du mit den Pfeilen – das gezeigte Bild kommt in den Film." />
       {g.scenes.length === 0 ? (
         <p className="rounded-[10px] border border-[#2a364b] p-6 text-base text-[#c3ccdd]">Noch keine Szenen. Geh zurück zu <b>Schritt 1 · Idee</b>.</p>
       ) : (

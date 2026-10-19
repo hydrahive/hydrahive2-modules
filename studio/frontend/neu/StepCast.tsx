@@ -23,7 +23,7 @@ function PersonCard({ p, g }: { p: Person; g: Guided }) {
             <span className="font-bold">Foto hineinziehen oder hier klicken</span>
             <span className="text-xs text-[#8d9ab0]">Ein deutliches Foto reicht. Die KI macht daraus ein Probebild.</span>
           </button>
-          <SmallButton onClick={() => g.patchPerson(p.id, { state: "ohne" })}><Wand2 size={14} /> Ohne Foto – die KI erfindet {p.kind === "figur" ? "die Figur" : "den Ort"}</SmallButton>
+          <BigButton tone="plain" onClick={() => g.patchPerson(p.id, { state: "ohne" })}><Wand2 size={16} /> Kein Foto – die KI erfindet {p.kind === "figur" ? "die Figur" : "den Ort"}</BigButton>
         </div>
       )}
 
@@ -42,7 +42,7 @@ function PersonCard({ p, g }: { p: Person; g: Guided }) {
           {p.state === "probe" ? (
             <div className="flex flex-wrap gap-2">
               <BigButton onClick={() => g.patchPerson(p.id, { state: "passt" })}><Check size={16} /> Passt</BigButton>
-              <BigButton tone="plain" onClick={() => void g.retryProbe(p.id, p.probe)} cost="≈ 1,5 ct"><RefreshCw size={16} /> Neu versuchen</BigButton>
+              <BigButton tone="plain" onClick={() => void g.retryProbe(p.id, p.probe)} cost="≈ 1,5 ct"><RefreshCw size={16} /> Anderes Probebild</BigButton>
               <BigButton tone="plain" onClick={() => g.patchPerson(p.id, { state: "leer", photo: undefined, probe: undefined })}>Anderes Foto</BigButton>
             </div>
           ) : (
@@ -77,8 +77,8 @@ export function StepCast({ g }: { g: Guided }) {
       <div className="grid gap-4 lg:grid-cols-2">
         {g.people.map((p) => <PersonCard key={p.id} p={p} g={g} />)}
         <div className="flex flex-col justify-center gap-2 rounded-[12px] border border-dashed border-[#2a364b] p-4">
-          <BigButton tone="plain" onClick={() => g.addPerson("figur")}><User size={16} /> + Figur</BigButton>
-          <BigButton tone="plain" onClick={() => g.addPerson("ort")}><MapPin size={16} /> + Ort</BigButton>
+          <BigButton tone="plain" onClick={() => g.addPerson("figur")}><User size={16} /> Figur hinzufügen</BigButton>
+          <BigButton tone="plain" onClick={() => g.addPerson("ort")}><MapPin size={16} /> Ort hinzufügen</BigButton>
           <p className="text-xs text-[#8d9ab0]">Figur = Mensch, Tier, Maskottchen. Ort = ein Platz, der öfter vorkommt.</p>
         </div>
       </div>

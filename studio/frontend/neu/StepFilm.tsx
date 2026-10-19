@@ -39,8 +39,8 @@ export function StepFilm({ g }: { g: Guided }) {
           </div>
           {shown.length > 0 && (
             <div className="mt-3 flex items-center gap-3">
-              <button type="button" onClick={() => setPlaying(!playing)} aria-label={playing ? "Anhalten" : "Abspielen"}
-                className="grid h-12 w-12 place-items-center rounded-full bg-[#69d7ff] text-[#06111c]">{playing ? <Pause size={22} /> : <Play size={22} />}</button>
+              <button type="button" onClick={() => setPlaying(!playing)}
+                className="flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#69d7ff] px-5 text-base font-bold text-[#06111c]">{playing ? <><Pause size={20} /> Anhalten</> : <><Play size={20} /> Abspielen</>}</button>
               <div className="flex flex-1 gap-1">
                 {shown.map((s, i) => (
                   <button key={s.id} type="button" onClick={() => setAt(i)} aria-label={`Szene ${g.scenes.indexOf(s) + 1}`}
