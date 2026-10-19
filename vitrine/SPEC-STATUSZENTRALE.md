@@ -130,7 +130,7 @@ Auswahl der HydraHive-Nutzer, Standard = der Admin, der zuletzt die Vitrine-Eins
 2. Mining-Bereich **ja**, wenn das Modul installiert ist.
 3. „Wartet auf Till“ **ja**, mit dem Token des Projekts **Hydrahive DEV** (nur lesend genutzt).
 
-## S3 — Meldungen mit Verlauf (Entscheidung Till 19.10.2026: Option C)
+## S3 — Meldungen mit Verlauf (Entscheidung Till 19.10.2026: Option C; abgenommen am Gehäuse am 19.10.2026, vitrine 0.9.1)
 
 S2 ist abgenommen (Till, 19.10.: „alles lesbar und plausibel“; Firefox 0,5 % eines Kerns über 60 s). S3 sorgt dafür, dass
 eine Meldung nicht verloren geht: Auf dem Video bleibt die Karte wie heute (15 s, Fehler 10 min). In der Statuszentrale
@@ -174,6 +174,14 @@ steht sie aber **24 Stunden** lang, bis Till sie als gelesen markiert.
   von 127.0.0.1, Rate-Limit des Kerns). Körper nur `{"id": "<12 Hex-Zeichen>"}` (alles andere → 422). Die ID wird nur
   verglichen, nie zu einem Pfad. Unbekannte ID → 404. Antwort 204.
 - „Gelesen“ und „Zurück“ bleiben die **einzigen** Kiosk-Routen, die etwas ändern.
+
+### Abnahme S3 (19.10.2026, vitrine 0.9.1)
+- Till: zwei Meldungen aus dem Cockpit (14:21, 14:23) → Karte → Maus 20–30 s kräftig bewegt → Neu → Gelesen (zweimal
+  204) → Verlauf. „Hat alles geklappt, nicht eingefroren.“
+- Gemessen 14:21–14:27 jede Sekunde: X immer frei (ep_poll), 0 × `flip_done`, EVDI-Thread nie im Warten auf X;
+  Firefox 0,4 % eines Kerns.
+- Vorher (0.9.0) fror die Statuszentrale bei Mausbewegung ein: Der EVDI-Thread fragte X nach dem Zeiger, X hing im
+  EVDI-Bildwechsel → gegenseitiges Warten. Behoben in 0.9.1 (eigener Zeiger-Thread, PR #212).
 
 ### Akzeptanz S3
 - Meldung abschicken (Cockpit oder Werkzeug) → Karte auf dem Video mit Zeile „Maus bewegen …“; Maus → steht unter Neu
