@@ -55,7 +55,7 @@ describe("B2 – Aus einer Idee", () => {
     const out = form("")
     expect(out).toContain("idea_label")
     expect(out).toContain("idea_style")
-    expect(buttons(out)).toEqual(["idea_len.30", "idea_len.60", "idea_len.120", "cancel", "idea_run"])
+    expect(buttons(out)).toEqual(["idea_len.30", "idea_len.60", "idea_len.120", "cancel", "idea_run costs_badge"])   // C3: Zeichen „kostet“
     expect(out).toMatch(/aria-pressed="true"[^>]*>idea_len\.60|data-idea-length="60"[^>]*aria-pressed="true"/)
     expect(out).toMatch(/<button[^>]*disabled=""[^>]*data-idea-run/)
     expect(form("Ein Leuchtturm")).not.toMatch(/<button[^>]*disabled=""[^>]*data-idea-run/)

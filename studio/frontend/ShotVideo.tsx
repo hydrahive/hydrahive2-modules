@@ -5,18 +5,21 @@ import { jobText } from "./jobLogic"
 import type { Job, Shot } from "./planApi"
 import { fileOf } from "./planLogic"
 import { Label } from "./formParts"
+import { Costs } from "./Costs"
 
 interface Props {
   shot: Shot
   base: string
   job: Job | null
   onGenerate: () => void
+  /** C3: Modell aus dem Drehbuch für den Kosten-Hinweis (leer = Standard des Servers) */
+  model?: string
   /** C1: Video löschen */
   onDelete?: (rel: string) => void
 }
 
 /** Video des Shots: aus dem gewählten Bild erzeugen (Auftrag im Hintergrund), fertiges Video abspielen. */
-export function ShotVideo({ shot, base, job, onGenerate, onDelete }: Props) {
+export function ShotVideo({ shot, base, job, onGenerate, model, onDelete }: Props) {
   const { t } = useTranslation("studio")
   const running = job?.status === "running" || job?.status === "queued" || shot.status === "video_processing"
   const error = jobText(t, job)
@@ -37,7 +40,8 @@ export function ShotVideo({ shot, base, job, onGenerate, onDelete }: Props) {
         className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#46617f] py-1.5 text-xs font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
         {running ? <Loader2 size={13} className="animate-spin" /> : <Film size={13} />}
         {running ? t("video_running") : video ? t("video_again") : t("video_generate", { seconds: shot.duration })}
-      </button>
+       <Costs model={model} />
+        </button>
       {error && <p className="rounded-[4px] border border-[#ff6b8a]/40 bg-[#ff6b8a]/10 px-2 py-1.5 text-[11px] leading-relaxed text-[#ff6b8a]" data-shot-video-error>{error}</p>}
     </div>
   )

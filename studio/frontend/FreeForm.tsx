@@ -8,6 +8,7 @@ import { jobText } from "./jobLogic"
 import type { Catalog } from "./modelCatalog"
 import { ModelPick } from "./ModelPick"
 import { ASPECTS, type Job } from "./planApi"
+import { Costs } from "./Costs"
 
 interface Props {
   form: FreeFormState
@@ -75,7 +76,8 @@ export function FreeForm({ form, catalog, images, job, busy, onChange, onRun }: 
       <button type="button" onClick={onRun} disabled={busy || running || !freeValid(form)} data-free-run
         className="flex items-center justify-center gap-1.5 rounded-[4px] bg-[#69d7ff] py-1.5 font-black text-[#08111c] disabled:opacity-50">
         {running ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />} {t("free_run", { count: form.count })}
-      </button>
+       <Costs model={form.model} />
+        </button>
       {running && job?.progress && <p className="text-[#ffb86b]" data-free-progress>{t("free_progress", { done: job.progress.done + job.progress.failed, total: job.progress.total })}</p>}
       {job?.status === "failed" && <p className="text-[#ff6b8a]" data-free-error>{jobText(t, job)}</p>}
       {job?.status === "done" && failed > 0 && <p className="text-[#ffb86b]">{t("free_partly", { failed })}</p>}

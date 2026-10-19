@@ -55,7 +55,7 @@ export function PlanInspector({ p, shots, images, jobs = [], upload, onDeleteMed
         onGenerate={() => void shots.generateImage(shot.id)} onVideo={() => void shots.generateVideo(shot.id)}
         onChoose={(rel) => void shots.chooseVariant(shot.id, rel)}
         voices={voices} speechJob={latestJob(jobs, shot.id, "speech")} onSpeech={() => void shots.generateSpeech(shot.id)}
-        onDeleteMedia={onDeleteMedia && ((rel) => onDeleteMedia(rel, `${scene.title || t("untitled")} · ${t("shot", { n: index + 1 })}`))} />
+        models={plan.screenplay.models} onDeleteMedia={onDeleteMedia && ((rel) => onDeleteMedia(rel, `${scene.title || t("untitled")} · ${t("shot", { n: index + 1 })}`))} />
     }
   }
   return (

@@ -90,10 +90,11 @@ describe("B1 – Kurzhilfe, Fortschritt, So geht’s", () => {
     expect(buttons(html(<ProgressBar overview={O({ scenes: 1, shots: 1, with_image: 1, with_video: 1, clips: 1 })} onGo={noop} />))).toEqual([])
   })
 
-  it("So geht’s: fünf Schritte mit Sprung-Knöpfen in die Reiter", () => {
+  it("So geht’s: alle Schritte mit Sprung-Knöpfen in die Reiter (C3: neun statt fünf)", () => {
     const out = html(<HowTo onGo={noop} />)
-    expect([...out.matchAll(/data-howto-step="(\d)"/g)].map((m) => m[1])).toEqual(["1", "2", "3", "4", "5"])
-    expect(buttons(out)).toEqual(["howto_go.plan", "howto_go.plan", "howto_go.generate", "howto_go.generate", "howto_go.edit"])
+    expect([...out.matchAll(/data-howto-step="(\w+)"/g)].map((m) => m[1])).toEqual(["film", "photo", "shots", "images", "videos", "cut", "audio", "subtitles", "deliver"])
+    expect(buttons(out)).toEqual(["howto_go.plan", "howto_go.plan", "howto_go.plan", "howto_go.generate", "howto_go.generate", "howto_go.edit",
+      "howto_go.audio", "howto_go.subtitles", "howto_go.deliver"])
   })
 
   it("Texte: alle neuen Schlüssel in de und en, keine Etappen-Nummern in Nutzertexten", () => {

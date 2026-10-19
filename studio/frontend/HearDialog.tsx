@@ -4,6 +4,7 @@ import { costText, lengthText, type HearInfo } from "./hearLogic"
 import { jobText } from "./jobLogic"
 import type { Job } from "./planApi"
 import { Backdrop } from "./StudioDialogs"
+import { Costs } from "./Costs"
 
 interface Props { info: HearInfo | null; language: string; job: Job | null; busy: boolean; onRun: () => void; onClose: () => void }
 
@@ -45,6 +46,7 @@ function Body({ info, language, job, busy, onRun, onClose }: Omit<Props, "info">
         <button type="button" disabled={busy || running || !!block} data-hear-run onClick={onRun}
           className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-40">
           {busy ? <Loader2 size={12} className="animate-spin" /> : <Ear size={12} />} {t("hear_run")}
+         <Costs model={info?.model} />
         </button>
       </div>
     </div>

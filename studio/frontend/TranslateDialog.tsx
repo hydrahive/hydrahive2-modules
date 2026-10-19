@@ -6,6 +6,7 @@ import { jobText } from "./jobLogic"
 import type { Job } from "./planApi"
 import { Backdrop } from "./StudioDialogs"
 import { targetChoices, type LanguageList } from "./translateLogic"
+import { Costs } from "./Costs"
 
 interface Props {
   list: LanguageList | null
@@ -46,7 +47,8 @@ export function TranslateDialog({ list, from, count, model, job, busy, onRun, on
           <button type="button" disabled={busy || running || !to || !count} data-translate-run onClick={() => onRun(to, existing > 0)}
             className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-40">
             {busy ? <Loader2 size={12} className="animate-spin" /> : <Languages size={12} />} {t("translate_run")}
-          </button>
+           <Costs model={model} />
+        </button>
         </div>
       </div>
     </Backdrop>
