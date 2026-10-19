@@ -1,6 +1,6 @@
 /** Geführter Weg (G1): rein, ohne DOM – damit testbar. Eine Karte = eine Szene (mit genau einem Shot im Normalfall). */
 import type { IdeaLength } from "../draftApi"
-import type { Job, Plan, PlanElement, Scene } from "../planApi"
+import type { Job, Plan, PlanElement, Scene, Shot } from "../planApi"
 
 export type FilmKind = "trailer" | "explainer" | "short" | "music"
 export const FILM_KINDS: FilmKind[] = ["trailer", "explainer", "short", "music"]
@@ -42,7 +42,7 @@ export function doneSteps(plan: Plan | null): Record<StepId, boolean> {
     1: scenes.length > 0,
     2: scenes.length > 0 && castOpen(plan?.elements ?? []) === 0,
     3: all((s) => s.shots.some((x) => x.image_rel)),
-    4: all((s) => s.shots.some((x) => x.video_rel)),
+    4: all((s) => s.shots.length > 0 && s.shots.every((x) => motionState(x) === "moving" || motionState(x) === "still")),
     5: false,
   }
 }
@@ -63,4 +63,61 @@ export function castState(el: PlanElement, jobs: Job[]): CastState {
 /** Wie viele sind noch nicht fertig (weder „Passt“ noch „Kein Foto“)? */
 export function castOpen(elements: PlanElement[]): number {
   return elements.filter((e) => !(e.approved && e.probe_rel) && !e.no_photo).length
+}
+
+// ---- G3 Bilder ------------------------------------------------------------------------------------------------
+export interface ImageCardData { n: number; part: number; text: string; sceneId: string; shot: Shot }
+
+/** Eine Karte je Shot. Szene mit genau einem Shot → Szenentext; mehrere → „Teil N“ mit der Bildbeschreibung. */
+export function imageCards(plan: Plan | null): ImageCardData[] {
+  return (plan?.scenes ?? []).flatMap((sc, i) => sc.shots.map((s, j) => ({
+    n: i + 1, part: sc.shots.length > 1 ? j + 1 : 0, sceneId: sc.id, shot: s,
+    text: sc.shots.length > 1 ? s.prompt : sc.description || sc.title,
+  })))
+}
+
+export function missingImages(plan: Plan | null): number {
+  return imageCards(plan).filter((c) => !c.shot.image_rel).length
+}
+
+const running = (j: Job) => j.status === "running" || j.status === "queued"
+
+/** Entsteht gerade ein Bild für diesen Shot (eigener Auftrag oder Sammelauftrag, der gerade hier ist)? */
+export function shotBusy(jobs: Job[], shotId: string, kind: "image" | "video" = "image"): boolean {
+  const batch = kind === "image" ? "images_all" : "videos_all"
+  return jobs.some((j) => running(j) && ((j.kind === kind && j.target === shotId) || (j.kind === batch && j.progress?.current_shot === shotId)))
+}
+
+/** Nächstes/voriges Bild der Varianten (zyklisch); null, wenn es nichts zu blättern gibt. */
+export function variantStep(s: Shot, dir: -1 | 1): string | null {
+  const v = s.variants
+  if (v.length < 2) return null
+  const i = v.indexOf(s.image_rel ?? "")
+  return v[i < 0 ? 0 : (i + dir + v.length) % v.length]
+}
+
+/** „Mit dabei“ antippen: weg → ausschließen; dazu → anhaken und nicht mehr ausschließen. */
+export function castToggle(s: Shot, id: string): { element_ids: string[]; excluded_ids: string[] } {
+  const ids = s.element_ids.filter((x) => x !== id)
+  const ex = (s.excluded_ids ?? []).filter((x) => x !== id)
+  return (s.cast ?? []).includes(id) ? { element_ids: ids, excluded_ids: [...ex, id] } : { element_ids: [...ids, id], excluded_ids: ex }
+}
+
+/** Gesicht einer Figur: freigegebenes Probebild, sonst erstes Foto, sonst nichts. */
+export function faceOf(e: PlanElement): string {
+  return (e.approved && e.probe_rel) || e.references[0] || ""
+}
+
+// ---- G4 Bewegung ----------------------------------------------------------------------------------------------
+export type MotionState = "no_image" | "open" | "still" | "moving"
+
+export function motionState(s: Shot): MotionState {
+  if (s.video_rel) return "moving"
+  if (!s.image_rel) return "no_image"
+  return s.still ? "still" : "open"
+}
+
+/** Wie viele Bilder warten noch auf Bewegung (mit Bild, ohne Clip, nicht als Standbild gelassen)? */
+export function motionLeft(plan: Plan | null): number {
+  return imageCards(plan).filter((c) => motionState(c.shot) === "open").length
 }

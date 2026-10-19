@@ -42,7 +42,7 @@ def _steps(pid: str, kind: str) -> list[tuple[str, str | None, str]]:
             elif kind == "images_all":
                 want = not s.get("image_rel")
             else:
-                want = bool(s.get("image_rel")) and not s.get("video_rel")
+                want = bool(s.get("image_rel")) and not s.get("video_rel") and s.get("still") is not True   # G4
             if want:
                 out.append((scene["id"], s["id"], f"{title} · Shot {i}"))
     return out
@@ -89,7 +89,7 @@ def start(pid: str, kind: str) -> dict:
         for scene_id, shot_id, name in steps:
             if progress.cancelled():
                 raise jobs.Cancelled()
-            progress.set(current=name)
+            progress.set(current=name, current_shot=shot_id or "")
             try:
                 _run_step(pid, kind, scene_id, shot_id)
                 done += 1
@@ -97,8 +97,8 @@ def start(pid: str, kind: str) -> dict:
                 logger.info("Studio-Sammelauftrag %s: Schritt %s fehlgeschlagen (%s)", kind, name, e)
                 failed += 1
             progress.set(done=done, failed=failed)
-        progress.set(current="")
+        progress.set(current="", current_shot="")
         return {"done": done, "failed": failed}
 
     return jobs.start(pid, kind, f"batch:{pid}", "", work, busy_code="studio_batch_running",
-                      progress={"total": len(steps), "done": 0, "failed": 0, "current": ""})
+                      progress={"total": len(steps), "done": 0, "failed": 0, "current": "", "current_shot": ""})

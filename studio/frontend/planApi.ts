@@ -41,6 +41,10 @@ export interface Shot {
   voice_rel?: string | null
   /** C2: wer im Bild ist – angehakt oder im Text genannt (vom Server berechnet, nur Anzeige) */
   cast?: string[]
+  /** G3: „Mit dabei“ abgewählt – gilt auch, wenn der Name im Text steht */
+  excluded_ids?: string[]
+  /** G4: „Als Standbild lassen“ – kein Clip, das Bild steht im Film */
+  still?: boolean
 }
 
 export type BatchKind = "decompose_all" | "images_all" | "videos_all" | "speech_all"
@@ -57,7 +61,7 @@ export interface Job {
   result: Record<string, unknown> | null
   created_at: string
   finished_at: string | null
-  progress?: { total: number; done: number; failed: number; current: string }
+  progress?: { total: number; done: number; failed: number; current: string; current_shot?: string }
   /** Angaben für die Anzeige, z. B. Vorlage eines Films (7c) */
   info?: { aspect?: string; quality?: string; subtitles?: boolean }
 }

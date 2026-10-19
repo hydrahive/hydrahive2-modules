@@ -4,9 +4,13 @@ import { ArrowLeft, ArrowRight, Check, Clapperboard, Construction, Film, ImageIc
 import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
-import { castOpen, doneSteps, STEP_IDS, type StepId } from "./guidedLogic"
+import { castOpen, doneSteps, missingImages, motionLeft, STEP_IDS, type StepId } from "./guidedLogic"
 import { StepHead } from "./ui"
 import { StepCastLive } from "./StepCastLive"
+import { StepClipsLive } from "./StepClipsLive"
+import { StepImagesLive } from "./StepImagesLive"
+import { useClips } from "./useClips"
+import { useImages } from "./useImages"
 import { StepIdeaLive } from "./StepIdeaLive"
 import { useCast } from "./useCast"
 import { useGuided, type GuidedState } from "./useGuided"
@@ -74,7 +78,10 @@ function Footer({ g }: { g: GuidedState }) {
   const { t } = useTranslation("studio")
   const next = (g.step + 1) as StepId
   const open = castOpen(g.plan?.elements ?? [])
-  const gap = g.step === 1 && !g.plan?.scenes.length ? t("guided.gap.1") : g.step === 2 && open ? t("guided.gap.2", { count: open }) : ""
+  const noImage = missingImages(g.plan)
+  const gap = g.step === 1 && !g.plan?.scenes.length ? t("guided.gap.1") : g.step === 2 && open ? t("guided.gap.2", { count: open })
+    : g.step === 3 && noImage ? t("guided.gap.3", { count: noImage })
+    : g.step === 4 && motionLeft(g.plan) ? t("guided.gap.4", { count: motionLeft(g.plan) }) : ""
   return (
     <footer className="flex items-center gap-4 border-t border-[#1c2433] bg-[#0b111b] px-8 py-4">
       {g.step > 1 ? <button type="button" onClick={() => g.setStep((g.step - 1) as StepId)} className="flex items-center gap-2 text-sm font-semibold text-[#c3ccdd] hover:text-white"><ArrowLeft size={16} /> {t("guided.back")}</button> : <span />}
@@ -93,6 +100,8 @@ export function GuidedPage() {
   const { t } = useTranslation("studio")
   const g = useGuided(t)
   const c = useCast(g, t, g.step === 2)
+  const im = useImages(g, g.step === 3)
+  const cl = useClips(g, g.step === 4)
   return (
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
       <CockpitTopbar active="/studio" context={t("title")} />
@@ -103,7 +112,9 @@ export function GuidedPage() {
             <div className="mx-auto max-w-6xl">
               {g.projects && g.projects.length === 0
                 ? <p className="rounded-[10px] border border-[#2a364b] p-6 text-base text-[#c3ccdd]">{t("guided.no_project")}</p>
-                : g.step === 1 ? <StepIdeaLive g={g} /> : g.step === 2 ? <StepCastLive g={g} c={c} /> : <Soon n={g.step} />}
+                : g.step === 1 ? <StepIdeaLive g={g} /> : g.step === 2 ? <StepCastLive g={g} c={c} />
+                  : g.step === 3 ? <StepImagesLive g={g} im={im} />
+                  : g.step === 4 ? <StepClipsLive g={g} cl={cl} /> : <Soon n={g.step} />}
             </div>
           </main>
           <Footer g={g} />
