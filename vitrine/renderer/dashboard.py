@@ -4,6 +4,10 @@ Warum ein Thread (gemessen auf .2): Solange niemand die EVDI-Ereignisse abarbeit
 niemand die Bilder abholt, wartet Xorg bei jedem Bildwechsel bis zum Timeout (19.10.: 0/s → Xorg dauerhaft blockiert,
 20/s → praktisch nie, 0,9 % CPU). Der Thread holt deshalb immer ~20×/s ab – auch im Video- und Nachtmodus – und baut nur
 im Dashboard-Modus (`set_active(True)`) JPEGs daraus.
+
+Zeigerposition (19.10.2026 13:44 auf .2 gemessen): Fragt der EVDI-Thread selbst X nach dem Zeiger, kann X gerade in einem
+EVDI-Bildwechsel stecken (drm_crtc_commit_wait) und erst antworten, wenn EVDI weiter abholt – beide warten aufeinander,
+Bild und Zeiger stehen. Deshalb fragt ein eigener Thread („vitrine-zeiger“) X; der EVDI-Thread nimmt nur den letzten Wert.
 """
 from __future__ import annotations
 
@@ -17,6 +21,7 @@ from .evdi_source import EvdiSource, EvdiUnavailable
 log = logging.getLogger("vitrine.dashboard")
 IDLE_TICK = 0.05          # im Hintergrund ~20×/s Ereignisse + Bild abholen (0,9 % CPU gemessen)
 RETRY_OPEN = 30.0
+POINTER_EVERY = 0.05      # Zeiger so oft abfragen wie Bilder (20/s) – nur im Dashboard-Modus
 
 
 class Dashboard:
@@ -32,10 +37,14 @@ class Dashboard:
         self._stop = threading.Event()
         self._lock = threading.Lock()
         self._fresh: bytes | None = None
+        self._cursor: tuple[int, int] | None = None
         self._thread = threading.Thread(target=self._run, name="vitrine-evdi", daemon=True)
+        self._ptr_thread = threading.Thread(target=self._run_pointer, name="vitrine-zeiger", daemon=True)
 
     def start(self) -> "Dashboard":
         self._thread.start()
+        if self._pointer is not None:
+            self._ptr_thread.start()
         return self
 
     # --- vom Dienst (Hauptthread) ---
@@ -72,7 +81,7 @@ class Dashboard:
             t0 = time.monotonic()
             try:
                 if self._active.is_set():
-                    j = self._src.next_jpeg(cursor=self._pointer.pointer() if self._pointer else None)
+                    j = self._src.next_jpeg(cursor=self._cursor)     # nie hier X fragen (siehe oben)
                     if j:
                         with self._lock:
                             self._fresh, self.last_jpeg = j, j
@@ -87,6 +96,18 @@ class Dashboard:
             wait = self.period if self._active.is_set() else self.tick
             self._stop.wait(max(0.0, wait - (time.monotonic() - t0)))
         self._close_src()
+
+    def _run_pointer(self) -> None:
+        """Eigener Thread: darf in X hängen, ohne das Bildabholen aufzuhalten. Fragt nur im Dashboard-Modus."""
+        while not self._stop.is_set():
+            if not self._active.wait(0.5):
+                continue
+            try:
+                self._cursor = self._pointer.pointer()
+            except Exception as e:  # noqa: BLE001 – Zeiger ist Zugabe; Fehler dürfen den Thread nicht beenden
+                log.warning("Zeigerabfrage fehlgeschlagen: %s", e)
+                self._cursor = None
+            self._stop.wait(POINTER_EVERY)
 
     def _try_open(self) -> None:
         try:
