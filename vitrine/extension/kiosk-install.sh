@@ -90,9 +90,12 @@ Relogin=true
 EOF
 # --- laufenden Kiosk-Firefox beenden: die Sitzungsschleife startet ihn sofort neu → neue Seite nach Modul-Update ---
 pkill -u "${KIOSK}" -f "firefox --kiosk" 2>/dev/null || true
-# Openbox liest seine Konfiguration nur beim Start → beenden. Ohne Fenstermanager startet die Sitzung ihn nicht neu;
-# deshalb die ganze Sitzung neu starten lassen (sddm-Autologin, Relogin=true), sobald ein altes Openbox lief.
-if pkill -u "${KIOSK}" -x openbox 2>/dev/null; then
-  loginctl terminate-user "${KIOSK}" 2>/dev/null || true
+# Openbox liest seine Konfiguration nur beim Start. Läuft noch eines OHNE die eigene Datei (Standard-Menü mit Terminal),
+# sddm neu starten → Autologin startet die Sitzung frisch. NICHT `loginctl terminate-user`: das beendet auch den
+# sddm-helper, sddm meldet dann „Process crashed“ und meldet nicht neu an (19.10.2026 17:24 auf .2, Display schwarz).
+# Läuft Openbox schon mit der Datei, bleibt die Sitzung (kein Schwarzbild bei jedem Update).
+if pgrep -u "${KIOSK}" -x openbox >/dev/null 2>&1 \
+   && ! pgrep -u "${KIOSK}" -f -- "--config-file /etc/hydrahive2-vitrine/openbox.xml" >/dev/null 2>&1; then
+  systemctl restart sddm 2>/dev/null || true
 fi
 echo "Vitrine-Kiosk eingerichtet (Nutzer ${KIOSK}, Sitzung hydrahive-vitrine-kiosk) – wirksam nach Neustart von sddm"
