@@ -2,7 +2,8 @@
 import { describe, expect, it, vi } from "vitest"
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k) }) }))
 import { renderToStaticMarkup } from "react-dom/server"
-import { Costs, isLocalModel } from "./Costs"
+import { Costs } from "./Costs"
+import { isLocalModel } from "./localModel"
 
 const html = (n: React.ReactElement) => renderToStaticMarkup(n)
 

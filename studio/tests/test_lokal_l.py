@@ -87,7 +87,8 @@ def test_l1_local_model_goes_to_core_not_openrouter(local, monkeypatch) -> None:
 
 
 @pytest.mark.parametrize("aspect,size", [("16:9", (1360, 768)), ("9:16", (768, 1360)), ("1:1", (768, 768)),
-                                         ("4:3", (1024, 768)), ("21:9", (1792, 768)), ("auto", (768, 768))])
+                                         ("4:3", (1024, 768)), ("21:9", (1792, 768)), ("auto", (768, 768)),
+                                         ("0:9", (768, 768)), ("16:0", (768, 768))])
 def test_l1_size_from_aspect(local, aspect, size) -> None:
     image_provider.request_image(model=MODEL, prompt="x", references=[], aspect_ratio=aspect)
     p = local.calls[0]["params"]
@@ -116,6 +117,11 @@ def test_l1_errors_have_codes(monkeypatch, fake, code) -> None:
     with pytest.raises(image_provider.ProviderError) as e:
         image_provider.request_image(model=MODEL, prompt="x", references=[], aspect_ratio="1:1")
     assert str(e.value) == code
+
+
+def test_l1_only_prefix_counts() -> None:
+    from backend import local_image
+    assert local_image.is_local(MODEL) and not local_image.is_local("openai/local:x") and not local_image.is_local("")
 
 
 def test_l1_cloud_model_still_openrouter(monkeypatch) -> None:
@@ -154,11 +160,8 @@ def test_l1_shot_image_with_local_model(client, auth_headers, ws, local) -> None
     sc = client.post(f"{P}/scenes", headers=auth_headers, json={"title": "Wald"}).json()
     sh = client.post(f"{P}/scenes/{sc['id']}/shots", headers=auth_headers, json={"prompt": "Hydra im Wald", "element_ids": [h["id"]]}).json()
     assert client.post(f"{P}/scenes/{sc['id']}/shots/{sh['id']}/image", headers=auth_headers, json={}).status_code == 202
-    end = time.time() + 5
-    while time.time() < end and not local.calls:
-        time.sleep(0.05)
     for _ in range(100):
-        job = [j for j in client.get(f"{P}/jobs", headers=auth_headers).json()["jobs"] if j["target"] == sh["id"]][0]
+        job = next(j for j in client.get(f"{P}/jobs", headers=auth_headers).json()["jobs"] if j["target"] == sh["id"])
         if job["status"] in ("done", "failed"):
             break
         time.sleep(0.05)

@@ -89,18 +89,29 @@ async def draft(pid: str, data: dict) -> dict:
     system = SYSTEM_PROMPT.replace("{shots}", SHOTS_ONE if single else SHOTS_NORMAL)
     messages = [{"role": "system", "content": system}, {"role": "user", "content": _context(idea, length, style, kind)}]
     model = plan.get_head(pid)["models"]["text"] or None
+    out = await _ask(pid, messages, model, style) or await _ask(pid, messages, model, style)   # L3: einmal neu fragen
+    if out is None:
+        raise plan.PlanError("studio_idea_failed", 502)
+    return {"draft": one_shot(out) if single else out}
+
+
+async def _ask(pid: str, messages: list[dict], model: str | None, style: str) -> dict | None:
+    """Eine Anfrage; None = unbrauchbare Antwort (z. B. bei lokaler KI abgeschnitten). LLM-Fehler wird nicht wiederholt."""
     try:
         raw = await llm_client.complete(messages, model=model, temperature=0.8, max_tokens=8000)
     except Exception as e:
         logger.warning("Studio-Idee: LLM-Fehler (Projekt %s): %s", pid, e)
         raise plan.PlanError("studio_idea_failed", 502) from e
-    answer = parse_answer(raw)
     try:
-        if answer is None:
-            raise _draft.DraftInvalid("answer")
-        head = {"title": answer.get("title"), "logline": answer.get("logline"), "style": style or answer.get("style")}
-        out = _draft.clean({**answer, "head": head}, strict=False, max_scenes=MAX_SCENES, durations=SHOT_SECONDS)
-    except _draft.DraftInvalid as e:
+        return _usable(raw, style)
+    except _draft.DraftInvalid:
         logger.warning("Studio-Idee: unbrauchbare Antwort (Projekt %s): %s", pid, text(raw, 200))
-        raise plan.PlanError("studio_idea_failed", 502) from e
-    return {"draft": one_shot(out) if single else out}
+        return None
+
+
+def _usable(raw: str, style: str) -> dict:
+    answer = parse_answer(raw)
+    if answer is None:
+        raise _draft.DraftInvalid("answer")
+    head = {"title": answer.get("title"), "logline": answer.get("logline"), "style": style or answer.get("style")}
+    return _draft.clean({**answer, "head": head}, strict=False, max_scenes=MAX_SCENES, durations=SHOT_SECONDS)
