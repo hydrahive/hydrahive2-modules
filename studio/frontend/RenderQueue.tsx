@@ -29,7 +29,7 @@ export function RenderQueue({ jobs, cancelling, onCancel }: Props) {
             ? t("queue_status.running", { percent: j.progress?.done ?? 0 }) : t(`queue_status.${j.status}`)
           return (
             <li key={j.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1.5" data-queue-item={j.status}>
-              <span className="text-[#e8eef8]">{presetLabel(t, info) || "–"}</span>
+              <span className="text-[#e8eef8]">{presetLabel(t, info) || t("queue_film")}</span>
               {info.subtitles && <span className="text-[#8d9ab0]">{t("queue_subtitles")}</span>}
               <span className={`flex items-center gap-1 ${COLORS[j.status] ?? ""}`}>
                 {j.status === "running" && <Loader2 size={11} className="animate-spin" />}{status}

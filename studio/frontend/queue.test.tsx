@@ -76,6 +76,12 @@ describe("7c – Warteschlange: Liste", () => {
     expect(html(<RenderQueue jobs={[q]} cancelling="wartet" onCancel={noop} />)).toMatch(/<button[^>]*disabled=""[^>]*data-queue-cancel/)
   })
 
+  it("Film ohne Vorlage (vor 7b erzeugt): „Film“ statt eines Strichs", () => {
+    const out = html(<RenderQueue jobs={[job({ status: "done", info: undefined })]} cancelling={null} onCancel={noop} />)
+    expect(out).toContain(">queue_film<")
+    expect(out).not.toContain(">–<")
+  })
+
   it("leer: keine Liste", () => {
     expect(html(<RenderQueue jobs={[]} cancelling={null} onCancel={noop} />)).toBe("")
   })
@@ -113,7 +119,7 @@ describe("7c – Texte", () => {
   it("de/en vorhanden, auch der Fehler studio_render_queue_full", () => {
     for (const lang of ["de", "en"] as const) {
       const s = studioI18n[lang].studio as unknown as Record<string, unknown> & { queue_status: Record<string, string>; err: Record<string, string> }
-      for (const k of ["queue_title", "queue_cancel", "queue_cancelling", "queue_full", "queue_subtitles", "notice_render_queued"]) expect(s[k], `${lang} ${k}`).toBeTruthy()
+      for (const k of ["queue_title", "queue_film", "queue_cancel", "queue_cancelling", "queue_full", "queue_subtitles", "notice_render_queued"]) expect(s[k], `${lang} ${k}`).toBeTruthy()
       for (const st of ["queued", "running", "done", "cancelled"]) expect(s.queue_status[st], `${lang} ${st}`).toBeTruthy()
       expect(s.err.studio_render_queue_full).toBeTruthy()
     }
