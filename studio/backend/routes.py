@@ -13,7 +13,7 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 from hydrahive.projects._config_io import list_for_user
 
-from . import library, overview, plan, render, voice_provider, waveform
+from . import library, media, overview, plan, render, voice_provider, waveform
 from ._guard import guard
 from .draft_routes import router as draft_router
 from .music_routes import router as music_router
@@ -54,6 +54,23 @@ def post_render(project_id: str, auth: Auth, data: Annotated[Any, Body()] = None
 def get_renders(project_id: str, auth: Auth) -> dict:
     guard(auth[0], project_id)
     return render.list_renders(project_id)
+
+
+@router.get("/projects/{project_id}/media/usage")
+def get_media_usage(project_id: str, rel: str, auth: Auth) -> dict:
+    """Wo wird eine Datei benutzt (Shots, Zeitleiste, Bausteine)? Für die Rückfrage vor dem Löschen (C1)."""
+    guard(auth[0], project_id)
+    return media.usage(project_id, rel)
+
+
+@router.delete("/projects/{project_id}/media")
+def delete_media(project_id: str, rel: str, auth: Auth) -> dict:
+    """Eigene Datei des Studios löschen; Shots und Bausteine werden bereinigt (C1)."""
+    guard(auth[0], project_id)
+    try:
+        return media.delete(project_id, rel)
+    except plan.PlanError as e:
+        raise coded(e.status, e.code)
 
 
 @router.get("/projects/{project_id}/waveform")

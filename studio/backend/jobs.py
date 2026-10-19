@@ -121,8 +121,9 @@ def start(pid: str, kind: str, target: str, scene_id: str, work: Callable[..., d
                     _running.discard((pid, target))
                     _cancel.discard(job["id"])
 
+    started = {**job}                          # Zustand beim Start – der Thread ändert `job` weiter (sonst zufällig „done“)
     threading.Thread(target=run, name=f"studio-{kind}-{target[:8]}", daemon=True).start()
-    return job
+    return started
 
 
 def cancel(pid: str, job_id: str) -> dict:
