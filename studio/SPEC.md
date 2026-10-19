@@ -1236,6 +1236,18 @@ Hilfetexte nicht möglich.“ → „Mache das alles, damit man arbeiten kann.�
 - **Alle Knöpfe benannt:** Jeder Knopf hat sichtbaren Text oder `aria-label` + `title` (Test über alle .tsx). Der
   Papierkorb der Zeitleiste heißt „Clip entfernen (Datei bleibt)“.
 
+**C4 im Detail – Aufräumen**
+- **Ein Weg zum Shot:** In „Erzeugen“ entfällt der obere Knopf „+ Shot“ (er fragte nach der Szene). Shots legt man im
+  Storyboard der gewählten Szene an („Shot selbst anlegen“ / „Von der KI in Shots zerlegen“) – überall gleich.
+- **„Freies Bild“ heißt „Einzelbild (ohne Szene)“** und erklärt sich: „Ein Bild, das zu keinem Shot gehört – z. B. als
+  Vorlage-Foto für eine Figur oder für die Zeitleiste.“
+- **Speichern:** Ohne Änderung steht „✓ Gespeichert“ als Text (kein grauer Knopf); mit Änderung der Knopf „Speichern“.
+- **Löschen im Formular** ist ein beschrifteter Knopf „Löschen …“ statt nur eines Papierkorbs.
+- **Farben mit Farbwähler:** je Farbe ein Farbfeld (Klick → Farbwähler des Browsers) mit ×, dazu „+ Farbe“ (höchstens
+  12). Der Wert bleibt die bisherige Liste von #rrggbb.
+- **Neuling-Prüfung (E2E):** leeres Projekt, nur sichtbare Texte: Hydra mit Foto anlegen → Szene mit Shot „Hydra …“ →
+  Bild erzeugen → ein zweites Bild → das erste löschen → auf die Zeitleiste → Film erzeugen → herunterladen.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.

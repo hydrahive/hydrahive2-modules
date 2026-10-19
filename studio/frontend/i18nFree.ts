@@ -1,9 +1,8 @@
-/** Texte für „+ Shot“ und „Freies Bild“ in „Erzeugen“ (B3). Ohne Terminal- oder Datei-Hinweise. */
+/** Texte für „Einzelbild (ohne Szene)“ in „Erzeugen“ (B3, C4). Ohne Terminal- oder Datei-Hinweise. */
 export const free_de = {
-  gen_add_shot: "+ Shot",
-  gen_free: "Freies Bild",
-  gen_pick_scene: "In welche Szene?",
-  free_title: "Freies Bild",
+  gen_free: "Einzelbild (ohne Szene)",
+  gen_free_hint: "Ein Bild, das zu keinem Shot gehört – zum Beispiel als Vorlage-Foto für eine Figur oder für die Zeitleiste. Shots legst du im Storyboard der Szene an.",
+  free_title: "Einzelbild (ohne Szene)",
   free_text: "Ein Bild ohne Shot – zum Ausprobieren, als Referenz oder für die Zeitleiste. Du kannst es danach einem Shot zuweisen.",
   free_prompt: "Was soll zu sehen sein?",
   free_prompt_placeholder: "z. B. Ein roter Drachen über den Dünen, Abendlicht, weiter Blick",
@@ -31,10 +30,9 @@ export const free_de = {
 }
 
 export const free_en: typeof free_de = {
-  gen_add_shot: "+ Shot",
-  gen_free: "Free image",
-  gen_pick_scene: "Into which scene?",
-  free_title: "Free image",
+  gen_free: "Single image (no scene)",
+  gen_free_hint: "An image that belongs to no shot – for example as a template photo for a character or for the timeline. You create shots in the scene's storyboard.",
+  free_title: "Single image (no scene)",
   free_text: "An image without a shot – to try things out, as a reference or for the timeline. You can assign it to a shot afterwards.",
   free_prompt: "What should be seen?",
   free_prompt_placeholder: "e.g. A red kite over the dunes, evening light, wide view",

@@ -1,10 +1,10 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { ASPECTS, LANGUAGES, MODEL_KEYS, type Head } from "./planApi"
-import { paletteFromText } from "./planLogic"
 import { Field, FormActions, Label, fieldCls } from "./formParts"
 import { ModelPick } from "./ModelPick"
 import type { Catalog, ModelKind } from "./modelCatalog"
+import { ColorPick } from "./ColorPick"
 
 interface Props {
   head: Head
@@ -17,8 +17,7 @@ interface Props {
 export function HeadForm({ head, busy, onSave, catalogs = {} }: Props) {
   const { t } = useTranslation("studio")
   const [h, setH] = useState(head)
-  const [palette, setPalette] = useState(head.look.palette.join(", "))
-  const dirty = JSON.stringify(h) !== JSON.stringify(head) || palette !== head.look.palette.join(", ")
+  const dirty = JSON.stringify(h) !== JSON.stringify(head)
   const set = <K extends keyof Head>(k: K, v: Head[K]) => setH((x) => ({ ...x, [k]: v }))
   return (
     <div className="mt-3 space-y-3 text-xs" data-plan-form="head">
@@ -50,9 +49,9 @@ export function HeadForm({ head, busy, onSave, catalogs = {} }: Props) {
         <p className="text-[10px] leading-relaxed text-[#68758a]">{t("f.models_hint")}</p>
       </fieldset>
       <Field name="style" label={t("f.style")} value={h.look.style} max={2000} rows={2} onChange={(v) => set("look", { ...h.look, style: v })} />
-      <Field name="palette" label={t("f.palette")} value={palette} max={300} onChange={setPalette} />
+      <ColorPick label={t("f.palette")} colors={h.look.palette} onChange={(c) => set("look", { ...h.look, palette: c })} />
       <FormActions busy={busy} dirty={dirty}
-        onSave={() => onSave({ ...h, look: { ...h.look, palette: paletteFromText(palette) } })} />
+        onSave={() => onSave(h)} />
     </div>
   )
 }

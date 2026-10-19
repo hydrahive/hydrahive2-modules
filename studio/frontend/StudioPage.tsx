@@ -133,7 +133,7 @@ export function StudioPage() {
               {subbing ? st.left : planning ? <PlanSidebar p={plan} library={library} books={books} onIdea={dr.openIdea} onBook={dr.openBook} />
                 : generating ? (
                   <div className="flex h-full min-h-0 flex-col">
-                    <GenerateSideBar plan={p.plan} free={fr.open} busy={p.busy} pickScene={fr.pickScene} onFree={fr.toggle} onAddShot={fr.addShot} />
+                    <GenerateSideBar plan={p.plan} free={fr.open} busy={p.busy} onFree={fr.toggle} />
                     <div className="min-h-0 flex-1">
                       <ShotList plan={p.plan} jobs={jobs.jobs} selected={fr.open ? null : selShot?.id ?? null} onPlan={() => s.setWorkspace("plan")}
                         onSelect={(sceneId, id) => { fr.close(); plan.select({ kind: "shot", sceneId, id }) }} />

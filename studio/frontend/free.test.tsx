@@ -24,20 +24,11 @@ const FORM = { prompt: "", model: "", aspect: "16:9", count: 1, refs: [] as stri
 const job = (p: Partial<Job>): Job => ({ id: "j", kind: "free_images", target: "free:x", scene_id: "", status: "running", error: null,
   result: null, created_at: "x", finished_at: null, progress: { total: 4, done: 2, failed: 0, current: "" }, ...p })
 
-describe("B3 – Erzeugen, links: „+ Shot“ und „Freies Bild“", () => {
-  it("beide Knöpfe beschriftet; „+ Shot“ ohne Szenen gesperrt", () => {
-    const empty = html(<GenerateSideBar plan={PLAN([])} free={false} busy={false} onFree={noop} onAddShot={noop} />)
-    expect(buttons(empty)).toEqual(["gen_add_shot", "gen_free"])
-    expect(empty).toMatch(/<button[^>]*disabled=""[^>]*data-gen-add-shot/)
-    const some = html(<GenerateSideBar plan={PLAN([scene("a", "Hafen"), scene("b", "Sturm")])} free busy={false} onFree={noop} onAddShot={noop} />)
-    expect(some).not.toMatch(/<button[^>]*disabled=""[^>]*data-gen-add-shot/)
-    expect(some).toMatch(/aria-pressed="true"[^>]*data-gen-free|data-gen-free[^>]*aria-pressed="true"/)
-  })
-
-  it("„+ Shot“ öffnet die Liste der Szenen (Klick legt dort an)", () => {
-    const out = html(<GenerateSideBar plan={PLAN([scene("a", "Hafen"), scene("b", "")])} free={false} busy={false} onFree={noop}
-      onAddShot={noop} pickScene />)
-    expect(buttons(out)).toEqual(["gen_add_shot", "gen_free", "Hafen", "untitled"])
+describe("B3/C4 – Erzeugen, links: nur „Einzelbild (ohne Szene)“", () => {
+  it("ein Knopf, gedrückt, wenn offen; Shots entstehen im Storyboard", () => {
+    const out = html(<GenerateSideBar plan={PLAN([scene("a", "Hafen")])} free busy={false} onFree={noop} />)
+    expect(buttons(out)).toEqual(["gen_free"])
+    expect(out).toMatch(/aria-pressed="true"[^>]*data-gen-free|data-gen-free[^>]*aria-pressed="true"/)
   })
 })
 

@@ -74,11 +74,12 @@ describe("Studio Etappe 2a – Planen", () => {
     expect(out).toContain('role="dialog"')
   })
 
-  it("Kopf: Werte, Seitenformate, Palette als Text", () => {
+  it("Kopf: Werte, Seitenformate, Palette als Farbfelder (C4)", () => {
     const out = html(<HeadForm head={PLAN.screenplay} busy={false} onSave={noop} catalogs={{ video: { default: "", models: [] } }} />)
     expect(out).toContain('value="Sturm"')
     expect(attr(out, "data-head-aspect")).toEqual(["16:9", "9:16", "1:1", "4:3", "21:9"])
-    expect(out).toContain('value="#111, #222"')
+    expect(out).toContain('value="#111111"')                                  // #111 ausgeschrieben fürs Farbfeld
+    expect(out).toContain('value="#222222"')
     expect(out).toContain('value="kling"')
   })
 
