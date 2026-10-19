@@ -33,7 +33,7 @@ output_ok() { xrandr --current | grep -Eq '^DVI-I-[0-9-]+ connected (primary )?1
 trap 'kill $(jobs -p) 2>/dev/null' EXIT
 x_alive() { xset q >/dev/null 2>&1; }
 until output_on; do sleep 2; x_alive || exit 0; done
-openbox &
+openbox --config-file /etc/hydrahive2-vitrine/openbox.xml &   # eigene Konfiguration: kein Menü, keine Tastenkürzel
 ( while x_alive; do firefox --kiosk --profile "${HOME}/firefox" "${START}"; sleep 2; done ) &
 while x_alive; do
   output_ok || output_on || true

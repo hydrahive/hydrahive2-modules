@@ -46,6 +46,8 @@ EOF
 chown "${KIOSK}:${KIOSK}" "${HOME_DIR}/vitrine/start.html"
 rm -rf "${HOME_DIR}/.vitrine"                       # alte Ablage bis 0.7.2 (Firefox-Snap durfte sie nicht lesen)
 install -m 755 "${MODULE_ROOT}/extension/kiosk-session.sh" "${CONF}/kiosk-session.sh"
+# Openbox ohne Menü/Tastenkürzel (Standard öffnet per Rechtsklick ein Terminal – mit BT-Tastatur eine Shell)
+install -m 644 "${MODULE_ROOT}/extension/kiosk-openbox.xml" "${CONF}/openbox.xml"
 mkdir -p "$(dirname "${SESSION}")"
 cat > "${SESSION}" <<EOF
 [Desktop Entry]
@@ -88,4 +90,9 @@ Relogin=true
 EOF
 # --- laufenden Kiosk-Firefox beenden: die Sitzungsschleife startet ihn sofort neu → neue Seite nach Modul-Update ---
 pkill -u "${KIOSK}" -f "firefox --kiosk" 2>/dev/null || true
+# Openbox liest seine Konfiguration nur beim Start → beenden. Ohne Fenstermanager startet die Sitzung ihn nicht neu;
+# deshalb die ganze Sitzung neu starten lassen (sddm-Autologin, Relogin=true), sobald ein altes Openbox lief.
+if pkill -u "${KIOSK}" -x openbox 2>/dev/null; then
+  loginctl terminate-user "${KIOSK}" 2>/dev/null || true
+fi
 echo "Vitrine-Kiosk eingerichtet (Nutzer ${KIOSK}, Sitzung hydrahive-vitrine-kiosk) – wirksam nach Neustart von sddm"
