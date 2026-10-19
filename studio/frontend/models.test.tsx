@@ -26,6 +26,7 @@ describe("Modelle im Drehbuch – aus dem Katalog", () => {
       music: "/llm/media-models?category=audio",
       voice: "/llm/models?modality=tts",
       text: "/llm/models?modality=chat",
+      vision: "/llm/models?modality=chat",
     })
   })
 
@@ -92,7 +93,7 @@ describe("Modelle im Drehbuch – aus dem Katalog", () => {
     for (const lang of ["de", "en"] as const) {
       const s = studioI18n[lang].studio as Record<string, unknown>
       const gen = s.gen as Record<string, string> | undefined
-      expect(gen && Object.keys(gen).sort()).toEqual(["image", "music", "text", "video", "voice"])
+      expect(gen && Object.keys(gen).sort()).toEqual(["image", "music", "text", "video", "vision", "voice"])
     }
   })
 })

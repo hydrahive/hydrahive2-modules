@@ -14,7 +14,8 @@ import { useVoices } from "./useVoices"
 
 /** Planen, rechts: Formular des Gewählten. `key` mit `rev` setzt das Formular nach dem Speichern auf die frischen Daten. */
 export function PlanInspector({ p, shots, images, jobs = [], upload, onDeleteMedia }: { p: PlanState; shots?: ShotsState; images: LibraryItem[]; jobs?: Job[];
-  upload?: { busy: boolean; reference: (elementId: string, file: File, pending: Partial<PlanElement> | null) => void }
+  upload?: { busy: boolean; describing?: string | null; reference: (elementId: string, file: File, pending: Partial<PlanElement> | null) => void
+    describe?: (elementId: string, pending: Partial<PlanElement> | null) => void }
   /** C1: Bild/Video eines Shots löschen (Rückfrage) */
   onDeleteMedia?: (rel: string, name: string) => void }) {
   const { t } = useTranslation("studio")
@@ -40,14 +41,15 @@ export function PlanInspector({ p, shots, images, jobs = [], upload, onDeleteMed
     if (el) {
       body = <ElementForm key={`${el.id}-${p.rev}`} element={el} base={plan.base} images={images} busy={p.busy}
         onSave={(e) => void p.saveElement(el.id, e)} onDelete={() => p.setDialog({ kind: "delete", target: "element", id: el.id, name: el.name })}
-        onUploadReference={upload ? (f, pending) => upload.reference(el.id, f, pending) : undefined} uploading={upload?.busy} />
+        onUploadReference={upload ? (f, pending) => upload.reference(el.id, f, pending) : undefined} uploading={upload?.busy}
+        onDescribe={upload?.describe ? (pending) => upload.describe?.(el.id, pending) : undefined} describing={upload?.describing === el.id} />
     }
   } else if (plan && sel?.kind === "shot" && shots) {
     const scene = sceneOf(plan, sel)
     const index = scene?.shots.findIndex((s) => s.id === sel.id) ?? -1
     const shot = index >= 0 ? scene?.shots[index] : undefined
     if (scene && shot) {
-      body = <ShotForm key={`${shot.id}-${p.rev}`} shot={shot} index={index} elements={plan.elements} sceneElementIds={scene.element_ids}
+      body = <ShotForm key={`${shot.id}-${p.rev}`} shot={shot} index={index} elements={plan.elements}
         presets={plan.presets.shot ?? []} busy={p.busy} onSave={(d) => void shots.save(shot.id, d)} onDelete={() => shots.remove(shot.id, index)}
         base={plan.base} job={latestJob(jobs, shot.id, "image")} videoJob={latestJob(jobs, shot.id, "video")}
         onGenerate={() => void shots.generateImage(shot.id)} onVideo={() => void shots.generateVideo(shot.id)}

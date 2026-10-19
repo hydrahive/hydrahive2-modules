@@ -14,6 +14,7 @@ export const CATALOG_SOURCES: Record<ModelKind, string> = {
   music: "/llm/media-models?category=audio",
   voice: "/llm/models?modality=tts",
   text: "/llm/models?modality=chat",
+  vision: "/llm/models?modality=chat",              // C2: Fotos beschreiben (Modell muss Bilder verstehen)
 }
 
 /** Ab so vielen Einträgen gibt es ein Suchfeld. */
@@ -51,7 +52,7 @@ export function modelOptions(cat: Catalog, value: string, query: string): Option
 
 /** Lädt die Kataloge aller Arten einmal (null = lädt noch). Fehler → leerer Katalog (Freitext bleibt möglich). */
 export function useModelCatalogs(active: boolean): Record<ModelKind, Catalog | null> {
-  const [cats, setCats] = useState<Record<ModelKind, Catalog | null>>({ video: null, image: null, music: null, voice: null, text: null })
+  const [cats, setCats] = useState<Record<ModelKind, Catalog | null>>({ video: null, image: null, music: null, voice: null, text: null, vision: null })
   useEffect(() => {
     if (!active) return
     let alive = true

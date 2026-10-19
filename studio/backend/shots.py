@@ -17,8 +17,8 @@ def load_scene(pid: str, scene_id: str) -> dict:
 
 
 def scene_elements(pid: str, scene: dict) -> set[str]:
-    """Bausteine, die ein Shot dieser Szene nutzen darf: die der Szene, sofern es sie noch gibt."""
-    return set(scene.get("element_ids") or []) & plan._element_ids(pid)
+    """Bausteine, die ein Shot nutzen darf: jeder vorhandene (C2 – früher nur die der Szene, das verschluckte Häkchen)."""
+    return plan._element_ids(pid)
 
 
 def save_shots(pid: str, scene: dict, shots: list[dict]) -> list[dict]:

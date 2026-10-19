@@ -45,7 +45,7 @@ import { editing, filmWs, useCutWorkspace } from "./useCutWorkspace"
 import { useSubtitleWorkspace } from "./useSubtitleWorkspace"
 import { clipsOf, findClip } from "./timelineApi"
 import { useDeliver } from "./useDeliver"
-import { useMediaDelete } from "./useMediaDelete"
+import { useMediaTools } from "./useMediaTools"
 import { useDraft } from "./useDraft"
 import { useFree } from "./useFree"
 import { useModelCatalogs } from "./modelCatalog"
@@ -105,8 +105,8 @@ export function StudioPage() {
     s.setWorkspace("plan")
     p.select({ kind: "shot", sceneId: c.scene_id, id: c.shot_id })
   }
-  const md = useMediaDelete(lib.projectId, (rel) => { if (s.item?.rel === rel) s.clearMedia(); [lib, p, guide, cut, dv].forEach((x) => void x.reload()) },
-    (x) => (shotsWs || delivering ? p.setNotice(x) : cut.setNotice(x)))   // C1: nach dem Löschen alles neu laden
+  const md = useMediaTools({ projectId: lib.projectId, item: s.item, clearMedia: s.clearMedia, reloadAll: () => [lib, p, guide, cut, dv].forEach((x) => void x.reload()),
+    openElement: (id) => { s.setWorkspace("plan"); void p.reload(); p.select({ kind: "element", id }) }, notice: (x) => (shotsWs || delivering ? p.setNotice(x) : cut.setNotice(x)), planNotice: p.setNotice })
   const reload = () => { void lib.reload(); void guide.reload(); if (shotsWs) void p.reload(); if (editing(s.workspace)) void cut.reload() }
   const mu = useMusic(lib.projectId, editing(s.workspace), ed.addMusic, (x) => cut.setNotice(x), () => void lib.reload())
   const selShot = p.selection?.kind === "shot" ? p.selection : null
@@ -168,9 +168,9 @@ export function StudioPage() {
                 : mixing && !s.item ? <MixInspector clip={cut.clip} onChange={(v) => cut.clip && ed.onClipMix(cut.clip.id, v)} />
                 : editing(s.workspace) ? <CutInspector clip={s.item ? null : cut.clip} onPlan={toPlan} media={s.item}
                     mix={cut.clip?.kind === "audio" ? (v) => cut.clip && ed.onClipMix(cut.clip.id, v) : undefined}
-                    onUnbind={() => cut.clip && ed.unbindVoice(cut.clip.id)} onDeleteMedia={md.askItem}
+                    onUnbind={() => cut.clip && ed.unbindVoice(cut.clip.id)} onDeleteMedia={md.askItem} onCreateElement={md.createElement}
                     onAppend={() => { const k = appendNotice(s.item, ed.addMedia); if (k) { s.clearMedia(); cut.setNotice(t(k)) } }} />
-                : <MediaInfo item={s.item} onDelete={md.askItem} />}
+                : <MediaInfo item={s.item} onDelete={md.askItem} onCreateElement={md.createElement} />}
             </div>
           </div>
         </div>
@@ -198,7 +198,7 @@ export function StudioPage() {
         <DraftDialog d={dr} append={!!p.plan?.scenes.length} />
         {bt.dialog && <BatchDialog kind={bt.dialog.kind} preview={bt.dialog.preview} busy={p.busy} onRun={() => void bt.run()} onClose={bt.close} />}
         {st.dialog}
-        {md.dialog}
+        {md.dialogs}
         {cut.confirm && <FromPlanDialog count={cut.clips.length} busy={cut.busy} onConfirm={cut.confirmReplace} onClose={cut.closeConfirm} />}
         {sh.confirm && <DecomposeDialog count={sh.confirm.count} busy={sh.busy !== null} onConfirm={() => void sh.confirmReplace()} onClose={sh.closeConfirm} />}
         {p.dialog?.kind === "delete" && <DeleteDialog name={p.dialog.name} busy={p.busy} onConfirm={p.confirmDelete} onClose={() => p.setDialog(null)} />}

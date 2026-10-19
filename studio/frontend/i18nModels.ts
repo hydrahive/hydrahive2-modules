@@ -1,7 +1,7 @@
 /** Texte für die Modellwahl im Drehbuch (Katalog des Kerns). Ohne Terminal-, Datei- oder Einstellungs-Hinweise. */
 
 export const models_de = {
-  gen: { video: "Video", image: "Bild", voice: "Sprache", music: "Musik", text: "Text (KI-Regie)" },
+  gen: { video: "Video", image: "Bild", voice: "Sprache", music: "Musik", text: "Text (KI-Regie)", vision: "Fotos beschreiben (Figuren, Orte)" },
   model_default: "Standard ({{model}})",
   model_auto: "automatisch",
   model_search: "Modell suchen …",
@@ -14,7 +14,7 @@ export const models_de = {
 }
 
 export const models_en: typeof models_de = {
-  gen: { video: "Video", image: "Image", voice: "Voice", music: "Music", text: "Text (AI director)" },
+  gen: { video: "Video", image: "Image", voice: "Voice", music: "Music", text: "Text (AI director)", vision: "Describe photos (characters, places)" },
   model_default: "Default ({{model}})",
   model_auto: "automatic",
   model_search: "Search model …",

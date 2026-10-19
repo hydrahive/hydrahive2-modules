@@ -25,12 +25,12 @@ def test_add_update_delete_shot(client, auth_headers, ws) -> None:
     assert b["order"] == 1 and b["prompt"] == "Boot" and b["duration"] == 3
 
     up = client.put(f"{S}/{a['id']}", headers=auth_headers, json={
-        "shot": "closeup", "prompt": "x" * 3000, "duration": 99, "element_ids": [mira["id"], ole["id"]],
+        "shot": "closeup", "prompt": "x" * 3000, "duration": 99, "element_ids": [mira["id"], ole["id"], "f" * 32, "kaputt"],
         "status": "done", "image_rel": "../../etc/passwd", "video_rel": "a.mp4", "order": 9})
     assert up.status_code == 200, up.text
     s = up.json()
     assert s["shot"] == "closeup" and len(s["prompt"]) == 2000 and s["duration"] == 60
-    assert s["element_ids"] == [mira["id"]]                                # nur Bausteine der Szene
+    assert s["element_ids"] == [mira["id"], ole["id"]]                     # C2: jeder vorhandene Baustein, Fremdes fällt raus
     assert s["status"] == "planned" and s["image_rel"] is None and s["video_rel"] is None   # nur das Erzeugen ändert das
     assert s["order"] == 0
     assert client.put(f"{S}/{a['id']}", headers=auth_headers, json={"shot": "erfunden"}).json()["shot"] == ""

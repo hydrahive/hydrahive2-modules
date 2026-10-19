@@ -23,7 +23,7 @@ const shot = (id: string, image_rel: string | null) => ({ id, order: 0, shot: "c
 const PLAN: Plan = {
   base: "/data/w",
   screenplay: { title: "Sturm", logline: "Ein Hafen", description: "", aspect_ratio: "16:9", default_duration: 5,
-    models: { video: "kling", image: "", voice: "", music: "", text: "" }, look: { style: "noir", palette: ["#111", "#222"] }, scene_order: ["s2", "s1"] },
+    models: { video: "kling", image: "", voice: "", music: "", text: "", vision: "" }, look: { style: "noir", palette: ["#111", "#222"] }, scene_order: ["s2", "s1"] },
   scenes: [
     { id: "s2", title: "Hafen", description: "Am Steg", location: "Steg", time_of_day: "dawn", element_ids: ["e1"],
       dialogues: [{ element_id: "e1", line: "Wo bist du?", emotion: "leise" }], camera: { shot: "closeup" },

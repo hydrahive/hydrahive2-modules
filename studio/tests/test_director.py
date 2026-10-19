@@ -35,7 +35,7 @@ def test_decompose_replaces_shots(client, auth_headers, ws) -> None:
     shots = r.json()["shots"]
     assert r.json()["count"] == 5 and len(shots) == 5                      # höchstens 5
     assert [s["prompt"] for s in shots[:3]] == ["harbour at dawn", "her face", "boat"]
-    assert shots[0]["element_ids"] == [mira["id"]]                          # nur Bausteine der Szene
+    assert shots[0]["element_ids"] == [mira["id"], ole["id"]]               # C2: vorhandene Bausteine, „fremd“ fällt raus
     assert shots[1]["shot"] == "" and shots[1]["duration"] == 60
     assert all(s["status"] == "planned" and s["image_rel"] is None for s in shots)
     saved = client.get(P, headers=auth_headers).json()["scenes"][0]["shots"]

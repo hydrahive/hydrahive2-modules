@@ -59,19 +59,20 @@ describe("7a – Bibliothek: Hochladen …", () => {
 describe("7a – Baustein: Referenzbild hochladen", () => {
   const form = (p: Partial<React.ComponentProps<typeof ElementForm>> = {}) =>
     html(<ElementForm element={EL} base="/w" images={[]} busy={false} onSave={noop} onDelete={noop} onUploadReference={noop} uploading={false} {...p} />)
-  it("Knopf „Bild hochladen …“ mit Dateiauswahl nur für Bilder, Hinweis aufs Ablegen", () => {
+  it("C2: Foto-Feld oben mit Dateiauswahl nur für Bilder, Erklärung wofür", () => {
     const out = form()
-    expect(out).toMatch(/<button[^>]*data-element-upload[^>]*>.*upload_reference/)
+    expect(out).toMatch(/<button[^>]*data-element-photo-pick[^>]*>.*photo_more/s)             // schon ein Foto da → „Weiteres Foto …“
+    expect(form({ element: { ...EL, references: [] } })).toMatch(/<button[^>]*data-element-photo-pick[^>]*>.*photo_drop/s)
     expect(out).toMatch(/<input[^>]*type="file"[^>]*accept="[^"]*\.png[^"]*"/)
     expect(out.match(/<input[^>]*type="file"[^>]*>/)?.[0]).not.toContain(".mp4")
-    expect(out).toContain("upload_reference_hint")
+    expect(out).toContain("photo_why")
   })
-  it("auch ohne Bilder in der Bibliothek möglich; bei 8 Referenzen gesperrt; beim Hochladen gesperrt", () => {
-    expect(form()).toContain("data-element-upload")
+  it("auch ohne Bilder in der Bibliothek möglich; bei 8 Fotos gesperrt; beim Hochladen gesperrt", () => {
+    expect(form()).toContain("data-element-photo-pick")
     const full = form({ element: { ...EL, references: Array.from({ length: 8 }, (_, i) => `r${i}.png`) } })
-    expect(full.match(/<button[^>]*data-element-upload[^>]*>/)?.[0]).toContain('disabled=""')
+    expect(full.match(/<button[^>]*data-element-photo-pick[^>]*>/)?.[0]).toContain('disabled=""')
     expect(full).toContain("upload_reference_full")
-    expect(form({ uploading: true }).match(/<button[^>]*data-element-upload[^>]*>/)?.[0]).toContain('disabled=""')
+    expect(form({ uploading: true }).match(/<button[^>]*data-element-photo-pick[^>]*>/)?.[0]).toContain('disabled=""')
   })
   it("Hochladen gibt die noch nicht gespeicherten Felder mit (sie werden zuerst gespeichert, nichts geht verloren)", async () => {
     const { pendingElement } = await import("./uploadLogic")

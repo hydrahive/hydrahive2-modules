@@ -26,7 +26,7 @@ def test_head_is_cleaned_and_saved_atomically(client, auth_headers, ws) -> None:
     assert r.status_code == 200, r.text
     head = r.json()
     assert len(head["title"]) == 200 and head["default_duration"] == 60 and head["aspect_ratio"] == "9:16"
-    assert head["models"] == {"video": "kling", "image": "", "voice": "", "music": "", "text": ""}
+    assert head["models"] == {"video": "kling", "image": "", "voice": "", "music": "", "text": "", "vision": ""}
     assert len(head["look"]["palette"]) == 12 and head["scene_order"] == []
     f = ws / "studio" / "screenplay.json"
     assert json.loads(f.read_text())["logline"] == "Ein Sturm"

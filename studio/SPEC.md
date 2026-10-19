@@ -1204,6 +1204,26 @@ Hilfetexte nicht möglich.“ → „Mache das alles, damit man arbeiten kann.�
   jede Variante und das Video mit „×“ (gleicher Dialog). Freie Bilder und fertige Filme: „Löschen …“.
 - Danach lädt die Bibliothek, das Drehbuch und die Zeitleiste neu.
 
+**C2 im Detail – Figur/Ort aus einem Foto („so sieht Hydra aus“)**
+- **Automatisch dabei, statt Häkchen zu suchen:** Ein Baustein gilt für einen Shot, wenn er im Shot angehakt ist **oder**
+  sein Name (bzw. einer seiner Namen) im Shot-Text, im Sprechtext, im Titel oder in der Beschreibung der Szene
+  vorkommt. Verglichen wird ganzes Wort, ohne Groß/Klein. Das gilt beim Bild (Beschreibung, Aussehen, Farben,
+  Vorlage-Fotos) und beim Video. Angehakt ist zusätzlich möglich (z. B. bei „sie“ statt Name). Die Bindung an die
+  Szene ist dafür nicht mehr nötig.
+- **Im Shot sichtbar:** „Mit im Bild: Hydra (Foto), Leuchtturm“ – automatisch erkannte und angehakte Bausteine, je mit
+  dem Hinweis, ob ein Vorlage-Foto mitgeht.
+- **Aus Foto beschreiben** (`POST …/plan/elements/{id}/describe`): Die Bild-KI (Vision, Standard
+  `google/gemini-2.5-flash`, ≈ 0,1 ct) bekommt das erste Vorlage-Foto und schreibt **Beschreibung** (2–4 Sätze, wer/was)
+  und **Aussehen** (feste Merkmale für jedes Bild: Gestalt, Farben, Kleidung bzw. Bauweise). Leere Felder werden
+  gefüllt; bei vorhandenem Text fragt die Oberfläche „Ersetzen?“. Ohne Foto → 400 `studio_describe_no_image`; kein
+  Schlüssel / Anbieter → Auftragsfehler wie beim Bild (`no_key`, `provider_rejected`, `empty_answer`).
+- **Oberfläche des Bausteins:** Ganz oben steht ein großes Feld „Foto hierher ziehen oder auswählen“ (bzw. die Fotos,
+  wenn schon da) mit dem Satz „Diese Fotos bekommt die Bild-KI als Vorlage, wenn {{name}} im Bild ist.“ Darunter
+  „Aus dem Foto beschreiben (≈ 0,1 ct)“. Nach dem Hochladen eines ersten Fotos wird automatisch beschrieben, wenn
+  Beschreibung und Aussehen leer sind.
+- **Aus der Bibliothek:** Beim gewählten Bild gibt es „Als Figur anlegen …“ und „Als Ort anlegen …“ → Name abfragen →
+  Baustein mit diesem Foto, danach automatisch beschreiben und in „Planen“ öffnen.
+
 ## Grundregeln (wie immer)
 
 - Alles über die Oberfläche bzw. Admin-Konsole, kein Terminal. UI-Texte ohne Datei- oder Terminal-Hinweise.

@@ -6,12 +6,14 @@ import { MediaActions } from "./MediaActions"
 const label = "block text-[10px] font-bold uppercase tracking-wide text-[#68758a]"
 
 /** Rechts: Angaben zum gewählten Medium der Bibliothek (oder ein Hinweis, wenn nichts gewählt ist). */
-export function MediaInfo({ item, onDelete }: { item: LibraryItem | null; onDelete?: (item: LibraryItem) => void }) {
+export function MediaInfo({ item, onDelete, onCreateElement }: { item: LibraryItem | null; onDelete?: (item: LibraryItem) => void
+  onCreateElement?: (item: LibraryItem, kind: "character" | "place") => void }) {
   const { t } = useTranslation("studio")
   return (
     <section className="flex h-full min-h-0 flex-col overflow-y-auto p-3" data-studio-panel="inspector">
       <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("properties")}</h2>
-      {item ? <><ItemInfo item={item} />{onDelete && <MediaActions item={item} onDelete={() => onDelete(item)} />}</> : <p className="mt-3 text-xs text-[#68758a]">{t("pick_medium")}</p>}
+      {item ? <><ItemInfo item={item} />{onDelete && <MediaActions item={item} onDelete={() => onDelete(item)}
+        onCreateElement={onCreateElement && ((k) => onCreateElement(item, k))} />}</> : <p className="mt-3 text-xs text-[#68758a]">{t("pick_medium")}</p>}
     </section>
   )
 }

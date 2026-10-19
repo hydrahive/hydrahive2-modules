@@ -48,10 +48,12 @@ def voice(monkeypatch):
     return fake
 
 
-def wait_job(client, h, target: str, timeout: float = 8.0) -> dict:
+def wait_job(client, h, target: str, timeout: float = 8.0, job_id: str | None = None) -> dict:
+    """Auf den jüngsten Auftrag für `target` warten – mit `job_id` genau auf diesen (sonst kann bei schnell
+    nacheinander gestarteten Aufträgen der vorige, schon fertige zurückkommen)."""
     end = time.time() + timeout
     while time.time() < end:
-        jobs = [j for j in client.get(f"{P}/jobs", headers=h).json()["jobs"] if j["target"] == target]
+        jobs = [j for j in client.get(f"{P}/jobs", headers=h).json()["jobs"] if j["target"] == target and (job_id is None or j["id"] == job_id)]
         if jobs and jobs[0]["status"] in ("done", "failed", "cancelled"):
             return jobs[0]
         time.sleep(0.05)

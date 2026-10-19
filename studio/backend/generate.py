@@ -8,7 +8,7 @@ from __future__ import annotations
 import base64
 from datetime import datetime, timezone
 
-from . import _clean, image_provider, jobs, plan, presets, shots
+from . import _clean, cast, image_provider, jobs, plan, presets, shots
 from ._clean import CAMERA_KEYS
 from ._store import new_id, project_lock, project_root, root, safe_rel, write_json
 
@@ -18,15 +18,21 @@ MEDIA_DIR = "studio/media/images"
 _MIME = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "gif": "image/gif"}
 
 
+def _cast(pid: str, scene: dict, shot: dict) -> list[dict]:
+    """Bausteine im Bild: angehakt oder im Text genannt (C2), in dieser Reihenfolge."""
+    els = plan.list_elements(pid)
+    by_id = {e["id"]: e for e in els}
+    return [by_id[i] for i in cast.of_shot(scene, shot, els)]
+
+
 def build_prompt(pid: str, scene: dict, shot: dict) -> str:
     head = plan.get_head(pid)
     parts: list[str] = []
     if head["look"]["style"]:
         parts.append(head["look"]["style"])
-    used = set(shot.get("element_ids") or [])
-    cast = [e for e in plan.list_elements(pid) if e["id"] in used]
+    cast_ = _cast(pid, scene, shot)
     palette = list(head["look"]["palette"])
-    for e in cast:
+    for e in cast_:
         desc = e.get("description") or ""
         parts.append(f"{e['name']}: {desc}" if desc else e["name"])
         if e.get("style_anchor"):
@@ -44,13 +50,10 @@ def build_prompt(pid: str, scene: dict, shot: dict) -> str:
     return ". ".join(t for t in (p.strip().rstrip(".").strip() for p in parts) if t)
 
 
-def reference_urls(pid: str, shot: dict) -> list[str]:
-    """Referenzbilder der Bausteine im Shot als data:-URLs (nur echte Bilder im Projekt, höchstens 3)."""
-    used = set(shot.get("element_ids") or [])
+def reference_urls(pid: str, shot: dict, scene: dict | None = None) -> list[str]:
+    """Vorlage-Fotos der Bausteine im Bild als data:-URLs (nur echte Bilder im Projekt, höchstens 3)."""
     urls: list[str] = []
-    for e in plan.list_elements(pid):
-        if e["id"] not in used:
-            continue
+    for e in _cast(pid, scene or {}, shot):
         for rel in e.get("references") or []:
             if not safe_rel(pid, rel, plan.IMAGE_EXT):
                 continue
@@ -76,7 +79,7 @@ def _work(pid: str, scene_id: str, shot_id: str) -> dict:
     model = head["models"]["image"] or image_provider.server_default_model()
     prompt = build_prompt(pid, scene, shot)
     try:
-        raw = image_provider.request_image(model=model, prompt=prompt, references=reference_urls(pid, shot),
+        raw = image_provider.request_image(model=model, prompt=prompt, references=reference_urls(pid, shot, scene),
                                            aspect_ratio=head["aspect_ratio"])
     except image_provider.ProviderError as e:
         raise jobs.JobFailed(str(e)) from e

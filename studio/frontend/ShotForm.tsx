@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { Job, PlanElement, Shot } from "./planApi"
+import { ShotCast } from "./ShotCast"
 import { ShotImage } from "./ShotImage"
 import { ShotSpeech } from "./ShotSpeech"
 import { ShotVideo } from "./ShotVideo"
@@ -11,7 +12,8 @@ interface Props {
   shot: Shot
   index: number
   elements: PlanElement[]
-  sceneElementIds: string[]
+  /** nicht mehr benutzt (C2: jeder Baustein darf in den Shot) – bleibt für ältere Aufrufer */
+  sceneElementIds?: string[]
   presets: string[]
   busy: boolean
   onSave: (s: Partial<Shot>) => void
@@ -31,12 +33,11 @@ interface Props {
 }
 
 /** Planen, rechts: ein Shot (Kamera, Beschreibung, Bausteine der Szene, Dauer). Status und Medien ändert das Erzeugen. */
-export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy, onSave, onDelete, base = "", job = null, onGenerate, onChoose, videoJob = null, onVideo,
+export function ShotForm({ shot, index, elements, presets, busy, onSave, onDelete, base = "", job = null, onGenerate, onChoose, videoJob = null, onVideo,
   voices = [], speechJob = null, onSpeech, onDeleteMedia }: Props) {
   const { t } = useTranslation("studio")
   const [s, setS] = useState(shot)
   const dirty = JSON.stringify(s) !== JSON.stringify(shot)
-  const inScene = elements.filter((e) => sceneElementIds.includes(e.id))
   const toggle = (id: string) => setS((x) => ({ ...x, element_ids: x.element_ids.includes(id) ? x.element_ids.filter((y) => y !== id) : [...x.element_ids, id] }))
   return (
     <div className="mt-3 space-y-3 text-xs" data-plan-form="shot">
@@ -67,17 +68,17 @@ export function ShotForm({ shot, index, elements, sceneElementIds, presets, busy
         </label>
       ) : <p className="text-[11px] text-[#68758a]">{t("voice_only_default")}</p>}
       {onSpeech && <ShotSpeech shot={shot} base={base} job={speechJob} onGenerate={onSpeech} />}
-      <div>
-        <Label>{t("elements")}</Label>
-        {!inScene.length && <p className="mt-1 text-[11px] text-[#68758a]">{t("shot_no_elements")}</p>}
+      <ShotCast shot={shot} elements={elements} />
+      <details>
+        <summary className="cursor-pointer text-[11px] text-[#8d9ab0] hover:text-[#e8eef8]">{t("shot_extra_elements")}</summary>
         <div className="mt-1 flex flex-wrap gap-1">
-          {inScene.map((e) => (
+          {elements.map((e) => (
             <label key={e.id} className="flex items-center gap-1 rounded-full bg-[#111827] px-2 py-0.5 text-[11px] text-[#c3ccdd]">
               <input type="checkbox" checked={s.element_ids.includes(e.id)} onChange={() => toggle(e.id)} data-shot-element={e.id} /> {e.name}
             </label>
           ))}
         </div>
-      </div>
+      </details>
       <p className="text-[11px] text-[#8d9ab0]">{t("f.status")}: <span className="text-[#e8eef8]">{t(`shot_status.${shot.status}`, { defaultValue: shot.status })}</span></p>
       <FormActions busy={busy} dirty={dirty} onDelete={onDelete}
         onSave={() => onSave(shotChanges(s))} />

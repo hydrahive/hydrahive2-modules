@@ -8,7 +8,7 @@ from ._store import is_id, new_id
 
 ELEMENT_KINDS = ("character", "place", "object")
 SHOT_STATUS = ("planned", "image_ready", "video_processing", "done", "failed")
-MODEL_KEYS = ("video", "image", "voice", "music", "text")
+MODEL_KEYS = ("video", "image", "voice", "music", "text", "vision")
 LANGUAGES = ("de", "en", "fr", "es", "it", "nl", "pl", "pt", "tr", "uk", "ru", "sv", "da", "no", "fi", "cs", "ja", "zh")
 CAMERA_KEYS = ("shot", "lens", "light", "weather", "time", "mood")
 VARIANT_DIRS = ("studio/media/images/", "studio/media/free/")

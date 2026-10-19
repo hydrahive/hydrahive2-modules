@@ -11,6 +11,7 @@ import threading
 
 from hydrahive.llm import client as llm_client
 
+from . import cast as cast_
 from . import plan, presets, shots
 from ._clean import CAMERA_KEYS
 from ._store import project_lock
@@ -47,8 +48,9 @@ def scene_context(pid: str, scene: dict) -> str:
         lines.append("Requested look: " + ", ".join(p for p in phrases if p))
     if head["look"]["style"]:
         lines.append(f"Overall style of the film: {head['look']['style']}")
-    allowed = shots.scene_elements(pid, scene)
-    cast = [e for e in plan.list_elements(pid) if e["id"] in allowed]
+    els = plan.list_elements(pid)
+    in_scene = [*(scene.get("element_ids") or []), *cast_.of_shot(scene, {}, els)]   # Szene: angehakt oder genannt (C2)
+    cast = [e for e in els if e["id"] in set(in_scene)]
     if cast:
         lines.append("Elements in this scene (use their ids in element_ids):")
         for e in cast:
