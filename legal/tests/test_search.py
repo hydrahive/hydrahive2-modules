@@ -59,7 +59,9 @@ def test_snippet_is_short_and_from_text(corpus):
 
 
 def test_limit_and_empty_query(corpus):
-    assert len(search.search("der", limit=2)) <= 2
+    assert len(search.search("Frist", limit=2)) == 2
+    with pytest.raises(search.SearchError):
+        search.search("der die das")                      # nur Füllwörter → keine Suchwörter
     with pytest.raises(search.SearchError):
         search.search("   ")
     with pytest.raises(search.SearchError):

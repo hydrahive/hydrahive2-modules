@@ -13,8 +13,9 @@ def _save(key="bgb", xml=None, at="2026-10-20T03:30:00Z", pinned=True):
 
 
 def test_first_import_stores_law_and_norms():
+    """Fixture: 7 BGB-Normen (§ 10 weggefallen und Inhaltsübersicht zählen nicht)."""
     res = _save()
-    assert res == {"key": "bgb", "changed": True, "norms": 8}
+    assert res == {"key": "bgb", "changed": True, "norms": 7}
     law = store.get_law("bgb")
     assert law["abbr"] == "BGB" and law["pinned"] is True
     assert store.get_norm("BGB", "§ 536c")["title"].startswith("Während der Mietzeit")
@@ -22,9 +23,9 @@ def test_first_import_stores_law_and_norms():
 
 def test_same_hash_changes_nothing():
     _save()
-    assert _save(at="2026-10-21T03:30:00Z") == {"key": "bgb", "changed": False, "norms": 8}
+    assert _save(at="2026-10-21T03:30:00Z") == {"key": "bgb", "changed": False, "norms": 7}
     assert store.get_law("bgb")["fetched_at"] == "2026-10-21T03:30:00Z"     # Abruf vermerkt, Inhalt gleich
-    assert store.count_norms("BGB", include_old=True) == 8
+    assert store.count_norms("BGB", include_old=True) == 7
 
 
 def test_new_version_keeps_old_text_with_valid_to():
@@ -36,7 +37,7 @@ def test_new_version_keeps_old_text_with_valid_to():
     assert "binnen einer Woche" in now["text"] and now["valid_from"] == "2026-11-02T03:30:00Z"
     old = store.get_norm("BGB", "§ 536c", as_of="2026-10-25T00:00:00Z")
     assert "unverzüglich" in old["text"] and old["valid_to"] == "2026-11-02T03:30:00Z"
-    assert store.count_norms("BGB") == 8                                    # gültige Fassung zählt einmal
+    assert store.count_norms("BGB") == 7                                    # gültige Fassung zählt einmal
 
 
 def test_norm_removed_in_new_version_is_closed_not_deleted():
