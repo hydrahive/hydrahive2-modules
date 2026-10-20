@@ -139,3 +139,23 @@ def test_migration_keeps_old_proposals_and_allows_letter():
     c.execute("INSERT INTO module_legal_proposals(project_id,kind,payload,created_at) VALUES ('p','letter','{}','x')")
     with pytest.raises(sqlite3.IntegrityError):
         c.execute("INSERT INTO module_legal_proposals(project_id,kind,payload,created_at) VALUES ('p','quatsch','{}','x')")
+
+
+@pytest.mark.parametrize("cut_before", ["INSERT INTO module_legal_proposals_new", "DROP TABLE module_legal_proposals;"])
+def test_migration_repeatable_after_partial_run(cut_before):
+    """Abbruch mitten in 003 → erneuter Lauf darf nicht an „already exists“ scheitern (der Kern würde ihn sonst als
+    erledigt markieren und der alte CHECK bliebe, siehe modules/migrations.py)."""
+    import sqlite3
+    from pathlib import Path
+    mig = Path(__file__).resolve().parents[1] / "migrations"
+    sql = (mig / "003_letters.sql").read_text()
+    c = sqlite3.connect(":memory:")
+    c.executescript((mig / "002_cases.sql").read_text())
+    c.execute("INSERT INTO module_legal_cases(project_id,title,state,created_by,created_at,updated_at) "
+              "VALUES ('p','T','NW','a','x','x')")
+    c.execute("INSERT INTO module_legal_proposals(project_id,kind,payload,created_at) VALUES ('p','fact','{}','x')")
+    c.commit()
+    c.executescript(sql[:sql.index(cut_before)])
+    c.executescript(sql)
+    c.execute("INSERT INTO module_legal_proposals(project_id,kind,payload,created_at) VALUES ('p','letter','{}','x')")
+    assert [r[0] for r in c.execute("SELECT kind FROM module_legal_proposals ORDER BY id")] == ["fact", "letter"]

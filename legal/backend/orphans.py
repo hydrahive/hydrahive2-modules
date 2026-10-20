@@ -18,7 +18,8 @@ from hydrahive.db.connection import db
 logger = logging.getLogger(__name__)
 
 GRACE = timedelta(days=30)
-_CHILD_TABLES = ("module_legal_parties", "module_legal_deadlines", "module_legal_notes", "module_legal_proposals")
+_CHILD_TABLES = ("module_legal_parties", "module_legal_deadlines", "module_legal_notes", "module_legal_proposals",
+                 "module_legal_correspondence")
 _FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 
@@ -37,7 +38,7 @@ def _dump(project_id: str) -> dict[str, Any]:
     with db() as c:
         for key, table in (("case", "module_legal_cases"), ("parties", _CHILD_TABLES[0]),
                            ("deadlines", _CHILD_TABLES[1]), ("notes", _CHILD_TABLES[2]),
-                           ("proposals", _CHILD_TABLES[3])):
+                           ("proposals", _CHILD_TABLES[3]), ("correspondence", _CHILD_TABLES[4])):
             cur = c.execute(f"SELECT * FROM {table} WHERE project_id = ? ORDER BY rowid", (project_id,))
             cols = [d[0] for d in cur.description]
             rows = [dict(zip(cols, r, strict=True)) for r in cur.fetchall()]
