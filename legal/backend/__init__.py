@@ -7,10 +7,11 @@ register(ctx) →
   - Job       orphans (täglich: Fälle ohne Projekt markieren, nach 30 Tagen sichern + löschen)
   - Migrationen 001_corpus.sql, 002_cases.sql
 L2 (PLAN-L2.md): Fälle = Projekte mit Rechts-Agent, Fallakte, Fristenrechner, Fall-Werkzeuge (privat).
+L3 (PLAN-L3.md): Schriftverkehr, Brief-Vorlagen + Prüfliste, Brief-Werkzeuge, Skill rechtsbrief (System-Skill).
 """
 from __future__ import annotations
 
-from . import corpus_sync, orphans
+from . import corpus_sync, orphans, skill_sync
 from .routes import router
 from .tools import TOOLS
 
@@ -22,3 +23,4 @@ def register(ctx) -> None:
     ctx.register_job("corpus_sync", corpus_sync.job, interval_seconds=3600, initial_delay_seconds=120)
     ctx.register_job("orphans", orphans.job, interval_seconds=86400, initial_delay_seconds=600)
     ctx.register_migrations("migrations")
+    skill_sync.install()
