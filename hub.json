@@ -46,6 +46,11 @@
       "path": "deepresearch"
     },
     {
+      "id": "diagramme",
+      "name": "Diagramme",
+      "path": "diagramme"
+    },
+    {
       "id": "minigames",
       "name": "Minigames",
       "path": "minigames"

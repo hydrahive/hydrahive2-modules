@@ -1,0 +1,12 @@
+{
+  "id": "diagramme",
+  "name": "Diagramme",
+  "version": "0.1.0",
+  "description": "Agenten erstellen interaktive Diagramme – Abläufe, Aufbau eines Systems, Datenbank, Zeitleisten – und Antwort-Seiten. Bedienbar im Chat, alle dauerhaft gespeichert. Läuft lokal (Archify), ohne Kosten.",
+  "icon": "Network",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "default_agent_tools": true,
+  "min_core_version": "2.0.0"
+}
