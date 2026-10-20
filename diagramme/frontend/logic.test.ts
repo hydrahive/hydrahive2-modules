@@ -21,6 +21,7 @@ describe("Diagramme: Logik der Sammlung (Spec §12.2)", () => {
   it("errorKey nimmt bekannte Codes, sonst einen allgemeinen Text", () => {
     expect(errorKey(Object.assign(new Error("x"), { code: "diagram_not_owner" }))).toBe("err.diagram_not_owner")
     expect(errorKey(new Error("Netz weg"))).toBe("err.general")
+    expect(errorKey(Object.assign(new Error("x"), { code: "upload_request_too_large" }))).toBe("err.general")
     expect(errorKey("kaputt")).toBe("err.general")
   })
 

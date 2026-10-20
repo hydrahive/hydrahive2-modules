@@ -32,6 +32,11 @@ describe("Seite Diagramme", () => {
     expect(html).toContain("versions_count:{&quot;count&quot;:2}")
   })
 
+  it("Kachel mit nur einer Fassung nennt keine Fassungen", () => {
+    const html = renderToStaticMarkup(<Tile item={{ ...ITEM, versions: 1 }} onOpen={() => {}} />)
+    expect(html).not.toContain("versions_count")
+  })
+
   it("Endgültig-löschen-Dialog ist ein eigener Dialog mit klarer Warnung", () => {
     const html = renderToStaticMarkup(<PurgeDialog title="Ablauf" busy={false} onConfirm={() => {}} onClose={() => {}} />)
     expect(html).toContain('role="dialog"')

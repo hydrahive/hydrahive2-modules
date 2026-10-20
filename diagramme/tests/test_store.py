@@ -162,3 +162,72 @@ def test_preview_state_column(store_dir):
     assert store.get(d["id"])["preview_state"] is None
     store.set_preview_state(d["id"], "ok")
     assert store.get(d["id"])["preview_state"] == "ok"
+
+
+def test_purge_never_deletes_outside_root_even_with_bad_rows(store_dir, setup_test_env):
+    """Eine manipulierte Zeile (version_of zeigt auf die Kette, id ist ein Pfad) darf nichts außerhalb löschen."""
+    from hydrahive.db.connection import db
+    a = _new()
+    victim = setup_test_env / "opfer"
+    victim.mkdir(exist_ok=True)
+    (victim / "wichtig.txt").write_text("bleibt")
+    nested = store_dir / a["id"] / "unter"
+    nested.mkdir()
+    bad_ids = ["../opfer", f"{a['id']}/unter"]
+    with db() as c:
+        for bad in bad_ids:
+            c.execute("INSERT INTO module_diagrams (id, username, title, kind, created_at, version_of) VALUES (?, ?, ?, ?, ?, ?)",
+                      (bad, "testuser", "x", "workflow", "2026-10-20T00:00:01Z", a["id"]))
+    try:
+        store.purge_chain(a["id"])
+        assert (victim / "wichtig.txt").read_text() == "bleibt"
+        assert not (store_dir / a["id"]).exists()
+    finally:
+        with db() as c:
+            for bad in bad_ids:
+                c.execute("DELETE FROM module_diagrams WHERE id = ?", (bad,))
+        (victim / "wichtig.txt").unlink()
+        victim.rmdir()
+
+
+def test_purge_does_not_follow_a_link_out_of_the_store(store_dir, setup_test_env):
+    """Gültige ID, aber der Ordner ist ein Verweis nach draußen → draußen bleibt alles."""
+    from hydrahive.db.connection import db
+    a = _new()
+    outside = setup_test_env / "draussen"
+    outside.mkdir(exist_ok=True)
+    (outside / "wichtig.txt").write_text("bleibt")
+    link = store_dir / "d_verweis"
+    link.symlink_to(outside, target_is_directory=True)
+    with db() as c:
+        c.execute("INSERT INTO module_diagrams (id, username, title, kind, created_at, version_of) VALUES (?, ?, ?, ?, ?, ?)",
+                  ("d_verweis", "testuser", "x", "workflow", "2026-10-20T00:00:02Z", a["id"]))
+    try:
+        store.purge_chain(a["id"])
+        assert (outside / "wichtig.txt").read_text() == "bleibt"
+    finally:
+        with db() as c:
+            c.execute("DELETE FROM module_diagrams WHERE id = ?", ("d_verweis",))
+        link.unlink()
+        (outside / "wichtig.txt").unlink()
+        outside.rmdir()
+
+
+def test_purge_leaves_foreign_folders_in_the_store(store_dir):
+    """Ein Ordner in der Ablage, der kein Diagramm ist (ID ohne d_), wird nie gelöscht."""
+    from hydrahive.db.connection import db
+    a = _new()
+    foreign = store_dir / "sicherung"
+    foreign.mkdir()
+    (foreign / "x.txt").write_text("bleibt")
+    with db() as c:
+        c.execute("INSERT INTO module_diagrams (id, username, title, kind, created_at, version_of) VALUES (?, ?, ?, ?, ?, ?)",
+                  ("sicherung", "testuser", "x", "workflow", "2026-10-20T00:00:03Z", a["id"]))
+    try:
+        store.purge_chain(a["id"])
+        assert (foreign / "x.txt").read_text() == "bleibt"
+    finally:
+        with db() as c:
+            c.execute("DELETE FROM module_diagrams WHERE id = ?", ("sicherung",))
+        (foreign / "x.txt").unlink()
+        foreign.rmdir()

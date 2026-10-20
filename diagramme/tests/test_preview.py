@@ -61,6 +61,20 @@ def test_failed_screenshot_is_remembered(store_dir, fake_chrome):
     assert not (store_dir / d["id"] / "vorschau.png").exists()
 
 
+def test_failed_screenshot_leaves_no_half_image(store_dir, monkeypatch):
+    """Chromium schreibt eine Datei, meldet aber Fehler → kein halbes Bild bleiben lassen."""
+    monkeypatch.setattr(preview.chrome, "find", lambda: "/opt/chrome/chrome")
+
+    def broken(argv, *, timeout, env):
+        out = next(a for a in argv if a.startswith("--screenshot=")).split("=", 1)[1]
+        Path(out).write_bytes(b"halb")
+        return 1
+    monkeypatch.setattr(preview, "_run", broken)
+    d = _d()
+    assert preview.make(d["id"]) is False
+    assert not (store_dir / d["id"] / "vorschau.png").exists()
+
+
 def test_timeout_does_not_raise(store_dir, monkeypatch):
     monkeypatch.setattr(preview.chrome, "find", lambda: "/opt/chrome/chrome")
 
