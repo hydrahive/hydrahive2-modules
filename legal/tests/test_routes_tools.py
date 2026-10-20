@@ -59,7 +59,7 @@ def test_laws_list_and_detail(app_client, corpus):
     h = _login(app_client, "alice")
     laws = app_client.get(f"{PREFIX}/laws", headers=h).json()
     bgb = next(law for law in laws["laws"] if law["key"] == "bgb")
-    assert bgb["abbr"] == "BGB" and bgb["norms"] == 7 and bgb["group"] == "Zivil- und Verfahrensrecht"
+    assert bgb["abbr"] == "BGB" and bgb["norms"] == 12 and bgb["group"] == "Zivil- und Verfahrensrecht"
     assert laws["core_total"] == 54
     detail = app_client.get(f"{PREFIX}/laws/bgb", headers=h).json()
     assert [n["enbez"] for n in detail["norms"]][:3] == ["§ 535", "§ 536", "§ 536c"]

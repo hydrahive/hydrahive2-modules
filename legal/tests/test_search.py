@@ -77,3 +77,32 @@ def test_old_versions_are_not_found(corpus):
     store.save_law(parse_law("bgb", changed), changed, fetched_at="2026-11-02T03:30:00Z", pinned=True)
     hits = [h for h in search.search("Mangel Mietsache Anzeige Mieter") if h["enbez"] == "§ 536c"]
     assert len(hits) == 1
+
+
+def test_title_weighs_more_than_text(corpus):
+    """„Widerrufsrecht Verbrauchervertrag“: § 355 BGB hat die Wörter im Titel, §§ 356d/e/f nur im Text.
+    Auf dem echten Korpus stand ungewichtet § 356e vorne (L0, 20.10.2026). bm25 hängt von der Korpusgröße ab –
+    daher hier der Vorsprung des Titel-Treffers statt nur der Platz. Gemessen auf dieser Fixture (20.10.2026):
+    Titel 8 → 2,97-fach, Titel 4 → 2,77, Titel 2 → 2,44, alle 1 → 2,0. Schwelle 2,9 trennt das gewählte Gewicht."""
+    assert _ids(search.search("Widerrufsrecht Verbrauchervertrag", limit=3))[0] == ("BGB", "§ 355")
+    assert search.BM25_WEIGHTS[2] >= 4 * search.BM25_WEIGHTS[4]          # Titel ≥ 4 × Text
+    assert search.BM25_WEIGHTS[3] > search.BM25_WEIGHTS[4]               # Gliederung > Text (Normen ohne Titel)
+    from hydrahive.db.connection import db
+    with db() as c:
+        def lead(w):
+            rows = c.execute(f"SELECT n.enbez, bm25(module_legal_norms_fts, {', '.join(map(str, w))}) "
+                             "FROM module_legal_norms_fts JOIN module_legal_norms n ON n.id = module_legal_norms_fts.rowid "
+                             "WHERE module_legal_norms_fts MATCH ? AND n.valid_to IS NULL ORDER BY 2 LIMIT 2",
+                             ('"widerrufsre"* OR "verbraucherver"*',)).fetchall()
+            return rows[0][1] / rows[1][1]
+        assert lead(search.BM25_WEIGHTS) >= 2.9
+
+
+def test_limit_is_capped():
+    """Mehr als 20 passende Normen anlegen – limit=500 darf trotzdem höchstens MAX_LIMIT liefern."""
+    from backend.gii_parse import Law, Norm
+    law = Law(key="testg", abbr="TestG", title="Testgesetz", stand="",
+              norms=[Norm("TestG", f"§ {i}", f"d{i}", f"Frist Nummer {i}", "", f"Eine Frist von {i} Tagen.", i)
+                     for i in range(1, 31)])
+    store.save_law(law, b"x", fetched_at="2026-10-20T03:30:00Z", pinned=False)
+    assert len(search.search("Frist", law="TestG", limit=500)) == search.MAX_LIMIT == 20

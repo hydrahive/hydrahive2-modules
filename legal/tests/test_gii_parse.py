@@ -82,3 +82,26 @@ def test_broken_xml_is_a_clear_error():
 def test_norm_with_only_a_dash_is_skipped():
     """JGG § 19 (Stand 20.10.2026) hat als Text nur „-“ – kein Inhalt, nicht in den Korpus (L0 filterte das)."""
     assert [n.enbez for n in parse_law("jgg", fixture_xml("jgg")).norms] == []
+
+
+def test_footnote_markers_and_official_notes_stay_out_of_the_text():
+    """BGB § 14 (Stand 20.10.2026): <FnR/> im ersten Absatz, „Amtlicher Hinweis“ in <Footnotes> neben <Content>."""
+    n = _by(parse_law("bgb", fixture_xml("bgb")).norms, "§ 14")
+    assert n.text.startswith("(1) Unternehmer ist eine natürliche oder juristische Person")
+    assert "Amtlicher Hinweis" not in n.text and "Richtlinien" not in n.text
+
+
+def test_table_of_contents_is_not_a_norm_even_if_it_had_text():
+    """Die Inhaltsübersicht steht in <TOC> (leerer Content) – trotzdem auch per Bezeichnung ausschließen."""
+    xml = fixture_xml("bgb").replace(b"<text format=\"XML\"><TOC>", b"<text format=\"XML\"><Content><P>Buch 1 Allgemeiner Teil</P></Content><TOC>", 1)
+    assert "Inhaltsübersicht" not in [n.enbez for n in parse_law("bgb", xml).norms]
+
+
+def test_footnotes_inside_content_would_be_dropped():
+    """Schutz für den Fall, dass das amtliche XML Fußnoten einmal in <Content> stellt (heute nicht so)."""
+    from xml.etree import ElementTree as ET
+
+    from backend.gii_parse import _text_of
+    el = ET.fromstring('<Content><P>(1) Text<FnR ID="x"/> weiter.</P>'
+                       '<Footnotes><Footnote ID="x"><B>Amtlicher Hinweis:</B> Richtlinie</Footnote></Footnotes></Content>')
+    assert _text_of(el) == "(1) Text weiter."

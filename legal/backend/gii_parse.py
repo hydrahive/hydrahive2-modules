@@ -48,6 +48,8 @@ def _text_of(el: ET.Element | None) -> str:
     parts: list[str] = []
 
     def walk(e: ET.Element) -> None:
+        # Schutz: Stand 20.10.2026 liegen <Footnotes> außerhalb von <Content> und <FnR/> ist leer – der Zweig greift
+        # heute nicht (Mutanten-Gegenprobe), verhindert aber Fußnotentext im Normtext, falls sich das XML ändert.
         if e.tag in ("Footnotes", "Footnote", "FnR"):
             if e.tail:
                 parts.append(e.tail)

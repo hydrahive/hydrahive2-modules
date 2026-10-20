@@ -14,6 +14,9 @@ from . import corpus_store as store
 from .citation import parse_citation
 
 MAX_LIMIT = 20
+#: bm25-Spaltengewichte (abbr, enbez, title, gliederung, text). L0 auf dem echten Korpus (10.715 Normen, 20 Fragen):
+#: Titel 8 / Gliederung 2 / Text 1 → Top 1 15/20; alle 1 → 12/20 (Spec §6a).
+BM25_WEIGHTS = (0.0, 0.0, 8.0, 2.0, 1.0)
 _STOP = {"der", "die", "das", "und", "oder", "mit", "von", "für", "nach", "gegen", "wegen", "dem", "den", "des",
          "ein", "eine", "einer", "eines", "bei", "zur", "zum", "auf", "aus", "ist", "sind", "im", "in", "an"}
 _SNIPPET = 280
@@ -64,7 +67,7 @@ def search(query: str, *, law: str | None = None, limit: int = 10) -> list[dict]
            "FROM module_legal_norms_fts f JOIN module_legal_norms n ON n.id = f.rowid "
            "WHERE module_legal_norms_fts MATCH ? AND n.valid_to IS NULL"
            + (" AND n.abbr = ?" if law else "")
-           + " ORDER BY bm25(module_legal_norms_fts, 0.0, 0.0, 8.0, 2.0, 1.0) LIMIT ?")
+           + f" ORDER BY bm25(module_legal_norms_fts, {', '.join(map(str, BM25_WEIGHTS))}) LIMIT ?")
     params = (match, law, limit) if law else (match, limit)
     with db() as c:
         rows = c.execute(sql, params).fetchall()

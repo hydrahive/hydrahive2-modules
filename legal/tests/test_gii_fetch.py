@@ -102,7 +102,7 @@ def test_too_big_download_or_unpacked_xml_is_rejected(fake_http, monkeypatch):
     monkeypatch.setattr(gii_fetch, "MAX_ZIP_BYTES", 10_000_000)
     monkeypatch.setattr(gii_fetch, "MAX_XML_BYTES", 1000)
     answers[gii_fetch.zip_url("bgb")] = _Resp(200, _zip({"g.xml": b"<a>" + b"x" * 5000 + b"</a>"}))
-    with pytest.raises(gii_fetch.FetchError, match="zu groß"):
+    with pytest.raises(gii_fetch.FetchError, match="XML zu groß"):
         asyncio.run(gii_fetch.fetch_law_xml("bgb"))
 
 
@@ -130,3 +130,16 @@ def test_network_errors_become_fetch_error(monkeypatch):
     monkeypatch.setattr(ssrf, "safe_async_client", blocked)
     with pytest.raises(gii_fetch.FetchError, match="gesperrt"):
         asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+
+
+def test_xml_size_is_checked_before_unpacking(fake_http, monkeypatch):
+    """Zip-Bombe: Die Größe im ZIP-Verzeichnis wird vor dem Entpacken geprüft (file_size), nicht erst danach."""
+    _, answers = fake_http
+    monkeypatch.setattr(gii_fetch, "MAX_XML_BYTES", 1000)
+    answers[gii_fetch.zip_url("bgb")] = _Resp(200, _zip({"g.xml": b"<a>" + b"x" * 5000 + b"</a>"}))
+    read_calls = []
+    orig = zipfile.ZipFile.read
+    monkeypatch.setattr(zipfile.ZipFile, "read", lambda self, *a, **k: read_calls.append(a) or orig(self, *a, **k))
+    with pytest.raises(gii_fetch.FetchError, match="XML zu groß"):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+    assert read_calls == []
