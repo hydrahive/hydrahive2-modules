@@ -106,3 +106,15 @@ def test_limit_is_capped():
                      for i in range(1, 31)])
     store.save_law(law, b"x", fetched_at="2026-10-20T03:30:00Z", pinned=False)
     assert len(search.search("Frist", law="TestG", limit=500)) == search.MAX_LIMIT == 20
+
+
+def test_citation_query_lists_norms_that_cite_it_not_noise(corpus):
+    """Live hydratest 20.10.2026: „§ 536c BGB“ brachte unter dem exakten Treffer „Anhang EV ZPO/HeizkostenV“, weil
+    „bgb“ fast überall vorkommt. Nach einer Normbezeichnung zählen nur Normen, die genau diese Nummer zitieren."""
+    hits = search.search("§ 536 BGB")
+    assert hits[0]["match"] == "exact" and hits[0]["enbez"] == "§ 536"
+    rest = hits[1:]
+    assert rest, "§ 536c zitiert „§ 536“ – muss als Querverweis erscheinen"
+    assert all("536" in h["snippet"] for h in rest)
+    assert ("BGB", "§ 536c") in _ids(rest)
+    assert all(h["match"] == "cites" for h in rest)
