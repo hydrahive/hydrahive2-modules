@@ -78,7 +78,7 @@ def test_title_comes_from_meta_or_fallback(fake_archify, store_dir, ws):
 def test_meta_output_is_forced_into_own_folder(fake_archify, store_dir, ws):
     """Der Agent kann über meta.output nicht woanders hinschreiben."""
     _create(_ctx(ws), beschreibung=json.dumps({"meta": {"title": "T", "output": "../../../etc/x.html"}}))
-    written = json.loads((fake_archify["calls"][0]["cwd"] / "eingabe.json").read_text())
+    written = json.loads(fake_archify["calls"][0]["input"])
     assert written["meta"]["output"] == "diagramm.html"
 
 

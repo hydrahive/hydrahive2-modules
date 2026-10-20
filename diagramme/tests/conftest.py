@@ -155,7 +155,9 @@ def fake_archify(monkeypatch):
     state = {"calls": [], "fail": None}
 
     def fake_run(argv, *, cwd, env, timeout):
-        state["calls"].append({"argv": list(argv), "cwd": Path(cwd), "env": dict(env), "timeout": timeout})
+        src = Path(cwd) / argv[argv.index("finalize") + 2]
+        state["calls"].append({"argv": list(argv), "cwd": Path(cwd), "env": dict(env), "timeout": timeout,
+                               "input": src.read_text() if src.is_file() else None})
         if state["fail"]:
             return 1, json.dumps({"ok": False, "diagnostics": state["fail"]})
         out = Path(cwd) / argv[argv.index("finalize") + 3]
