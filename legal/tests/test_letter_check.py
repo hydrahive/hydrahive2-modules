@@ -127,3 +127,14 @@ def test_garbage_input_does_not_crash():
     assert out["ok"] is False and len(out["items"]) == 10
     out = letter_check.check({"body": None, "attachments": "kaputt", "date": "2026-13-45"}, today=TODAY)
     assert out["ok"] is False
+
+
+@pytest.mark.parametrize("body", [
+    "Am 03.07.2026 habe ich den Mangel mündlich gemeldet.\nBitte beseitigen Sie ihn binnen 14 Tagen. § 536c BGB.",
+    "Am 03.07.2026 habe ich den Mangel mündlich gemeldet. Bitte beseitigen Sie ihn binnen 14 Tagen. § 536c BGB.",
+    "Bitte beseitigen Sie den Mangel binnen 14 Tagen. Die Messung vom 16.08.2026 liegt bei. § 536c BGB.",
+])
+def test_date_in_neighbouring_sentence_does_not_count(body):
+    """Nur ein Datum im SELBEN Satz macht die relative Frist bestimmt – ein Datum davor/danach (Ereignis) nicht."""
+    items, _ = _items({**GOOD, "body": body})
+    assert items["deadline_date"]["ok"] is False
