@@ -7,7 +7,6 @@ from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Query, Response, status
 from fastapi.responses import FileResponse
-
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 

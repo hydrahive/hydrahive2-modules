@@ -4,10 +4,9 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, ConfigDict, StrictBool
-
 from hydrahive.api.middleware.auth import require_admin, require_auth
 from hydrahive.api.middleware.errors import coded
+from pydantic import BaseModel, ConfigDict, StrictBool
 
 from . import agents_access, links, store
 from .collection import router as collection_router
