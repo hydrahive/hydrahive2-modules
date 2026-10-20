@@ -12,7 +12,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+import pytest
+from _hh_isolation import (  # noqa: F401 - pytest-Hooks, über conftest registriert
     isolated_root,
     only_own_files,
     only_own_rows,
@@ -23,9 +24,7 @@ from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest r
     pytest_unconfigure,
     remove_test_tree,
 )
-
-import pytest  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 if str(MODULE_DIR) not in sys.path:
@@ -63,10 +62,10 @@ def setup_test_env():
                 "id": pid, "name": pid, "members": [member], "created_by": member,
             }, indent=2))
 
-        from hydrahive.api import main
         from backend.device_routes import device_auth, device_router
         from backend.routes import router
         from fastapi import Depends
+        from hydrahive.api import main
         main.app.include_router(router, prefix=MOD_PREFIX)
         main.app.include_router(device_router, prefix=DEV_PREFIX, dependencies=[Depends(device_auth)])
         yield tmp_path
@@ -77,7 +76,6 @@ def client(setup_test_env):
     from contextlib import asynccontextmanager
 
     from fastapi import FastAPI
-
     from hydrahive.db import init_db
     from hydrahive.modules.migrations import apply_module_migrations
     init_db()

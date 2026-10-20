@@ -4,7 +4,6 @@ from __future__ import annotations
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-
 from backend import links, store
 from conftest import DEV_PREFIX, MOD_PREFIX, OTHER_PROJECT_ID, PROJECT_ID
 
@@ -30,7 +29,7 @@ def test_view_link_for_owner(client, auth_headers, store_dir):
     assert r.status_code == 200
     url = r.json()["url"]
     assert url.startswith(f"{DEV_PREFIX}/sandbox/{d['id']}?")
-    path, exp, sig = _split(url)
+    _, exp, sig = _split(url)
     assert links.check(d["id"], int(exp), sig)
 
 

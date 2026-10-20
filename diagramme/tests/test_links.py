@@ -4,7 +4,6 @@ from __future__ import annotations
 import hmac
 
 import pytest
-
 from backend import links
 
 

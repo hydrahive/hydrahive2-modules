@@ -5,7 +5,6 @@ import json
 import shutil
 
 import pytest
-
 from backend import runner
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="Node fehlt")

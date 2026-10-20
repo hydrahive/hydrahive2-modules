@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from backend import store, tools
 from conftest import PROJECT_ID
 

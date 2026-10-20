@@ -2,14 +2,13 @@
 from __future__ import annotations
 
 import pytest
-
 from backend import store
 from conftest import OTHER_PROJECT_ID, PROJECT_ID
 
 
 def _new(**kw):
-    base = dict(username="testuser", project_id=PROJECT_ID, session_id="s1", agent_id="a1", title="Websuche",
-                kind="workflow", html="<html>1</html>", source='{"a": 1}', source_ext="json")
+    base = {"username": "testuser", "project_id": PROJECT_ID, "session_id": "s1", "agent_id": "a1", "title": "Websuche",
+            "kind": "workflow", "html": "<html>1</html>", "source": '{"a": 1}', "source_ext": "json"}
     base.update(kw)
     return store.create(**base)
 
