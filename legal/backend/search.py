@@ -46,25 +46,43 @@ def _hit(n: dict, terms: list[str], match: str) -> dict:
             "law_key": n["law_key"]}
 
 
+_REF = r"\d+[a-z]?"
+_JOIN = r"\s*(?:,|und|bis|oder)\s*"
+_DETAIL = r"\s+(?:Absatz|Abs\.|Satz|S\.|Nummer|Nr\.|Buchstabe|Buchst\.)\s*(?:\d+[a-z]?|[a-z]\b)"
+#: Nach der Nummer: weitere Aufzählung/Absatz/Satz …, dann „des|der <Großgeschrieben>“ = fremdes Gesetz.
+_FOREIGN = re.compile(rf"^(?:{_JOIN}{_REF}|{_DETAIL})*\s+(?:des|der)\s+(?!(?:vorstehenden|nachstehenden|folgenden)\b)[A-ZÄÖÜ]")
+
+
+def cites_number(text: str, num: str) -> bool:
+    """Nennt ``text`` die Nummer ``num`` als Paragraf DIESES Gesetzes? Nicht: andere Nummer („§ 536a“, „§ 5361“),
+    fremdes Gesetz („§ 1 … des Kreditwesengesetzes“, „§§ 1, 2 oder 2a des …“), Paragraf in einem Artikel eines
+    anderen Gesetzes („Artikel 246a § 1“, „des Artikels 250 §§ 1 bis 3“). Fälle aus dem echten BGB (20.10.2026)."""
+    pattern = re.compile(rf"(Artikels?\s+{_REF}\s+)?§§?\s*(?:{_REF}{_JOIN})*{re.escape(num)}(?![\da-z])")
+    for m in pattern.finditer(text):
+        if m.group(1):
+            continue
+        if _FOREIGN.match(text[m.end():]):
+            continue
+        return True
+    return False
+
+
 def _citing(abbr: str, enbez: str, limit: int) -> list[dict]:
-    """Normen von ``abbr``, deren Text „§ 536“ als ganze Nummer nennt (nicht „§ 5361“, nicht „§ 536a“)."""
-    if limit <= 0:
+    """Normen von ``abbr``, die genau diese Nummer als Paragraf dieses Gesetzes nennen (``cites_number``)."""
+    if limit <= 0 or not enbez.startswith("§ "):
         return []
     num = enbez.split(" ", 1)[1]
-    pattern = re.compile(rf"(?:§§?|Art\.?)\s*(?:\d+[a-z]?\s*(?:,|und|bis|oder)\s*)*{re.escape(num)}(?![\da-z])")
-    match = f'"{num}"'
     sql = (f"SELECT {', '.join('n.' + c.strip() for c in store._NORM_COLS.split(','))} "
            "FROM module_legal_norms_fts f JOIN module_legal_norms n ON n.id = f.rowid "
            "WHERE module_legal_norms_fts MATCH ? AND n.valid_to IS NULL AND n.abbr = ? AND n.enbez != ? "
-           "ORDER BY n.position LIMIT 200")
+           "ORDER BY n.position LIMIT 500")
     with db() as c:
-        rows = c.execute(sql, (f"text : {match}", abbr, enbez)).fetchall()
+        rows = c.execute(sql, (f'text : "{num}"', abbr, enbez)).fetchall()
     out = []
     for row in rows:
         n = store.norm_dict(row)
-        if pattern.search(n["text"]):
-            hit = _hit(n, [num], "cites")
-            out.append(hit)
+        if cites_number(n["text"], num):
+            out.append(_hit(n, [num], "cites"))
             if len(out) >= limit:
                 break
     return out

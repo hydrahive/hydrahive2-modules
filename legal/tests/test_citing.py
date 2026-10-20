@@ -22,6 +22,10 @@ def test_counts_own_law_mentions(text):
     "§ 1 Absatz 1 Satz 2 des Kreditwesengesetzes",             # fremdes Gesetz (BGB § 310, echt)
     "§ 40a des Beurkundungsgesetzes",                          # fremdes Gesetz (BGB § 77, echt)
     "Artikel 246a § 1 Absatz 2 und 3 des Einführungsgesetzes",  # Artikel eines anderen Gesetzes (BGB § 312, echt)
+    "nach den §§ 1, 2 oder 2a des Unterlassungsklagengesetzes",  # Aufzählung, dann fremdes Gesetz (BGB § 204a, echt)
+    "nach Maßgabe des Artikels 246b §§ 1 bis 3 des Einführungsgesetzes",  # (BGB § 312d, echt)
+    "im Sinne des § 1 Nummer 2 Buchstabe a des Reisesicherungsfondsgesetzes",  # (BGB § 651r, echt)
+    "nach den §§ 1 bis 6 des Vormünder- und Betreuervergütungsgesetzes",  # (BGB § 1888, echt)
 ])
 def test_ignores_other_norms_and_foreign_laws(text):
     number = "1" if "§ 1" in text else ("40a" if "40a" in text else "536")
