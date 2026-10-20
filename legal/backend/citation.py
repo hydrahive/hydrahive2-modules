@@ -26,7 +26,7 @@ _ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII":
 
 def _sgb_book(raw: str) -> int | None:
     """„SGB II“ / „SGB 2“ → 2 (gesetze-im-internet schreibt arabisch, nur SGB X römisch)."""
-    m = re.fullmatch(r"SGB\s+([IVX]+|\d+)", raw.strip(), re.I)
+    m = re.fullmatch(r"SGB\s+([IVX]+|\d+)", raw.strip(), re.IGNORECASE)
     if not m:
         return None
     part = m.group(1).upper()

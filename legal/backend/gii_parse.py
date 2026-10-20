@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from xml.etree import ElementTree as ET
 
 _SKIP_ENBEZ = {"Inhaltsübersicht", "Inhaltsverzeichnis", "Eingangsformel", "Schlussformel"}
-_REPEALED = re.compile(r"^\(?\s*(weggefallen|aufgehoben)\s*\)?\.?$", re.I)
+_REPEALED = re.compile(r"^\(?\s*(weggefallen|aufgehoben)\s*\)?\.?$", re.IGNORECASE)
 _EMPTY = re.compile(r"^[\s\-–—.]*$")          # Text nur „-“ (z. B. JGG § 19): kein Inhalt
 _BREAK_BEFORE = {"P", "DT", "BR", "Title", "Subtitle"}
 

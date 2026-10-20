@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from backend.citation import Citation, parse_citation
 
 

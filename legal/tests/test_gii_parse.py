@@ -1,9 +1,8 @@
 """Parser für gesetze-im-internet.de-XML (gii-norm.dtd 1.01). Fixtures = echte Ausschnitte vom 20.10.2026."""
 from __future__ import annotations
 
-from conftest import fixture_xml
-
 from backend.gii_parse import parse_law
+from conftest import fixture_xml
 
 
 def _by(norms, enbez):
