@@ -1,8 +1,10 @@
-// Diagramme S1: nur Texte. Die Sammlung im Menü folgt in S2; die Ansicht im Chat kommt aus dem Kern (module_view).
-export const routes = []
-export const nav = []
+import { DiagrammePage } from "./DiagrammePage"
+import { diagrammeI18n } from "./i18n"
 
-export const i18n = {
-  de: { diagramme: { title: "Diagramme" } },
-  en: { diagramme: { title: "Diagrams" } },
-}
+export const routes = [{ path: "/diagramme", element: <DiagrammePage /> }]
+export const nav = [
+  { path: "/diagramme", icon: "Network", labelKey: "diagramme", group: "working", roles: [] as ("admin" | "user")[] },
+]
+
+// Menütitel kommt aus diagramme:title (Kern shared/nav-label.ts) – keinen eigenen nav-Namespace anlegen.
+export const i18n = diagrammeI18n
