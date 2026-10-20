@@ -82,5 +82,7 @@ async def sync_now(_: Admin) -> dict:
 
 
 from .case_routes import router as _case_router
+from .letter_routes import router as _letter_router
 
 router.include_router(_case_router)
+router.include_router(_letter_router)
