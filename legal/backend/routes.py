@@ -79,3 +79,8 @@ async def sync_now(_: Admin) -> dict:
     _tasks.add(task)
     task.add_done_callback(_tasks.discard)
     return {"started": True}
+
+
+from .case_routes import router as _case_router
+
+router.include_router(_case_router)

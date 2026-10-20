@@ -42,10 +42,10 @@ def _caps(monkeypatch):
     cat = capabilities.Catalog.with_core()
     cat.register_module(ModuleManifest.load(Path(__file__).resolve().parents[1] / "manifest.json"))
     monkeypatch.setattr(capabilities, "CATALOG", cat)
-    from hydrahive.api.middleware.users import get_by_username
-    alice_id = (get_by_username("alice") or {}).get("id") or "alice"
+    alice_id = check.user_id_for("alice")
+    assert alice_id
     monkeypatch.setattr(check, "_levels", lambda uid: {"legal.create_case": "use", "module.legal": "use"}
-                        if uid in (alice_id, "alice") else {"module.legal": "use"})
+                        if uid == alice_id else {"module.legal": "use"})
     from backend.tools import TOOLS
     from hydrahive.tools import REGISTRY
     for t in TOOLS:
