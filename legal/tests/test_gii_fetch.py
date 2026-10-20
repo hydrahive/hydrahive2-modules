@@ -1,0 +1,145 @@
+"""Laden von gesetze-im-internet.de – nur dieser Host, nur https, Größenlimit, ZIP im Speicher (Plan L1 Schritt 4).
+
+Befund 20.10.2026: gii-toc.xml verlinkt ``http://…/xml.zip`` → 302 auf https. Der Kern-Client folgt Redirects
+bewusst nicht (SSRF), daher baut das Modul die https-URL selbst aus dem Kürzel.
+"""
+from __future__ import annotations
+
+import asyncio
+import io
+import zipfile
+
+import pytest
+from backend import gii_fetch
+from conftest import fixture_xml
+
+
+def _zip(files: dict[str, bytes]) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        for name, data in files.items():
+            z.writestr(name, data)
+    return buf.getvalue()
+
+
+class _Resp:
+    def __init__(self, status=200, content=b""):
+        self.status_code = status
+        self.content = content
+
+
+@pytest.fixture
+def fake_http(monkeypatch):
+    calls = []
+    answers = {}
+
+    async def get(url):
+        calls.append(url)
+        return answers.get(url, _Resp(404))
+
+    monkeypatch.setattr(gii_fetch, "_get", get)
+    return calls, answers
+
+
+TOC = b"""<?xml version="1.0" encoding="UTF-8" ?><items>
+<item><title>B\xc3\xbcrgerliches Gesetzbuch</title><link>http://www.gesetze-im-internet.de/bgb/xml.zip</link></item>
+<item><title>Gesetz &#252;ber Ordnungswidrigkeiten</title><link>http://www.gesetze-im-internet.de/owig_1968/xml.zip</link></item>
+<item><title>Fremd</title><link>http://evil.example/x/xml.zip</link></item>
+</items>"""
+
+
+def test_url_is_https_on_the_official_host():
+    assert gii_fetch.zip_url("bgb") == "https://www.gesetze-im-internet.de/bgb/xml.zip"
+    assert gii_fetch.TOC_URL == "https://www.gesetze-im-internet.de/gii-toc.xml"
+
+
+@pytest.mark.parametrize("bad", ["../etc", "bgb/../x", "BGB", "b g b", "", "a" * 81, "bgb?x=1", "http://x"])
+def test_invalid_keys_are_rejected_without_request(fake_http, bad):
+    calls, _ = fake_http
+    with pytest.raises(gii_fetch.FetchError):
+        asyncio.run(gii_fetch.fetch_law_xml(bad))
+    assert calls == []
+
+
+def test_toc_parses_keys_and_titles_only_from_official_host(fake_http):
+    _, answers = fake_http
+    answers[gii_fetch.TOC_URL] = _Resp(200, TOC)
+    toc = asyncio.run(gii_fetch.fetch_toc())
+    assert toc == {"bgb": "Bürgerliches Gesetzbuch", "owig_1968": "Gesetz über Ordnungswidrigkeiten"}
+
+
+def test_fetch_law_reads_single_xml_from_zip(fake_http):
+    calls, answers = fake_http
+    answers[gii_fetch.zip_url("bgb")] = _Resp(200, _zip({"BJNR001950896.xml": fixture_xml("bgb")}))
+    assert asyncio.run(gii_fetch.fetch_law_xml("bgb")) == fixture_xml("bgb")
+    assert calls == ["https://www.gesetze-im-internet.de/bgb/xml.zip"]
+
+
+@pytest.mark.parametrize("files", [{}, {"a.xml": b"<x/>", "b.xml": b"<y/>"}, {"readme.txt": b"hi"}])
+def test_zip_without_exactly_one_xml_is_an_error(fake_http, files):
+    _, answers = fake_http
+    answers[gii_fetch.zip_url("bgb")] = _Resp(200, _zip(files))
+    with pytest.raises(gii_fetch.FetchError):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+
+
+def test_http_error_and_not_a_zip(fake_http):
+    _, answers = fake_http
+    answers[gii_fetch.zip_url("bgb")] = _Resp(500, b"")
+    with pytest.raises(gii_fetch.FetchError, match="HTTP 500"):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+    answers[gii_fetch.zip_url("bgb")] = _Resp(200, b"kein zip")
+    with pytest.raises(gii_fetch.FetchError):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+
+
+def test_too_big_download_or_unpacked_xml_is_rejected(fake_http, monkeypatch):
+    _, answers = fake_http
+    monkeypatch.setattr(gii_fetch, "MAX_ZIP_BYTES", 100)
+    answers[gii_fetch.zip_url("bgb")] = _Resp(200, b"x" * 101)
+    with pytest.raises(gii_fetch.FetchError, match="zu groß"):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+    monkeypatch.setattr(gii_fetch, "MAX_ZIP_BYTES", 10_000_000)
+    monkeypatch.setattr(gii_fetch, "MAX_XML_BYTES", 1000)
+    answers[gii_fetch.zip_url("bgb")] = _Resp(200, _zip({"g.xml": b"<a>" + b"x" * 5000 + b"</a>"}))
+    with pytest.raises(gii_fetch.FetchError, match="XML zu groß"):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+
+
+def test_network_errors_become_fetch_error(monkeypatch):
+    """Echter _get-Pfad: httpx-Fehler → FetchError, SSRF-Sperre → FetchError (kein roher Fehler nach außen)."""
+    import contextlib
+
+    import httpx
+    from hydrahive.net import ssrf
+
+    @contextlib.asynccontextmanager
+    async def timeout_client(url, *, timeout):
+        class C:
+            async def get(self, *a, **k):
+                raise httpx.ReadTimeout("zu langsam")
+        yield C()
+
+    monkeypatch.setattr(ssrf, "safe_async_client", timeout_client)
+    with pytest.raises(gii_fetch.FetchError, match="Nicht erreichbar"):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+
+    def blocked(url, *, timeout):
+        raise ssrf.SsrfBlocked("host_blocked")
+
+    monkeypatch.setattr(ssrf, "safe_async_client", blocked)
+    with pytest.raises(gii_fetch.FetchError, match="gesperrt"):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+
+
+def test_xml_size_is_checked_before_unpacking(fake_http, monkeypatch):
+    """Zip-Bombe: Die Größe im ZIP-Verzeichnis wird vor dem Entpacken geprüft (file_size), nicht erst danach."""
+    _, answers = fake_http
+    monkeypatch.setattr(gii_fetch, "MAX_XML_BYTES", 1000)
+    answers[gii_fetch.zip_url("bgb")] = _Resp(200, _zip({"g.xml": b"<a>" + b"x" * 5000 + b"</a>"}))
+    read_calls = []
+    orig = zipfile.ZipFile.read
+    monkeypatch.setattr(zipfile.ZipFile, "read", lambda self, *a, **k: read_calls.append(a) or orig(self, *a, **k))
+    with pytest.raises(gii_fetch.FetchError, match="XML zu groß"):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+    assert read_calls == []
