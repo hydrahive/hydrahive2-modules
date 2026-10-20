@@ -87,8 +87,8 @@ module_legal_proposals.kind  + 'letter'  (CHECK neu anlegen: SQLite kann CHECK n
 - Danach Till: echter Fall (Task 5d49bee3) – fehlende Daten (Namen/Anschriften, Datum Sprechstunde, Baujahr, seit wann)
   liefert er.
 
-## Fragen an Till vor dem Bau
+## Entscheidungen (Till, 20.10.2026)
 
-1. **Eingang erfassen:** reicht Abschreiben/Kurzfassung bis L5 (Upload/OCR)?
-2. **Vorlagen:** passt die Liste (6 Stück, ohne DSGVO bis EUR-Lex geklärt)? Fehlt eine, die die Familie braucht?
-3. **Absender:** eigene Anschrift je Fall als Beteiligter „Ich / wir“ (so gebaut) – oder einmal zentral je Nutzer?
+1. **Eingang erfassen:** Abschreiben bzw. Kurzfassung reicht bis L5 (Upload/OCR).
+2. **Vorlagen:** Die 6 Vorlagen reichen (ohne DSGVO, bis EUR-Lex geklärt ist).
+3. **Absender:** je Fall, als Beteiligter mit Rolle „Ich / wir“ (`me`).
