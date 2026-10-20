@@ -66,6 +66,19 @@ def test_unknown_id_and_bad_id(store_dir):
         assert store.html(bad) is None
 
 
+def test_bad_id_never_reaches_the_database(store_dir, monkeypatch):
+    """Die ID-Form wird vor jedem Zugriff geprüft – auch wenn es eine Zeile mit so einer ID gäbe."""
+    from hydrahive.db.connection import db
+    with db() as c:
+        c.execute("INSERT INTO module_diagrams (id, username, title, kind, created_at) VALUES (?, ?, ?, ?, ?)",
+                  ("../boese", "testuser", "x", "workflow", "2026-10-20T00:00:00Z"))
+    try:
+        assert store.get("../boese") is None and store.html("../boese") is None
+    finally:
+        with db() as c:
+            c.execute("DELETE FROM module_diagrams WHERE id = ?", ("../boese",))
+
+
 def test_html_of_trashed_diagram_is_still_readable(store_dir):
     """Nachschlagen im Papierkorb soll gehen."""
     d = _new()
