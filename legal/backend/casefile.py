@@ -1,7 +1,6 @@
-"""Fallakte: Beteiligte, Fristen, Notizen, Vorschläge (Plan L2 Schritte 4–5). Rechte prüfen Route bzw. Werkzeug.
+"""Fallakte: Beteiligte, Fristen, Notizen (Plan L2 Schritte 4–5). Rechte prüfen Route bzw. Werkzeug.
 
-Vorschläge des Agenten ändern die Akte nicht; erst ``decide(accept=True)`` schreibt sie (Spec §4.6). Eine Frist wird
-schon beim Vorschlag gerechnet, damit der Mensch das Ergebnis mit Rechenweg sieht, bevor er übernimmt.
+Vorschläge des Agenten und die Gesamtsicht stehen in ``proposals.py`` (hier am Ende wieder angeboten).
 """
 from __future__ import annotations
 
@@ -13,17 +12,14 @@ from hydrahive.db.connection import db
 
 from . import deadlines
 from .cases import CaseError, _now, get_case
-from .holidays_de import STATES
 
 PARTY_ROLES = ("opponent", "lawyer", "authority", "court", "witness", "me", "other")
 DEADLINE_STATUSES = ("open", "done", "missed")
-PROPOSAL_KINDS = ("party", "deadline", "fact")
 _PARTY_LIMITS = {"name": 200, "address": 500, "contact": 300, "note": 2000}
 _P_COLS = ("id", "project_id", "role", "name", "address", "contact", "note", "created_at")
 _D_COLS = ("id", "project_id", "label", "event_date", "kind", "amount", "start_rule", "due_date", "calc", "status",
            "note", "created_at")
 _N_COLS = ("id", "project_id", "author", "author_name", "title", "body", "citations", "created_at")
-_PR_COLS = ("id", "project_id", "kind", "payload", "author_name", "status", "created_at", "decided_by", "decided_at")
 
 
 def _case(project_id: str) -> dict[str, Any]:
@@ -206,88 +202,5 @@ def delete_note(project_id: str, note_id: int) -> None:
             raise CaseError("note_not_found", 404)
 
 
-# ── Vorschläge ────────────────────────────────────────────────────────────────
-
-def _proposal_payload(kind: str, payload: dict[str, Any], state: str) -> dict[str, Any]:
-    if kind == "party":
-        return _party_data(payload)
-    if kind == "deadline":
-        return _deadline_data(payload, state)
-    if kind == "fact":
-        return {"text": _text(payload.get("text"), "text", 5000, required=True)}
-    raise CaseError("proposal_kind_invalid", allowed=list(PROPOSAL_KINDS))
-
-
-def _proposal_row(row: tuple) -> dict[str, Any]:
-    p = dict(zip(_PR_COLS, row, strict=True))
-    p["payload"] = json.loads(p["payload"])
-    return p
-
-
-def propose(project_id: str, kind: str, payload: dict[str, Any], *, author_name: str) -> dict[str, Any]:
-    case = _case(project_id)
-    data = _proposal_payload(kind, payload if isinstance(payload, dict) else {}, case["state"])
-    with db() as c:
-        cur = c.execute("INSERT INTO module_legal_proposals(project_id, kind, payload, author_name, created_at) "
-                        "VALUES (?,?,?,?,?)", (project_id, kind, json.dumps(data, ensure_ascii=False),
-                                               author_name[:200], _now()))
-        row = c.execute(f"SELECT {', '.join(_PR_COLS)} FROM module_legal_proposals WHERE id = ?",
-                        (cur.lastrowid,)).fetchone()
-    return _proposal_row(row)
-
-
-def list_proposals(project_id: str, *, only_open: bool = True) -> list[dict[str, Any]]:
-    where = " AND status = 'open'" if only_open else ""
-    with db() as c:
-        rows = c.execute(f"SELECT {', '.join(_PR_COLS)} FROM module_legal_proposals WHERE project_id = ?{where} "
-                         "ORDER BY id", (project_id,)).fetchall()
-    return [_proposal_row(r) for r in rows]
-
-
-def _apply(project_id: str, kind: str, payload: dict[str, Any]) -> None:
-    if kind == "party":
-        add_party(project_id, payload)
-    elif kind == "deadline":
-        _insert_deadline(project_id, payload)
-    else:
-        facts = (get_case(project_id) or {}).get("facts", "")
-        new = f"{facts.rstrip()}\n\n{payload['text']}" if facts.strip() else payload["text"]
-        with db() as c:
-            c.execute("UPDATE module_legal_cases SET facts = ?, updated_at = ? WHERE project_id = ?",
-                      (new[:20000], _now(), project_id))
-
-
-def decide(project_id: str, proposal_id: int, *, accept: bool, by: str) -> dict[str, Any]:
-    _case(project_id)
-    with db() as c:
-        row = c.execute(f"SELECT {', '.join(_PR_COLS)} FROM module_legal_proposals WHERE id = ? AND project_id = ?",
-                        (proposal_id, project_id)).fetchone()
-        if row is None:
-            raise CaseError("proposal_not_found", 404)
-        if row[_PR_COLS.index("status")] != "open":
-            raise CaseError("proposal_decided", 409)
-        # Erst als entschieden markieren (Doppelklick legt nichts doppelt an), dann anwenden.
-        n = c.execute("UPDATE module_legal_proposals SET status = ?, decided_by = ?, decided_at = ? "
-                      "WHERE id = ? AND status = 'open'",
-                      ("accepted" if accept else "rejected", by, _now(), proposal_id)).rowcount
-    if not n:
-        raise CaseError("proposal_decided", 409)
-    proposal = _proposal_row(row)
-    if accept:
-        try:
-            _apply(project_id, proposal["kind"], proposal["payload"])
-        except Exception:
-            with db() as c:
-                c.execute("UPDATE module_legal_proposals SET status = 'open', decided_by = NULL, decided_at = NULL "
-                          "WHERE id = ?", (proposal_id,))
-            raise
-    return {**proposal, "status": "accepted" if accept else "rejected"}
-
-
-# ── Gesamtsicht (Werkzeug legal_case, Fallakte-Seite) ─────────────────────────
-
-def snapshot(project_id: str) -> dict[str, Any]:
-    case = _case(project_id)
-    return {"case": case, "state_name": STATES[case["state"]], "parties": list_parties(project_id),
-            "deadlines": list_deadlines(project_id), "notes": list_notes(project_id),
-            "open_proposals": len(list_proposals(project_id))}
+# Vorschläge + Gesamtsicht liegen in proposals.py; hier wieder angeboten, damit Aufrufer nur casefile kennen.
+from .proposals import PROPOSAL_KINDS, decide, list_proposals, propose, snapshot  # noqa: F401
