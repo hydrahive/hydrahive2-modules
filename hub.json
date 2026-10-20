@@ -144,6 +144,11 @@
       "id": "studio",
       "name": "Studio",
       "path": "studio"
+    },
+    {
+      "id": "legal",
+      "name": "Recht",
+      "path": "legal"
     }
   ]
 }
