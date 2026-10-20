@@ -1,0 +1,25 @@
+{
+  "id": "legal",
+  "name": "Recht",
+  "version": "0.1.0",
+  "description": "Rechtsrecherche mit belegten Normen: Bundesgesetze lokal mit Stand, Suche für Mensch und Agent. Fälle, Fristen und Briefe folgen. Keine Rechtsberatung.",
+  "icon": "Scale",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "min_core_version": "2.0.0",
+  "vault": true,
+  "default_agent_tools": false,
+  "capabilities": [
+    {
+      "id": "module.legal",
+      "label": "Recht nutzen (Gesetze suchen, eigene Fälle sehen)",
+      "default": "admin_only"
+    },
+    {
+      "id": "legal.create_case",
+      "label": "Recht: Fälle anlegen (je Fall ein Projekt mit Rechts-Agent)",
+      "default": "admin_only"
+    }
+  ]
+}
