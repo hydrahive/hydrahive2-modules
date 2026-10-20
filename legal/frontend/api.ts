@@ -76,8 +76,8 @@ export interface Deadline {
   created_at: string
 }
 export interface CaseNote { id: number; author: "agent" | "user"; author_name: string; title: string; body: string; citations: { citation: string; found: boolean }[]; created_at: string }
-export interface Proposal { id: number; kind: "party" | "deadline" | "fact"; payload: Record<string, unknown>; author_name: string; status: string; created_at: string }
-export interface CaseSnapshot { case: CaseRow; state_name: string; parties: Party[]; deadlines: Deadline[]; notes: CaseNote[]; open_proposals: number; role: string }
+export interface Proposal { id: number; kind: "party" | "deadline" | "fact" | "letter"; payload: Record<string, unknown>; author_name: string; status: string; created_at: string }
+export interface CaseSnapshot { case: CaseRow; state_name: string; parties: Party[]; deadlines: Deadline[]; notes: CaseNote[]; correspondence: Entry[]; open_proposals: number; role: string }
 export interface CalcResult { event_date: string; kind: string; amount: number; state: string; start: string; raw_end: string; due_date: string; weekday: string; steps: string[]; warnings: string[] }
 export interface DeadlineInput { event_date: string; kind: string; amount: number; start_rule: string }
 
@@ -101,4 +101,41 @@ export const caseApi = {
   decide: (pid: string, id: number, accept: boolean) => api.post<Proposal>(`${c(pid)}/proposals/${id}/${accept ? "accept" : "reject"}`, {}),
   chat: (pid: string) => api.post<{ session_id: string; url: string; agent_id: string }>(`${c(pid)}/chat`, {}),
   calc: (body: DeadlineInput & { state: string }) => api.post<CalcResult>(`${BASE}/deadline/calc`, body),
+}
+
+// ── Schriftverkehr + Briefe (L3) ─────────────────────────────────────────────
+
+export interface Letter {
+  letter_type: string
+  sender: string
+  recipient: string
+  date: string
+  their_ref: string
+  our_ref: string
+  subject: string
+  body: string
+  delivery: string
+  attachments: string[]
+}
+export interface Entry extends Letter {
+  id: number
+  direction: "in" | "out"
+  status: "draft" | "sent" | "received"
+  proof: string
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+export interface LetterTemplate { key: string; label: string; hint: string }
+
+export const letterApi = {
+  templates: () => api.get<{ templates: LetterTemplate[] }>(`${BASE}/letters/templates`),
+  draft: (pid: string, template: string, recipient_id?: number) =>
+    api.post<Letter>(`${c(pid)}/letters/draft`, { template, ...(recipient_id ? { recipient_id } : {}) }),
+  check: (pid: string, letter: Partial<Letter>) => api.post<import("./letterFormat").CheckResult>(`${c(pid)}/letters/check`, letter),
+  add: (pid: string, body: Partial<Letter> & { direction: "in" | "out" }) => api.post<Entry>(`${c(pid)}/correspondence`, body),
+  update: (pid: string, id: number, body: Partial<Letter>) => api.patch<Entry>(`${c(pid)}/correspondence/${id}`, body),
+  sent: (pid: string, id: number, body: { date: string; delivery: string; proof: string }) =>
+    api.post<Entry>(`${c(pid)}/correspondence/${id}/sent`, body),
+  remove: (pid: string, id: number) => api.delete<void>(`${c(pid)}/correspondence/${id}`),
 }
