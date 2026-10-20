@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pytest  # noqa: E402
 from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
     isolated_root,
     only_own_files,
@@ -18,8 +19,6 @@ from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest r
     pytest_unconfigure,
     remove_test_tree,
 )
-
-import pytest  # noqa: E402
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
