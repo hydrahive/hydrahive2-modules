@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { caseApi } from "./api"
-import { caseFormErrors, errorText } from "./caseFormat"
+import { caseFormErrors, errorText, modelState } from "./caseFormat"
+import { CaseModel } from "./CaseModel"
+import { useModelCatalog } from "./useModelCatalog"
 
 const input = "w-full rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1.5 text-sm text-[#e8eef8]"
 const label = "block text-xs font-semibold text-[#d7deea]"
@@ -13,9 +15,11 @@ export function CaseNew({ onCancel, onCreated }: { onCancel: () => void; onCreat
   const [touched, setTouched] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const catalog = useModelCatalog()
+  const [model, setModel] = useState("")
 
   useEffect(() => { caseApi.states().then((r) => setStates(r.states)).catch((e) => setError(errorText(e))) }, [])
-  const errs = caseFormErrors(f)
+  const errs = caseFormErrors(f, modelState(catalog, model))
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF((o) => ({ ...o, [k]: e.target.value }))
 
@@ -25,7 +29,7 @@ export function CaseNew({ onCancel, onCreated }: { onCancel: () => void; onCreat
     if (Object.keys(errs).length) return
     setBusy(true); setError(null)
     try {
-      const out = await caseApi.create({ ...f, title: f.title.trim() })
+      const out = await caseApi.create({ ...f, title: f.title.trim(), ...(model ? { model } : {}) })
       onCreated(out.project_id)
     } catch (err) { setError(errorText(err)) } finally { setBusy(false) }
   }
@@ -67,6 +71,7 @@ export function CaseNew({ onCancel, onCreated }: { onCancel: () => void; onCreat
           <input value={f.their_ref} onChange={set("their_ref")} maxLength={100} className={input} />
         </label>
       </div>
+      <CaseModel catalog={catalog} value={model} onChange={setModel} error={touched ? errs.model : undefined} />
       <p className="text-[11px] leading-4 text-[#68758a]">Bekannte Fristen trägst du danach in der Fallakte unter „Fristen“ ein – dort wird mit Rechenweg gerechnet.</p>
       {error && <p className="text-xs text-rose-300">{error}</p>}
       <div className="flex gap-2">

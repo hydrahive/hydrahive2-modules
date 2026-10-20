@@ -1,7 +1,7 @@
 {
   "id": "legal",
   "name": "Recht",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Rechtsrecherche mit belegten Normen: Bundesgesetze lokal mit Stand, Suche für Mensch und Agent, Fälle mit Fallakte, Fristenrechner und Rechts-Agent. Briefe folgen. Keine Rechtsberatung.",
   "icon": "Scale",
   "nav_group": "working",
