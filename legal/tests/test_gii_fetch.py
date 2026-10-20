@@ -104,3 +104,29 @@ def test_too_big_download_or_unpacked_xml_is_rejected(fake_http, monkeypatch):
     answers[gii_fetch.zip_url("bgb")] = _Resp(200, _zip({"g.xml": b"<a>" + b"x" * 5000 + b"</a>"}))
     with pytest.raises(gii_fetch.FetchError, match="zu groß"):
         asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+
+
+def test_network_errors_become_fetch_error(monkeypatch):
+    """Echter _get-Pfad: httpx-Fehler → FetchError, SSRF-Sperre → FetchError (kein roher Fehler nach außen)."""
+    import contextlib
+
+    import httpx
+    from hydrahive.net import ssrf
+
+    @contextlib.asynccontextmanager
+    async def timeout_client(url, *, timeout):
+        class C:
+            async def get(self, *a, **k):
+                raise httpx.ReadTimeout("zu langsam")
+        yield C()
+
+    monkeypatch.setattr(ssrf, "safe_async_client", timeout_client)
+    with pytest.raises(gii_fetch.FetchError, match="Nicht erreichbar"):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
+
+    def blocked(url, *, timeout):
+        raise ssrf.SsrfBlocked("host_blocked")
+
+    monkeypatch.setattr(ssrf, "safe_async_client", blocked)
+    with pytest.raises(gii_fetch.FetchError, match="gesperrt"):
+        asyncio.run(gii_fetch.fetch_law_xml("bgb"))
