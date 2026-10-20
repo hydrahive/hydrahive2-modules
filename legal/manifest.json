@@ -27,6 +27,9 @@
     "legal_propose_party": "privat",
     "legal_propose_deadline": "privat",
     "legal_propose_fact": "privat",
-    "legal_note": "privat"
+    "legal_note": "privat",
+    "legal_letter_draft": "privat",
+    "legal_check_letter": "privat",
+    "legal_propose_letter": "privat"
   }
 }

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
-from backend import case_tools, casefile, cases, correspondence
+from backend import case_tools, casefile, cases, correspondence, letter_tools
 from test_correspondence import LETTER
 
 
@@ -36,7 +36,7 @@ def pid():
 
 
 def test_propose_letter_leaves_correspondence_untouched(pid):
-    r = _run(case_tools.PROPOSE_LETTER, LETTER, _ctx(project_id=pid))
+    r = _run(letter_tools.PROPOSE_LETTER, LETTER, _ctx(project_id=pid))
     assert r.success and r.output["kind"] == "letter" and "check" in r.output["payload"]
     assert correspondence.list_for(pid) == [] and len(casefile.list_proposals(pid)) == 1
 
@@ -44,18 +44,18 @@ def test_propose_letter_leaves_correspondence_untouched(pid):
 def test_read_role_cannot_propose_letter(pid):
     from hydrahive.projects import config as pc
     pc.update(pid, members=[{"username": "bob", "role": "read"}])
-    r = _run(case_tools.PROPOSE_LETTER, LETTER, _ctx(user="bob", project_id=pid))
+    r = _run(letter_tools.PROPOSE_LETTER, LETTER, _ctx(user="bob", project_id=pid))
     assert not r.success and "Leserechte" in r.error
     assert casefile.list_proposals(pid) == []
 
 
 def test_foreign_or_no_project_fails(pid):
-    assert not _run(case_tools.PROPOSE_LETTER, LETTER, _ctx()).success
-    assert not _run(case_tools.PROPOSE_LETTER, LETTER, _ctx(user="bob", project_id=pid)).success
+    assert not _run(letter_tools.PROPOSE_LETTER, LETTER, _ctx()).success
+    assert not _run(letter_tools.PROPOSE_LETTER, LETTER, _ctx(user="bob", project_id=pid)).success
 
 
 def test_check_letter_stores_nothing(pid):
-    r = _run(case_tools.CHECK_LETTER, {**LETTER, "body": "binnen 14 Tagen"}, _ctx(project_id=pid))
+    r = _run(letter_tools.CHECK_LETTER, {**LETTER, "body": "binnen 14 Tagen"}, _ctx(project_id=pid))
     assert r.success
     items = {i["key"]: i for i in r.output["items"]}
     assert items["deadline_date"]["ok"] is False
@@ -65,15 +65,15 @@ def test_check_letter_stores_nothing(pid):
 def test_letter_draft_from_template(pid):
     me = casefile.add_party(pid, {"role": "me", "name": "Till Muster", "address": "Musterweg 1\n30159 Hannover"})
     opp = casefile.add_party(pid, {"role": "opponent", "name": "HV Müller", "address": "Hauptstr. 1\n30159 Hannover"})
-    r = _run(case_tools.LETTER_DRAFT, {"template": "mangelanzeige", "recipient_id": opp["id"]}, _ctx(project_id=pid))
+    r = _run(letter_tools.LETTER_DRAFT, {"template": "mangelanzeige", "recipient_id": opp["id"]}, _ctx(project_id=pid))
     assert r.success and r.output["sender"].startswith(me["name"]) and r.output["recipient"].startswith("HV Müller")
     assert "§ 536c BGB" in r.output["body"]
-    r = _run(case_tools.LETTER_DRAFT, {"template": "gibtsnicht"}, _ctx(project_id=pid))
+    r = _run(letter_tools.LETTER_DRAFT, {"template": "gibtsnicht"}, _ctx(project_id=pid))
     assert not r.success
 
 
 def test_invalid_letter_returns_error(pid):
-    r = _run(case_tools.PROPOSE_LETTER, {**LETTER, "delivery": "taube"}, _ctx(project_id=pid))
+    r = _run(letter_tools.PROPOSE_LETTER, {**LETTER, "delivery": "taube"}, _ctx(project_id=pid))
     assert not r.success and r.error
 
 

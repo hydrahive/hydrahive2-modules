@@ -9,6 +9,7 @@ from __future__ import annotations
 LEGAL_TOOLS = (
     "legal_case", "legal_search", "legal_norm", "legal_deadline",
     "legal_propose_party", "legal_propose_deadline", "legal_propose_fact", "legal_note",
+    "legal_letter_draft", "legal_check_letter", "legal_propose_letter",
 )
 GENERAL_TOOLS = ("web_search", "read_memory", "write_memory", "search_memory", "todo_write", "list_skills",
                  "load_skill")
