@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 
 pytest.importorskip("hydrahive")
-from _hh_isolation import only_own_files  # noqa: E402
-from _routes_fixtures import _ffprobe, admin, client, data, env  # noqa: E402, F401 - pytest-Fixtures
+from _hh_isolation import only_own_files
+from _routes_fixtures import _ffprobe, admin, client, data, env  # noqa: F401 - pytest-Fixtures
 
 D = "/api/module-device/vitrine"
 KEY = "f" * 64
@@ -74,7 +74,7 @@ def test_daten_mit_schluessel_festes_schema(client, key, monkeypatch):
     monkeypatch.setattr(dash_data, "build", fake_build)
     r = client.get(f"{D}/data", params={"k": key})
     assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
-    assert set(r.json()) == set(dash_data.AREAS) | {"updated"}
+    assert set(r.json()) == set(dash_data.AREAS) | {"updated", "page_version"}
     assert seen["cfg"]["github_project"] == "Hydrahive DEV" and seen["cfg"]["tasks_user"] == "till"
     assert seen["ret"] == 120, "Rückkehrzeit kommt aus dashboard_return_seconds"
 
@@ -202,3 +202,11 @@ def test_chat_ohne_schluessel_oder_fremde_adresse_404(client, key, data, monkeyp
 def test_chat_verlauf_leer_ohne_session(client, key, data, kiosk_local):
     r = client.get(f"{D}/chat", params={"k": key})
     assert r.status_code == 200 and r.json() == {"messages": []}
+
+
+def test_daten_enthalten_seitenversion(client, key, kiosk_local, monkeypatch):
+    """Kiosk vergleicht sie mit seiner eigenen und lädt bei Abweichung neu (Fund 20.10.: gemischte Seite nach Update)."""
+    from backend import dash_data, kiosk
+    monkeypatch.setattr(dash_data, "build", lambda *a, **k: {"updated": "12:00:00"})
+    r = client.get(f"{D}/data", params={"k": key}).json()
+    assert r["page_version"] == kiosk.page_version()

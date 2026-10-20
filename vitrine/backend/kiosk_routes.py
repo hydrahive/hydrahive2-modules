@@ -39,7 +39,8 @@ def kiosk_back() -> None:
 def kiosk_data(response: Response) -> dict:
     response.headers["Cache-Control"] = "no-store"
     cfg = config.load(_data())
-    return dash_data.build(_data(), cfg["dashboard"], return_seconds=cfg["dashboard_return_seconds"])
+    out = dash_data.build(_data(), cfg["dashboard"], return_seconds=cfg["dashboard_return_seconds"])
+    return {**out, "page_version": kiosk.page_version()}   # Kiosk lädt sich neu, wenn ein Update die Seite geändert hat
 
 
 class ReadIn(BaseModel):
