@@ -74,4 +74,7 @@ async def _norm(args: dict, ctx: ToolContext) -> ToolResult:
 LEGAL_SEARCH = Tool(name="legal_search", description=_SEARCH_DESC, schema=_SEARCH_SCHEMA, execute=_search,
                     category="legal")
 LEGAL_NORM = Tool(name="legal_norm", description=_NORM_DESC, schema=_NORM_SCHEMA, execute=_norm, category="legal")
-TOOLS = [LEGAL_SEARCH, LEGAL_NORM]
+
+from .case_tools import TOOLS as CASE_TOOLS
+
+TOOLS = [LEGAL_SEARCH, LEGAL_NORM, *CASE_TOOLS]
