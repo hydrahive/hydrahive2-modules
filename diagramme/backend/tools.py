@@ -12,7 +12,7 @@ from . import help_text, runner, store
 from .errors import KNOWN
 
 TITLE_FALLBACK = "Diagramm"
-_FRONT_TITLE = re.compile(r"^---\s*\n(?:.*\n)*?title:\s*(.+?)\s*\n(?:.*\n)*?---", re.M)
+_FRONT_TITLE = re.compile(r"^---\s*\n(?:.*\n)*?title:\s*(.+?)\s*\n(?:.*\n)*?---", re.MULTILINE)
 
 
 def _title(kind: str, source: str) -> str:
