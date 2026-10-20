@@ -1,6 +1,6 @@
 # Diagramme – Spec
 
-Status: **ENTWURF** – Tills Antworten vom 20.10. eingearbeitet (§11), wartet auf Freigabe.
+Status: **FREIGEGEBEN** durch Till (20.10.2026), Umsetzung ab K1 + S1.
 Stand: 20.10.2026. Anlass: Till fand Archify (github.com/tt-a1i/archify): „sieht saucool aus und ist hyperpraktisch“.
 Probe vom 20.10. (nur Arbeitsordner, nichts an HydraHive geändert): `_work/archify-probe/`, Ergebnis
 `generated/archify-websuche.html` (Ablauf der Websuche nach Variante C).
@@ -54,25 +54,56 @@ Die Diagramm-Seite ist **von einem Agenten erzeugtes HTML mit Skripten** und des
 - Die App-CSP (`60-nginx.sh`, auf Server-Ebene) erlaubt keine Inline-Skripte. **Gemessen 20.10.** (Chromium, zwei
   CSP-Köpfe auf einer Antwort): App-CSP + eigene CSP → Skript **blockiert**; nur eigene CSP → Skript **läuft**.
   `srcDoc` scheidet aus: Ein srcdoc-Dokument erbt laut HTML-Standard die CSP der App (nicht gemessen).
-  → **Kern-Änderung (Till 20.10.: ja):** In `60-nginx.sh` eine eigene `location` für die Ansicht
-  (`/api/modules/diagramme/view/`), die **nur** die strenge eigene CSP setzt (nicht die App-CSP) und sonst wie
-  `/api/` an den Kern weiterreicht. Migration in `update.sh` (nginx-Konfig neu schreiben + `nginx -t` + reload, bei
-  Fehler zurück), Test im Kern wie bei den anderen nginx-Regeln.
-- Eigene CSP der Ansicht: `sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox; default-src 'none';
-  script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none';
-  form-action 'none'; frame-ancestors 'self'`, dazu `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`.
+  → **Kern-Änderung K1 (Till 20.10.: ja), allgemein für alle Module:**
+  - Ein `<iframe>` kann keinen Anmelde-Kopf schicken, und das Token soll nicht in die Adresse. Die Ansicht läuft
+    deshalb über den **Gerätezugang ohne Login** (`ctx.register_device_router`, `/api/module-device/<id>/…`, mit
+    Rate-Limit). Das Modul prüft dort eine **signierte Kurzzeit-Adresse** (§4a).
+  - nginx bekommt **eine** allgemeine Ausnahme: `location ~ ^/api/module-device/[a-z0-9-]+/sandbox/`. Dort setzt
+    nginx **selbst und fest** die Sandbox-CSP (unten) statt der App-CSP, dazu `nosniff`, `Referrer-Policy: no-referrer`,
+    `X-Frame-Options: SAMEORIGIN` und `Cache-Control: no-store`. Die Abschottung hängt damit **nicht** vom Modul ab:
+    Ein Modul kann sie nur strenger machen, nie lockern.
+  - Migration: Marker `hh_module_sandbox` in `update.sh` (wie `hh_peering_tailnet`): fehlt er, wird die
+    nginx-Konfig neu geschrieben, `nginx -t`, reload.
+  - Mac-Fassung (`modules-mac/60-nginx.sh`) setzt keine App-CSP → dort keine Ausnahme nötig; das Modul setzt die
+    Sandbox-CSP zusätzlich selbst (doppelt hält besser, auch beim direkten Zugriff auf Port 8001).
+- Sandbox-CSP (nginx fest, Modul zusätzlich): `sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox;
+  default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:;
+  connect-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'self'`.
   Die Seite kann also **nichts nachladen und nichts senden**; Export (PNG/SVG) läuft über `blob:` im Rahmen.
-- **Kein Anmelde-Token in der Rahmen-Adresse:** Die Seite könnte ihre eigene Adresse lesen. Darum holt die App vorher
-  einen **Ansichts-Link mit Kurzzeit-Signatur** (HMAC mit eigenem Zweck-Schlüssel, gilt 10 min, nur für dieses eine
-  Diagramm und diesen Nutzer). Das Token von HydraHive kommt nie in die Adresse.
 - Im Chat: `<iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox">` **ohne**
-  `allow-same-origin`, `allow-top-navigation` und `allow-forms`.
+  `allow-same-origin`, `allow-top-navigation` und `allow-forms`, `referrerpolicy="no-referrer"`.
+
+### 4a. Signierte Ansichts-Adresse
+
+- Mit Login: `GET /api/modules/diagramme/view-link/{id}` → `{"url": "/api/module-device/diagramme/sandbox/{id}?exp=…&sig=…"}`.
+  Nur wenn der Nutzer das Diagramm sehen darf (§5a).
+- `sig` = HMAC-SHA256 über `diagramme|view|{id}|{exp}` mit einem aus `settings.secret_key` abgeleiteten Zweck-Schlüssel
+  (eigener Kontext-String, nie der Schlüssel selbst). Gültig 10 min. Vergleich zeitkonstant.
+- Falsche, abgelaufene oder fremde Signatur, unbekannte ID → **404** (kein Hinweis, was falsch war).
+- Die Adresse enthält **kein** Anmelde-Token. Nach Ablauf holt der Chat einfach eine neue (beim Öffnen bzw. Neuladen).
+
 - **Kein Netz beim Erzeugen:** `ARCHIFY_UPDATE_CHECK_DISABLED=1`, Hilfsprogramm ohne Netzrechte aufrufen (feste
   Argumente, kein Shell, Zeitgrenze, nur im Arbeitsordner des Moduls).
 - Links in der Seite (Quellen auf GitHub) öffnen nur über einen Klick in einem neuen Tab (`allow-popups` +
   `allow-popups-to-escape-sandbox`); keine automatische Weiterleitung, kein `allow-top-navigation`.
 - Eingaben vom Agenten (JSON) werden vor dem Lauf auf Größe geprüft (≤ 512 KB) und nur als Datei übergeben.
 - Repo-Belege (`--repo-root`) nur aus dem **Arbeitsordner des Projekts** (`safe_path`-Prüfung wie bei den Datei-Werkzeugen).
+
+## 5a. Alles wird gespeichert (Till 20.10.: „Hauptsache, die Diagramme werden alle gespeichert zum Nachschlagen“)
+
+- **Jedes** erfolgreich erstellte Diagramm wird dauerhaft abgelegt: `data_dir/diagramme/<id>/` mit
+  `diagramm.html`, `eingabe.json` (bzw. `.md`), `vorschau.png` (ab S2) und Eintrag in der Tabelle `module_diagrams`
+  (Migration): `id, username, project_id, session_id, agent_id, title, kind, created_at, version_of, deleted_at`.
+- **Ändern legt eine neue Fassung an**, die alte bleibt: `diagramm_erstellen` mit `ersetzt: <id>` →
+  neues Diagramm mit `version_of`. In der Sammlung sieht man die neueste Fassung, die älteren unter „Frühere Fassungen“.
+- **Nichts verschwindet von selbst:** keine automatische Löschung, keine Größen- oder Altersgrenze.
+- **Löschen nur durch Menschen** (Agenten haben kein Lösch-Werkzeug): erst in den **Papierkorb** (`deleted_at`),
+  dort Wiederherstellen oder „endgültig löschen“ (eigener Dialog).
+- Abgelegt außerhalb der Projektordner: Wird ein Projekt gelöscht, bleiben seine Diagramme erhalten
+  (in der Sammlung unter „ohne Projekt“).
+- **Sehen dürfen:** der Nutzer, in dessen Lauf das Diagramm entstand, Admins und Mitglieder des Projekts.
+- Gesichert über das normale Backup von `data_dir`.
+- Fehlgeschlagene Versuche (Archify meldet Fehler) werden **nicht** als Diagramm gespeichert, nur im Werkzeug-Ergebnis gemeldet.
 
 ## 5. Aufbau
 
@@ -83,8 +114,10 @@ diagramme/
   backend/
     __init__.py            register(): Router, Werkzeuge, Skill
     runner.py              ruft node vendor/archify/bin/archify.mjs finalize … (subprocess, Zeitgrenze 180 s)
-    store.py               Diagramme je Projekt: data_dir/diagramme/<projekt>/<id>/{candidate.json, bild.html, info.json}
-    routes.py              Liste, Ansehen (mit Sandbox-CSP), Herunterladen, Löschen
+    store.py               Ablage (§5a): data_dir/diagramme/<id>/ + Tabelle module_diagrams
+    links.py               signierte Ansichts-Adresse (§4a)
+    routes.py              mit Login: Liste, view-link, Herunterladen, Papierkorb
+    device_routes.py       ohne Login: /sandbox/{id} (Signatur prüfen, Sandbox-CSP)
     tools.py               Werkzeuge für Agenten (§6)
     skill_sync.py          Skill wie mining/backend/skill_sync.py
     locale_de.py           deutsche Texte der Bedienleiste (meta.translations)
@@ -117,9 +150,12 @@ diagramme/
    (Höhe ca. 480 px, im Verlauf mitscrollend) mit Titel, „Groß öffnen“ und „Herunterladen“. Bedienen direkt im Chat.
    - Kern-Änderung nötig (heute kennt der Chat nur Bild, Ton, Video, PDF und EPUB: `runner/_media.py`,
      `MediaPreview.tsx`): neue Art **`diagram`** im Werkzeug-Ergebnis `{kind: "diagram", module: "diagramme",
-     id, title}`. Der Chat holt dazu über die Modul-API den signierten Ansichts-Link und zeigt den Rahmen.
-     Allgemein gehalten (`kind: "module_view"` mit Modul + ID), damit andere Module (z. B. Recherche-Bericht) es
-     später auch nutzen können.
+     id, title}` – allgemein als **`kind: "module_view"`** mit `module`, `id`, `title`. Konvention für jedes Modul:
+     `GET /api/modules/<module>/view-link/<id>` liefert die signierte Adresse. So können später auch andere Module
+     (z. B. der Recherche-Bericht) bedienbare Ansichten im Chat zeigen.
+   - Das Werkzeug liefert dafür `ToolResult.ok(text, result_type="module_view", module=…, view_id=…, title=…)`;
+     der Dispatcher macht daraus `block["media"] = [{"kind": "module_view", …}]`. Nur Modul-IDs, die geladen sind,
+     und IDs nach `^[A-Za-z0-9_-]{1,64}$`.
    - Ist das Modul nicht installiert oder der Link abgelaufen: Karte mit Titel und Hinweis, kein leerer Rahmen.
    - Lange Chats: Rahmen erst laden, wenn er ins Bild scrollt (lazy), damit 20 Diagramme nicht alles bremsen.
 2. **Sammlung** (Menü „Diagramme“): Kacheln je Projekt mit Vorschaubild, Titel, Art und Datum. Öffnen (Sandbox-iframe,
@@ -130,9 +166,9 @@ diagramme/
 
 | Etappe | Inhalt | Ergebnis |
 |---|---|---|
-| **K1** (Kern) | nginx-Ausnahme für `/api/modules/diagramme/view/` + Migration; Chat-Art `module_view` (Backend `_media.py`/Dispatcher, Frontend Rahmen mit Lazy-Load). Eigener Kern-PR. | Grundlage für „bedienbar im Chat“. |
-| **S1** | Grundgerüst: vendor-Kopie, `runner.py`, `diagramm_erstellen` + `diagramm_hilfe`, Ablage, signierter Ansichts-Link, Route „Ansehen“ mit eigener CSP. Ergebnis als `module_view`. | Agent erstellt ein Diagramm, es ist **im Chat bedienbar**. |
-| **S2** | Sammlung im Menü, groß öffnen, herunterladen, löschen, `diagramm_liste`. Vorschaubilder (PNG) für die Kacheln. | Diagramme wiederfinden und teilen. |
+| **K1** (Kern) | allgemeine nginx-Ausnahme `/api/module-device/<id>/sandbox/` mit fester Sandbox-CSP + Marker/Migration; Chat-Art `module_view` (Dispatcher + Frontend-Rahmen mit Lazy-Load, Link über `view-link`). Eigener Kern-PR. | Grundlage für „bedienbar im Chat“. |
+| **S1** | Grundgerüst: vendor-Kopie, `runner.py`, `diagramm_erstellen` (inkl. `ersetzt`) + `diagramm_hilfe`, Ablage mit Tabelle (§5a), signierte Adresse (§4a), Sandbox-Route. Ergebnis als `module_view`. | Agent erstellt ein Diagramm, es ist **im Chat bedienbar**. |
+| **S2** | Sammlung im Menü (je Projekt, Suche nach Titel), groß öffnen, herunterladen, frühere Fassungen, Papierkorb, `diagramm_liste`. Vorschaubilder (PNG). | Diagramme wiederfinden und teilen. |
 | **S3** | Deutsche Bedienleiste (`meta.translations`), gekürzter deutscher Skill, Antwort-Seite (`explainer`). | Alles auf Deutsch. |
 | **S4** (optional) | Aus dem Code-Graph (graphify) per Knopf ein Aufbau-Diagramm für ein Projekt. | Überblick über ein ganzes Repo. |
 
@@ -146,9 +182,12 @@ Version anheben → hydratest → E2E 1600/1280 → PR → CI → Bericht.
 
 - `runner`: feste Argumente, kein Shell, Zeitgrenze, Umgebungsvariablen (Update-Check aus, Chrome-Pfad), Abbruch bei
   > 512 KB, Fehlermeldungen von Archify gekürzt und ohne Pfade außerhalb des Arbeitsordners.
-- `routes`: CSP-Kopf exakt, Ansichts-Link: falsche/abgelaufene/fremde Signatur → 404, `X-Content-Type-Options: nosniff`, fremdes Projekt → 404, Pfad-Tricks (`..`) → 404.
-- **Kern K1:** nginx-Konfig enthält die Ausnahme genau einmal, setzt dort die App-CSP nicht, `nginx -t` grün;
-  Chat zeigt `module_view` als Rahmen mit genau diesen sandbox-Rechten.
+- `links`: Signatur stimmt, abgelaufen/falsch/andere ID → ungültig, zeitkonstanter Vergleich.
+- `store`: neue Fassung behält alte; Papierkorb + Wiederherstellen; fremder Nutzer sieht nichts.
+- `routes`: CSP-Kopf exakt, view-link nur mit Recht, Sandbox-Route: falsche/abgelaufene/fremde Signatur → 404, `X-Content-Type-Options: nosniff`, fremdes Projekt → 404, Pfad-Tricks (`..`) → 404.
+- **Kern K1:** nginx-Ausnahme genau einmal, setzt dort die feste Sandbox-CSP und **nicht** die App-CSP; Marker in
+  `update.sh`; Dispatcher reicht `module_view` nur mit gültigen Feldern durch; Chat zeigt den Rahmen mit genau diesen
+  sandbox-Rechten, lädt erst beim Hinscrollen und holt bei Fehler einen neuen Link.
 - **Sandbox-Test im Browser (E2E):** Ein bösartiges Diagramm versucht `fetch('/api/…')`, `parent.document` und
   `localStorage` zu benutzen → alles scheitert. Das Diagramm selbst bleibt bedienbar.
 - `tools`: Erfolg legt genau ein Diagramm an; Fehler legt keins an; `repo` außerhalb des Projekts → abgelehnt.
@@ -160,12 +199,13 @@ Version anheben → hydratest → E2E 1600/1280 → PR → CI → Bericht.
 - Kein Bearbeiten im Browser per Maus (Archify kann das nicht; Änderungen gehen über den Agenten).
 - Kein automatisches Archify-Update.
 - Kein Hochladen fremder Diagramm-Dateien in S1–S3 (nur selbst erzeugte).
+- Kein Lösch-Werkzeug für Agenten.
 - Keine Cloud-Dienste (archify.si o. Ä.).
 
 ## 11. Entscheidungen Till (20.10.2026)
 
 1. **Name:** „Diagramme“ (Modul-ID `diagramme`).
-2. **Wer darf:** alle Agenten – siehe Vorschlag unten (noch zu bestätigen).
+2. **Wer darf:** alle Agenten – Vorschlag unten von Till bestätigt („ok mache das so“).
 3. **Kern-Ausnahme für die Ansicht** (nginx): ja.
 4. **Im Chat:** gleich bedienbar → Kern-Etappe K1.
 
