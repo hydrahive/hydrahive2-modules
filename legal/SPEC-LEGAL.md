@@ -1,6 +1,6 @@
 # Modul „Recht“ (`legal`) – Rechtsrecherche mit Beleg, Fallakte und Briefe
 
-Stand: 20.10.2026 · Task f0b8d254 · Status: **Entwurf, wartet auf Tills OK**
+Stand: 20.10.2026 · Task f0b8d254 · Status: **Entwurf, wartet auf Tills OK** · Datei: `legal/SPEC-LEGAL.md`
 
 ## 1. Ziel
 
