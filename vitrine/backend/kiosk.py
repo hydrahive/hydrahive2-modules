@@ -6,6 +6,7 @@ mit Rate-Limit) und braucht den Kiosk-Schlüssel (<daten>/kiosk.key, 0600, vom I
 """
 from __future__ import annotations
 
+import hashlib
 import hmac
 import json
 from pathlib import Path
@@ -14,6 +15,8 @@ from renderer import mode
 
 MIN_KEY = 32
 LOCAL = frozenset({"127.0.0.1", "::1"})
+HERE = Path(__file__).parent
+PAGE_FILES = ("kiosk_page.html", "kiosk_chat.js")
 
 
 def key_ok(data_dir: Path, given: str | None) -> bool:
@@ -34,10 +37,18 @@ def back(data_dir: Path) -> None:
     mode.request_back(data_dir)
 
 
+def page_version() -> str:
+    """Version der Kiosk-Seite = Hash über ihre Dateien. Steht in der Seite und in /data. Weicht sie ab, hat ein Update
+    die Seite geändert, und der Kiosk lädt sich neu (Fund 20.10.2026: gemischte Seite, 18 h „antwortet nicht“)."""
+    h = hashlib.sha256()
+    for name in PAGE_FILES:
+        h.update((HERE / name).read_bytes())
+    return h.hexdigest()[:16]
+
+
 def page(key: str) -> str:
     """Statuszentrale (S2): statische Seite aus dem Modul; der Schlüssel wird als JS-String eingesetzt (json + </ entschärft)."""
     k = json.dumps(key)[1:-1].replace("</", "<\\/")
-    here = Path(__file__).parent
-    chat_js = (here / "kiosk_chat.js").read_text(encoding="utf-8").replace("</", "<\\/")
-    html = (here / "kiosk_page.html").read_text(encoding="utf-8").replace("__KEY__", k)
+    chat_js = (HERE / "kiosk_chat.js").read_text(encoding="utf-8").replace("</", "<\\/")
+    html = (HERE / "kiosk_page.html").read_text(encoding="utf-8").replace("__KEY__", k).replace("__VERSION__", page_version())
     return html.replace("</script></html>", "\n" + chat_js + "</script></html>", 1)

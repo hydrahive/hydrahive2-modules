@@ -23,6 +23,7 @@ h2{font-size:34px;margin:0 0 8px;color:#69d7ff;font-weight:normal}
 #zu-voll{font-size:32px;color:#8d9ab0;text-align:center}
 #offline{display:none;font-size:44px;color:#ff6b6b;text-align:center;padding:26px}
 body.offline #offline{display:block}body.offline section{opacity:.35}
+#kaputt{display:none;font-size:34px;color:#ffb86b;text-align:center;padding:20px}body.kaputt #kaputt{display:block}
 #unten{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:20px}
 #knubbel{display:flex;gap:6px}
 #knubbel button{font-size:44px;line-height:1;min-width:72px;min-height:72px;padding:0;border:none;background:none;color:#69d7ff}
@@ -36,6 +37,7 @@ button{font-size:48px;padding:24px 60px;border-radius:20px;border:3px solid #69d
 </style>
 <div id="kopf"><div id="uhr"></div><div id="datum"></div><div id="feiertag"></div></div>
 <div id="offline">HydraHive antwortet nicht</div>
+<div id="kaputt">Anzeige wird neu geladen …</div>
 <div id="bereiche">
 <section id="b-messages"><h2 id="m-kopf">Neu</h2><div id="m-neu"></div><div class="klein" id="m-mehr"></div>
   <div id="m-verlauf-box"><h2>Verlauf (24 h)</h2><div id="m-verlauf"></div></div></section>
@@ -57,6 +59,7 @@ button{font-size:48px;padding:24px 60px;border-radius:20px;border:3px solid #69d
 <script>
 "use strict";
 const k = "__KEY__";
+const PAGE_VERSION = "__VERSION__";
 const $ = (id) => document.getElementById(id);
 function line(parent, text, cls) {
   const d = document.createElement("div");
@@ -204,17 +207,44 @@ function knubbel(used, withChat) {
   }
 }
 let busy = false, lastData = null;
+// Seite selbst neu laden, wenn ein Update sie geändert hat (Version in /data ≠ eigene) oder render() wiederholt scheitert.
+// Fund 20.10.2026: Nach einem Update war die Seite gemischt (neues HTML ohne Chat-Skript). render() warf jedes Mal, und
+// die Seite zeigte 18 h „antwortet nicht“, obwohl /data 200 lieferte. Höchstens einmal pro Minute (sessionStorage),
+// damit eine kaputte Seite nicht in einer Dauerschleife neu lädt. Netzfehler bleiben „antwortet nicht“, ohne Neuladen.
+const RELOAD_GAP_MS = 60000, RENDER_FAILS_MAX = 3;
+let renderFails = 0;
+function reloadPage() {
+  let last = 0;
+  try { last = Number(sessionStorage.getItem("vitrine-reload") || 0); } catch (e) { /* ohne Speicher: trotzdem bremsen */ }
+  if (Date.now() - last < RELOAD_GAP_MS) return false;
+  try { sessionStorage.setItem("vitrine-reload", String(Date.now())); } catch (e) { /* egal */ }
+  location.reload();
+  return true;
+}
 async function load() {
   if (busy) return;
   busy = true;
+  let d;
   try {
     const r = await fetch("data?k=" + encodeURIComponent(k), {cache: "no-store"});
     if (!r.ok) throw new Error(r.status);
-    lastData = await r.json();
-    render(lastData);
-    document.body.classList.remove("offline");
+    d = await r.json();
   } catch (e) {
     document.body.classList.add("offline");
+    busy = false;
+    return;
+  }
+  document.body.classList.remove("offline");
+  try {
+    if (d.page_version && d.page_version !== PAGE_VERSION && reloadPage()) return;
+    lastData = d;
+    render(d);
+    renderFails = 0;
+    document.body.classList.remove("kaputt");
+  } catch (e) {
+    renderFails += 1;
+    document.body.classList.add("kaputt");
+    if (renderFails >= RENDER_FAILS_MAX) reloadPage();
   } finally { busy = false; }
 }
 function tick() {
