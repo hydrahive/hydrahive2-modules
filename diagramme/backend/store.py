@@ -15,7 +15,7 @@ from typing import Any
 from hydrahive.db.connection import db
 
 ID_RE = re.compile(r"^d_[A-Za-z0-9_-]{1,62}$")
-_COLS = "id, username, project_id, session_id, agent_id, title, kind, created_at, version_of, deleted_at"
+_COLS = "id, username, project_id, session_id, agent_id, title, kind, created_at, version_of, deleted_at, preview_state"
 
 
 def root() -> Path:
@@ -58,7 +58,7 @@ def create(*, username: str, project_id: str | None, session_id: str | None, age
     (folder / f"eingabe.{'md' if source_ext == 'md' else 'json'}").write_text(source, encoding="utf-8")
     origin = _origin(version_of) if version_of else None
     with db() as c:
-        c.execute(f"INSERT INTO module_diagrams ({_COLS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)",
+        c.execute(f"INSERT INTO module_diagrams ({_COLS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)",
                   (view_id, username, project_id, session_id, agent_id, title, kind, _now(), origin))
     return get(view_id) or {}
 
@@ -101,9 +101,45 @@ def can_view(row: dict[str, Any] | None, username: str, role: str) -> bool:
     return bool(row["project_id"]) and row["project_id"] in _member_projects(username)
 
 
-def list_for(username: str, role: str) -> list[dict[str, Any]]:
-    """Sichtbare Diagramme ohne Papierkorb, neueste zuerst (Sammlung kommt in S2)."""
+def list_for(username: str, role: str, *, trash: bool = False) -> list[dict[str, Any]]:
+    """Sichtbare Diagramme (alle Fassungen), neueste zuerst; ohne bzw. nur Papierkorb."""
+    return [d for d in all_rows(trash=trash) if can_view(d, username, role)]
+
+
+def set_preview_state(view_id: str, state: str) -> None:
     with db() as c:
-        rows = c.execute(f"SELECT {_COLS} FROM module_diagrams WHERE deleted_at IS NULL "
-                         "ORDER BY created_at DESC, rowid DESC").fetchall()
-    return [d for d in (_row(r) for r in rows) if can_view(d, username, role)]
+        c.execute("UPDATE module_diagrams SET preview_state = ? WHERE id = ?", (state, view_id))
+
+
+def all_rows(*, trash: bool = False) -> list[dict[str, Any]]:
+    """Alle Zeilen (neueste zuerst), wahlweise nur Papierkorb oder nur aktive – Rechte prüft der Aufrufer."""
+    cond = "deleted_at IS NOT NULL" if trash else "deleted_at IS NULL"
+    with db() as c:
+        rows = c.execute(f"SELECT {_COLS} FROM module_diagrams WHERE {cond} ORDER BY created_at DESC, rowid DESC").fetchall()
+    return [_row(r) for r in rows]
+
+
+# Ketten (S2) – in chains.py, hier zum bequemen Aufruf durchgereicht
+def chain_id(view_id: str) -> str:
+    from . import chains
+    return chains.chain_id(view_id)
+
+
+def trash_chain(view_id: str) -> None:
+    from . import chains
+    chains.trash_chain(view_id)
+
+
+def restore_chain(view_id: str) -> None:
+    from . import chains
+    chains.restore_chain(view_id)
+
+
+def purge_chain(view_id: str) -> None:
+    from . import chains
+    chains.purge_chain(view_id)
+
+
+def can_change(row: dict[str, Any] | None, username: str, role: str) -> bool:
+    from . import chains
+    return chains.can_change(row, username, role)

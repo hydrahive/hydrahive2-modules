@@ -10,4 +10,6 @@ KNOWN: dict[str, str] = {
     "diagram_node_missing": "Node fehlt auf dem Server – Diagramme können nicht erstellt werden.",
     "diagram_failed": "Das Diagramm konnte nicht erstellt werden.",
     "diagram_repo_outside": "Der Ordner liegt nicht im Projekt.",
+    "diagram_not_owner": "Nur wer das Diagramm erstellt hat (oder ein Admin) kann es wegwerfen.",
+    "diagram_not_in_trash": "Endgültig löschen geht nur aus dem Papierkorb.",
 }
