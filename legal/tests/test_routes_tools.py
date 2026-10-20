@@ -132,7 +132,7 @@ def test_tool_search_hint_when_nothing_found(corpus):
     from backend.tools import LEGAL_SEARCH
     res = _run(LEGAL_SEARCH, {"query": "Raumfahrt Mondlandung"})
     assert res.success and res.output["hits"] == []
-    assert "andere Fachbegriffe" in res.output["hint"]
+    assert "anderen Fachbegriffen" in res.output["hint"]
 
 
 def test_tool_norm_returns_wording_with_source(corpus):
@@ -168,3 +168,14 @@ def test_empty_corpus_tells_agent_to_sync():
     from backend.tools import LEGAL_SEARCH
     res = _run(LEGAL_SEARCH, {"query": "Mietsicherheit"})
     assert not res.success and "noch keine Gesetze" in res.error
+
+
+def test_as_of_with_timezone_is_converted_to_utc(corpus):
+    """Neue Fassung ab 02.11. 03:30 UTC. 02.11. 04:00+02:00 = 02:00 UTC → noch die alte Fassung."""
+    from backend.tools import LEGAL_NORM
+    changed = fixture_xml("bgb").replace("unverzüglich anzuzeigen".encode(), b"binnen einer Woche anzuzeigen")
+    corpus_store.save_law(parse_law("bgb", changed), changed, fetched_at="2026-11-02T03:30:00Z", pinned=True)
+    before = _run(LEGAL_NORM, {"citation": "§ 536c BGB", "as_of": "2026-11-02T04:00:00+02:00"})
+    after = _run(LEGAL_NORM, {"citation": "§ 536c BGB", "as_of": "2026-11-02T04:00:00Z"})
+    assert "unverzüglich" in before.output["text"]
+    assert "binnen einer Woche" in after.output["text"]
