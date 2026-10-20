@@ -119,3 +119,46 @@ def test_list_for_user_newest_first_without_trash(store_dir):
     ids = [d["id"] for d in store.list_for("testuser", "user")]
     assert ids[:2] == [b["id"], a["id"]] and c["id"] not in ids
     assert all(d["title"] != "fremd" for d in store.list_for("testuser", "user"))
+
+
+# --- S2: Ketten, ganze Kette in den Papierkorb, endgültig löschen (Spec §12.6) ------------------------
+
+def test_chain_id(store_dir):
+    a = _new()
+    b = _new(version_of=a["id"])
+    assert store.chain_id(a["id"]) == a["id"] == store.chain_id(b["id"])
+
+
+def test_trash_chain_and_restore_chain(store_dir):
+    a = _new()
+    b = _new(version_of=a["id"])
+    store.trash_chain(b["id"])
+    assert store.get(a["id"])["deleted_at"] and store.get(b["id"])["deleted_at"]
+    store.restore_chain(a["id"])
+    assert store.get(a["id"])["deleted_at"] is None and store.get(b["id"])["deleted_at"] is None
+
+
+def test_purge_chain_only_inside_root(store_dir):
+    a = _new()
+    b = _new(version_of=a["id"])
+    other = _new()
+    store.purge_chain(a["id"])
+    assert store.get(a["id"]) is None and store.get(b["id"]) is None
+    assert not (store_dir / a["id"]).exists() and not (store_dir / b["id"]).exists()
+    assert (store_dir / other["id"]).exists()
+
+
+def test_can_change_only_owner_or_admin(store_dir):
+    d = _new(username="jemand")
+    row = store.get(d["id"])
+    assert store.can_change(row, "jemand", "user")
+    assert store.can_change(row, "boss", "admin")
+    assert not store.can_change(row, "testuser", "user")      # Projekt-Mitglied darf sehen, nicht wegwerfen
+    assert not store.can_change(None, "boss", "admin")
+
+
+def test_preview_state_column(store_dir):
+    d = _new()
+    assert store.get(d["id"])["preview_state"] is None
+    store.set_preview_state(d["id"], "ok")
+    assert store.get(d["id"])["preview_state"] == "ok"

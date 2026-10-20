@@ -24,7 +24,7 @@ def _create(ctx, **args):
 def test_tools_are_registered_with_clear_names():
     assert tools.diagramm_erstellen.name == "diagramm_erstellen"
     assert tools.diagramm_hilfe.name == "diagramm_hilfe"
-    assert {t.name for t in tools.TOOLS} == {"diagramm_erstellen", "diagramm_hilfe"}
+    assert {t.name for t in tools.TOOLS} == {"diagramm_erstellen", "diagramm_hilfe", "diagramm_liste"}
     assert "delete" not in " ".join(t.name for t in tools.TOOLS)
 
 
@@ -122,3 +122,61 @@ def test_help_without_art_lists_kinds(ws):
 def test_help_unknown_art(ws):
     res = asyncio.run(tools.diagramm_hilfe.execute({"art": "../etc"}, _ctx(ws)))
     assert not res.success
+
+
+# --- S2: diagramm_liste (Spec §12.5) -----------------------------------------------------------------
+
+def _mk(title, project_id=PROJECT_ID, username="testuser", version_of=None):
+    return store.create(username=username, project_id=project_id, session_id="s", agent_id=None, title=title,
+                        kind="workflow", html="<html/>", source="{}", source_ext="json", version_of=version_of)
+
+
+def test_list_tool_is_registered():
+    assert tools.diagramm_liste.name == "diagramm_liste"
+    assert "diagramm_liste" in {t.name for t in tools.TOOLS}
+
+
+def test_list_tool_shows_newest_versions(store_dir, ws):
+    a = _mk("Ablauf alt")
+    b = _mk("Ablauf neu", version_of=a["id"])
+    c = _mk("Datenbank")
+    res = asyncio.run(tools.diagramm_liste.execute({}, _ctx(ws)))
+    assert res.success
+    assert b["id"] in res.output and c["id"] in res.output and a["id"] not in res.output
+    assert "Ablauf neu" in res.output and "2 Fassungen" in res.output
+
+
+def test_list_tool_filters(store_dir, ws):
+    a = _mk("Ablauf der Websuche")
+    b = _mk("Fremdes Projekt", project_id=None)
+    res = asyncio.run(tools.diagramm_liste.execute({"q": "websuche"}, _ctx(ws)))
+    assert a["id"] in res.output and b["id"] not in res.output
+    res = asyncio.run(tools.diagramm_liste.execute({"projekt": True}, _ctx(ws)))
+    assert a["id"] in res.output and b["id"] not in res.output
+
+
+def test_list_tool_hides_trash_and_foreign(store_dir, ws):
+    a = _mk("weg")
+    store.trash(a["id"])
+    f = _mk("fremd", project_id="other-project-diagramme", username="other")
+    res = asyncio.run(tools.diagramm_liste.execute({}, _ctx(ws)))
+    assert a["id"] not in res.output and f["id"] not in res.output
+
+
+def test_list_tool_limit_30(store_dir, ws):
+    made = [_mk(f"D{i:02d}") for i in range(32)]
+    res = asyncio.run(tools.diagramm_liste.execute({}, _ctx(ws)))
+    assert made[-1]["id"] in res.output and made[0]["id"] not in res.output and made[1]["id"] not in res.output
+
+
+def test_list_tool_empty(store_dir, ws):
+    res = asyncio.run(tools.diagramm_liste.execute({"q": "gibtsnichtxyz"}, _ctx(ws)))
+    assert res.success and "keine" in res.output.lower()
+
+
+def test_create_makes_preview(fake_archify, store_dir, ws, monkeypatch):
+    from backend import preview
+    calls = []
+    monkeypatch.setattr(preview, "make", lambda vid: calls.append(vid) or True)
+    res = _create(_ctx(ws))
+    assert calls == [res.metadata["view_id"]]
