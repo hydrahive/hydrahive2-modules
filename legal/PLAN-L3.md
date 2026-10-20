@@ -69,10 +69,13 @@ module_legal_proposals.kind  + 'letter'  (CHECK neu anlegen: SQLite kann CHECK n
      „Neuer Brief“ (Vorlage wählen → Editor mit Gerüst).
    - **Brief-Editor**: Text links, Prüfliste rechts (live), unbekannte Normen rot; „Als Entwurf speichern“,
      „Druckansicht“, „Versendet am … per …“.
-   - **Druckansicht**: eigene Seite, DIN 5008 Form B (Anschriftfeld 85×45 mm, linke Kante 20 mm, Text ab 25 mm – mehrfach
-     belegt, z. B. falzmarke.com/din-5008, din5008.net/anschrift; Oberkante Form B 45 mm / Form A 27 mm laut
-     sekretaria.de, Quellen widersprechen sich teils → vor dem Bau gegen die Maßzeichnung prüfen; Bezugszeichenzeile,
-     Betreff fett, Seitenzahl „Seite x von y“ per CSS-Counter, Falzmarken), `window.print()`.
+   - **Druckansicht**: eigene Seite, DIN 5008 **Form B**, `window.print()`. Maße (falzmarke.com/din-5008, abgerufen
+     20.10.2026, dort „mehrfach bestätigt“ über Wikimedia-Maßzeichnung Form B + Onlineprinters-Magazin; Abgleich mit dem
+     kostenpflichtigen Normtext steht laut Quelle aus): A4 210×297 mm; Briefkopf 45 mm; Anschriftfeld 85×45 mm, linke
+     Kante 20 mm, Text ab 25 mm, darin Rücksendeangabe 5 mm, Zusatz-/Vermerkzone 12,7 mm, Anschriftzone 27,3 mm;
+     Informationsblock x = 125 mm, Breite 75 mm, Oberkante 50 mm; Ränder links 25 mm, rechts 20 mm (Textbreite 165 mm);
+     Falzmarken 105 und 210 mm, Lochmarke 148,5 mm; Grundzeile 4,23 mm (12 pt); Betreff zwei Leerzeilen unter dem
+     tieferen von Feld und Block. Seitenzahl auf Folgeseiten. Abnahme: PDF ausmessen.
    - Vorschläge-Reiter zeigt Brief-Vorschläge mit Prüfliste.
    - vitest: Prüflisten-Anzeige, Druck-Layout-Hilfen (Datum, Bezugszeichen), Formular.
 
