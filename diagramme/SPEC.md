@@ -216,3 +216,64 @@ man sie im Agent-Editor einträgt. Vorschlag:
 - Im Modul (Admin) ein Knopf **„Für alle Agenten freischalten“**: trägt `diagramm_erstellen`, `diagramm_hilfe`,
   `diagramm_liste` bei allen Agenten ein (mit Sicherung der Agent-Konfigs, rückgängig per zweitem Knopf). Die Werkzeuge
   haben keine Außenwirkung (kein Netz, nur eigener Ablageordner).
+
+## 12. Etappe S2 im Detail (Stand 20.10.2026, nach S1 live)
+
+S1 ist live (Kern 713754c8, Modul 0.1.0). Till hat das erste Diagramm im Chat gesehen und bedient. S2 macht das
+**Nachschlagen** möglich und gibt das Werkzeug **allen Agenten**.
+
+### 12.1 Routen (mit Login, `/api/modules/diagramme/…`)
+| Route | Was | Recht |
+|---|---|---|
+| `GET /list?project=&q=&trash=0\|1` | neueste Fassung je Diagramm-Kette: id, title, kind, project_id, project_name, created_at, versions (Anzahl), agent_name | `can_view` je Zeile |
+| `GET /item/{id}` | ein Diagramm + alle Fassungen (id, created_at, agent_name) | `can_view` |
+| `GET /download/{id}` | HTML als Datei (`Content-Disposition: attachment`, Name aus Titel), Sandbox-CSP | `can_view` |
+| `GET /preview/{id}` | Vorschaubild PNG (siehe 12.3), sonst 404 | `can_view` |
+| `POST /trash/{id}` / `POST /restore/{id}` | ganze Kette in den Papierkorb / zurück | Ersteller oder Admin |
+| `DELETE /item/{id}` | **endgültig löschen** – nur aus dem Papierkorb, ganze Kette, Dateien weg | Ersteller oder Admin |
+| `GET /agents-access` | Anzahl Agenten mit/ohne Werkzeug | Admin |
+| `POST /agents-access` `{"on": true\|false}` | Freischalten / Zurücknehmen (12.4) | Admin |
+
+Fehler über `coded()` mit Codes aus `errors.KNOWN` (Fehlerfall immer 404 statt 403, wenn das Diagramm fremd ist).
+
+### 12.2 Seite „Diagramme“ (`/diagramme`, Menü „Arbeiten“)
+- Kopf: Suche (Titel), Auswahl Projekt („Alle“, je Projekt, „ohne Projekt“), Umschalter „Papierkorb“.
+- Kacheln: Vorschaubild (oder Platzhalter mit Art), Titel, Art in Worten („Ablauf“, „Aufbau“ …), Projekt, Datum,
+  „n Fassungen“. Klick → Ansicht.
+- Ansicht: großer abgeschotteter Rahmen (Kern-`ModuleViewFrame`-Muster, eigene Kopie im Modul), Knöpfe
+  „Herunterladen“, „Frühere Fassungen“ (Liste, Klick zeigt diese Fassung), „In den Papierkorb“.
+- Papierkorb: „Wiederherstellen“, „Endgültig löschen“ mit eigenem Dialog („Das Diagramm und alle Fassungen werden
+  gelöscht. Das lässt sich nicht rückgängig machen.“) – kein `confirm()`.
+- Admin: Kasten „Für alle Agenten“ mit Zahl („12 von 85 Agenten können Diagramme erstellen“) und Knopf
+  „Für alle Agenten freischalten“ bzw. „Wieder zurücknehmen“.
+- Leer-Zustand: „Noch keine Diagramme. Bitte einen Agenten: „Zeichne mir … als Diagramm.““
+- Texte de/en, ohne Fachwörter. Breiten 1600 und 1280 px.
+
+### 12.3 Vorschaubilder
+- Beim Erstellen: Chromium (`chrome.find()`) macht ein Bildschirmfoto der HTML-Datei:
+  `--headless=new --no-sandbox --disable-gpu --hide-scrollbars --window-size=1200,750 --virtual-time-budget=3000
+  --screenshot=<ordner>/vorschau.png file://<ordner>/diagramm.html`. Zeitgrenze 60 s, kein Shell, Umgebung wie runner.
+- Kein Chromium oder Fehler → kein Bild (Platzhalter), Diagramm wird trotzdem gespeichert.
+- Bestehende Diagramme ohne Bild: beim ersten Abruf von `/preview` nachträglich erzeugen (einmal je Diagramm,
+  Fehlversuch wird gemerkt → kein Dauerversuch).
+
+### 12.4 Für alle Agenten freischalten
+- Heute bekommen nur Master-Agenten das Werkzeug automatisch (`default_agent_tools`, Kern `agents/_defaults.py`).
+- „Freischalten“: für jeden Agenten ohne `diagramm_erstellen` die Werkzeuge `diagramm_erstellen`, `diagramm_hilfe`,
+  `diagramm_liste` ergänzen (über `hydrahive.agents.config.update`, also mit Prüfung und atomarem Schreiben).
+  Vorher eine **Sicherung**: `data_dir/diagramme/_freischaltung.json` mit der Liste der Agenten, die dadurch neu
+  dazukamen (nur IDs, keine Configs).
+- „Zurücknehmen“: genau bei diesen Agenten die drei Werkzeuge wieder entfernen (andere bleiben unberührt, auch
+  Master mit `default_agent_tools`). Danach Datei leeren.
+- Gesperrte oder gelöschte Agenten werden übersprungen, Fehler je Agent werden gezählt, nie Abbruch.
+- Agenten, die später neu angelegt werden, bekommen das Werkzeug nicht automatisch (erneut freischalten).
+
+### 12.5 Werkzeug `diagramm_liste`
+- Ohne Argumente: die 30 neuesten sichtbaren Diagramme (id, Titel, Art, Datum, Projekt) als Text, zum Wiederaufnehmen
+  oder Ändern mit `ersetzt`. Optional `q` (Titel enthält) und `projekt` (nur aktuelles Projekt: `true`).
+- Kein Lösch- oder Papierkorb-Werkzeug für Agenten.
+
+### 12.6 Datenmodell
+- Migration `002_preview.sql`: Spalte `preview_state TEXT` (`ok` | `fehlt` | `fehler`), Standard `NULL` = noch nie versucht.
+- „Kette“ = `id` der ersten Fassung (`version_of` oder `id`). Liste zeigt je Kette die neueste nicht gelöschte Fassung.
+- Papierkorb gilt für die ganze Kette (alle Fassungen bekommen `deleted_at`).
