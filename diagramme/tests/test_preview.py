@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from backend import preview, store
 from conftest import MOD_PREFIX, PROJECT_ID
 

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from backend import store
 from conftest import MOD_PREFIX, OTHER_PROJECT_ID, PROJECT_ID
 
