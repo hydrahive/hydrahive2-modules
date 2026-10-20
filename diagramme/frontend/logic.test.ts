@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { diagrammeI18n } from "./i18n"
 import { errorKey, kindLabelKey, listQuery, sameUser, shortDate } from "./logic"
 
@@ -50,5 +50,19 @@ describe("Diagramme: Logik der Sammlung (Spec §12.2)", () => {
     expect(sameUser({ username: "till" }, "till", "user")).toBe(true)
     expect(sameUser({ username: "bibi" }, "till", "user")).toBe(false)
     expect(sameUser({ username: "bibi" }, "till", "admin")).toBe(true)
+  })
+})
+
+vi.mock("./DiagrammePage", () => ({ DiagrammePage: () => null }))
+
+describe("Einbindung ins Menü", () => {
+  it("bringt keinen eigenen nav-Namespace mit (würde den des Kerns überschreiben)", async () => {
+    const mod = await import("./index")
+    for (const lang of ["de", "en"] as const) {
+      expect(Object.keys(mod.i18n[lang])).toEqual(["diagramme"])
+      expect((mod.i18n[lang].diagramme as { title: string }).title).toBeTruthy()
+    }
+    expect(mod.nav[0].labelKey).toBe("diagramme")
+    expect(mod.routes[0].path).toBe("/diagramme")
   })
 })
