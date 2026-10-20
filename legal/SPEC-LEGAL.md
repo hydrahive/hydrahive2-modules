@@ -1,6 +1,6 @@
 # Modul „Recht“ (`legal`) – Rechtsrecherche mit Beleg, Fallakte und Briefe
 
-Stand: 20.10.2026 · Task f0b8d254 · Status: **Antworten §8 eingearbeitet, wartet auf Merge-OK** · Datei: `legal/SPEC-LEGAL.md`
+Stand: 20.10.2026 · Task f0b8d254 · Status: **freigegeben (Till, 20.10.)**, L0 gemessen (§ 6a) · Datei: `legal/SPEC-LEGAL.md`
 
 ## 1. Ziel
 
@@ -201,6 +201,39 @@ Unsicherheit: Anwalt oder Beratungsstelle.“
 | **L3** | Vorschläge + Brief-Werkstatt + Prüfliste + Druckansicht | Pilot: Mangelanzeige Mietsache (Task 5d49bee3) |
 | **L4** | Zitat-Prüfer vollständig + Gegenlesen + Rechtsprechung | 30 Zitate, davon 10 absichtlich falsch → alle 10 rot |
 | **L5** | Dokumente hochladen (PDF/Bild), Text erkennen, durchsuchen | eigene Spec |
+
+## 6a. L0 – Messung (20.10.2026, Wegwerf-Probe außerhalb der Produktiv-DB)
+
+| Messung | Wert |
+|---|---|
+| Download der 54 Gesetze (`xml.zip`, 0,5 s Pause je Abruf) | **33 s**, zusammen **5,0 MB** ZIP. Größte: StVO 742 KB, SGB V 624 KB, BGB 467 KB |
+| Normen nach dem Filtern (ohne Inhaltsübersicht, weggefallene Normen, leere Texte) | **10.715**, z. B. BGB 2.486, ZPO 1.053, StGB 519 |
+| Aufbau SQLite + FTS5 | **3 s**, DB **26 MB** |
+| Suche | **2–3 ms** pro Anfrage |
+| Treffer bei Laienfragen direkt („Wohnung zu heiß, Mangel melden“) | Top 1: 4/20 · Top 5: 9/20 · **Top 10: 13/20** |
+| Treffer, wenn der Agent in Fachbegriffe übersetzt („Mangel Mietsache Anzeige Mieter“) | **Top 1: 15/20 · Top 5: 19/20** · Top 10: 19/20 |
+
+**Befunde:**
+- **Kürzel:** `<jurabk>` lautet z. B. „OWiG 1968“ bzw. „BDSG 2018“. Das richtige Zitierkürzel steht in **`<amtabk>`**
+  (OWiG, BDSG). Der Parser nimmt `amtabk`, sonst `jurabk`. Das hat 2 von 20 Testfällen repariert.
+- **815 Normen ohne Überschrift** (vor allem VwGO, GVG, GG, GBO). Für diese Normen sucht der Index
+  schon über **die Überschrift der Gliederungseinheit** (z. B. VwGO § 70 → „8. Abschnitt Besondere Vorschriften
+  für Anfechtungs- und Verpflichtungsklagen“) und über den Text.
+  - Mit „Widerspruchsfrist Verwaltungsakt“ fand die Suche VwGO § 70 nicht unter den ersten 10. Mit
+    „Widerspruch Frist Verwaltungsakt“ (getrennte Wörter) stand er auf **Platz 2**. Zusammengesetzte Wörter sind
+    die Schwachstelle der Wortsuche.
+  - → Skill-Regel: Wortverbindungen getrennt suchen. Bei Normen ohne Überschrift zeigt die Ergebnisliste die
+    Gliederung an.
+- Die BetrKV hat tatsächlich nur 2 Paragrafen, der Katalog steht in § 2.
+
+**Entscheidung für L1** (folgt aus der Messung):
+- Die Volltextsuche reicht, **wenn der Agent die Frage vorher in Gesetzessprache umformuliert**. Die
+  Werkzeug-Beschreibung von `legal_search` und der Skill sagen das ausdrücklich („Suche mit Fachbegriffen; bei wenig
+  Treffern zweite Formulierung“). Ohne Umformulierung fehlen 7 von 20.
+- **Embeddings nicht in L1.** Das eingestellte Kern-Embedding ist `text-embedding-3-small` (OpenAI, kostenpflichtig;
+  Messung auf .2 am 20.10.). Der Korpus hat ca. **3,8 Mio. Token** (13,2 Mio. Zeichen, Faustregel 3,5 Zeichen/Token).
+  Den aktuellen Preis konnte ich auf der OpenAI-Preisseite nicht finden, er ist also nicht bestätigt. Laut Spec gilt
+  „nur kostenlos“. Bedeutungssuche kommt erst mit einem lokalen Modell (Ollama auf .2 ist heute aus).
 
 ## 7. Nicht in dieser Spec
 
