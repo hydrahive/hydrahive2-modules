@@ -46,6 +46,30 @@ def _hit(n: dict, terms: list[str], match: str) -> dict:
             "law_key": n["law_key"]}
 
 
+def _citing(abbr: str, enbez: str, limit: int) -> list[dict]:
+    """Normen von ``abbr``, deren Text „§ 536“ als ganze Nummer nennt (nicht „§ 5361“, nicht „§ 536a“)."""
+    if limit <= 0:
+        return []
+    num = enbez.split(" ", 1)[1]
+    pattern = re.compile(rf"(?:§§?|Art\.?)\s*(?:\d+[a-z]?\s*(?:,|und|bis|oder)\s*)*{re.escape(num)}(?![\da-z])")
+    match = f'"{num}"'
+    sql = (f"SELECT {', '.join('n.' + c.strip() for c in store._NORM_COLS.split(','))} "
+           "FROM module_legal_norms_fts f JOIN module_legal_norms n ON n.id = f.rowid "
+           "WHERE module_legal_norms_fts MATCH ? AND n.valid_to IS NULL AND n.abbr = ? AND n.enbez != ? "
+           "ORDER BY n.position LIMIT 200")
+    with db() as c:
+        rows = c.execute(sql, (f"text : {match}", abbr, enbez)).fetchall()
+    out = []
+    for row in rows:
+        n = store.norm_dict(row)
+        if pattern.search(n["text"]):
+            hit = _hit(n, [num], "cites")
+            out.append(hit)
+            if len(out) >= limit:
+                break
+    return out
+
+
 def search(query: str, *, law: str | None = None, limit: int = 10) -> list[dict]:
     query = (query or "").strip()
     if not query:
@@ -57,6 +81,9 @@ def search(query: str, *, law: str | None = None, limit: int = 10) -> list[dict]
         n = store.get_norm(cit.abbr, cit.enbez)
         if n:
             hits.append(_hit(n, [], "exact"))
+        # Nach einer Normbezeichnung: nur Normen desselben Gesetzes, die genau diese Nummer zitieren.
+        # Sonst trifft das Kürzel („bgb“) fast alles (live hydratest 20.10.2026: „Anhang EV“ unter § 536c).
+        return hits + _citing(cit.abbr, cit.enbez, limit - len(hits))
     terms = _terms(query)
     if not terms:
         if hits:
