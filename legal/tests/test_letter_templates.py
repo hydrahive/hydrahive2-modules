@@ -63,3 +63,17 @@ def test_no_case_data_leaks_into_other_fields():
     assert "28 °C" not in d["body"]
     d = letter_templates.draft("anwalt", case=CASE, parties=[ME, OPP], recipient_id=7, today=date(2026, 10, 20))
     assert "28 °C" in d["body"]
+
+
+# Am 20.10.2026 im Live-Korpus gelesen (Wortlaut + Titel), siehe Modul-Docstring.
+VERIFIED = {("BGB", "§ 535"), ("BGB", "§ 536"), ("BGB", "§ 536c"), ("BGB", "§ 286"), ("BGB", "§ 543"), ("BGB", "§ 568"),
+            ("BGB", "§ 573c"), ("BGB", "§ 623"), ("VwGO", "§ 68"), ("VwGO", "§ 70"), ("VwVfG", "§ 29"), ("SGB X", "§ 25")}
+
+
+def test_templates_only_use_verified_norms():
+    used = set()
+    for key in letter_templates.ORDER:
+        d = letter_templates.draft(key, case=CASE, parties=[ME, OPP], recipient_id=7, today=date(2026, 10, 20))
+        for text in (d["body"], d["subject"]):
+            used |= {(c.abbr, c.enbez) for f in citation.find_all(text, CORPUS) for c in f.citations}
+    assert used and used <= VERIFIED, used - VERIFIED
