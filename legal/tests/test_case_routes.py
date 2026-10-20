@@ -162,3 +162,19 @@ def test_deadline_calc_without_case(client):
                       headers=h)
     assert bad.status_code == 400 and bad.json()["detail"]["code"] == "legal_event_date_invalid"
     assert client.get(f"{PREFIX}/states", headers=h).json()["states"]["NW"] == "Nordrhein-Westfalen"
+
+
+def test_chat_session_with_case_agent_is_reused(client, made):
+    from hydrahive.db import sessions as sessions_db
+    from hydrahive.projects import config as pc
+    pid = _create(client, made).json()["project_id"]
+    a = _login(client, "alice")
+    r = client.post(f"{PREFIX}/cases/{pid}/chat", headers=a)
+    assert r.status_code == 200
+    out = r.json()
+    s = sessions_db.get(out["session_id"])
+    assert s.project_id == pid and s.agent_id == pc.get(pid)["agent_id"] and s.user_id == "alice"
+    assert out["url"] == f"/werkstatt/{out['session_id']}" and "Mietsache Hitze" in s.title
+    assert client.post(f"{PREFIX}/cases/{pid}/chat", headers=a).json()["session_id"] == out["session_id"]
+    pc.update(pid, members=[{"username": "bob", "role": "read"}])
+    assert client.post(f"{PREFIX}/cases/{pid}/chat", headers=_login(client, "bob")).status_code == 403
