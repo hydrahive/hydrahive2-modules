@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import pytest
-from conftest import fixture_xml
-
 from backend import corpus_store as store
 from backend import search
 from backend.gii_parse import parse_law
+from conftest import fixture_xml
 
 
 @pytest.fixture
@@ -74,7 +73,7 @@ def test_fts_syntax_cannot_be_injected(corpus):
 
 
 def test_old_versions_are_not_found(corpus):
-    changed = fixture_xml("bgb").replace("unverzüglich anzuzeigen".encode(), "binnen einer Woche anzuzeigen".encode())
+    changed = fixture_xml("bgb").replace("unverzüglich anzuzeigen".encode(), b"binnen einer Woche anzuzeigen")
     store.save_law(parse_law("bgb", changed), changed, fetched_at="2026-11-02T03:30:00Z", pinned=True)
     hits = [h for h in search.search("Mangel Mietsache Anzeige Mieter") if h["enbez"] == "§ 536c"]
     assert len(hits) == 1

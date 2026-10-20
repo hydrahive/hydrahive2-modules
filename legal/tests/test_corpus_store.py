@@ -1,10 +1,9 @@
 """Gesetz speichern: Hash-Vergleich, alte Fassung bleibt mit valid_to erhalten (Spec §4.1)."""
 from __future__ import annotations
 
-from conftest import fixture_xml
-
 from backend import corpus_store as store
 from backend.gii_parse import parse_law
+from conftest import fixture_xml
 
 
 def _save(key="bgb", xml=None, at="2026-10-20T03:30:00Z", pinned=True):
@@ -30,7 +29,7 @@ def test_same_hash_changes_nothing():
 
 def test_new_version_keeps_old_text_with_valid_to():
     _save(at="2026-10-20T03:30:00Z")
-    changed = fixture_xml("bgb").replace("unverzüglich anzuzeigen".encode(), "binnen einer Woche anzuzeigen".encode())
+    changed = fixture_xml("bgb").replace("unverzüglich anzuzeigen".encode(), b"binnen einer Woche anzuzeigen")
     res = _save(xml=changed, at="2026-11-02T03:30:00Z")
     assert res["changed"] is True
     now = store.get_norm("BGB", "§ 536c")
