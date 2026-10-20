@@ -13,7 +13,7 @@ KNOWN = {"BGB", "GG", "VwGO", "SGB 2", "SGB X", "BetrKV", "ZPO"}
 
 
 def _cits(text):
-    return [(f.citation.abbr, f.citation.enbez) for f in find_all(text, KNOWN) if f.citation]
+    return [(c.abbr, c.enbez) for f in find_all(text, KNOWN) for c in f.citations]
 
 
 @pytest.mark.parametrize("text,expected", [
