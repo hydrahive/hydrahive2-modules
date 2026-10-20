@@ -2,7 +2,7 @@
   "id": "legal",
   "name": "Recht",
   "version": "0.1.0",
-  "description": "Rechtsrecherche mit belegten Normen: Bundesgesetze lokal mit Stand, Suche für Mensch und Agent. Fälle, Fristen und Briefe folgen. Keine Rechtsberatung.",
+  "description": "Rechtsrecherche mit belegten Normen: Bundesgesetze lokal mit Stand, Suche für Mensch und Agent, Fälle mit Fallakte, Fristenrechner und Rechts-Agent. Briefe folgen. Keine Rechtsberatung.",
   "icon": "Scale",
   "nav_group": "working",
   "permissions": [],
@@ -21,5 +21,12 @@
       "label": "Recht: Fälle anlegen (je Fall ein Projekt mit Rechts-Agent)",
       "default": "admin_only"
     }
-  ]
+  ],
+  "sensitive_tools": {
+    "legal_case": "privat",
+    "legal_propose_party": "privat",
+    "legal_propose_deadline": "privat",
+    "legal_propose_fact": "privat",
+    "legal_note": "privat"
+  }
 }
