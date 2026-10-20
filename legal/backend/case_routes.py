@@ -206,3 +206,27 @@ def decide(pid: str, proposal_id: int, action: str, p: Principal) -> dict:
         raise coded(status.HTTP_404_NOT_FOUND, "legal_action_unknown")
     _guard(p, pid, "write")
     return _call(casefile.decide, pid, proposal_id, accept=action == "accept", by=p.username)
+
+
+CASE_KEY = "legal_case"            # Kennzeichen in session.metadata: zu welchem Fall die Sitzung gehört
+_EMBED = {"embedded_in": "legal"}  # Kern (Task 8fd82c02): Projekt-Cockpit öffnet/merkt eingebettete Sitzungen nicht
+
+
+@router.post("/cases/{pid}/chat")
+def chat(pid: str, p: Principal) -> dict:
+    """Chat mit dem Rechts-Agenten des Falls: jüngste eigene Sitzung weiternutzen, sonst neu anlegen."""
+    _guard(p, pid, "write")
+    from hydrahive.db import sessions as sessions_db
+    from hydrahive.projects._config_io import get as get_project
+    agent_id = (get_project(pid) or {}).get("agent_id")
+    if not agent_id:
+        raise coded(status.HTTP_409_CONFLICT, "legal_case_agent_missing")
+    s = next((x for x in sessions_db.list_for_user(p.username, limit=500)
+              if x.agent_id == agent_id and x.project_id == pid and x.metadata.get(CASE_KEY) == pid), None)
+    if s is None:
+        title = (cases.get_case(pid) or {}).get("title", "")
+        s = sessions_db.create(agent_id=agent_id, user_id=p.username, project_id=pid,
+                               title=f"Recht: {title}"[:200], metadata={CASE_KEY: pid, **_EMBED})
+    else:
+        sessions_db.touch(s.id)
+    return {"session_id": s.id, "url": f"/werkstatt/{s.id}", "agent_id": agent_id}
