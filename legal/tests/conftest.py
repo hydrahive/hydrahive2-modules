@@ -27,7 +27,8 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 TABLES = ("module_legal_laws", "module_legal_norms", "module_legal_sync", "module_legal_cases",
-          "module_legal_parties", "module_legal_deadlines", "module_legal_notes", "module_legal_proposals")
+          "module_legal_parties", "module_legal_deadlines", "module_legal_notes", "module_legal_proposals",
+          "module_legal_correspondence")
 
 
 @pytest.fixture(scope="session", autouse=True)
