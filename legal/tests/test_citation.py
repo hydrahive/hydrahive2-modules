@@ -34,3 +34,20 @@ def test_not_a_citation(raw):
 def test_absatz_and_satz_are_ignored_for_lookup():
     assert parse_citation("§ 536 Abs. 1 S. 2 BGB", {"BGB"}) == Citation("BGB", "§ 536")
     assert parse_citation("§ 573c Absatz 1 BGB", {"BGB"}) == Citation("BGB", "§ 573c")
+
+
+@pytest.mark.parametrize("raw,enbez,abbr", [
+    ("§ 7 SGB II", "§ 7", "SGB 2"),
+    ("§ 7 SGB 2", "§ 7", "SGB 2"),
+    ("§ 1 SGB I", "§ 1", "SGB 1"),
+    ("§ 27 SGB V", "§ 27", "SGB 5"),
+    ("§ 14 SGB XI", "§ 14", "SGB 11"),
+    ("§ 34 SGB X", "§ 34", "SGB X"),
+    ("§ 34 SGB 10", "§ 34", "SGB X"),
+    ("SGB XII § 19", "§ 19", "SGB 12"),
+])
+def test_sgb_roman_and_arabic_both_work(raw, enbez, abbr):
+    """gesetze-im-internet: „SGB 1/2/5/8/11/12“ (arabisch), nur „SGB X“ römisch (Stand 20.10.2026).
+    Zitiert wird meist römisch – beides muss auf das Kürzel im Korpus führen."""
+    known = {"SGB 1", "SGB 2", "SGB 5", "SGB 8", "SGB 11", "SGB 12", "SGB X"}
+    assert parse_citation(raw, known) == Citation(abbr, enbez)

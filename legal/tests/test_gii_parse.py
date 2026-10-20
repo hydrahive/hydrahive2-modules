@@ -78,3 +78,8 @@ def test_broken_xml_is_a_clear_error():
         parse_law("bgb", b"<dokumente><norm>kaputt")
     with pytest.raises(GiiParseError):
         parse_law("bgb", b"<dokumente></dokumente>")      # kein einziges Gesetz-Kopf
+
+
+def test_norm_with_only_a_dash_is_skipped():
+    """JGG § 19 (Stand 20.10.2026) hat als Text nur „-“ – kein Inhalt, nicht in den Korpus (L0 filterte das)."""
+    assert [n.enbez for n in parse_law("jgg", fixture_xml("jgg")).norms] == []
