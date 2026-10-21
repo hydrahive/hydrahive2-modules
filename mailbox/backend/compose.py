@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from email.message import EmailMessage
+from email.policy import SMTP
 from email.utils import formatdate, make_msgid
 from html import escape
 
@@ -94,7 +95,8 @@ def assemble(acc: dict, *, to: list, cc: list, bcc: list, subject: str, text: st
     for r in [*to, *cc, *bcc]:
         if r.addr not in envelope:
             envelope.append(r.addr)
-    return Built(raw=m.as_bytes(), envelope=envelope, message_id=mid)
+    # SMTP-Policy: nur CRLF (smtplib wandelt bytes nicht um; Postfix lehnt nacktes LF ab, APPEND verlangt CRLF)
+    return Built(raw=m.as_bytes(policy=SMTP), envelope=envelope, message_id=mid)
 
 
 def _parse(field: str, value: str) -> list:

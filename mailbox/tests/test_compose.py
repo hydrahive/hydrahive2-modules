@@ -23,7 +23,7 @@ def test_neue_mail():
     assert m["Bcc"] is None and b"geheim@x.de" not in r.raw, "Bcc nie in der Mail selbst"
     assert r.envelope == ["anna@example.org", "b@x.de", "geheim@x.de"]
     assert m["Message-ID"].endswith("@example.net>") and m["Date"]
-    body = m.get_body(("plain",)).get_content()
+    body = m.get_body(("plain",)).get_content().replace("\r\n", "\n")
     assert body.startswith("Hi Anna") and body.rstrip().endswith("-- \nGruß\nTill")
 
 
@@ -143,3 +143,25 @@ def test_boese_message_id_im_original_landet_nicht_roh():
     m = _msg(r.raw)
     assert m["Bcc"] is None and "opfer@x.de" not in r.envelope
     assert m["References"].split() == ["<r1@x>", "<r2@x>", "<ok@x>"]
+
+
+@pytest.mark.parametrize("kind", ["new", "reply", "forward"])
+def test_zeilenenden_crlf(kind):
+    """smtplib wandelt Zeilenenden nur bei str um, nicht bei bytes; Postfix ≥ 3.9 lehnt nacktes LF ab
+    (smtpd_forbid_bare_newline), IMAP APPEND verlangt CRLF. Also: nur CRLF, nie nacktes LF/CR."""
+    from backend import compose
+    r = {"new": lambda: compose.build(ACC, to="a@x.de", subject="s", text="a\nb\r\nc\rd",
+                                      attachments=[("x.txt", "text/plain", b"1\n2")]),
+         "reply": lambda: compose.reply(ACC, eml("attachments"), text="a\nb", reply_all=True),
+         "forward": lambda: compose.forward(ACC, eml("attachments"), to="n@x.de", text="a\nb", with_attachments=True)}[kind]()
+    rest = r.raw.replace(b"\r\n", b"")
+    assert b"\n" not in rest and b"\r" not in rest
+
+
+def test_einzelnes_cr_wird_zeilenumbruch():
+    """Altes Mac-Zeilenende im Text: als eigene Zeile, nicht verschluckt oder verklebt."""
+    from backend import compose
+    m = _msg(compose.build(ACC, to="a@x.de", subject="s", text="eins\rzwei").raw)
+    lines = m.get_body(("plain",)).get_content().splitlines()
+    assert lines[:2] == ["eins", "zwei"]
+    assert "eins\nzwei" in m.get_body(("html",)).get_content().replace("\r\n", "\n")
