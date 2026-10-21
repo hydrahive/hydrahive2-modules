@@ -128,11 +128,3 @@ def test_job_nutzt_alle_konten(monkeypatch):
     asyncio.run(idle_manager.job())
     assert seen == [["x", "y"]]
 
-
-def test_registriert_den_idle_job():
-    import backend
-    from hydrahive.modules.context import ModuleContext
-    ctx = ModuleContext("mailbox")
-    backend.register(ctx)
-    jobs = {j.name: j for j in ctx.jobs}
-    assert set(jobs) == {"sync", "idle"} and jobs["idle"].interval_seconds == 60
