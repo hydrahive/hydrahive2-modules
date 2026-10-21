@@ -27,10 +27,16 @@ def _addr_list(value: str) -> list:
         return []                 # kaputte Kopfzeile im Original: lieber leer als falsch
 
 
+def _without_signature(text: str) -> str:
+    """Alles ab der Trennzeile „-- “ (RFC 3676 §4.3) weg – die Signatur des anderen wird nicht mitzitiert."""
+    lines = text.splitlines()
+    return "\n".join(lines[: lines.index("-- ")] if "-- " in lines else lines).rstrip()
+
+
 def _quote(p: parse.Parsed) -> str:
     who = p.from_addr or "Unbekannt"
     when = p.date.replace("T", " ").replace("Z", " UTC") if p.date else "einem unbekannten Datum"
-    quoted = "\n".join("> " + line for line in (p.body or "").splitlines())
+    quoted = "\n".join("> " + line for line in _without_signature(p.body or "").splitlines())
     return f"Am {when} schrieb {who}:\n{quoted}"
 
 

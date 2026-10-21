@@ -165,3 +165,21 @@ def test_einzelnes_cr_wird_zeilenumbruch():
     lines = m.get_body(("plain",)).get_content().splitlines()
     assert lines[:2] == ["eins", "zwei"]
     assert "eins\nzwei" in m.get_body(("html",)).get_content().replace("\r\n", "\n")
+
+
+def test_zitat_ohne_signatur_des_originals():
+    """RFC 3676 §4.3: Signatur (ab „-- “) wird beim Antworten nicht mitzitiert – auch mit CRLF."""
+    from backend import compose
+    orig = b"From: a@x.de\r\nSubject: s\r\nMessage-ID: <q@x>\r\n\r\nHallo\r\nText\r\n\r\n-- \r\nGruss\r\nAnna\r\n"
+    body = _msg(compose.reply(ACC, orig, text="x", reply_all=False).raw).get_body(("plain",)).get_content()
+    body = body.replace("\r\n", "\n")
+    assert "> Hallo\n> Text" in body and "Gruss" not in body and "> -- " not in body
+    assert body.rstrip().endswith("-- \nGruß\nTill"), "eigene Signatur bleibt"
+
+
+def test_zitat_ohne_signatur_nur_echter_trenner():
+    """„--“ ohne Leerzeichen oder mitten im Text ist kein Trenner."""
+    from backend import compose
+    orig = b"From: a@x.de\r\nSubject: s\r\nMessage-ID: <q@x>\r\n\r\nA\r\n--\r\nB -- C\r\n"
+    body = _msg(compose.reply(ACC, orig, text="x", reply_all=False).raw).get_body(("plain",)).get_content()
+    assert "> --" in body and "> B -- C" in body
