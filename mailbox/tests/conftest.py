@@ -33,7 +33,7 @@ TABLES = ("module_mailbox_accounts", "module_mailbox_sync")
 def setup_test_env():
     with isolated_root() as tmpdir:
         tmp_path = Path(tmpdir)
-        os.environ["HH_SECRET_KEY"] = "test-secret-key-for-jwt-signing"
+        os.environ["HH_SECRET_KEY"] = "test-secret-key-for-jwt-signing-at-least-32-bytes"
         os.environ["HH_DISCORD_ENABLED"] = "0"
         os.environ["HH_WA_ENABLED"] = "0"
         os.environ["HH_AGENTLINK_URL"] = ""
@@ -46,6 +46,7 @@ def setup_test_env():
         (tmp_path / "config" / "users.json").write_text(json.dumps({
             "alice": {"password_hash": pw_hash, "role": "user"},
             "bob": {"password_hash": pw_hash, "role": "user"},
+            "carol": {"password_hash": pw_hash, "role": "user"},
             "root": {"password_hash": pw_hash, "role": "admin"},
         }, indent=2))
 

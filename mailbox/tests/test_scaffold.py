@@ -97,3 +97,9 @@ def test_probe_nutzt_genau_die_fts_definition():
 
     assert index_db._fts5_available(Old()) is False
     assert index_db._fts5_available(sqlite3.connect(":memory:")) is True
+
+
+def test_keine_neuen_status_konstanten():
+    """Kern erlaubt fastapi >= 0.111 (Starlette 0.37): dort gibt es HTTP_422_UNPROCESSABLE_CONTENT noch nicht."""
+    for f in (MODULE_DIR / "backend").glob("*.py"):
+        assert "UNPROCESSABLE_CONTENT" not in f.read_text(), f.name

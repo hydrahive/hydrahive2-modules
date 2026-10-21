@@ -178,3 +178,12 @@ def test_verbindungstest_ok_meldet_ordner(monkeypatch):
     monkeypatch.undo()
     monkeypatch.setattr(imap_conn, "open_connection", lambda acc, **kw: _Conn())
     assert accounts._test_login(BASE, "pw") == {"folders": 1}
+
+
+def test_update_lehnt_adresse_selbst_ab():
+    """Zweite Schicht unabhängig von der Route: accounts.update weist „address“ ab, auch mit gültigen Feldern."""
+    from backend import accounts
+    a = accounts.create("alice", dict(BASE))
+    with pytest.raises(ValueError):
+        accounts.update("alice", a["id"], {"label": "x", "address": "till@example.net"})
+    assert accounts.get_own("alice", a["id"])["label"] == "Privat"
