@@ -187,3 +187,17 @@ def test_update_lehnt_adresse_selbst_ab():
     with pytest.raises(ValueError):
         accounts.update("alice", a["id"], {"label": "x", "address": "till@example.net"})
     assert accounts.get_own("alice", a["id"])["label"] == "Privat"
+
+
+def test_verbindungstest_schwaerzt_passwort(monkeypatch):
+    from backend import accounts, imap_conn
+    monkeypatch.undo()
+    import imaplib
+
+    class Leak(_Conn):
+        def login(self, u, p):
+            raise imaplib.IMAP4.error(f"LOGIN {u} {p} rejected")
+    monkeypatch.setattr(imap_conn, "open_connection", lambda acc, **kw: Leak())
+    with pytest.raises(accounts.ConnectError) as e:
+        accounts._test_login(BASE, "geheim-123")
+    assert "geheim-123" not in str(e.value) and "***" in str(e.value)

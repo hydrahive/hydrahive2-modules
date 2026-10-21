@@ -71,6 +71,11 @@ def _validate(d: dict, *, new: bool) -> dict:
     return out
 
 
+def redact(text: str, password: str) -> str:
+    """Passwort aus Fehlertexten entfernen (manche Server wiederholen die Login-Zeile)."""
+    return text.replace(password, "***") if password else text
+
+
 def allowed_internal_hosts() -> set[str]:
     """Admin-Freigabe für Mailserver im Heimnetz (M1: leer; Einstellung folgt mit der Admin-Seite)."""
     return set()
@@ -94,11 +99,11 @@ def _test_login(acc: dict, password: str) -> dict:
         typ, data = conn.list('""', "*")
         return {"folders": len(data or []) if typ == "OK" else 0}
     except imaplib.IMAP4.error as e:
-        raise ConnectError("auth", f"Anmeldung fehlgeschlagen: {e}"[:200]) from None
+        raise ConnectError("auth", redact(f"Anmeldung fehlgeschlagen: {e}", password)[:200]) from None
     except ssl.SSLError as e:
-        raise ConnectError("tls", f"TLS/Zertifikat: {e}"[:200]) from None
+        raise ConnectError("tls", redact(f"TLS/Zertifikat: {e}", password)[:200]) from None
     except OSError as e:
-        raise ConnectError("connect", f"Verbindung abgebrochen: {e}"[:200]) from None
+        raise ConnectError("connect", redact(f"Verbindung abgebrochen: {e}", password)[:200]) from None
     finally:
         try:
             conn.logout()

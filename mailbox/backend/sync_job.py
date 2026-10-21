@@ -44,6 +44,15 @@ def progress(aid: str) -> dict:
     return dict(r) if r else {}
 
 
+def _redact(text: str, aid: str) -> str:
+    """Passwort nie in Status/Log, auch wenn ein Server die Login-Zeile in die Fehlermeldung schreibt."""
+    try:
+        pw = accounts.password_of(aid)
+    except Exception:  # noqa: BLE001 - ohne lesbares Passwort gibt es nichts zu schwärzen
+        return text
+    return accounts.redact(text, pw)
+
+
 def _sync_one(acc: dict) -> dict:
     conn = _open(acc)
     try:
@@ -63,10 +72,10 @@ async def _run(acc: dict) -> bool:
         counts = await asyncio.to_thread(_sync_one, acc)
         accounts.set_status(acc["id"], "ok", "")
     except fetch.AuthFailed as e:
-        error = str(e)
+        error = _redact(str(e), acc["id"])
         accounts.set_status(acc["id"], "auth_failed", error)
     except Exception as e:  # noqa: BLE001 - ein Konto darf den Job nie stoppen
-        error = f"{type(e).__name__}: {e}"
+        error = _redact(f"{type(e).__name__}: {e}", acc["id"])
         accounts.set_status(acc["id"], "error", error)
         log.warning("Mailbox-Abgleich %s: %s", acc["id"], error)
     finally:

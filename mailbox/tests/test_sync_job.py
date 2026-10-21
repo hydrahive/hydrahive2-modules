@@ -125,3 +125,21 @@ def test_jetzt_abrufen_nur_eigenes(servers):
     a = _acc("alice", "a@example.net", servers, s)
     assert asyncio.run(sync_job.sync_now("bob", a["id"])) is False
     assert asyncio.run(sync_job.sync_now("alice", a["id"])) is True
+
+
+def test_passwort_nie_im_fehlertext_oder_log(servers, monkeypatch, caplog):
+    """Manche Server/Bibliotheken schreiben die Login-Zeile in die Fehlermeldung – Passwort muss trotzdem raus."""
+    import logging
+
+    from backend import accounts, fetch, sync_job
+    a = _acc("alice", "a@example.net", servers, FakeServer(user="a@example.net"))
+
+    def leaky(acc):
+        raise fetch.SyncError(f'LOGIN "a@example.net" "{accounts.password_of(acc["id"])}" failed')
+    monkeypatch.setattr(sync_job, "_sync_one", leaky)
+    with caplog.at_level(logging.WARNING):
+        asyncio.run(sync_job.job())
+    st = accounts.get_own("alice", a["id"])
+    assert st["status"] == "error" and "LOGIN" in st["status_detail"], "Fehler bleibt lesbar"
+    for where in (st["status_detail"], caplog.text, sync_job.progress(a["id"])["last_error"]):
+        assert '"pw"' not in where and "***" in where, where
