@@ -1,0 +1,19 @@
+{
+  "id": "mailbox",
+  "name": "Mailbox",
+  "version": "0.1.0",
+  "description": "Webmail für mehrere Konten (IMAP/SMTP, Gmail per App-Passwort) mit vollständigem lokalem Mailarchiv als Backup: alle Ordner, alle Jahre, durchsuchbar, nichts wird gelöscht.",
+  "icon": "Mail",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "min_core_version": "2.0.0",
+  "default_agent_tools": false,
+  "capabilities": [
+    {
+      "id": "module.mailbox",
+      "label": "Mailbox nutzen (eigene Mailkonten, Webmail, Archiv)",
+      "default": "admin_only"
+    }
+  ]
+}

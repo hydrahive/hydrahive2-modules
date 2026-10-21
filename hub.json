@@ -149,6 +149,11 @@
       "id": "legal",
       "name": "Recht",
       "path": "legal"
+    },
+    {
+      "id": "mailbox",
+      "name": "Mailbox",
+      "path": "mailbox"
     }
   ]
 }
