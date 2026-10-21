@@ -87,4 +87,14 @@ class FakeIMAPW(FakeIMAP):
         return "OK", [b""]
 
     def close(self):
+        """Wie RFC 3501 6.4.2: CLOSE entfernt still alle \\Deleted-Mails des Ordners (= pauschales EXPUNGE)."""
+        if self.selected and not self.readonly:
+            self.expunge()
+        self.selected = None
+        return "OK", [b""]
+
+    def unselect(self):
+        if "UNSELECT" not in self.caps:
+            raise AssertionError("UNSELECT ohne Fähigkeit")
+        self.selected = None
         return "OK", [b""]
