@@ -99,8 +99,10 @@ def folders(auth: Auth) -> list[dict]:
 
 @router.get("/messages")
 def messages(auth: Auth, q: str = Query("", max_length=2000), folder_id: int | None = None,
-             deleted: bool = False, limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)) -> dict:
+             deleted: bool = False, inbox: bool = False, limit: int = Query(50, ge=1, le=200),
+             offset: int = Query(0, ge=0)) -> dict:
     accs = access.accounts_map(auth[0])
     if folder_id is not None and not access.folder_owned(accs, folder_id):
         return {"items": [], "total": 0, "limit": limit, "offset": offset, "fulltext": True}
-    return search.search(accs, q, folder_id=folder_id, only_deleted=deleted, limit=limit, offset=offset)
+    return search.search(accs, q, folder_id=folder_id, only_deleted=deleted, role="inbox" if inbox else None,
+                         limit=limit, offset=offset)

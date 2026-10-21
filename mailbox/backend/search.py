@@ -41,8 +41,11 @@ def _post_filter(items: list[dict], q: query.Query) -> list[dict]:
     return out
 
 
+ROLES = {"inbox", "sent", "drafts", "trash", "junk", "archive", "all"}
+
+
 def search(accounts: dict[str, str], text: str, *, folder_id: int | None = None, only_deleted: bool = False,
-           limit: int = LIMIT_DEFAULT, offset: int = 0) -> dict:
+           role: str | None = None, limit: int = LIMIT_DEFAULT, offset: int = 0) -> dict:
     limit = max(1, min(int(limit), LIMIT_MAX))
     offset = max(0, int(offset))
     if not accounts:
@@ -73,6 +76,9 @@ def search(accounts: dict[str, str], text: str, *, folder_id: int | None = None,
         args.append(int(folder_id))
     if only_deleted:
         where.append("m.deleted_on_server=1")
+    if role in ROLES:
+        where.append("m.id IN (SELECT l.message_id FROM locations l JOIN folders r ON r.id=l.folder_id WHERE r.role=?)")
+        args.append(role)
     with index_db.connect() as c:
         fts = _has_fts(c)
         if q.has_text and fts:

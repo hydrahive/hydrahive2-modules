@@ -179,3 +179,17 @@ def test_ohne_konten_frueh_raus(monkeypatch):
     from backend import index_db, search
     monkeypatch.setattr(index_db, "connect", lambda: (_ for _ in ()).throw(AssertionError("keine DB-Abfrage")))
     assert search.search({}, "termin")["items"] == []
+
+
+def test_nur_posteingaenge_im_backend(mails):
+    """„Alle Posteingänge“: Filter im Backend (sonst stimmen Seiten und Gesamtzahl nicht)."""
+    from backend import search
+    r = search.search({A1: ADDR[A1]}, "", role="inbox", limit=2)
+    assert r["total"] == 3 and len(r["items"]) == 2
+    assert all(x["folder"] == "INBOX" for x in r["items"])
+    assert "Re: Termin morgen" not in [x["subject"] for x in search.search({A1: ADDR[A1]}, "", role="inbox")["items"]]
+
+
+def test_rolle_unbekannt_wird_ignoriert(mails):
+    from backend import search
+    assert search.search({A1: ADDR[A1]}, "", role="'; DROP TABLE messages; --")["total"] == 4

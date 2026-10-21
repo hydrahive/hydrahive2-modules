@@ -286,3 +286,8 @@ def test_cid_links_tragen_den_token_nicht_selbst(client, alice, acc):
     mid = _mid(client, alice, "Re: Unterlagen")
     html = client.get(f"{B}/messages/{mid}/html", params={"token": token}).text
     assert token not in html
+
+
+def test_alle_posteingaenge_route(client, alice, acc):
+    r = client.get(f"{B}/messages", params={"inbox": "true"}, headers=alice).json()
+    assert r["total"] == 2 and {x["folder"] for x in r["items"]} == {"INBOX"}
