@@ -41,6 +41,7 @@ class Dashboard(BaseModel):
     mining_in_machine: bool = True
     pages: dict[str, StrictInt] = Field(default_factory=lambda: dict(dash_layout.DEFAULT_PAGES))
     chat_enabled: StrictBool = True
+    bluetooth_enabled: StrictBool = True
 
     @model_validator(mode="after")
     def _ok(self):

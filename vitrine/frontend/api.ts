@@ -73,6 +73,29 @@ export interface VitrineMessage {
   source: string
 }
 
+/** S7: Stand für die Bluetooth-Karte (GET /bluetooth). Zwillinge (BT3.0/BT4.0) sind schon eine Zeile. */
+export interface BtDevice {
+  name: string
+  addresses: string[]
+  kind: "keyboard" | "mouse" | "headphones" | "speaker" | "phone" | "other"
+  rssi: number | null
+  bars: number
+  paired: boolean
+  connected: boolean
+  /** ohne Namen und schwach → unter „Weitere Geräte“ */
+  more: boolean
+}
+
+export interface BtView {
+  available: boolean
+  adapter: { name: string; powered: boolean } | null
+  window_left: number
+  devices: BtDevice[]
+  weak_signal: boolean
+  pairing: { address: string | null; passkey: string | null } | null
+  error: string | null
+}
+
 export const vitrineApi = {
   status: () => api.get<VitrineStatus>(`${BASE}/status`),
   config: () => api.get<VitrineConfig>(`${BASE}/config`),
@@ -90,6 +113,10 @@ export const vitrineApi = {
     api.post<VitrineMessage>(`${BASE}/messages`, m),
   homeRooms: () => api.get<{ rooms: string[]; available: boolean }>(`${BASE}/home-rooms`),
   dismiss: (id: string) => api.delete<void>(`${BASE}/messages/${encodeURIComponent(id)}`),
+  bluetooth: () => api.get<BtView>(`${BASE}/bluetooth`),
+  btScan: () => api.post<{ started: boolean }>(`${BASE}/bluetooth/scan`, {}),
+  btPair: (address: string) => api.post<void>(`${BASE}/bluetooth/pair`, { address }),
+  btRemove: (address: string) => api.delete<void>(`${BASE}/bluetooth/${encodeURIComponent(address)}`),
   simulate: (at: string) => api.post<Simulation>(`${BASE}/simulate`, { at }),
   /** Display zeigt 30 s das Programm dieses Zeitpunkts. */
   startPreview: (at: string) => api.post<{ at: string; seconds: number }>(`${BASE}/preview`, { at }),

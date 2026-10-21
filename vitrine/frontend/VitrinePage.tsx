@@ -11,6 +11,7 @@ import { RuleList } from "./RuleList"
 import { DashboardCard } from "./DashboardCard"
 import { SettingsCard } from "./SettingsCard"
 import { MessagesCard } from "./MessagesCard"
+import { BluetoothCard } from "./BluetoothCard"
 
 export function VitrinePage() {
   const { t } = useTranslation("vitrine")
@@ -65,6 +66,7 @@ export function VitrinePage() {
 
           <StatusCard />
           <MessagesCard />
+          <BluetoothCard />
 
           {loadErr && <p className="rounded-[4px] border border-rose-400/40 bg-rose-400/10 p-3 text-sm text-rose-100">{t("load_error")}</p>}
           {config && <>
