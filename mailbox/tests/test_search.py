@@ -193,3 +193,30 @@ def test_nur_posteingaenge_im_backend(mails):
 def test_rolle_unbekannt_wird_ignoriert(mails):
     from backend import search
     assert search.search({A1: ADDR[A1]}, "", role="'; DROP TABLE messages; --")["total"] == 4
+
+
+def test_mit_fts_blaettert_die_datenbank(mails, monkeypatch):
+    """Mit FTS5 holt die Abfrage nur die angezeigte Seite (LIMIT/OFFSET in SQL) – nicht alle Treffer in den Speicher."""
+    from backend import index_db, search
+    seen = []
+    real = index_db.connect
+
+    class Spy:
+        def __init__(self, c): self.c = c
+        def execute(self, sql, *a):
+            seen.append(sql)
+            return self.c.execute(sql, *a)
+        def __getattr__(self, n): return getattr(self.c, n)
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def spy():
+        with real() as c:
+            yield Spy(c)
+    monkeypatch.setattr(index_db, "connect", spy)
+    r = search.search({A1: ADDR[A1]}, "termin", limit=1, offset=1)
+    assert r["total"] == 2 and len(r["items"]) == 1
+    sel = [s for s in seen if s.lstrip().upper().startswith("SELECT M.ID")]
+    assert sel and all("LIMIT" in s.upper() for s in sel)
+    assert any("COUNT(*)" in s.upper() for s in seen)

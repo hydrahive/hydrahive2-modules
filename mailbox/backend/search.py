@@ -85,11 +85,14 @@ def search(accounts: dict[str, str], text: str, *, folder_id: int | None = None,
             where.append("m.id IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?)")
             args.append(query.fts_expr(q))
         sql = f"FROM messages m JOIN folders f ON f.id=m.folder_id WHERE {' AND '.join(where)}"
-        rows = [dict(r) for r in c.execute(f"SELECT {_COLS} {sql} ORDER BY m.date DESC, m.id DESC", args)]
-    if q.has_text and not fts:
-        rows = _post_filter(rows, q)
-    total = len(rows)
-    items = [_item(r, accounts) for r in rows[offset:offset + limit]]
+        order = "ORDER BY m.date DESC, m.id DESC"
+        if fts or not q.has_text:   # Datenbank zählt und blättert – nur die Seite kommt in den Speicher
+            total = c.execute(f"SELECT count(*) {sql}", args).fetchone()[0]
+            rows = [dict(r) for r in c.execute(f"SELECT {_COLS} {sql} {order} LIMIT ? OFFSET ?", [*args, limit, offset])]
+        else:                       # ohne FTS5: Wörter in Python prüfen (dazu alle Kandidaten der übrigen Filter)
+            rows = _post_filter([dict(r) for r in c.execute(f"SELECT {_COLS} {sql} {order}", args)], q)
+            total, rows = len(rows), rows[offset:offset + limit]
+    items = [_item(r, accounts) for r in rows]
     return {"items": items, "total": total, "limit": limit, "offset": offset, "fulltext": fts}
 
 
