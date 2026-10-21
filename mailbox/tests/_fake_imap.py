@@ -30,6 +30,8 @@ class FakeServer:
         self.body_fetches = 0       # wie viele Mails mit Inhalt geladen wurden
         self.logins = 0
         self.writable_selects = 0   # SELECT ohne readonly (darf beim Abgleich nie vorkommen)
+        self.appends: list = []     # (mailbox, flags, date_time, message)
+        self.fail_append = False
 
     def box(self, name, **kw):
         self.boxes.setdefault(name, Box(name, **kw))
@@ -118,6 +120,21 @@ class FakeIMAP:
                     data.append(f"1 (UID {u} FLAGS ({fl}))".encode())
             return "OK", data
         return "BAD", [b"unknown"]
+
+    def append(self, mailbox, flags, date_time, message):
+        """APPEND wie imaplib: Ordnername in Anführungszeichen, Flags „(\\Seen)“, Rohmail als bytes."""
+        self.s.appends.append((mailbox, flags, date_time, message))
+        if self.s.fail_append:
+            return "NO", [b"[OVERQUOTA] mailbox full"]
+        if not (mailbox.startswith('"') and mailbox.endswith('"')):
+            return "BAD", [b"mailbox name must be quoted"]
+        name = _from_utf7(mailbox[1:-1].replace('\\"', '"').replace("\\\\", "\\"))
+        if name not in self.s.boxes:
+            return "NO", [b"[TRYCREATE] Mailbox does not exist"]
+        if b"\n" in message.replace(b"\r\n", b""):
+            return "BAD", [b"bare newline"]
+        uid = self.s.boxes[name].add(message, set((flags or "").strip("()").split()))
+        return "OK", [f"[APPENDUID {self.s.boxes[name].uidvalidity} {uid}] APPEND completed".encode()]
 
     def logout(self):
         return "BYE", [b""]

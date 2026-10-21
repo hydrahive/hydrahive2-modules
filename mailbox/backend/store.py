@@ -70,6 +70,21 @@ def add_location(mid: int, folder_id: int, uid: int, flags: set[str]) -> None:
         _locate(c, mid, folder_id, uid, flags)
 
 
+def check_uidvalidity(folder_id: int, value: int) -> bool:
+    """Neue UIDVALIDITY: alle Fundorte des Ordners vergessen (die Mails bleiben; der Abgleich findet sie über
+    Message-ID + Größe wieder oder lädt sie neu). Unbekannter Wert (0) ändert nichts. True = gewechselt."""
+    if not value:
+        return False
+    with index_db.connect() as c:
+        old = c.execute("SELECT uidvalidity FROM folders WHERE id=?", (folder_id,)).fetchone()[0]
+        if old == value:
+            return False
+        if old:
+            c.execute("DELETE FROM locations WHERE folder_id=?", (folder_id,))
+        c.execute("UPDATE folders SET uidvalidity=?, last_uid=0 WHERE id=?", (value, folder_id))
+        return bool(old)
+
+
 def known_uids(folder_id: int) -> set[int]:
     with index_db.connect() as c:
         return {r[0] for r in c.execute("SELECT uid FROM locations WHERE folder_id=?", (folder_id,))}

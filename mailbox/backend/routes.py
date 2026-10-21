@@ -12,11 +12,15 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
 from . import access, accounts, providers, search, sync_job
+from .action_routes import router as action_router
 from .body_routes import router as body_router
+from .compose_routes import router as compose_router
 from .schemas import AccountIn, AccountPatch
 
 router = APIRouter()
 router.include_router(body_router)
+router.include_router(compose_router)
+router.include_router(action_router)
 # 422 als Zahl: die Konstante heißt je nach Starlette-Version anders (Kern erlaubt fastapi >= 0.111)
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
 

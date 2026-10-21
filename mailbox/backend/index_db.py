@@ -61,6 +61,25 @@ CREATE INDEX IF NOT EXISTS messages_folder_date ON messages(folder_id, date DESC
 CREATE INDEX IF NOT EXISTS messages_account_date ON messages(account_id, date DESC);
 CREATE INDEX IF NOT EXISTS messages_thread ON messages(account_id, thread_key);
 CREATE INDEX IF NOT EXISTS messages_msgid ON messages(account_id, message_id, size);
+-- Entwürfe (M2): Inhalt gehört nicht in die Kern-DB. Anhänge liegen als Dateien unter <archiv>/.drafts/<id>/.
+CREATE TABLE IF NOT EXISTS drafts (
+  id TEXT PRIMARY KEY,                  -- zufällige ID
+  account_id TEXT NOT NULL,
+  owner TEXT NOT NULL,                  -- Benutzername; nur der Ersteller sieht den Entwurf
+  to_addr TEXT NOT NULL DEFAULT '',
+  cc_addr TEXT NOT NULL DEFAULT '',
+  bcc_addr TEXT NOT NULL DEFAULT '',
+  subject TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  mode TEXT NOT NULL DEFAULT 'new',     -- new | reply | reply_all | forward
+  ref_message INTEGER,                  -- messages.id der Ursprungsmail (Antwort/Weiterleitung)
+  with_attachments INTEGER NOT NULL DEFAULT 0,
+  server_folder TEXT NOT NULL DEFAULT '',
+  server_message_id TEXT NOT NULL DEFAULT '',   -- Message-ID der Server-Kopie (zum gezielten Ersetzen)
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS drafts_owner ON drafts(owner, updated_at);
 """
 _FTS_ARGS = "subject, from_addr, to_addr, body, content='', contentless_delete=1, tokenize='unicode61 remove_diacritics 2'"
 _FTS = f"CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5({_FTS_ARGS});"

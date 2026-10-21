@@ -1,6 +1,7 @@
 import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import type { FolderRow } from "./mailFormat"
+import type { ComposeMode, Draft, Prefill } from "./composeFormat"
 
 const BASE = "/modules/mailbox"
 
@@ -83,7 +84,12 @@ export interface Attachment {
 export interface MailDetail {
   id: number
   account: string
+  account_id: string
   folder: string
+  folder_id: number
+  folder_role: string
+  seen: number
+  flagged: number
   date: string
   from_addr: string
   to_addr: string
@@ -96,6 +102,22 @@ export interface MailDetail {
   parse_error: string
 }
 
+export interface SendResult {
+  sent: boolean
+  message_id: string
+  refused: string[]
+  sent_copy: "server" | "provider" | "archive_only"
+  warning: string
+}
+
+export interface SavedDraft extends Draft {
+  id: string
+  updated_at: string
+  server?: "ok" | "local_only"
+}
+
+export type MailAction = "seen" | "unseen" | "flag" | "unflag" | "move" | "delete"
+
 function withToken(path: string, extra = ""): string {
   const token = useAuthStore.getState().token ?? ""
   return `/api${BASE}${path}?token=${encodeURIComponent(token)}${extra}`
@@ -106,7 +128,7 @@ export const mailApi = {
   account: (id: string) => api.get<Account>(`${BASE}/accounts/${encodeURIComponent(id)}`),
   suggest: (address: string) => api.get<Suggestion>(`${BASE}/suggest?address=${encodeURIComponent(address)}`),
   createAccount: (a: AccountIn) => api.post<Account>(`${BASE}/accounts`, a),
-  updateAccount: (id: string, a: Partial<AccountIn> & { signature?: string }) =>
+  updateAccount: (id: string, a: Partial<AccountIn> & { signature?: string; sender_name?: string }) =>
     api.patch<Account>(`${BASE}/accounts/${encodeURIComponent(id)}`, a),
   removeAccount: (id: string) => api.delete<void>(`${BASE}/accounts/${encodeURIComponent(id)}`),
   syncNow: (id: string) => api.post<{ started: boolean }>(`${BASE}/accounts/${encodeURIComponent(id)}/sync`, {}),
@@ -126,4 +148,14 @@ export const mailApi = {
   htmlUrl: (id: number, images: boolean) => withToken(`/messages/${id}/html`, images ? "&images=1" : ""),
   attachmentUrl: (id: number, index: number) => withToken(`/attachments/${id}/${index}`),
   emlUrl: (id: number) => withToken(`/messages/${id}/eml`),
+  // M2: Schreiben, Entwürfe, Aktionen
+  send: (form: FormData) => api.postForm<SendResult>(`${BASE}/send`, form),
+  prefill: (accountId: string, mode: Exclude<ComposeMode, "new">, ref: number) =>
+    api.get<Prefill>(`${BASE}/compose/prefill?${new URLSearchParams({ account_id: accountId, mode, ref_message: String(ref) })}`),
+  drafts: () => api.get<SavedDraft[]>(`${BASE}/drafts`),
+  saveDraft: (d: Draft, id: string | null) =>
+    id ? api.patch<SavedDraft>(`${BASE}/drafts/${encodeURIComponent(id)}`, d) : api.post<SavedDraft>(`${BASE}/drafts`, d),
+  deleteDraft: (id: string) => api.delete<void>(`${BASE}/drafts/${encodeURIComponent(id)}`),
+  act: (ids: number[], action: MailAction, target?: string) =>
+    api.post<{ done: number; skipped: number }>(`${BASE}/messages/actions`, { ids, action, ...(target ? { target } : {}) }),
 }

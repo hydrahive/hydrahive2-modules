@@ -33,7 +33,8 @@ def message_owned(user: str, mid: int) -> dict | None:
     if not accs:          # nur Abkürzung: ohne Konten besteht auch „in accs“ unten nie
         return None
     with index_db.connect() as c:
-        r = c.execute("SELECT m.*, f.name AS folder FROM messages m JOIN folders f ON f.id=m.folder_id WHERE m.id=?",
+        r = c.execute("SELECT m.*, f.name AS folder, f.role AS folder_role FROM messages m JOIN folders f "
+                      "ON f.id=m.folder_id WHERE m.id=?",
                       (int(mid),)).fetchone()
     if not r or r["account_id"] not in accs:
         return None

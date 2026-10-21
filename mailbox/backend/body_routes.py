@@ -60,8 +60,8 @@ def _html(raw: bytes) -> str:
 def message(mid: int, auth: Auth) -> dict:
     m, raw = _own(auth.username, mid)
     p = parse.parse(raw)
-    keys = ("id", "account", "folder", "date", "from_addr", "to_addr", "cc_addr", "subject", "seen", "flagged",
-            "answered", "thread_key", "deleted_on_server", "size")
+    keys = ("id", "account", "account_id", "folder", "folder_id", "folder_role", "date", "from_addr", "to_addr",
+            "cc_addr", "subject", "seen", "flagged", "answered", "thread_key", "deleted_on_server", "size")
     return {**{k: m[k] for k in keys}, "text": p.body, "has_html": p.has_html,
             "attachments": json.loads(m["attachments"] or "[]"), "parse_error": m["parse_error"]}
 

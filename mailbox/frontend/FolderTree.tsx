@@ -1,8 +1,9 @@
-import { Archive, Inbox, Plus, RefreshCw } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { Archive, FileText, Inbox, Plus, RefreshCw, Settings } from "lucide-react"
 import type { Account } from "./api"
 import { accountState, folderLabel, groupFolders, syncText, type FolderRow } from "./mailFormat"
 
-export type Selection = { kind: "all" } | { kind: "folder"; id: number } | { kind: "archive" }
+export type Selection = { kind: "all" } | { kind: "folder"; id: number } | { kind: "archive" } | { kind: "drafts" }
 
 interface Props {
   accounts: Account[]
@@ -11,12 +12,15 @@ interface Props {
   onSelect: (s: Selection) => void
   onAddAccount: () => void
   onSync: (id: string) => void
+  draftCount?: number
+  onSettings?: (id: string) => void
 }
 
 const TONE = { ok: "bg-emerald-400", warn: "bg-amber-300", err: "bg-rose-400" }
 
 /** Linke Spalte: alle Posteingänge, Konten mit Ordnern, „nur im Archiv“. */
-export function FolderTree({ accounts, folders, selection, onSelect, onAddAccount, onSync }: Props) {
+export function FolderTree({ accounts, folders, selection, onSelect, onAddAccount, onSync, draftCount = 0, onSettings }: Props) {
+  const { t } = useTranslation("mailbox")
   const groups = groupFolders(folders.filter((f) => f.gone === 0))
   const unreadInbox = folders.filter((f) => f.role === "inbox").reduce((n, f) => n + f.unread, 0)
   const item = (active: boolean) =>
@@ -37,6 +41,8 @@ export function FolderTree({ accounts, folders, selection, onSelect, onAddAccoun
               <span className="min-w-0 flex-1 truncate">{acc?.label ?? g.account}</span>
               <button type="button" onClick={() => onSync(g.accountId)} title="Jetzt abrufen" aria-label="Jetzt abrufen"
                 className="rounded p-0.5 hover:bg-[#1c2638]"><RefreshCw size={11} className={acc?.sync?.running ? "animate-spin" : ""} /></button>
+              {onSettings && <button type="button" onClick={() => onSettings(g.accountId)} title={t("settings.open")} aria-label={t("settings.open")}
+                data-mbx-settings-open={g.accountId} className="rounded p-0.5 hover:bg-[#1c2638]"><Settings size={11} /></button>}
             </div>
             {syncText(acc?.sync) && <p className="px-2 text-[11px] text-[#69d7ff]" data-mbx-sync="1">{syncText(acc?.sync)}</p>}
             {acc && acc.status !== "ok" && acc.status_detail && (
@@ -52,6 +58,10 @@ export function FolderTree({ accounts, folders, selection, onSelect, onAddAccoun
           </section>
         )
       })}
+      <button type="button" className={item(selection.kind === "drafts")} onClick={() => onSelect({ kind: "drafts" })} data-mbx-drafts="1">
+        <FileText size={14} /><span className="flex-1">Entwürfe</span>
+        {draftCount > 0 && <span className="text-xs text-[#8d9ab0]">{draftCount}</span>}
+      </button>
       <button type="button" className={item(selection.kind === "archive")} onClick={() => onSelect({ kind: "archive" })} data-mbx-archive="1">
         <Archive size={14} /><span className="flex-1">Nur im Archiv</span>
       </button>
