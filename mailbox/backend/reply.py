@@ -41,9 +41,8 @@ def _subject(prefix: str, subject: str, *, keep_if: re.Pattern | None) -> str:
     return f"{prefix} {s}"
 
 
-def reply(acc: dict, raw: bytes, *, text: str, reply_all: bool, bcc: str = ""):
-    from .compose import ComposeError, assemble
-    msg, p = _orig(raw)
+def _recipients(acc: dict, msg, p, reply_all: bool):
+    from .compose import ComposeError
     target = _addr_list(parse._hdr(msg, "Reply-To")) or _addr_list(p.from_addr)
     if not target:
         raise ComposeError("Original ohne Absender – bitte Empfänger selbst eintragen")
@@ -56,6 +55,13 @@ def reply(acc: dict, raw: bytes, *, text: str, reply_all: bool, bcc: str = ""):
             if r.addr.lower() not in seen and r.addr.lower() != own.lower():
                 seen.add(r.addr.lower())
                 cc.append(r)
+    return to, cc
+
+
+def reply(acc: dict, raw: bytes, *, text: str, reply_all: bool, bcc: str = "", extra_attachments=None):
+    from .compose import assemble
+    msg, p = _orig(raw)
+    to, cc = _recipients(acc, msg, p, reply_all)
     refs = _MSGID.findall(parse._hdr(msg, "References"))
     if p.message_id and p.message_id not in refs:
         refs.append(p.message_id)
@@ -66,7 +72,7 @@ def reply(acc: dict, raw: bytes, *, text: str, reply_all: bool, bcc: str = ""):
         headers["References"] = " ".join(refs[-20:])
     body = f"{(text or '').rstrip()}\n\n{_quote(p)}"
     return assemble(acc, to=to, cc=cc, bcc=_addr_list(bcc), subject=_subject("Re:", p.subject, keep_if=_REPLY_PREFIX),
-                    text=body, extra_headers=headers)
+                    text=body, extra_headers=headers, attachments=extra_attachments)
 
 
 def _original_attachments(msg) -> list[tuple[str, str, bytes]]:
@@ -77,7 +83,8 @@ def _original_attachments(msg) -> list[tuple[str, str, bytes]]:
     return out
 
 
-def forward(acc: dict, raw: bytes, *, to: str, text: str, with_attachments: bool, cc: str = "", bcc: str = ""):
+def forward(acc: dict, raw: bytes, *, to: str, text: str, with_attachments: bool, cc: str = "", bcc: str = "",
+            extra_attachments=None):
     from .compose import build
     msg, p = _orig(raw)
     head = ("---------- Weitergeleitete Nachricht ----------\n"
@@ -86,4 +93,17 @@ def forward(acc: dict, raw: bytes, *, to: str, text: str, with_attachments: bool
         head += f"Cc: {p.cc_addr}\n"
     body = f"{(text or '').rstrip()}\n\n{head}\n{p.body}"
     return build(acc, to=to, cc=cc, bcc=bcc, subject=_subject("WG:", p.subject, keep_if=None), text=body,
-                 attachments=_original_attachments(msg) if with_attachments else None)
+                 attachments=(_original_attachments(msg) if with_attachments else []) + list(extra_attachments or []))
+
+
+def prefill(acc: dict, raw: bytes, mode: str) -> dict:
+    """Vorlage für das Schreibfenster: dieselben Regeln wie beim Senden (Empfänger, Präfix, Zitat/Kopf)."""
+    msg, p = _orig(raw)
+    if mode == "forward":
+        head = ("---------- Weitergeleitete Nachricht ----------\n"
+                f"Von: {p.from_addr}\nDatum: {p.date}\nBetreff: {p.subject}\nAn: {p.to_addr}\n")
+        return {"to": "", "cc": "", "subject": _subject("WG:", p.subject, keep_if=None), "quote": f"{head}\n{p.body}",
+                "attachments": [a.get("name", "") for a in p.attachments]}
+    to, cc = _recipients(acc, msg, p, mode == "reply_all")
+    return {"to": addresses.header(to), "cc": addresses.header(cc) if cc else "",
+            "subject": _subject("Re:", p.subject, keep_if=_REPLY_PREFIX), "quote": _quote(p), "attachments": []}
