@@ -119,3 +119,18 @@ def test_senden_loescht_entwurf(client, alice, acc, smtp, fake_net):
                                                       "draft_id": d["id"]})
     assert r.status_code == 200
     assert client.get(f"{B}/drafts", headers=alice).json() == []
+
+
+def test_langer_text_mit_umlauten(client, alice, acc, smtp):
+    """Starlette begrenzt jedes Formularfeld auf 1 MB (Bytes, nicht Zeichen). Bis dahin geht alles durch, auch mit
+    Umlauten; darüber 400 vor der Route (nichts gesendet). Das Schreibfenster warnt vorher (composeFormat.textTooLong)."""
+    # wie der Browser (FormData): immer multipart – ohne Datei würde der TestClient urlencoded schicken (ä = 6 Byte)
+    mp = [("files", ("leer.txt", b"", "text/plain"))]
+    ok = "ä" * 450_000                                      # 0,9 MB in UTF-8
+    r = client.post(f"{B}/send", headers=alice, files=mp,
+                    data={"account_id": acc["id"], "to": "a@x.de", "subject": "s", "body": ok})
+    assert r.status_code == 200, r.text[:200]
+    big = "ä" * 600_000                                     # 1,2 MB in UTF-8: Starlette lehnt ab, bevor die Route läuft
+    r = client.post(f"{B}/send", headers=alice, files=mp,
+                    data={"account_id": acc["id"], "to": "a@x.de", "subject": "s", "body": big})
+    assert r.status_code == 400 and len(smtp) == 1, "zweite (zu lange) Mail darf nicht gesendet werden"

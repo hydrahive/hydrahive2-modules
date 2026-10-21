@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { attachmentsTooBig, buildSendForm, draftKey, emptyDraft, fromPrefill, isDirty, MAX_ATTACH, needsConfirm, recipientsOk } from "./composeFormat"
+import { attachmentsTooBig, buildSendForm, draftKey, emptyDraft, fromPrefill, isDirty, MAX_ATTACH, MAX_TEXT_BYTES, needsConfirm, recipientsOk, textTooLong } from "./composeFormat"
 
 describe("Schreibfenster-Logik", () => {
   it("Vorlage aus Antwort: Text = leer + Zitat darunter, Empfänger/Betreff übernommen", () => {
@@ -52,5 +52,12 @@ describe("Schreibfenster-Logik", () => {
   it("Löschen braucht Bestätigung, Markieren/Verschieben nicht", () => {
     expect(needsConfirm("delete")).toBe(true)
     for (const a of ["seen", "unseen", "flag", "unflag", "move"]) expect(needsConfirm(a)).toBe(false)
+  })
+
+  it("Textlänge in Bytes (Umlaute zählen doppelt) – Grenze knapp unter 1 MiB", () => {
+    expect(textTooLong("a".repeat(MAX_TEXT_BYTES))).toBe(false)
+    expect(textTooLong("a".repeat(MAX_TEXT_BYTES + 1))).toBe(true)
+    expect(textTooLong("ä".repeat(MAX_TEXT_BYTES / 2 + 1))).toBe(true)
+    expect(MAX_TEXT_BYTES).toBeLessThan(1024 * 1024)
   })
 })

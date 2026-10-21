@@ -107,7 +107,8 @@ export function StatusLine({ status }: { status: ComposeStatus }) {
   const { t } = useTranslation("mailbox")
   if (status.kind === "idle" || status.kind === "sending") return null
   if (status.kind === "invalid") {
-    return <p role="alert" className="text-xs text-rose-300">{t(status.reason === "size" ? "compose.tooBig" : "compose.needRecipient")}</p>
+    const key = { size: "compose.tooBig", text: "compose.textTooLong", recipient: "compose.needRecipient" }[status.reason]
+    return <p role="alert" className="text-xs text-rose-300">{t(key)}</p>
   }
   if (status.kind === "error") {
     const key = status.code === "rate_limited" ? "compose.rateLimited" : `compose.error.${status.code}`

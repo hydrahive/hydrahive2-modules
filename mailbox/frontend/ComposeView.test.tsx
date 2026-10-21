@@ -79,6 +79,7 @@ describe("Ergebniszeile", () => {
     expect(err("auth")).toContain("compose.error.auth")
     expect(err("rate_limited")).toContain("compose.rateLimited")
     expect(renderToStaticMarkup(<StatusLine status={{ kind: "invalid", reason: "size" }} />)).toContain("compose.tooBig")
+    expect(renderToStaticMarkup(<StatusLine status={{ kind: "invalid", reason: "text" }} />)).toContain("compose.textTooLong")
   })
 })
 

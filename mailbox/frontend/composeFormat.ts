@@ -23,6 +23,8 @@ export interface Prefill {
 }
 
 export const MAX_ATTACH = 25 * 1024 * 1024
+/** Starlette nimmt je Formularfeld höchstens 1 MiB (Bytes) – etwas Luft für den Formular-Rahmen. */
+export const MAX_TEXT_BYTES = 1000 * 1024
 
 export function emptyDraft(accountId: string): Draft {
   return { account_id: accountId, to: "", cc: "", bcc: "", subject: "", body: "", mode: "new", ref_message: null,
@@ -66,4 +68,8 @@ export function isDirty(now: Draft, saved: Draft): boolean {
 /** Welche Aktionen vorher bestätigt werden müssen (Löschen – auch wenn die Mail im Archiv bleibt). */
 export function needsConfirm(action: string): boolean {
   return action === "delete"
+}
+
+export function textTooLong(text: string): boolean {
+  return new TextEncoder().encode(text).length > MAX_TEXT_BYTES
 }

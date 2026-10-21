@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { mailApi, type SendResult } from "./api"
-import { attachmentsTooBig, buildSendForm, isDirty, recipientsOk, type Draft } from "./composeFormat"
+import { attachmentsTooBig, buildSendForm, isDirty, recipientsOk, textTooLong, type Draft } from "./composeFormat"
 
 export type ComposeStatus =
   | { kind: "idle" } | { kind: "sending" } | { kind: "sent"; result: SendResult }
-  | { kind: "error"; code: string } | { kind: "invalid"; reason: "recipient" | "size" }
+  | { kind: "error"; code: string } | { kind: "invalid"; reason: "recipient" | "size" | "text" }
 
 const AUTOSAVE_MS = 4000
 
@@ -41,6 +41,7 @@ export function useCompose(initial: Draft, initialDraftId: string | null) {
   const send = useCallback(async () => {
     if (!recipientsOk(draft)) { setStatus({ kind: "invalid", reason: "recipient" }); return }
     if (attachmentsTooBig(files)) { setStatus({ kind: "invalid", reason: "size" }); return }
+    if (textTooLong(draft.body)) { setStatus({ kind: "invalid", reason: "text" }); return }
     setStatus({ kind: "sending" })
     if (saving.current) await saving.current          // laufendes Speichern abwarten (sonst Entwurf nach dem Senden)
     try {
