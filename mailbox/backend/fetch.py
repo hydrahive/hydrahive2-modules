@@ -49,6 +49,14 @@ def _bodies(conn, uids: list[int]) -> list[tuple[int, set[str], bytes]]:
     return out
 
 
+def _uidvalidity(conn) -> int:
+    _, data = conn.response("UIDVALIDITY")
+    try:
+        return int((data or [b"0"])[-1] or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def _flags_all(conn) -> dict[int, tuple[set[str], int, str]]:
     data = _ok(*conn.uid("FETCH", "1:*", "(UID FLAGS RFC822.SIZE BODY.PEEK[HEADER.FIELDS (MESSAGE-ID)])"), "FETCH")
     out = {}
@@ -67,6 +75,7 @@ def _folder(acc: dict, conn, info: dict, batch: int, counts: dict, on_progress=N
     typ, _ = conn.select(imap_conn.quote(info["name"]), readonly=True)
     if typ != "OK":
         return set()
+    store.check_uidvalidity(fid, _uidvalidity(conn))   # Wechsel → alte UIDs gelten nicht mehr (RFC 3501 2.3.1.1)
     server = _flags_all(conn)
     known = store.known_uids(fid)
     store.set_flags(fid, {u: f for u, (f, _, _) in server.items() if u in known})
