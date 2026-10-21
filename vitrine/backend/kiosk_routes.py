@@ -10,8 +10,10 @@ from hydrahive.settings import settings
 from renderer import config, inbox
 
 from . import chat, dash_data, kiosk
+from .bt_routes import kiosk_router as _bt_kiosk
 
 device_router = APIRouter()
+device_router.include_router(_bt_kiosk)  # S7: Bluetooth ohne Entfernen
 
 
 def _data():
