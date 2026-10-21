@@ -1,6 +1,8 @@
 # Mailbox – Webmail, Mailarchiv und Mail-Werkzeuge für Agenten
 
 Status: **Entwurf** (Till 21.10.2026: „pk leg los, das ganze als modul und auf mac sollte es ja eh laufen“).
+Entscheidungen Till 21.10.: Erstabgleich **alle Jahre**; **immer alles im Archiv behalten**, das Archiv ist zugleich
+**Backup des Mailbestands**, erreichbar über eine **Samba-Freigabe**; Microsoft-App-Registrierung **zum Schluss**.
 Modul-ID `mailbox`, Name „Mailbox“.
 
 ## 1. Ziel
@@ -57,8 +59,8 @@ Modul-ID `mailbox`, Name „Mailbox“.
 - **project_share**: Projekt-ID, Konto, Ordner (leer bedeutet alle), Stufe `read` | `draft` | `send`, wer und wann.
 - **audit**: jede Agenten-Aktion und jeder Versand (wer, welches Projekt, welche Mail, Ergebnis). Ohne Mailinhalt.
 
-Rohmails liegen als `.eml` unter `<data_dir>/mailbox/<konto>/<jjjj>/<mm>/<sha256>.eml`. Sie sind unveränderlich und
-werden auch für Anhänge genutzt. Das ist das Archiv: Kopien lassen sich ohne HydraHive mit jedem Mailprogramm öffnen.
+Rohmails liegen als `.eml` im Archivordner (Aufbau §5a). Sie werden nie verändert und auch für Anhänge genutzt.
+Das ist das Archiv: Jede Datei lässt sich ohne HydraHive mit jedem Mailprogramm öffnen.
 
 ## 5. Abgleich und Archiv
 
@@ -66,11 +68,39 @@ werden auch für Anhänge genutzt. Das ist das Archiv: Kopien lassen sich ohne H
   **IMAP IDLE** auf dem Posteingang für sofortige neue Mails, sonst Abfrage alle 5 Minuten (einstellbar).
 - Erster Abgleich: **alle Ordner, alle Mails** (Archiv). Er läuft gedrosselt (z. B. 200 Mails je Runde) und sichtbar
   mit Fortschritt. Große Postfächer brauchen Stunden, das ist in Ordnung.
-- **Archiv-Regel**: Löscht der Server eine Mail (oder ein anderes Programm verschiebt sie in den Papierkorb und leert
-  ihn), bleibt sie lokal erhalten und wird als `deleted_on_server` markiert. Sie erscheint im Ordner „Archiv (nur
-  lokal)“. Löscht der **Nutzer** in Mailbox, wird auf dem Server gelöscht. Lokal hängt es von der Einstellung je Konto
-  ab: „im Archiv behalten“ (Standard) oder „auch lokal löschen“.
+- **Archiv-Regel (Till: „immer alles im Archiv behalten“)**: Das Archiv löscht **nie**. Löscht der Server eine Mail
+  (auch durch ein anderes Programm oder ein geleerter Papierkorb), bleibt sie lokal und wird als `deleted_on_server`
+  markiert. Sie ist im Ordner „Archiv (nur lokal)“ zu finden. Löscht der **Nutzer** in Mailbox, wird nur auf dem Server
+  gelöscht, die Archivdatei bleibt. Es gibt **keine** Einstellung „auch lokal löschen“.
 - Speicherplatz wird je Konto angezeigt. Wird die Platte knapp, gibt es einen Hinweis und es wird nichts gelöscht.
+
+### 5a. Archiv als Backup
+
+- **Aufbau, lesbar ohne HydraHive**:
+  `<archiv>/<konto-adresse>/<ordner>/<jjjj>/<jjjj-mm-tt_hhmm>_<kurzbetreff>_<hash8>.eml`. Den Dateinamen bildet nur
+  der Server: Betreff gekürzt, nur `[A-Za-z0-9äöüÄÖÜß_-]`, max. 60 Zeichen. Verschiebt der Nutzer eine Mail auf dem
+  Server, zieht die Datei in den neuen Ordner um. Sie wird verschoben, nie gelöscht.
+- **Vollständigkeit**: Je Konto eine Datei `MANIFEST.tsv` (Pfad, SHA-256, Message-ID, Server-Ordner, Status). Eine
+  Prüfung (wöchentlich und auf Knopfdruck) gleicht Dateien, Hashes und Datenbank ab und meldet Fehlendes oder
+  Verändertes in der Oberfläche.
+- **Wiederherstellen**: Dateien lassen sich in Thunderbird (Import von `.eml`) oder in jedes IMAP-Konto hochladen.
+  Optional später: „Ordner auf den Server zurückspielen“ (IMAP APPEND) in der Oberfläche.
+- **Speicherort** einstellbar (Standard `<data_dir>/mailbox/archiv`), z. B. auf einer eigenen Platte. Die Datenbank
+  (Index) lässt sich jederzeit aus den `.eml` neu aufbauen. Das Backup sind also die Dateien.
+
+### 5b. Samba-Freigabe des Archivs
+
+- Ausgangslage (geprüft 21.10.): Der Kern gibt heute **nur Projekt-Workspaces** frei, mit **einem gemeinsamen
+  Samba-Nutzer** für alle Freigaben (`samba/manager.py`) und **beschreibbar**. Für ein Mailarchiv reicht das nicht:
+  Jeder mit dem Samba-Passwort sähe alle Archive, und Dateien wären änderbar.
+- Daher: **Kern-Erweiterung** (§9.3) für Modul-Freigaben, die
+  1. **nur lesbar** sind (`read only = yes`),
+  2. einen **eigenen Samba-Nutzer je HydraHive-Nutzer** haben (Passwort in HydraHive gesetzt, nur für Samba),
+  3. pro HydraHive-Nutzer nur **seine** Konten zeigen (eine Freigabe `Mailarchiv-<nutzer>`). Gemeinsame Konten liegen in
+     `Mailarchiv-<gruppe>` für die Mitglieder der Gruppe.
+- Freigabe je Konto in der Mailbox-Oberfläche an/aus (Standard **aus**). Nur unter Linux mit installiertem Samba. Auf
+  dem Mac gibt es keine Samba-Freigabe von HydraHive. Dort bleibt der Ordner im Finder bzw. die Dateifreigabe von
+  macOS.
 
 ## 6. Oberfläche (Webmail)
 
@@ -132,16 +162,19 @@ werden auch für Anhänge genutzt. Das ist das Archiv: Kopien lassen sich ohne H
 
 1. **Bestätigung für Modul-Werkzeuge** (Voraussetzung für M4): `Tool` bekommt ein optionales
    `confirm_reason(args) -> str | None`. Der Runner fragt das zusätzlich zu `ALWAYS_CONFIRM`. Klein, mit Tests, eigener PR.
-2. Sonst keine. Das Modul bringt eigene Python-Abhängigkeiten in der Modul-venv mit, falls nötig. Das Ziel ist aber
-   nur die Standardbibliothek (`imaplib`, `smtplib`, `email`) plus das vorhandene `cryptography` und `httpx`.
+2. Keine neuen Abhängigkeiten: Standardbibliothek (`imaplib`, `smtplib`, `email`) plus das vorhandene
+   `cryptography` und `httpx`.
+3. **Samba-Freigaben für Module** (für §5b): nur lesbar, eigener Samba-Nutzer je HydraHive-Nutzer bzw. Gruppe, Pfad
+   nur innerhalb des Datenordners des Moduls. Eigene Spec im Kern-Repo, eigener PR. Voraussetzung für M2b.
 
 ## 10. Etappen
 
 | Etappe | Inhalt | Abnahme |
 |---|---|---|
 | **M1** | Konten (Passwort-IMAP/SMTP, Gmail per App-Passwort), Abgleich + Archiv + FTS, Webmail **lesen** (3 Spalten, Suche, Unterhaltungen, sichere Anzeige, Anhänge laden), persönliche Konten | Tills Mailkonto vollständig archiviert, Suche findet alte Mails, HTML-Mail ohne externe Bilder |
-| **M1b** | OAuth Microsoft (Geräte-Code), danach Google-OAuth optional | Tills Microsoft-Adresse liest und sendet |
+| **M1b** | OAuth Microsoft (Geräte-Code), danach Google-OAuth optional. **Zum Schluss** (Till: Azure-App erst dann) | Tills Microsoft-Adresse liest und sendet |
 | **M2** | Schreiben, Antworten, Weiterleiten, Entwürfe, Signaturen, Verschieben, Löschen, Archiv-Regel | Mail gesendet und im Gesendet-Ordner, gelöschte Server-Mail bleibt im Archiv |
+| **M2b** | Archiv als Backup (§5a: Prüfung, Manifest, Speicherort) + Kern-PR §9.3 + Samba-Freigabe nur lesbar | `Mailarchiv-till` im Datei-Manager sichtbar, nicht beschreibbar, ein fremder Nutzer sieht es nicht |
 | **M3** | Gemeinsame Konten (Gruppe), Freigabe je Projekt, Werkzeuge `read` + `draft`, Protokoll | Rechts-Agent findet Mail im freigegebenen Konto, sieht ein anderes nicht |
 | **M4** | Kern-PR §9.1 + `mailbox_send` mit Bestätigung | Senden nur nach „Ja“, ohne Antwort wird nicht gesendet |
 | **M5** | Legal-Anbindung, Mail → Task/Ticket, Regeln/Filter, Vitrine-Hinweis | nach Bedarf |
@@ -169,9 +202,9 @@ werden auch für Anhänge genutzt. Das ist das Archiv: Kopien lassen sich ohne H
 - POP3, Exchange-EWS/Graph-API (nur IMAP/SMTP), Kalender und Kontakte, S/MIME und PGP (später denkbar), eigene
   Spam-Erkennung (der Server filtert), automatisches Senden ohne Bestätigung.
 
-## 14. Offene Fragen an Till
+## 14. Entschieden (Till 21.10.2026)
 
-1. Erster Abgleich: wirklich **alle** Ordner und **alle** Jahre, oder ein Startdatum (z. B. die letzten 5 Jahre)?
-2. Soll eine im Webmail gelöschte Mail lokal im Archiv bleiben (Vorschlag: **ja**, Standard „im Archiv behalten“)?
-3. Microsoft: Die App-Registrierung (Client-ID) muss jemand im Azure-Portal anlegen. Machst du das, oder soll ich dir
-   eine Schritt-für-Schritt-Anleitung schreiben?
+1. Erstabgleich: **alle Ordner, alle Jahre**.
+2. **Immer alles im Archiv behalten**, auch im Webmail Gelöschtes. Das Archiv ist das Backup des Mailbestands, über
+   Samba erreichbar (§5a/§5b).
+3. Microsoft-App-Registrierung: **zum Schluss** (M1b wandert ans Ende, Anleitung dann).
