@@ -21,12 +21,24 @@ Projektfreigaben, Agenten-Werkzeuge und Samba folgen ab M2.
 - Testserver für echtes IMAP: **Dovecot auf hydratest** (Paket `dovecot-imapd` 2.3.21 verfügbar). Nur für die
   Abnahme vor Till, mit Wegwerf-Postfächern, danach wieder entfernt.
 
+## Entscheidung: zwei Datenbanken
+
+- **Kern-Datenbank** (`sessions.db`, Migrationen des Moduls): nur das Kleine und Unersetzliche, also Konten (mit
+  verschlüsseltem Geheimnis), Abgleich-Status, später Freigaben und Protokoll. Es ist im System-Backup enthalten.
+- **Eigener Index** `<archiv>/index.sqlite` (WAL): Ordner mit UID-Stand, Nachrichten, FTS5. Er kann groß werden
+  (alle Jahre) und gehört deshalb **nicht** in `sessions.db`, die bei jedem System-Backup ganz kopiert wird. Der Index
+  lässt sich jederzeit aus den `.eml` neu aufbauen (`rebuild`). Fehlt er, holt der nächste Abgleich nur Fehlendes
+  (Abgleich über Message-ID + Hash).
+- Das Archiv (`.eml` + Index) liegt **nicht** im System-Backup des Kerns. Es ist selbst das Backup (Spec §5a) und
+  wird über Samba gesichert bzw. erreicht (M2b).
+
 ## Dateien (jede ≤ 200 Zeilen)
 
 | Datei | Aufgabe |
 |---|---|
 | `mailbox/manifest.json` | id `mailbox`, Name „Mailbox“, Capability `module.mailbox`, `sensitive_tools` folgt ab M3 |
-| `mailbox/migrations/001_mailbox.sql` | Tabellen `module_mailbox_accounts`, `_folders`, `_messages`, `_sync`, FTS5 `_fts` |
+| `mailbox/migrations/001_mailbox.sql` | Kern-DB: `module_mailbox_accounts`, `module_mailbox_sync` |
+| `backend/index_db.py` | eigener Index `index.sqlite`: Schema (Ordner, Nachrichten, FTS5 bzw. Ersatz), Verbindung, `rebuild` |
 | `backend/__init__.py` | `register(ctx)`: Router, Job `sync`, Migrationen |
 | `backend/secrets.py` | Passwort verschlüsseln/entschlüsseln (AES-GCM aus `hydrahive.credentials._crypto`, eigener Kontext `mailbox`) |
 | `backend/providers.py` | bekannte Anbieter (Gmail, GMX, Web.de, IONOS, Strato, Posteo, Outlook) → Host/Port/TLS, Hinweis App-Passwort |
@@ -65,8 +77,8 @@ Projektfreigaben, Agenten-Werkzeuge und Samba folgen ab M2.
 
 ## Reihenfolge (TDD: Test rot → grün → Mutanten-Gegenprobe ohne Bytecode-Cache)
 
-1. **Gerüst**: manifest, Migration, `register`. Test: Migration läuft, Tabellen + FTS vorhanden, `register` meldet
-   Router/Job/Migrationen. Fallback-Test ohne FTS5.
+1. **Gerüst**: manifest, Migration, `register`, `index_db`. Test: Migration läuft (Kern-Tabellen), Index-Schema mit
+   FTS5 entsteht im Archivordner, `register` meldet Router/Job/Migrationen. Fallback-Test ohne FTS5.
 2. **secrets**: Passwort rundum verschlüsselt, nie im Klartext in der DB. Falscher Schlüssel → Fehler, kein Klartext.
 3. **providers + netcheck**: Gmail-Vorschlag mit Hinweis App-Passwort. `127.0.0.1`, `192.168.x`, `::1`, `169.254.x`,
    Namen, die auf interne Adressen zeigen → abgelehnt (DNS-Auflösung testbar über injizierte Funktion). Port 8080 → abgelehnt.
