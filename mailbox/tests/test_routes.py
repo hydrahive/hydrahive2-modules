@@ -266,3 +266,23 @@ def test_patch_schema_kennt_keine_adresse():
     from pydantic import ValidationError
     with pytest.raises(ValidationError):
         AccountPatch.model_validate({"address": "x@y.de"})
+
+
+def test_iframe_und_bilder_mit_token_in_der_adresse(client, alice, acc):
+    """<iframe>/<img> schicken keinen Header → ?token= wie beim Mediaplayer. Ohne Token weiterhin 401."""
+    token = alice["Authorization"].split(" ", 1)[1]
+    mid = _mid(client, alice, "Re: Unterlagen")
+    r = client.get(f"{B}/messages/{mid}/html", params={"token": token})
+    assert r.status_code == 200 and "Anbei die Unterlagen" in r.text
+    logo = next(a for a in client.get(f"{B}/messages/{mid}", headers=alice).json()["attachments"] if a["inline"])
+    assert client.get(f"{B}/attachments/{mid}/{logo['index']}", params={"inline": 1, "token": token}).status_code == 200
+    assert client.get(f"{B}/messages/{mid}/html").status_code == 401
+    assert client.get(f"{B}/messages/{mid}/html", params={"token": "falsch"}).status_code == 401
+
+
+def test_cid_links_tragen_den_token_nicht_selbst(client, alice, acc):
+    """Der Token kommt vom Frontend an die iframe-Adresse – im HTML selbst steht er nie (Weiterleiten/Kopieren)."""
+    token = alice["Authorization"].split(" ", 1)[1]
+    mid = _mid(client, alice, "Re: Unterlagen")
+    html = client.get(f"{B}/messages/{mid}/html", params={"token": token}).text
+    assert token not in html

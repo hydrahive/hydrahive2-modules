@@ -13,13 +13,14 @@ from typing import Annotated
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Query, Response, status
-from hydrahive.api.middleware.auth import require_auth
+from hydrahive.api.middleware.auth import AuthPrincipal, require_principal_or_query
 from hydrahive.api.middleware.errors import coded
 
 from . import access, archive, parse, sanitize
 
 router = APIRouter()
-Auth = Annotated[tuple[str, str], Depends(require_auth)]
+# <iframe>/<img> können keinen Authorization-Header setzen → ?token= erlaubt (Kern: require_principal_or_query)
+Auth = Annotated[AuthPrincipal, Depends(require_principal_or_query)]
 _INLINE_OK = {"image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp"}
 _PREFIX = "/api/modules/mailbox"
 
@@ -57,7 +58,7 @@ def _html(raw: bytes) -> str:
 
 @router.get("/messages/{mid}")
 def message(mid: int, auth: Auth) -> dict:
-    m, raw = _own(auth[0], mid)
+    m, raw = _own(auth.username, mid)
     p = parse.parse(raw)
     keys = ("id", "account", "folder", "date", "from_addr", "to_addr", "cc_addr", "subject", "seen", "flagged",
             "answered", "thread_key", "deleted_on_server", "size")
@@ -67,7 +68,7 @@ def message(mid: int, auth: Auth) -> dict:
 
 @router.get("/messages/{mid}/html")
 def message_html(mid: int, auth: Auth, images: bool = False) -> Response:
-    m, raw = _own(auth[0], mid)
+    m, raw = _own(auth.username, mid)
     att = json.loads(m["attachments"] or "[]")
     cids = {a["cid"]: f"{_PREFIX}/attachments/{mid}/{a['index']}?inline=1" for a in att if a.get("cid")}
     r = sanitize.clean(_html(raw), cid_urls=cids, allow_remote=images)
@@ -83,7 +84,7 @@ def _safe_name(name: str) -> str:
 
 @router.get("/attachments/{mid}/{index}")
 def attachment(mid: int, index: int, auth: Auth, inline: bool = Query(False)) -> Response:
-    _, raw = _own(auth[0], mid)
+    _, raw = _own(auth.username, mid)
     parts = _parts(raw)
     if not 0 <= index < len(parts):
         raise coded(status.HTTP_404_NOT_FOUND, "not_found")
@@ -101,7 +102,7 @@ def attachment(mid: int, index: int, auth: Auth, inline: bool = Query(False)) ->
 
 @router.get("/messages/{mid}/eml")
 def message_eml(mid: int, auth: Auth) -> Response:
-    m, raw = _own(auth[0], mid)
+    m, raw = _own(auth.username, mid)
     name = _safe_name((m["subject"] or "mail")[:80]) + ".eml"
     return Response(raw, media_type="message/rfc822", headers={
         "Content-Disposition": f"attachment; filename*=UTF-8''{quote(name)}", "X-Content-Type-Options": "nosniff",
