@@ -50,7 +50,7 @@ def _stamp(date: str) -> tuple[str, str]:
 
 
 def file_name(date: str, subject: str, sha256: str) -> str:
-    year, stamp = _stamp(date)
+    _, stamp = _stamp(date)
     subj = _SUBJ_OK.sub("_", subject or "").strip("_-")[:SUBJECT_MAX].strip("_-")
     return f"{stamp}_{subj}_{sha256[:8]}.eml"
 
@@ -112,9 +112,21 @@ def move(rel: str, address: str, folder: str) -> str:
         if dest.read_bytes() == src.read_bytes():
             return new
         raise ArchiveError("Ziel belegt – nichts überschrieben") from None
+    except OSError:                      # Dateisystem ohne Hardlinks (exFAT, manche NAS)
+        _copy_new(src, dest)
+        if hashlib.sha256(dest.read_bytes()).hexdigest() != hashlib.sha256(src.read_bytes()).hexdigest():
+            raise ArchiveError("Kopie beim Umzug fehlerhaft – Quelle bleibt") from None
+        src.unlink()  # erst nach geprüfter Kopie: Daten liegen vollständig unter dem neuen Namen
+        return new
     if os.path.samefile(src, dest):
         src.unlink()  # nur der alte Name; die Daten liegen unter dem neuen Namen (gleiche Inode)
     return new
+
+
+def _copy_new(src: Path, dest: Path) -> None:
+    if dest.exists():
+        raise ArchiveError("Ziel belegt – nichts überschrieben")
+    _write_new(dest, src.read_bytes())
 
 
 def read(rel: str) -> bytes:

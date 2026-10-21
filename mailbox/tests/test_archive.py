@@ -127,7 +127,7 @@ def test_datei_wird_atomar_geschrieben(archive, monkeypatch):
 def test_kein_loeschpfad_im_modul():
     """Spec §5: Das Archiv löscht nie. Im Backend gibt es keinen Aufruf, der Dateien entfernt (außer der eigenen tmp-Datei)."""
     allowed = {("archive.py", "tmp.unlink(missing_ok=True)"),  # eigene halbe tmp-Datei
-               ("archive.py", "src.unlink()")}                   # alter Name nach Hardlink (samefile geprüft)
+               ("archive.py", "src.unlink()")}                   # alter Name nach Hardlink/geprüfter Kopie
     for f in sorted((MODULE_DIR / "backend").glob("*.py")):
         for no, line in enumerate(f.read_text().splitlines(), 1):
             code = line.split("#", 1)[0]
@@ -152,3 +152,29 @@ def test_lesen_von_ordner_oder_fehlender_datei(archive):
     for rel in ("till@example.net/INBOX", "till@example.net/INBOX/2026/gibts-nicht.eml"):
         with pytest.raises(ar.ArchiveError):
             ar.read(rel)
+
+
+def test_umzug_ohne_hardlinks(archive, monkeypatch):
+    """Archiv auf exFAT/NAS ohne Hardlinks: kopieren, Hash prüfen, erst dann alten Namen lösen."""
+    import os
+
+    from backend import archive as ar
+    rel = _store(archive)
+
+    def nolink(src, dst):
+        raise PermissionError("Operation not permitted")
+    monkeypatch.setattr(os, "link", nolink)
+    new = ar.move(rel, ADDR, "Ablage")
+    assert (archive / new).read_bytes() == eml("plain") and not (archive / rel).exists()
+
+
+def test_umzug_ohne_hardlinks_kopie_kaputt_quelle_bleibt(archive, monkeypatch):
+    import os
+
+    from backend import archive as ar
+    rel = _store(archive)
+    monkeypatch.setattr(os, "link", lambda s, d: (_ for _ in ()).throw(PermissionError("nein")))
+    monkeypatch.setattr(ar, "_copy_new", lambda src, dest: dest.write_bytes(b"halb"))
+    with pytest.raises(ar.ArchiveError):
+        ar.move(rel, ADDR, "Ablage")
+    assert (archive / rel).read_bytes() == eml("plain"), "Quelle bleibt, wenn die Kopie nicht stimmt"
