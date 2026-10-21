@@ -1,0 +1,26 @@
+From: Shop <news@shop.example>
+To: till@example.net
+Subject: Angebot
+Date: Mon, 19 Oct 2026 18:00:00 +0000
+Message-ID: <html-1@shop.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============3584987498667976459=="
+
+--===============3584987498667976459==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Nur Text-Teil: Angebot der Woche
+
+--===============3584987498667976459==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html><head><script>alert(1)</script><style>body{color:red}</style></head><bo=
+dy><p onclick=3D"evil()">Angebot der <b>Woche</b></p><img src=3D"https://trac=
+k.example/pixel.gif"><a href=3D"javascript:alert(2)">klick</a><a href=3D"http=
+s://shop.example/x">Shop</a></body></html>
+
+--===============3584987498667976459==--
