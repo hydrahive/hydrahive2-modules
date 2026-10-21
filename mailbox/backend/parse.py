@@ -13,6 +13,7 @@ from datetime import timezone
 from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
 
+from . import threads
 from .htmltext import to_text
 
 BODY_MAX = 200_000
@@ -112,7 +113,8 @@ def parse(raw: bytes) -> Parsed:
         p.in_reply_to = _first_id(_hdr(msg, "In-Reply-To"))
         p.date = _date(msg)
         refs = _MSGID.findall(_hdr(msg, "References"))
-        p.thread_key = refs[0] if refs else (p.in_reply_to or p.message_id or "sha:" + p.sha256[:32])
+        root = refs[0] if refs else p.in_reply_to
+        p.thread_key = threads.key(root, p.subject, p.message_id) or "sha:" + p.sha256[:32]
         _walk(msg, p)
     except Exception as e:  # noqa: BLE001 - eine kaputte Mail darf den Abgleich nie stoppen
         p.error = f"{type(e).__name__}: {e}"[:300]

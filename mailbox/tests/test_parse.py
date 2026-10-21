@@ -131,3 +131,18 @@ def test_unerwarteter_fehler_wird_fehlerfeld(monkeypatch):
     monkeypatch.setattr(parse, "_walk", boom)
     p = parse.parse(eml("plain"))
     assert p.error.startswith("KeyError") and p.subject == "Termin morgen" and p.thread_key
+
+
+def test_antwort_ohne_references_faedelt_ueber_betreff():
+    """Manche Programme lassen References weg: „AW: Termin“ landet trotzdem bei „Re: Termin“."""
+    from backend import parse
+    a = parse.parse(b"From: a@b.de\r\nSubject: AW: Termin morgen\r\nMessage-ID: <x1@b.de>\r\n\r\nok")
+    b = parse.parse(b"From: c@d.de\r\nSubject: Re:  termin MORGEN\r\nMessage-ID: <x2@d.de>\r\n\r\nok")
+    assert a.thread_key == b.thread_key == "subj:termin morgen"
+
+
+def test_ohne_praefix_keine_betreff_faedelung():
+    from backend import parse
+    a = parse.parse(b"From: a@b.de\r\nSubject: Rechnung\r\nMessage-ID: <r1@b.de>\r\n\r\nx")
+    b = parse.parse(b"From: c@d.de\r\nSubject: Rechnung\r\nMessage-ID: <r2@d.de>\r\n\r\ny")
+    assert a.thread_key == "<r1@b.de>" and b.thread_key == "<r2@d.de>"
