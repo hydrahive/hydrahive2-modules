@@ -98,3 +98,17 @@ describe("Ordnerleiste", () => {
     expect(h).toMatch(/Alle Posteingänge<\/span><span[^>]*>2</) // nur Posteingänge, nicht „Newsletter“ (7)
   })
 })
+
+describe("Ordnerleiste – Abgleich", () => {
+  it("zeigt Fortschritt und Fehler des Kontos", () => {
+    const acc = { id: "a", label: "Yahoo", address: "t@x.de", status: "error", status_detail: "Verbindung abgebrochen",
+      sync: { running: 1, messages_done: 2200, folders_done: 0, folders_total: 9, finished_at: null, last_error: "" } }
+    const h = renderToStaticMarkup(<FolderTree accounts={[acc as never]} selection={{ kind: "all" }} onSelect={() => {}}
+      onAddAccount={() => {}} onSync={() => {}}
+      folders={[{ id: 1, account_id: "a", account: "t@x.de", name: "INBOX", role: "inbox", total: 0, unread: 0, gone: 0 }]} />)
+    expect(h).toContain("lädt … 2.200 Mails · Ordner 1/9")
+    expect(h).toContain('data-mbx-status="1"')
+    expect(h).toContain("animate-spin")
+  })
+})
+

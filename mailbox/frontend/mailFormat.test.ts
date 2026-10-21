@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { accountState, folderLabel, groupFolders, senderName, shortDate, size, type FolderRow } from "./mailFormat"
+import { accountState, folderLabel, groupFolders, senderName, shortDate, size, syncText, type FolderRow } from "./mailFormat"
 
 const f = (id: number, account: string, name: string, role = ""): FolderRow =>
   ({ id, account_id: account, account: `${account}@x.de`, name, role, total: 0, unread: 0, gone: 0 })
@@ -45,5 +45,12 @@ describe("Mailbox-Anzeige", () => {
     expect(accountState("ok").tone).toBe("ok")
     expect(accountState("auth_failed")).toEqual({ text: "Anmeldung fehlgeschlagen", tone: "err" })
     expect(accountState("new").tone).toBe("warn")
+  })
+  it("Fortschritt nur während des Abgleichs", () => {
+    expect(syncText(undefined)).toBe("")
+    expect(syncText({ running: 0, messages_done: 5, folders_done: 1, folders_total: 3 })).toBe("")
+    expect(syncText({ running: 1, messages_done: 2200, folders_done: 0, folders_total: 9 })).toBe("lädt … 2.200 Mails · Ordner 1/9")
+    expect(syncText({ running: 1, messages_done: 7, folders_done: 9, folders_total: 9 })).toBe("lädt … 7 Mails · Ordner 9/9")
+    expect(syncText({ running: 1, messages_done: 0, folders_done: 0, folders_total: 0 })).toBe("lädt … 0 Mails")
   })
 })

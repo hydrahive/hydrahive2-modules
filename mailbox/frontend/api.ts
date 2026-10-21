@@ -19,7 +19,7 @@ export interface Account {
   signature: string
   status: "new" | "ok" | "auth_failed" | "error"
   status_detail: string
-  sync?: { running: number; messages_done: number; finished_at: string | null; last_error: string }
+  sync?: { running: number; messages_done: number; folders_done: number; folders_total: number; finished_at: string | null; last_error: string }
 }
 
 export interface AccountIn {

@@ -99,3 +99,42 @@ def test_mails_ohne_message_id_nicht_doppelt_geladen(archive, server):
     _sync(server)
     _sync(server)
     assert server.body_fetches == 3 and _count() == 3
+
+
+def test_posteingang_zuerst_und_alle_ordner_sofort_sichtbar(archive):
+    """Yahoo listet „Archive“ vor INBOX: trotzdem erst den Posteingang laden; alle Ordner stehen vor dem ersten Laden fest."""
+    from backend import fetch, index_db
+    s = FakeServer()
+    s.boxes = {"Archive": s.boxes.get("Archive") or __import__("_fake_imap").Box("Archive"), "INBOX": s.boxes["INBOX"]}
+    s.box("Sent", special="\\Sent")
+    s.boxes["Archive"].add(_mail(1))
+    s.boxes["INBOX"].add(_mail(2))
+    seen = []
+    real = fetch._bodies
+
+    def spy(conn, uids):
+        with index_db.connect() as c:
+            seen.append((conn.selected.name, c.execute("SELECT count(*) FROM folders").fetchone()[0]))
+        return real(conn, uids)
+    fetch._bodies = spy
+    try:
+        fetch.sync_account(ACC, FakeIMAP(s))
+    finally:
+        fetch._bodies = real
+    assert seen[0] == ("INBOX", 3), seen
+
+
+def test_fortschritt_je_paket_mit_zaehlern(archive, server):
+    """Nach jedem Paket: Rückmeldung + Ordnerzähler aktuell (sonst sieht man stundenlang „0“)."""
+    from backend import fetch, index_db
+    for n in range(25):
+        server.boxes["INBOX"].add(_mail(n))
+    calls = []
+
+    def cb(c):
+        with index_db.connect() as db:
+            total = db.execute("SELECT total FROM folders WHERE name='INBOX'").fetchone()[0]
+        calls.append((c["new"], c["folders_total"], total))
+    fetch.sync_account(ACC, FakeIMAP(server), batch=10, on_progress=cb)
+    inbox = [x for x in calls if x[2] > 0]
+    assert inbox[:3] == [(10, 4, 10), (20, 4, 20), (25, 4, 25)], calls

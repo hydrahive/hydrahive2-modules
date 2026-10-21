@@ -1,6 +1,6 @@
 import { Archive, Inbox, Plus, RefreshCw } from "lucide-react"
 import type { Account } from "./api"
-import { accountState, folderLabel, groupFolders, type FolderRow } from "./mailFormat"
+import { accountState, folderLabel, groupFolders, syncText, type FolderRow } from "./mailFormat"
 
 export type Selection = { kind: "all" } | { kind: "folder"; id: number } | { kind: "archive" }
 
@@ -36,8 +36,11 @@ export function FolderTree({ accounts, folders, selection, onSelect, onAddAccoun
               <span className={`h-2 w-2 rounded-full ${TONE[st.tone]}`} title={st.text} />
               <span className="min-w-0 flex-1 truncate">{acc?.label ?? g.account}</span>
               <button type="button" onClick={() => onSync(g.accountId)} title="Jetzt abrufen" aria-label="Jetzt abrufen"
-                className="rounded p-0.5 hover:bg-[#1c2638]"><RefreshCw size={11} /></button>
+                className="rounded p-0.5 hover:bg-[#1c2638]"><RefreshCw size={11} className={acc?.sync?.running ? "animate-spin" : ""} /></button>
             </div>
+            {syncText(acc?.sync) && <p className="px-2 text-[11px] text-[#69d7ff]" data-mbx-sync="1">{syncText(acc?.sync)}</p>}
+            {acc && acc.status !== "ok" && acc.status_detail && (
+              <p className="px-2 text-[11px] text-rose-300" data-mbx-status="1">{acc.status_detail}</p>)}
             {g.folders.map((f) => (
               <button key={f.id} type="button" data-mbx-folder={f.id}
                 className={item(selection.kind === "folder" && selection.id === f.id)}

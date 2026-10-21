@@ -32,10 +32,16 @@ def _claim(aid: str) -> bool:
 
 
 def _release(aid: str, error: str, counts: dict | None = None) -> None:
+    """Lauf beenden. Zähler schreibt _write_progress während des Laufs (hier nicht noch einmal addieren)."""
     with db() as c:
-        c.execute("UPDATE module_mailbox_sync SET running=0, finished_at=?, last_error=?, "
-                  "messages_done=messages_done+?, folders_done=? WHERE account_id=?",
-                  (now_iso(), (error or "")[:300], (counts or {}).get("new", 0), (counts or {}).get("folders", 0), aid))
+        c.execute("UPDATE module_mailbox_sync SET running=0, finished_at=?, last_error=? WHERE account_id=?",
+                  (now_iso(), (error or "")[:300], aid))
+
+
+def _write_progress(aid: str, done: int, folders_done: int, folders_total: int) -> None:
+    with db() as c:
+        c.execute("UPDATE module_mailbox_sync SET messages_done=?, folders_done=?, folders_total=? WHERE account_id=?",
+                  (done, folders_done, folders_total, aid))
 
 
 def progress(aid: str) -> dict:
@@ -54,9 +60,15 @@ def _redact(text: str, aid: str) -> str:
 
 
 def _sync_one(acc: dict) -> dict:
+    """messages_done = alle bisher archivierten Mails des Kontos (Stand vor dem Lauf + neue dieses Laufs)."""
+    base = progress(acc["id"]).get("messages_done") or 0
+
+    def cb(c: dict) -> None:
+        _write_progress(acc["id"], base + c["new"], c["folders"], c["folders_total"])
     conn = _open(acc)
     try:
-        return fetch.sync_account(acc, conn, login=(acc["username"], accounts.password_of(acc["id"])))
+        return fetch.sync_account(acc, conn, login=(acc["username"], accounts.password_of(acc["id"])),
+                                  on_progress=cb)   # fetch meldet nach jedem Ordner – auch nach dem letzten
     finally:
         try:
             conn.logout()

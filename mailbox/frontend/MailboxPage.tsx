@@ -37,7 +37,15 @@ export function MailboxPage() {
     setItems((old) => (offset ? [...old, ...r.items] : r.items)); setTotal(r.total); setFulltext(r.fulltext)
   }).catch(() => setErr("Mails nicht ladbar")), [sel, applied])
 
-  useEffect(() => { loadMeta(); const id = window.setInterval(loadMeta, 30_000); return () => window.clearInterval(id) }, [loadMeta])
+  // Solange ein Konto abgleicht, alle 10 s nachladen (Ordner + erste Seite); sonst alle 30 s nur Konten/Ordner.
+  // Liste nur nachladen, solange man auf der ersten Seite ist (sonst springt „Weitere laden“ zurück).
+  const busy = accounts.some((a) => a.sync?.running)
+  const onFirstPage = items.length <= PAGE
+  useEffect(() => {
+    loadMeta()
+    const id = window.setInterval(() => { loadMeta(); if (busy && onFirstPage) void query(0) }, busy ? 10_000 : 30_000)
+    return () => window.clearInterval(id)
+  }, [loadMeta, query, busy, onFirstPage])
   useEffect(() => { void query(0) }, [query])
 
   async function select(id: number) {
