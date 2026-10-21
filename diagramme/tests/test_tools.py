@@ -74,6 +74,28 @@ def test_title_comes_from_meta_or_fallback(fake_archify, store_dir, ws):
     assert res.metadata["title"] == "Antwort zur Websuche"
 
 
+def test_explainer_title_comes_from_first_heading(fake_archify, store_dir, ws):
+    """Archify-Antwort-Seiten haben kein Front-Matter: der Titel ist die erste „# “-Überschrift (ohne {#id})."""
+    md = "# HydraHive-Atlas: Wie kommt eine Nachricht an? {#atlas}\n\nAntwort.\n\n## Teil {#teil}\n"
+    res = _create(_ctx(ws), art="explainer", beschreibung=md)
+    assert res.metadata["title"] == "HydraHive-Atlas: Wie kommt eine Nachricht an?"
+    # „## “ zählt nicht als Titel, „#“ ohne Leerzeichen auch nicht
+    res = _create(_ctx(ws), art="explainer", beschreibung="#hashtag\n## Nur Abschnitt\n")
+    assert res.metadata["title"] == "Diagramm"
+    # Überschrift ohne Anker und mit Leerraum
+    res = _create(_ctx(ws), art="explainer", beschreibung="\n\n#   Schlicht   \n")
+    assert res.metadata["title"] == "Schlicht"
+    # nur ein Anker → Fallback
+    res = _create(_ctx(ws), art="explainer", beschreibung="# {#nur-anker}\n")
+    assert res.metadata["title"] == "Diagramm"
+    # „# “ in einem Codeblock weiter unten ist kein Titel
+    res = _create(_ctx(ws), art="explainer", beschreibung="Text zuerst\n```bash\n# kommentar\n```\n")
+    assert res.metadata["title"] == "Diagramm"
+    # sehr lang → auf 200 Zeichen gekürzt
+    res = _create(_ctx(ws), art="explainer", beschreibung="# " + "x" * 300 + "\n")
+    assert len(res.metadata["title"]) == 200
+
+
 def test_meta_output_is_forced_into_own_folder(fake_archify, store_dir, ws):
     """Der Agent kann über meta.output nicht woanders hinschreiben."""
     _create(_ctx(ws), beschreibung=json.dumps({"meta": {"title": "T", "output": "../../../etc/x.html"}}))
