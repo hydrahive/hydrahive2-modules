@@ -146,3 +146,42 @@ def test_ohne_praefix_keine_betreff_faedelung():
     a = parse.parse(b"From: a@b.de\r\nSubject: Rechnung\r\nMessage-ID: <r1@b.de>\r\n\r\nx")
     b = parse.parse(b"From: c@d.de\r\nSubject: Rechnung\r\nMessage-ID: <r2@d.de>\r\n\r\ny")
     assert a.thread_key == "<r1@b.de>" and b.thread_key == "<r2@d.de>"
+
+
+@pytest.mark.parametrize("raw, want", [
+    # ohne Content-Type, aber UTF-8-Bytes (häufig bei alten/einfachen Programmen)
+    (b"From: a@b.de\r\nSubject: s\r\n\r\nTreffen im B\xc3\xbcro\r\n", "Treffen im Büro"),
+    # charset=us-ascii angegeben, Inhalt aber UTF-8
+    (b"From: a@b.de\r\nSubject: s\r\nContent-Type: text/plain; charset=us-ascii\r\n\r\nGr\xc3\xbc\xc3\x9fe\r\n", "Grüße"),
+    # ohne Angabe, Latin-1-Bytes (kein gültiges UTF-8)
+    (b"From: a@b.de\r\nSubject: s\r\n\r\nSch\xf6ne Gr\xfc\xdfe\r\n", "Schöne Grüße"),
+    # unbekannter Zeichensatz
+    (b"From: a@b.de\r\nSubject: s\r\nContent-Type: text/plain; charset=x-quatsch\r\n\r\nK\xc3\xb6ln\r\n", "Köln"),
+    # Windows-1252 mit Euro-Zeichen und Anführungszeichen
+    (b"From: a@b.de\r\nSubject: s\r\nContent-Type: text/plain; charset=windows-1252\r\n\r\n\x80 5 \x84ok\x93\r\n", "€ 5 „ok“"),
+])
+def test_zeichensatz_robust(raw, want):
+    from backend import parse
+    assert parse.parse(raw).body == want
+
+
+def test_betreff_8bit_ohne_kodierung():
+    from backend import parse
+    assert parse.parse(b"From: a@b.de\r\nSubject: Gr\xc3\xbc\xc3\x9fe\r\n\r\nx").subject == "Grüße"
+
+
+def test_ohne_angabe_windows_1252():
+    from backend import parse
+    assert parse.parse(b"From: a@b.de\r\nSubject: s\r\n\r\n\x80 5 \x84ok\x93\r\n").body == "€ 5 „ok“"
+
+
+def test_betreff_8bit_latin1():
+    from backend import parse
+    assert parse.parse(b"From: a@b.de\r\nSubject: Gr\xfc\xdfe aus K\xf6ln\r\n\r\nx").subject == "Grüße aus Köln"
+
+
+def test_ascii_angabe_mit_umlauten_wird_nicht_zerstoert():
+    """Angabe us-ascii, Inhalt mit Umlauten (UTF-8) → keine Ersatzzeichen, sondern Umlaute."""
+    from backend import parse
+    assert parse.decode_bytes("Grüße".encode(), "us-ascii") == "Grüße"
+    assert parse.decode_bytes(b"Gr\xfc\xdfe", "ascii") == "Grüße"
