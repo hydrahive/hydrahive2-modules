@@ -58,6 +58,11 @@ describe("Anordnung der Statuszentrale", () => {
     expect(normalizeDashboard({ chat_enabled: false }).chat_enabled).toBe(false)
   })
 
+  it("Bluetooth ist standardmäßig an und bleibt beim Ergänzen erhalten (S7)", () => {
+    expect(normalizeDashboard({}).bluetooth_enabled).toBe(true)
+    expect(normalizeDashboard({ bluetooth_enabled: false }).bluetooth_enabled).toBe(false)
+  })
+
   it("verschiebt und bleibt an den Rändern", () => {
     const o = [...AREAS]
     expect(moveArea(o, "home", -1).slice(0, 2)).toEqual(["home", "messages"])

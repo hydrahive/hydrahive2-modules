@@ -12,7 +12,7 @@ from typing import Any, Callable
 log = logging.getLogger(__name__)
 AREAS = ("messages", "home", "hydra", "tasks", "machine", "mining", "github", "holiday")
 TTL = {"github": 60.0, "home": 60.0}
-LAYOUT_KEYS = ("order", "hidden", "messages_max", "mining_in_machine", "pages", "chat_enabled")
+LAYOUT_KEYS = ("order", "hidden", "messages_max", "mining_in_machine", "pages", "chat_enabled", "bluetooth_enabled")
 TTL_DEFAULT = 5.0
 
 

@@ -36,7 +36,8 @@ def wants(runner) -> bool:
     avail = dash.available()
     m = runner._mode.update(idle_ms=dash.idle_ms() if avail else None, available=avail, now=time.monotonic(),
                             back_requested=mode.take_back_request(runner.data),
-                            chat_busy=mode.chat_busy(runner.data, now=time.time()))
+                            chat_busy=mode.chat_busy(runner.data, now=time.time())
+                            or mode.bt_busy(runner.data, now=time.time()))
     runner.state.update(mode=m, dashboard="bereit" if avail else f"nicht verfügbar: {dash.reason or '?'}")
     return m == "dashboard"
 

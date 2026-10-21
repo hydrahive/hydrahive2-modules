@@ -151,3 +151,16 @@ def test_chat_antwort_haelt_dashboard_im_dienst(tmp_path):
     (tmp_path / "chat_busy.json").unlink()
     r.run(max_frames=12)
     assert json.loads((tmp_path / "state.json").read_text())["mode"] == "video", "Antwort fertig → zurück zum Video"
+
+
+def test_bt_fenster_haelt_dashboard_im_dienst(tmp_path):
+    """S7: Kopplungsfenster offen (bt_busy) → Dienst bleibt trotz langer Ruhe im Dashboard; Fenster zu → Video."""
+    (tmp_path / "bt_busy").write_text(json.dumps({"since": time.time()}))
+    dash, disp = FakeDash([0, 500_000], jpegs=[JPEG_A]), SentDisplay()
+    r = _runner(tmp_path, dash, disp)
+    r.dashboard_repeat = 0
+    r.run(max_frames=6)
+    assert json.loads((tmp_path / "state.json").read_text())["mode"] == "dashboard"
+    (tmp_path / "bt_busy").unlink()
+    r.run(max_frames=12)
+    assert json.loads((tmp_path / "state.json").read_text())["mode"] == "video"

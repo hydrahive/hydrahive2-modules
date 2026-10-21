@@ -16,7 +16,7 @@ from typing import Callable, Iterable
 import usb.core
 from PIL import Image
 
-from . import aic, cached_play, cards, config, hydra_state, inbox, mode, night, preview, program, scene, sysinfo, video, warmer
+from . import aic, bt_runner, cached_play, cards, config, hydra_state, inbox, mode, night, preview, program, scene, sysinfo, video, warmer
 from . import play_dashboard as dash_play
 from .frames import _connect_real, encode, fallback_frame, write_preview  # noqa: F401 - auch von Tests genutzt
 
@@ -191,6 +191,7 @@ def main() -> None:
     data = Path(os.environ.get("VITRINE_DATA", "/var/lib/hydrahive2/vitrine"))
     warm = warmer.Warmer(data / "cache", frames=lambda src, w, h, fps: video.frames(
         video.prepare(Path(src), data / "cache", w, h, fps), w, h, fps, loop=False))
+    bt_runner.start(data)                              # S7: eigener Thread, Fehler dort stoppen das Display nie
     Runner(data_dir=data, quality=int(os.environ.get("VITRINE_QUALITY", "80")), warmer=warm,
            dashboard=dash_play.from_env()).run()
 

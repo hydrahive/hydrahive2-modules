@@ -16,7 +16,7 @@ from renderer import mode
 MIN_KEY = 32
 LOCAL = frozenset({"127.0.0.1", "::1"})
 HERE = Path(__file__).parent
-PAGE_FILES = ("kiosk_page.html", "kiosk_chat.js")
+PAGE_FILES = ("kiosk_page.html", "kiosk_chat.js", "kiosk_bt.js", "kiosk_bt.css")
 
 
 def key_ok(data_dir: Path, given: str | None) -> bool:
@@ -49,6 +49,7 @@ def page_version() -> str:
 def page(key: str) -> str:
     """Statuszentrale (S2): statische Seite aus dem Modul; der Schlüssel wird als JS-String eingesetzt (json + </ entschärft)."""
     k = json.dumps(key)[1:-1].replace("</", "<\\/")
-    chat_js = (HERE / "kiosk_chat.js").read_text(encoding="utf-8").replace("</", "<\\/")
+    js = "\n".join((HERE / n).read_text(encoding="utf-8").replace("</", "<\\/") for n in ("kiosk_chat.js", "kiosk_bt.js"))
     html = (HERE / "kiosk_page.html").read_text(encoding="utf-8").replace("__KEY__", k).replace("__VERSION__", page_version())
-    return html.replace("</script></html>", "\n" + chat_js + "</script></html>", 1)
+    css = (HERE / "kiosk_bt.css").read_text(encoding="utf-8").replace("</", "")
+    return html.replace("</style>", css + "</style>", 1).replace("</script></html>", "\n" + js + "</script></html>", 1)

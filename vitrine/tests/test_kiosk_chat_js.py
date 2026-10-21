@@ -77,7 +77,7 @@ PAGES = {"messages": 1, "home": 1, "hydra": 1, "tasks": 2, "github": 2, "machine
 
 def _d(chat=True):
     lay = {"order": list(PAGES), "hidden": [], "messages_max": 3, "mining_in_machine": True, "pages": dict(PAGES),
-           "chat_enabled": chat, "return_seconds": 120}
+           "chat_enabled": chat, "bluetooth_enabled": False, "return_seconds": 120}   # Bluetooth-Knubbel: test_kiosk_bt_js
     return _data([_m(1)], 1, [], home=HOME, machine=MACHINE, layout=lay)
 
 

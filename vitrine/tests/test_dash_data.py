@@ -121,7 +121,8 @@ def test_layout_und_home_bereich_im_schema(monkeypatch):
     r = dd.build("/tmp/x", cfg)
     dd._builders.clear()
     assert r["layout"] == {"order": cfg["order"], "hidden": ["mining"], "messages_max": 2, "mining_in_machine": True,
-                           "pages": cfg["pages"], "chat_enabled": True, "return_seconds": 120}
+                           "pages": cfg["pages"], "chat_enabled": True, "bluetooth_enabled": True,
+                           "return_seconds": 120}
     assert seen["cfg"]["messages_max"] == 2
 
 

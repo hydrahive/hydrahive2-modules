@@ -50,13 +50,17 @@ def test_seite_ohne_daten_nur_data_und_zurueck():
     assert 'fetch("back?k=' in html and 'fetch("data?k=' in html     # relativ zu /api/module-device/vitrine/kiosk
     assert 'fetch("read?k=' in html                                  # S3: Gelesen
     assert html.count('fetch("chat?k=') == 2                          # S6: Verlauf lesen + Nachricht schicken
-    assert html.count("fetch(") == 5, "nur Daten, Zurück, Gelesen, Chat-Verlauf, Chat-Senden"
+    assert html.count('fetch("bluetooth?k=') == 1                     # S7: Stand lesen
+    assert html.count('fetch(path + "?k=') == 1                       # S7: scan/pair (nur über btPost, s. u.)
+    assert html.count("fetch(") == 7, "nur Daten, Zurück, Gelesen, Chat ×2, Bluetooth-Stand, Bluetooth-Auftrag"
     import re
-    assert set(re.findall(r'fetch\("([a-z]+)\?k=', html)) == {"data", "back", "read", "chat"}, "keine weiteren Ziele"
+    assert set(re.findall(r'fetch\("([a-z]+)\?k=', html)) == {"data", "back", "read", "chat", "bluetooth"}, "keine weiteren Ziele"
+    assert set(re.findall(r'btPost\("([a-z/]+)"', html)) == {"bluetooth/scan", "bluetooth/pair"}, "S7: kein Entfernen am Kiosk"
+    assert '"delete"' not in html.lower() and "entfernen" not in html.lower()
     for verboten in ("/api/modules/", "authorization", "innerhtml", "outerhtml", "insertadjacenthtml", "document.write",
                      "eval(", "<script src", "<link", "http://", "https://"):
         assert verboten not in html.lower(), verboten
-    assert html.count("<button") == 1, "fest im HTML nur „Zurück“; „Gelesen“ entsteht je Meldung per createElement"
+    assert html.count("<button") == 3, "fest im HTML nur „Zurück“ + S7 „Gerät koppeln“/„Weitere“; „Gelesen“ per createElement"
     assert 'createElement("button")' in html and "Gelesen" in html and "Keine neuen Meldungen" in html
     assert "Verlauf" in html and "weitere" in html
     assert "HydraHive antwortet nicht" in html
@@ -125,3 +129,13 @@ def test_installer_startet_kiosk_firefox_neu():
     s = (Path(__file__).resolve().parents[1] / "extension" / "kiosk-install.sh").read_text()
     assert 'pkill -u "${KIOSK}" -f "firefox --kiosk"' in s
     assert s.index("pkill -u") > s.index('cat > "${HOME_DIR}/vitrine/start.html"'), "erst neue Startseite, dann Neustart"
+
+
+
+def test_bluetooth_aussehen_steht_in_der_seite():
+    """S7: kiosk_bt.css landet im <style> (nicht als externe Datei); Zeilen mindestens 64 px hoch (Maus/Trackpad)."""
+    from backend import kiosk
+    html = kiosk.page("K")
+    style = html.split("<style>", 1)[1].split("</style>", 1)[0]
+    assert ".bt-zeile{" in style and "min-height:64px" in style and "#bt{" in style
+    assert html.count("<style>") == 1 and "<link" not in html

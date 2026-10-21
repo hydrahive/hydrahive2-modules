@@ -111,3 +111,11 @@ def test_chat_schalter():
     assert dl.normalize(dict(S2, chat_enabled=False))["chat_enabled"] is False
     assert dl.layout_ok(dict(S2, chat_enabled="ja")) is False
     assert dl.layout_ok(dict(S2, chat_enabled=1)) is False
+
+
+def test_bluetooth_schalter():
+    """S7: Bluetooth-Seite am Gehäuse an/aus, Standard an."""
+    assert dl.normalize({})["bluetooth_enabled"] is True
+    assert dl.normalize(dict(S2, bluetooth_enabled=False))["bluetooth_enabled"] is False
+    assert dl.layout_ok(dict(S2, bluetooth_enabled="ja")) is False
+    assert dl.layout_ok(dict(S2, bluetooth_enabled=0)) is False

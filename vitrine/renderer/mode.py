@@ -6,6 +6,7 @@ Regeln (SPEC-STATUSZENTRALE.md, Till 18.10.2026):
 - Nach „Zurück“ weckt erst eine **neue** Eingabe wieder (sonst würde der Klick auf den Knopf sofort zurückholen).
 - S6: Solange Hydra im Chat antwortet (Datei chat_busy.json, höchstens 10 min frisch), zählt die Ruhezeit nicht. Die
   Antwort weckt das Dashboard aber nicht, und „Zurück“ gilt weiterhin.
+- S7: Ebenso, solange das Bluetooth-Kopplungsfenster offen ist (Datei bt_busy vom Dienst, höchstens 3 min frisch).
 """
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ BACK_GRACE = 0.5        # Eingaben bis 0,5 s nach „Zurück“ zählen noch zum
 RETURN_DEFAULT, RETURN_RANGE = 120, (30, 1800)
 _FILE = "mode.json"
 CHAT_BUSY_FILE, CHAT_BUSY_MAX = "chat_busy.json", 600
+BT_BUSY_FILE, BT_BUSY_MAX = "bt_busy", 180
 
 
 def return_seconds(config: dict) -> int:
@@ -51,13 +53,22 @@ class Mode:
         return self.current
 
 
-def chat_busy(data_dir: Path, *, now: float) -> bool:
-    """Antwortet Hydra gerade im Chat am Gehäuse? Datei vom Backend; älter als 10 min oder kaputt → nein (verwaist)."""
+def _fresh(path: Path, now: float, max_age: float) -> bool:
     try:
-        since = float(json.loads((data_dir / CHAT_BUSY_FILE).read_text())["since"])
+        since = float(json.loads(path.read_text())["since"])
     except (OSError, ValueError, KeyError, TypeError):
         return False
-    return 0 <= now - since <= CHAT_BUSY_MAX
+    return 0 <= now - since <= max_age
+
+
+def chat_busy(data_dir: Path, *, now: float) -> bool:
+    """Antwortet Hydra gerade im Chat am Gehäuse? Datei vom Backend; älter als 10 min oder kaputt → nein (verwaist)."""
+    return _fresh(data_dir / CHAT_BUSY_FILE, now, CHAT_BUSY_MAX)
+
+
+def bt_busy(data_dir: Path, *, now: float) -> bool:
+    """S7: Ist das Bluetooth-Kopplungsfenster offen? Datei vom Dienst; älter als 3 min oder kaputt → nein (verwaist)."""
+    return _fresh(data_dir / BT_BUSY_FILE, now, BT_BUSY_MAX)
 
 
 def request_back(data_dir: Path) -> None:

@@ -23,6 +23,7 @@ DEFAULTS: dict = {
     "order": list(AREAS), "hidden": [], "messages_max": 3, "home_rooms": [], "mining_in_machine": True,
     "pages": dict(DEFAULT_PAGES),
     "chat_enabled": True,                                   # S6: Chat-Seite am Gehäuse
+    "bluetooth_enabled": True,                              # S7: Bluetooth-Seite am Gehäuse
 }
 S2_KEYS = {"tasks_user", "github_project", "github_repos"}
 
@@ -54,6 +55,7 @@ def layout_ok(d) -> bool:
             and all(isinstance(r, str) and _ROOM.fullmatch(r) for r in rooms)
             and type(d.get("mining_in_machine", True)) is bool
             and type(d.get("chat_enabled", True)) is bool
+            and type(d.get("bluetooth_enabled", True)) is bool
             and _pages_ok(d.get("pages", {})))
 
 
