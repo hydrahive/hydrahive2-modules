@@ -29,6 +29,9 @@ class FakeBluez:
         self.calls.append(("set", prop, value))
         self.props[prop] = value
 
+    async def set_timeouts(self, seconds):
+        self.calls.append(("timeouts", seconds))
+
     async def discovery(self, on):
         self.calls.append(("discovery", on))
         self.discovering = on
@@ -256,3 +259,17 @@ def test_start_raeumt_alte_busy_datei_weg(tmp_path):
     s, _ = svc(tmp_path, FakeBluez())
     run(s.start())
     assert not (tmp_path / bt_service.BUSY_FILE).exists()
+
+
+def test_bluez_schliesst_selbst_falls_der_dienst_stirbt(tmp_path):
+    """Harter Abbruch (Update, Absturz) bei offenem Fenster: BlueZ-Timeouts schließen spätestens nach 180 s."""
+    fake = FakeBluez(RAPOO)
+    s, clock = svc(tmp_path, fake)
+    run(s.start())
+    bt_jobs.put(tmp_path, "scan", now=clock["t"])
+    run(s.tick())
+    t = [c for c in fake.calls if c[0] == "timeouts"]
+    assert t and t[0][1] == 180
+    i_t = fake.calls.index(t[0])
+    i_p = fake.calls.index(("set", "Pairable", True))
+    assert i_t < i_p, "Timeout vor dem Öffnen setzen"

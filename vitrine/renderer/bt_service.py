@@ -15,6 +15,7 @@ from typing import Callable
 from . import bt_jobs, bt_model
 
 WINDOW_SECONDS = 120
+BLUEZ_TIMEOUT = 180       # Netz: stirbt der Dienst bei offenem Fenster, schließt BlueZ selbst (Pairable/Discoverable)
 BUSY_FILE = "bt_busy"
 log = logging.getLogger("vitrine.bt")
 
@@ -67,6 +68,7 @@ class Service:
         if self.window_until > now:
             return                                      # nicht verlängern
         await self.bluez.set_adapter("Powered", True)
+        await self.bluez.set_timeouts(BLUEZ_TIMEOUT)
         await self.bluez.agent_register(self.agent)
         await self.bluez.set_adapter("Pairable", True)
         await self.bluez.set_adapter("Discoverable", True)

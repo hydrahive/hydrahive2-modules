@@ -99,6 +99,11 @@ class Bluez:
         await self._call(ADAPTER, "org.freedesktop.DBus.Properties", "set", "org.bluez.Adapter1", prop,
                          Variant("b", bool(value)))
 
+    async def set_timeouts(self, seconds: int) -> None:
+        for prop in ("PairableTimeout", "DiscoverableTimeout"):
+            await self._call(ADAPTER, "org.freedesktop.DBus.Properties", "set", "org.bluez.Adapter1", prop,
+                             Variant("u", int(seconds)))
+
     async def discovery(self, on: bool) -> None:
         try:
             await self._call(ADAPTER, "org.bluez.Adapter1", "start_discovery" if on else "stop_discovery")
