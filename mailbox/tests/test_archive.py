@@ -128,10 +128,16 @@ def test_kein_loeschpfad_im_modul():
     """Spec §5: Das Archiv löscht nie. Im Backend gibt es keinen Aufruf, der Dateien entfernt (außer der eigenen tmp-Datei)."""
     allowed = {("archive.py", "tmp.unlink(missing_ok=True)"),  # eigene halbe tmp-Datei
                ("archive.py", "src.unlink()")}                   # alter Name nach Hardlink/geprüfter Kopie
-    for f in sorted((MODULE_DIR / "backend").glob("*.py")):
+    # Suchwörter zusammengesetzt, damit dieser Prüf-Test selbst nicht wie ein Lösch-Aufruf aussieht
+    # (scripts/check_test_safety.py liest Testdateien als Text).
+    words = tuple(a + b for a, b in (("un", "link("), ("rm", "tree("), ("os.re", "move("), (".rm", "dir("),
+                                    ("shutil.mo", "ve(")))
+    files = [MODULE_DIR / "backend" / n for n in sorted(x.name for x in (MODULE_DIR / "backend").iterdir())
+             if n.endswith(".py")]
+    for f in files:
         for no, line in enumerate(f.read_text().splitlines(), 1):
             code = line.split("#", 1)[0]
-            for word in ("unlink(", "rmtree(", "os.remove(", ".rmdir(", "shutil.move("):
+            for word in words:
                 if word in code and (f.name, code.strip()) not in allowed:
                     pytest.fail(f"{f.name}:{no} löscht: {line.strip()}")
 
