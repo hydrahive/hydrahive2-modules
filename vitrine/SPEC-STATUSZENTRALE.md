@@ -378,6 +378,88 @@ Till hat **Option B** gewählt: Chat mit dem **vollen Buddy** (alle Werkzeuge), 
 4. Antwort zuerst am Stück; Streaming als spätere Etappe.
 5. Zurück zum Video nach 2 min ohne Eingabe; nicht während Hydra antwortet.
 
+## S7 — Bluetooth-Geräte koppeln (Till 21.10.2026: „an beide Stellen“, Kiosk und Cockpit)
+
+Am 21.10. hat das Koppeln der Rapoo-Tastatur (E9300G) von Hand über eine Stunde gedauert. S7 macht daraus einen Knopf, an
+**beiden Stellen**: auf dem Gehäuse-Display (Kiosk) und in der Vitrine-Seite im Cockpit.
+
+### Ausgangslage (am 21.10. auf .2 gemessen)
+- Adapter Realtek RTL8922AE (`hci0`, USB-Teil `0bda:8922`), BlueZ 5.85. **Ohne Antennen** kamen Geräte mit −98 … −106 dBm
+  an und Verbindungen brachen nach 420 ms ab (btmon: `Connection Failed to be Established`). Mit Antenne: −56 dBm.
+- Der Dienst-Nutzer `hydrahive` darf BlueZ über D-Bus steuern (Default-Policy; `pairable on/off` als `hydrahive` geprüft).
+  Es gibt keine D-Bus-Bibliothek im Kern; `busctl` (systemd) ist vorhanden.
+- **Multi-Mode-Tastaturen** melden sich mit zwei Adressen und Namen (Rapoo: `RAPOO BT3.0 KB` klassisch,
+  `RAPOO BT4.0 KB` LE). Die LE-Kopplung brach mit `auth failed 0x05` ab, die klassische klappte sofort.
+- Der Adapter stand auf nicht „bondable“; Kopplungen ohne Bonding verfallen (`AuthenticationCanceled`).
+
+### Was der Knopf tut
+- **„Gerät koppeln“** öffnet das Kopplungsfenster für **2 Minuten**: Adapter an, bondable, pairable, Suche (klassisch + LE).
+  Danach schließt es sich von selbst (Suche aus, pairable aus). Ein zweiter Druck verlängert nicht, er zeigt die Restzeit.
+- **Liste** (alle 2 s aktuell): Name (sonst „Unbekanntes Gerät“), Art aus dem Icon (Tastatur, Maus, Kopfhörer, Lautsprecher,
+  Telefon, Sonstiges), **Signal** als Balken mit dBm, Zustand (neu / gekoppelt / verbunden). Ohne Namen und schwächer als
+  −90 dBm erst unter „Weitere Geräte“ (zugeklappt).
+- **Tippen auf ein Gerät koppelt es:** pair → trust → connect. Fordert das Gerät einen **Code**, erscheint er **groß** mit dem
+  Satz „Auf der Tastatur eintippen, dann Enter“. Fragt das Gerät nach Bestätigung (Zahlenvergleich), wird bestätigt –
+  das Tippen auf das Gerät ist die Bestätigung.
+- **Zwei Adressen, ein Gerät:** Gleicher Name bis auf `BT3.0`/`BT4.0`/`LE` und gleiche Hersteller-Kennung (erste drei
+  Bytes der Adresse) → eine Zeile. Gekoppelt wird **zuerst die klassische** Adresse, bei Fehler die LE-Adresse.
+- **Gekoppelte Geräte** (immer sichtbar, auch ohne offenes Fenster): Name, verbunden ja/nein, Knopf **„Entfernen“**
+  (nur Cockpit; am Kiosk nur ansehen, damit niemand im Vorbeigehen die Tastatur entkoppelt).
+- **Signal-Hinweis:** Ist das stärkste Gerät in der Liste schwächer als −85 dBm, steht oben „Sehr schwacher Empfang –
+  Antennen am Rechner prüfen“.
+
+### Kiosk
+- Neuer Knubbel **„Bluetooth“** (ganz rechts, vor „Chat“), eigene Seite wie der Chat; nicht Teil der Seitenzuordnung 1–3.
+  Im Cockpit an/aus (`bluetooth_enabled`, Standard an).
+- Während das Kopplungsfenster offen ist, zählt die Rückkehr zum Video **nicht** (wie `chat_busy`, Datei
+  `bt_busy`, verwaist nach 3 min).
+- Bedienung mit Maus/Trackpad (kein Touch): Zeilen mindestens 64 px hoch.
+
+### Cockpit
+- Karte **„Bluetooth“** auf der Vitrine-Seite: dieselbe Liste + „Entfernen“, Adapter-Name und -Zustand, Hinweis bei
+  schwachem Signal. Nur mit dem Recht `module.vitrine` (wie die übrige Vitrine-Seite).
+
+### Weg (Backend + Dienst)
+- **Der Vitrine-Dienst** (`hydrahive2-vitrine`, läuft als `hydrahive`) übernimmt Bluetooth. Grund: Ein Kopplungs-Agent
+  (`org.bluez.Agent1`, Fähigkeit `KeyboardDisplay`) muss als D-Bus-Objekt **dauerhaft** erreichbar sein, solange das
+  Fenster offen ist. Das kann ein Dienst, aber kein einzelner HTTP-Aufruf. Neues Paket `dbus-fast` in der venv des Dienstes
+  (asynchron, reines Python; auf .2 per pip verfügbar geprüft). Der Kern bekommt **keine** neue Abhängigkeit.
+- Weg wie bei allem anderen der Vitrine (SPEC §1: „spricht nur lokal über Dateien“): Das Backend schreibt Aufträge nach
+  `inbox/bt-*.json` (`scan`, `pair <Adresse>`, `remove <Adresse>`), der Dienst schreibt den Stand nach `bluetooth.json`
+  (Adapter, Fenster offen bis, Geräte, laufende Kopplung, angezeigter Code, letzter Fehler). Kein Socket, kein Port.
+- Routen, Kiosk: `GET /bluetooth`, `POST /bluetooth/scan`, `POST /bluetooth/pair` unter
+  `/api/module-device/vitrine/…?k=…` (Kiosk-Schlüssel + 127.0.0.1 wie S1–S6).
+  Cockpit: dieselben unter `/api/modules/vitrine/…` plus `DELETE /bluetooth/{adresse}`, mit Login + Recht.
+- Der Dienst setzt beim Öffnen `Powered`, `Pairable`, `Discoverable` (180 s Grenze von BlueZ, wir schließen nach 120 s),
+  bondable über `Pairable` (BlueZ setzt Bonding mit). Beim Schließen und beim Start des Dienstes: `Pairable` und
+  `Discoverable` aus, Suche aus, Agent abmelden.
+- **Eingaben:** Adresse nur im Format `XX:XX:XX:XX:XX:XX` (Hex, Großbuchstaben), sonst 422. Koppeln nur bei offenem
+  Fenster und nur für Geräte, die die laufende Suche gesehen hat (sonst 409 `window_closed` bzw. `not_seen`). Keine
+  Freitext-Felder; Aufträge sind feste Arten mit geprüfter Adresse.
+- Ausgaben: nur Name (gekürzt 60), Art, Signal, Zustand, Adresse. Keine Schlüssel, keine UUID-Listen.
+
+### Sicherheit
+- Koppeln ist mächtig: Eine gekoppelte Tastatur kann am Server tippen. Deshalb: Fenster **nur auf Knopfdruck**, **2 min**,
+  danach zu; Koppeln **nur nach Tippen** auf ein Gerät; außerhalb des Fensters ist der Adapter nicht pairable und nicht
+  discoverable (der Server ist nie für andere sichtbar).
+- Kiosk: Kiosk-Schlüssel + direkte Verbindung von 127.0.0.1 + Rate-Limit des Kerns; „Entfernen“ gibt es am Kiosk nicht.
+- Jede Kopplung und jedes Entfernen kommt als Meldung in den Verlauf (S3): „Bluetooth: <Name> gekoppelt“.
+
+### Akzeptanz S7
+- Knopf „Gerät koppeln“ → binnen 5 s erscheint die Rapoo (beide Adressen als **eine** Zeile) mit Signalbalken.
+- Tippen → gekoppelt, vertraut, verbunden; nach Neustart von .2 verbindet sie sich von selbst wieder.
+- Nach 2 min: `Pairable: no`, `Discoverable: no`, Suche aus (geprüft mit `bluetoothctl show`).
+- Ungültige Adresse → 422; nicht gesehene Adresse → 409; Kiosk ohne/mit falschem Schlüssel oder von anderer Adresse → 404;
+  Cockpit ohne Recht → 403 (Tests).
+- Am Kiosk gibt es kein „Entfernen“ (Test). Seite ohne `innerHTML`.
+
+### Bewusst nicht in S7
+- Audio-Geräte als Ausgang einstellen (PipeWire), Dateiübertragung, Geräte umbenennen, mehrere Adapter.
+
+### Entscheidungen S7 (Till, 21.10.2026)
+1. An beiden Stellen: Kiosk und Cockpit.
+2. Fenster nur auf Knopfdruck, 2 min, Koppeln nur nach Tippen, danach zu.
+
 ## Bewusst nicht (V1 der Statuszentrale)
 
 - keine Aktionen mit Folgen (Merge, Dienste, Update, Zonen, Schalter) – kommen später nur mit PIN
@@ -400,7 +482,8 @@ Till hat **Option B** gewählt: Chat mit dem **vollen Buddy** (alle Werkzeuge), 
 4. **S4 Zuhause + Anordnung:** HA-Favoriten je Raum, Einstellungsseite (an/aus, Reihenfolge, Einstellungen je Bereich)
 5. **S5 Seiten:** Bereiche fest auf Seiten 1–3, Knubbel unten zum Blättern
 6. **S6 Chat:** eigene Seite, BT-Tastatur, voller Buddy in eigener Session, Antwort am Stück
-7. danach: Streaming im Chat, Sprache, Knöpfe mit PIN
+7. **S7 Bluetooth:** Geräte suchen und koppeln, am Kiosk und im Cockpit
+8. danach: Streaming im Chat, Sprache, Knöpfe mit PIN
 
 ## Akzeptanzkriterien
 
