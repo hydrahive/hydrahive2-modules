@@ -24,7 +24,7 @@ def test_version_steht_in_der_seite(files):
     assert "__VERSION__" not in html and len(kiosk.page_version()) == 16
 
 
-@pytest.mark.parametrize("name", ["kiosk_page.html", "kiosk_chat.js", "kiosk_bt.js"])
+@pytest.mark.parametrize("name", ["kiosk_page.html", "kiosk_chat.js", "kiosk_bt.js", "kiosk_bt.css"])
 def test_version_aendert_sich_mit_jeder_seitendatei(files, name):
     from backend import kiosk
     before = kiosk.page_version()

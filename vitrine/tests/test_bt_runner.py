@@ -8,7 +8,7 @@ from renderer import bt_runner, bt_service, inbox
 
 
 def test_neuer_versuch_nach_fehler_und_dann_lauf(tmp_path):
-    from test_bt_service import FakeBluez
+    from _bt_fake import FakeBluez
     stop, tries = threading.Event(), []
     fake = FakeBluez()
 

@@ -38,8 +38,6 @@ def bt(data):
             {"address": A3, "name": "RAPOO BT3.0 KB", "rssi": -62, "icon": "input-keyboard", "paired": True},
             {"address": A4, "name": "RAPOO BT4.0 KB", "rssi": -58, "icon": "input-keyboard", "le": True}]})
         yield data
-        for p in (data / "bt" / "inbox").glob("*.json"):
-            p.unlink()
 
 
 # --- Kiosk ---------------------------------------------------------------------------------------------------------

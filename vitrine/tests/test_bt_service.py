@@ -1,85 +1,10 @@
-"""S7: Ablauf im Dienst mit einem Fake-BlueZ – Fenster, Aufräumen, Koppeln (klassisch zuerst), Code, Meldungen."""
+"""S7: Dienst – Fenster öffnen/schließen (120 s), Start räumt auf, bt_busy, BlueZ-Netz."""
 from __future__ import annotations
 
-import asyncio
+import pytest  # noqa: F401 - parametrize in einzelnen Tests
 
-import pytest
-
+from _bt_fake import A3, A4, RAPOO, FakeBluez, run, svc  # noqa: F401
 from renderer import bt_jobs, bt_service
-
-A3, A4 = "B4:EE:25:ED:70:7F", "B4:EE:25:EE:72:7F"
-
-
-class FakeBluez:
-    """Spielt BlueZ nach: Eigenschaften, Suche, Agent, pair/trust/connect/remove. Protokolliert alle Aufrufe."""
-
-    def __init__(self, devices=None, *, fail_pair=()):
-        self.calls: list[tuple] = []
-        self.props = {"Powered": True, "Pairable": True, "Discoverable": True}   # „schmutziger“ Start
-        self.discovering = True
-        self.agent = False
-        self.fail_pair = set(fail_pair)
-        self.devices = {d["address"]: d for d in (devices or [])}
-        self.on_pair = None                                       # Hook: z. B. Code anzeigen während des Koppelns
-
-    async def adapter(self):
-        return {"name": "hydrahive-master", "powered": self.props["Powered"], **self.props}
-
-    async def set_adapter(self, prop, value):
-        self.calls.append(("set", prop, value))
-        self.props[prop] = value
-
-    async def set_timeouts(self, seconds):
-        self.calls.append(("timeouts", seconds))
-
-    async def discovery(self, on):
-        self.calls.append(("discovery", on))
-        self.discovering = on
-
-    async def agent_register(self, agent):
-        self.calls.append(("agent", True))
-        self.agent = agent
-
-    async def agent_unregister(self):
-        self.calls.append(("agent", False))
-        self.agent = False
-
-    async def devices_list(self):
-        return list(self.devices.values())
-
-    async def pair(self, addr):
-        self.calls.append(("pair", addr))
-        if self.on_pair:
-            await self.on_pair(addr)
-        if addr in self.fail_pair:
-            raise bt_service.BluezError("org.bluez.Error.AuthenticationFailed")
-        self.devices[addr]["paired"] = True
-
-    async def trust(self, addr):
-        self.calls.append(("trust", addr))
-
-    async def connect(self, addr):
-        self.calls.append(("connect", addr))
-        self.devices[addr]["connected"] = True
-
-    async def remove(self, addr):
-        self.calls.append(("remove", addr))
-        self.devices.pop(addr, None)
-
-
-RAPOO = [{"address": A3, "name": "RAPOO BT3.0 KB", "rssi": -62, "icon": "input-keyboard", "le": False},
-         {"address": A4, "name": "RAPOO BT4.0 KB", "rssi": -58, "icon": "input-keyboard", "le": True}]
-
-
-def svc(tmp_path, fake, now=1000.0):
-    clock = {"t": now}
-    s = bt_service.Service(tmp_path, fake, clock=lambda: clock["t"], notify=lambda text, kind: s.notes.append((text, kind)))
-    s.notes = []
-    return s, clock
-
-
-def run(coro):
-    return asyncio.run(coro)
 
 
 def test_start_schliesst_alles(tmp_path):
@@ -125,85 +50,6 @@ def test_zweiter_scan_verlaengert_nicht(tmp_path):
     assert bt_jobs.read_state(tmp_path)["window_until"] == 1120.0
 
 
-def test_koppeln_klassisch_zuerst_dann_trust_connect_meldung(tmp_path):
-    fake = FakeBluez(RAPOO)
-    s, clock = svc(tmp_path, fake)
-    run(s.start())
-    bt_jobs.put(tmp_path, "scan", now=clock["t"])
-    run(s.tick())
-    fake.calls.clear()
-    bt_jobs.put(tmp_path, "pair", A4, now=clock["t"])                   # angetippt wurde die LE-Adresse
-    run(s.tick())
-    assert [c for c in fake.calls if c[0] in ("pair", "trust", "connect")] == [
-        ("pair", A3), ("trust", A3), ("connect", A3)]
-    assert s.notes == [("Bluetooth: RAPOO KB gekoppelt", "success")]
-    assert fake.props["Pairable"] is False                               # nach Erfolg sofort zu
-
-
-def test_klassisch_scheitert_dann_le(tmp_path):
-    fake = FakeBluez(RAPOO, fail_pair={A3})
-    s, clock = svc(tmp_path, fake)
-    run(s.start())
-    bt_jobs.put(tmp_path, "scan", now=clock["t"])
-    run(s.tick())
-    fake.calls.clear()
-    bt_jobs.put(tmp_path, "pair", A3, now=clock["t"])
-    run(s.tick())
-    assert [c for c in fake.calls if c[0] == "pair"] == [("pair", A3), ("pair", A4)]
-    assert ("connect", A4) in fake.calls
-
-
-def test_beide_scheitern_fehler_im_stand_fenster_bleibt_offen(tmp_path):
-    fake = FakeBluez(RAPOO, fail_pair={A3, A4})
-    s, clock = svc(tmp_path, fake)
-    run(s.start())
-    bt_jobs.put(tmp_path, "scan", now=clock["t"])
-    run(s.tick())
-    bt_jobs.put(tmp_path, "pair", A3, now=clock["t"])
-    run(s.tick())
-    st = bt_jobs.read_state(tmp_path)
-    assert "nicht gekoppelt" in st["error"] and st["pairing"] is None
-    assert st["window_until"] > clock["t"] and s.notes == []             # nochmal versuchen möglich
-
-
-def test_koppeln_bei_geschlossenem_fenster_tut_nichts(tmp_path):
-    fake = FakeBluez(RAPOO)
-    s, clock = svc(tmp_path, fake)
-    run(s.start())
-    fake.calls.clear()
-    bt_jobs.put(tmp_path, "pair", A3, now=clock["t"])
-    run(s.tick())
-    assert not [c for c in fake.calls if c[0] == "pair"]
-
-
-def test_code_erscheint_waehrend_des_koppelns_und_verschwindet(tmp_path):
-    fake = FakeBluez(RAPOO)
-    s, clock = svc(tmp_path, fake)
-    seen = {}
-
-    async def show(addr):
-        s.agent.display_passkey(addr, 123456)                             # BlueZ ruft DisplayPasskey am Agenten
-        seen["state"] = bt_jobs.read_state(tmp_path)
-
-    fake.on_pair = show
-    run(s.start())
-    bt_jobs.put(tmp_path, "scan", now=clock["t"])
-    run(s.tick())
-    bt_jobs.put(tmp_path, "pair", A3, now=clock["t"])
-    run(s.tick())
-    assert seen["state"]["pairing"] == {"address": A3, "passkey": "123456"}
-    assert bt_jobs.read_state(tmp_path)["pairing"] is None
-
-
-def test_entfernen_auch_ohne_fenster_und_meldung(tmp_path):
-    fake = FakeBluez([dict(RAPOO[0], paired=True)])
-    s, clock = svc(tmp_path, fake)
-    run(s.start())
-    bt_jobs.put(tmp_path, "remove", A3, now=clock["t"])
-    run(s.tick())
-    assert ("remove", A3) in fake.calls and s.notes == [("Bluetooth: RAPOO BT3.0 KB entfernt", "info")]
-
-
 def test_bluez_fehler_beim_lesen_stoppt_nicht(tmp_path):
     fake = FakeBluez(RAPOO)
 
@@ -228,18 +74,6 @@ def test_busy_datei_nur_bei_offenem_fenster(tmp_path, busy):
     run(s.tick())
     assert (tmp_path / bt_service.BUSY_FILE).exists() is busy
 
-
-def test_ungesehenes_geraet_wird_nicht_gekoppelt(tmp_path):
-    """Auch wenn ein Auftrag am Backend vorbei in bt/inbox landet: nur Geräte, die die Suche sieht."""
-    fake = FakeBluez(RAPOO)
-    s, clock = svc(tmp_path, fake)
-    run(s.start())
-    bt_jobs.put(tmp_path, "scan", now=clock["t"])
-    run(s.tick())
-    fake.calls.clear()
-    bt_jobs.put(tmp_path, "pair", "AA:AA:AA:AA:AA:AA", now=clock["t"])
-    run(s.tick())
-    assert not [c for c in fake.calls if c[0] == "pair"]
 
 
 def test_busy_datei_verschwindet_wenn_fenster_zu(tmp_path):

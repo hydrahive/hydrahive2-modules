@@ -1,0 +1,8 @@
+/* Bluetooth am Gehäuse (S7) – von kiosk.page() in den Style-Block der Seite eingesetzt. Zeilen ≥ 64 px (Maus/Trackpad). */
+#bt{display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;overflow-y:auto}
+.bt-zeile{display:flex;align-items:center;gap:20px;min-height:64px;font-size:34px;padding:8px 20px;border-radius:16px;
+  background:#151c2b;border:2px solid #24304a;margin:6px 0}.bt-zeile.gekoppelt{border-color:#5ee08a}
+.bt-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bt-signal{color:#69d7ff;font-size:32px;white-space:nowrap}
+.bt-zustand{color:#b7c2d6;font-size:32px;white-space:nowrap}#bt-hinweis{font-size:32px;color:#ffd166;min-height:40px}
+.bt-zahl{font-size:140px;font-weight:bold;letter-spacing:.15em;text-align:center;color:#e8eef8}#bt-code{text-align:center}
+#bt-mehr{font-size:32px;padding:12px 30px;border-width:2px}

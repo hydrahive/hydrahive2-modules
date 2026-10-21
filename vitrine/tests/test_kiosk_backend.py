@@ -129,3 +129,13 @@ def test_installer_startet_kiosk_firefox_neu():
     s = (Path(__file__).resolve().parents[1] / "extension" / "kiosk-install.sh").read_text()
     assert 'pkill -u "${KIOSK}" -f "firefox --kiosk"' in s
     assert s.index("pkill -u") > s.index('cat > "${HOME_DIR}/vitrine/start.html"'), "erst neue Startseite, dann Neustart"
+
+
+
+def test_bluetooth_aussehen_steht_in_der_seite():
+    """S7: kiosk_bt.css landet im <style> (nicht als externe Datei); Zeilen mindestens 64 px hoch (Maus/Trackpad)."""
+    from backend import kiosk
+    html = kiosk.page("K")
+    style = html.split("<style>", 1)[1].split("</style>", 1)[0]
+    assert ".bt-zeile{" in style and "min-height:64px" in style and "#bt{" in style
+    assert html.count("<style>") == 1 and "<link" not in html
