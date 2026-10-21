@@ -3,13 +3,15 @@ import { ArrowLeft, MessagesSquare } from "lucide-react"
 import { caseApi, type CaseSnapshot } from "./api"
 import { CASE_STATUS, errorText } from "./caseFormat"
 import { CaseChat } from "./CaseChat"
+import { CorrespondencePanel } from "./CorrespondencePanel"
 import { DeadlinePanel } from "./DeadlinePanel"
 import { NotesPanel } from "./NotesPanel"
 import { PartyPanel } from "./PartyPanel"
 import { ProposalPanel } from "./ProposalPanel"
 
-type Tab = "overview" | "parties" | "deadlines" | "notes" | "proposals"
-const TABS: [Tab, string][] = [["overview", "Übersicht"], ["parties", "Beteiligte"], ["deadlines", "Fristen"], ["notes", "Notizen"], ["proposals", "Vorschläge"]]
+type Tab = "overview" | "parties" | "deadlines" | "letters" | "notes" | "proposals"
+const TABS: [Tab, string][] = [["overview", "Übersicht"], ["parties", "Beteiligte"], ["deadlines", "Fristen"], ["letters", "Schriftverkehr"],
+  ["notes", "Notizen"], ["proposals", "Vorschläge"]]
 
 function Field({ name, value }: { name: string; value: string }) {
   if (!value) return null
@@ -73,6 +75,7 @@ export function CaseFile({ pid, onBack }: { pid: string; onBack: () => void }) {
         )}
         {snap && tab === "parties" && <PartyPanel pid={pid} parties={snap.parties} canWrite={canWrite} onChange={load} />}
         {snap && tab === "deadlines" && <DeadlinePanel pid={pid} deadlines={snap.deadlines} canWrite={canWrite} stateName={snap.state_name} onChange={load} />}
+        {snap && tab === "letters" && <CorrespondencePanel pid={pid} entries={snap.correspondence} parties={snap.parties} canWrite={canWrite} onChange={load} />}
         {snap && tab === "notes" && <NotesPanel pid={pid} notes={snap.notes} canWrite={canWrite} onChange={load} />}
         {snap && tab === "proposals" && <ProposalPanel pid={pid} canWrite={canWrite} onChange={load} />}
       </section>

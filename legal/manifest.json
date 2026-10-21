@@ -1,8 +1,8 @@
 {
   "id": "legal",
   "name": "Recht",
-  "version": "0.2.1",
-  "description": "Rechtsrecherche mit belegten Normen: Bundesgesetze lokal mit Stand, Suche für Mensch und Agent, Fälle mit Fallakte, Fristenrechner und Rechts-Agent. Briefe folgen. Keine Rechtsberatung.",
+  "version": "0.3.0",
+  "description": "Rechtsrecherche mit belegten Normen: Bundesgesetze lokal mit Stand, Fälle mit Fallakte, Fristenrechner und Rechts-Agent, Schriftverkehr und Brief-Werkstatt mit Prüfliste und Druckansicht. Keine Rechtsberatung.",
   "icon": "Scale",
   "nav_group": "working",
   "permissions": [],
@@ -27,6 +27,9 @@
     "legal_propose_party": "privat",
     "legal_propose_deadline": "privat",
     "legal_propose_fact": "privat",
-    "legal_note": "privat"
+    "legal_note": "privat",
+    "legal_letter_draft": "privat",
+    "legal_check_letter": "privat",
+    "legal_propose_letter": "privat"
   }
 }

@@ -76,5 +76,6 @@ LEGAL_SEARCH = Tool(name="legal_search", description=_SEARCH_DESC, schema=_SEARC
 LEGAL_NORM = Tool(name="legal_norm", description=_NORM_DESC, schema=_NORM_SCHEMA, execute=_norm, category="legal")
 
 from .case_tools import TOOLS as CASE_TOOLS
+from .letter_tools import TOOLS as LETTER_TOOLS
 
-TOOLS = [LEGAL_SEARCH, LEGAL_NORM, *CASE_TOOLS]
+TOOLS = [LEGAL_SEARCH, LEGAL_NORM, *CASE_TOOLS, *LETTER_TOOLS]

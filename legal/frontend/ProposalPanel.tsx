@@ -4,6 +4,8 @@ import { caseApi, type Proposal } from "./api"
 import { errorText, partyRoleLabel } from "./caseFormat"
 import { shortDate } from "./legalFormat"
 import { CalcSteps } from "./DeadlinePanel"
+import { CheckList } from "./CheckList"
+import { deDate, type CheckResult } from "./letterFormat"
 
 function Body({ p }: { p: Proposal }) {
   const v = p.payload as Record<string, unknown>
@@ -19,10 +21,23 @@ function Body({ p }: { p: Proposal }) {
       </div>
     )
   }
+  if (p.kind === "letter") {
+    return (
+      <div className="grid gap-2 lg:grid-cols-[1fr_260px]">
+        <div className="space-y-1 text-sm text-[#e8eef8]">
+          <p><b>{String(v.subject)}</b> <span className="text-xs text-[#8d9ab0]">· {deDate(String(v.date))}</span></p>
+          <p className="whitespace-pre-wrap text-xs text-[#8d9ab0]">An: {String(v.recipient)}</p>
+          <details><summary className="cursor-pointer text-xs text-[#69d7ff]">Text anzeigen</summary>
+            <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[#d7deea]">{String(v.body)}</p></details>
+        </div>
+        <CheckList check={(v.check as CheckResult) ?? null} />
+      </div>
+    )
+  }
   return <p className="whitespace-pre-wrap text-sm text-[#e8eef8]">{String(v.text)}</p>
 }
 
-const KIND: Record<Proposal["kind"], string> = { party: "Beteiligter", deadline: "Frist", fact: "Tatsache" }
+const KIND: Record<Proposal["kind"], string> = { party: "Beteiligter", deadline: "Frist", fact: "Tatsache", letter: "Brief (→ Schriftverkehr als Entwurf)" }
 
 /** Reiter „Vorschläge“: was der Rechts-Agent ablegen möchte – erst nach „Übernehmen“ steht es in der Akte. */
 export function ProposalPanel({ pid, canWrite, onChange }: { pid: string; canWrite: boolean; onChange: () => void }) {

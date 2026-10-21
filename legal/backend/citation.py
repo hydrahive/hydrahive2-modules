@@ -65,3 +65,48 @@ def parse_citation(raw: str, known_abbrs: set[str]) -> Citation | None:
         abbr = _canon_abbr(m.group(1), known_abbrs)
         return Citation(abbr, _enbez(m.group(2), m.group(3), m.group(4))) if abbr else None
     return None
+
+
+# ── Normen in Fließtext (Plan L3 Schritt 1) ───────────────────────────────────
+
+@dataclass(frozen=True)
+class Finding:
+    """Fundstelle im Text. ``citations`` = alle Normen der Stelle (bei „§§ 536, 536c BGB“ zwei); ``citation`` = die erste
+    oder None, wenn das Gesetz nicht im Korpus ist (``unknown_law`` nennt dann das Kürzel)."""
+    raw: str
+    start: int
+    end: int
+    citations: tuple[Citation, ...]
+    unknown_law: str | None = None
+
+    @property
+    def citation(self) -> Citation | None:
+        return self.citations[0] if self.citations else None
+
+
+_ONE = r"\d+\s?[a-zA-Z]?(?![\w])"
+_PART = r"(?:\s*(?:Abs\.?|Absatz|S\.|Satz|Nr\.?|Nummer|Buchst\.?|lit\.?)\s*\d+[a-z]?)"
+_ITEM = rf"{_ONE}{_PART}*(?:\s*ff?\.)?"
+_SEP = r"\s*(?:,|und|bis|sowie|–|-)\s*"
+# Kürzel: Großbuchstabe am Anfang, danach Buchstaben/Ziffern; SGB mit römischer/arabischer Buchnummer; „OWiG 1968“ nicht
+_ABBR = r"(?:SGB\s+(?:[IVX]+|\d+)\b|[A-ZÄÖÜ][A-Za-zÄÖÜäöü]{1,14}\b)"
+_FIND = re.compile(rf"(§§?|Art\.?|Artikel)\s*({_ITEM}(?:{_SEP}{_ITEM})*)\s+({_ABBR})")
+_NUMS = re.compile(rf"(\d+)\s?([a-zA-Z])?(?![\w])(?:{_PART})*(?:\s*ff?\.)?")
+_NOT_LAW = frozenset({"Abs", "Absatz", "Satz", "Nr", "Nummer", "und", "bis", "sowie", "ff"})
+
+
+def find_all(text: str, known_abbrs: set[str]) -> list[Finding]:
+    """Alle Normbezeichnungen in ``text`` mit Position. Nur Stellen mit „§“, „§§“ oder „Art.“ (keine nackten Zahlen)."""
+    out: list[Finding] = []
+    for m in _FIND.finditer(text or ""):
+        kind, items, law = m.group(1), m.group(2), re.sub(r"\s+", " ", m.group(3))
+        if law in _NOT_LAW:
+            continue
+        abbr = _canon_abbr(law, known_abbrs)
+        raw = text[m.start():m.end()]
+        if abbr is None:
+            out.append(Finding(raw, m.start(), m.end(), (), unknown_law=law))
+            continue
+        cits = tuple(dict.fromkeys(Citation(abbr, _enbez(kind, n.group(1), n.group(2))) for n in _NUMS.finditer(items)))
+        out.append(Finding(raw, m.start(), m.end(), cits))
+    return out

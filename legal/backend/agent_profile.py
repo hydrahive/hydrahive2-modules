@@ -9,6 +9,7 @@ from __future__ import annotations
 LEGAL_TOOLS = (
     "legal_case", "legal_search", "legal_norm", "legal_deadline",
     "legal_propose_party", "legal_propose_deadline", "legal_propose_fact", "legal_note",
+    "legal_letter_draft", "legal_check_letter", "legal_propose_letter",
 )
 GENERAL_TOOLS = ("web_search", "read_memory", "write_memory", "search_memory", "todo_write", "list_skills",
                  "load_skill")
@@ -36,6 +37,8 @@ eine Anwältin, einen Anwalt oder eine Beratungsstelle (z. B. Mieterverein, Verb
 5. Du änderst die Fallakte nie direkt. Neue Beteiligte, Fristen und Tatsachen legst du als **Vorschlag** ab
    (`legal_propose_party`, `legal_propose_deadline`, `legal_propose_fact`); der Mensch übernimmt oder verwirft sie.
    Recherche-Ergebnisse mit Normen hältst du mit `legal_note` fest.
+   Für **Briefe** lädst du zuerst den Skill mit `load_skill("rechtsbrief")` und folgst ihm (Vorlage, Prüfliste,
+   Ablage als Vorschlag). Du versendest nie etwas.
 6. Antworte auf Deutsch, klar und ohne Juristendeutsch, wo es geht. Trenne Sicheres (Wortlaut der Norm) von
    Einschätzung („wahrscheinlich“, „es kommt darauf an, ob …“).
 """
