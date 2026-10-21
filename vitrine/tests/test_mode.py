@@ -118,3 +118,21 @@ def test_chat_busy_datei(tmp_path):
 def test_chat_busy_dateiname_wie_im_backend():
     from backend import chat
     assert chat.BUSY_FILE == mode.CHAT_BUSY_FILE
+
+
+def test_bt_busy_datei(tmp_path):
+    """S7: offenes Kopplungsfenster hält das Dashboard; Datei vom Dienst, verwaist nach 3 min."""
+    import json
+    assert mode.bt_busy(tmp_path, now=1000.0) is False
+    (tmp_path / "bt_busy").write_text(json.dumps({"since": 900.0}))
+    assert mode.bt_busy(tmp_path, now=1000.0) is True
+    assert mode.bt_busy(tmp_path, now=900.0 + 180 + 1) is False, "verwaist nach 3 min"
+    (tmp_path / "bt_busy").write_text("kaputt")
+    assert mode.bt_busy(tmp_path, now=1000.0) is False
+    (tmp_path / "bt_busy").write_text(json.dumps({"since": 2000.0}))
+    assert mode.bt_busy(tmp_path, now=1000.0) is False, "Zeit in der Zukunft gilt nicht"
+
+
+def test_bt_busy_dateiname_wie_im_dienst():
+    from renderer import bt_service
+    assert bt_service.BUSY_FILE == mode.BT_BUSY_FILE
