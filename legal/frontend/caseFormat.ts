@@ -52,14 +52,33 @@ export function dueText(iso: string, today: Date = new Date()): string {
   return n === -1 ? "seit gestern vorbei" : `seit ${-n} Tagen vorbei`
 }
 
-/** Prüfung des Aufnahmeformulars (Pflichtfelder Titel + Bundesland). */
-export function caseFormErrors(f: { title: string; state: string }): Record<string, string> {
+/** Prüfung des Aufnahmeformulars (Pflichtfelder Titel + Bundesland; Modell nur, wenn der Standard nicht nutzbar ist). */
+export function caseFormErrors(f: { title: string; state: string }, model?: { mustChoose: boolean }): Record<string, string> {
   const out: Record<string, string> = {}
   const title = f.title.trim()
   if (!title) out.title = "Bitte einen kurzen Titel angeben."
   else if (title.length > 200) out.title = "Höchstens 200 Zeichen."
   if (!f.state) out.state = "Bitte das Bundesland wählen (für Feiertage bei Fristen)."
+  if (model?.mustChoose) out.model = "Bitte ein Modell für den Rechts-Agenten wählen."
   return out
+}
+
+/** Modell des Rechts-Agenten (Fund hydratest 20.10.: Standard nicht im Katalog → „Neuer Fall“ scheiterte mit 400 ohne
+ * Ausweg). `catalog` aus GET /llm/models?modality=chat: `selected` = Standard, wie er in der Liste heißt (leer, wenn er
+ * dort fehlt). Eigene Wahl gewinnt. Ohne Katalog (Laden fehlgeschlagen) nicht blockieren – der Server prüft ohnehin. */
+export function modelState(
+  catalog: { standard: string; selected: string; ids: string[] } | null,
+  chosen: string,
+): { effective: string; mustChoose: boolean; warning: string | null } {
+  if (chosen) return { effective: chosen, mustChoose: false, warning: null }
+  if (!catalog) return { effective: "", mustChoose: false, warning: null }
+  if (catalog.selected && catalog.ids.includes(catalog.selected)) {
+    return { effective: catalog.selected, mustChoose: false, warning: null }
+  }
+  const warning = catalog.standard
+    ? `Das Standard-Modell „${catalog.standard}“ ist gerade nicht verfügbar – bitte ein anderes wählen.`
+    : "Es ist kein Standard-Modell eingestellt – bitte ein Modell wählen."
+  return { effective: "", mustChoose: true, warning }
 }
 
 /** Fehlercode des Backends ({detail:{code}}) in einen verständlichen Satz. */
@@ -69,8 +88,8 @@ export function errorText(e: unknown): string {
     legal_case_not_found: "Fall nicht gefunden oder kein Zugriff.",
     legal_case_read_only: "Nur Leserechte in diesem Fall.",
     capability_denied: "Dafür fehlt die Freigabe „Recht: Fälle anlegen“.",
-    legal_no_model: "Kein Standard-Modell eingestellt – bitte ein Modell wählen.",
-    legal_model_unavailable: "Dieses Modell ist nicht verfügbar.",
+    legal_no_model: "Kein Standard-Modell eingestellt – bitte unten ein Modell wählen.",
+    legal_model_unavailable: "Dieses Modell ist nicht verfügbar – bitte unten ein anderes Modell wählen.",
     legal_event_date_invalid: "Bitte ein gültiges Datum angeben.",
     legal_deadline_invalid: "Diese Frist lässt sich so nicht rechnen (Art/Anzahl prüfen).",
     legal_proposal_decided: "Über diesen Vorschlag wurde schon entschieden.",
