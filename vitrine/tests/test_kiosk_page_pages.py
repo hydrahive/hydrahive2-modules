@@ -60,7 +60,7 @@ PAGES = {"messages": 1, "home": 1, "hydra": 1, "tasks": 2, "github": 2, "machine
 def _full(**layout):
     lay = {"order": ["messages", "home", "hydra", "tasks", "github", "machine", "mining"], "hidden": [],
            "messages_max": 3, "mining_in_machine": True, "pages": dict(PAGES), "return_seconds": 120,
-           "chat_enabled": False}                           # S5 prüft nur die Seiten; Chat-Knubbel testet S6
+           "chat_enabled": False, "bluetooth_enabled": False}   # S5 prüft nur die Seiten; Chat (S6)/Bluetooth (S7) eigen
     lay.update(layout)
     return _data([_m(1)], 1, [], home=HOME, hydra=HYDRA, tasks=TASKS, machine=MACHINE, mining=MINING,
                  github={"prs": [], "error": None}, layout=lay)

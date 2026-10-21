@@ -122,3 +122,19 @@ def test_adresse_wird_schon_an_der_route_geprueft(client, key, local, bt, monkey
     monkeypatch.setattr(bluetooth, "pair", lambda *a, **k: called.append(a))
     r = client.post(f"{D}/bluetooth/pair", params={"k": key}, json={"address": "../../etc"})
     assert r.status_code == 422 and called == []
+
+
+@pytest.mark.parametrize("method, path, body", [("get", "/bluetooth", None), ("post", "/bluetooth/scan", None),
+                                                ("post", "/bluetooth/pair", {"address": A4})])
+def test_kiosk_aus_wenn_bluetooth_abgeschaltet(client, key, local, bt, method, path, body):
+    """bluetooth_enabled=false im Cockpit: nicht nur kein Knubbel, auch die Kiosk-Routen sind zu (kein Fenster öffnen)."""
+    import json
+    from renderer import config
+    cfg = config.load(bt)
+    cfg["dashboard"] = dict(cfg["dashboard"], bluetooth_enabled=False)
+    with only_own_files(bt, "config.json"):
+        (bt / "config.json").write_text(json.dumps(cfg))
+        kw = {"json": body} if body else {}
+        assert getattr(client, method)(f"{D}{path}", params={"k": key}, **kw).status_code == 404
+        assert client.get(f"{B}/bluetooth", headers=_h(client, "admin")).status_code == 200, "Cockpit bleibt"
+    assert bt_jobs.take(bt) == []

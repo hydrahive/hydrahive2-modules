@@ -50,13 +50,17 @@ def test_seite_ohne_daten_nur_data_und_zurueck():
     assert 'fetch("back?k=' in html and 'fetch("data?k=' in html     # relativ zu /api/module-device/vitrine/kiosk
     assert 'fetch("read?k=' in html                                  # S3: Gelesen
     assert html.count('fetch("chat?k=') == 2                          # S6: Verlauf lesen + Nachricht schicken
-    assert html.count("fetch(") == 5, "nur Daten, Zurück, Gelesen, Chat-Verlauf, Chat-Senden"
+    assert html.count('fetch("bluetooth?k=') == 1                     # S7: Stand lesen
+    assert html.count('fetch(path + "?k=') == 1                       # S7: scan/pair (nur über btPost, s. u.)
+    assert html.count("fetch(") == 7, "nur Daten, Zurück, Gelesen, Chat ×2, Bluetooth-Stand, Bluetooth-Auftrag"
     import re
-    assert set(re.findall(r'fetch\("([a-z]+)\?k=', html)) == {"data", "back", "read", "chat"}, "keine weiteren Ziele"
+    assert set(re.findall(r'fetch\("([a-z]+)\?k=', html)) == {"data", "back", "read", "chat", "bluetooth"}, "keine weiteren Ziele"
+    assert set(re.findall(r'btPost\("([a-z/]+)"', html)) == {"bluetooth/scan", "bluetooth/pair"}, "S7: kein Entfernen am Kiosk"
+    assert '"delete"' not in html.lower() and "entfernen" not in html.lower()
     for verboten in ("/api/modules/", "authorization", "innerhtml", "outerhtml", "insertadjacenthtml", "document.write",
                      "eval(", "<script src", "<link", "http://", "https://"):
         assert verboten not in html.lower(), verboten
-    assert html.count("<button") == 1, "fest im HTML nur „Zurück“; „Gelesen“ entsteht je Meldung per createElement"
+    assert html.count("<button") == 3, "fest im HTML nur „Zurück“ + S7 „Gerät koppeln“/„Weitere“; „Gelesen“ per createElement"
     assert 'createElement("button")' in html and "Gelesen" in html and "Keine neuen Meldungen" in html
     assert "Verlauf" in html and "weitere" in html
     assert "HydraHive antwortet nicht" in html

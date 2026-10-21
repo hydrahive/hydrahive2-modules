@@ -5,17 +5,24 @@ Die Routen legen nur Aufträge ab; ausgeführt werden sie vom Vitrine-Dienst (re
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from hydrahive.settings import settings
+from renderer import config
 
 from . import bluetooth
 
 _ADDR = r"^[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}$"
 _STATUS = {"invalid_address": 422, "unavailable": 503, "window_closed": 409, "not_seen": 409, "not_paired": 409}
 
-kiosk_router = APIRouter()
+def _kiosk_enabled() -> None:
+    """Im Cockpit abgeschaltet (bluetooth_enabled=false) → am Kiosk gibt es Bluetooth gar nicht, nicht nur keinen Knubbel."""
+    if config.load(_data())["dashboard"].get("bluetooth_enabled") is False:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"code": "not_found"})
+
+
+kiosk_router = APIRouter(dependencies=[Depends(_kiosk_enabled)])
 cockpit_router = APIRouter()
 
 
