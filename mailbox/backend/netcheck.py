@@ -7,6 +7,8 @@ Ein eigener Mailserver im Heimnetz geht nur über eine ausdrückliche Admin-Frei
 from __future__ import annotations
 
 import ipaddress
+import os
+import re
 import socket
 from collections.abc import Callable, Iterable
 
@@ -48,3 +50,17 @@ def check(host: str, port: int, *, resolve: Callable[[str], list[str]] = _system
     if isinstance(first, ipaddress.IPv6Address) and first.ipv4_mapped is not None:
         first = first.ipv4_mapped
     return str(first)
+
+
+_HOSTNAME = re.compile(r"^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$")
+
+
+def allowed_from_env() -> set[str]:
+    """Admin-Freigabe für Mailserver im Heimnetz (Spec §11): HH_MAILBOX_ALLOW_INTERNAL in /etc/hydrahive2/env,
+    Hostnamen/IPs durch Komma getrennt. Nur genau diese Namen – keine Muster, keine Netzbereiche."""
+    out = set()
+    for part in os.environ.get("HH_MAILBOX_ALLOW_INTERNAL", "").split(","):
+        name = part.strip().lower().rstrip(".")
+        if _HOSTNAME.match(name):
+            out.add(name)
+    return out

@@ -77,8 +77,8 @@ def redact(text: str, password: str) -> str:
 
 
 def allowed_internal_hosts() -> set[str]:
-    """Admin-Freigabe für Mailserver im Heimnetz (M1: leer; Einstellung folgt mit der Admin-Seite)."""
-    return set()
+    """Admin-Freigabe für Mailserver im Heimnetz – siehe netcheck.allowed_from_env."""
+    return netcheck.allowed_from_env()
 
 
 def _test_login(acc: dict, password: str) -> dict:
