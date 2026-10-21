@@ -13,12 +13,22 @@ from .errors import KNOWN
 
 TITLE_FALLBACK = "Diagramm"
 _FRONT_TITLE = re.compile(r"^---\s*\n(?:.*\n)*?title:\s*(.+?)\s*\n(?:.*\n)*?---", re.MULTILINE)
+# Archify-Antwort-Seiten beginnen mit „# Titel {#id}“: nur die erste nichtleere Zeile zählt (sonst würde
+# z. B. ein „# Kommentar“ in einem Codeblock weiter unten zum Titel). Der Anker gehört nicht dazu.
+_H1_TITLE = re.compile(r"\A\s*#[ \t]+(.*?)[ \t]*(?:\{#[^}]*\})?[ \t]*$", re.MULTILINE)
+
+
+def _explainer_title(source: str) -> str:
+    m = _FRONT_TITLE.match(source)
+    if m and m.group(1).strip().strip("\"'"):
+        return m.group(1).strip().strip("\"'")
+    h1 = _H1_TITLE.match(source)
+    return h1.group(1).strip() if h1 else ""
 
 
 def _title(kind: str, source: str) -> str:
     if kind == "explainer":
-        m = _FRONT_TITLE.match(source)
-        return (m.group(1).strip().strip("\"'") if m else "") or TITLE_FALLBACK
+        return _explainer_title(source)[:200] or TITLE_FALLBACK
     try:
         title = json.loads(source).get("meta", {}).get("title")
     except (ValueError, AttributeError):
