@@ -28,12 +28,13 @@ verschieben, markieren, als gelesen setzen und löschen. Gelöscht wird **nur au
 | `backend/compose.py` | Mail bauen: From (Absendername + Adresse des Kontos), To/Cc/Bcc geprüft, Betreff, Text + einfaches HTML, Anhänge, `Message-ID`, `Date`; Antwort/Weiterleitung: Zitat, `In-Reply-To`, `References`, Betreff-Präfix |
 | `backend/addresses.py` | Empfänger prüfen: nur gültige Adressen, max. 100, keine Kopfzeilen-Injektion (CR/LF), Bcc nie in die Kopfzeilen |
 | `backend/smtp_send.py` | Versand: geprüfte IP, TLS Pflicht (465 SSL / 587 STARTTLS), Zertifikat geprüft, Passwort geschwärzt in Fehlern |
-| `backend/drafts.py` | Entwürfe: lokal (Kern-DB `module_mailbox_drafts`) + `APPEND` in den Entwürfe-Ordner des Servers, alten Server-Entwurf ersetzen |
+| `backend/drafts.py` | Entwürfe: lokal im eigenen Index (Tabelle `drafts` – Inhalt gehört nicht in die Kern-DB) + `APPEND` in den Entwürfe-Ordner des Servers; erst neue Kopie, dann alte gezielt entfernen. Anhänge werden in M2 nicht im Entwurf gespeichert |
+| `backend/outbox.py` | Senden als Ablauf: Grenze → SMTP → Zählung → Archivkopie → Gesendet-Ordner; nach dem Versand nur noch Warnungen |
 | `backend/actions.py` | Verschieben (`UID MOVE`, sonst `COPY` + `\Deleted` + `EXPUNGE`), Flags setzen, Löschen (Papierkorb, sonst `\Deleted`), alles nur auf dem Server – Archiv/Index folgen über den Abgleich |
 | `backend/ratelimit.py` | Versandgrenze je Konto (Standard 20/h), in der Kern-DB gezählt |
 | `backend/idle.py` | IDLE auf dem Posteingang je Konto (Thread), bei neuer Mail kurzen Abgleich anstoßen; Neuverbindung nach Fehler mit Wartezeit; alle 25 min neu (RFC 2177) |
 | `backend/compose_routes.py` | `POST /send`, `POST/PATCH/DELETE /drafts`, `GET /drafts`, `POST /messages/{id}/move|flags|delete` |
-| `migrations/002_m2.sql` | `module_mailbox_drafts`, `module_mailbox_sendlog` (Zeitpunkt, Konto, Anzahl Empfänger – ohne Inhalt) |
+| `migrations/002_m2.sql` | `module_mailbox_sendlog` (Zeitpunkt, Konto, Anzahl Empfänger – ohne Inhalt) |
 | `frontend/Composer.tsx` | Schreibfenster: Absenderkonto, An/Cc/Bcc mit Vorschlägen aus dem Archiv, Betreff, Text, Anhänge, Signatur, Entwurf automatisch speichern |
 | `frontend/MessageActions.tsx` | Antworten, Allen antworten, Weiterleiten, Verschieben, Löschen, Gelesen/Ungelesen, Markieren |
 | `frontend/composeFormat.ts` (+ Test) | Zitat-Aufbau, Präfixe, Empfängerliste für „Allen antworten“ (ohne eigene Adresse) |
@@ -72,6 +73,13 @@ verschieben, markieren, als gelesen setzen und löschen. Gelöscht wird **nur au
 - Kein Senden ohne TLS, kein Zertifikat ohne Prüfung, keine Kopfzeilen-Injektion, Bcc bleibt verborgen.
 - Höchstens 20 Mails je Stunde und Konto (einstellbar).
 - Neue Mails erscheinen bei IDLE-fähigen Servern innerhalb von 10 s.
+
+## Befunde unterwegs (21.10.2026)
+
+- `compose` schrieb nacktes LF – smtplib wandelt bytes nicht um, Postfix ≥ 3.9 lehnt das ab → SMTP-Policy (CRLF).
+- Der Abgleich (M1) hat UIDVALIDITY nie gespeichert/geprüft → nach einem Wechsel mit gleichen UIDs wären neue Mails
+  nie archiviert worden. Behoben in `store.check_uidvalidity`.
+- `CLOSE` entfernt still alle `\Deleted`-Mails (auch fremde) → Aktionen verlassen Ordner mit `UNSELECT` bzw. Lese-SELECT.
 
 ## Nicht in M2
 
