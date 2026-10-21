@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { caseFormErrors, deadlineLight, daysUntil, nextOpenDeadline, partyRoleLabel } from "./caseFormat"
+import { caseFormErrors, deadlineLight, daysUntil, modelState, nextOpenDeadline, partyRoleLabel } from "./caseFormat"
 
 const today = new Date("2026-10-20T10:00:00")
 
@@ -50,5 +50,36 @@ describe("partyRoleLabel", () => {
     expect(partyRoleLabel("opponent")).toBe("Gegenseite")
     expect(partyRoleLabel("lawyer")).toBe("Anwalt/Anwältin")
     expect(partyRoleLabel("xyz")).toBe("xyz")
+  })
+})
+
+describe("modelState", () => {
+  const list = ["openai-codex/gpt-5.6-luna", "claude-sonnet-4-6"]
+  it("Standard aus der Liste → vorausgewählt, keine Wahl nötig", () => {
+    expect(modelState({ standard: "openai-codex/gpt-5.6-luna", selected: "openai-codex/gpt-5.6-luna", ids: list }, ""))
+      .toEqual({ effective: "openai-codex/gpt-5.6-luna", mustChoose: false, warning: null })
+  })
+  it("Standard fehlt im Katalog → muss wählen, Hinweis nennt das Modell (Fund hydratest 20.10.)", () => {
+    const s = modelState({ standard: "claude-sonnet-4-6", selected: "", ids: ["openai-codex/gpt-5.6-luna"] }, "")
+    expect(s.mustChoose).toBe(true)
+    expect(s.effective).toBe("")
+    expect(s.warning).toMatch(/claude-sonnet-4-6/)
+  })
+  it("kein Standard eingestellt → muss wählen", () => {
+    expect(modelState({ standard: "", selected: "", ids: list }, "").mustChoose).toBe(true)
+  })
+  it("eigene Wahl gewinnt und hebt die Pflicht auf", () => {
+    expect(modelState({ standard: "claude-sonnet-4-6", selected: "", ids: list }, "openai-codex/gpt-5.6-luna"))
+      .toEqual({ effective: "openai-codex/gpt-5.6-luna", mustChoose: false, warning: null })
+  })
+  it("Katalog nicht geladen → nicht blockieren (Server entscheidet)", () => {
+    expect(modelState(null, "")).toEqual({ effective: "", mustChoose: false, warning: null })
+  })
+})
+
+describe("caseFormErrors mit Modell", () => {
+  it("meldet fehlendes Modell nur, wenn gewählt werden muss", () => {
+    expect(caseFormErrors({ title: "Miete", state: "NW" }, { mustChoose: true }).model).toBeTruthy()
+    expect(caseFormErrors({ title: "Miete", state: "NW" }, { mustChoose: false })).toEqual({})
   })
 })
