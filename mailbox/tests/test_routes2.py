@@ -89,3 +89,15 @@ def test_cid_links_tragen_den_token_nicht_selbst(client, alice, acc):
 def test_alle_posteingaenge_route(client, alice, acc):
     r = client.get(f"{B}/messages", params={"inbox": "true"}, headers=alice).json()
     assert r["total"] == 2 and {x["folder"] for x in r["items"]} == {"INBOX"}
+
+
+def test_neues_konto_wird_sofort_abgeglichen(client, alice, fake_net):
+    """Nicht erst im 5-Minuten-Takt: direkt nach dem Anlegen holt Mailbox die Mails."""
+    r = client.post(f"{B}/accounts", json=NEW, headers=alice)
+    assert r.status_code == 201
+    assert client.get(f"{B}/messages", headers=alice).json()["total"] == 3
+
+
+def test_kontoliste_mit_fortschritt(client, alice, acc):
+    a = client.get(f"{B}/accounts", headers=alice).json()[0]
+    assert a["sync"]["messages_done"] == 3 and a["sync"]["running"] == 0

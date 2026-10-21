@@ -62,7 +62,7 @@ def _flags_all(conn) -> dict[int, tuple[set[str], int, str]]:
     return out
 
 
-def _folder(acc: dict, conn, info: dict, batch: int, counts: dict) -> set[int]:
+def _folder(acc: dict, conn, info: dict, batch: int, counts: dict, on_progress=None) -> set[int]:
     fid = store.folder(acc["id"], info["name"], role=info["role"])
     typ, _ = conn.select(imap_conn.quote(info["name"]), readonly=True)
     if typ != "OK":
@@ -89,6 +89,9 @@ def _folder(acc: dict, conn, info: dict, batch: int, counts: dict) -> set[int]:
             if not existed:
                 archive.manifest_add(acc["address"], rel, p.message_id, info["name"], "ok")
                 counts["new"] += 1
+        store.recount(fid)                  # Zähler nach jedem Paket – sonst sieht man stundenlang „0“
+        if on_progress:
+            on_progress(dict(counts))
     store.drop_locations(fid, keep_uids=set(server))
     store.recount(fid)
     return {fid}
@@ -98,8 +101,10 @@ def _folder_names(conn) -> list[dict]:
     return imap_conn.parse_list(_ok(*conn.list('""', "*"), "LIST"))
 
 
-def sync_account(acc: dict, conn, *, login: tuple[str, str] | None = None, batch: int = BATCH) -> dict:
-    counts = {"new": 0, "gone": 0, "folders": 0}
+def sync_account(acc: dict, conn, *, login: tuple[str, str] | None = None, batch: int = BATCH,
+                 on_progress=None) -> dict:
+    """on_progress(counts) nach jedem Paket und jedem Ordner (Fortschritt in der Oberfläche)."""
+    counts = {"new": 0, "gone": 0, "folders": 0, "folders_total": 0}
     try:
         if login:
             try:
@@ -107,9 +112,17 @@ def sync_account(acc: dict, conn, *, login: tuple[str, str] | None = None, batch
             except imaplib.IMAP4.error as e:
                 raise AuthFailed(str(e)[:200]) from None
         seen = set()
-        for info in _folder_names(conn):
-            seen |= _folder(acc, conn, info, batch, counts)
+        infos = sorted(_folder_names(conn), key=lambda f: f["role"] != "inbox")   # Posteingang zuerst
+        for info in infos:                  # alle Ordner sofort sichtbar, auch wenn ihr Inhalt noch kommt
+            store.folder(acc["id"], info["name"], role=info["role"])
+        counts["folders_total"] = len(infos)
+        if on_progress:
+            on_progress(dict(counts))
+        for info in infos:
+            seen |= _folder(acc, conn, info, batch, counts, on_progress)
             counts["folders"] += 1
+            if on_progress:
+                on_progress(dict(counts))
         _mark_missing_folders(acc["id"], seen)
         r = store.reconcile(acc["id"])
         counts["gone"] = r["gone"]

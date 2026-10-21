@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response, status
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
@@ -43,15 +43,17 @@ def suggest(auth: Auth, address: str = Query(max_length=254)) -> dict:
 
 @router.get("/accounts")
 def list_accounts(auth: Auth) -> list[dict]:
-    return accounts.list_for(auth[0])
+    return [{**a, "sync": sync_job.progress(a["id"])} for a in accounts.list_for(auth[0])]
 
 
 @router.post("/accounts", status_code=status.HTTP_201_CREATED)
-def create_account(body: AccountIn, auth: Auth) -> dict:
+def create_account(body: AccountIn, auth: Auth, background: BackgroundTasks) -> dict:
     try:
-        return accounts.create(auth[0], body.model_dump())
+        a = accounts.create(auth[0], body.model_dump())
     except Exception as e:  # noqa: BLE001 - _fail ordnet zu, Unbekanntes wird neu geworfen
         _fail(e)
+    background.add_task(sync_job.sync_now, auth[0], a["id"])   # sofort abgleichen, nicht erst im 5-min-Takt
+    return a
 
 
 @router.get("/accounts/{aid}")

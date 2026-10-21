@@ -1,7 +1,7 @@
 {
   "id": "mailbox",
   "name": "Mailbox",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Webmail für mehrere Konten (IMAP/SMTP, Gmail per App-Passwort) mit vollständigem lokalem Mailarchiv als Backup: alle Ordner, alle Jahre, durchsuchbar, nichts wird gelöscht.",
   "icon": "Mail",
   "nav_group": "working",

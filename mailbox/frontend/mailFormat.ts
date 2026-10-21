@@ -79,3 +79,10 @@ export function accountState(status: string): { text: string; tone: "ok" | "warn
   if (status === "error") return { text: "Fehler beim Abgleich", tone: "err" }
   return { text: "noch nicht abgeglichen", tone: "warn" }
 }
+
+/** Fortschritt des Abgleichs für die Ordnerleiste; leer, wenn nichts läuft. */
+export function syncText(sync?: { running: number; messages_done: number; folders_done: number; folders_total: number }): string {
+  if (!sync || !sync.running) return ""
+  const n = sync.messages_done.toLocaleString("de-DE")
+  return sync.folders_total ? `lädt … ${n} Mails · Ordner ${Math.min(sync.folders_done + 1, sync.folders_total)}/${sync.folders_total}` : `lädt … ${n} Mails`
+}

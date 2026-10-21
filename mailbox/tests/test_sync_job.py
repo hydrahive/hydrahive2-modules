@@ -143,3 +143,25 @@ def test_passwort_nie_im_fehlertext_oder_log(servers, monkeypatch, caplog):
     assert st["status"] == "error" and "LOGIN" in st["status_detail"], "Fehler bleibt lesbar"
     for where in (st["status_detail"], caplog.text, sync_job.progress(a["id"])["last_error"]):
         assert '"pw"' not in where and "***" in where, where
+
+
+def test_fortschritt_waehrend_des_laufs_ohne_doppelt_zaehlen(servers, monkeypatch):
+    from backend import sync_job
+    s = FakeServer(user="a@example.net")
+    for n in range(3):
+        s.boxes["INBOX"].add(_mail(n))
+    a = _acc("alice", "a@example.net", servers, s)
+    seen = []
+    real = sync_job._write_progress
+
+    def spy(aid, done, folders_done, folders_total):
+        seen.append(done)
+        return real(aid, done, folders_done, folders_total)
+    monkeypatch.setattr(sync_job, "_write_progress", spy)
+    asyncio.run(sync_job.job())
+    assert seen and seen[-1] == 3
+    p = sync_job.progress(a["id"])
+    assert p["messages_done"] == 3 and p["folders_total"] == 1 and p["running"] == 0, "am Ende nicht doppelt addiert"
+    s.boxes["INBOX"].add(_mail(9))
+    asyncio.run(sync_job.job())
+    assert sync_job.progress(a["id"])["messages_done"] == 4
