@@ -27,8 +27,7 @@ CREATE TABLE IF NOT EXISTS folders (
 CREATE TABLE IF NOT EXISTS messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   account_id TEXT NOT NULL,
-  folder_id INTEGER NOT NULL REFERENCES folders(id),
-  uid INTEGER,                          -- NULL, wenn auf dem Server weg
+  folder_id INTEGER NOT NULL REFERENCES folders(id),  -- Hauptordner (Archivpfad); Fundorte in locations
   message_id TEXT NOT NULL DEFAULT '',
   sha256 TEXT NOT NULL,
   thread_key TEXT NOT NULL DEFAULT '',
@@ -45,15 +44,23 @@ CREATE TABLE IF NOT EXISTS messages (
   size INTEGER NOT NULL DEFAULT 0,
   attachments TEXT NOT NULL DEFAULT '[]',
   path TEXT NOT NULL,                   -- relativ zu archive_root
-  deleted_on_server INTEGER NOT NULL DEFAULT 0,
+  deleted_on_server INTEGER NOT NULL DEFAULT 0,    -- in keinem Ordner des Servers mehr (bleibt im Archiv)
   parse_error TEXT NOT NULL DEFAULT '',
   UNIQUE(account_id, sha256)
 );
+-- Fundorte auf dem Server: eine Mail kann in mehreren Ordnern liegen (Gmail: Posteingang + Alle Nachrichten).
+CREATE TABLE IF NOT EXISTS locations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id INTEGER NOT NULL REFERENCES messages(id),
+  folder_id INTEGER NOT NULL REFERENCES folders(id),
+  uid INTEGER NOT NULL,
+  UNIQUE(folder_id, uid)
+);
+CREATE INDEX IF NOT EXISTS locations_message ON locations(message_id);
 CREATE INDEX IF NOT EXISTS messages_folder_date ON messages(folder_id, date DESC);
 CREATE INDEX IF NOT EXISTS messages_account_date ON messages(account_id, date DESC);
 CREATE INDEX IF NOT EXISTS messages_thread ON messages(account_id, thread_key);
-CREATE INDEX IF NOT EXISTS messages_msgid ON messages(account_id, message_id);
-CREATE INDEX IF NOT EXISTS messages_uid ON messages(folder_id, uid);
+CREATE INDEX IF NOT EXISTS messages_msgid ON messages(account_id, message_id, size);
 """
 _FTS_ARGS = "subject, from_addr, to_addr, body, content='', contentless_delete=1, tokenize='unicode61 remove_diacritics 2'"
 _FTS = f"CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5({_FTS_ARGS});"
