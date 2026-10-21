@@ -7,6 +7,7 @@ import { DraftList } from "./DraftList"
 import { MessageActions } from "./MessageActions"
 import { useComposeOpen } from "./useComposeOpen"
 import { AccountDialog } from "./AccountDialog"
+import { AccountSettings } from "./AccountSettings"
 import { FolderTree, type Selection } from "./FolderTree"
 import { MessageList } from "./MessageList"
 import { MessageView } from "./MessageView"
@@ -30,6 +31,7 @@ export function MailboxPage() {
   const [dialog, setDialog] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<SavedDraft[]>([])
+  const [settings, setSettings] = useState<string | null>(null)
 
   const loadMeta = useCallback(() => {
     mailApi.accounts().then(setAccounts).catch(() => setErr("Konten nicht ladbar"))
@@ -105,7 +107,7 @@ export function MailboxPage() {
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 md:grid-cols-[14rem_22rem_1fr]">
         <div className={`min-h-0 ${open ? "hidden md:block" : ""}`}>
           <FolderTree accounts={accounts} folders={folders} selection={sel} onSelect={(s) => { setSel(s); setOpen(null) }}
-            onAddAccount={() => setDialog(true)} onSync={(id) => void sync(id)} draftCount={drafts.length} />
+            onAddAccount={() => setDialog(true)} onSync={(id) => void sync(id)} draftCount={drafts.length} onSettings={setSettings} />
         </div>
         <div className={`min-h-0 rounded-[4px] border border-[#2a364b] bg-[#0b1220] ${open ? "hidden md:block" : ""}`}>
           {sel.kind === "drafts" ? <DraftList drafts={drafts} onOpen={(d) => { setOpen(null); cmp.openDraft(d) }} /> :
@@ -127,6 +129,9 @@ export function MailboxPage() {
           ) : <p className="p-6 text-center text-sm text-[#718097]">Mail auswählen</p>}
         </div>
       </div>
+      {settings && accounts.find((a) => a.id === settings) && (
+        <AccountSettings account={accounts.find((a) => a.id === settings)!} onClose={() => setSettings(null)}
+          onSaved={() => { setSettings(null); loadMeta() }} />)}
       {dialog && <AccountDialog onClose={() => setDialog(false)} onSaved={() => { setDialog(false); loadMeta() }} />}
     </div>
   )

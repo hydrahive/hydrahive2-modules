@@ -27,6 +27,9 @@ export const i18n = {
         failed: "Aktion fehlgeschlagen", archiveOnly: "Nur noch im Archiv – auf dem Server nichts zu ändern",
       },
       drafts: { title: "Entwürfe", empty: "Keine Entwürfe", open: "Öffnen", untitled: "(ohne Betreff)" },
+      settings: { title: "Kontoeinstellungen", open: "Absender und Signatur", senderName: "Absendername", signature: "Signatur",
+        signatureHint: "Wird beim Senden unter jede Mail gesetzt (nach „-- “).", save: "Speichern", cancel: "Abbrechen",
+        failed: "Speichern fehlgeschlagen" },
     },
   },
   en: {
@@ -56,6 +59,9 @@ export const i18n = {
         failed: "Action failed", archiveOnly: "Archive only – nothing to change on the server",
       },
       drafts: { title: "Drafts", empty: "No drafts", open: "Open", untitled: "(no subject)" },
+      settings: { title: "Account settings", open: "Sender and signature", senderName: "Sender name", signature: "Signature",
+        signatureHint: "Added below every mail you send (after “-- ”).", save: "Save", cancel: "Cancel",
+        failed: "Saving failed" },
     },
   },
 }

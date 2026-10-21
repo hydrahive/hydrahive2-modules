@@ -128,7 +128,7 @@ export const mailApi = {
   account: (id: string) => api.get<Account>(`${BASE}/accounts/${encodeURIComponent(id)}`),
   suggest: (address: string) => api.get<Suggestion>(`${BASE}/suggest?address=${encodeURIComponent(address)}`),
   createAccount: (a: AccountIn) => api.post<Account>(`${BASE}/accounts`, a),
-  updateAccount: (id: string, a: Partial<AccountIn> & { signature?: string }) =>
+  updateAccount: (id: string, a: Partial<AccountIn> & { signature?: string; sender_name?: string }) =>
     api.patch<Account>(`${BASE}/accounts/${encodeURIComponent(id)}`, a),
   removeAccount: (id: string) => api.delete<void>(`${BASE}/accounts/${encodeURIComponent(id)}`),
   syncNow: (id: string) => api.post<{ started: boolean }>(`${BASE}/accounts/${encodeURIComponent(id)}/sync`, {}),

@@ -8,6 +8,8 @@ vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Re
 const { Composer, StatusLine } = await import("./Composer")
 const { MessageActions } = await import("./MessageActions")
 const { DraftList } = await import("./DraftList")
+const { AccountSettings } = await import("./AccountSettings")
+const { FolderTree } = await import("./FolderTree")
 import type { Account, MailDetail, SavedDraft } from "./api"
 import { emptyDraft } from "./composeFormat"
 import type { FolderRow } from "./mailFormat"
@@ -120,5 +122,28 @@ describe("Entwürfe", () => {
     const h = renderToStaticMarkup(<DraftList drafts={[d]} onOpen={() => {}} />)
     expect(h).toContain("&lt;b&gt;E&lt;/b&gt;")
     expect(renderToStaticMarkup(<DraftList drafts={[]} onOpen={() => {}} />)).toContain("drafts.empty")
+  })
+})
+
+describe("Kontoeinstellungen", () => {
+  it("Absendername und Signatur vorbelegt, als Text", () => {
+    const a = { id: "acc1", address: "till@example.net", sender_name: "<b>Till</b>", signature: "Gruß\n<script>x</script>" } as Account
+    const h = renderToStaticMarkup(<AccountSettings account={a} onClose={() => {}} onSaved={() => {}} />)
+    expect(h).toContain('value="&lt;b&gt;Till&lt;/b&gt;"')
+    expect(h).toContain("&lt;script&gt;x&lt;/script&gt;")
+    expect(h).not.toContain("<script>x")
+    expect(h).toContain('maxLength="5000"')
+  })
+})
+
+describe("Ordnerbaum M2", () => {
+  const acc = { id: "acc1", address: "till@example.net", label: "Privat", status: "ok", status_detail: "" } as Account
+  const tree = (extra = {}) => renderToStaticMarkup(<FolderTree accounts={[acc]} folders={[F(3, "acc1", "INBOX", "inbox")]}
+    selection={{ kind: "all" }} onSelect={() => {}} onAddAccount={() => {}} onSync={() => {}} {...extra} />)
+  it("Entwürfe-Eintrag mit Anzahl; Einstellungen je Konto nur wenn verdrahtet", () => {
+    expect(tree({ draftCount: 2 })).toContain('data-mbx-drafts="1"')
+    expect(tree()).not.toContain("data-mbx-settings-open")
+    expect(tree({ onSettings: () => {} })).toContain('data-mbx-settings-open="acc1"')
+    expect(tree({ onSettings: () => {} })).toContain("settings.open")
   })
 })
