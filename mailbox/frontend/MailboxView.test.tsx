@@ -10,7 +10,7 @@ const { FolderTree } = await import("./FolderTree")
 import type { MailDetail, MailItem } from "./api"
 
 const MAIL: MailDetail = {
-  id: 7, account: "till@example.net", folder: "INBOX", date: "2026-10-21T09:30:00Z", from_addr: "Kanzlei <post@k.example>",
+  id: 7, account: "till@example.net", account_id: "acc1", folder: "INBOX", folder_id: 3, folder_role: "inbox", seen: 1, flagged: 0, date: "2026-10-21T09:30:00Z", from_addr: "Kanzlei <post@k.example>",
   to_addr: "till@example.net", cc_addr: "", subject: "Re: Unterlagen", text: "Anbei die Unterlagen.", has_html: true,
   attachments: [{ index: 0, name: "logo.png", type: "image/png", size: 10, inline: true },
     { index: 1, name: "Vertrag.pdf", type: "application/pdf", size: 2048, inline: false }],

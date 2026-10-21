@@ -153,3 +153,10 @@ def test_jede_besitzschicht_greift_einzeln(client, alice, acc, fake_net, bob_kon
     assert action_routes._by_account("bob", [mid]) == {}                                        # (1)
     assert action_routes._run_account("bob", acc["id"], [mid], "delete", None) == {"done": 0, "skipped": 1}  # (2)
     assert actions._targets(bacc["id"], [mid]) == []                                            # (3)
+
+
+def test_mail_detail_kennt_konto_und_ordner(client, alice, acc):
+    """Das Schreibfenster antwortet aus dem Konto der Mail; Aktionen brauchen den Ordner."""
+    mid = _mid(client, alice, "Re: Unterlagen")
+    j = client.get(f"{B}/messages/{mid}", headers=alice).json()
+    assert j["account_id"] == acc["id"] and isinstance(j["folder_id"], int) and j["folder_role"] == "inbox"

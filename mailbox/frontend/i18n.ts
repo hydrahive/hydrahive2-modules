@@ -1,0 +1,61 @@
+/** Texte der Mailbox (de + en). M2-Teile nutzen useTranslation("mailbox"); M1-Texte folgen beim nächsten Umbau. */
+export const i18n = {
+  de: {
+    mailbox: {
+      title: "Mailbox",
+      compose: {
+        new: "Neue Mail", reply: "Antworten", replyAll: "Allen antworten", forward: "Weiterleiten",
+        from: "Von", to: "An", cc: "Cc", bcc: "Bcc", subject: "Betreff", body: "Text",
+        showCc: "Cc/Bcc", attach: "Anhang", withOriginal: "Anhänge des Originals mitsenden",
+        send: "Senden", sending: "Wird gesendet …", saveDraft: "Entwurf speichern", discard: "Verwerfen",
+        close: "Schließen", savedAt: "Entwurf gespeichert {{time}}", savedLocal: "Entwurf nur lokal gespeichert",
+        needRecipient: "Mindestens ein Empfänger", tooBig: "Anhänge zusammen höchstens 25 MB",
+        sent: "Gesendet", sentProvider: "Gesendet (der Anbieter legt die Kopie selbst ab)",
+        sentArchiveOnly: "Gesendet – Kopie nur im Archiv, nicht im Gesendet-Ordner",
+        refused: "Abgelehnt: {{list}}", warning: "Hinweis: {{text}}",
+        rateLimited: "Versandgrenze je Stunde erreicht – bitte später erneut senden",
+        error: { auth: "Anmeldung beim Postausgangsserver abgelehnt", tls: "Verschlüsselung/Zertifikat abgelehnt",
+          connect: "Postausgangsserver nicht erreichbar", rejected: "Empfänger abgelehnt", config: "Kein Postausgangsserver eingetragen",
+          blocked: "Postausgangsserver nicht erlaubt", smtp: "Fehler beim Senden", invalid: "Eingabe ungültig",
+          too_large: "Anhänge zu groß", generic: "Senden fehlgeschlagen" },
+        confirmDiscard: "Entwurf verwerfen?", originalAttachments: "Anhänge des Originals: {{list}}",
+      },
+      action: {
+        markRead: "Als gelesen markieren", markUnread: "Als ungelesen markieren", flag: "Markieren", unflag: "Markierung entfernen",
+        move: "Verschieben nach …", delete: "Löschen", deleteForever: "Endgültig vom Server löschen",
+        deleteHint: "Die Mail bleibt im Archiv.", done: "Erledigt", skipped: "{{n}} übersprungen (auf dem Server nicht mehr gefunden)",
+        failed: "Aktion fehlgeschlagen", archiveOnly: "Nur noch im Archiv – auf dem Server nichts zu ändern",
+      },
+      drafts: { title: "Entwürfe", empty: "Keine Entwürfe", open: "Öffnen", untitled: "(ohne Betreff)" },
+    },
+  },
+  en: {
+    mailbox: {
+      title: "Mailbox",
+      compose: {
+        new: "New mail", reply: "Reply", replyAll: "Reply all", forward: "Forward",
+        from: "From", to: "To", cc: "Cc", bcc: "Bcc", subject: "Subject", body: "Text",
+        showCc: "Cc/Bcc", attach: "Attachment", withOriginal: "Include original attachments",
+        send: "Send", sending: "Sending …", saveDraft: "Save draft", discard: "Discard",
+        close: "Close", savedAt: "Draft saved {{time}}", savedLocal: "Draft saved locally only",
+        needRecipient: "At least one recipient", tooBig: "Attachments up to 25 MB in total",
+        sent: "Sent", sentProvider: "Sent (the provider files the copy itself)",
+        sentArchiveOnly: "Sent – copy only in the archive, not in the Sent folder",
+        refused: "Refused: {{list}}", warning: "Note: {{text}}",
+        rateLimited: "Hourly sending limit reached – please try again later",
+        error: { auth: "Outgoing server rejected the login", tls: "Encryption/certificate rejected",
+          connect: "Outgoing server unreachable", rejected: "Recipients rejected", config: "No outgoing server configured",
+          blocked: "Outgoing server not allowed", smtp: "Error while sending", invalid: "Invalid input",
+          too_large: "Attachments too large", generic: "Sending failed" },
+        confirmDiscard: "Discard draft?", originalAttachments: "Original attachments: {{list}}",
+      },
+      action: {
+        markRead: "Mark as read", markUnread: "Mark as unread", flag: "Flag", unflag: "Remove flag",
+        move: "Move to …", delete: "Delete", deleteForever: "Delete from server permanently",
+        deleteHint: "The mail stays in the archive.", done: "Done", skipped: "{{n}} skipped (no longer found on the server)",
+        failed: "Action failed", archiveOnly: "Archive only – nothing to change on the server",
+      },
+      drafts: { title: "Drafts", empty: "No drafts", open: "Open", untitled: "(no subject)" },
+    },
+  },
+}
