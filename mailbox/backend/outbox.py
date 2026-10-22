@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 
-from . import archive, imap_conn, index_db, parse, ratelimit, smtp_send, store
+from . import archive, imap_conn, index_db, parse, ratelimit, sent_link, smtp_send, store
 
 log = logging.getLogger("hydrahive.modules.mailbox")
 SELF_FILING = ("imap.gmail.com",)
@@ -35,6 +35,7 @@ def _archive_copy(acc: dict, raw: bytes, folder: str) -> int:
         c.execute("UPDATE messages SET deleted_on_server=1 WHERE id=? AND NOT EXISTS "
                   "(SELECT 1 FROM locations l WHERE l.message_id=?)", (mid, mid))
     archive.manifest_add(acc["address"], rel, p.message_id, folder, "sent")
+    sent_link.mark(mid)
     return mid
 
 

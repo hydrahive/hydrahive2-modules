@@ -9,7 +9,7 @@ from __future__ import annotations
 import imaplib
 import re
 
-from . import archive, imap_conn, parse, store
+from . import archive, imap_conn, parse, sent_link, store
 
 BATCH = 200
 _FETCH = re.compile(rb"UID (\d+)")
@@ -134,6 +134,8 @@ def sync_account(acc: dict, conn, *, login: tuple[str, str] | None = None, batch
                 on_progress(dict(counts))
         _mark_missing_folders(acc["id"], seen)
         r = store.reconcile(acc["id"])
+        sent_link.adopt_legacy(acc["id"])           # Bestand aus 0.2.0
+        sent_link.refresh(acc["id"])                # eigene Gesendet-Kopie ↔ (umgeschriebene) Server-Fassung
         counts["gone"] = r["gone"]
         _apply_moves(acc, r["moves"])
     except (imaplib.IMAP4.abort, OSError) as e:
