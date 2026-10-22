@@ -67,7 +67,7 @@ def test_altlast_nur_eigene_gesendete_kopien(archive, monkeypatch):
     _sync(srv)
     srv.boxes["INBOX"].msgs.clear()
     with index_db.connect() as c:
-        c.execute("DELETE FROM sent_local")
+        c.execute("DELETE FROM sent_local WHERE message_id IN (SELECT id FROM messages WHERE account_id=?)", (ACC_S["id"],))
     _sync(srv)
     assert [m["subject"] for m in _only_archive()] == ["Echo"]
     assert len(_sl()) == 1
@@ -80,7 +80,7 @@ def test_altlast_nicht_wenn_kopie_noch_auf_dem_server(archive, monkeypatch):
     _sync(srv)
     _deliver(srv, _sent_raw(), monkeypatch, rewrite=False)
     with index_db.connect() as c:
-        c.execute("DELETE FROM sent_local")
+        c.execute("DELETE FROM sent_local WHERE message_id IN (SELECT id FROM messages WHERE account_id=?)", (ACC_S["id"],))
     _sync(srv)
     assert _sl() == {} and len([m for m in _visible() if m["subject"] == "Test"]) == 1
 

@@ -136,7 +136,7 @@ def test_altlast_aufraeumen(archive, monkeypatch):
     _sync(srv)
     _deliver(srv, _sent_raw(), monkeypatch)
     with index_db.connect() as c:                       # Zustand wie 0.2.0: kein Kennzeichen
-        c.execute("DELETE FROM sent_local")
+        c.execute("DELETE FROM sent_local WHERE message_id IN (SELECT id FROM messages WHERE account_id=?)", (ACC_S["id"],))
     _sync(srv)
     assert len([m for m in _visible() if m["subject"] == "Test"]) == 1
     assert [m for m in _only_archive() if m["subject"] == "Test"] == []
