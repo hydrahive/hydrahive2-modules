@@ -83,3 +83,62 @@ def test_altlast_nicht_wenn_kopie_noch_auf_dem_server(archive, monkeypatch):
         c.execute("DELETE FROM sent_local")
     _sync(srv)
     assert _sl() == {} and len([m for m in _visible() if m["subject"] == "Test"]) == 1
+
+
+def test_gesendete_mail_sofort_loeschbar_ohne_abgleich(archive, monkeypatch):
+    """Befund Browser-Test 22.10.: Direkt nach dem Senden (vor dem nächsten Abgleich) hatte die eigene Kopie keinen
+    Fundort → Löschen meldete „übersprungen“. Mit APPENDUID (UIDPLUS) ist der Fundort sofort bekannt."""
+    from _fake_imap_write import FakeIMAPW
+    from backend import actions, index_db
+    srv = _srv()
+    srv.box("Trash", special="\\Trash")
+    _sync(srv)
+    built = _sent_raw()
+    _deliver(srv, built, monkeypatch, rewrite=False)
+    with index_db.connect() as c:
+        mid = c.execute("SELECT id FROM messages WHERE message_id=?", (built.message_id,)).fetchone()[0]
+    r = actions.apply(ACC_S, FakeIMAPW(srv, caps=("MOVE", "UIDPLUS", "UNSELECT")), "delete", [mid])
+    assert r == {"done": 1, "skipped": 0}
+    assert srv.boxes["Sent"].msgs == {} and len(srv.boxes["Trash"].msgs) == 1
+
+
+def test_ohne_appenduid_bleibt_es_beim_abgleich(archive, monkeypatch):
+    """Server ohne UIDPLUS (keine APPENDUID-Antwort): kein geratener Fundort; der Abgleich trägt ihn nach."""
+    from _fake_imap import FakeIMAP
+    from backend import index_db, outbox, smtp_send
+    srv = _srv()
+    _sync(srv)
+    monkeypatch.setattr(smtp_send, "send", lambda *a, **kw: {})
+
+    class NoUidplus(FakeIMAP):
+        def append(self, mailbox, flags, dt, message):
+            typ, _ = super().append(mailbox, flags, dt, message)
+            return typ, [b"APPEND completed"]
+    built = _sent_raw()
+    outbox.deliver(ACC_S, "pw", built, open_imap=lambda a: NoUidplus(srv))
+    with index_db.connect() as c:
+        assert c.execute("SELECT count(*) FROM locations l JOIN messages m ON m.id=l.message_id WHERE m.message_id=?",
+                         (built.message_id,)).fetchone()[0] == 0
+    _sync(srv)
+    with index_db.connect() as c:
+        assert c.execute("SELECT count(*) FROM locations l JOIN messages m ON m.id=l.message_id WHERE m.message_id=?",
+                         (built.message_id,)).fetchone()[0] == 1
+
+
+def test_appenduid_mit_falscher_uidvalidity_ignoriert(archive, monkeypatch):
+    """APPENDUID nennt eine andere UIDVALIDITY als der Index kennt → Fundort nicht eintragen (UID gehört zu einer
+    anderen Zählung)."""
+    from _fake_imap import FakeIMAP
+    from backend import index_db, outbox, smtp_send
+    srv = _srv()
+    _sync(srv)
+    monkeypatch.setattr(smtp_send, "send", lambda *a, **kw: {})
+
+    class Fremd(FakeIMAP):
+        def append(self, mailbox, flags, dt, message):
+            typ, _ = super().append(mailbox, flags, dt, message)
+            return typ, [b"[APPENDUID 999999 1] APPEND completed"]
+    built = _sent_raw()
+    outbox.deliver(ACC_S, "pw", built, open_imap=lambda a: Fremd(srv))
+    with index_db.connect() as c:
+        assert c.execute("SELECT count(*) FROM locations").fetchone()[0] == 0

@@ -116,6 +116,8 @@ class FakeIMAP:
                     data.append((f"1 (UID {u} FLAGS ({fl}) RFC822.SIZE {len(raw)} "
                                  f"BODY[HEADER.FIELDS (MESSAGE-ID)] {{{len(hdr)}}}".encode(), hdr))
                     data.append(b")")
+                elif "RFC822.SIZE" in what:
+                    data.append(f"1 (UID {u} RFC822.SIZE {len(raw)})".encode())
                 else:
                     data.append(f"1 (UID {u} FLAGS ({fl}))".encode())
             return "OK", data

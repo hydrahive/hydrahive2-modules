@@ -10,6 +10,7 @@ Gmail legt gesendete Mails selbst ab → kein APPEND (sonst doppelt im Gesendet-
 from __future__ import annotations
 
 import logging
+import re
 
 from . import archive, imap_conn, index_db, parse, ratelimit, sent_link, smtp_send, store
 
@@ -39,13 +40,27 @@ def _archive_copy(acc: dict, raw: bytes, folder: str) -> int:
     return mid
 
 
-def _append(acc: dict, password: str, folder: str, raw: bytes, open_imap) -> None:
+_APPENDUID = re.compile(rb"\[APPENDUID (\d+) (\d+)\]", re.IGNORECASE)
+
+
+def _append(acc: dict, password: str, folder: str, raw: bytes, open_imap) -> tuple[int, int] | None:
+    """Ablegen; Rückgabe (UIDVALIDITY, UID) aus der APPENDUID-Antwort (UIDPLUS, RFC 4315), sonst None."""
     conn = open_imap(acc)
     try:
         conn.login(acc.get("username") or acc["address"], password)
         typ, data = conn.append(imap_conn.quote(folder), "(\\Seen)", None, raw)
         if typ != "OK":
             raise RuntimeError(f"Ablage abgelehnt: {(data or [b''])[0]!r}"[:200])
+        m = _APPENDUID.search(b" ".join(x for x in (data or []) if isinstance(x, bytes)))
+        if not m:
+            return None
+        uidinfo = (int(m.group(1)), int(m.group(2)))
+        # Nur übernehmen, wenn der Server die Mail unverändert abgelegt hat (Yahoo schreibt um → andere Größe).
+        # Sonst gehört die UID zur Server-Fassung; die archiviert der Abgleich als eigene Mail (sent_link verknüpft).
+        conn.select(imap_conn.quote(folder), readonly=True)
+        typ, d = conn.uid("FETCH", str(uidinfo[1]), "(RFC822.SIZE)")
+        size = re.search(rb"RFC822\.SIZE (\d+)", b" ".join(x if isinstance(x, bytes) else x[0] for x in (d or []) if x))
+        return uidinfo if typ == "OK" and size and int(size.group(1)) == len(raw) else None
     finally:
         try:
             conn.logout()
@@ -53,9 +68,16 @@ def _append(acc: dict, password: str, folder: str, raw: bytes, open_imap) -> Non
             pass
 
 
-def _mark_on_server(mid: int) -> None:
+def _mark_on_server(mid: int, account_id: str, folder: str, uidinfo: tuple[int, int] | None) -> None:
+    """Auf dem Server. Mit APPENDUID den Fundort gleich eintragen – sonst ließe sich die Mail bis zum nächsten Abgleich
+    nicht verschieben/löschen. Nur wenn die UIDVALIDITY zum Index passt (sonst gehört die UID zu einer anderen Zählung)."""
     with index_db.connect() as c:
         c.execute("UPDATE messages SET deleted_on_server=0 WHERE id=?", (mid,))
+        if uidinfo is None:
+            return
+        f = c.execute("SELECT id, uidvalidity FROM folders WHERE account_id=? AND name=?", (account_id, folder)).fetchone()
+        if f and f[1] and f[1] == uidinfo[0]:
+            c.execute("INSERT OR IGNORE INTO locations(message_id, folder_id, uid) VALUES (?,?,?)", (mid, f[0], uidinfo[1]))
 
 
 def deliver(acc: dict, password: str, built, *, allow_internal=frozenset(), open_imap=None) -> dict:
@@ -81,10 +103,10 @@ def deliver(acc: dict, password: str, built, *, allow_internal=frozenset(), open
         out["sent_copy"] = "provider"           # Gmail legt selbst ab; Archiv folgt beim Abgleich
     elif folder and open_imap is not None:
         try:
-            _append(acc, password, folder, built.raw, open_imap)
+            uidinfo = _append(acc, password, folder, built.raw, open_imap)
             out["sent_copy"] = "server"
             if mid is not None:
-                _mark_on_server(mid)
+                _mark_on_server(mid, acc["id"], folder, uidinfo)
         except Exception as e:  # noqa: BLE001
             warnings.append(f"Gesendet-Ordner: {e}")
     out["warning"] = "; ".join(w[:200] for w in warnings)
