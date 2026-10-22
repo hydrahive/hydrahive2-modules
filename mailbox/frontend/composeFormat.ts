@@ -73,3 +73,10 @@ export function needsConfirm(action: string): boolean {
 export function textTooLong(text: string): boolean {
   return new TextEncoder().encode(text).length > MAX_TEXT_BYTES
 }
+
+/** Hinweis nach einer Aktion (Text-Schlüssel). Löschen außerhalb des Papierkorbs = nur verschoben – sonst wundert man
+ *  sich, dass die Mail nicht unter „Nur im Archiv“ steht (Befund Till 22.10.2026). */
+export function afterActionNote(action: string, folderRole: string, done: number): string | null {
+  if (action !== "delete" || done === 0) return null
+  return folderRole === "trash" ? "action.deletedForever" : "action.movedToTrash"
+}

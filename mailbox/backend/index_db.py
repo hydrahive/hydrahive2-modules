@@ -80,6 +80,12 @@ CREATE TABLE IF NOT EXISTS drafts (
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS drafts_owner ON drafts(owner, updated_at);
+-- Selbst gesendete Archivkopien (0.3.0). Legt der Server eine umgeschriebene Fassung ab (Yahoo: andere Bytes, gleiche
+-- Message-ID), wird die eigene Kopie in Listen zurückgestellt (superseded=1) – die Datei bleibt im Archiv.
+CREATE TABLE IF NOT EXISTS sent_local (
+  message_id INTEGER PRIMARY KEY REFERENCES messages(id),
+  superseded INTEGER NOT NULL DEFAULT 0
+);
 """
 _FTS_ARGS = "subject, from_addr, to_addr, body, content='', contentless_delete=1, tokenize='unicode61 remove_diacritics 2'"
 _FTS = f"CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5({_FTS_ARGS});"

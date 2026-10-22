@@ -14,7 +14,8 @@ from . import imap_conn, index_db
 
 _FLAG = {"seen": ("+", "\\Seen"), "unseen": ("-", "\\Seen"), "flag": ("+", "\\Flagged"), "unflag": ("-", "\\Flagged")}
 _COL = {"\\Seen": "seen", "\\Flagged": "flagged"}
-ACTIONS = frozenset({*_FLAG, "move", "delete"})
+ACTIONS = frozenset({*_FLAG, "move", "delete", "archive", "junk"})
+_ROLE_MOVE = {"archive": "archive", "junk": "junk"}     # Aktion → Ordner-Rolle (Spec §6: archivieren, Spam)
 _MSGID_OK = re.compile(r"^<[^<>\s\"\\]{1,500}>$")
 
 
@@ -121,6 +122,11 @@ def apply(acc: dict, conn, action: str, mids: list[int], *, target: str | None =
         raise ActionError("unbekannte Aktion")
     if action == "move" and not (target and _folder_exists(acc["id"], target)):
         raise ActionError("Zielordner unbekannt")
+    if action in _ROLE_MOVE:                     # archivieren/Spam = verschieben in den Rollen-Ordner dieses Kontos
+        target = _folder_by_role(acc["id"], _ROLE_MOVE[action])
+        if not target:
+            return {"done": 0, "skipped": len({int(m) for m in mids})}
+        action = "move"
     caps = _caps(conn)
     by_folder: dict[str, list[dict]] = {}
     taken: set[int] = set()

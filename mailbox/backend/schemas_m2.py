@@ -22,5 +22,5 @@ class DraftIn(BaseModel):
 class ActionIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     ids: list[int] = Field(min_length=1, max_length=500)
-    action: Literal["seen", "unseen", "flag", "unflag", "move", "delete"]
+    action: Literal["seen", "unseen", "flag", "unflag", "move", "delete", "archive", "junk"]
     target: str | None = Field(default=None, max_length=500)

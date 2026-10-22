@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import re
 
-from . import index_db, query
+from . import index_db, query, sent_link
 
 LIMIT_DEFAULT, LIMIT_MAX = 50, 200
 _COLS = ("m.id, m.account_id, m.date, m.from_addr, m.to_addr, m.cc_addr, m.subject, m.snippet, m.seen, m.flagged, "
@@ -56,7 +56,7 @@ def search(accounts: dict[str, str], text: str, *, folder_id: int | None = None,
         acc_ids = [i for i in acc_ids if a in accounts[i].casefold()]
     if not acc_ids:
         return {"items": [], "total": 0, "limit": limit, "offset": offset, "fulltext": True}
-    where = [f"m.account_id IN ({','.join('?' * len(acc_ids))})"]
+    where = [f"m.account_id IN ({','.join('?' * len(acc_ids))})", sent_link.VISIBLE]
     args: list = list(acc_ids)
     for col, key in (("m.from_addr", "from"), ("m.to_addr || ' ' || m.cc_addr", "to"), ("m.subject", "subject"),
                      ("f.name", "folder")):
