@@ -116,7 +116,7 @@ export interface SavedDraft extends Draft {
   server?: "ok" | "local_only"
 }
 
-export type MailAction = "seen" | "unseen" | "flag" | "unflag" | "move" | "delete"
+export type MailAction = "seen" | "unseen" | "flag" | "unflag" | "move" | "delete" | "archive" | "junk"
 
 function withToken(path: string, extra = ""): string {
   const token = useAuthStore.getState().token ?? ""

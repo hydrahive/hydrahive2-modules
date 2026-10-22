@@ -30,13 +30,13 @@ describe("Schreibfenster", () => {
     const h = composer()
     expect(h).toContain("Till &lt;till@example.net&gt;")
     expect(h).toContain("t2@example.net")
-    expect(/<select[^>]*data-mbx-from[^>]*>/.exec(h)?.[0]).not.toContain("disabled")
+    expect(/<select[^>]*data-mbx-from[^>]*>/.exec(h)?.[0]).not.toMatch(/ disabled=""/)
   })
 
   it("Antwort: Konto und Betreff fest (Unterhaltung + Absender bleiben richtig)", () => {
     const h = composer({ mode: "reply", ref_message: 7, subject: "Re: x" })
-    expect(/<select[^>]*data-mbx-from[^>]*>/.exec(h)?.[0]).toContain("disabled")
-    expect(/<input[^>]*data-mbx-field="subject"[^>]*>/.exec(h)?.[0]).toContain("disabled")
+    expect(/<select[^>]*data-mbx-from[^>]*>/.exec(h)?.[0]).toMatch(/ disabled=""/)
+    expect(/<input[^>]*data-mbx-field="subject"[^>]*>/.exec(h)?.[0]).toMatch(/ disabled=""/)
   })
 
   it("Cc/Bcc erst auf Klick – außer sie sind schon gefüllt", () => {

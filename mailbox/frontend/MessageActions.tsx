@@ -2,14 +2,14 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Flag, FolderInput, Forward, Mail, MailOpen, Reply, ReplyAll, Trash2 } from "lucide-react"
 import { mailApi, type MailAction, type MailDetail } from "./api"
-import { needsConfirm, type ComposeMode } from "./composeFormat"
+import { afterActionNote, needsConfirm, type ComposeMode } from "./composeFormat"
 import { folderLabel, type FolderRow } from "./mailFormat"
 
 interface Props {
   mail: MailDetail
   folders: FolderRow[]
   onCompose: (mode: Exclude<ComposeMode, "new">) => void
-  onChanged: (action: MailAction) => void
+  onChanged: (action: MailAction, note: string | null) => void
 }
 
 const BTN = "inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-0.5 text-xs text-[#c8d2df] hover:bg-[#1c2638] disabled:opacity-40"
@@ -31,7 +31,8 @@ export function MessageActions({ mail, folders, onCompose, onChanged }: Props) {
     try {
       const r = await mailApi.act([mail.id], action, target)
       setNote(r.skipped ? t("action.skipped", { n: r.skipped }) : null)
-      if (r.done) onChanged(action)
+      const key = afterActionNote(action, mail.folder_role, r.done)
+      if (r.done) onChanged(action, key ? t(key) : null)
     } catch {
       setNote(t("action.failed"))
     } finally {

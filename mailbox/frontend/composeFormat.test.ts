@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { attachmentsTooBig, buildSendForm, draftKey, emptyDraft, fromPrefill, isDirty, MAX_ATTACH, MAX_TEXT_BYTES, needsConfirm, recipientsOk, textTooLong } from "./composeFormat"
+import { afterActionNote, attachmentsTooBig, buildSendForm, draftKey, emptyDraft, fromPrefill, isDirty, MAX_ATTACH, MAX_TEXT_BYTES, needsConfirm, recipientsOk, textTooLong } from "./composeFormat"
 
 describe("Schreibfenster-Logik", () => {
   it("Vorlage aus Antwort: Text = leer + Zitat darunter, Empfänger/Betreff übernommen", () => {
@@ -59,5 +59,12 @@ describe("Schreibfenster-Logik", () => {
     expect(textTooLong("a".repeat(MAX_TEXT_BYTES + 1))).toBe(true)
     expect(textTooLong("ä".repeat(MAX_TEXT_BYTES / 2 + 1))).toBe(true)
     expect(MAX_TEXT_BYTES).toBeLessThan(1024 * 1024)
+  })
+
+  it("Hinweis nach Löschen: Papierkorb vs. endgültig; sonst keiner", () => {
+    expect(afterActionNote("delete", "inbox", 1)).toBe("action.movedToTrash")
+    expect(afterActionNote("delete", "trash", 1)).toBe("action.deletedForever")
+    expect(afterActionNote("delete", "inbox", 0)).toBeNull()
+    expect(afterActionNote("seen", "inbox", 1)).toBeNull()
   })
 })
