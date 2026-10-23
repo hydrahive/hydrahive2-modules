@@ -8,7 +8,6 @@ from __future__ import annotations
 import email
 import email.policy
 import json
-import re
 from typing import Annotated
 from urllib.parse import quote
 
@@ -16,7 +15,7 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal_or_query
 from hydrahive.api.middleware.errors import coded
 
-from . import access, archive, parse, sanitize
+from . import access, archive, mime_parts, parse, sanitize
 
 router = APIRouter()
 # <iframe>/<img> können keinen Authorization-Header setzen → ?token= erlaubt (Kern: require_principal_or_query)
@@ -33,19 +32,6 @@ def _own(user: str, mid: int) -> tuple[dict, bytes]:
         return m, archive.read(m["path"])
     except archive.ArchiveError:
         raise coded(status.HTTP_404_NOT_FOUND, "file_missing") from None
-
-
-def _parts(raw: bytes) -> list:
-    msg = email.message_from_bytes(raw, policy=email.policy.default)
-    out = []
-    for part in msg.walk():
-        if part.is_multipart():
-            continue
-        disp = (part.get_content_disposition() or "").lower()
-        cid = (part.get("Content-ID") or "").strip()
-        if part.get_filename() or disp == "attachment" or (cid and not part.get_content_type().startswith("text/")):
-            out.append(part)
-    return out
 
 
 def _html(raw: bytes) -> str:
@@ -78,20 +64,16 @@ def message_html(mid: int, auth: Auth, images: bool = False) -> Response:
         "X-Mailbox-Blocked-Images": str(r["blocked_images"])})
 
 
-def _safe_name(name: str) -> str:
-    return re.sub(r"[\x00-\x1f\x7f\"\\/]+", "_", name or "anhang")[:200]
-
-
 @router.get("/attachments/{mid}/{index}")
 def attachment(mid: int, index: int, auth: Auth, inline: bool = Query(False)) -> Response:
     _, raw = _own(auth.username, mid)
-    parts = _parts(raw)
+    parts = mime_parts.parts(raw)
     if not 0 <= index < len(parts):
         raise coded(status.HTTP_404_NOT_FOUND, "not_found")
     part = parts[index]
     data = part.get_payload(decode=True) or b""
     ctype = part.get_content_type()
-    name = _safe_name(part.get_filename() or f"anhang-{index}")
+    name = mime_parts.safe_name(part.get_filename() or f"anhang-{index}")
     headers = {"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store",
                "Content-Security-Policy": "default-src 'none'; sandbox"}
     if inline and ctype in _INLINE_OK:
@@ -103,7 +85,7 @@ def attachment(mid: int, index: int, auth: Auth, inline: bool = Query(False)) ->
 @router.get("/messages/{mid}/eml")
 def message_eml(mid: int, auth: Auth) -> Response:
     m, raw = _own(auth.username, mid)
-    name = _safe_name((m["subject"] or "mail")[:80]) + ".eml"
+    name = mime_parts.safe_name((m["subject"] or "mail")[:80]) + ".eml"
     return Response(raw, media_type="message/rfc822", headers={
         "Content-Disposition": f"attachment; filename*=UTF-8''{quote(name)}", "X-Content-Type-Options": "nosniff",
         "Cache-Control": "private, no-store"})

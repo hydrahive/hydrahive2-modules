@@ -172,11 +172,12 @@ def update(user: str, aid: str, data: dict) -> dict:
 
 
 def remove(user: str, aid: str) -> None:
-    """Zugang entfernen. Archiv und Index bleiben (Spec §5: nie löschen)."""
+    """Zugang und Freigaben entfernen. Archiv und Index bleiben (Spec §5: nie löschen)."""
     with db() as c:
         if not c.execute("SELECT 1 FROM module_mailbox_accounts WHERE id=? AND owner=?", (aid, _owner(user))).fetchone():
             raise NotFound(aid)
         c.execute("DELETE FROM module_mailbox_sync WHERE account_id=?", (aid,))
+        c.execute("DELETE FROM module_mailbox_shares WHERE account_id=?", (aid,))   # M3a: Freigaben gehen mit
         c.execute("DELETE FROM module_mailbox_accounts WHERE id=? AND owner=?", (aid, _owner(user)))
 
 

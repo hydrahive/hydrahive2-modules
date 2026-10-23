@@ -10,6 +10,7 @@ register(ctx) →
 from __future__ import annotations
 
 from . import idle_manager, sync_job
+from .agent_tools import TOOLS
 from .routes import router
 
 SYNC_SECONDS = 300
@@ -18,6 +19,8 @@ IDLE_CHECK_SECONDS = 60
 
 def register(ctx) -> None:
     ctx.register_router(router)
+    for tool in TOOLS:                       # M3a: Lese-Werkzeuge, nur für freigegebene Konten
+        ctx.register_tool(tool)
     ctx.register_job("sync", sync_job.job, interval_seconds=SYNC_SECONDS, initial_delay_seconds=60)
     # IDLE-Threads (daemon) passend zu den Konten halten; neue Mail → Abgleich sofort statt nach 5 Minuten
     ctx.register_job("idle", idle_manager.job, interval_seconds=IDLE_CHECK_SECONDS, initial_delay_seconds=90)

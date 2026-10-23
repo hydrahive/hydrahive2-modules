@@ -29,7 +29,11 @@ def folders_for(user: str) -> list[dict]:
 
 def message_owned(user: str, mid: int) -> dict | None:
     """Mail-Datensatz, wenn sie zu einem Konto des Nutzers gehört – sonst None (Route antwortet 404)."""
-    accs = accounts_map(user)
+    return message_in(accounts_map(user), mid)
+
+
+def message_in(accs: dict[str, str], mid: int) -> dict | None:
+    """Mail-Datensatz, wenn sie zu einem der Konten ``accs`` gehört (Webmail: eigene; Werkzeug: freigegebene)."""
     if not accs:          # nur Abkürzung: ohne Konten besteht auch „in accs“ unten nie
         return None
     with index_db.connect() as c:
