@@ -1,8 +1,8 @@
 {
   "id": "mailbox",
   "name": "Mailbox",
-  "version": "0.6.0",
-  "description": "Webmail für mehrere Konten (IMAP/SMTP, Gmail per App-Passwort, Outlook/Hotmail/Microsoft 365 per Microsoft-Anmeldung): schreiben, antworten, weiterleiten, Entwürfe, Mehrfachauswahl, Tastenkürzel, neue Mails sofort (IMAP IDLE) – mit vollständigem lokalem Mailarchiv als Backup: alle Ordner, alle Jahre, durchsuchbar, nichts wird gelöscht. Agenten lesen nur Konten, die du für ihr Projekt freigibst.",
+  "version": "0.7.0",
+  "description": "Webmail für mehrere Konten (IMAP/SMTP, Gmail per App-Passwort, Outlook/Hotmail/Microsoft 365 per Microsoft-Anmeldung): schreiben, antworten, weiterleiten, Entwürfe, Mehrfachauswahl, Tastenkürzel, neue Mails sofort (IMAP IDLE) – mit vollständigem lokalem Mailarchiv als Backup: alle Ordner, alle Jahre, durchsuchbar, nichts wird gelöscht. Agenten lesen und entwerfen nur in Konten, die du für ihr Projekt freigibst – senden nie selbst.",
   "icon": "Mail",
   "nav_group": "working",
   "permissions": [],
@@ -20,6 +20,9 @@
     "mailbox_accounts": "privat",
     "mailbox_search": "privat",
     "mailbox_read": "privat",
-    "mailbox_attachment": "privat"
+    "mailbox_attachment": "privat",
+    "mailbox_draft": "privat",
+    "mailbox_move": "privat",
+    "mailbox_flag": "privat"
   }
 }

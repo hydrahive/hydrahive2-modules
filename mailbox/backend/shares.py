@@ -13,7 +13,8 @@ from hydrahive.db.connection import db
 
 from . import accounts
 
-LEVELS = ("read",)                      # M3b: draft, M4: send
+LEVELS = ("read", "draft")              # M4: send
+RANK = {"read": 1, "draft": 2}
 BUDDY = "buddy"
 _PROJECT = re.compile(r"^project:([0-9a-f-]{8,64})$")
 
@@ -79,8 +80,21 @@ def remove(user: str, aid: str, target: str) -> bool:
                          (aid, target)).rowcount > 0
 
 
-def visible(user: str, project_id: str | None) -> dict[str, str]:
-    """Konto-ID → Adresse aller Konten, die ein Werkzeuglauf von ``user`` in ``project_id`` nutzen darf."""
+def owner_of(aid: str) -> str | None:
+    """Benutzername des Kontobesitzers (Entwürfe eines Agenten gehören ihm und erscheinen in seinem Webmail)."""
+    with db() as c:
+        r = c.execute("SELECT owner FROM module_mailbox_accounts WHERE id=?", (aid,)).fetchone()
+    return r[0].removeprefix("user:") if r and r[0].startswith("user:") else None
+
+
+def scope_of(project_id: str | None) -> str:
+    return f"project:{project_id}" if project_id else BUDDY
+
+
+def visible(user: str, project_id: str | None, need: str = "read") -> dict[str, str]:
+    """Konto-ID → Adresse aller Konten, die ein Werkzeuglauf von ``user`` in ``project_id`` mit mindestens Stufe
+    ``need`` nutzen darf."""
+    allowed = tuple(lvl for lvl, r in RANK.items() if r >= RANK[need])
     if project_id:
         if not _member(user, project_id):
             return {}
@@ -91,5 +105,6 @@ def visible(user: str, project_id: str | None) -> dict[str, str]:
         sql = ("SELECT a.id, a.address FROM module_mailbox_shares s JOIN module_mailbox_accounts a "
                "ON a.id=s.account_id WHERE s.target=? AND a.owner=?")
         args = (BUDDY, f"user:{user}")
+    sql += f" AND s.level IN ({','.join('?' * len(allowed))})"
     with db() as c:
-        return {r["id"]: r["address"] for r in c.execute(sql + " ORDER BY a.address", args)}
+        return {r["id"]: r["address"] for r in c.execute(sql + " ORDER BY a.address", (*args, *allowed))}

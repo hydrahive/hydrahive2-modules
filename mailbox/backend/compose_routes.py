@@ -110,7 +110,9 @@ def prefill(auth: Auth, account_id: str = Query(max_length=64), mode: str = Quer
 
 @router.get("/drafts")
 def list_drafts(auth: Auth) -> list[dict]:
-    return drafts.list_for(auth[0])
+    from .agent_drafts import ids as agent_ids
+    mine = agent_ids()
+    return [{**d, "by_agent": d["id"] in mine} for d in drafts.list_for(auth[0])]
 
 
 def _save(auth, body: DraftIn, draft_id: str | None) -> dict:

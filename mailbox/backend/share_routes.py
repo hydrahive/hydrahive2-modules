@@ -17,7 +17,7 @@ Auth = Annotated[tuple[str, str], Depends(require_auth)]
 class ShareIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     target: str = Field(min_length=1, max_length=80)
-    level: Literal["read"] = "read"
+    level: Literal["read", "draft"] = "read"
 
 
 def _projects_for(user: str) -> list[dict]:

@@ -144,7 +144,8 @@ def test_registriert_und_im_manifest_privat():
     from backend import agent_tools
     from conftest import MODULE_DIR
     names = {t.name for t in agent_tools.TOOLS}
-    assert names == {"mailbox_accounts", "mailbox_search", "mailbox_read", "mailbox_attachment"}
+    assert names == {"mailbox_accounts", "mailbox_search", "mailbox_read", "mailbox_attachment", "mailbox_draft",
+                     "mailbox_flag", "mailbox_move"}
     m = json.loads((MODULE_DIR / "manifest.json").read_text())
     assert m["default_agent_tools"] is True
     assert {k for k, v in m["sensitive_tools"].items() if v == "privat"} >= names

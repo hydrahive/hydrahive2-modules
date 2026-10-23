@@ -33,3 +33,22 @@ describe("Freigaben im Kontodialog", () => {
     expect(h).not.toContain("<details")
   })
 })
+
+describe("Freigabe-Stufen und Agenten-Entwürfe", () => {
+  it("jede Freigabe hat ihre Stufe auswählbar, neue Freigabe mit Stufenwahl", () => {
+    const h = renderToStaticMarkup(<AccountShares accountId="a1" initial={{ ...INFO,
+      shares: [{ ...INFO.shares[0], level: "draft" }] }} />)
+    const sel = /<select[^>]*data-mbx-share-level="project:p1"[^>]*>([\s\S]*?)<\/select>/.exec(h)?.[1] ?? ""
+    expect(sel).toMatch(/<option value="draft" selected="">/)
+    expect(h).toContain('data-mbx-share-new-level="1"')
+  })
+
+  it("Entwurfsliste markiert Agenten-Entwürfe", async () => {
+    const { DraftList } = await import("./DraftList")
+    const base = { account_id: "a", to: "", cc: "", bcc: "", body: "", mode: "new" as const, ref_message: null,
+      with_attachments: false, updated_at: "2026-10-23T20:00:00Z" }
+    const h = renderToStaticMarkup(<DraftList onOpen={() => {}} drafts={[
+      { ...base, id: "d1", subject: "Vom Agenten", by_agent: true }, { ...base, id: "d2", subject: "Von mir" }]} />)
+    expect(h.match(/data-mbx-draft-agent="1"/g)?.length).toBe(1)
+  })
+})
