@@ -165,3 +165,19 @@ def test_vorschlag_kennt_microsoft(client, alice):
     r = client.get(f"{B}/suggest", params={"address": "x@hotmail.de"}, headers=alice).json()
     assert r["auth"] == "oauth_microsoft"
     assert client.get(f"{B}/suggest", params={"address": "x@gmx.de"}, headers=alice).json()["auth"] == "password"
+
+
+def test_microsoft_konto_entfernen_vergisst_token(client, alice, ms, clock, app_set, monkeypatch):
+    """Entfernen: Konto weg, Zugriffstoken aus dem Speicher, IDLE/Abgleich holen keinen neuen Token mehr."""
+    from backend import accounts, ms_tokens, sync_job
+
+    async def no_sync(user, aid):
+        return False
+    monkeypatch.setattr(accounts, "_test_login", lambda acc, pw: {})
+    monkeypatch.setattr(sync_job, "sync_now", no_sync)    # kein Hintergrund-Abgleich, der den Token verwirft
+    a = client.post(f"{M}/accounts", json={"flow_id": _done_flow(client, alice, clock), "address": ADDR},
+                    headers=alice).json()
+    ms_tokens.prime(a["id"], {"access_token": "AT-X", "expires_in": 3600})   # wie nach einem Abruf
+    assert a["id"] in ms_tokens._CACHE
+    assert client.delete(f"{B}/accounts/{a['id']}", headers=alice).status_code == 204
+    assert a["id"] not in ms_tokens._CACHE and accounts.list_for("alice") == []

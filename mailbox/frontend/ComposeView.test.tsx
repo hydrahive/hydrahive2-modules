@@ -134,6 +134,13 @@ describe("Kontoeinstellungen", () => {
     expect(h).not.toContain("<script>x")
     expect(h).toContain('maxLength="5000"')
   })
+
+  it("Konto entfernen: Knopf mit Hinweis, dass das Archiv bleibt", () => {
+    const a = { id: "acc1", address: "till@example.net", sender_name: "", signature: "", auth: "password" } as Account
+    const h = renderToStaticMarkup(<AccountSettings account={a} onClose={() => {}} onSaved={() => {}} />)
+    expect(h).toContain('data-mbx-remove="1"')
+    expect(h).toContain("settings.remove")
+  })
 })
 
 describe("Ordnerbaum M2", () => {
