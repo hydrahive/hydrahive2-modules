@@ -40,6 +40,16 @@ def _quote(p: parse.Parsed) -> str:
     return f"Am {when} schrieb {who}:\n{quoted}"
 
 
+def _with_original(text: str, original: str) -> str:
+    """Zitat/Weiterleitung nur anhängen, wenn der Text es nicht schon enthält. Das Schreibfenster legt es per
+    compose/prefill bereits hinein (auch gekürzt) – sonst stünde das Original doppelt in der Mail."""
+    text = (text or "").rstrip()
+    first = original.splitlines()[0] if original else ""
+    if first and first in text:
+        return text
+    return f"{text}\n\n{original}"
+
+
 def _subject(prefix: str, subject: str, *, keep_if: re.Pattern | None) -> str:
     s = (subject or "").strip() or "(ohne Betreff)"
     if keep_if and keep_if.match(s):
@@ -76,7 +86,7 @@ def reply(acc: dict, raw: bytes, *, text: str, reply_all: bool, bcc: str = "", e
         headers["In-Reply-To"] = p.message_id
     if refs:
         headers["References"] = " ".join(refs[-20:])
-    body = f"{(text or '').rstrip()}\n\n{_quote(p)}"
+    body = _with_original(text, _quote(p))
     return assemble(acc, to=to, cc=cc, bcc=_addr_list(bcc), subject=_subject("Re:", p.subject, keep_if=_REPLY_PREFIX),
                     text=body, extra_headers=headers, attachments=extra_attachments)
 
@@ -97,7 +107,7 @@ def forward(acc: dict, raw: bytes, *, to: str, text: str, with_attachments: bool
             f"Von: {p.from_addr}\nDatum: {p.date}\nBetreff: {p.subject}\nAn: {p.to_addr}\n")
     if p.cc_addr:
         head += f"Cc: {p.cc_addr}\n"
-    body = f"{(text or '').rstrip()}\n\n{head}\n{p.body}"
+    body = _with_original(text, f"{head}\n{p.body}")
     return build(acc, to=to, cc=cc, bcc=bcc, subject=_subject("WG:", p.subject, keep_if=None), text=body,
                  attachments=(_original_attachments(msg) if with_attachments else []) + list(extra_attachments or []))
 

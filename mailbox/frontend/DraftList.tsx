@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import { FileText } from "lucide-react"
+import { Bot, FileText } from "lucide-react"
 import type { SavedDraft } from "./api"
 import { shortDate } from "./mailFormat"
 
@@ -16,6 +16,8 @@ export function DraftList({ drafts, onOpen }: { drafts: SavedDraft[]; onOpen: (d
             <span className="flex items-center gap-2 text-sm text-[#e8eef8]">
               <FileText size={12} className="shrink-0 text-[#8d9ab0]" />
               <span className="min-w-0 flex-1 truncate">{d.subject || t("drafts.untitled")}</span>
+              {d.by_agent && <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-[#69d7ff]/15 px-1 text-[10px] text-[#69d7ff]"
+                title={t("drafts.byAgentHint")} data-mbx-draft-agent="1"><Bot size={10} />{t("drafts.byAgent")}</span>}
               <span className="shrink-0 text-[11px] text-[#718097]">{shortDate(d.updated_at)}</span>
             </span>
             <span className="block truncate text-xs text-[#8d9ab0]">{d.to || "–"}</span>

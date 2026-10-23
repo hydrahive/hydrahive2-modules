@@ -52,7 +52,7 @@ def test_ziel_und_stufe_werden_geprueft(project):
         with pytest.raises(ValueError):
             shares.put("alice", aid, bad, "read")
     with pytest.raises(ValueError):
-        shares.put("alice", aid, f"project:{project}", "send")   # M3a: nur lesen
+        shares.put("alice", aid, f"project:{project}", "send")   # Senden kommt erst mit M4
 
 
 def test_nur_mitglieder_duerfen_ein_projekt_freigeben(other_project):
