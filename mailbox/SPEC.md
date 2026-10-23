@@ -105,6 +105,7 @@ Das ist das Archiv: Jede Datei lässt sich ohne HydraHive mit jedem Mailprogramm
 ## 6. Oberfläche (Webmail)
 
 - Drei Spalten: **Konten und Ordner** | **Mailliste** | **Lesebereich**. Auf schmalen Bildschirmen jeweils eine Spalte.
+- Die Ordner jedes Kontos sind beim ersten Öffnen eingeklappt. Der Nutzer kann jedes Konto einzeln auf- und zuklappen; der Zustand bleibt in diesem Browser erhalten, bis er ihn erneut ändert. Neu hinzugefügte Konten starten ebenfalls eingeklappt.
 - „Alle Posteingänge“ zusätzlich zu den einzelnen Konten. Unterhaltungen gruppiert (umschaltbar).
 - Suche über alle Konten mit Filtern (von:, an:, betreff:, hat:anhang, vor:/nach:, konto:, ordner:).
 - Aktionen: gelesen/ungelesen, markieren, verschieben, archivieren, löschen, Spam. Mehrfachauswahl.

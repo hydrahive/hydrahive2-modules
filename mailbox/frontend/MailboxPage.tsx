@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, Bell, Mail, PenSquare, Search } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { HelpButton } from "@/i18n/HelpButton"
 import { mailApi, type Account, type MailAction, type MailDetail, type MailItem, type SavedDraft } from "./api"
 import { BulkBar } from "./BulkBar"
 import { Composer } from "./Composer"
@@ -122,6 +123,7 @@ export function MailboxPage() {
           className="min-w-0 flex-1 rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-2 py-1.5 text-sm text-[#e8eef8]" />
         <datalist id="mbx-filter">{FILTER_HELP.map(([k, label]) => <option key={k} value={k}>{label}</option>)}</datalist>
         {!fulltext && <span className="text-[11px] text-amber-200" title="SQLite ohne FTS5">Suche nur in Betreff/Kopf</span>}
+        <HelpButton topic="mailbox" />
         <NotifyToggle />
         <MsAppButton />
         <button type="button" onClick={cmp.openNew} data-mbx-new="1" title={t("keys.help")}
