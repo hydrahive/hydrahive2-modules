@@ -1,7 +1,7 @@
 {
   "id": "mailbox",
   "name": "Mailbox",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Webmail für mehrere Konten (IMAP/SMTP, Gmail per App-Passwort, Outlook/Hotmail/Microsoft 365 per Microsoft-Anmeldung): schreiben, antworten, weiterleiten, Entwürfe, Mehrfachauswahl, Tastenkürzel, neue Mails sofort (IMAP IDLE) – mit vollständigem lokalem Mailarchiv als Backup: alle Ordner, alle Jahre, durchsuchbar, nichts wird gelöscht.",
   "icon": "Mail",
   "nav_group": "working",

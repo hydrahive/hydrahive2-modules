@@ -3,6 +3,7 @@ export const i18n = {
   de: {
     mailbox: {
       title: "Mailbox",
+      folders: { expand: "Ordner von {{account}} ausklappen", collapse: "Ordner von {{account}} einklappen", sync: "Jetzt abrufen" },
       compose: {
         new: "Neue Mail", reply: "Antworten", replyAll: "Allen antworten", forward: "Weiterleiten",
         from: "Von", to: "An", cc: "Cc", bcc: "Bcc", subject: "Betreff", body: "Text",
@@ -66,6 +67,7 @@ export const i18n = {
   en: {
     mailbox: {
       title: "Mailbox",
+      folders: { expand: "Expand folders for {{account}}", collapse: "Collapse folders for {{account}}", sync: "Check now" },
       compose: {
         new: "New mail", reply: "Reply", replyAll: "Reply all", forward: "Forward",
         from: "From", to: "To", cc: "Cc", bcc: "Bcc", subject: "Subject", body: "Text",

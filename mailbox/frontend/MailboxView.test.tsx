@@ -8,6 +8,7 @@ const { MessageView } = await import("./MessageView")
 const { MessageList } = await import("./MessageList")
 const { FolderTree } = await import("./FolderTree")
 import type { MailDetail, MailItem } from "./api"
+import { EXPANDED_ACCOUNTS_KEY } from "./folderCollapse"
 
 const MAIL: MailDetail = {
   id: 7, account: "till@example.net", account_id: "acc1", folder: "INBOX", folder_id: 3, folder_role: "inbox", seen: 1, flagged: 0, date: "2026-10-21T09:30:00Z", from_addr: "Kanzlei <post@k.example>",
@@ -87,15 +88,34 @@ describe("Mailliste", () => {
 })
 
 describe("Ordnerleiste", () => {
-  it("weggefallene Ordner ausgeblendet, Ungelesene im Posteingang gezählt", () => {
+  const folders = [
+    { id: 1, account_id: "a", account: "t@x.de", name: "INBOX", role: "inbox", total: 3, unread: 2, gone: 0 },
+    { id: 2, account_id: "a", account: "t@x.de", name: "Alt", role: "", total: 1, unread: 0, gone: 1 },
+    { id: 3, account_id: "a", account: "t@x.de", name: "Newsletter", role: "", total: 9, unread: 7, gone: 0 },
+  ]
+
+  it("startet eingeklappt, blendet Ordner aus und zählt nur ungelesene Posteingänge", () => {
     const h = renderToStaticMarkup(<FolderTree accounts={[]} selection={{ kind: "all" }} onSelect={() => {}} onAddAccount={() => {}} onSync={() => {}}
-      folders={[{ id: 1, account_id: "a", account: "t@x.de", name: "INBOX", role: "inbox", total: 3, unread: 2, gone: 0 },
-        { id: 2, account_id: "a", account: "t@x.de", name: "Alt", role: "", total: 1, unread: 0, gone: 1 },
-        { id: 3, account_id: "a", account: "t@x.de", name: "Newsletter", role: "", total: 9, unread: 7, gone: 0 }]} />)
-    expect(h).toContain('data-mbx-folder="1"')
-    expect(h).not.toContain('data-mbx-folder="2"')
-    expect(h).toContain("Posteingang")
+      folders={folders} />)
+    expect(h).toContain('data-mbx-account-toggle="a"')
+    expect(h).toContain('aria-expanded="false"')
+    expect(h).not.toContain("data-mbx-folder")
     expect(h).toMatch(/Alle Posteingänge<\/span><span[^>]*>2</) // nur Posteingänge, nicht „Newsletter“ (7)
+  })
+
+  it("zeigt die Ordner eines im Browser aufgeklappt gespeicherten Kontos, aber keine weggefallenen", () => {
+    vi.stubGlobal("localStorage", { getItem: (key: string) => key === EXPANDED_ACCOUNTS_KEY ? '["a"]' : null })
+    try {
+      const h = renderToStaticMarkup(<FolderTree accounts={[]} selection={{ kind: "all" }} onSelect={() => {}} onAddAccount={() => {}} onSync={() => {}}
+        folders={folders} />)
+      expect(h).toContain('aria-expanded="true"')
+      expect(h).toContain('data-mbx-folder="1"')
+      expect(h).toContain('data-mbx-folder="3"')
+      expect(h).not.toContain('data-mbx-folder="2"')
+      expect(h).toContain("Posteingang")
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })
 
