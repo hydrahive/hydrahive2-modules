@@ -111,7 +111,7 @@ def test_falsches_passwort(archive, server):
     from backend import fetch
     server.password = "anders"
     with pytest.raises(fetch.AuthFailed):
-        fetch.sync_account(ACC, FakeIMAP(server), login=("till@example.net", "pw"))
+        fetch.sync_account(ACC, FakeIMAP(server), login=lambda c: c.login("till@example.net", "pw"))
 
 
 def test_ordner_auf_server_weg_inhalt_bleibt(archive, server):

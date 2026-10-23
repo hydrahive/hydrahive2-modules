@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from hydrahive.db._utils import now_iso
 from hydrahive.db.connection import db
 
-from . import accounts, fetch, imap_conn
+from . import accounts, auth_login, fetch, imap_conn
 
 STALE_SECONDS = 6 * 3600
 log = logging.getLogger("hydrahive.modules.mailbox")
@@ -67,8 +67,10 @@ def _sync_one(acc: dict) -> dict:
         _write_progress(acc["id"], base + c["new"], c["folders"], c["folders_total"])
     conn = _open(acc)
     try:
-        return fetch.sync_account(acc, conn, login=(acc["username"], accounts.password_of(acc["id"])),
-                                  on_progress=cb)   # fetch meldet nach jedem Ordner – auch nach dem letzten
+        def login(c) -> None:
+            auth_login.imap_login(c, acc, accounts.password_of(acc["id"]))
+        # fetch meldet nach jedem Ordner – auch nach dem letzten
+        return fetch.sync_account(acc, conn, login=login, on_progress=cb)
     finally:
         try:
             conn.logout()

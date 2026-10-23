@@ -14,6 +14,7 @@ import { AccountSettings } from "./AccountSettings"
 import { FolderTree, type Selection } from "./FolderTree"
 import { MessageList } from "./MessageList"
 import { MessageView } from "./MessageView"
+import { MsAppButton } from "./MsAppButton"
 import { FILTER_HELP, type FolderRow } from "./mailFormat"
 
 const PAGE = 50
@@ -107,6 +108,7 @@ export function MailboxPage() {
         <p className="max-w-md text-sm text-[#8d9ab0]">Webmail für alle deine Konten. Jede Mail wird vollständig archiviert – auch wenn sie auf dem Server gelöscht wird.</p>
         <button type="button" onClick={() => setDialog(true)} data-mbx-first="1"
           className="rounded-[4px] border border-[#69d7ff]/50 bg-[#69d7ff]/15 px-4 py-2 text-sm font-semibold text-[#69d7ff]">Erstes Konto hinzufügen</button>
+        <MsAppButton />
         {err && <p className="text-xs text-rose-300">{err}</p>}
       </div>
     )
@@ -121,6 +123,7 @@ export function MailboxPage() {
         <datalist id="mbx-filter">{FILTER_HELP.map(([k, label]) => <option key={k} value={k}>{label}</option>)}</datalist>
         {!fulltext && <span className="text-[11px] text-amber-200" title="SQLite ohne FTS5">Suche nur in Betreff/Kopf</span>}
         <NotifyToggle />
+        <MsAppButton />
         <button type="button" onClick={cmp.openNew} data-mbx-new="1" title={t("keys.help")}
           className="inline-flex items-center gap-1 rounded-[4px] border border-[#69d7ff]/50 bg-[#69d7ff]/15 px-3 py-1.5 text-sm font-semibold text-[#69d7ff]">
           <PenSquare size={14} />{t("compose.new")}</button>

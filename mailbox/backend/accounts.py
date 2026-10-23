@@ -16,6 +16,7 @@ _PUBLIC = ("id", "label", "address", "sender_name", "auth", "imap_host", "imap_p
 _EDITABLE = {"label", "sender_name", "imap_host", "imap_port", "imap_tls", "smtp_host", "smtp_port", "smtp_tls",
              "username", "signature", "password"}
 TLS = {"ssl", "starttls"}
+_MS_FIXED = {"imap_host", "imap_port", "imap_tls", "smtp_host", "smtp_port", "smtp_tls", "username", "password"}
 
 
 class NotFound(LookupError):
@@ -85,7 +86,7 @@ def _test_login(acc: dict, password: str) -> dict:
     import imaplib
     import ssl
 
-    from . import imap_conn
+    from . import auth_login, imap_conn   # lokal: auth_login → ms_tokens → accounts
     try:
         conn = imap_conn.open_connection(acc, allow_internal=allowed_internal_hosts())
     except netcheck.HostBlocked as e:
@@ -95,7 +96,7 @@ def _test_login(acc: dict, password: str) -> dict:
     except OSError as e:
         raise ConnectError("connect", f"Server nicht erreichbar: {e}"[:200]) from None
     try:
-        conn.login(acc["username"], password)
+        auth_login.imap_login(conn, acc, password)
         typ, data = conn.list('""', "*")
         return {"folders": len(data or []) if typ == "OK" else 0}
     except imaplib.IMAP4.error as e:
@@ -156,6 +157,8 @@ def update(user: str, aid: str, data: dict) -> dict:
         raise NotFound(aid)
     if "address" in data or set(data) - _EDITABLE:
         raise ValueError("diese Felder lassen sich nicht ändern")
+    if old["auth"] == "oauth_microsoft" and set(data) & _MS_FIXED:
+        raise ValueError("Microsoft-Konto: Server und Anmeldung sind fest (neu anmelden statt Passwort)")
     v = _validate(data, new=False)
     if "password" in v:
         _test_login({**old, **v}, v["password"])
@@ -178,10 +181,13 @@ def remove(user: str, aid: str) -> None:
 
 
 def password_of(aid: str) -> str:
+    """Passwort eines Passwort-Kontos. Microsoft-Konten haben keins: "" – ihr Refresh-Token bleibt in ms_tokens."""
     with db() as c:
-        r = c.execute("SELECT secret FROM module_mailbox_accounts WHERE id=?", (aid,)).fetchone()
+        r = c.execute("SELECT secret, auth FROM module_mailbox_accounts WHERE id=?", (aid,)).fetchone()
     if not r:
         raise NotFound(aid)
+    if r["auth"] != "password":
+        return ""
     return secrets.open_(aid, r[0])
 
 

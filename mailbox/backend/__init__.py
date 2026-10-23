@@ -1,10 +1,11 @@
-"""Mailbox-Modul – Backend, Etappen M1 + M2 (mailbox/SPEC.md, PLAN-M1.md, PLAN-M2.md).
+"""Mailbox-Modul – Backend, Etappen M1 + M2 + M1b (mailbox/SPEC.md, PLAN-M1.md, PLAN-M2.md, PLAN-M1b.md).
 
 register(ctx) →
   - Router    /api/modules/mailbox/…
   - Job       sync (Konten abgleichen, Archiv füllen)
   - Job       idle (IMAP IDLE je Konto – neue Mails sofort)
-  - Migrationen 001_mailbox.sql (Kern-DB: Konten, Abgleich-Status); Nachrichten im eigenen Index (index_db)
+  - Migrationen 001–003 (Kern-DB: Konten, Abgleich-Status, Versandzählung, Einstellungen wie die Microsoft-App);
+    Nachrichten im eigenen Index (index_db)
 """
 from __future__ import annotations
 

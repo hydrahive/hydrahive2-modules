@@ -62,6 +62,8 @@ class SMTPServer:
         self.port = self.sock.getsockname()[1]
         self.received: list[dict] = []
         self.plain_auth_seen = False      # AUTH ohne TLS gesehen → darf nie passieren
+        self.token = "AT-1"               # erwarteter Zugriffstoken bei XOAUTH2
+        self.xoauth: list[bytes] = []
         threading.Thread(target=self._serve, daemon=True).start()
 
     def close(self):
@@ -99,7 +101,7 @@ class SMTPServer:
             up = cmd.upper()
             if up.startswith(("EHLO", "HELO")):
                 ext = ["250-test"] + (["250-STARTTLS"] if self.mode == "starttls" and not tls else [])
-                say("\r\n".join(ext + ["250 AUTH PLAIN"]))
+                say("\r\n".join(ext + ["250 AUTH PLAIN XOAUTH2"]))
             elif up == "STARTTLS" and self.mode == "starttls" and not tls:
                 say("220 go")
                 c = self.ctx.wrap_socket(c, server_side=True)
@@ -110,6 +112,13 @@ class SMTPServer:
                 parts = base64.b64decode(cmd.split()[2]).split(b"\0")
                 ok = parts[1].decode() == self.user and parts[2].decode() == self.password
                 say("235 ok" if ok else f"535 5.7.8 auth failed for {parts[1].decode()} {parts[2].decode()}")
+            elif up.startswith("AUTH XOAUTH2"):
+                if not tls:
+                    self.plain_auth_seen = True
+                raw = base64.b64decode(cmd.split()[2])
+                self.xoauth.append(raw)
+                ok = raw == f"user={self.user}\x01auth=Bearer {self.token}\x01\x01".encode()
+                say("235 2.7.0 Authentication successful" if ok else "535 5.7.3 Authentication unsuccessful")
             elif up.startswith("MAIL FROM:"):
                 mail = {"from": cmd[10:].strip(" <>"), "rcpt": [], "data": b""}
                 say("250 ok")

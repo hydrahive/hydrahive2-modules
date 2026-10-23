@@ -7,6 +7,9 @@ _ADDR = re.compile(r"^[A-Za-z0-9._%+'-]{1,64}@((?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,6
 _GMAIL_HINT = ("Gmail: Bitte ein App-Passwort verwenden (Google-Konto → Sicherheit → 2-Schritt-Bestätigung → "
                "App-Passwörter). Das normale Google-Passwort funktioniert für IMAP nicht.")
 
+_MS = {"imap_host": "outlook.office365.com", "smtp_host": "smtp-mail.outlook.com", "smtp_port": 587,
+       "smtp_tls": "starttls", "auth": "oauth_microsoft", "hint": "Microsoft-Konten melden sich ohne Passwort an: „Mit Microsoft anmelden“."}
+
 _KNOWN: dict[str, dict] = {
     "gmail.com": {"imap_host": "imap.gmail.com", "smtp_host": "smtp.gmail.com", "hint": _GMAIL_HINT},
     "googlemail.com": {"imap_host": "imap.gmail.com", "smtp_host": "smtp.gmail.com", "hint": _GMAIL_HINT},
@@ -20,14 +23,12 @@ _KNOWN: dict[str, dict] = {
     "mailbox.org": {"imap_host": "imap.mailbox.org", "smtp_host": "smtp.mailbox.org", "smtp_port": 465},
     "t-online.de": {"imap_host": "secureimap.t-online.de", "smtp_host": "securesmtp.t-online.de", "smtp_port": 465,
                     "hint": "Telekom: eigenes E-Mail-Passwort im Kundencenter anlegen."},
-    "outlook.com": {"imap_host": "outlook.office365.com", "smtp_host": "smtp-mail.outlook.com", "smtp_port": 587,
-                    "smtp_tls": "starttls", "hint": "Microsoft verlangt eine Anmeldung per Microsoft-Konto (kommt mit "
-                    "Etappe M1b). Mit Passwort klappt es meist nicht mehr."},
-    "hotmail.com": {"imap_host": "outlook.office365.com", "smtp_host": "smtp-mail.outlook.com", "smtp_port": 587,
-                    "smtp_tls": "starttls", "hint": "Microsoft verlangt eine Anmeldung per Microsoft-Konto (M1b)."},
+    "outlook.com": _MS,
+    "hotmail.com": _MS,
 }
-for _alias in ("outlook.de", "hotmail.de", "live.com", "live.de", "msn.com"):
-    _KNOWN[_alias] = _KNOWN["hotmail.com"]
+for _alias in ("outlook.de", "outlook.at", "outlook.fr", "hotmail.de", "hotmail.co.uk", "hotmail.fr", "live.com",
+               "live.de", "live.at", "msn.com"):
+    _KNOWN[_alias] = _MS
 for _alias in ("ionos.de", "online.de"):
     _KNOWN[_alias] = {"imap_host": "imap.ionos.de", "smtp_host": "smtp.ionos.de", "smtp_port": 465}
 _KNOWN["strato.de"] = {"imap_host": "imap.strato.de", "smtp_host": "smtp.strato.de", "smtp_port": 465}
@@ -44,7 +45,7 @@ def domain(address: str) -> str:
 
 def suggest(address: str) -> dict:
     d = domain(address)
-    base = {"imap_port": 993, "imap_tls": "ssl", "smtp_port": 465, "smtp_tls": "ssl", "hint": ""}
+    base = {"imap_port": 993, "imap_tls": "ssl", "smtp_port": 465, "smtp_tls": "ssl", "hint": "", "auth": "password"}
     known = _KNOWN.get(d)
     if known:
         return {**base, **known, "known": True}

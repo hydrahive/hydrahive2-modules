@@ -16,7 +16,7 @@ from email.utils import formatdate, make_msgid
 
 from hydrahive.db._utils import now_iso
 
-from . import actions, addresses, imap_conn, index_db
+from . import actions, addresses, auth_login, imap_conn, index_db
 
 log = logging.getLogger("hydrahive.modules.mailbox")
 MODES = frozenset({"new", "reply", "reply_all", "forward"})
@@ -116,7 +116,7 @@ def _sync_server(acc: dict, password: str, open_imap, raw: bytes | None, old_msg
     conn = None
     try:
         conn = open_imap(acc)
-        conn.login(acc.get("username") or acc["address"], password)
+        auth_login.imap_login(conn, acc, password)
         if raw is not None:
             typ, data = conn.append(imap_conn.quote(folder), "(\\Draft \\Seen)", None, raw)
             if typ != "OK":

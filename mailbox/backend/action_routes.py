@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, status
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import access, accounts, actions, index_db, sync_job
+from . import access, accounts, actions, auth_login, index_db, sync_job
 from .schemas_m2 import ActionIn
 
 router = APIRouter()
@@ -54,9 +54,11 @@ def _run_account(user: str, aid: str, mids: list[int], action: str, target: str 
         raise ServerError("connect", str(e)[:200]) from None
     try:
         try:
-            conn.login(acc["username"], password)
+            auth_login.imap_login(conn, acc, password)
         except imaplib.IMAP4.error as e:
             raise ServerError("auth", accounts.redact(str(e), password)[:200]) from None
+        except OSError as e:              # z. B. Microsoft gerade nicht erreichbar (Token)
+            raise ServerError("connect", str(e)[:200]) from None
         try:
             return actions.apply(acc, conn, action, mids, target=target)
         except (imaplib.IMAP4.error, OSError) as e:

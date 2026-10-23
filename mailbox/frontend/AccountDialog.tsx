@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { X } from "lucide-react"
 import { mailApi, type AccountIn } from "./api"
+import { MsAccountPart } from "./MsAccountPart"
 
 const EMPTY: AccountIn = { label: "", address: "", imap_host: "", imap_port: 993, imap_tls: "ssl", smtp_host: "",
   smtp_port: 465, smtp_tls: "ssl", username: "", password: "" }
@@ -13,7 +14,11 @@ export function AccountDialog({ onClose, onSaved }: { onClose: () => void; onSav
   const [more, setMore] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [ms, setMs] = useState(false)               // Anmeldeart: Microsoft statt Passwort
+  const [msReady, setMsReady] = useState<boolean | null>(null)
   const set = (p: Partial<AccountIn>) => setA((x) => ({ ...x, ...p }))
+
+  useEffect(() => { mailApi.msStatus().then((r) => setMsReady(r.configured)).catch(() => setMsReady(false)) }, [])
 
   async function suggest() {
     if (!a.address.includes("@")) return
@@ -22,7 +27,9 @@ export function AccountDialog({ onClose, onSaved }: { onClose: () => void; onSav
       set({ imap_host: s.imap_host, imap_port: s.imap_port, imap_tls: s.imap_tls, smtp_host: s.smtp_host,
         smtp_port: s.smtp_port, smtp_tls: s.smtp_tls, username: a.username || a.address, label: a.label || a.address })
       setHint(s.hint)
-      if (!s.known) setMore(true)
+      const isMs = s.auth === "oauth_microsoft"
+      setMs(isMs)
+      if (!s.known && !isMs) setMore(true)
     } catch { setErr("Adresse ungültig") }
   }
 
@@ -41,6 +48,17 @@ export function AccountDialog({ onClose, onSaved }: { onClose: () => void; onSav
         <label className="block space-y-1 text-xs text-[#8d9ab0]">Mailadresse
           <input className={field} value={a.address} autoComplete="email" onChange={(e) => set({ address: e.target.value.trim() })} onBlur={() => void suggest()} />
         </label>
+        <div className="flex gap-3 text-xs text-[#8d9ab0]" role="radiogroup" aria-label="Anmeldung">
+          <label className="inline-flex items-center gap-1"><input type="radio" checked={!ms} onChange={() => setMs(false)} />Passwort</label>
+          <label className="inline-flex items-center gap-1"><input type="radio" checked={ms} onChange={() => setMs(true)} data-mbx-auth-ms="1" />
+            Microsoft (Outlook, Hotmail, Microsoft 365)</label>
+        </div>
+        {ms ? <>
+          <MsAccountPart address={a.address} label={a.label} ready={msReady} onSaved={onSaved} />
+          <div className="flex justify-end">
+            <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-sm text-[#c8d2df] hover:bg-[#1c2638]">Abbrechen</button>
+          </div>
+        </> : <>
         <label className="block space-y-1 text-xs text-[#8d9ab0]">Passwort
           <input className={field} type="password" value={a.password} autoComplete="new-password" onChange={(e) => set({ password: e.target.value })} />
         </label>
@@ -70,6 +88,7 @@ export function AccountDialog({ onClose, onSaved }: { onClose: () => void; onSav
             className="rounded-[4px] border border-[#69d7ff]/50 bg-[#69d7ff]/15 px-3 py-1.5 text-sm font-semibold text-[#69d7ff] disabled:opacity-40">
             {busy ? "Prüfe Anmeldung …" : "Speichern"}</button>
         </div>
+        </>}
       </div>
     </div>
   )
