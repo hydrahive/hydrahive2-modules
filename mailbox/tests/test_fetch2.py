@@ -72,7 +72,7 @@ def test_falsches_passwort_markiert_nichts(archive, server):
     server.boxes["INBOX"].add(_mail(1))
     server.password = "anders"
     with pytest.raises(fetch.AuthFailed):
-        fetch.sync_account(ACC, FakeIMAP(server), login=("till@example.net", "pw"))
+        fetch.sync_account(ACC, FakeIMAP(server), login=lambda c: c.login("till@example.net", "pw"))
     assert _count() == 0
 
 

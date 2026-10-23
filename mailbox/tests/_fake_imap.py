@@ -29,6 +29,8 @@ class FakeServer:
         self.fetches = 0
         self.body_fetches = 0       # wie viele Mails mit Inhalt geladen wurden
         self.logins = 0
+        self.token = "AT-1"         # erwarteter Zugriffstoken bei XOAUTH2
+        self.xoauth: list = []      # (Mechanismus, Rohtext) jeder AUTHENTICATE-Anfrage
         self.writable_selects = 0   # SELECT ohne readonly (darf beim Abgleich nie vorkommen)
         self.appends: list = []     # (mailbox, flags, date_time, message)
         self.fail_append = False
@@ -54,6 +56,17 @@ class FakeIMAP:
         self.s = server
         self.selected: Box | None = None
         self.logged_in = False
+
+    def authenticate(self, mechanism, authobject):
+        """XOAUTH2 wie imaplib: authobject(b"") liefert den Rohtext (imaplib kodiert base64 selbst)."""
+        self.s.logins += 1
+        raw = authobject(b"")
+        raw = raw.encode() if isinstance(raw, str) else raw
+        self.s.xoauth.append((mechanism, raw))
+        if mechanism != "XOAUTH2" or raw != f"user={self.s.user}\x01auth=Bearer {self.s.token}\x01\x01".encode():
+            raise imaplib.IMAP4.error("[AUTHENTICATIONFAILED] AUTHENTICATE failed.")
+        self.logged_in = True
+        return "OK", [b"AUTHENTICATE completed"]
 
     def login(self, user, password):
         self.s.logins += 1

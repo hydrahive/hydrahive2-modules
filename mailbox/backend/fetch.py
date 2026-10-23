@@ -110,14 +110,14 @@ def _folder_names(conn) -> list[dict]:
     return imap_conn.parse_list(_ok(*conn.list('""', "*"), "LIST"))
 
 
-def sync_account(acc: dict, conn, *, login: tuple[str, str] | None = None, batch: int = BATCH,
+def sync_account(acc: dict, conn, *, login=None, batch: int = BATCH,
                  on_progress=None) -> dict:
     """on_progress(counts) nach jedem Paket und jedem Ordner (Fortschritt in der Oberfläche)."""
     counts = {"new": 0, "gone": 0, "folders": 0, "folders_total": 0}
     try:
         if login:
             try:
-                conn.login(*login)
+                login(conn)
             except imaplib.IMAP4.error as e:
                 raise AuthFailed(str(e)[:200]) from None
         seen = set()

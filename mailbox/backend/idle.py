@@ -18,6 +18,8 @@ import select
 import threading
 import time
 
+from . import auth_login
+
 log = logging.getLogger("hydrahive.modules.mailbox")
 _EVENT = re.compile(rb"^\* \d+ (EXISTS|EXPUNGE)\b", re.IGNORECASE)
 
@@ -122,7 +124,7 @@ def watch(acc: dict, stop: threading.Event, trigger, *, open_conn, password_of, 
             if "IDLE" not in _caps(conn):
                 return "unsupported"
             try:
-                conn.login(acc.get("username") or acc["address"], password_of(acc["id"]))
+                auth_login.imap_login(conn, acc, password_of(acc["id"]))
             except imaplib.IMAP4.error:
                 if stop.wait(auth_backoff):
                     break

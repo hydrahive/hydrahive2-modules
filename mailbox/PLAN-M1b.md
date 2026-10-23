@@ -1,6 +1,7 @@
 # Mailbox M1b – Microsoft-Anmeldung (Outlook.com, Hotmail, Microsoft 365)
 
-Stand: **Entwurf** 23.10.2026. Grundlage: SPEC.md §3 (Anmeldung), §10 (Etappe M1b), §11 (Sicherheit).
+Stand: **umgesetzt** 23.10.2026 (Till: „ok baue das so ein“; Client-ID **einmal global** durch den Admin,
+alle Nutzer melden sich darüber an). Grundlage: SPEC.md §3 (Anmeldung), §10 (Etappe M1b), §11 (Sicherheit).
 
 ## Ziel
 

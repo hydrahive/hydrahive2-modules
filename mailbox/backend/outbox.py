@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import re
 
-from . import archive, imap_conn, index_db, parse, ratelimit, sent_link, smtp_send, store
+from . import archive, auth_login, imap_conn, index_db, parse, ratelimit, sent_link, smtp_send, store
 
 log = logging.getLogger("hydrahive.modules.mailbox")
 SELF_FILING = ("imap.gmail.com",)
@@ -47,7 +47,7 @@ def _append(acc: dict, password: str, folder: str, raw: bytes, open_imap) -> tup
     """Ablegen; Rückgabe (UIDVALIDITY, UID) aus der APPENDUID-Antwort (UIDPLUS, RFC 4315), sonst None."""
     conn = open_imap(acc)
     try:
-        conn.login(acc.get("username") or acc["address"], password)
+        auth_login.imap_login(conn, acc, password)
         typ, data = conn.append(imap_conn.quote(folder), "(\\Seen)", None, raw)
         if typ != "OK":
             raise RuntimeError(f"Ablage abgelehnt: {(data or [b''])[0]!r}"[:200])

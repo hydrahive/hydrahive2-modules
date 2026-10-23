@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { X } from "lucide-react"
 import { mailApi, type Account } from "./api"
+import { MsReauth } from "./MsReauth"
 
 const FIELD = "w-full rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-2 py-1 text-sm text-[#e8eef8]"
 
@@ -44,6 +45,7 @@ export function AccountSettings({ account, onClose, onSaved }: { account: Accoun
         </label>
         <p className="text-[11px] text-[#718097]">{t("settings.signatureHint")}</p>
         {err && <p role="alert" className="text-xs text-rose-300">{t("settings.failed")}</p>}
+        {account.auth === "oauth_microsoft" && <MsReauth account={account} onDone={onSaved} />}
         <footer className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-[4px] border border-[#2a364b] px-3 py-1 text-sm text-[#c8d2df]">
             {t("settings.cancel")}</button>

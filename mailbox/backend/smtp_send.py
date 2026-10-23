@@ -11,7 +11,7 @@ import smtplib
 import socket
 import ssl
 
-from . import netcheck
+from . import auth_login, netcheck
 
 TIMEOUT = 30
 
@@ -86,7 +86,7 @@ def send(acc: dict, password: str, raw: bytes, envelope: list[str], *, allow_int
     conn = None
     try:
         conn = _open(acc, allow_internal)
-        conn.login(acc.get("username") or acc["address"], password)
+        auth_login.smtp_login(conn, acc, password)
         refused = conn.sendmail(acc["address"], envelope, raw)
         return {"refused": sorted(refused)} if refused else {}
     except SendError:

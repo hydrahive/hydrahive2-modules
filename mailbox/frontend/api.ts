@@ -2,6 +2,7 @@ import { api } from "@/shared/api-client"
 import { useAuthStore } from "@/features/auth/useAuthStore"
 import type { FolderRow } from "./mailFormat"
 import type { ComposeMode, Draft, Prefill } from "./composeFormat"
+import type { FlowStart } from "./msFlow"
 
 const BASE = "/modules/mailbox"
 
@@ -18,6 +19,7 @@ export interface Account {
   smtp_tls: "ssl" | "starttls"
   username: string
   signature: string
+  auth: "password" | "oauth_microsoft" | "oauth_google"
   status: "new" | "ok" | "auth_failed" | "error"
   status_detail: string
   sync?: { running: number; messages_done: number; folders_done: number; folders_total: number; finished_at: string | null; last_error: string }
@@ -45,6 +47,7 @@ export interface Suggestion {
   smtp_tls: "ssl" | "starttls"
   hint: string
   known: boolean
+  auth: "password" | "oauth_microsoft"
 }
 
 export interface MailItem {
@@ -156,6 +159,18 @@ export const mailApi = {
   saveDraft: (d: Draft, id: string | null) =>
     id ? api.patch<SavedDraft>(`${BASE}/drafts/${encodeURIComponent(id)}`, d) : api.post<SavedDraft>(`${BASE}/drafts`, d),
   deleteDraft: (id: string) => api.delete<void>(`${BASE}/drafts/${encodeURIComponent(id)}`),
+  // M1b: Microsoft-Anmeldung (App einmal global durch den Admin, Anmeldung je Konto per Geräte-Code)
+  msStatus: () => api.get<{ configured: boolean }>(`${BASE}/microsoft/status`),
+  msApp: () => api.get<{ client_id: string; tenant: string }>(`${BASE}/microsoft/app`),
+  msSaveApp: (client_id: string, tenant: string) =>
+    api.put<{ client_id: string; tenant: string }>(`${BASE}/microsoft/app`, { client_id, tenant }),
+  msCheckApp: () => api.post<{ ok: boolean; error?: string; message?: string }>(`${BASE}/microsoft/app/check`, {}),
+  msStart: () => api.post<FlowStart>(`${BASE}/microsoft/flows`, {}),
+  msPoll: (flowId: string) => api.get<{ state: string; error?: string }>(`${BASE}/microsoft/flows/${encodeURIComponent(flowId)}`),
+  msCreate: (flow_id: string, address: string, label: string) =>
+    api.post<Account>(`${BASE}/microsoft/accounts`, { flow_id, address, label }),
+  msReauth: (id: string, flow_id: string) =>
+    api.post<Account>(`${BASE}/accounts/${encodeURIComponent(id)}/microsoft`, { flow_id }),
   act: (ids: number[], action: MailAction, target?: string) =>
     api.post<{ done: number; skipped: number }>(`${BASE}/messages/actions`, { ids, action, ...(target ? { target } : {}) }),
 }
