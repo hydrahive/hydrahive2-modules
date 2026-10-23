@@ -11,7 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response, status
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import access, accounts, providers, search, sync_job
+from . import access, accounts, ms_tokens, providers, search, sync_job
 from .action_routes import router as action_router
 from .body_routes import router as body_router
 from .compose_routes import router as compose_router
@@ -89,6 +89,7 @@ def delete_account(aid: str, auth: Auth) -> Response:
         accounts.remove(auth[0], aid)
     except accounts.NotFound as e:
         _fail(e)
+    ms_tokens.forget(aid)      # Microsoft: Zugriffstoken nicht im Speicher liegen lassen
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

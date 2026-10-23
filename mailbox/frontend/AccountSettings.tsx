@@ -13,6 +13,20 @@ export function AccountSettings({ account, onClose, onSaved }: { account: Accoun
   const [sig, setSig] = useState(account.signature)
   const [err, setErr] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [removing, setRemoving] = useState(false)
+
+  async function remove() {
+    if (!window.confirm(t("settings.removeConfirm", { address: account.address }))) return
+    setRemoving(true)
+    setErr(false)
+    try {
+      await mailApi.removeAccount(account.id)
+      onSaved()
+    } catch {
+      setErr(true)
+      setRemoving(false)
+    }
+  }
 
   async function save() {
     setBusy(true)
@@ -46,6 +60,12 @@ export function AccountSettings({ account, onClose, onSaved }: { account: Accoun
         <p className="text-[11px] text-[#718097]">{t("settings.signatureHint")}</p>
         {err && <p role="alert" className="text-xs text-rose-300">{t("settings.failed")}</p>}
         {account.auth === "oauth_microsoft" && <MsReauth account={account} onDone={onSaved} />}
+        <section className="space-y-1 border-t border-[#2a364b] pt-3">
+          <button type="button" onClick={() => void remove()} disabled={removing} data-mbx-remove="1"
+            className="rounded-[4px] border border-rose-400/40 px-3 py-1 text-sm text-rose-300 hover:bg-rose-400/10 disabled:opacity-50">
+            {t("settings.remove")}</button>
+          <p className="text-[11px] text-[#718097]">{t("settings.removeHint")}</p>
+        </section>
         <footer className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-[4px] border border-[#2a364b] px-3 py-1 text-sm text-[#c8d2df]">
             {t("settings.cancel")}</button>
