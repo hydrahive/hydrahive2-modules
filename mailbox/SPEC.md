@@ -176,7 +176,8 @@ Das ist das Archiv: Jede Datei lässt sich ohne HydraHive mit jedem Mailprogramm
 | **M1b** | OAuth Microsoft (Geräte-Code), danach Google-OAuth optional. **Zum Schluss** (Till: Azure-App erst dann) | Tills Microsoft-Adresse liest und sendet |
 | **M2** | Schreiben, Antworten, Weiterleiten, Entwürfe, Signaturen, Verschieben, Löschen, Archiv-Regel | Mail gesendet und im Gesendet-Ordner, gelöschte Server-Mail bleibt im Archiv |
 | **M2b** | Archiv als Backup (§5a: Prüfung, Manifest, Speicherort) + Kern-PR §9.3 + Samba-Freigabe nur lesbar | `Mailarchiv-till` im Datei-Manager sichtbar, nicht beschreibbar, ein fremder Nutzer sieht es nicht |
-| **M3** | Gemeinsame Konten (Gruppe), Freigabe je Projekt, Werkzeuge `read` + `draft`, Protokoll | Rechts-Agent findet Mail im freigegebenen Konto, sieht ein anderes nicht |
+| **M3a** | Freigabe je Projekt bzw. Buddy (Stufe `read`), Werkzeuge `mailbox_accounts/search/read/attachment`, Protokoll (PLAN-M3a.md, 0.6.0) | Rechts-Agent findet Mail im freigegebenen Konto, sieht ein anderes nicht |
+| **M3b** | Stufe `draft`: `mailbox_draft`, `mailbox_move`, `mailbox_flag`; gemeinsame Konten (Gruppe) | Agent legt Entwurf an, der im Webmail erscheint |
 | **M4** | Kern-PR §9.1 + `mailbox_send` mit Bestätigung | Senden nur nach „Ja“, ohne Antwort wird nicht gesendet |
 | **M5** | Legal-Anbindung, Mail → Task/Ticket, Regeln/Filter, Vitrine-Hinweis | nach Bedarf |
 

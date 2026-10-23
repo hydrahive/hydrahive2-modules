@@ -126,7 +126,16 @@ function withToken(path: string, extra = ""): string {
   return `/api${BASE}${path}?token=${encodeURIComponent(token)}${extra}`
 }
 
+export interface Share { target: string; level: "read"; name: string; created_by: string; created_at: string }
+export interface ShareAudit { at: string; username: string; project_id: string; tool: string; message_id: number | null; result: string }
+export interface SharesInfo { shares: Share[]; projects: { id: string; name: string }[]; audit: ShareAudit[] }
+
 export const mailApi = {
+  shares: (id: string) => api.get<SharesInfo>(`${BASE}/accounts/${encodeURIComponent(id)}/shares`),
+  addShare: (id: string, target: string) =>
+    api.put<Share>(`${BASE}/accounts/${encodeURIComponent(id)}/shares`, { target, level: "read" }),
+  removeShare: (id: string, target: string) =>
+    api.delete<void>(`${BASE}/accounts/${encodeURIComponent(id)}/shares/${encodeURIComponent(target)}`),
   accounts: () => api.get<Account[]>(`${BASE}/accounts`),
   account: (id: string) => api.get<Account>(`${BASE}/accounts/${encodeURIComponent(id)}`),
   suggest: (address: string) => api.get<Suggestion>(`${BASE}/suggest?address=${encodeURIComponent(address)}`),

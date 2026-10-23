@@ -17,8 +17,10 @@ from .body_routes import router as body_router
 from .compose_routes import router as compose_router
 from .ms_routes import router as ms_router
 from .schemas import AccountIn, AccountPatch
+from .share_routes import router as share_router
 
 router = APIRouter()
+router.include_router(share_router)
 router.include_router(body_router)
 router.include_router(compose_router)
 router.include_router(action_router)

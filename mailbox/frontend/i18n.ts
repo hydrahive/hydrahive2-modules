@@ -4,6 +4,10 @@ export const i18n = {
     mailbox: {
       title: "Mailbox",
       folders: { expand: "Ordner von {{account}} ausklappen", collapse: "Ordner von {{account}} einklappen", sync: "Jetzt abrufen" },
+      shares: { title: "Freigaben für Agenten", hint: "Agenten im gewählten Projekt dürfen dieses Konto durchsuchen, Mails lesen und Anhänge in ihren Arbeitsordner holen. Senden und Ändern können sie nicht.",
+        none: "Noch für niemanden freigegeben.", buddy: "Mein Buddy (ohne Projekt)", unknown: "(Projekt nicht mehr vorhanden)",
+        read: "lesen", pick: "Projekt wählen …", add: "Freigeben", remove: "Freigabe entfernen",
+        failed: "Freigaben konnten nicht geladen oder gespeichert werden", audit: "Letzte Agenten-Zugriffe ({{n}})" },
       compose: {
         new: "Neue Mail", reply: "Antworten", replyAll: "Allen antworten", forward: "Weiterleiten",
         from: "Von", to: "An", cc: "Cc", bcc: "Bcc", subject: "Betreff", body: "Text",
@@ -68,6 +72,10 @@ export const i18n = {
     mailbox: {
       title: "Mailbox",
       folders: { expand: "Expand folders for {{account}}", collapse: "Collapse folders for {{account}}", sync: "Check now" },
+      shares: { title: "Sharing with agents", hint: "Agents in the selected project may search this account, read mail and save attachments to their workspace. They cannot send or change anything.",
+        none: "Not shared with anyone yet.", buddy: "My Buddy (no project)", unknown: "(project no longer exists)",
+        read: "read", pick: "Choose project …", add: "Share", remove: "Remove sharing",
+        failed: "Sharing could not be loaded or saved", audit: "Recent agent access ({{n}})" },
       compose: {
         new: "New mail", reply: "Reply", replyAll: "Reply all", forward: "Forward",
         from: "From", to: "To", cc: "Cc", bcc: "Bcc", subject: "Subject", body: "Text",

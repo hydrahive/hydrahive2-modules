@@ -26,7 +26,8 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
-TABLES = ("module_mailbox_accounts", "module_mailbox_sync", "module_mailbox_sendlog", "module_mailbox_settings")
+TABLES = ("module_mailbox_accounts", "module_mailbox_sync", "module_mailbox_sendlog", "module_mailbox_settings",
+          "module_mailbox_shares", "module_mailbox_audit")
 
 
 @pytest.fixture(scope="session", autouse=True)
