@@ -1,7 +1,7 @@
 {
   "id": "studio",
   "name": "Studio",
-  "version": "0.35.2",
+  "version": "0.35.3",
   "description": "Film oder Trailer in 5 geführten Schritten: Idee → Figuren & Orte (Foto → Probebild) → Bilder → Bewegung → Film mit Musik, Erzählstimme und Untertiteln. Für alles Feinere die Profi-Ansicht mit Drehbuch, Zeitleiste, Mischpult, Untertiteln und Ausgabe. Löst Atelier, Video-Editor und Tonstudio ab.",
   "icon": "Clapperboard",
   "nav_group": "working",
