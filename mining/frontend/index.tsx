@@ -8,7 +8,7 @@ export const nav = [
     path: "/mining",
     icon: "Pickaxe",
     labelKey: "mining",
-    group: "working",
+    group: "working", area: "zuhause",
     roles: [] as ("admin" | "user")[],
   },
 ]

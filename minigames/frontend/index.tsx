@@ -10,7 +10,7 @@ export const nav = [
     path: "/minigames",
     icon: "Gamepad2",
     labelKey: "mg_title",
-    group: "working",
+    group: "working", area: "freizeit",
     roles: [] as ("admin" | "user")[],
   },
 ]

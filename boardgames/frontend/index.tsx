@@ -10,7 +10,7 @@ export const nav = [
     path: "/boardgames",
     icon: "Crown",
     labelKey: "bg_title",
-    group: "working",
+    group: "working", area: "freizeit",
     roles: [] as ("admin" | "user")[],
   },
 ]

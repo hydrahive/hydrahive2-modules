@@ -7,7 +7,7 @@ export const nav = [
     path: "/homeassistant",
     icon: "House",
     labelKey: "homeassistant",
-    group: "working",
+    group: "working", area: "zuhause",
     roles: [] as ("admin" | "user")[],
   },
 ]

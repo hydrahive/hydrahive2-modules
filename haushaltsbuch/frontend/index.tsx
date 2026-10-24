@@ -9,7 +9,7 @@ export const nav = [
     path: "/haushaltsbuch",
     icon: "WalletCards",
     labelKey: "haushaltsbuch",
-    group: "working",
+    group: "working", area: "zuhause",
     roles: [] as ("admin" | "user")[],
     cockpit: true,
   },

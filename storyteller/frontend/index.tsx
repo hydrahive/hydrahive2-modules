@@ -9,7 +9,7 @@ export const nav = [
     path: "/storyteller",
     icon: "Feather",
     labelKey: "storyteller",
-    group: "working",
+    group: "working", area: "schreiben",
     roles: [] as ("admin" | "user")[],
   },
 ]

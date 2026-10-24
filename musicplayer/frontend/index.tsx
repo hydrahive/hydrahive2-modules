@@ -3,7 +3,7 @@ import { MediaPlayerPage } from "./MediaPlayerPage"
 import { MusicPlayerBuddyBox } from "./MusicPlayerBuddyBox"
 
 export const routes = [{ path: "/musicplayer", element: <MediaPlayerPage /> }]
-export const nav = [{ path: "/musicplayer", icon: "Clapperboard", labelKey: "musicplayer", group: "working", roles: [], cockpit: true }]
+export const nav = [{ path: "/musicplayer", icon: "Clapperboard", labelKey: "musicplayer", group: "working", area: "medien", roles: [], cockpit: true }]
 export const buddyMediaWidgets = [{ id: "musicplayer", order: 10, component: MusicPlayerBuddyBox }] satisfies BuddyMediaWidget[]
 
 export const i18n = {

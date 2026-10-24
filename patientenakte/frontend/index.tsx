@@ -14,7 +14,7 @@ export const nav = [
     path: "/akte",
     icon: "FolderHeart",
     labelKey: "akte",
-    group: "overview",
+    group: "overview", area: "zuhause",
     roles: [] as ("admin" | "user")[],
   },
 ]

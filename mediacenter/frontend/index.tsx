@@ -10,7 +10,7 @@ export const nav = [
     path: "/mediacenter",
     icon: "MonitorPlay",
     labelKey: "mediacenter",
-    group: "working",
+    group: "working", area: "freizeit",
     roles: [] as ("admin" | "user")[],
     cockpit: true,
   },

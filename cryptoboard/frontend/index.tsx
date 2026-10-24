@@ -7,7 +7,7 @@ export const nav = [
     path: "/cryptoboard",
     icon: "CandlestickChart",
     labelKey: "cryptoboard",
-    group: "working",
+    group: "working", area: "zuhause",
     roles: [] as ("admin" | "user")[],
   },
 ]

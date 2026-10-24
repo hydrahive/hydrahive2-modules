@@ -3,7 +3,7 @@ import { VrPage } from "./VrPage"
 export const routes = [{ path: "/vr", element: <VrPage /> }]
 
 export const nav = [
-  { path: "/vr", icon: "Glasses", labelKey: "vr", group: "working", roles: [] as ("admin" | "user")[] },
+  { path: "/vr", icon: "Glasses", labelKey: "vr", group: "working", area: "freizeit", roles: [] as ("admin" | "user")[] },
 ]
 
 export const i18n = {
