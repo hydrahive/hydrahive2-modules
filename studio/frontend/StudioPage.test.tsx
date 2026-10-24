@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server"
+import { MemoryRouter } from "react-router-dom"
 import { describe, expect, it, vi } from "vitest"
 
-vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k) }) }))
+vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k), i18n: { language: "de", resolvedLanguage: "de", changeLanguage: () => Promise.resolve() } }) }))
 vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() => {})) } }))
 import type { LibraryItem } from "./api"
 import { studioI18n } from "./i18n"
@@ -34,12 +35,14 @@ const ITEMS = [
 
 describe("Studio Etappe 1", () => {
   it("Gerüst mit Hauptmenü oben, vier Bereiche, sechs Arbeitsbereiche", () => {
-    const out = html(<StudioPage />)
+    const out = html(<MemoryRouter initialEntries={["/studio"]}><StudioPage /></MemoryRouter>)
     expect(attr(out, "data-studio-panel")).toEqual(["sidebar", "preview", "inspector", "storyboard"])   // Start in „Planen“ (Etappe B)
     expect(attr(out, "data-studio-workspace")).toEqual(["plan", "generate", "edit", "audio", "subtitles", "deliver"])
     expect(attr(out, "data-studio-splitter")).toEqual(["x", "x", "y"])
-    const top = out.search(/href="\/buddy"|Buddy|Projekte/)
+    // Hauptmenü = Bereichs-Leiste des Kerns (#618): Start-Knopf + „Alle Apps“ stehen über dem Studio.
+    const top = out.search(/aria-label="Start"/)
     expect(top).toBeGreaterThanOrEqual(0)
+    expect(out.search(/aria-label="Alle Apps"/)).toBeLessThan(out.indexOf("data-studio-root"))
     expect(top).toBeLessThan(out.indexOf("data-studio-root"))
   })
 
