@@ -3,7 +3,7 @@ import { DeepResearchPage } from "./DeepResearchPage"
 export const routes = [{ path: "/deepresearch", element: <DeepResearchPage /> }]
 
 export const nav = [
-  { path: "/deepresearch", icon: "Telescope", labelKey: "deepresearch", group: "working", roles: [] },
+  { path: "/deepresearch", icon: "Telescope", labelKey: "deepresearch", group: "working", area: "wissen", roles: [] },
 ]
 
 export const i18n = {

@@ -2,7 +2,7 @@ import { VitrinePage } from "./VitrinePage"
 
 export const routes = [{ path: "/vitrine", element: <VitrinePage /> }]
 export const nav = [
-  { path: "/vitrine", icon: "MonitorPlay", labelKey: "vitrine", group: "working", roles: ["admin"] as ("admin" | "user")[], cockpit: true },
+  { path: "/vitrine", icon: "MonitorPlay", labelKey: "vitrine", group: "working", area: "zuhause", roles: ["admin"] as ("admin" | "user")[], cockpit: true },
 ]
 
 export const i18n = {

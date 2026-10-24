@@ -11,7 +11,7 @@ export const routes = [
 ]
 
 export const nav = [
-  { path: "/studio", icon: "Clapperboard", labelKey: "studio", group: "working", roles: [] as ("admin" | "user")[], cockpit: true },
+  { path: "/studio", icon: "Clapperboard", labelKey: "studio", group: "working", area: "medien", roles: [] as ("admin" | "user")[], cockpit: true },
 ]
 
 export const i18n = studioI18n

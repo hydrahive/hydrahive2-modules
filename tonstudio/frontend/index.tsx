@@ -1,7 +1,7 @@
 import { TonstudioPage } from "./TonstudioPage"
 
 export const routes = [{ path: "/tonstudio", element: <TonstudioPage /> }]
-export const nav = [{ path: "/tonstudio", icon: "AudioLines", labelKey: "tonstudio", group: "working", roles: [], cockpit: true }]
+export const nav = [{ path: "/tonstudio", icon: "AudioLines", labelKey: "tonstudio", group: "working", area: "medien", roles: [], cockpit: true }]
 
 export const i18n = {
   de: { tonstudio: {

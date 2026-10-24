@@ -2,7 +2,7 @@ import { NotizbuchPage } from "./NotizbuchPage"
 
 export const routes = [{ path: "/notizbuch", element: <NotizbuchPage /> }]
 export const nav = [
-  { path: "/notizbuch", icon: "NotebookPen", labelKey: "notizbuch", group: "working", roles: [] },
+  { path: "/notizbuch", icon: "NotebookPen", labelKey: "notizbuch", group: "working", area: "schreiben", roles: [] },
 ]
 export const i18n = {
   de: {

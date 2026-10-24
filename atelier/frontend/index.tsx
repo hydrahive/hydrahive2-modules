@@ -4,7 +4,7 @@ export { mediaSources } from "./mediaSource"
 
 export const routes = [{ path: "/atelier", element: <AtelierPage /> }]
 export const nav = [
-  { path: "/atelier", icon: "Palette", labelKey: "atelier", group: "working", roles: [] },
+  { path: "/atelier", icon: "Palette", labelKey: "atelier", group: "working", area: "medien", roles: [] },
 ]
 
 // Theme-Template-Baustein: <hh-atelier/> in einem Template. Wird vom Core über

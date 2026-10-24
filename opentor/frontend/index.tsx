@@ -7,7 +7,7 @@ export const nav = [
     path: "/opentor",
     icon: "ShieldSearch",
     labelKey: "title",
-    group: "working",
+    group: "working", area: "wissen",
     roles: ["admin", "user"] as ("admin" | "user")[],
   },
 ]

@@ -1,7 +1,7 @@
 {
   "id": "tonstudio",
   "name": "Tonstudio",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Songs mit KI erzeugen, arrangieren, mischen und exportieren – projektgebunden, mit austauschbaren Musik-Modellen (Lyria über OpenRouter, später lokal ACE-Step). M1: Songs, Bibliothek und Clips erzeugen.",
   "icon": "AudioLines",
   "nav_group": "working",

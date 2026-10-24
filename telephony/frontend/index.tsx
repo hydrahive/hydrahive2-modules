@@ -8,7 +8,7 @@ export const nav = [
     path: "/voip",
     icon: "PhoneCall",
     labelKey: "voip",
-    group: "working",
+    group: "working", area: "kommunikation",
     roles: [] as ("admin" | "user")[],
     cockpit: true,
   },

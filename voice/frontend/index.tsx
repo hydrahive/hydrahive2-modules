@@ -10,7 +10,7 @@ export const nav = [
     path: "/voice",
     icon: "Mic",
     labelKey: "voice",
-    group: "working",
+    group: "working", area: "kommunikation",
     roles: [] as ("admin" | "user")[],
     cockpit: true,
   },

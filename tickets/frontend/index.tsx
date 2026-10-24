@@ -7,7 +7,7 @@ export const nav = [
     path: "/tickets",
     icon: "Ticket",
     labelKey: "tickets",
-    group: "working",
+    group: "working", area: "agenten",
     topnav: true,
     cockpit: true,
     roles: [] as ("admin" | "user")[],

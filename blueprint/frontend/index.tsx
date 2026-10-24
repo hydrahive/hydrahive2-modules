@@ -7,7 +7,7 @@ export const nav = [
     path: "/blueprint",
     icon: "PenTool",
     labelKey: "blueprint",
-    group: "working",
+    group: "working", area: "schreiben",
     roles: [] as ("admin" | "user")[],
   },
 ]
