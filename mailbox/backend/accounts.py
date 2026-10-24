@@ -9,7 +9,7 @@ import sqlite3
 from hydrahive.db._utils import now_iso
 from hydrahive.db.connection import db
 
-from . import netcheck, providers, secrets
+from . import agent_tool_sync, netcheck, providers, secrets
 
 _PUBLIC = ("id", "label", "address", "sender_name", "auth", "imap_host", "imap_port", "imap_tls", "smtp_host",
            "smtp_port", "smtp_tls", "username", "signature", "status", "status_detail", "created_at", "updated_at")
@@ -86,7 +86,7 @@ def _test_login(acc: dict, password: str) -> dict:
     import imaplib
     import ssl
 
-    from . import auth_login, imap_conn   # lokal: auth_login → ms_tokens → accounts
+    from . import auth_login, imap_conn  # lokal: auth_login → ms_tokens → accounts
     try:
         conn = imap_conn.open_connection(acc, allow_internal=allowed_internal_hosts())
     except netcheck.HostBlocked as e:
@@ -176,9 +176,12 @@ def remove(user: str, aid: str) -> None:
     with db() as c:
         if not c.execute("SELECT 1 FROM module_mailbox_accounts WHERE id=? AND owner=?", (aid, _owner(user))).fetchone():
             raise NotFound(aid)
+        targets = [r[0] for r in c.execute("SELECT target FROM module_mailbox_shares WHERE account_id=?", (aid,))]
         c.execute("DELETE FROM module_mailbox_sync WHERE account_id=?", (aid,))
         c.execute("DELETE FROM module_mailbox_shares WHERE account_id=?", (aid,))   # M3a: Freigaben gehen mit
         c.execute("DELETE FROM module_mailbox_accounts WHERE id=? AND owner=?", (aid, _owner(user)))
+    for t in targets:
+        agent_tool_sync.sync_target(t)
 
 
 def password_of(aid: str) -> str:

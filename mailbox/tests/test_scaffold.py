@@ -74,7 +74,7 @@ def test_register_meldet_router_job_migrationen():
 
     backend.register(Ctx())
     assert seen["routers"] == 1 and seen["migrations"] == ["migrations"]
-    assert [n for n, _ in seen["jobs"]] == ["sync", "idle"]          # M2: IDLE-Aufseher
+    assert [n for n, _ in seen["jobs"]] == ["sync", "idle", "tool_sync"]   # M2: IDLE; 0.7.1: Werkzeug-Abgleich
     kw = dict(seen["jobs"])
     assert kw["sync"]["interval_seconds"] == 300 and kw["idle"]["interval_seconds"] == 60
 

@@ -11,7 +11,7 @@ import re
 from hydrahive.db._utils import now_iso
 from hydrahive.db.connection import db
 
-from . import accounts
+from . import accounts, agent_tool_sync
 
 LEVELS = ("read", "draft")              # M4: send
 RANK = {"read": 1, "draft": 2}
@@ -60,6 +60,7 @@ def put(user: str, aid: str, target: str, level: str = "read") -> dict:
         c.execute("INSERT INTO module_mailbox_shares(account_id, target, level, created_by, created_at) "
                   "VALUES (?,?,?,?,?) ON CONFLICT(account_id, target) DO UPDATE SET level=excluded.level",
                   (aid, target, level, user, now_iso()))
+    agent_tool_sync.sync_target(target)
     return next(s for s in list_for(user, aid) if s["target"] == target)
 
 
@@ -76,8 +77,11 @@ def remove(user: str, aid: str, target: str) -> bool:
     if not accounts.get_own(user, aid):
         raise NotFound(aid)
     with db() as c:
-        return c.execute("DELETE FROM module_mailbox_shares WHERE account_id=? AND target=?",
+        gone = c.execute("DELETE FROM module_mailbox_shares WHERE account_id=? AND target=?",
                          (aid, target)).rowcount > 0
+    if gone:
+        agent_tool_sync.sync_target(target)
+    return gone
 
 
 def owner_of(aid: str) -> str | None:
