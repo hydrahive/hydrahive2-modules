@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server"
+import { MemoryRouter } from "react-router-dom"
 import { describe, expect, it, vi } from "vitest"
 
-vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k) }) }))
+vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k), i18n: { language: "de", resolvedLanguage: "de", changeLanguage: () => Promise.resolve() } }) }))
 vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() => {})) } }))
 import { GenerateHint } from "./GenerateHint"
 import { ShotList } from "./ShotList"
@@ -83,7 +84,7 @@ describe("Alle Reiter sind echt – keine Beispiele, kein „kommt noch“ (Unte
   })
 
   it("Studio startet ohne Beispieldaten (kein „Nordwind“, kein Beispiel-Hinweis)", () => {
-    const out = html(<StudioPage />)
+    const out = html(<MemoryRouter initialEntries={["/studio"]}><StudioPage /></MemoryRouter>)
     expect(out).not.toContain("data-studio-demo-badge")
     expect(out).not.toContain("Titel: Nordwind")
   })
