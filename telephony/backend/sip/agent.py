@@ -21,6 +21,20 @@ logger = logging.getLogger(__name__)
 _STOP_STATES = {"auth_failed", "not_found", "port_in_use"}
 
 
+def source_ip_for(target: tuple[str, int]) -> str:
+    """Eigene Adresse auf dem Weg zur Anlage (Routing des Systems; es wird nichts gesendet).
+
+    Wichtig bei mehreren Netzen, z. B. Kabel ins Heimnetz und WLAN zur FRITZ!Box: Die Anlage muss in Via/Contact
+    die Adresse sehen, über die sie uns erreicht – nie 0.0.0.0.
+    """
+    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        probe.connect(target)
+        return probe.getsockname()[0]
+    finally:
+        probe.close()
+
+
 class SipAgent:
     def __init__(self, *, connection_id: str, user: str, password: str, domain: str, target: tuple[str, int],
                  bind: tuple[str, int], display_name: str, interval: int,
@@ -76,8 +90,15 @@ class SipAgent:
             return
         self._sock = sock
         self.local_addr = sock.getsockname()
-        self._state.local = (self._state.local[0], self.local_addr[1]) if self._state.local[1] == 0 \
-            else self._state.local
+        host = self.local_addr[0]
+        if host in ("0.0.0.0", ""):
+            try:
+                host = source_ip_for(self._state.target)
+            except OSError:
+                sock.close()
+                self._set("unreachable")
+                return
+        self._state.local = (host, self.local_addr[1])
         try:
             self._loop(sock)
         finally:

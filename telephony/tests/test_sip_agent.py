@@ -175,3 +175,25 @@ def test_kennwort_nicht_in_repr(reg) -> None:
     from backend.sip.agent import SipAgent
 
     assert "Sehr-Geheim-42" not in repr(SipAgent(**_cfg(reg)))
+
+
+def test_gebunden_an_alle_adressen_meldet_die_echte_quelladresse(reg) -> None:
+    """Bind 0.0.0.0 → in Via/Contact steht die Adresse, über die die Anlage erreicht wird (nie 0.0.0.0)."""
+    from backend.sip.agent import SipAgent
+
+    a = SipAgent(**_cfg(reg, bind=("0.0.0.0", 0)))
+    a.start()
+    try:
+        assert _wait(lambda: a.status == "registered")
+        first = reg.registers()[0]
+        assert "0.0.0.0" not in first.header("via") and "0.0.0.0" not in first.header("contact")
+        assert "SIP/2.0/UDP 127.0.0.1:" in first.header("via")
+        assert "@127.0.0.1:" in first.header("contact")
+    finally:
+        a.stop()
+
+
+def test_quelladresse_ermitteln() -> None:
+    from backend.sip.agent import source_ip_for
+
+    assert source_ip_for(("127.0.0.1", 5060)) == "127.0.0.1"
