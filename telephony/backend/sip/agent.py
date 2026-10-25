@@ -1,8 +1,8 @@
 """Dauerhafte SIP-Anmeldung einer Verbindung in einem eigenen Thread (PLAN-EINSTELLUNGEN Schritt 5).
 
 Hält einen festen UDP-Port, meldet sich an, erneuert bei der Hälfte der gewährten Zeit und meldet beim Stoppen ab
-(Expires 0). Anfragen der Anlage werden beantwortet: OPTIONS → 200, INVITE → 480 (Etappe 1 nimmt noch keine Anrufe an;
-andere Telefone klingeln weiter), BYE/CANCEL → 200 bzw. 481. Anfragen anderer Absender werden verworfen.
+(Expires 0). Anfragen der Anlage werden beantwortet: OPTIONS → 200, Anrufe über den CallDispatcher (annehmen/480,
+BYE/CANCEL). ``dial`` wählt über denselben Socket (Etappe 3). Anfragen anderer Absender werden verworfen.
 Bei falschem Kennwort wird nicht erneut versucht (die FRITZ!Box sperrt sonst die Nebenstelle).
 """
 from __future__ import annotations
@@ -14,7 +14,8 @@ import threading
 import time
 from collections.abc import Callable
 
-from . import message
+from . import agent_dial, message
+from .agent_dial import LineBusy, NotReady  # noqa: F401 - Teil der Schnittstelle
 from .dispatch import CallDispatcher
 from .register import RegState, register
 
@@ -56,8 +57,9 @@ class SipAgent:
         self.status = "disconnected"
         self.local_addr: tuple[str, int] | None = None
         self.ignored = 0
+        self._record = call_record or (lambda r: None)
         self.calls = CallDispatcher(policy=call_policy or (lambda: None), rtp_ports=rtp_ports,
-                                    record=call_record or (lambda r: None), **(call_options or {}))
+                                    record=self._record, **(call_options or {}))
         if call_assistant is not None:
             self.calls.assistant = call_assistant
 
@@ -82,6 +84,10 @@ class SipAgent:
         self._stop.clear()
         self._thread = threading.Thread(target=self._run, name=f"tel-sip-{self.connection_id}", daemon=True)
         self._thread.start()
+
+    def dial(self, number: str, audio, **options):
+        """Ausgehender Anruf über diese Anmeldung (sip/agent_dial.py). Nummer vorher mit dialrules prüfen."""
+        return agent_dial.dial(self, number, audio, record=self._record, **options)
 
     def stop(self, timeout: float = 4.0) -> None:
         self._stop.set()

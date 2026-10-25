@@ -72,12 +72,14 @@ def record(cid: str, info: dict) -> None:
             return
         is_test = _ts(row["test_until"]) > _now() and info.get("result") != "busy"
         notes = _notes(info.get("notes"))
+        direction = "out" if info.get("direction") == "out" else "in"
+        is_test = is_test and direction == "in"
         c.execute("INSERT INTO module_telephony_calls(connection_id, started_at, number, result, codec, rtp_out, "
-                  "rtp_in, is_test, turns, notes, notes_read) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                  "rtp_in, is_test, turns, notes, notes_read, direction) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                   (cid, now_iso(), str(info.get("number", "unbekannt"))[:20], str(info.get("result", ""))[:20],
                    str(info.get("codec", ""))[:8], int(info.get("rtp_out", 0)), int(info.get("rtp_in", 0)),
                    int(is_test), int(info.get("turns", 0)), json.dumps(notes, ensure_ascii=False) if notes else "",
-                   0 if notes else 1))
+                   0 if notes else 1, direction))
         if is_test:
             c.execute("UPDATE module_telephony_connections SET test_until=NULL WHERE id=?", (cid,))
         c.execute("DELETE FROM module_telephony_calls WHERE connection_id=? AND id NOT IN (SELECT id FROM "
@@ -116,7 +118,8 @@ def _public(r) -> dict:
     return {"id": r["id"], "started_at": r["started_at"], "number": r["number"], "result": r["result"],
             "codec": r["codec"], "rtp_out": r["rtp_out"], "rtp_in": r["rtp_in"], "is_test": bool(r["is_test"]),
             "heard": None if r["heard"] is None else bool(r["heard"]), "turns": r["turns"],
-            "notes": json.loads(r["notes"]) if r["notes"] else {}, "notes_read": bool(r["notes_read"])}
+            "notes": json.loads(r["notes"]) if r["notes"] else {}, "notes_read": bool(r["notes_read"]),
+            "direction": r["direction"]}
 
 
 def list_for(user_id: str) -> list[dict]:

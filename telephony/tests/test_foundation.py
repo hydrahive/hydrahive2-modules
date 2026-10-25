@@ -31,7 +31,7 @@ def test_status_is_honest_about_unavailable_telephony(client, auth_headers) -> N
             "setup": True,
             "registration": True,
             "inbound_calls": True,
-            "outbound_calls": False,
+            "outbound_calls": True,
             "archive": False,
         },
     }
@@ -89,12 +89,12 @@ def test_manifest_declares_installable_foundation() -> None:
     assert manifest == {
         "id": "telephony",
         "name": "VoIP",
-        "version": "0.8.3",
+        "version": "0.9.0",
         "description": (
             "Telefonassistent für die FRITZ!Box und andere SIP-Anlagen – in Entwicklung. "
             "Verbindet HydraHive mit der Anlage und nimmt Anrufe mit einer Ansage oder dem KI-Telefon-Assistenten "
             "an (Anliegen aufnehmen, Fragen aus eigenem Wissenstext beantworten, Notiz). "
-            "Selbst anrufen und Kontakte folgen."
+            "Ruft auf Knopfdruck selbst an und liest eine Ansage vor. Kontakte folgen."
         ),
         "icon": "PhoneCall",
         "nav_group": "working",

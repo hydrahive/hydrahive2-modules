@@ -2,7 +2,7 @@
 export const connDe = {
   title: "Verbindung zur Telefonanlage",
   intro: "HydraHive meldet sich wie ein IP-Telefon an deiner FRITZ!Box an. Lege dafür zuerst in der FRITZ!Box ein IP-Telefon an (Anleitung unten) und trage die Daten hier ein.",
-  stage_notice: "Nach dem Verbinden kannst du unten einstellen, ob HydraHive Anrufe annimmt – mit einer Ansage oder mit dem Telefon-Assistenten. Selbst anrufen folgt in einer der nächsten Versionen.",
+  stage_notice: "Nach dem Verbinden kannst du unten einstellen, ob HydraHive Anrufe annimmt – mit einer Ansage oder mit dem Telefon-Assistenten. Selbst anrufen kannst du im Reiter „Telefonaufträge“.",
   pbx: "Anlage",
   pbx_fritzbox: "FRITZ!Box",
   pbx_sip: "Andere SIP-Anlage",
@@ -86,7 +86,7 @@ export type ConnTexts = typeof connDe
 export const connEn: ConnTexts = {
   title: "Connection to the phone system",
   intro: "HydraHive signs in to your FRITZ!Box like an IP phone. First create an IP phone in the FRITZ!Box (guide below), then enter its details here.",
-  stage_notice: "After connecting you can choose below whether HydraHive answers calls – with an announcement or with the phone assistant. Placing calls follows in one of the next versions.",
+  stage_notice: "After connecting you can choose below whether HydraHive answers calls – with an announcement or with the phone assistant. You can place calls in the "Phone tasks" tab.",
   pbx: "Phone system",
   pbx_fritzbox: "FRITZ!Box",
   pbx_sip: "Other SIP system",

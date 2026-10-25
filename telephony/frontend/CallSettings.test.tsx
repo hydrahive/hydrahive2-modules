@@ -27,11 +27,12 @@ const CONN = {
   username: "spike2000", own_number: "", local_sip_port: 5070, rtp_port_min: 7078, rtp_port_max: 7109,
   register_interval: 300, answer_calls: false, greeting: "", greeting_default: "Hallo, hier ist HydraHive.",
   test_until: null, call_mode: "greeting", assistant_name: "", assistant_knowledge: "", assistant_model: "",
+  allow_premium: false, allow_foreign: false,
 } as Extract<Connection, { configured: true }>
 
 const call = (p: Partial<CallEntry>): CallEntry => ({
   id: 1, started_at: "2026-10-25T12:00:00+00:00", number: "•••981", result: "answered", codec: "PCMA",
-  rtp_out: 250, rtp_in: 240, is_test: false, heard: null, turns: 0, notes: {}, notes_read: true, ...p,
+  rtp_out: 250, rtp_in: 240, is_test: false, heard: null, turns: 0, notes: {}, notes_read: true, direction: "in", ...p,
 })
 
 describe("Logik", () => {

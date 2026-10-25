@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { FoundationOverview } from "./_FoundationOverview"
+import { JobsSection } from "./_JobsSection"
 import { SectionPlaceholder } from "./_SectionPlaceholder"
 import { ConnectionSettings } from "./ConnectionSettings"
 import { telephonyApi } from "./api"
@@ -94,7 +95,8 @@ export function VoIPPage() {
             <FoundationOverview status={status.status} onSetup={() => setActive("settings")} />
           )}
           {!loading && !error && active === "settings" && <ConnectionSettings />}
-          {!loading && !error && active !== "overview" && active !== "settings" && (
+          {!loading && !error && active === "jobs" && <JobsSection onSetup={() => setActive("settings")} />}
+          {!loading && !error && !["overview", "settings", "jobs"].includes(active) && (
             <SectionPlaceholder section={active} icon={activeDefinition.icon} />
           )}
         </div>

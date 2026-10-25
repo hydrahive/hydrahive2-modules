@@ -57,7 +57,8 @@ def public(user_id: str) -> dict:
             "answer_calls": bool(r["answer_calls"]), "greeting": r["greeting"],
             "greeting_default": calls.DEFAULT_GREETING, "test_until": calls.open_window(r),
             "call_mode": r["call_mode"], "assistant_name": r["assistant_name"],
-            "assistant_knowledge": r["assistant_knowledge"], "assistant_model": r["assistant_model"]}
+            "assistant_knowledge": r["assistant_knowledge"], "assistant_model": r["assistant_model"],
+            "allow_premium": bool(r["allow_premium"]), "allow_foreign": bool(r["allow_foreign"])}
 
 
 def save(user_id: str, data: ConnectionIn) -> dict:

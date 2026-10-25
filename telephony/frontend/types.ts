@@ -75,6 +75,8 @@ export type Connection =
       assistant_name: string
       assistant_knowledge: string
       assistant_model: string
+      allow_premium: boolean
+      allow_foreign: boolean
     })
 
 export type CallMode = "greeting" | "assistant"
@@ -99,6 +101,7 @@ export interface AssistantSettings {
 export type CallResult =
   | "answered" | "rejected" | "busy" | "cancelled" | "caller_hangup" | "hung_up" | "no_ack" | "codec" | "no_port"
   | "assistant_end" | "no_input" | "max_duration" | "errors"
+  | "no_answer" | "declined" | "invalid_number" | "failed" | "auth_failed" | "unreachable" | "remote_hangup"
 
 export interface CallEntry {
   id: number
@@ -113,4 +116,10 @@ export interface CallEntry {
   turns: number
   notes: CallNotes
   notes_read: boolean
+  direction: "in" | "out"
 }
+
+/** Laufender bzw. letzter ausgehender Anruf (GET /connection/dial). */
+export type DialStatus =
+  | { active: false; state?: undefined }
+  | { active: boolean; state: "calling" | "ringing" | "answered" | "ended"; number: string; result: string }
