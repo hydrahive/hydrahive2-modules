@@ -1,0 +1,7 @@
+"""Feste Sätze der Gesprächsschleife (agent/conversation.py) – ein Ort, damit Tests und Texte gleich bleiben."""
+SAY_NOT_UNDERSTOOD = "Entschuldigung, das habe ich akustisch nicht verstanden. Können Sie das bitte wiederholen?"
+SAY_STILL_THERE = "Sind Sie noch da?"
+SAY_BYE_SILENT = "Ich höre leider nichts mehr. Auf Wiederhören!"
+SAY_BYE_TIME = "Unsere Zeit ist leider um. Ich gebe Ihr Anliegen weiter. Auf Wiederhören!"
+SAY_ERRORS = "Es tut mir leid, ich habe gerade technische Probleme. Bitte versuchen Sie es später noch einmal."
+SAY_THINKING = "Einen Moment."

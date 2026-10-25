@@ -37,8 +37,10 @@ def dial(agent: SipAgent, number: str, audio: Callable[[str], bytes], *, record:
 
     def finished(call: OutboundCall) -> None:
         agent.calls.finish_outbound(call)
+        extra = {"turns": call.turns, "notes": call.notes} if call._assistant is not None else {}
         record({"direction": "out", "number": "•••" + call.number[-3:], "result": call.result or "failed",
-                "codec": call.codec, "rtp_out": call.rtp_out, "rtp_in": call.rtp_in, "started_at": time.time()})
+                "codec": call.codec, "rtp_out": call.rtp_out, "rtp_in": call.rtp_in, "started_at": time.time(),
+                **extra})
         if on_end is not None:
             on_end(call)
 

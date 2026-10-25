@@ -24,11 +24,12 @@ class FakePbx:
     def __init__(self, *, user: str = "hydra-telefon", password: str = "Sehr-Geheim-42", realm: str = "fritz.box",
                  auth: int | None = 401, outcome: str = "answer", ring: float = 0.1, hangup_after: float | None = None,
                  codecs: str = "8 0", repeat_ok: bool = False, wrong_rtp_source: bool = False,
-                 rechallenge: bool = False, repeat_challenge: bool = False) -> None:
+                 rechallenge: bool = False, repeat_challenge: bool = False, speak_ms: int = 0) -> None:
         self.user, self.password, self.realm, self.auth = user, password, realm, auth
         self.outcome, self.ring, self.hangup_after, self.codecs = outcome, ring, hangup_after, codecs
         self.repeat_ok, self.wrong_rtp_source = repeat_ok, wrong_rtp_source
         self.rechallenge, self.repeat_challenge = rechallenge, repeat_challenge   # falsches Kennwort / 401 doppelt
+        self.speak_ms = speak_ms                        # > 0: meldet sich nach dem Abnehmen mit „Sprache“ (Sinuston)
         self.sip = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sip.bind(("127.0.0.1", 0))
         self.rtp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -177,9 +178,20 @@ class FakePbx:
         if self.wrong_rtp_source:
             sender = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sender.bind(("127.0.0.2", 0))
-        for i in range(10):
+        frames = [b"\xd5" * 160] * 10
+        if self.speak_ms:
+            import math
+            import struct
+
+            from backend.media import g711
+
+            pcm = struct.pack(f"<{self.speak_ms * 8}h",
+                              *(int(6000 * math.sin(2 * math.pi * 220 * n / 8000)) for n in range(self.speak_ms * 8)))
+            tone = g711.encode(pcm, "PCMA")
+            frames = [tone[i:i + 160] for i in range(0, len(tone), 160)] + [b"\xd5" * 160] * 40
+        for i, payload in enumerate(frames):
             try:
-                sender.sendto(rtp.packet(payload_type=8, seq=i, timestamp=i * 160, ssrc=7, payload=b"\xd5" * 160),
+                sender.sendto(rtp.packet(payload_type=8, seq=i, timestamp=i * 160, ssrc=7, payload=payload),
                               (o.address, o.port))
             except OSError:
                 return

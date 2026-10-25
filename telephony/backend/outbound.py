@@ -29,6 +29,10 @@ class Busy(RuntimeError):
     pass
 
 
+class TaskRequired(ValueError):
+    pass
+
+
 class Limit(RuntimeError):
     def __init__(self, code: str) -> None:
         super().__init__(code)
@@ -76,11 +80,14 @@ def set_rules(user_id: str, allow_premium: bool, allow_foreign: bool) -> dict:
     return {"allow_premium": allow_premium, "allow_foreign": allow_foreign}
 
 
-def dial(user_id: str, number: str, text: str) -> dict:
+def dial(user_id: str, number: str, text: str, mode: str = "greeting", task: str = "", may_share: str = "") -> dict:
+    """mode „greeting“: Ansage vorlesen (3a); „assistant“: Assistent führt das Gespräch mit Auftrag (3b)."""
     row = _row(user_id)
     cid = row["id"]
     target = dialrules.check(number, allow_premium=bool(row["allow_premium"]),
                              allow_foreign=bool(row["allow_foreign"]))
+    if mode == "assistant" and not task.strip():
+        raise TaskRequired()
     spoken = text.strip() or default_text(row)
     agent = _agent(cid)
     if agent is None or getattr(agent, "status", "") != "registered":
@@ -94,7 +101,11 @@ def dial(user_id: str, number: str, text: str) -> dict:
         from .sip.agent import NotReady as AgentNotReady
 
         try:
-            call = agent.dial(target, lambda codec: _render(spoken, codec))
+            options = {}
+            if mode == "assistant":
+                from . import assistant
+                options["assistant"] = assistant.outbound_bundle(cid, task.strip(), may_share.strip())
+            call = agent.dial(target, lambda codec: _render(spoken, codec), **options)
         except LineBusy:
             raise Busy() from None
         except AgentNotReady:

@@ -1,7 +1,7 @@
 /** Texte „Anrufen“ (Etappe 3). Eingebunden in i18n.ts unter voip.dial. */
 export const dialDe = {
   title: "Anrufen",
-  intro: "HydraHive ruft über deine FRITZ!Box an und liest eine Ansage vor, sobald abgenommen wird. Danach legt HydraHive auf. Nur du kannst einen Anruf auslösen.",
+  intro: "HydraHive ruft über deine FRITZ!Box an – mit einer Ansage oder der Assistent führt das Gespräch mit deinem Auftrag. Nur du kannst einen Anruf auslösen.",
   number: "Rufnummer",
   number_help: "Mit Vorwahl, z. B. 030 1234567 oder +49 30 1234567.",
   text: "Ansage",
@@ -17,7 +17,7 @@ export const dialDe = {
   state: {
     calling: "Wählt …",
     ringing: "Klingelt bei {{number}} …",
-    answered: "Verbunden – Ansage läuft",
+    answered: "Verbunden",
     ended: "Beendet",
   },
   last: "Letzter Anruf: {{number}} – {{result}}",
@@ -31,15 +31,24 @@ export const dialDe = {
     line_busy: "Es läuft schon ein Anruf.",
     too_fast: "Bitte ein paar Sekunden warten.",
     daily_limit: "Tagesgrenze erreicht (20 Anrufe).",
+    task_required: "Bitte einen Auftrag eingeben.",
     unknown: "Anruf nicht möglich.",
   },
+  mode_greeting: "Ansage vorlesen",
+  mode_assistant: "Assistent führt das Gespräch",
+  task: "Auftrag",
+  task_help: "Was soll der Assistent erreichen? Z. B. „Frag nach einem Termin für einen Reifenwechsel nächste Woche vormittags.“ Er holt nur Informationen ein und macht keine Zusagen.",
+  share: "Darf nennen (optional)",
+  share_help: "Was der Assistent über dich sagen darf, z. B. Kundennummer oder Rückrufnummer. Sonst nennt er nichts.",
+  assistant_info: "Der Assistent stellt sich als KI vor, nennt den Grund des Anrufs, macht keine Zusagen und schreibt danach eine Notiz mit dem Ergebnis. Name und Sprachmodell kommen aus den Einstellungen.",
+  calls_title: "Letzte Anrufe",
 }
 
 export type DialTexts = typeof dialDe
 
 export const dialEn: DialTexts = {
   title: "Call",
-  intro: "HydraHive calls through your FRITZ!Box and reads an announcement as soon as someone picks up, then hangs up. Only you can start a call.",
+  intro: "HydraHive calls through your FRITZ!Box – with an announcement, or the assistant holds the conversation with your task. Only you can start a call.",
   number: "Phone number",
   number_help: "With area code, e.g. 030 1234567 or +49 30 1234567.",
   text: "Announcement",
@@ -55,7 +64,7 @@ export const dialEn: DialTexts = {
   state: {
     calling: "Dialling …",
     ringing: "Ringing at {{number}} …",
-    answered: "Connected – announcement playing",
+    answered: "Connected",
     ended: "Ended",
   },
   last: "Last call: {{number}} – {{result}}",
@@ -69,6 +78,15 @@ export const dialEn: DialTexts = {
     line_busy: "A call is already in progress.",
     too_fast: "Please wait a few seconds.",
     daily_limit: "Daily limit reached (20 calls).",
+    task_required: "Please enter a task.",
     unknown: "Call not possible.",
   },
+  mode_greeting: "Read announcement",
+  mode_assistant: "Assistant holds the conversation",
+  task: "Task",
+  task_help: "What should the assistant achieve? E.g. \u201cAsk for an appointment for a tyre change next week in the morning.\u201d It only gathers information and makes no commitments.",
+  share: "May mention (optional)",
+  share_help: "What the assistant may say about you, e.g. customer number or call-back number. Otherwise it mentions nothing.",
+  assistant_info: "The assistant introduces itself as an AI, states the reason for the call, makes no commitments and writes a note with the result afterwards. Name and language model come from the settings.",
+  calls_title: "Recent calls",
 }

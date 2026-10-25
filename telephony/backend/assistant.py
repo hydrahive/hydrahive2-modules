@@ -53,3 +53,14 @@ def bundle(cid: str) -> dict | None:
     return {"cfg": AgentConfig(owner_name=row["assistant_name"], knowledge=row["assistant_knowledge"]),
             "llm": _llm(row["assistant_model"]), "stt": _stt, "tts": _tts, "options": {}}
 
+
+
+def outbound_bundle(cid: str, task: str, may_share: str) -> dict:
+    """Ausgehendes Gespräch mit Auftrag (PLAN-ANRUFEN-3, 3b): Name und Modell aus den Assistent-Einstellungen."""
+    from .agent.prompt_out import OutboundConfig
+
+    with db() as c:
+        row = c.execute("SELECT assistant_name, assistant_model FROM module_telephony_connections WHERE id=?",
+                        (cid,)).fetchone()
+    return {"cfg": OutboundConfig(owner_name=row["assistant_name"], task=task, may_share=may_share),
+            "llm": _llm(row["assistant_model"]), "stt": _stt, "tts": _tts, "options": {}}

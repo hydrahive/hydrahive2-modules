@@ -1,7 +1,7 @@
 /** Reine Logik „Anrufen“ (Etappe 3, getestet in DialPanel.test.tsx). */
 
 const ERRORS = new Set(["number_emergency", "number_premium", "number_foreign", "number_invalid",
-  "number_no_area_code", "not_registered", "line_busy", "too_fast", "daily_limit"])
+  "number_no_area_code", "not_registered", "line_busy", "too_fast", "daily_limit", "task_required"])
 const STATES = new Set(["calling", "ringing", "answered", "ended"])
 
 export function dialErrorKey(code: string | undefined): string {

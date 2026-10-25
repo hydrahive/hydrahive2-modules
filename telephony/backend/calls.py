@@ -27,6 +27,10 @@ class Conflict(ValueError):
     pass
 
 
+class NoCallbackNumber(LookupError):
+    pass
+
+
 def _now() -> float:
     return time.time()
 
@@ -158,3 +162,21 @@ def confirm(user_id: str, call_id: int, heard: bool) -> dict:
         c.execute("UPDATE module_telephony_calls SET heard=? WHERE id=?", (int(heard), call_id))
         r = c.execute("SELECT * FROM module_telephony_calls WHERE id=?", (call_id,)).fetchone()
     return _public(r)
+
+
+def callback(user_id: str, call_id: int) -> dict:
+    """Vorschlag für „Zurückrufen“ (PLAN-ANRUFEN-3, 3b): Nummer aus der Notiz + Auftrag. Gewählt wird erst per Knopf."""
+    cid = _cid(user_id)
+    with db() as c:
+        r = c.execute("SELECT notes FROM module_telephony_calls WHERE id=? AND connection_id=?", (call_id, cid)).fetchone()
+    if not r:
+        raise NotFound(str(call_id))
+    notes = json.loads(r["notes"]) if r["notes"] else {}
+    number = (notes.get("callback_number") or "").strip()
+    if not number:
+        raise NoCallbackNumber(str(call_id))
+    who = notes.get("name") or "der Anrufer"
+    about = notes.get("concern") or notes.get("summary") or "die hinterlassene Nachricht"
+    task = (f"Rückruf an {who}. Anliegen laut Notiz: {about}. Sag, dass die Nachricht angekommen ist, "
+            "frag nach, worum es genau geht und wann ein Gespräch passt. Nichts zusagen.")
+    return {"number": number, "task": task[:1000]}

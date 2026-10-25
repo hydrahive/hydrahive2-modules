@@ -29,7 +29,7 @@ class OutboundCall:
     def __init__(self, *, sock: socket.socket, target: tuple[str, int], local: tuple[str, int], user: str,
                  password: str, domain: str, number: str, rtp_sock: socket.socket, audio: Callable[[str], bytes],
                  on_finish: Callable[[OutboundCall], None], ring_timeout: float = 45.0, max_seconds: float = 60.0,
-                 invite_timeout: float = 32.0, display_name: str = "HydraHive") -> None:
+                 invite_timeout: float = 32.0, display_name: str = "HydraHive", assistant: dict | None = None) -> None:
         if not number.isdigit():
             raise ValueError("Nummer darf nur Ziffern enthalten")       # dialrules prüft vorher, hier nur Notbremse
         self.sock, self.target, self.local, self.rtp_sock = sock, target, local, rtp_sock
@@ -42,6 +42,9 @@ class OutboundCall:
         self.cseq, self.branch, self.remote_tag, self.remote_uri = 0, "", "", self.uri
         self.state, self.result, self.codec = "calling", "", ""
         self.rtp_out = self.rtp_in = 0
+        self._assistant = assistant                             # None = Ansage (3a); sonst Gespräch mit Auftrag (3b)
+        self._voice: queue.Queue[bytes | None] = queue.Queue(maxsize=500)
+        self.turns, self.notes = 0, {}
         self._responses: queue.Queue[message.Message] = queue.Queue()
         self._ok_raw: bytes | None = None
         self._ack_raw: bytes | None = None
@@ -159,8 +162,15 @@ class OutboundCall:
                 continue
             except OSError:
                 return
-            if addr[0] == remote_ip and rtp.parse(data) is not None:
-                self.rtp_in += 1
+            pkt = rtp.parse(data) if addr[0] == remote_ip else None
+            if pkt is None:
+                continue
+            self.rtp_in += 1
+            if self._assistant is not None and len(pkt.payload) == 160:
+                try:
+                    self._voice.put_nowait(g711.decode(pkt.payload, self.codec))   # nur im Speicher
+                except (queue.Full, ValueError):
+                    pass
 
     def _stream(self, offer: sdp.Offer, pt: int) -> None:
         audio = self._audio(self.codec)[: int(self._max * 8000)]
