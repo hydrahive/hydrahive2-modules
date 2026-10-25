@@ -6,6 +6,7 @@ Ein Testfenster (60 s) nimmt genau einen Anruf an, auch wenn der Schalter aus is
 """
 from __future__ import annotations
 
+import json
 import time
 from datetime import datetime, timezone
 
@@ -38,6 +39,12 @@ def _ts(iso: str | None) -> float:
     return datetime.fromisoformat(iso).timestamp() if iso else 0.0
 
 
+def _notes(raw) -> dict:
+    """Nur bekannte Notizfelder, begrenzt (gleiche Regeln wie bei der Modellantwort)."""
+    from .agent.reply import _notes as clean
+    return clean(raw)
+
+
 def greeting_text(row) -> str:
     return (row["greeting"] or "").strip() or DEFAULT_GREETING
 
@@ -64,11 +71,13 @@ def record(cid: str, info: dict) -> None:
         if not row:
             return
         is_test = _ts(row["test_until"]) > _now() and info.get("result") != "busy"
+        notes = _notes(info.get("notes"))
         c.execute("INSERT INTO module_telephony_calls(connection_id, started_at, number, result, codec, rtp_out, "
-                  "rtp_in, is_test) VALUES (?,?,?,?,?,?,?,?)",
+                  "rtp_in, is_test, turns, notes, notes_read) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                   (cid, now_iso(), str(info.get("number", "unbekannt"))[:20], str(info.get("result", ""))[:20],
                    str(info.get("codec", ""))[:8], int(info.get("rtp_out", 0)), int(info.get("rtp_in", 0)),
-                   int(is_test)))
+                   int(is_test), int(info.get("turns", 0)), json.dumps(notes, ensure_ascii=False) if notes else "",
+                   0 if notes else 1))
         if is_test:
             c.execute("UPDATE module_telephony_connections SET test_until=NULL WHERE id=?", (cid,))
         c.execute("DELETE FROM module_telephony_calls WHERE connection_id=? AND id NOT IN (SELECT id FROM "
@@ -83,11 +92,17 @@ def _cid(user_id: str) -> str:
     return row["id"]
 
 
-def update(user_id: str, answer_calls: bool, greeting: str) -> None:
+def update(user_id: str, answer_calls: bool, greeting: str, assistant: dict | None = None) -> None:
+    """assistant: {mode, assistant_name, assistant_knowledge, assistant_model} oder None (= unverändert lassen)."""
     cid = _cid(user_id)
     with db() as c:
         c.execute("UPDATE module_telephony_connections SET answer_calls=?, greeting=?, updated_at=? WHERE id=?",
                   (int(answer_calls), greeting, now_iso(), cid))
+        if assistant is not None:
+            c.execute("UPDATE module_telephony_connections SET call_mode=?, assistant_name=?, assistant_knowledge=?, "
+                      "assistant_model=? WHERE id=?", (assistant["mode"], assistant["assistant_name"],
+                                                        assistant["assistant_knowledge"],
+                                                        assistant["assistant_model"], cid))
 
 
 def open_test(user_id: str) -> str:
@@ -100,7 +115,8 @@ def open_test(user_id: str) -> str:
 def _public(r) -> dict:
     return {"id": r["id"], "started_at": r["started_at"], "number": r["number"], "result": r["result"],
             "codec": r["codec"], "rtp_out": r["rtp_out"], "rtp_in": r["rtp_in"], "is_test": bool(r["is_test"]),
-            "heard": None if r["heard"] is None else bool(r["heard"])}
+            "heard": None if r["heard"] is None else bool(r["heard"]), "turns": r["turns"],
+            "notes": json.loads(r["notes"]) if r["notes"] else {}, "notes_read": bool(r["notes_read"])}
 
 
 def list_for(user_id: str) -> list[dict]:
@@ -109,6 +125,23 @@ def list_for(user_id: str) -> list[dict]:
         rows = c.execute("SELECT * FROM module_telephony_calls WHERE connection_id=? ORDER BY id DESC LIMIT ?",
                          (cid, KEEP)).fetchall()
     return [_public(r) for r in rows]
+
+
+def unread(user_id: str) -> int:
+    cid = _cid(user_id)
+    with db() as c:
+        return c.execute("SELECT COUNT(*) FROM module_telephony_calls WHERE connection_id=? AND notes_read=0",
+                         (cid,)).fetchone()[0]
+
+
+def mark_read(user_id: str, call_id: int) -> dict:
+    cid = _cid(user_id)
+    with db() as c:
+        r = c.execute("SELECT id FROM module_telephony_calls WHERE id=? AND connection_id=?", (call_id, cid)).fetchone()
+        if not r:
+            raise NotFound(str(call_id))
+        c.execute("UPDATE module_telephony_calls SET notes_read=1 WHERE id=?", (call_id,))
+        return _public(c.execute("SELECT * FROM module_telephony_calls WHERE id=?", (call_id,)).fetchone())
 
 
 def confirm(user_id: str, call_id: int, heard: bool) -> dict:

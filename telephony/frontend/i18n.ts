@@ -1,3 +1,4 @@
+import { assistantDe, assistantEn, notesDe, notesEn } from "./i18nAssistant"
 import { callsDe, callsEn } from "./i18nCalls"
 import { connDe, connEn } from "./i18nConnection"
 
@@ -11,7 +12,7 @@ export const i18n = {
       loading: "Modulstatus wird geladen …",
       status_error: "Der Modulstatus konnte nicht geladen werden.",
       retry: "Erneut versuchen",
-      honest_notice: "VoIP ist in Entwicklung. Diese Version verbindet HydraHive mit deiner FRITZ!Box oder SIP-Anlage und kann Anrufe mit einer Ansage annehmen. Telefon-Agent, selbst anrufen und Archiv folgen.",
+      honest_notice: "VoIP ist in Entwicklung. Diese Version verbindet HydraHive mit deiner FRITZ!Box oder SIP-Anlage und nimmt Anrufe mit einer Ansage oder dem Telefon-Assistenten an. Selbst anrufen, Kontakte und Archiv folgen.",
       setup_description: "Unter „Einstellungen“ trägst du die Zugangsdaten ein und verbindest HydraHive mit der Anlage. Dort steht auch eine Schritt-für-Schritt-Anleitung für die FRITZ!Box.",
       setup_action: "Jetzt einrichten",
       setup_action_edit: "Einstellungen öffnen",
@@ -19,11 +20,11 @@ export const i18n = {
       status_calls: "Anrufe",
       status_calls_value: "Abnehmen mit Ansage",
       status_agent: "Telefon-Agent",
-      status_agent_value: "Folgt",
+      status_agent_value: "Telefon-Assistent (KI)",
       status_archive: "Archiv",
       status_archive_value: "Folgt",
       next_title: "Nächste Ausbaustufen",
-      next_inbound: "Telefon-Agent: Anliegen aufnehmen und Fragen beantworten",
+      next_inbound: "Anbindung an einen Kontaktmanager",
       next_outbound: "Selbst anrufen – nur mit deiner Freigabe",
       next_agent: "Spezialisierter Telefon-Agent",
       next_project: "Eigenes Projekt pro VoIP-Zugang, Mitglieder",
@@ -31,6 +32,8 @@ export const i18n = {
       section_unavailable: "Dieser Bereich folgt in einer der nächsten Versionen.",
       conn: connDe,
       calls: callsDe,
+      assistant: assistantDe,
+      notes: notesDe,
       sections: {
         overview: "Übersicht",
         jobs: "Telefonaufträge",
@@ -51,7 +54,7 @@ export const i18n = {
       loading: "Loading module status …",
       status_error: "The module status could not be loaded.",
       retry: "Try again",
-      honest_notice: "VoIP is in development. This version connects HydraHive to your FRITZ!Box or SIP system and can answer calls with an announcement. Phone agent, placing calls and the archive follow.",
+      honest_notice: "VoIP is in development. This version connects HydraHive to your FRITZ!Box or SIP system and answers calls with an announcement or the phone assistant. Placing calls, contacts and the archive follow.",
       setup_description: "Under “Settings” you enter the credentials and connect HydraHive to the phone system. A step-by-step guide for the FRITZ!Box is there as well.",
       setup_action: "Set up now",
       setup_action_edit: "Open settings",
@@ -59,11 +62,11 @@ export const i18n = {
       status_calls: "Calls",
       status_calls_value: "Answer with announcement",
       status_agent: "Phone agent",
-      status_agent_value: "Follows",
+      status_agent_value: "Phone assistant (AI)",
       status_archive: "Archive",
       status_archive_value: "Follows",
       next_title: "Next stages",
-      next_inbound: "Phone agent: take messages and answer questions",
+      next_inbound: "Connection to a contact manager",
       next_outbound: "Place calls – only with your approval",
       next_agent: "Specialised phone agent",
       next_project: "Own project per VoIP connection, members",
@@ -71,6 +74,8 @@ export const i18n = {
       section_unavailable: "This area follows in one of the next versions.",
       conn: connEn,
       calls: callsEn,
+      assistant: assistantEn,
+      notes: notesEn,
       sections: {
         overview: "Overview",
         jobs: "Phone tasks",

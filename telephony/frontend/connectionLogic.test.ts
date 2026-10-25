@@ -8,6 +8,7 @@ const SAVED: Connection = {
   registrar_port: 5060, username: "hydra-telefon", own_number: "030 1", local_sip_port: 5070,
   rtp_port_min: 7078, rtp_port_max: 7109, register_interval: 300,
   answer_calls: false, greeting: "", greeting_default: "Hallo", test_until: null,
+  call_mode: "greeting", assistant_name: "", assistant_knowledge: "", assistant_model: "",
 }
 
 describe("Formular", () => {

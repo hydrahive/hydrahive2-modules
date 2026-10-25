@@ -1,12 +1,13 @@
 import { Loader2, PhoneIncoming, Save, Timer } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { AssistantFields } from "./_AssistantFields"
 import { CallList } from "./_CallList"
 import { Switch } from "./_Switch"
 import { telephonyApi } from "./api"
 import { pendingTest, saveSwitch, secondsLeft } from "./callsLogic"
 import { errorKey } from "./connectionLogic"
-import type { CallEntry, Connection } from "./types"
+import type { AssistantSettings, CallEntry, Connection } from "./types"
 
 const btn = "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
 type Configured = Extract<Connection, { configured: true }>
@@ -20,6 +21,10 @@ export function CallSettings({ conn }: { conn: Configured }) {
   const [testUntil, setTestUntil] = useState<string | null>(conn.test_until)
   const [left, setLeft] = useState(secondsLeft(conn.test_until))
   const [calls, setCalls] = useState<CallEntry[]>([])
+  const [assistant, setAssistant] = useState<AssistantSettings>({
+    mode: conn.call_mode, assistant_name: conn.assistant_name, assistant_knowledge: conn.assistant_knowledge,
+    assistant_model: conn.assistant_model,
+  })
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,6 +66,12 @@ export function CallSettings({ conn }: { conn: Configured }) {
     const r = await telephonyApi.startTestCall()
     setTestUntil(r.test_until); setLeft(r.seconds)
   })
+  const saveAssistant = (next: AssistantSettings) => run(async () => {
+    await telephonyApi.saveCalls({ answer_calls: answer, greeting: savedGreeting, ...next })
+    setAssistant(next)
+    setSaved(true)
+  })
+  const markRead = (id: number) => run(async () => { await telephonyApi.markRead(id); load() })
   const confirm = (id: number, heard: boolean) => run(async () => {
     await telephonyApi.confirmHeard(id, heard); load()
   })
@@ -81,19 +92,24 @@ export function CallSettings({ conn }: { conn: Configured }) {
         <Switch checked={answer} disabled={busy} onChange={(v) => void toggle(v)} label={t("calls.answer")} />
       </div>
 
-      <label className="block space-y-1.5 text-sm text-zinc-300">
+      <AssistantFields key={JSON.stringify(assistant)} saved={assistant} busy={busy}
+        onSave={(next) => saveAssistant(next)} />
+
+      {assistant.mode === "greeting" && <label className="block space-y-1.5 text-sm text-zinc-300">
         <span>{t("calls.greeting")}</span>
         <textarea className="min-h-24 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-indigo-500"
           value={greeting} maxLength={500} placeholder={conn.greeting_default} data-voip-greeting="1"
           onChange={(e) => { setSaved(false); setGreeting(e.target.value) }} />
         <span className="block text-xs text-zinc-500">{t("calls.greeting_help")}</span>
-      </label>
+      </label>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className={`${btn} bg-zinc-800 text-zinc-100 hover:bg-zinc-700`} disabled={busy || !dirty}
-          onClick={() => void save()} data-voip-calls-save="1">
-          <Save size={15} /> {t("calls.greeting_save")}
-        </button>
+        {assistant.mode === "greeting" && (
+          <button type="button" className={`${btn} bg-zinc-800 text-zinc-100 hover:bg-zinc-700`} disabled={busy || !dirty}
+            onClick={() => void save()} data-voip-calls-save="1">
+            <Save size={15} /> {t("calls.greeting_save")}
+          </button>
+        )}
         <button type="button" className={`${btn} bg-indigo-500 text-white hover:bg-indigo-400`}
           disabled={busy || !registered || left > 0} onClick={() => void startTest()} data-voip-test-call="1"
           title={registered ? undefined : t("calls.test_needs_connection")}>
@@ -117,7 +133,7 @@ export function CallSettings({ conn }: { conn: Configured }) {
         </div>
       )}
 
-      <CallList calls={calls} />
+      <CallList calls={calls} onRead={(id) => void markRead(id)} />
     </section>
   )
 }
