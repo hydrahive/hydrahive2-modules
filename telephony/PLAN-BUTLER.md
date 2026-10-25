@@ -7,6 +7,12 @@ aber primär sinnlos, wenn ich einen Anruf nicht als Auslöser habe.“
 → **Hauptsache: Auslöser „Anruf kommt rein“** – feuert, während es klingelt, **bevor** HydraHive abnimmt. Der Ablauf
 entscheidet, was mit **diesem** Anruf passiert. „Anruf beendet“ kommt danach als Zusatz.
 
+## Entscheidungen Till (25.10.)
+- Reihenfolge B1 → B2 → B3 passt.
+- Schalter „Anrufe annehmen“ aus + Ablauf sagt „annehmen“ → **Ablauf gewinnt**.
+- Neu (Idee Till): **PIN per Tastatur** – Anrufer gibt eine PIN ein, ist dann authentifiziert und bekommt andere
+  Grenzen/Rechte. → eigener Abschnitt „PIN“ unten (eigene Etappe, Fragen offen).
+
 ## Ausgangslage (geprüft im Code)
 
 - Module steuern Butler-Bausteine ohne Kern-Änderung bei (`ctx.register_butler_trigger/condition/action`,
@@ -21,6 +27,14 @@ entscheidet, was mit **diesem** Anruf passiert. „Anruf beendet“ kommt danach
 - Kern-Aktion „Agent antworten lassen“ (`agent_reply`) setzt nur einen Hinweis; ausgeführt wird er heute nur von
   Kanälen und vom Zeitplan (`butler/_scheduled_agent_run.run_scheduled_agent_actions`).
 - Ereignisdaten werden **nicht** gespeichert (nur Rückgabe an den Aufrufer) – volle Rufnummer im Ereignis ist ok.
+- ⚠ **Butler-Editor kennt nur fest eingebaute Bausteine**: `frontend/src/features/butler/palette-data.ts`
+  (PALETTE_STRUCTURE) und `properties/registry.tsx` (FORMS) sind statische Listen. Modul-Bausteine (auch
+  cryptoboard `crypto_price`) erscheinen **nicht** in der Palette und haben kein Formular. Das Backend nimmt sie beim
+  Speichern an (Registry), aber anlegen kann man sie in der Oberfläche nicht. → **Ohne Kern-Änderung ist der
+  Butler-Teil für Till nicht bedienbar.** Lösung: Kern-PR „Modul-Bausteine im Butler-Editor“ – Backend liefert die
+  Registry (Label, Beschreibung, ParamSchema) über eine Route, die Palette zeigt eine Gruppe „Module“, und für
+  Bausteine ohne eigenes Formular baut der Editor das Formular aus dem ParamSchema (text, textarea, select, number,
+  checkbox, list_text). Nutzt auch cryptoboard. Klein und allgemein; braucht Tills OK (Kern).
 
 ## Ablauf eines eingehenden Anrufs mit Butler
 
@@ -102,8 +116,35 @@ Ereignis `telephony_call_incoming`:
 2. **Etappe B2** – „Agent antworten lassen“ beim eingehenden Anruf (Nachricht an dich).
 3. **Etappe B3** – „Anruf beendet“ + Notiz-Bedingungen + „Anrufen“/„Zurückrufen“.
 
+## PIN per Tastatur (Idee Till, eigene Etappe B4 – nach B1)
+
+Ziel: Ein Anrufer tippt eine PIN; stimmt sie, gilt er als **authentifiziert** (z. B. Till selbst von unterwegs) und
+bekommt **andere Grenzen** – bis hin zu einem eigenen Assistenten-Profil.
+
+Technik (geprüft): Die FRITZ!Box bietet Tastentöne als `telephone-event` (RFC 4733, Payload 101) an; HydraHive nimmt
+das heute **nicht** an (Antwort-SDP nur G.711). Nötig: 101 im Antwort-SDP anbieten, RTP-Pakete mit diesem Typ als
+Tasten lesen (Ende-Bit, doppelte Pakete), dazu Rückfall „Ton-Erkennung“ (Goertzel/DTMF im Ton) falls die Anlage die
+Töne im Sprachkanal schickt. Eingabe: Ziffern + `#` zum Abschließen, Zeitgrenze 10 s.
+
+Sicherheit (verbindlich):
+- PIN nur **gehasht** gespeichert (wie Passwörter), mind. 6 Ziffern, nie im Klartext in Notiz/Ereignis/Log.
+- **3 Versuche** je Anruf, danach Anruf normal weiter (oder auflegen); **Sperre** nach 10 Fehlversuchen/Tag je
+  Verbindung (Schutz gegen Durchprobieren).
+- Rufnummer bleibt ungeprüft – die PIN ist der eigentliche Nachweis. PIN + bekannte Nummer zusammen sind stärker
+  (Option „nur von diesen Nummern“).
+- Was „andere Grenzen“ heißt, ist **Tills Entscheidung** (siehe Fragen). Der Assistent bekommt auch mit PIN **keine
+  Werkzeuge**, solange es keine eigene Spec dafür gibt (SPEC-V1 §9: „spätere Tools nur mit eigener Spec und
+  Bestätigungsgates“).
+- Im Butler: Aktion „PIN abfragen“ mit Ja/Nein-Zweig (wahr = PIN richtig), oder Ereignisfeld `pin_ok` nach einer
+  Abfrage. Danach z. B. „Mit Assistent annehmen“ mit Profil „privat“.
+
 ## Fragen an Till
 1. Passt die Reihenfolge (B1 zuerst)?
 2. Schalter „Anrufe annehmen“ aus, aber ein Ablauf sagt „annehmen“ → **Ablauf gewinnt**?
 3. Darf der Butler beim Selbst-Anrufen (B3) ohne Rückfrage anrufen, wenn du den Ablauf angelegt hast? Und der kleine
    Kern-PR (Ablaufbesitzer an Aktionen)?
+4. **Kern-PR „Modul-Bausteine im Butler-Editor“** – ohne ihn sind die neuen Bausteine nicht anlegbar. OK?
+5. **PIN:** Was soll nach richtiger PIN anders sein? Vorschläge: (a) längere Gesprächsdauer, (b) eigener Wissenstext
+   mit privaten Infos (z. B. Termine, die nur du hören darfst), (c) eine Nachricht an dich wird sofort geschickt,
+   (d) später: Assistent darf bestimmte Dinge tun (z. B. Aufgabe anlegen) – das wäre ein großer Schritt (Werkzeuge
+   am Telefon) und bräuchte eine eigene Spec.
