@@ -89,7 +89,7 @@ def test_manifest_declares_installable_foundation() -> None:
     assert manifest == {
         "id": "telephony",
         "name": "VoIP",
-        "version": "0.8.0",
+        "version": "0.8.1",
         "description": (
             "Telefonassistent für die FRITZ!Box und andere SIP-Anlagen – in Entwicklung. "
             "Verbindet HydraHive mit der Anlage und nimmt Anrufe mit einer Ansage oder dem KI-Telefon-Assistenten "
