@@ -1,4 +1,4 @@
-import type { CallEntry } from "./types"
+import type { AssistantSettings, CallEntry, CallNotes } from "./types"
 
 /** Reine Logik der Anruf-Karte (getestet in callsLogic.test.ts). */
 
@@ -17,7 +17,7 @@ export function pendingTest(calls: CallEntry[]): CallEntry | null {
 export type CallTone = "ok" | "warn" | "idle"
 
 export function callTone(c: CallEntry): CallTone {
-  if (c.result === "answered" || c.result === "caller_hangup" || c.result === "hung_up") return "ok"
+  if (["answered", "caller_hangup", "hung_up", "assistant_end", "max_duration"].includes(c.result)) return "ok"
   if (c.result === "rejected" || c.result === "cancelled") return "idle"
   return "warn"
 }
@@ -49,4 +49,20 @@ export async function saveSwitch(api: CallsSaver, next: boolean, savedGreeting: 
   } catch (e) {
     return { value: previous, error: (e as { code?: string }).code ?? "unknown" }
   }
+}
+
+/** Assistent-Einstellungen geändert? (Leerzeichen am Rand zählen nicht – der Server schneidet sie ab.) */
+export function assistantDirty(a: AssistantSettings, b: AssistantSettings): boolean {
+  return a.mode !== b.mode || a.assistant_name.trim() !== b.assistant_name.trim()
+    || a.assistant_knowledge.trim() !== b.assistant_knowledge.trim() || a.assistant_model !== b.assistant_model
+}
+
+/** Notiz in einer Zeile für die Liste: Name · Anliegen (· Rückruf). */
+export function noteLine(n: CallNotes): string {
+  return [n.name, n.concern, n.callback_wanted ? (n.callback_number ? `Rückruf ${n.callback_number}` : "Rückruf") : ""]
+    .filter((x): x is string => Boolean(x)).join(" · ")
+}
+
+export function hasNote(c: CallEntry): boolean {
+  return Object.keys(c.notes ?? {}).length > 0
 }

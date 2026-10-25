@@ -76,3 +76,42 @@ def test_resample_auf_8khz_und_mono() -> None:
                                                   channels=1)) == (200, -100)
     # 8 kHz Mono bleibt unverändert
     assert g711.to_8k_mono(b"\x01\x00\x02\x00", rate=8000, channels=1) == b"\x01\x00\x02\x00"
+
+
+# ---- Dekodieren (Zuhören, Etappe 2b) – Referenz CPython audioop.alaw2lin/ulaw2lin ----
+ALAW_DECODE_SHA256 = "e04788d110e58ff8c70c93b8480190d973e3b67876b6119abbaec766cc75c174"
+ULAW_DECODE_SHA256 = "3dab54339e520bb2c924826e3b72a917a2b612e9fd12fc867500f1d983a75827"
+
+
+def test_dekodieren_alle_256_werte_wie_referenz() -> None:
+    import hashlib
+
+    from backend.media import g711
+
+    assert hashlib.sha256(g711.decode(bytes(range(256)), "PCMA")).hexdigest() == ALAW_DECODE_SHA256
+    assert hashlib.sha256(g711.decode(bytes(range(256)), "PCMU")).hexdigest() == ULAW_DECODE_SHA256
+
+
+def test_dekodieren_einzelwerte() -> None:
+    from backend.media import g711
+
+    assert struct.unpack("<4h", g711.decode(bytes([0xD5, 0x55, 0x2A, 0xAA]), "PCMA")) == (8, -8, -32256, 32256)
+    assert struct.unpack("<4h", g711.decode(bytes([0xFF, 0x7F, 0x00, 0x80]), "PCMU")) == (0, 0, -32124, 32124)
+    with pytest.raises(ValueError):
+        g711.decode(b"\x00", "G722")
+
+
+def test_hin_und_zurueck_bleibt_nah() -> None:
+    from backend.media import g711
+
+    for v in (0, 100, -100, 1000, -5000, 20000):
+        back = struct.unpack("<h", g711.decode(g711.encode(struct.pack("<h", v), "PCMA"), "PCMA"))[0]
+        assert abs(back - v) <= max(16, abs(v) // 16)
+
+
+def test_8k_auf_16k() -> None:
+    from backend.media import g711
+
+    out = struct.unpack("<6h", g711.up_16k(struct.pack("<3h", 0, 100, -100)))
+    assert out == (0, 50, 100, 0, -100, -100), "Zwischenwert gemittelt, letzter Wert doppelt"
+    assert g711.up_16k(b"") == b""

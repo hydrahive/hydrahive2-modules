@@ -29,6 +29,10 @@ export const callsDe = {
     no_ack: "Verbindung kam nicht zustande",
     codec: "Tonformat nicht unterstützt",
     no_port: "kein Sprach-Port frei",
+    assistant_end: "Gespräch mit dem Assistenten",
+    no_input: "Anrufer hat nichts gesagt",
+    max_duration: "Höchstdauer erreicht",
+    errors: "technische Probleme",
   },
 }
 
@@ -64,5 +68,9 @@ export const callsEn: CallsTexts = {
     no_ack: "connection not established",
     codec: "audio format not supported",
     no_port: "no voice port free",
+    assistant_end: "talked to the assistant",
+    no_input: "caller said nothing",
+    max_duration: "maximum duration reached",
+    errors: "technical problems",
   },
 }

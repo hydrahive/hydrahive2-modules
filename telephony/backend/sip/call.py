@@ -6,6 +6,7 @@ CallDispatcher hierher. Ton vom Anrufer wird nur gezählt (nur von der Adresse a
 from __future__ import annotations
 
 import os
+import queue
 import socket
 import threading
 import time
@@ -21,11 +22,14 @@ class CallSession:
     def __init__(self, *, sock: socket.socket, invite: message.Message, remote: tuple[str, int], local_ip: str,
                  offer: sdp.Offer, pt: int, codec: str, rtp_sock: socket.socket, audio: Callable[[], bytes],
                  ring_seconds: float, ack_timeout: float, max_seconds: float,
-                 on_finish: Callable[[CallSession], None]) -> None:
+                 on_finish: Callable[[CallSession], None], assistant: dict | None = None) -> None:
         self.sock, self.invite, self.remote, self.local_ip = sock, invite, remote, local_ip
         self.offer, self.pt, self.codec, self.rtp_sock = offer, pt, codec, rtp_sock
         self._audio, self._ring, self._ack_timeout, self._max = audio, ring_seconds, ack_timeout, max_seconds
         self._on_finish = on_finish
+        self._assistant = assistant                             # None = nur Ansage (2a); sonst Telefon-Assistent (2b)
+        self._voice: queue.Queue[bytes | None] = queue.Queue(maxsize=500)
+        self.turns, self.notes = 0, {}
         self.call_id = invite.header("call-id") or ""
         self.to_tag = os.urandom(4).hex()
         self.state = "ringing"
@@ -120,6 +124,9 @@ class CallSession:
                 self._bye()
                 return
             threading.Thread(target=self._listen, daemon=True).start()
+            if self._assistant is not None:
+                self._converse()
+                return
             audio = audio[: int(self._max * 8000)]
             self.rtp_out = rtp.send_stream(self.rtp_sock, (self.offer.address, self.offer.port), audio,
                                            payload_type=self.pt, stop=self._ended.is_set,
@@ -154,5 +161,33 @@ class CallSession:
                 continue
             except OSError:
                 return
-            if addr[0] == self.offer.address and rtp.parse(data) is not None:
-                self.rtp_in += 1                                # nur zählen – Inhalt wird verworfen
+            pkt = rtp.parse(data) if addr[0] == self.offer.address else None
+            if pkt is None:
+                continue
+            self.rtp_in += 1
+            if self._assistant is not None and len(pkt.payload) == 160:
+                try:
+                    self._voice.put_nowait(g711.decode(pkt.payload, self.codec))   # nur im Speicher, nie abgelegt
+                except (queue.Full, ValueError):
+                    pass
+
+    # ---- Telefon-Assistent (Etappe 2b) ----
+    def _say_rtp(self, text: str, interrupted: Callable[[], bool]) -> bool:
+        audio = self._assistant["tts"](text, self.codec)[: int(self._max * 8000)]
+        sent = rtp.send_stream(self.rtp_sock, (self.offer.address, self.offer.port), audio, payload_type=self.pt,
+                               stop=lambda: interrupted() or self._ended.is_set(), silence=g711.SILENCE[self.codec])
+        self.rtp_out += sent
+        return sent * 160 >= len(audio)
+
+    def _converse(self) -> None:
+        from ..agent.conversation import Conversation
+
+        a = self._assistant
+        conv = Conversation(cfg=a["cfg"], llm=a["llm"], stt=a["stt"], say=self._say_rtp, frames=self._voice,
+                            hangup=self._ended.is_set, max_seconds=self._max, **a.get("options", {}))
+        result = conv.run()
+        self.turns, self.notes = result.turns, result.notes
+        if not self._ended.is_set():
+            self._end(result.reason)
+            self._bye()
+

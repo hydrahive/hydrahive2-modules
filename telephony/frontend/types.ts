@@ -71,10 +71,34 @@ export type Connection =
       greeting: string
       greeting_default: string
       test_until: string | null
+      call_mode: CallMode
+      assistant_name: string
+      assistant_knowledge: string
+      assistant_model: string
     })
+
+export type CallMode = "greeting" | "assistant"
+
+export interface CallNotes {
+  name?: string
+  callback_number?: string
+  concern?: string
+  callback_wanted?: boolean
+  open_questions?: string[]
+  needs_review?: boolean
+  summary?: string
+}
+
+export interface AssistantSettings {
+  mode: CallMode
+  assistant_name: string
+  assistant_knowledge: string
+  assistant_model: string
+}
 
 export type CallResult =
   | "answered" | "rejected" | "busy" | "cancelled" | "caller_hangup" | "hung_up" | "no_ack" | "codec" | "no_port"
+  | "assistant_end" | "no_input" | "max_duration" | "errors"
 
 export interface CallEntry {
   id: number
@@ -86,4 +110,7 @@ export interface CallEntry {
   rtp_in: number
   is_test: boolean
   heard: boolean | null
+  turns: number
+  notes: CallNotes
+  notes_read: boolean
 }

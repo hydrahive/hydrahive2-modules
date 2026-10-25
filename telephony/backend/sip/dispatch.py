@@ -32,6 +32,7 @@ class CallDispatcher:
         self.policy, self.rtp_ports, self._record = policy, rtp_ports, record
         self._greeting = greeting or _greeting_mod.render
         self._ring, self._ack, self._max = ring_seconds, ack_timeout, max_seconds
+        self.assistant: Callable[[], dict | None] = lambda: None   # Modus „Telefon-Assistent“ (sip/agent.py setzt)
         self._lock = threading.Lock()
         self._calls: dict[str, CallSession] = {}
 
@@ -53,7 +54,8 @@ class CallDispatcher:
     def _finish(self, call: CallSession) -> None:
         with self._lock:
             self._calls.pop(call.call_id, None)
-        self._note(call.invite, call.result, codec=call.codec, rtp_out=call.rtp_out, rtp_in=call.rtp_in)
+        extra = {"turns": call.turns, "notes": call.notes} if call._assistant is not None else {}
+        self._note(call.invite, call.result, codec=call.codec, rtp_out=call.rtp_out, rtp_in=call.rtp_in, **extra)
 
     def handle_request(self, sock: socket.socket, msg: message.Message, addr: tuple[str, int], local_ip: str) -> bool:
         cid = msg.header("call-id") or ""
@@ -96,11 +98,21 @@ class CallDispatcher:
         sock.sendto(message.build_response(msg, 100, "Trying"), addr)
         call = CallSession(sock=sock, invite=msg, remote=addr, local_ip=local_ip, offer=offer, pt=pt, codec=codec,
                            rtp_sock=rtp_sock, audio=lambda: self._greeting(text, codec), ring_seconds=self._ring,
-                           ack_timeout=self._ack, max_seconds=self._max, on_finish=self._finish)
+                           ack_timeout=self._ack, max_seconds=self._max, on_finish=self._finish,
+                           assistant=self._assistant_for(msg))
         with self._lock:
             self._calls[cid] = call
         call.start()
         return True
+
+    def _assistant_for(self, invite: message.Message) -> dict | None:
+        try:
+            a = self.assistant()
+        except Exception:  # noqa: BLE001 - Einstellungen nicht lesbar → sicher: nur Ansage
+            return None
+        if a is not None:
+            a["cfg"].caller_number = mask_number(invite.header("from") or "")
+        return a
 
     def handle_response(self, msg: message.Message) -> None:
         with self._lock:

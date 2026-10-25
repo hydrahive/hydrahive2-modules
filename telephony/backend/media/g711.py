@@ -77,3 +77,41 @@ def to_8k_mono(pcm16: bytes, *, rate: int, channels: int) -> bytes:
         window = mono[lo:hi]
         out.append(round(sum(window) / len(window)))
     return struct.pack(f"<{len(out)}h", *out)
+
+
+def _alaw_dec(code: int) -> int:
+    code ^= 0x55
+    seg, mant = (code >> 4) & 0x07, code & 0x0F
+    v = (mant << 4) + 8 if seg == 0 else ((mant << 4) + 0x108) << (seg - 1)
+    return v if code & 0x80 else -v
+
+
+def _ulaw_dec(code: int) -> int:
+    code = ~code & 0xFF
+    seg, mant = (code >> 4) & 0x07, code & 0x0F
+    v = (((mant << 3) + 0x84) << seg) - 0x84
+    return -v if code & 0x80 else v
+
+
+@lru_cache(maxsize=2)
+def _dec_table(codec: str) -> tuple[int, ...]:
+    fn = {"PCMA": _alaw_dec, "PCMU": _ulaw_dec}[codec]
+    return tuple(fn(c) for c in range(256))
+
+
+def decode(data: bytes, codec: str) -> bytes:
+    """G.711-Bytes → PCM 16 Bit little-endian (wie CPython audioop.alaw2lin/ulaw2lin)."""
+    if codec not in SILENCE:
+        raise ValueError(f"Codec {codec} nicht unterstützt")
+    table = _dec_table(codec)
+    return struct.pack(f"<{len(data)}h", *(table[b] for b in data))
+
+
+def up_16k(pcm8k: bytes) -> bytes:
+    """8 kHz → 16 kHz (für Whisper): je Wert ein gemittelter Zwischenwert."""
+    s = memoryview(pcm8k[: len(pcm8k) - len(pcm8k) % 2]).cast("h")
+    out: list[int] = []
+    for i, v in enumerate(s):
+        nxt = s[i + 1] if i + 1 < len(s) else v
+        out += (v, (v + nxt) // 2)
+    return struct.pack(f"<{len(out)}h", *out)

@@ -12,7 +12,7 @@ import time
 from hydrahive.db._utils import now_iso
 from hydrahive.db.connection import db
 
-from . import calls, conn_manager, netguard, secrets
+from . import assistant, calls, conn_manager, netguard, secrets
 from .conn_models import ConnectionIn
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,9 @@ def public(user_id: str) -> dict:
         return {"configured": False, "status": "not_configured"}
     return {"configured": True, "has_password": True, "enabled": bool(r["enabled"]), **{k: r[k] for k in _PUBLIC},
             "answer_calls": bool(r["answer_calls"]), "greeting": r["greeting"],
-            "greeting_default": calls.DEFAULT_GREETING, "test_until": calls.open_window(r)}
+            "greeting_default": calls.DEFAULT_GREETING, "test_until": calls.open_window(r),
+            "call_mode": r["call_mode"], "assistant_name": r["assistant_name"],
+            "assistant_knowledge": r["assistant_knowledge"], "assistant_model": r["assistant_model"]}
 
 
 def save(user_id: str, data: ConnectionIn) -> dict:
@@ -99,7 +101,8 @@ def _config(row) -> dict:
             "bind": (_bind_host(), row["local_sip_port"]), "display_name": row["display_name"],
             "interval": row["register_interval"], "rtp_ports": (row["rtp_port_min"], row["rtp_port_max"]),
             "call_policy": lambda cid=row["id"]: calls.policy(cid),
-            "call_record": lambda info, cid=row["id"]: calls.record(cid, info)}
+            "call_record": lambda info, cid=row["id"]: calls.record(cid, info),
+            "call_assistant": lambda cid=row["id"]: assistant.bundle(cid)}
 
 
 def _start(row) -> None:

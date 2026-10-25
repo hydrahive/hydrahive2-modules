@@ -8,7 +8,8 @@ vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() =
 const { i18n: texts } = await import("./i18n")
 const { CallSettings } = await import("./CallSettings")
 const { CallList } = await import("./_CallList")
-const { callTone, pendingTest, secondsLeft, shortTime } = await import("./callsLogic")
+const { assistantDirty, callTone, hasNote, noteLine, pendingTest, secondsLeft, shortTime } = await import("./callsLogic")
+const { AssistantFields } = await import("./_AssistantFields")
 import type { CallEntry, Connection } from "./types"
 
 const inst = i18next.createInstance()
@@ -25,12 +26,12 @@ const CONN = {
   updated_at: "u1", pbx: "fritzbox", display_name: "HydraHive", registrar: "192.168.3.1", registrar_port: 5060,
   username: "spike2000", own_number: "", local_sip_port: 5070, rtp_port_min: 7078, rtp_port_max: 7109,
   register_interval: 300, answer_calls: false, greeting: "", greeting_default: "Hallo, hier ist HydraHive.",
-  test_until: null,
+  test_until: null, call_mode: "greeting", assistant_name: "", assistant_knowledge: "", assistant_model: "",
 } as Extract<Connection, { configured: true }>
 
 const call = (p: Partial<CallEntry>): CallEntry => ({
   id: 1, started_at: "2026-10-25T12:00:00+00:00", number: "•••981", result: "answered", codec: "PCMA",
-  rtp_out: 250, rtp_in: 240, is_test: false, heard: null, ...p,
+  rtp_out: 250, rtp_in: 240, is_test: false, heard: null, turns: 0, notes: {}, notes_read: true, ...p,
 })
 
 describe("Logik", () => {
@@ -91,9 +92,69 @@ describe("Karte Anrufe annehmen", () => {
     expect(html(<CallList calls={[]} />)).toContain("Noch keine Anrufe.")
   })
   it("alle Ergebnisse haben Text (DE/EN)", () => {
-    for (const r of ["answered", "rejected", "busy", "cancelled", "caller_hangup", "hung_up", "no_ack", "codec", "no_port"]) {
+    for (const r of ["answered", "rejected", "busy", "cancelled", "caller_hangup", "hung_up", "no_ack", "codec", "no_port",
+      "assistant_end", "no_input", "max_duration", "errors"]) {
       expect(texts.de.voip.calls.result).toHaveProperty(r)
       expect(texts.en.voip.calls.result).toHaveProperty(r)
     }
+  })
+})
+
+describe("Telefon-Assistent", () => {
+  const A = { mode: "assistant" as const, assistant_name: "Beispiel GmbH", assistant_knowledge: "Mo–Fr 9–17", assistant_model: "" }
+
+  it("Modus Nur Ansage: Wissensfeld unsichtbar, Ansage sichtbar", () => {
+    const h = html(<CallSettings conn={CONN} />)
+    expect(h).toContain('data-voip-mode="greeting"')
+    expect(h).not.toContain('data-voip-assistant-knowledge="1"')
+    expect(h).toContain('data-voip-greeting="1"')
+  })
+  it("Modus Assistent: Name, Wissen, Modell, Rechte-Hinweis; keine Ansage", () => {
+    const h = html(<CallSettings conn={{ ...CONN, call_mode: "assistant", assistant_name: "Beispiel GmbH" }} />)
+    expect(h).toContain('data-voip-assistant-name="1"')
+    expect(h).toContain('value="Beispiel GmbH"')
+    expect(h).toContain('data-voip-assistant-knowledge="1"')
+    expect(h).toContain('data-voip-assistant-model="1"')
+    expect(h).toContain("Anrufer sind Fremde")
+    expect(h).not.toContain('data-voip-greeting="1"')
+  })
+  it("Speichern-Knopf erst bei Änderung", () => {
+    const h = html(<AssistantFields saved={A} busy={false} onSave={async () => {}} />)
+    expect(h).toMatch(/<button[^>]*disabled=""[^>]*data-voip-assistant-save="1"/)
+    expect(assistantDirty({ ...A, assistant_name: " Beispiel GmbH " }, A)).toBe(false)
+    expect(assistantDirty({ ...A, mode: "greeting" }, A)).toBe(true)
+    expect(assistantDirty({ ...A, assistant_model: "x" }, A)).toBe(true)
+  })
+  it("Platzhalter neutral", () => {
+    expect(texts.de.voip.assistant.name_placeholder).toContain("Max Mustermann")
+    expect(texts.en.voip.assistant.name_placeholder).toContain("Jane Doe")
+  })
+})
+
+describe("Notizen", () => {
+  const note = { name: "Max Mustermann", concern: "Angebot", callback_wanted: true, callback_number: "0123 456789",
+    summary: "Möchte ein Angebot.", open_questions: ["Preis?"], needs_review: true }
+
+  it("Zeile: Name · Anliegen · Rückruf", () => {
+    expect(noteLine(note)).toBe("Max Mustermann · Angebot · Rückruf 0123 456789")
+    expect(noteLine({ name: "A" })).toBe("A")
+    expect(noteLine({ callback_wanted: true })).toBe("Rückruf")
+    expect(hasNote(call({ notes: {} }))).toBe(false)
+  })
+  it("Liste zeigt Notiz, neu-Markierung und Knopf", () => {
+    const h = html(<CallList calls={[call({ result: "assistant_end", turns: 3, notes: note, notes_read: false })]} onRead={() => {}} />)
+    expect(h).toContain('data-voip-note="1"')
+    expect(h).toContain("Max Mustermann · Angebot · Rückruf 0123 456789")
+    expect(h).toContain("Möchte ein Angebot.")
+    expect(h).toContain("Preis?")
+    expect(h).toContain("Bitte ansehen")
+    expect(h).toContain('data-voip-unread="1"')
+    expect(h).toContain('data-voip-mark-read="1"')
+    expect(h).toContain("Gespräch mit dem Assistenten")
+  })
+  it("gelesene Notiz ohne Knopf", () => {
+    const h = html(<CallList calls={[call({ notes: note, notes_read: true })]} onRead={() => {}} />)
+    expect(h).not.toContain('data-voip-mark-read="1"')
+    expect(h).not.toContain('data-voip-unread="1"')
   })
 })
