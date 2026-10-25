@@ -96,6 +96,7 @@ def test_grenzen_grosszuegig() -> None:
     assert budgets.MAX_TIME_S >= 900
 
 
+@pytest.mark.asyncio
 async def test_lange_auswertung_wird_nicht_abgeschnitten(model) -> None:
     result = await run_research(RunState(question="was ist mirtazipin"), min_rounds=1, max_rounds=1)
     assert result["stats"]["sources"] == 1
@@ -103,6 +104,7 @@ async def test_lange_auswertung_wird_nicht_abgeschnitten(model) -> None:
     assert "Keine verwertbaren Quellen" not in result["markdown"]
 
 
+@pytest.mark.asyncio
 async def test_jeder_schritt_bekommt_seine_grenze(model) -> None:
     await run_research(RunState(question="was ist mirtazipin"), min_rounds=1, max_rounds=1)
     assert model.limits == {
@@ -111,12 +113,14 @@ async def test_jeder_schritt_bekommt_seine_grenze(model) -> None:
     }
 
 
+@pytest.mark.asyncio
 async def test_bericht_ueber_streaming_und_vollstaendig(model) -> None:
     result = await run_research(RunState(question="was ist mirtazipin"), min_rounds=1, max_rounds=1)
     assert model.streamed == [budgets.REPORT]
     assert result["markdown"] == LONG_REPORT.strip()          # ~92.000 Zeichen, nichts abgeschnitten
 
 
+@pytest.mark.asyncio
 async def test_kaputte_auswertung_wird_einmal_wiederholt(model) -> None:
     model.broken_extracts = 1
     result = await run_research(RunState(question="was ist mirtazipin"), min_rounds=1, max_rounds=1)
@@ -125,6 +129,7 @@ async def test_kaputte_auswertung_wird_einmal_wiederholt(model) -> None:
     assert result["stats"]["unreadable"] == 0
 
 
+@pytest.mark.asyncio
 async def test_zweimal_kaputt_wird_gezaehlt_und_erklaert(model) -> None:
     model.broken_extracts = 2
     result = await run_research(RunState(question="was ist mirtazipin"), min_rounds=1, max_rounds=1)
@@ -135,6 +140,7 @@ async def test_zweimal_kaputt_wird_gezaehlt_und_erklaert(model) -> None:
     assert "konnte nicht ausgewertet werden" in result["markdown"]
 
 
+@pytest.mark.asyncio
 async def test_nicht_relevant_ist_kein_fehler(model, monkeypatch) -> None:
     async def irrelevant(messages, model=None, temperature=0.7, max_tokens=4096):
         if "Extrahiere" in messages[-1]["content"]:
@@ -148,6 +154,7 @@ async def test_nicht_relevant_ist_kein_fehler(model, monkeypatch) -> None:
     assert "passte nicht zur Frage" in result["markdown"]
 
 
+@pytest.mark.asyncio
 async def test_leere_seiten_werden_gezaehlt(model, monkeypatch) -> None:
     async def empty(url):
         return ("", "")
