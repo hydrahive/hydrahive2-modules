@@ -180,11 +180,13 @@ class CallSession:
         return sent * 160 >= len(audio)
 
     def _converse(self) -> None:
-        from ..agent.conversation import Conversation
+        from ..agent import conversation
 
         a = self._assistant
-        conv = Conversation(cfg=a["cfg"], llm=a["llm"], stt=a["stt"], say=self._say_rtp, frames=self._voice,
-                            hangup=self._ended.is_set, max_seconds=self._max, **a.get("options", {}))
+        # Eigene Höchstdauer fürs Gespräch – self._max ist die (kurze) Grenze der Ansage (Till 25.10.: Abbruch nach 60 s).
+        options = {"max_seconds": conversation.ASSISTANT_MAX_SECONDS, **a.get("options", {})}
+        conv = conversation.Conversation(cfg=a["cfg"], llm=a["llm"], stt=a["stt"], say=self._say_rtp,
+                                         frames=self._voice, hangup=self._ended.is_set, **options)
         result = conv.run()
         self.turns, self.notes = result.turns, result.notes
         if not self._ended.is_set():
