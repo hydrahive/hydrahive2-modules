@@ -55,7 +55,8 @@ class CallDispatcher:
     def _finish(self, call: CallSession) -> None:
         with self._lock:
             self._calls.pop(call.call_id, None)
-        extra = {"turns": call.turns, "notes": call.notes} if call._assistant is not None else {}
+        extra = {"turns": call.turns, "notes": call.notes, "kind": "assistant"} if call._assistant is not None \
+            else {"kind": "greeting"}
         self._note(call.invite, call.result, codec=call.codec, rtp_out=call.rtp_out, rtp_in=call.rtp_in, **extra)
 
     def busy(self) -> bool:

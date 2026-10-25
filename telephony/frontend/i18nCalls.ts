@@ -19,6 +19,7 @@ export const callsDe = {
   recent: "Letzte Anrufe",
   none: "Noch keine Anrufe.",
   direction: { in: "eingehend", out: "ausgehend" },
+  kind: { greeting: "Ansage", assistant: "Assistent" },
   packets: "{{out}} gesendet / {{in}} empfangen",
   result: {
     answered: "angenommen",
@@ -66,6 +67,7 @@ export const callsEn: CallsTexts = {
   recent: "Recent calls",
   none: "No calls yet.",
   direction: { in: "incoming", out: "outgoing" },
+  kind: { greeting: "Announcement", assistant: "Assistant" },
   packets: "{{out}} sent / {{in}} received",
   result: {
     answered: "answered",

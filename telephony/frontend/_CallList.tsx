@@ -24,6 +24,10 @@ export function CallList({ calls, onRead, onCallback }: {
               <span className="w-24 text-zinc-400">{shortTime(c.started_at)}</span>
               <span className="w-20 font-mono text-zinc-300">{c.number}</span>
               <span className="text-zinc-200">{t(`calls.result.${c.result}`)}</span>
+              {c.kind && (
+                <span data-voip-kind={c.kind} className={`rounded px-1.5 text-xs ${c.kind === "assistant"
+                  ? "bg-indigo-500/15 text-indigo-300" : "bg-zinc-700/50 text-zinc-300"}`}>{t(`calls.kind.${c.kind}`)}</span>
+              )}
               {c.is_test && <span className="rounded bg-indigo-500/15 px-1.5 text-xs text-indigo-300">{t("calls.test")}</span>}
               {c.heard === true && <span className="text-xs text-emerald-300">{t("calls.heard_ok")}</span>}
               {c.heard === false && <span className="text-xs text-amber-300">{t("calls.heard_missing")}</span>}

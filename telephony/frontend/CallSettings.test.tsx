@@ -32,7 +32,7 @@ const CONN = {
 
 const call = (p: Partial<CallEntry>): CallEntry => ({
   id: 1, started_at: "2026-10-25T12:00:00+00:00", number: "•••981", result: "answered", codec: "PCMA",
-  rtp_out: 250, rtp_in: 240, is_test: false, heard: null, turns: 0, notes: {}, notes_read: true, direction: "in", ...p,
+  rtp_out: 250, rtp_in: 240, is_test: false, heard: null, turns: 0, notes: {}, notes_read: true, direction: "in", kind: "greeting", ...p,
 })
 
 describe("Logik", () => {

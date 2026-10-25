@@ -61,7 +61,7 @@ describe("Oberfläche Anrufen", () => {
     expect(h).toContain('data-voip-dial-number="1"')
     expect(h).toContain('data-voip-dial-text="1"')
     expect(h).toContain('data-voip-dial-start="1"')
-    expect(h).toContain("Anrufen")
+    expect(h).toContain("Anrufen &amp; Ansage vorlesen")
     expect(h).toContain("Notrufnummern")
     expect(h).toContain("20")
   })
@@ -84,7 +84,7 @@ describe("Oberfläche Anrufen", () => {
   it("Anrufliste zeigt die Richtung", () => {
     const c = (p: Partial<CallEntry>): CallEntry => ({
       id: 1, started_at: "2026-10-25T12:00:00+00:00", number: "•••567", result: "answered", codec: "PCMA",
-      rtp_out: 1, rtp_in: 1, is_test: false, heard: null, turns: 0, notes: {}, notes_read: true, direction: "in", ...p,
+      rtp_out: 1, rtp_in: 1, is_test: false, heard: null, turns: 0, notes: {}, notes_read: true, direction: "in", kind: "greeting", ...p,
     })
     const h = html(<CallList calls={[c({ id: 1, direction: "out" }), c({ id: 2, direction: "in" })]} />)
     expect(h).toContain('data-voip-direction="out"')
@@ -103,7 +103,6 @@ describe("Anrufen mit Assistent (3b)", () => {
     const h = html(<DialPanel conn={CONN} />)
     expect(h).toContain('data-voip-dial-mode="greeting"')
     expect(h).toContain('data-voip-dial-mode="assistant"')
-    expect(h).toMatch(/data-voip-dial-mode="greeting"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-voip-dial-mode="greeting"/)
     expect(h).not.toContain('data-voip-dial-task="1"')
   })
   it("Assistent: Felder Auftrag und Darf nennen, keine Ansage", () => {
@@ -128,7 +127,7 @@ describe("Anrufen mit Assistent (3b)", () => {
   it("Notiz: Ergebnis wird angezeigt, Zurückrufen nur mit Nummer", () => {
     const c = (p: Partial<CallEntry>): CallEntry => ({
       id: 1, started_at: "2026-10-25T12:00:00+00:00", number: "•••567", result: "assistant_end", codec: "PCMA",
-      rtp_out: 1, rtp_in: 1, is_test: false, heard: null, turns: 2, notes: {}, notes_read: true, direction: "in", ...p,
+      rtp_out: 1, rtp_in: 1, is_test: false, heard: null, turns: 2, notes: {}, notes_read: true, direction: "in", kind: "greeting", ...p,
     })
     const h = html(<CallList calls={[
       c({ id: 1, direction: "out", notes: { result: "Termin Di 10 Uhr möglich, nicht gebucht." } }),
@@ -144,12 +143,41 @@ describe("Anrufen mit Assistent (3b)", () => {
     const h = html(<CallList calls={[{
       id: 2, started_at: "2026-10-25T12:00:00+00:00", number: "•••567", result: "assistant_end", codec: "PCMA",
       rtp_out: 1, rtp_in: 1, is_test: false, heard: null, turns: 2, notes: { callback_number: "030 1234567" },
-      notes_read: true, direction: "in",
+      notes_read: true, direction: "in", kind: "assistant",
     }]} />)
     expect(h).not.toContain("data-voip-callback")
   })
   it("Abschnitt der Anrufliste im Reiter Telefonaufträge", () => {
     const h = html(<DialPanel conn={CONN} />)
     expect(h).toContain('data-voip-dial-calls="1"')
+  })
+})
+
+describe("Anrufart sichtbar (Till 25.10.)", () => {
+  const c = (p: Partial<CallEntry>): CallEntry => ({
+    id: 1, started_at: "2026-10-25T12:00:00+00:00", number: "•••567", result: "answered", codec: "PCMA",
+    rtp_out: 1, rtp_in: 1, is_test: false, heard: null, turns: 0, notes: {}, notes_read: true, direction: "out",
+    kind: "greeting", ...p,
+  })
+  it("Liste zeigt Ansage bzw. Assistent als Text", () => {
+    const h = html(<CallList calls={[c({ id: 1, kind: "greeting" }), c({ id: 2, kind: "assistant", result: "assistant_end" }),
+      c({ id: 3, kind: "", result: "rejected" })]} />)
+    expect(h).toContain('data-voip-kind="greeting"')
+    expect(h).toContain('data-voip-kind="assistant"')
+    expect((h.match(/data-voip-kind=/g) ?? []).length).toBe(2)
+    expect(h).toContain(">Ansage<")
+    expect(h).toContain(">Assistent<")
+  })
+  it("Auswahl als zwei große Karten mit Erklärung", () => {
+    const h = html(<DialPanel conn={CONN} />)
+    expect(h).toContain('role="radiogroup"')
+    expect((h.match(/role="radio"/g) ?? []).length).toBe(2)
+    expect(h).toMatch(/data-voip-dial-mode="greeting"[^>]*aria-checked="true"|aria-checked="true"[^>]*data-voip-dial-mode="greeting"/)
+    expect(h).toContain("liest deinen Text vor und legt auf")
+    expect(h).toContain("führt ein Gespräch mit deinem Auftrag")
+  })
+  it("Knopf sagt, was passiert", () => {
+    expect(html(<DialPanel conn={CONN} />)).toContain("Anrufen &amp; Ansage vorlesen")
+    expect(html(<DialPanel conn={CONN} initialMode="assistant" />)).toContain("Anrufen mit Assistent")
   })
 })

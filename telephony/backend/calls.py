@@ -14,6 +14,9 @@ from hydrahive.db._utils import now_iso
 from hydrahive.db.connection import db
 
 TEST_SECONDS = 60
+# Nicht angenommen bzw. nie verbunden → keine Anrufart
+_NOT_TAKEN = {"rejected", "busy", "codec", "no_port", "cancelled", "no_answer", "declined", "invalid_number",
+              "failed", "auth_failed", "unreachable"}
 KEEP = 50
 DEFAULT_GREETING = ("Hallo, hier ist der Telefonassistent von HydraHive. Im Moment ist leider niemand erreichbar. "
                     "Bitte versuchen Sie es später noch einmal. Auf Wiederhören.")
@@ -78,12 +81,14 @@ def record(cid: str, info: dict) -> None:
         notes = _notes(info.get("notes"))
         direction = "out" if info.get("direction") == "out" else "in"
         is_test = is_test and direction == "in"
+        result = str(info.get("result", ""))
+        kind = "" if result in _NOT_TAKEN else ("assistant" if info.get("kind") == "assistant" else "greeting")
         c.execute("INSERT INTO module_telephony_calls(connection_id, started_at, number, result, codec, rtp_out, "
-                  "rtp_in, is_test, turns, notes, notes_read, direction) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                  "rtp_in, is_test, turns, notes, notes_read, direction, kind) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                   (cid, now_iso(), str(info.get("number", "unbekannt"))[:20], str(info.get("result", ""))[:20],
                    str(info.get("codec", ""))[:8], int(info.get("rtp_out", 0)), int(info.get("rtp_in", 0)),
                    int(is_test), int(info.get("turns", 0)), json.dumps(notes, ensure_ascii=False) if notes else "",
-                   0 if notes else 1, direction))
+                   0 if notes else 1, direction, kind))
         if is_test:
             c.execute("UPDATE module_telephony_connections SET test_until=NULL WHERE id=?", (cid,))
         c.execute("DELETE FROM module_telephony_calls WHERE connection_id=? AND id NOT IN (SELECT id FROM "
@@ -123,7 +128,7 @@ def _public(r) -> dict:
             "codec": r["codec"], "rtp_out": r["rtp_out"], "rtp_in": r["rtp_in"], "is_test": bool(r["is_test"]),
             "heard": None if r["heard"] is None else bool(r["heard"]), "turns": r["turns"],
             "notes": json.loads(r["notes"]) if r["notes"] else {}, "notes_read": bool(r["notes_read"]),
-            "direction": r["direction"]}
+            "direction": r["direction"], "kind": r["kind"]}
 
 
 def list_for(user_id: str) -> list[dict]:
