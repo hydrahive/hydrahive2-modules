@@ -7,6 +7,7 @@ const SAVED: Connection = {
   created_at: "", updated_at: "", pbx: "fritzbox", display_name: "Büro", registrar: "192.168.178.1",
   registrar_port: 5060, username: "hydra-telefon", own_number: "030 1", local_sip_port: 5070,
   rtp_port_min: 7078, rtp_port_max: 7109, register_interval: 300,
+  answer_calls: false, greeting: "", greeting_default: "Hallo", test_until: null,
 }
 
 describe("Formular", () => {

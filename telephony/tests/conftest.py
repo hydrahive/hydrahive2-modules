@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+import pytest
+from _hh_isolation import (  # noqa: F401 - pytest-Hooks, über conftest registriert
     TEST_ROOT,
     isolated_root,
     only_own_files,
@@ -19,10 +20,8 @@ from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest r
     pytest_unconfigure,
     remove_test_tree,
 )
-
-import pytest  # noqa: E402
-from fastapi import FastAPI  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 CORE_SRC = MODULE_DIR.parents[1] / "hydrahive2" / "core" / "src"
@@ -82,7 +81,7 @@ def auth_headers() -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-TABLES = ("module_telephony_connections",)
+TABLES = ("module_telephony_connections", "module_telephony_calls")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -105,3 +104,11 @@ def other_headers() -> dict[str, str]:
     from hydrahive.api.middleware.auth import create_token
 
     return {"Authorization": f"Bearer {create_token('other', 'user', 'user-other')}"}
+
+
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits(monkeypatch):
+    """Ratenbegrenzung je Test frisch – sonst teilen sich Tests das Minuten-Kontingent (z. B. 20 × Speichern)."""
+    from hydrahive.api.middleware import inbound_ratelimit
+
+    monkeypatch.setattr(inbound_ratelimit, "_hits", type(inbound_ratelimit._hits)(list))

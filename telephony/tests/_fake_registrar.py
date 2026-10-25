@@ -56,6 +56,8 @@ class FakeRegistrar:
             self.sources.append(addr)
             if msg.is_request and msg.method == "REGISTER" and not self.silent:
                 self.sock.sendto(self._answer(msg, addr), addr)
+            elif msg.is_request and msg.method == "BYE" and not self.silent:
+                self.sock.sendto(message.build_response(msg, 200, "OK"), addr)
 
     def _via_ext(self, msg: message.Message, addr) -> message.Message:
         host, port = self.nat or addr

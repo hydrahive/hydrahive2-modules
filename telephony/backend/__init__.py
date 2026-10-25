@@ -1,7 +1,7 @@
-"""Telefonie-Modul — Etappe 1: SIP-Verbindung zur Anlage (PLAN-EINSTELLUNGEN.md).
+"""Telefonie-Modul — Etappe 1 (SIP-Verbindung, PLAN-EINSTELLUNGEN.md) und 2a (Anrufe mit Ansage, PLAN-ANRUFE-2A.md).
 
-Der Status meldet nur, was es gibt: Einrichten und dauerhafte Anmeldung. Anrufe annehmen/anrufen und das Archiv
-folgen in den nächsten Etappen (SPEC-V1). Die Spike-Routen (/spike/*) bleiben Entwicklerwerkzeug.
+Der Status meldet nur, was es gibt: Einrichten, dauerhafte Anmeldung, Anrufe annehmen mit Ansage. Telefon-Agent,
+anrufen und Archiv folgen (SPEC-V1). Die Spike-Routen (/spike/*) bleiben Entwicklerwerkzeug.
 """
 from __future__ import annotations
 
@@ -12,12 +12,14 @@ from fastapi import APIRouter, Depends
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 
 from . import connections
+from .calls_routes import router as calls_router
 from .conn_routes import router as conn_router
 from .probe_routes import router as probe_router
 
 router = APIRouter()
 router.include_router(probe_router)
 router.include_router(conn_router)
+router.include_router(calls_router)
 
 
 @router.get("/status")
@@ -35,7 +37,7 @@ def status(
         "features": {
             "setup": True,
             "registration": True,
-            "inbound_calls": False,
+            "inbound_calls": True,
             "outbound_calls": False,
             "archive": False,
         },

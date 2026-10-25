@@ -67,4 +67,23 @@ export type Connection =
       status_at: string | null
       created_at: string
       updated_at: string
+      answer_calls: boolean
+      greeting: string
+      greeting_default: string
+      test_until: string | null
     })
+
+export type CallResult =
+  | "answered" | "rejected" | "busy" | "cancelled" | "caller_hangup" | "hung_up" | "no_ack" | "codec" | "no_port"
+
+export interface CallEntry {
+  id: number
+  started_at: string
+  number: string
+  result: CallResult
+  codec: string
+  rtp_out: number
+  rtp_in: number
+  is_test: boolean
+  heard: boolean | null
+}
