@@ -86,3 +86,11 @@ def answer(address: str, port: int, pt: int, codec: str, *, session_id: int) -> 
              f"c=IN IP4 {address}", "t=0 0", f"m=audio {port} RTP/AVP {pt}", f"a=rtpmap:{pt} {codec}/8000",
              "a=ptime:20", "a=sendrecv"]
     return ("\r\n".join(lines) + "\r\n").encode()
+
+
+def offer(address: str, port: int, *, session_id: int) -> bytes:
+    """Eigenes Angebot für ausgehende Anrufe: G.711 A-law zuerst, dann µ-law (PLAN-ANRUFEN-3)."""
+    lines = ["v=0", f"o=HydraHive {session_id} {session_id} IN IP4 {address}", "s=HydraHive",
+             f"c=IN IP4 {address}", "t=0 0", f"m=audio {port} RTP/AVP 8 0", "a=rtpmap:8 PCMA/8000",
+             "a=rtpmap:0 PCMU/8000", "a=ptime:20", "a=sendrecv"]
+    return ("\r\n".join(lines) + "\r\n").encode()

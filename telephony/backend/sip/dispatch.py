@@ -35,6 +35,7 @@ class CallDispatcher:
         self.assistant: Callable[[], dict | None] = lambda: None   # Modus „Telefon-Assistent“ (sip/agent.py setzt)
         self._lock = threading.Lock()
         self._calls: dict[str, CallSession] = {}
+        self._out: dict[str, object] = {}                          # ausgehende Anrufe (sip/outbound.py)
 
     def _note(self, invite: message.Message, result: str, **extra) -> None:
         self._record({"number": mask_number(invite.header("from") or ""), "result": result,
@@ -57,11 +58,32 @@ class CallDispatcher:
         extra = {"turns": call.turns, "notes": call.notes} if call._assistant is not None else {}
         self._note(call.invite, call.result, codec=call.codec, rtp_out=call.rtp_out, rtp_in=call.rtp_in, **extra)
 
+    def busy(self) -> bool:
+        """Höchstens ein Anruf gleichzeitig – rein oder raus."""
+        with self._lock:
+            return any(c.alive for c in [*self._calls.values(), *self._out.values()])
+
+    def add_outbound(self, call) -> bool:
+        """Ausgehenden Anruf eintragen; False, wenn die Leitung belegt ist (prüfen und eintragen unter einer Sperre)."""
+        with self._lock:
+            if any(c.alive for c in [*self._calls.values(), *self._out.values()]):
+                return False
+            self._out[call.call_id] = call
+            return True
+
+    def finish_outbound(self, call) -> None:
+        with self._lock:
+            self._out.pop(call.call_id, None)
+
     def handle_request(self, sock: socket.socket, msg: message.Message, addr: tuple[str, int], local_ip: str) -> bool:
         cid = msg.header("call-id") or ""
         with self._lock:
             call = self._calls.get(cid)
-            busy = any(c.alive for c in self._calls.values())
+            out = self._out.get(cid)
+            busy = any(c.alive for c in [*self._calls.values(), *self._out.values()])
+        if out is not None:
+            out.on_request(msg, addr)
+            return True
         if call:
             call.on_request(msg, addr)
             return True
@@ -116,13 +138,13 @@ class CallDispatcher:
 
     def handle_response(self, msg: message.Message) -> None:
         with self._lock:
-            call = self._calls.get(msg.header("call-id") or "")
+            call = self._calls.get(msg.header("call-id") or "") or self._out.get(msg.header("call-id") or "")
         if call:
             call.on_response(msg)
 
     def hangup_all(self, timeout: float = 3.0) -> None:
         with self._lock:
-            calls = list(self._calls.values())
+            calls = [*self._calls.values(), *self._out.values()]
         for c in calls:
             c.hangup()
         end = time.monotonic() + timeout

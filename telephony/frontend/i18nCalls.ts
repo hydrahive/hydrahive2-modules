@@ -18,6 +18,7 @@ export const callsDe = {
   test: "Test",
   recent: "Letzte Anrufe",
   none: "Noch keine Anrufe.",
+  direction: { in: "eingehend", out: "ausgehend" },
   packets: "{{out}} gesendet / {{in}} empfangen",
   result: {
     answered: "angenommen",
@@ -33,6 +34,13 @@ export const callsDe = {
     no_input: "Anrufer hat nichts gesagt",
     max_duration: "Höchstdauer erreicht",
     errors: "technische Probleme",
+    no_answer: "niemand hat abgenommen",
+    declined: "abgelehnt",
+    invalid_number: "Nummer ungültig",
+    failed: "fehlgeschlagen",
+    auth_failed: "Anlage hat den Anruf verweigert",
+    unreachable: "Anlage nicht erreichbar",
+    remote_hangup: "Gegenseite hat aufgelegt",
   },
 }
 
@@ -57,6 +65,7 @@ export const callsEn: CallsTexts = {
   test: "Test",
   recent: "Recent calls",
   none: "No calls yet.",
+  direction: { in: "incoming", out: "outgoing" },
   packets: "{{out}} sent / {{in}} received",
   result: {
     answered: "answered",
@@ -72,5 +81,12 @@ export const callsEn: CallsTexts = {
     no_input: "caller said nothing",
     max_duration: "maximum duration reached",
     errors: "technical problems",
+    no_answer: "nobody answered",
+    declined: "declined",
+    invalid_number: "invalid number",
+    failed: "failed",
+    auth_failed: "phone system refused the call",
+    unreachable: "phone system unreachable",
+    remote_hangup: "other side hung up",
   },
 }

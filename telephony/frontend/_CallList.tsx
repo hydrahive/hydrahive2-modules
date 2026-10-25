@@ -1,3 +1,4 @@
+import { PhoneIncoming, PhoneOutgoing } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { callTone, hasNote, noteLine, shortTime } from "./callsLogic"
 import type { CallEntry } from "./types"
@@ -16,6 +17,8 @@ export function CallList({ calls, onRead }: { calls: CallEntry[]; onRead?: (id: 
           <li key={c.id} className="px-3 py-2 text-sm">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className={`h-2 w-2 shrink-0 rounded-full ${DOT[callTone(c)]}`} />
+              <span data-voip-direction={c.direction ?? "in"} title={t(`calls.direction.${c.direction ?? "in"}`)}
+                className="text-zinc-500">{c.direction === "out" ? <PhoneOutgoing size={13} /> : <PhoneIncoming size={13} />}</span>
               <span className="w-24 text-zinc-400">{shortTime(c.started_at)}</span>
               <span className="w-20 font-mono text-zinc-300">{c.number}</span>
               <span className="text-zinc-200">{t(`calls.result.${c.result}`)}</span>

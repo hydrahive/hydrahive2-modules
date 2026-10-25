@@ -81,7 +81,7 @@ describe("Seite", () => {
     expect(h).toContain('data-voip-save="1"')
     expect(h).toContain(">Verbinden<")
     expect(h).toContain('data-voip-guide="1"')
-    expect(h).toContain("mit dem Telefon-Assistenten. Selbst anrufen folgt")
+    expect(h).toContain("mit dem Telefon-Assistenten. Selbst anrufen kannst du im Reiter „Telefonaufträge“")
   })
   it("Übersicht: ehrlicher Stand und Weg zur Einrichtung", () => {
     const h = html(<FoundationOverview status="registered" onSetup={() => {}} />)

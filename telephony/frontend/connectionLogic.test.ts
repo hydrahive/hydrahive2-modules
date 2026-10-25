@@ -9,6 +9,7 @@ const SAVED: Connection = {
   rtp_port_min: 7078, rtp_port_max: 7109, register_interval: 300,
   answer_calls: false, greeting: "", greeting_default: "Hallo", test_until: null,
   call_mode: "greeting", assistant_name: "", assistant_knowledge: "", assistant_model: "",
+  allow_premium: false, allow_foreign: false,
 }
 
 describe("Formular", () => {

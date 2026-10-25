@@ -1,7 +1,7 @@
-"""Telefonie-Modul — Etappe 1 (SIP-Verbindung, PLAN-EINSTELLUNGEN.md) und 2a (Anrufe mit Ansage, PLAN-ANRUFE-2A.md).
+"""Telefonie-Modul — Etappe 1 (SIP-Verbindung), 2 (Anrufe annehmen: Ansage, Telefon-Assistent) und 3 (selbst anrufen,
+PLAN-ANRUFEN-3.md).
 
-Der Status meldet nur, was es gibt: Einrichten, dauerhafte Anmeldung, Anrufe annehmen mit Ansage. Telefon-Agent,
-anrufen und Archiv folgen (SPEC-V1). Die Spike-Routen (/spike/*) bleiben Entwicklerwerkzeug.
+Der Status meldet nur, was es gibt. Archiv folgt (SPEC-V1). Die Spike-Routen (/spike/*) bleiben Entwicklerwerkzeug.
 """
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def status(
             "setup": True,
             "registration": True,
             "inbound_calls": True,
-            "outbound_calls": False,
+            "outbound_calls": True,
             "archive": False,
         },
     }

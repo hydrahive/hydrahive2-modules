@@ -96,3 +96,67 @@ def heard(call_id: int, body: HeardIn, auth: Auth) -> dict:
         return calls.confirm(auth.user_id, call_id, body.heard)
     except Exception as e:  # noqa: BLE001
         _fail(e)
+
+
+# ---- Anrufen per Knopf (PLAN-ANRUFEN-3) ----
+class DialIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    number: str = Field(min_length=1, max_length=40)
+    text: str = Field("", max_length=500)
+
+    @field_validator("number", "text")
+    @classmethod
+    def _clean(cls, v: str) -> str:
+        return _no_controls(v, newlines=False)
+
+
+class RulesIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    allow_premium: bool
+    allow_foreign: bool
+
+
+def _dial_fail(e: Exception):
+    from . import dialrules, outbound
+
+    if isinstance(e, dialrules.Blocked):
+        raise coded(status.HTTP_400_BAD_REQUEST, f"number_{e.code}") from None
+    if isinstance(e, outbound.NotReady):
+        raise coded(status.HTTP_409_CONFLICT, "not_registered") from None
+    if isinstance(e, outbound.Busy):
+        raise coded(status.HTTP_409_CONFLICT, "line_busy") from None
+    if isinstance(e, outbound.Limit):
+        raise coded(status.HTTP_429_TOO_MANY_REQUESTS, e.code) from None
+    _fail(e)
+
+
+@router.post("/connection/dial")
+def dial(body: DialIn, auth: Auth) -> dict:
+    from . import outbound
+
+    try:
+        return outbound.dial(auth.user_id, body.number, body.text)
+    except Exception as e:  # noqa: BLE001 - _dial_fail ordnet zu
+        _dial_fail(e)
+
+
+@router.get("/connection/dial")
+def dial_status(auth: Auth) -> dict:
+    from . import outbound
+    return outbound.status(auth.user_id)
+
+
+@router.post("/connection/dial/hangup")
+def dial_hangup(auth: Auth) -> dict:
+    from . import outbound
+    return outbound.hangup(auth.user_id)
+
+
+@router.put("/connection/dial-rules")
+def dial_rules(body: RulesIn, auth: Auth) -> dict:
+    from . import outbound
+
+    try:
+        return outbound.set_rules(auth.user_id, body.allow_premium, body.allow_foreign)
+    except Exception as e:  # noqa: BLE001
+        _fail(e)
