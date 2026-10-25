@@ -47,9 +47,15 @@ async def fake_fetch(url):
     return ("Langer Seitentext über X. " * 30, "https://img.test/og.jpg")
 
 
+async def fake_stream(messages, model=None, temperature=0.7, max_tokens=4096):
+    # Bericht läuft seit SPEC „ausführlich“ per Streaming – gleiche Antworten wie fake_complete
+    yield await fake_complete(messages, model, temperature, max_tokens)
+
+
 @pytest.fixture
 def stub(monkeypatch):
     monkeypatch.setattr(llm_mod, "complete", fake_complete)
+    monkeypatch.setattr(llm_mod, "stream", fake_stream)
     monkeypatch.setattr(gather_mod, "searxng_search", fake_search)
     monkeypatch.setattr(gather_mod, "fetch_page", fake_fetch)
 

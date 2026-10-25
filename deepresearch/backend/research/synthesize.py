@@ -1,7 +1,7 @@
 """Schritt 4-5: laufende Synthese + Stop-Entscheidung."""
 from __future__ import annotations
 
-from . import prompts
+from . import budgets, prompts
 from .llm import ask
 from .models import Finding, RunState
 
@@ -25,7 +25,7 @@ async def synthesize(state: RunState) -> None:
         prompts.synthesize(state.question, state.report_md, _format_findings(recent)),
         model=state.model,
         system=system,
-        max_tokens=2500,
+        max_tokens=budgets.SYNTHESIZE,
         temperature=0.4,
     )
 
@@ -36,6 +36,6 @@ async def should_stop(state: RunState) -> bool:
     system = prompts.SYSTEM.format(date=prompts.today_str())
     raw = await ask(
         prompts.should_stop(state.question, state.report_md),
-        model=state.model, system=system, max_tokens=10,
+        model=state.model, system=system, max_tokens=budgets.STOP,
     )
     return raw.strip().upper().startswith("YES")

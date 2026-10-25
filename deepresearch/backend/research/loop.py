@@ -10,7 +10,7 @@ import logging
 import time
 from typing import Callable
 
-from . import planner, queries, synthesize
+from . import budgets, planner, queries, synthesize
 from .gather import gather_round
 from .models import RunState
 from .report_writer import write_report
@@ -44,7 +44,7 @@ async def run_research(
     progress: EmitFn = None,
     max_rounds: int = 6,
     min_rounds: int = 2,
-    max_time: float = 300.0,
+    max_time: float = budgets.MAX_TIME_S,
     category: str | None = None,
 ) -> dict:
     """Führt den Lauf aus und gibt {markdown, sources, stats, category} zurück."""
@@ -78,6 +78,9 @@ async def run_research(
         "queries": len(state.queries_used),
         "urls": len(state.urls_seen),
         "sources": len(state.sources()),
+        "unreadable": state.unreadable,
+        "irrelevant": state.irrelevant,
+        "empty_pages": state.empty_pages,
         "duration_s": round(time.monotonic() - started, 1),
         "model": state.model or "default",
     }

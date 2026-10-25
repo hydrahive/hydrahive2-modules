@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 
-from hydrahive.llm.client import complete
+from hydrahive.llm.client import complete, stream
 
 _THINK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
@@ -34,6 +34,24 @@ async def ask(
     messages.append({"role": "user", "content": prompt})
     out = await complete(messages, model=model, temperature=temperature, max_tokens=max_tokens)
     return strip_thinking(out or "")
+
+
+async def ask_streamed(
+    prompt: str,
+    *,
+    model: str | None = None,
+    system: str | None = None,
+    temperature: float = 0.3,
+    max_tokens: int = 2048,
+) -> str:
+    """Wie ask, aber per Streaming – für lange Antworten (Bericht). Ohne Streaming
+    lehnt das Anthropic-SDK große max_tokens ab (10-Minuten-Grenze)."""
+    messages: list[dict] = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+    parts = [chunk async for chunk in stream(messages, model=model, temperature=temperature, max_tokens=max_tokens)]
+    return strip_thinking("".join(parts))
 
 
 def _first_json_blob(text: str, opener: str, closer: str) -> str | None:

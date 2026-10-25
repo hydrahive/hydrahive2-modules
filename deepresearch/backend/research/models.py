@@ -26,6 +26,10 @@ class RunState:
     round: int = 0
     queries_used: set[str] = field(default_factory=set)
     urls_seen: set[str] = field(default_factory=set)
+    # Warum Seiten nicht zur Quelle wurden (vorher still verworfen, SPEC.md)
+    empty_pages: int = 0      # Seite nicht abrufbar / ohne Text
+    irrelevant: int = 0       # Modell: passt nicht zur Frage
+    unreadable: int = 0       # Modell-Antwort auch nach Wiederholung nicht lesbar
 
     def sources(self) -> list[dict]:
         """Deduplizierte Quellenliste {url, title, image} in Fund-Reihenfolge."""

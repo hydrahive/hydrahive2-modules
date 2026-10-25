@@ -1,7 +1,7 @@
 """Schritt 1: Plan — Teil-Fragen + Kategorie aus der Nutzerfrage."""
 from __future__ import annotations
 
-from . import prompts
+from . import budgets, prompts
 from .llm import ask, parse_json
 from .models import RunState
 
@@ -14,7 +14,7 @@ async def make_plan(state: RunState, forced_category: str | None = None) -> None
     forced_category (aus den UI-Einstellungen) überschreibt die Auto-Klassifikation.
     """
     system = prompts.SYSTEM.format(date=prompts.today_str())
-    raw = await ask(prompts.plan(state.question), model=state.model, system=system, max_tokens=600)
+    raw = await ask(prompts.plan(state.question), model=state.model, system=system, max_tokens=budgets.PLAN)
     data = parse_json(raw, {})
 
     subs = data.get("subquestions") if isinstance(data, dict) else None
