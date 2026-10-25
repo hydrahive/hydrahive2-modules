@@ -1,7 +1,7 @@
 """Schritt 2 (pro Runde): Suchanfragen erzeugen, dedupliziert gegen bereits genutzte."""
 from __future__ import annotations
 
-from . import prompts
+from . import budgets, prompts
 from .llm import ask, parse_json
 from .models import RunState
 
@@ -12,7 +12,7 @@ async def generate_queries(state: RunState, first_round: bool) -> list[str]:
         prompts.queries(state.question, state.subquestions, first_round, sorted(state.queries_used)),
         model=state.model,
         system=system,
-        max_tokens=400,
+        max_tokens=budgets.QUERIES,
     )
     arr = parse_json(raw, [])
     if not isinstance(arr, list):

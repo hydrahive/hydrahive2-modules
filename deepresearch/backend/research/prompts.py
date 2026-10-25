@@ -50,10 +50,11 @@ def extract(question: str, title: str, url: str, content: str) -> str:
         f"Quelle: {title} ({url})\n\n"
         "Seiteninhalt (gekürzt):\n"
         f"\"\"\"\n{content}\n\"\"\"\n\n"
-        "Extrahiere NUR Information, die zur Forschungsfrage relevant ist. "
-        "Wenn die Seite nichts Brauchbares enthält, setze relevant=false.\n\n"
+        "Extrahiere NUR Information, die zur Forschungsfrage relevant ist – aber gründlich: "
+        "alle passenden Fakten, Zahlen, Dosierungen, Warnhinweise, Studien und Quellenangaben "
+        "der Seite. Wenn die Seite nichts Brauchbares enthält, setze relevant=false.\n\n"
         'Antworte NUR mit JSON: '
-        '{"relevant": true/false, "summary": "2-4 Sätze Kernaussagen", '
+        '{"relevant": true/false, "summary": "gründliche Zusammenfassung der relevanten Aussagen", '
         '"evidence": "konkrete Fakten/Zahlen/Zitate"}'
     )
 
@@ -66,6 +67,7 @@ def synthesize(question: str, current_report: str, new_findings: str) -> str:
         f"Neue Funde (mit Quellen-URLs):\n{new_findings}\n\n"
         "Aktualisiere den Arbeitsbericht: arbeite die neuen Funde ein, behalte "
         "Inline-Zitate als [Quelle](url) direkt am jeweiligen Fakt. Markdown. "
+        "Nichts kürzen oder streichen, was schon im Bericht steht – der Bericht wächst. "
         "Keine Erfindungen — nur was durch Funde gedeckt ist."
     )
 
@@ -95,7 +97,8 @@ def final_report(question: str, report: str, category: str) -> str:
         f"Recherche-Material (mit Quellen):\n{report}\n\n"
         f"Schreibe den finalen Bericht. {hint}\n"
         "Anforderungen:\n"
-        "- Magazin-Qualität, mind. 1200 Wörter, klare ##/###-Überschriften\n"
+        "- Ausführlich: mind. 2500 Wörter, so ausführlich wie das Material trägt; "
+        "eigene Abschnitte je Teilaspekt, Tabellen wo sie helfen, klare ##/###-Überschriften\n"
         "- Beginne mit einer aussagekräftigen H1-Überschrift (# Titel)\n"
         "- Executive Summary am Anfang, Fazit am Ende\n"
         "- Inline-Zitate [Quellenname](url) direkt am Fakt\n"
