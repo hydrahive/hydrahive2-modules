@@ -149,3 +149,55 @@ def test_ton_von_fremder_adresse_erreicht_das_gespraech_nicht() -> None:
         evil.close()
         c.close()
         h.close()
+
+
+def test_gespraech_hat_eigene_hoechstdauer_nicht_die_der_ansage() -> None:
+    """Till 25.10.: Gespräch brach nach 60 s mit „max_duration“ ab – die Grenze der Ansage galt auch für den Assistenten.
+
+    Hier: Ansage-Grenze 0,5 s, Assistent darf 5 s. Der Anrufer spricht erst nach gut 1 s – das Gespräch muss weiterlaufen.
+    """
+    a = Assistant([{"say": "Auf Wiederhören!", "end": True}], ["Tschüss."])
+    h = _hydra(a)
+    h.d._max = 0.5
+    base = h.d.assistant
+    h.d.assistant = lambda: {**base(), "options": {**base()["options"], "max_seconds": 5}}
+    c = FakeCaller(send_rtp=False)
+    try:
+        c.invite(h.addr)
+        assert _wait(lambda: 200 in c.statuses())
+        port = _media_port(c)
+        time.sleep(1.2)
+        _send_voice(c, port, _tone_pcma(600) + bytes([0xD5]) * 8 * 500)
+        assert _wait(lambda: h.records, timeout=8)
+        assert h.records[0]["result"] == "assistant_end"
+    finally:
+        c.close()
+        h.close()
+
+
+def test_ohne_vorgabe_gilt_fuer_gespraeche_die_assistenten_grenze() -> None:
+    """Fehlt max_seconds in den Optionen, gilt ASSISTANT_MAX_SECONDS – nicht die kurze Grenze der Ansage."""
+    from backend.agent import conversation
+
+    seen: dict = {}
+
+    class Spy(conversation.Conversation):
+        def __init__(self, **kw) -> None:
+            seen["max"] = kw["max_seconds"]
+            super().__init__(**kw)
+
+    a = Assistant([], [])
+    h = _hydra(a)
+    h.d._max = 0.5
+    orig, conversation.Conversation = conversation.Conversation, Spy
+    c = FakeCaller(send_rtp=False)
+    try:
+        c.invite(h.addr)
+        assert _wait(lambda: "max" in seen)
+        assert seen["max"] == conversation.ASSISTANT_MAX_SECONDS == 300
+        c.bye()
+        assert _wait(lambda: h.records, timeout=5)
+    finally:
+        conversation.Conversation = orig
+        c.close()
+        h.close()

@@ -26,6 +26,7 @@ SAY_BYE_TIME = "Unsere Zeit ist leider um. Ich gebe Ihr Anliegen weiter. Auf Wie
 SAY_ERRORS = "Es tut mir leid, ich habe gerade technische Probleme. Bitte versuchen Sie es später noch einmal."
 SAY_THINKING = "Einen Moment."
 MAX_ERRORS = 3
+ASSISTANT_MAX_SECONDS = 300   # Höchstdauer eines Gesprächs (PLAN-AGENT-2B: 5 Minuten, fest) – die Ansage hat ihre eigene
 
 
 @dataclass
@@ -39,7 +40,7 @@ class ConversationResult:
 class Conversation:
     def __init__(self, *, cfg: AgentConfig, llm: Callable[[list[dict]], str], stt: Callable[[bytes], str],
                  say: Callable[[str, Callable[[], bool]], bool], frames: queue.Queue[bytes | None],
-                 hangup: Callable[[], bool], max_seconds: float = 300, no_input_ms: int = 8000,
+                 hangup: Callable[[], bool], max_seconds: float = ASSISTANT_MAX_SECONDS, no_input_ms: int = 8000,
                  end_silence_ms: int = 700, thinking_after: float = 1.5) -> None:
         self.cfg, self._llm, self._stt, self._say = cfg, llm, stt, say
         self._frames, self._hangup = frames, hangup
