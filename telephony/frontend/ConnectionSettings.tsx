@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { ConnectionForm } from "./_ConnectionForm"
 import { ConnectionStatusBox } from "./_ConnectionStatus"
+import { CallSettings } from "./CallSettings"
 import { SetupGuide } from "./SetupGuide"
 import { telephonyApi } from "./api"
 import { canSave, errorKey, formFrom, isDirty } from "./connectionLogic"
@@ -103,6 +104,8 @@ export function ConnectionSettings() {
           </div>
           {dirty && configured && <p className="mt-2 text-xs text-zinc-500">{t("conn.save_first")}</p>}
         </div>
+
+        {configured && <CallSettings key={conn.updated_at} conn={conn} />}
       </div>
 
       <SetupGuide form={form} />

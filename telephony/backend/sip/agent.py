@@ -15,6 +15,7 @@ import time
 from collections.abc import Callable
 
 from . import message
+from .dispatch import CallDispatcher
 from .register import RegState, register
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,9 @@ class SipAgent:
     def __init__(self, *, connection_id: str, user: str, password: str, domain: str, target: tuple[str, int],
                  bind: tuple[str, int], display_name: str, interval: int,
                  on_status: Callable[[str], None] | None = None, register_timeout: float = 8.0,
-                 retry_delays: tuple[float, ...] = (15, 30, 60, 120, 300)) -> None:
+                 retry_delays: tuple[float, ...] = (15, 30, 60, 120, 300),
+                 call_policy: Callable[[], str | None] | None = None, call_record: Callable[[dict], None] | None = None,
+                 rtp_ports: tuple[int, int] = (7078, 7109), call_options: dict | None = None) -> None:
         self.connection_id = connection_id
         self._state = RegState(user=user, password=password, domain=domain, target=target, local=bind,
                                display_name=display_name)
@@ -52,6 +55,8 @@ class SipAgent:
         self.status = "disconnected"
         self.local_addr: tuple[str, int] | None = None
         self.ignored = 0
+        self.calls = CallDispatcher(policy=call_policy or (lambda: None), rtp_ports=rtp_ports,
+                                    record=call_record or (lambda r: None), **(call_options or {}))
 
     def __repr__(self) -> str:
         return f"SipAgent({self.connection_id!r}, status={self.status!r})"
@@ -102,6 +107,7 @@ class SipAgent:
         try:
             self._loop(sock)
         finally:
+            self.calls.hangup_all()
             if self.status == "registered":
                 try:
                     register(sock, self._state, 0, timeout=2.0, on_request=self._handle)
@@ -156,16 +162,16 @@ class SipAgent:
                 continue
             if msg.is_request:
                 self._handle(msg, addr)
+            elif addr == self._state.target:
+                self.calls.handle_response(msg)                 # z. B. 200 auf unser BYE
 
     def _handle(self, msg: message.Message, addr: tuple[str, int]) -> None:
         if addr != self._state.target or self._sock is None:
             self.ignored += 1                               # nur die eigene Anlage (IP und SIP-Port)
             return
-        if msg.method == "ACK":
-            return
-        code, reason = {"OPTIONS": (200, "OK"), "INVITE": (480, "Temporarily Unavailable"),
-                        "BYE": (481, "Call/Transaction Does Not Exist"), "CANCEL": (200, "OK")
-                        }.get(msg.method, (405, "Method Not Allowed"))
+        if self.calls.handle_request(self._sock, msg, addr, self._state.local[0]):
+            return                                          # INVITE/ACK/BYE/CANCEL: Anrufannahme (sip/dispatch.py)
+        code, reason = {"OPTIONS": (200, "OK")}.get(msg.method, (405, "Method Not Allowed"))
         extra = [("Allow", "INVITE, ACK, CANCEL, BYE, OPTIONS")] if code in (200, 405) else []
         try:
             self._sock.sendto(message.build_response(msg, code, reason, to_tag=os.urandom(4).hex(), extra=extra),

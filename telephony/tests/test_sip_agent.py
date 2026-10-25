@@ -197,3 +197,52 @@ def test_quelladresse_ermitteln() -> None:
     from backend.sip.agent import source_ip_for
 
     assert source_ip_for(("127.0.0.1", 5060)) == "127.0.0.1"
+
+
+def test_mit_anrufannahme_nimmt_ab_und_spielt_ansage(reg) -> None:
+    """Die Anlage (Registrar-Socket) schickt INVITE mit SDP; HydraHive nimmt ab, spielt, legt auf."""
+    from backend.media import rtp as rtpmod
+    from backend.sip import message
+    from backend.sip.agent import SipAgent
+
+    records = []
+    a = SipAgent(**_cfg(reg), call_policy=lambda: "Hallo", call_record=records.append, rtp_ports=(32000, 32020),
+                 call_options={"ring_seconds": 0.0, "ack_timeout": 1.0, "greeting": lambda t, c: b"\x11" * 800})
+    a.start()
+    media = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    media.bind(("127.0.0.1", 0))
+    media.settimeout(2)
+    try:
+        assert _wait(lambda: a.status == "registered")
+        body = (f"v=0\r\nc=IN IP4 127.0.0.1\r\nm=audio {media.getsockname()[1]} RTP/AVP 8\r\n"
+                "a=rtpmap:8 PCMA/8000\r\n").encode()
+        reg.send(message.build_request("INVITE", "sip:hydra-telefon@127.0.0.1", [
+            ("Via", f"SIP/2.0/UDP 127.0.0.1:{reg.port};branch=z9hG4bKcall"), ("From", "<sip:0301234567@fritz.box>;tag=f"),
+            ("To", "<sip:hydra-telefon@fritz.box>"), ("Call-ID", "call-live"), ("CSeq", "1 INVITE"),
+            ("Contact", f"<sip:fritz@127.0.0.1:{reg.port}>"), ("Content-Type", "application/sdp")], body), a.local_addr)
+        assert _wait(lambda: any(m.status == 200 for m in _answers(reg, "call-live")))
+        ok = next(m for m in _answers(reg, "call-live") if m.status == 200)
+        reg.send(message.build_request("ACK", "sip:x", [
+            ("Via", f"SIP/2.0/UDP 127.0.0.1:{reg.port};branch=z9hG4bKack"), ("From", "<sip:0301234567@fritz.box>;tag=f"),
+            ("To", ok.header("to")), ("Call-ID", "call-live"), ("CSeq", "1 ACK")]), a.local_addr)
+        got = [rtpmod.parse(media.recvfrom(2048)[0]) for _ in range(5)]
+        assert {p.payload_type for p in got} == {8}
+        assert _wait(lambda: any(m.is_request and m.method == "BYE" for m in reg.requests), timeout=4)
+        assert _wait(lambda: records, timeout=6) and records[0]["result"] in ("answered", "hung_up")
+        assert a.status == "registered", "Anmeldung bleibt bestehen"
+    finally:
+        media.close()
+        a.stop()
+
+
+def test_ohne_anrufannahme_480_wie_bisher(reg) -> None:
+    from backend.sip.agent import SipAgent
+
+    a = SipAgent(**_cfg(reg), call_policy=lambda: None, call_record=lambda r: None)
+    a.start()
+    try:
+        assert _wait(lambda: a.status == "registered")
+        reg.send(_req("INVITE", "inv-off"), a.local_addr)
+        assert _wait(lambda: any(m.status == 480 for m in _answers(reg, "inv-off")))
+    finally:
+        a.stop()

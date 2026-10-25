@@ -12,7 +12,7 @@ from .sip.agent import SipAgent
 
 
 def fingerprint(cfg: dict) -> str:
-    keys = ("user", "password", "domain", "target", "bind", "display_name", "interval")
+    keys = ("user", "password", "domain", "target", "bind", "display_name", "interval", "rtp_ports")
     return hashlib.sha256(repr([cfg[k] for k in keys]).encode()).hexdigest()
 
 

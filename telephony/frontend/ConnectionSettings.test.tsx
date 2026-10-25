@@ -81,14 +81,14 @@ describe("Seite", () => {
     expect(h).toContain('data-voip-save="1"')
     expect(h).toContain(">Verbinden<")
     expect(h).toContain('data-voip-guide="1"')
-    expect(h).toContain("Anrufe annehmen und anrufen folgen")
+    expect(h).toContain("Telefon-Agent und selbst anrufen folgen")
   })
   it("Übersicht: ehrlicher Stand und Weg zur Einrichtung", () => {
     const h = html(<FoundationOverview status="registered" onSetup={() => {}} />)
     expect(h).toContain(">Verbindung</span>")
     expect((h.match(/>Verbunden</g) ?? []).length).toBe(2)          // Karte + Statusbox
     expect(h).toContain('data-voip-goto-settings="1"')
-    expect(h).toContain("Folgen in der nächsten Version")
+    expect(h).toContain("Abnehmen mit Ansage")
   })
 })
 
