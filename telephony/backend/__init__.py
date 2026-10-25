@@ -1,41 +1,40 @@
-"""Telefonie-Modul — ehrliches Walking Skeleton ohne SIP-Funktion.
+"""Telefonie-Modul — Etappe 1: SIP-Verbindung zur Anlage (PLAN-EINSTELLUNGEN.md).
 
-Der Statusvertrag beweist Modulregistrierung und Authentifizierung. Alle
-Telefoniefunktionen bleiben bis zu ihren jeweiligen SPEC-V1-Etappen deaktiviert.
+Der Status meldet nur, was es gibt: Einrichten und dauerhafte Anmeldung. Anrufe annehmen/anrufen und das Archiv
+folgen in den nächsten Etappen (SPEC-V1). Die Spike-Routen (/spike/*) bleiben Entwicklerwerkzeug.
 """
 from __future__ import annotations
 
+import atexit
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 
-from .probe_models import SPIKE_PORT, SPIKE_REGISTRAR
+from . import connections
+from .conn_routes import router as conn_router
 from .probe_routes import router as probe_router
 
 router = APIRouter()
 router.include_router(probe_router)
+router.include_router(conn_router)
 
 
 @router.get("/status")
 def status(
-    _principal: Annotated[AuthPrincipal, Depends(require_principal)],
+    principal: Annotated[AuthPrincipal, Depends(require_principal)],
 ) -> dict:
     """Liefert ausschließlich implementierte Fähigkeiten, keine Zukunftsbehauptungen."""
+    conn = connections.public(principal.user_id)
     return {
         "module": "telephony",
-        "stage": "foundation",
-        "status": "not_configured",
-        "configured": False,
+        "stage": "connection",
+        "status": conn["status"],
+        "configured": conn["configured"],
         "telephony_available": False,
-        "probe_target": {
-            "registrar": SPIKE_REGISTRAR,
-            "port": SPIKE_PORT,
-        },
         "features": {
-            "setup": False,
-            "registration_probe": True,
-            "incoming_call_probe": True,
+            "setup": True,
+            "registration": True,
             "inbound_calls": False,
             "outbound_calls": False,
             "archive": False,
@@ -43,6 +42,18 @@ def status(
     }
 
 
+RECONCILE_SECONDS = 60
+
+
 def register(ctx) -> None:
-    """Registriert nur den authentifizierten Statusrouter."""
+    """Router, Datenbank und den Job, der gespeicherte Verbindungen angemeldet hält (auch nach Neustart)."""
     ctx.register_router(router)
+    ctx.register_migrations("migrations")
+    ctx.register_job("connections", _reconcile, interval_seconds=RECONCILE_SECONDS, initial_delay_seconds=10)
+    atexit.register(connections.MANAGER.stop_all)      # beim Beenden abmelden (sonst verfällt es nach Ablaufzeit)
+
+
+async def _reconcile() -> None:
+    import asyncio
+
+    await asyncio.to_thread(connections.reconcile)

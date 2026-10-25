@@ -1,12 +1,19 @@
 {
   "id": "telephony",
   "name": "VoIP",
-  "version": "0.5.2",
-  "description": "Projektgebundener Telefonassistent für VoIP-Zugänge, Telefonaufträge und Gesprächsarchive.",
+  "version": "0.6.1",
+  "description": "Telefonassistent für die FRITZ!Box und andere SIP-Anlagen – in Entwicklung. Diese Version verbindet HydraHive mit der Anlage (Einstellungen, Anleitung). Anrufe annehmen und anrufen folgen.",
   "icon": "PhoneCall",
   "nav_group": "working",
   "permissions": [],
   "has_service": false,
   "default_agent_tools": false,
-  "min_core_version": "2.0.0"
+  "min_core_version": "2.0.0",
+  "capabilities": [
+    {
+      "id": "module.telephony",
+      "label": "VoIP nutzen (Telefonanlage verbinden, später Anrufe)",
+      "default": "admin_only"
+    }
+  ]
 }

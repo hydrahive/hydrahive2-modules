@@ -49,7 +49,12 @@ os.environ.update(
                 "user_id": "user-owner",
                 "password_hash": "not-used",
                 "role": "user",
-            }
+            },
+            "other": {
+                "user_id": "user-other",
+                "password_hash": "not-used",
+                "role": "user",
+            },
         }
     )
 )
@@ -75,3 +80,28 @@ def auth_headers() -> dict[str, str]:
 
     token = create_token("owner", "user", "user-owner")
     return {"Authorization": f"Bearer {token}"}
+
+
+TABLES = ("module_telephony_connections",)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _schema() -> None:
+    from hydrahive.db import init_db
+    from hydrahive.modules.migrations import apply_module_migrations
+
+    init_db()
+    apply_module_migrations("telephony", MODULE_DIR / "migrations")
+
+
+@pytest.fixture
+def clean_rows():
+    with only_own_rows(*TABLES):
+        yield
+
+
+@pytest.fixture
+def other_headers() -> dict[str, str]:
+    from hydrahive.api.middleware.auth import create_token
+
+    return {"Authorization": f"Bearer {create_token('other', 'user', 'user-other')}"}

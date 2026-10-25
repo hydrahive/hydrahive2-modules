@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 MODULE_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -14,21 +16,20 @@ def test_status_requires_current_principal(client) -> None:
     assert response.status_code == 401
 
 
+@pytest.mark.usefixtures("clean_rows")
 def test_status_is_honest_about_unavailable_telephony(client, auth_headers) -> None:
     response = client.get("/api/modules/telephony/status", headers=auth_headers)
 
     assert response.status_code == 200
     assert response.json() == {
         "module": "telephony",
-        "stage": "foundation",
+        "stage": "connection",
         "status": "not_configured",
         "configured": False,
         "telephony_available": False,
-        "probe_target": {"registrar": "192.168.3.1", "port": 5060},
         "features": {
-            "setup": False,
-            "registration_probe": True,
-            "incoming_call_probe": True,
+            "setup": True,
+            "registration": True,
             "inbound_calls": False,
             "outbound_calls": False,
             "archive": False,
@@ -36,20 +37,44 @@ def test_status_is_honest_about_unavailable_telephony(client, auth_headers) -> N
     }
 
 
-def test_register_mounts_only_the_router() -> None:
+@pytest.mark.usefixtures("clean_rows")
+def test_status_shows_own_connection(client, auth_headers) -> None:
+    from unittest import mock
+
+    from backend import connections
+    from backend.conn_models import ConnectionIn
+    with mock.patch.object(connections, "_resolve_target", lambda h: "192.168.178.1"):
+        connections.save("user-owner", ConnectionIn(registrar="fritz.box", username="hydra-telefon",
+                                                    password="Sehr-Geheim-42"))
+    data = client.get("/api/modules/telephony/status", headers=auth_headers).json()
+    assert data["configured"] is True and data["status"] == "disconnected"
+    assert data["telephony_available"] is False
+
+
+def test_register_mounts_router_migrations_and_job() -> None:
     from backend import register, router
 
     class Context:
         def __init__(self) -> None:
             self.routers: list[object] = []
+            self.migrations: list[str] = []
+            self.jobs: list[tuple] = []
 
         def register_router(self, value: object) -> None:
             self.routers.append(value)
+
+        def register_migrations(self, rel: str) -> None:
+            self.migrations.append(rel)
+
+        def register_job(self, name, fn, interval_seconds, *, initial_delay_seconds=5.0) -> None:
+            self.jobs.append((name, interval_seconds))
 
     ctx = Context()
     register(ctx)
 
     assert ctx.routers == [router]
+    assert ctx.migrations == ["migrations"]
+    assert ctx.jobs == [("connections", 60)]
 
 
 def test_hub_publishes_telephony_module() -> None:
@@ -64,10 +89,11 @@ def test_manifest_declares_installable_foundation() -> None:
     assert manifest == {
         "id": "telephony",
         "name": "VoIP",
-        "version": "0.5.1",
+        "version": "0.6.1",
         "description": (
-            "Projektgebundener Telefonassistent für VoIP-Zugänge, "
-            "Telefonaufträge und Gesprächsarchive."
+            "Telefonassistent für die FRITZ!Box und andere SIP-Anlagen – in Entwicklung. "
+            "Diese Version verbindet HydraHive mit der Anlage (Einstellungen, Anleitung). "
+            "Anrufe annehmen und anrufen folgen."
         ),
         "icon": "PhoneCall",
         "nav_group": "working",
@@ -75,6 +101,13 @@ def test_manifest_declares_installable_foundation() -> None:
         "has_service": False,
         "default_agent_tools": False,
         "min_core_version": "2.0.0",
+        "capabilities": [
+            {
+                "id": "module.telephony",
+                "label": "VoIP nutzen (Telefonanlage verbinden, später Anrufe)",
+                "default": "admin_only",
+            }
+        ],
     }
 
 

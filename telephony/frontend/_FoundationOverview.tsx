@@ -1,31 +1,28 @@
-import {
-  Archive,
-  Bot,
-  CheckCircle2,
-  FolderKanban,
-  LockKeyhole,
-  Network,
-  PhoneCall,
-  Plus,
-} from "lucide-react"
+import { Archive, Bot, FolderKanban, LockKeyhole, Network, PhoneCall, PhoneIncoming, Settings2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { ConnectionStatusBox } from "./_ConnectionStatus"
+import type { ConnectionStatus } from "./types"
 
-interface FoundationOverviewProps {
-  loaded: boolean
+interface Props {
+  status: ConnectionStatus
+  onSetup: () => void
 }
 
-export function FoundationOverview({ loaded }: FoundationOverviewProps) {
+/** Übersicht: ehrlicher Stand (Verbindung echt, Anrufe/Agent/Archiv folgen) und Weg zur Einrichtung. */
+export function FoundationOverview({ status, onSetup }: Props) {
   const { t } = useTranslation("voip")
+  const registered = status === "registered"
   const cards = [
-    { icon: CheckCircle2, label: t("status_module"), value: t("status_module_value"), ready: loaded },
-    { icon: Network, label: t("status_connection"), value: t("status_connection_value"), ready: false },
+    { icon: Network, label: t("status_connection"), value: t(`conn.status.${status}.title`), ready: registered },
+    { icon: PhoneIncoming, label: t("status_calls"), value: t("status_calls_value"), ready: false },
     { icon: Bot, label: t("status_agent"), value: t("status_agent_value"), ready: false },
     { icon: Archive, label: t("status_archive"), value: t("status_archive_value"), ready: false },
   ]
   const planned = [
-    { icon: FolderKanban, text: t("next_project") },
+    { icon: PhoneIncoming, text: t("next_inbound") },
+    { icon: PhoneCall, text: t("next_outbound") },
     { icon: Bot, text: t("next_agent") },
-    { icon: PhoneCall, text: t("next_calls") },
+    { icon: FolderKanban, text: t("next_project") },
     { icon: LockKeyhole, text: t("next_archive") },
   ]
 
@@ -47,24 +44,15 @@ export function FoundationOverview({ loaded }: FoundationOverviewProps) {
         ))}
       </div>
 
-      <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="max-w-2xl">
-            <h2 className="text-base font-semibold text-zinc-100">{t("setup_title")}</h2>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">{t("setup_description")}</p>
-          </div>
-          <div className="shrink-0 text-left sm:text-right">
-            <button
-              type="button"
-              disabled
-              title={t("setup_unavailable")}
-              className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-indigo-500/20 px-4 py-2.5 text-sm font-medium text-indigo-300 opacity-60"
-            >
-              <Plus size={16} />
-              {t("setup_action")}
-            </button>
-            <p className="mt-2 max-w-56 text-xs text-zinc-600">{t("setup_unavailable")}</p>
-          </div>
+      <section className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
+        <ConnectionStatusBox status={status} />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-2xl text-sm leading-6 text-zinc-400">{t("setup_description")}</p>
+          <button type="button" onClick={onSetup} data-voip-goto-settings="1"
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-400">
+            <Settings2 size={16} />
+            {registered ? t("setup_action_edit") : t("setup_action")}
+          </button>
         </div>
       </section>
 
