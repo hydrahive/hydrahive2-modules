@@ -26,6 +26,7 @@ class FakeCaller:
         self.rtp_packets: list[rtp.RtpHeader] = []
         self.target: tuple[str, int] | None = None
         self.call_id = "inv-" + str(id(self))
+        self.invite_from = "0301234567"                 # Absender-Nummer im From-Kopf (Platzhalter)
         self._stop = threading.Event()
         self._threads = [threading.Thread(target=self._sip_loop, daemon=True),
                          threading.Thread(target=self._rtp_loop, daemon=True)]
@@ -45,7 +46,7 @@ class FakeCaller:
     def _headers(self, method: str, cseq: int, to_tag: str | None = None) -> list[tuple[str, str]]:
         to = "<sip:hydra-telefon@127.0.0.1>" + (f";tag={to_tag}" if to_tag else "")
         return [("Via", f"SIP/2.0/UDP {self.addr[0]}:{self.addr[1]};branch=z9hG4bK{method}{cseq}"),
-                ("From", "<sip:0301234567@fritz.box>;tag=fritz1"), ("To", to), ("Call-ID", self.call_id),
+                ("From", f"<sip:{self.invite_from}@fritz.box>;tag=fritz1"), ("To", to), ("Call-ID", self.call_id),
                 ("CSeq", f"{cseq} {method}"), ("Contact", f"<sip:fritz@{self.addr[0]}:{self.addr[1]}>"),
                 ("Max-Forwards", "70")]
 

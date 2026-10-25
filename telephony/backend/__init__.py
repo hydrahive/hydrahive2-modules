@@ -52,6 +52,21 @@ def register(ctx) -> None:
     ctx.register_router(router)
     ctx.register_migrations("migrations")
     ctx.register_job("connections", _reconcile, interval_seconds=RECONCILE_SECONDS, initial_delay_seconds=10)
+    _register_butler(ctx)
+
+
+def _register_butler(ctx) -> None:
+    """Butler „Anruf kommt rein“ (PLAN-BUTLER B1). Ältere Kerne ohne Butler-Brücke: still auslassen."""
+    if not hasattr(ctx, "register_butler_trigger"):
+        return
+    from . import butler_specs
+
+    for spec in butler_specs.TRIGGERS:
+        ctx.register_butler_trigger(spec)
+    for spec in butler_specs.CONDITIONS:
+        ctx.register_butler_condition(spec)
+    for spec in butler_specs.ACTIONS:
+        ctx.register_butler_action(spec)
     atexit.register(connections.MANAGER.stop_all)      # beim Beenden abmelden (sonst verfällt es nach Ablaufzeit)
 
 

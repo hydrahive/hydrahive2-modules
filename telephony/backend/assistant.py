@@ -64,3 +64,14 @@ def outbound_bundle(cid: str, task: str, may_share: str) -> dict:
                         (cid,)).fetchone()
     return {"cfg": OutboundConfig(owner_name=row["assistant_name"], task=task, may_share=may_share),
             "llm": _llm(row["assistant_model"]), "stt": _stt, "tts": _tts, "options": {}}
+
+
+def bundle_any(cid: str) -> dict | None:
+    """Assistent mit den Einstellungen – unabhängig vom Modus (Butler „Mit Assistent annehmen“ erzwingt ihn)."""
+    with db() as c:
+        row = c.execute("SELECT assistant_name, assistant_knowledge, assistant_model "
+                        "FROM module_telephony_connections WHERE id=?", (cid,)).fetchone()
+    if not row:
+        return None
+    return {"cfg": AgentConfig(owner_name=row["assistant_name"], knowledge=row["assistant_knowledge"]),
+            "llm": _llm(row["assistant_model"]), "stt": _stt, "tts": _tts, "options": {}}

@@ -12,10 +12,16 @@ import time
 from collections.abc import Callable
 
 from ..media import greeting as _greeting_mod
-from . import message, sdp
+from . import incoming_plan, message, sdp
 from .call import CallSession
 
 _NUM_RE = re.compile(r"sip:\+?([0-9]+)@")
+
+
+def caller_digits(from_header: str) -> str:
+    """Rufnummer aus dem From-Kopf (Ziffern, + bleibt), leer bei unterdrückt."""
+    m = re.search(r"sip:(\+?[0-9]{3,20})@", from_header or "")
+    return m.group(1) if m else ""
 
 
 def mask_number(from_header: str) -> str:
@@ -33,6 +39,11 @@ class CallDispatcher:
         self._greeting = greeting or _greeting_mod.render
         self._ring, self._ack, self._max = ring_seconds, ack_timeout, max_seconds
         self.assistant: Callable[[], dict | None] = lambda: None   # Modus „Telefon-Assistent“ (sip/agent.py setzt)
+        # Butler „Anruf kommt rein“ (PLAN-BUTLER B1, sip/incoming_plan.py) – None = wie bisher, ohne Butler
+        self.decide: Callable[[str], dict | None] | None = None
+        self.has_flows: Callable[[], bool] = lambda: True
+        self.greeting_text: Callable[[], str] = lambda: ""
+        self.assistant_settings: Callable[[], dict | None] = lambda: None
         self._lock = threading.Lock()
         self._calls: dict[str, CallSession] = {}
         self._out: dict[str, object] = {}                          # ausgehende Anrufe (sip/outbound.py)
@@ -101,8 +112,9 @@ class CallDispatcher:
             reply(486, "Busy Here")
             self._note(msg, "busy")
             return True
-        text = self.policy()
-        if text is None:
+        deferred = self.decide is not None and self._has_flows()
+        text = None if deferred else self.policy()
+        if text is None and not deferred:
             reply(480, "Temporarily Unavailable")
             self._note(msg, "rejected")
             return True
@@ -119,14 +131,22 @@ class CallDispatcher:
             self._note(msg, "no_port")
             return True
         sock.sendto(message.build_response(msg, 100, "Trying"), addr)
+        number = caller_digits(msg.header("from") or "")
         call = CallSession(sock=sock, invite=msg, remote=addr, local_ip=local_ip, offer=offer, pt=pt, codec=codec,
                            rtp_sock=rtp_sock, audio=lambda: self._greeting(text, codec), ring_seconds=self._ring,
                            ack_timeout=self._ack, max_seconds=self._max, on_finish=self._finish,
-                           assistant=self._assistant_for(msg))
+                           assistant=None if deferred else self._assistant_for(msg),
+                           prepare=(lambda s: incoming_plan.prepare(self, s, number)) if deferred else None)
         with self._lock:
             self._calls[cid] = call
         call.start()
         return True
+
+    def _has_flows(self) -> bool:
+        try:
+            return bool(self.has_flows())
+        except Exception:  # noqa: BLE001 - im Zweifel fragen (decide hat selbst Rückfälle)
+            return True
 
     def _assistant_for(self, invite: message.Message) -> dict | None:
         try:
@@ -151,3 +171,12 @@ class CallDispatcher:
         end = time.monotonic() + timeout
         for c in calls:
             c._thread.join(max(0.0, end - time.monotonic()))
+
+
+def butler_decide(cid: str, number: str) -> dict | None:
+    """Butler fragen (backend/butler_events.decide) – nie eine Ausnahme nach oben."""
+    try:
+        from .. import butler_events
+        return butler_events.decide(cid, number)
+    except Exception:  # noqa: BLE001
+        return None
