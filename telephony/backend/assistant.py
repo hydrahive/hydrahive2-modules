@@ -11,7 +11,7 @@ from .agent.prompt import AgentConfig
 from .media import g711, greeting
 
 TEMPERATURE = 0.3
-MAX_TOKENS = 400
+MAX_TOKENS = 1500   # 400 war zu knapp: Antworten mit Notizen wurden mitten im Satz abgeschnitten (Till 25.10.)
 
 
 async def _complete(messages, model=None, temperature=0.7, max_tokens=4096):
