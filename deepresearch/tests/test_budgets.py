@@ -176,3 +176,23 @@ def test_prompts_fordern_ausfuehrlichkeit() -> None:
     ex = prompts.extract("F", "T", "https://x", "inhalt")
     assert "2-4 Sätze" not in ex and "gründlich" in ex.lower()
     assert "nichts kürzen" in prompts.synthesize("F", "alt", "neu").lower()
+
+
+@pytest.mark.asyncio
+async def test_json_liste_statt_objekt_gilt_als_unlesbar(model, monkeypatch) -> None:
+    """Ein Modell, das eine Liste statt eines Objekts schreibt, ist nicht auswertbar
+    (wird wiederholt und dann gezählt) – kein Absturz bei data.get()."""
+    async def as_list(messages, model=None, temperature=0.7, max_tokens=4096):
+        if "Extrahiere" in messages[-1]["content"]:
+            return '["relevant", "summary"]'
+        return await m_complete(messages, model, temperature, max_tokens)
+    m_complete = model.complete
+    monkeypatch.setattr(llm_mod, "complete", as_list)
+    result = await run_research(RunState(question="was ist mirtazipin"), min_rounds=1, max_rounds=1)
+    assert result["stats"]["unreadable"] == 1
+
+
+def test_lauf_nutzt_das_zeitbudget() -> None:
+    import inspect
+    from backend.research import loop
+    assert inspect.signature(loop.run_research).parameters["max_time"].default == budgets.MAX_TIME_S
