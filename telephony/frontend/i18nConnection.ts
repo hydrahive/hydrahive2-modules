@@ -86,7 +86,7 @@ export type ConnTexts = typeof connDe
 export const connEn: ConnTexts = {
   title: "Connection to the phone system",
   intro: "HydraHive signs in to your FRITZ!Box like an IP phone. First create an IP phone in the FRITZ!Box (guide below), then enter its details here.",
-  stage_notice: "After connecting you can choose below whether HydraHive answers calls – with an announcement or with the phone assistant. You can place calls in the "Phone tasks" tab.",
+  stage_notice: "After connecting you can choose below whether HydraHive answers calls – with an announcement or with the phone assistant. You can place calls in the “Phone tasks” tab.",
   pbx: "Phone system",
   pbx_fritzbox: "FRITZ!Box",
   pbx_sip: "Other SIP system",
