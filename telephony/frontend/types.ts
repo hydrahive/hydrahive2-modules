@@ -118,6 +118,7 @@ export interface CallEntry {
   notes: CallNotes
   notes_read: boolean
   direction: "in" | "out"
+  kind: "greeting" | "assistant" | ""
 }
 
 export type DialMode = "greeting" | "assistant"

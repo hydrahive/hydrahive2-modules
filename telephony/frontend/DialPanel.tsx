@@ -2,6 +2,7 @@ import { Loader2, PhoneCall, PhoneOff } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CallList } from "./_CallList"
+import { DialModePicker } from "./_DialModePicker"
 import { DialRules } from "./_DialRules"
 import { telephonyApi } from "./api"
 import { cleanNumberInput, dialErrorKey, dialStateKey } from "./dialLogic"
@@ -64,12 +65,6 @@ export function DialPanel({ conn, initialNumber = "", initialMode = "greeting", 
     } catch (e) { fail(e) }
   }
   const markRead = async (id: number) => { await telephonyApi.markRead(id).catch(() => undefined); loadCalls() }
-  const modeBtn = (m: DialMode) => (
-    <button key={m} type="button" aria-pressed={mode === m} data-voip-dial-mode={m} onClick={() => setMode(m)}
-      className={`rounded-lg px-3 py-1.5 text-sm ${mode === m ? "bg-indigo-500/20 text-indigo-200" : "text-zinc-400 hover:bg-zinc-800"}`}>
-      {t(`dial.mode_${m}`)}
-    </button>
-  )
 
   return (
     <div className="space-y-5">
@@ -82,7 +77,7 @@ export function DialPanel({ conn, initialNumber = "", initialMode = "greeting", 
           <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-200"
             data-voip-dial-needs-connection="1">{t("dial.needs_connection")}</p>
         )}
-        <div className="flex w-fit gap-1 rounded-lg border border-zinc-800 p-1">{modeBtn("greeting")}{modeBtn("assistant")}</div>
+        <DialModePicker mode={mode} onChange={setMode} />
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block space-y-1 text-sm">
             <span className="text-zinc-300">{t("dial.number")}</span>
@@ -119,7 +114,7 @@ export function DialPanel({ conn, initialNumber = "", initialMode = "greeting", 
           {!call.active ? (
             <button type="button" className={`${btn} bg-indigo-500 text-white hover:bg-indigo-400`} data-voip-dial-start="1"
               disabled={!ready} onClick={() => void start()}>
-              {busy ? <Loader2 size={15} className="animate-spin" /> : <PhoneCall size={15} />} {t("dial.start")}
+              {busy ? <Loader2 size={15} className="animate-spin" /> : <PhoneCall size={15} />} {t(`dial.start_${mode}`)}
             </button>
           ) : (
             <button type="button" className={`${btn} bg-red-500/90 text-white hover:bg-red-500`} data-voip-dial-hangup="1"
