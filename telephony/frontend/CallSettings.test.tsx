@@ -69,6 +69,12 @@ describe("Karte Anrufe annehmen", () => {
     expect(h).toContain("Testanruf starten")
     expect(h).toMatch(/data-voip-test-call="1"(?![^>]*disabled)/)
   })
+  it("Ansage-Knopf heißt „Ansage speichern“ und ist ohne Änderung gesperrt", () => {
+    const h = html(<CallSettings conn={{ ...CONN, answer_calls: true }} />)
+    expect(h).toContain("Ansage speichern")
+    expect(h).toMatch(/<button[^>]*disabled=""[^>]*data-voip-calls-save="1"/)
+    expect(h).toContain('aria-checked="true"')
+  })
   it("ohne Verbindung: Testanruf gesperrt", () => {
     const h = html(<CallSettings conn={{ ...CONN, status: "disconnected" }} />)
     expect(h).toMatch(/<button[^>]*disabled=""[^>]*data-voip-test-call="1"/)
