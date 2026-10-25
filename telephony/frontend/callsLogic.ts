@@ -31,3 +31,22 @@ export function shortTime(iso: string, now: Date = new Date()): string {
     ? d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
     : d.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
 }
+
+export interface CallsSaver {
+  saveCalls: (body: { answer_calls: boolean; greeting: string }) => Promise<unknown>
+}
+
+/**
+ * Schalter „Anrufe annehmen“ sofort speichern (Till 25.10.: Schalter muss einrasten, ohne extra Speichern-Knopf).
+ * Gespeichert wird immer die zuletzt GESPEICHERTE Ansage – eine noch nicht gespeicherte Änderung im Textfeld bleibt
+ * Sache des Speichern-Knopfs. Bei Fehler bleibt der alte Wert (Rückgabe: tatsächlich gültiger Zustand).
+ */
+export async function saveSwitch(api: CallsSaver, next: boolean, savedGreeting: string, previous: boolean):
+  Promise<{ value: boolean; error: string | undefined }> {
+  try {
+    await api.saveCalls({ answer_calls: next, greeting: savedGreeting })
+    return { value: next, error: undefined }
+  } catch (e) {
+    return { value: previous, error: (e as { code?: string }).code ?? "unknown" }
+  }
+}

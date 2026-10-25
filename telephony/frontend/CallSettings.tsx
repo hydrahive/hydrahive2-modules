@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { CallList } from "./_CallList"
 import { Switch } from "./_Switch"
 import { telephonyApi } from "./api"
-import { pendingTest, secondsLeft } from "./callsLogic"
+import { pendingTest, saveSwitch, secondsLeft } from "./callsLogic"
 import { errorKey } from "./connectionLogic"
 import type { CallEntry, Connection } from "./types"
 
@@ -15,6 +15,7 @@ type Configured = Extract<Connection, { configured: true }>
 export function CallSettings({ conn }: { conn: Configured }) {
   const { t } = useTranslation("voip")
   const [answer, setAnswer] = useState(conn.answer_calls)
+  const [savedGreeting, setSavedGreeting] = useState(conn.greeting)
   const [greeting, setGreeting] = useState(conn.greeting)
   const [testUntil, setTestUntil] = useState<string | null>(conn.test_until)
   const [left, setLeft] = useState(secondsLeft(conn.test_until))
@@ -22,7 +23,7 @@ export function CallSettings({ conn }: { conn: Configured }) {
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const dirty = answer !== conn.answer_calls || greeting !== conn.greeting
+  const dirty = greeting !== savedGreeting
 
   const load = useCallback(() => {
     void telephonyApi.calls().then((r) => setCalls(r.calls)).catch(() => undefined)
@@ -47,9 +48,15 @@ export function CallSettings({ conn }: { conn: Configured }) {
   }
   const save = () => run(async () => {
     await telephonyApi.saveCalls({ answer_calls: answer, greeting })
-    conn.answer_calls = answer; conn.greeting = greeting
+    setSavedGreeting(greeting)
     setSaved(true)
   })
+  const toggle = async (next: boolean) => {
+    setAnswer(next); setBusy(true); setError(null); setSaved(false)
+    const r = await saveSwitch(telephonyApi, next, savedGreeting, answer)
+    setAnswer(r.value); setBusy(false)
+    if (r.error) setError(errorKey(r.error)); else setSaved(true)
+  }
   const startTest = () => run(async () => {
     const r = await telephonyApi.startTestCall()
     setTestUntil(r.test_until); setLeft(r.seconds)
@@ -71,7 +78,7 @@ export function CallSettings({ conn }: { conn: Configured }) {
           <p className="text-sm text-zinc-200">{t("calls.answer")}</p>
           <p className="mt-0.5 text-xs leading-5 text-zinc-500">{t("calls.answer_help")}</p>
         </div>
-        <Switch checked={answer} onChange={(v) => { setSaved(false); setAnswer(v) }} label={t("calls.answer")} />
+        <Switch checked={answer} disabled={busy} onChange={(v) => void toggle(v)} label={t("calls.answer")} />
       </div>
 
       <label className="block space-y-1.5 text-sm text-zinc-300">
@@ -85,7 +92,7 @@ export function CallSettings({ conn }: { conn: Configured }) {
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className={`${btn} bg-zinc-800 text-zinc-100 hover:bg-zinc-700`} disabled={busy || !dirty}
           onClick={() => void save()} data-voip-calls-save="1">
-          <Save size={15} /> {t("conn.save")}
+          <Save size={15} /> {t("calls.greeting_save")}
         </button>
         <button type="button" className={`${btn} bg-indigo-500 text-white hover:bg-indigo-400`}
           disabled={busy || !registered || left > 0} onClick={() => void startTest()} data-voip-test-call="1"
