@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 MAX_SAY = 400
 FALLBACK_SAY = "Entschuldigung, das habe ich nicht verstanden. Können Sie das bitte wiederholen?"
-_TEXT_FIELDS = {"name": 120, "callback_number": 40, "concern": 600, "summary": 600}
+_TEXT_FIELDS = {"name": 120, "callback_number": 40, "concern": 600, "summary": 600, "result": 600}
 _BOOL_FIELDS = ("callback_wanted", "needs_review")
 _URL_RE = re.compile(r"\bhttps?://\S+|\bwww\.\S+", re.IGNORECASE)
 _MDLINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")

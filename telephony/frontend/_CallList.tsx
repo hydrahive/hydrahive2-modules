@@ -6,7 +6,9 @@ import type { CallEntry } from "./types"
 const DOT = { ok: "bg-emerald-400", warn: "bg-amber-400", idle: "bg-zinc-500" }
 
 /** Letzte Anrufe: Zeit, maskierte Nummer, Ergebnis, Notiz des Assistenten – nie Ton oder Wortlaut. */
-export function CallList({ calls, onRead }: { calls: CallEntry[]; onRead?: (id: number) => void }) {
+export function CallList({ calls, onRead, onCallback }: {
+  calls: CallEntry[]; onRead?: (id: number) => void; onCallback?: (id: number) => void
+}) {
   const { t } = useTranslation("voip")
   if (calls.length === 0) return <p className="text-sm text-zinc-500">{t("calls.none")}</p>
   return (
@@ -35,11 +37,18 @@ export function CallList({ calls, onRead }: { calls: CallEntry[]; onRead?: (id: 
             {hasNote(c) && (
               <div className="mt-2 space-y-1 rounded-lg bg-zinc-900/70 p-3" data-voip-note="1">
                 {noteLine(c.notes) && <p className="font-medium text-zinc-100">{noteLine(c.notes)}</p>}
+                {c.notes.result && (
+                  <p className="text-zinc-100" data-voip-result="1"><span className="text-zinc-400">{t("notes.result")}:</span> {c.notes.result}</p>
+                )}
                 {c.notes.summary && <p className="text-zinc-300">{c.notes.summary}</p>}
                 {c.notes.open_questions?.length ? (
                   <p className="text-xs text-zinc-400">{t("notes.open_questions")}: {c.notes.open_questions.join(" · ")}</p>
                 ) : null}
                 {c.notes.needs_review && <p className="text-xs text-amber-300">{t("notes.needs_review")}</p>}
+                {c.notes.callback_number && onCallback && (
+                  <button type="button" className="mr-3 text-xs text-indigo-300 hover:underline" onClick={() => onCallback(c.id)}
+                    data-voip-callback={c.id}>{t("notes.callback")}</button>
+                )}
                 {!c.notes_read && onRead && (
                   <button type="button" className="text-xs text-indigo-300 hover:underline" onClick={() => onRead(c.id)}
                     data-voip-mark-read="1">{t("notes.mark_read")}</button>

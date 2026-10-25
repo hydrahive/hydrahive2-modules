@@ -15,16 +15,12 @@ from dataclasses import dataclass, field
 
 from ..media import g711
 from ..media.vad import Vad
+from . import phrases as P
+from .opening import OPENING_SILENT, hello  # noqa: F401 - OPENING_SILENT Teil der Schnittstelle
 from .prompt import AgentConfig, build_messages, greeting
 from .reply import parse_reply
 
 logger = logging.getLogger(__name__)
-SAY_NOT_UNDERSTOOD = "Entschuldigung, das habe ich akustisch nicht verstanden. Können Sie das bitte wiederholen?"
-SAY_STILL_THERE = "Sind Sie noch da?"
-SAY_BYE_SILENT = "Ich höre leider nichts mehr. Auf Wiederhören!"
-SAY_BYE_TIME = "Unsere Zeit ist leider um. Ich gebe Ihr Anliegen weiter. Auf Wiederhören!"
-SAY_ERRORS = "Es tut mir leid, ich habe gerade technische Probleme. Bitte versuchen Sie es später noch einmal."
-SAY_THINKING = "Einen Moment."
 MAX_ERRORS = 3
 ASSISTANT_MAX_SECONDS = 300   # Höchstdauer eines Gesprächs (PLAN-AGENT-2B: 5 Minuten, fest) – die Ansage hat ihre eigene
 
@@ -41,8 +37,12 @@ class Conversation:
     def __init__(self, *, cfg: AgentConfig, llm: Callable[[list[dict]], str], stt: Callable[[bytes], str],
                  say: Callable[[str, Callable[[], bool]], bool], frames: queue.Queue[bytes | None],
                  hangup: Callable[[], bool], max_seconds: float = ASSISTANT_MAX_SECONDS, no_input_ms: int = 8000,
-                 end_silence_ms: int = 700, thinking_after: float = 1.5) -> None:
+                 end_silence_ms: int = 700, thinking_after: float = 1.5, messages: Callable | None = None,
+                 greet: Callable | None = None, opening: bool = False, wait_first: float = 2.0) -> None:
+        # messages/greet: eigener Systemtext + Begrüßung; opening: ausgehend (agent/opening.py, prompt_out.py)
         self.cfg, self._llm, self._stt, self._say = cfg, llm, stt, say
+        self._messages, self._greet = messages or build_messages, greet or greeting
+        self._opening, self._wait_first = opening, wait_first
         self._frames, self._hangup = frames, hangup
         self._max, self._thinking_after = max_seconds, thinking_after
         self.vad = Vad(end_silence_ms=end_silence_ms, no_input_ms=no_input_ms)
@@ -121,7 +121,7 @@ class Conversation:
         t.start()
         t.join(self._thinking_after)
         if t.is_alive():
-            self._speak(SAY_THINKING)
+            self._speak(P.SAY_THINKING)
             t.join(30)
         if "e" in box or "v" not in box:
             raise RuntimeError(type(box.get("e")).__name__ if "e" in box else "Zeitüberschreitung")
@@ -137,53 +137,61 @@ class Conversation:
 
         turns = errors = 0
         asked_still_there = False
-        self._speak(greeting(self.cfg))
+        pending: str | None = None                          # ausgehend: Meldung der Gegenseite → Modell eröffnet
+        if self._opening:
+            pending = hello(self, self._wait_first)
+            if pending is None:
+                return self._done("caller_hangup", turns)
+        self._speak(self._greet(self.cfg))
         while True:
+            kind, text, pending = ("opening", pending, None) if pending is not None else ("", "", None)
             if self._hangup():
                 return self._done("caller_hangup", turns)
-            kind, pcm = self._listen()
+            if kind != "opening":
+                kind, pcm = self._listen()
             if kind == "hangup":
                 return self._done("caller_hangup", turns)
             if kind == "timeout":
-                self._speak(SAY_BYE_TIME)
+                self._speak(P.SAY_BYE_TIME)
                 return self._done("max_duration", turns)
             if kind == "no_input":
                 if asked_still_there:
-                    self._speak(SAY_BYE_SILENT)
+                    self._speak(P.SAY_BYE_SILENT)
                     return self._done("no_input", turns)
                 asked_still_there = True
-                self._speak(SAY_STILL_THERE)
+                self._speak(P.SAY_STILL_THERE)
                 continue
             asked_still_there = False
-            try:
-                text = self._stt(g711.up_16k(pcm)).strip()
-            except Exception as e:  # noqa: BLE001
-                logger.warning("telephony: Spracherkennung fehlgeschlagen (%s)", type(e).__name__)
-                text, errors = "", errors + 1
-            pcm = b""                                        # Ton sofort verwerfen
+            if kind != "opening":
+                try:
+                    text = self._stt(g711.up_16k(pcm)).strip()
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("telephony: Spracherkennung fehlgeschlagen (%s)", type(e).__name__)
+                    text, errors = "", errors + 1
+                pcm = b""                                    # Ton sofort verwerfen
             if not text:
                 if errors >= MAX_ERRORS:
-                    self._speak(SAY_ERRORS)
+                    self._speak(P.SAY_ERRORS)
                     return self._done("errors", turns)
-                self._speak(SAY_NOT_UNDERSTOOD)
+                self._speak(P.SAY_NOT_UNDERSTOOD)
                 continue
             self._history.append(("caller", text))
             try:
-                reply = parse_reply(self._think(build_messages(self.cfg, self._history)))
+                reply = parse_reply(self._think(self._messages(self.cfg, self._history)))
                 errors = 0 if reply.ok else errors
             except RuntimeError as e:
                 logger.warning("telephony: Sprachmodell fehlgeschlagen (%s)", e)
                 errors += 1
                 if errors >= MAX_ERRORS:
-                    self._speak(SAY_ERRORS)
+                    self._speak(P.SAY_ERRORS)
                     return self._done("errors", turns)
-                self._speak(SAY_NOT_UNDERSTOOD)
+                self._speak(P.SAY_NOT_UNDERSTOOD)
                 continue
             turns += 1
             self._notes = merge_notes(self._notes, reply.notes)
             self._history.append(("assistant", reply.say))
             if self._over():
-                self._speak(SAY_BYE_TIME)
+                self._speak(P.SAY_BYE_TIME)
                 return self._done("max_duration", turns)
             self._speak(reply.say)
             if reply.end:

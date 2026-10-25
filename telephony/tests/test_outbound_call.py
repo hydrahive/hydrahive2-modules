@@ -221,3 +221,71 @@ def test_nummer_mit_steuerzeichen_wird_nie_gesendet() -> None:
             raise AssertionError(f"{bad!r} angenommen")
     finally:
         s.close()
+
+
+# ---- 3b: Assistent führt das Gespräch ----
+class FakeAssistant:
+    def __init__(self, replies, transcripts) -> None:
+        import json as _json
+
+        self._json = _json
+        self.replies, self.transcripts = list(replies), list(transcripts)
+        self.spoken: list[str] = []
+        self.system: list[str] = []
+        self.messages: list[list[dict]] = []
+
+    def bundle(self) -> dict:
+        from backend.agent import prompt_out
+
+        return {"cfg": prompt_out.OutboundConfig("Max Mustermann", "Frag nach einem Termin.", ""),
+                "llm": self.llm, "stt": lambda pcm: self.transcripts.pop(0) if self.transcripts else "",
+                "tts": self.tts, "options": {"no_input_ms": 3000, "end_silence_ms": 300, "thinking_after": 5.0,
+                                             "wait_first": 0.3, "max_seconds": 8}}
+
+    def llm(self, messages) -> str:
+        self.system.append(messages[0]["content"])
+        self.messages.append(messages)
+        return self._json.dumps(self.replies.pop(0) if self.replies else {"say": "Tschüss.", "end": True})
+
+    def tts(self, text: str, codec: str) -> bytes:
+        self.spoken.append(text)
+        return b"\x22" * 800
+
+
+def test_assistent_fuehrt_das_gespraech() -> None:
+    a = FakeAssistant([{"say": "Ich rufe wegen eines Termins an.", "notes": {"result": "Di 10 Uhr frei."},
+                        "end": True}], ["Autohaus Beispiel, guten Tag."])
+    pbx, _line, call = _run({"ring": 0.1, "speak_ms": 500}, {"assistant": a.bundle()}, wait=8)
+    assert call.result == "assistant_end" and call.turns == 1
+    assert "<gegenseite>Autohaus Beispiel, guten Tag.</gegenseite>" in a.messages[0][1]["content"], \
+        "Meldung der Gegenseite kam über RTP → Whisper beim Modell an"
+    assert call.notes == {"result": "Di 10 Uhr frei."}
+    assert "KI" in a.spoken[0] and a.spoken[1] == "Ich rufe wegen eines Termins an."
+    assert "DU hast angerufen" in a.system[0]
+    assert pbx.bye_received.is_set(), "nach der Verabschiedung legt HydraHive auf"
+
+
+def test_assistent_gegenseite_legt_auf() -> None:
+    a = FakeAssistant([{"say": "Ich rufe wegen eines Termins an."}] * 5, ["Hallo"] * 5)
+    pbx, _line, call = _run({"hangup_after": 0.8}, {"assistant": a.bundle()}, wait=8)
+    assert call.result == "remote_hangup" and not pbx.bye_received.is_set()
+
+
+def test_assistent_auflegen_knopf() -> None:
+    a = FakeAssistant([{"say": "x" * 50}] * 5, ["Hallo"] * 5)
+    pbx = FakePbx()
+    line = Line(pbx, assistant=a.bundle())
+    try:
+        assert _wait(lambda: line.call.state == "answered", 3)
+        time.sleep(0.5)
+        line.call.hangup()
+        assert _wait(lambda: line.finished, 5)
+        assert line.finished[0].result == "hung_up" and pbx.bye_received.is_set()
+    finally:
+        line.close()
+        pbx.close()
+
+
+def test_ohne_assistent_bleibt_es_bei_der_ansage() -> None:
+    _pbx, _line, call = _run({})
+    assert call.result == "answered" and call.turns == 0 and call.notes == {}

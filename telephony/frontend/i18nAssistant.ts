@@ -23,6 +23,8 @@ export const notesDe = {
   open_questions: "Offene Fragen",
   needs_review: "Bitte ansehen – ungewöhnliches oder sensibles Anliegen.",
   mark_read: "Als gelesen markieren",
+  result: "Ergebnis",
+  callback: "Zurückrufen",
 }
 
 export type AssistantTexts = typeof assistantDe
@@ -52,4 +54,6 @@ export const notesEn: NotesTexts = {
   open_questions: "Open questions",
   needs_review: "Please review – unusual or sensitive request.",
   mark_read: "Mark as read",
+  result: "Result",
+  callback: "Call back",
 }

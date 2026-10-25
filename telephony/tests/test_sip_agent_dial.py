@@ -50,6 +50,26 @@ def test_waehlt_ueber_den_socket_der_anmeldung(pbx) -> None:
         a.stop()
 
 
+def test_gespraech_mit_auftrag_notiz_in_der_anrufliste(pbx) -> None:
+    import json
+
+    from backend.agent import prompt_out
+
+    records: list = []
+    a = _agent(pbx, records)
+    bundle = {"cfg": prompt_out.OutboundConfig("Max Mustermann", "Frag nach einem Termin.", ""),
+              "llm": lambda m: json.dumps({"say": "Danke.", "notes": {"result": "Di 10 Uhr."}, "end": True}),
+              "stt": lambda p: "Hallo", "tts": lambda t, c: b"\x22" * 400,
+              "options": {"wait_first": 0.2, "no_input_ms": 1500, "end_silence_ms": 300}}
+    try:
+        a.dial("0301234567", lambda c: b"", assistant=bundle)
+        assert _wait(lambda: records, timeout=8)
+        assert records[0]["result"] == "assistant_end" and records[0]["turns"] == 1
+        assert records[0]["notes"] == {"result": "Di 10 Uhr."}
+    finally:
+        a.stop()
+
+
 def test_nur_wenn_angemeldet() -> None:
     from backend.sip.agent import NotReady, SipAgent
 

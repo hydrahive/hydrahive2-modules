@@ -37,6 +37,7 @@ class FakeAgent:
         if self.busy:
             raise LineBusy()
         self.dialed.append((number, audio("PCMA")))
+        self.options = options
         c = FakeCall(number, on_end)
         self.calls.append(c)
         return c
@@ -285,3 +286,107 @@ def test_eingaben_begrenzt(client, auth_headers, agent) -> None:
 
 def test_ohne_anmeldung_401(client) -> None:
     assert client.post(f"{BASE}/dial", json={"number": "030 1234567"}).status_code == 401
+
+
+
+# ---- 3b: Assistent mit Auftrag ----
+def _dial_a(client, headers, **kw):
+    body = {"number": "030 1234567", "mode": "assistant", "task": "Frag nach einem Termin.", "may_share": ""}
+    body.update(kw)
+    return client.post(f"{BASE}/dial", json=body, headers=headers)
+
+
+def test_assistent_bekommt_auftrag_freigabe_name_und_modell(client, auth_headers, agent, monkeypatch) -> None:
+    from backend import assistant
+
+    _setup(client, auth_headers)
+    client.put(f"{BASE}/calls", json={"answer_calls": False, "greeting": "", "mode": "greeting",
+                                      "assistant_name": "Max Mustermann", "assistant_knowledge": "",
+                                      "assistant_model": "beispiel-modell"}, headers=auth_headers)
+    seen = {}
+
+    def fake_llm(model):
+        seen["model"] = model
+        return lambda m: "{}"
+    monkeypatch.setattr(assistant, "_llm", fake_llm)
+    r = _dial_a(client, auth_headers, task="Frag nach dem Reparaturstatus.", may_share="Auftragsnummer 4711")
+    assert r.status_code == 200, r.text
+    a = agent.options["assistant"]
+    assert a["cfg"].owner_name == "Max Mustermann" and a["cfg"].task == "Frag nach dem Reparaturstatus."
+    assert a["cfg"].may_share == "Auftragsnummer 4711" and seen["model"] == "beispiel-modell"
+    assert {"llm", "stt", "tts"} <= set(a)
+
+
+def test_assistent_braucht_auftrag(client, auth_headers, agent) -> None:
+    _setup(client, auth_headers)
+    r = _dial_a(client, auth_headers, task="   ")
+    assert r.status_code == 400 and r.json()["detail"]["code"] == "task_required"
+    assert agent.dialed == []
+
+
+def test_assistent_felder_begrenzt(client, auth_headers, agent) -> None:
+    _setup(client, auth_headers)
+    assert _dial_a(client, auth_headers, task="x" * 1001).status_code == 422
+    assert _dial_a(client, auth_headers, may_share="x" * 1001).status_code == 422
+    assert _dial_a(client, auth_headers, mode="boese").status_code == 422
+
+
+def test_ansage_modus_ohne_assistent(client, auth_headers, agent) -> None:
+    _setup(client, auth_headers)
+    assert _dial(client, auth_headers).status_code == 200
+    assert agent.options.get("assistant") is None
+
+
+def test_notiz_des_ausgehenden_gespraechs_wird_gespeichert(client, auth_headers) -> None:
+    from backend import calls, connections
+
+    _setup(client, auth_headers)
+    cid = connections._row("user:user-owner")["id"]
+    calls.record(cid, {"direction": "out", "number": "•••567", "result": "assistant_end", "turns": 3,
+                       "notes": {"result": "Termin Di 10 Uhr möglich, nicht gebucht.", "geheim": "x"}})
+    got = client.get(f"{BASE}/calls", headers=auth_headers).json()
+    c = got["calls"][0]
+    assert c["direction"] == "out" and c["turns"] == 3 and c["notes_read"] is False
+    assert c["notes"] == {"result": "Termin Di 10 Uhr möglich, nicht gebucht."} and got["unread"] == 1
+
+
+def test_rueckruf_vorschlag(client, auth_headers) -> None:
+    from backend import calls, connections
+
+    _setup(client, auth_headers)
+    cid = connections._row("user:user-owner")["id"]
+    calls.record(cid, {"number": "•••567", "result": "assistant_end",
+                       "notes": {"name": "Erika Musterfrau", "callback_number": "030 1234567",
+                                 "concern": "Frage zur Rechnung"}})
+    call_id = client.get(f"{BASE}/calls", headers=auth_headers).json()["calls"][0]["id"]
+    r = client.get(f"{BASE}/calls/{call_id}/callback", headers=auth_headers)
+    assert r.status_code == 200
+    d = r.json()
+    assert d["number"] == "030 1234567" and "Frage zur Rechnung" in d["task"] and "Erika Musterfrau" in d["task"]
+
+
+def test_rueckruf_ohne_nummer_und_fremde_anrufe(client, auth_headers, other_headers) -> None:
+    from backend import calls, connections
+
+    _setup(client, auth_headers)
+    cid = connections._row("user:user-owner")["id"]
+    calls.record(cid, {"number": "•••567", "result": "assistant_end", "notes": {"concern": "ohne Nummer"}})
+    call_id = client.get(f"{BASE}/calls", headers=auth_headers).json()["calls"][0]["id"]
+    r = client.get(f"{BASE}/calls/{call_id}/callback", headers=auth_headers)
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "no_callback_number"
+    assert client.get(f"{BASE}/calls/999999/callback", headers=auth_headers).status_code == 404
+
+
+def test_rueckruf_nur_fuer_eigene_anrufe(client, auth_headers, other_headers) -> None:
+    """Auch wenn der andere Nutzer eine eigene Verbindung hat, sieht er die Rückrufnummer fremder Notizen nicht."""
+    from backend import calls, connections
+
+    _setup(client, auth_headers)
+    r = client.put(BASE, json={"registrar": "fritz.box", "username": "anderes-telefon", "password": "Sehr-Geheim-43",
+                               "local_sip_port": 5072}, headers=other_headers)
+    assert r.status_code == 200
+    cid = connections._row("user:user-owner")["id"]
+    calls.record(cid, {"number": "•••567", "result": "assistant_end", "notes": {"callback_number": "030 1234567"}})
+    call_id = client.get(f"{BASE}/calls", headers=auth_headers).json()["calls"][0]["id"]
+    r = client.get(f"{BASE}/calls/{call_id}/callback", headers=other_headers)
+    assert r.status_code == 404 and "1234567" not in r.text

@@ -97,3 +97,59 @@ describe("Oberfläche Anrufen", () => {
     }
   })
 })
+
+describe("Anrufen mit Assistent (3b)", () => {
+  it("Auswahl Ansage/Assistent, Standard Ansage", () => {
+    const h = html(<DialPanel conn={CONN} />)
+    expect(h).toContain('data-voip-dial-mode="greeting"')
+    expect(h).toContain('data-voip-dial-mode="assistant"')
+    expect(h).toMatch(/data-voip-dial-mode="greeting"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-voip-dial-mode="greeting"/)
+    expect(h).not.toContain('data-voip-dial-task="1"')
+  })
+  it("Assistent: Felder Auftrag und Darf nennen, keine Ansage", () => {
+    const h = html(<DialPanel conn={CONN} initialMode="assistant" initialTask="Frag nach einem Termin." />)
+    expect(h).toContain('data-voip-dial-task="1"')
+    expect(h).toContain('data-voip-dial-share="1"')
+    expect(h).not.toContain('data-voip-dial-text="1"')
+    expect(h).toContain("Frag nach einem Termin.")
+    expect(h).toContain("keine Zusagen")
+  })
+  it("Assistent ohne Auftrag → Knopf aus", () => {
+    const off = html(<DialPanel conn={CONN} initialMode="assistant" initialNumber="030 1234567" />)
+    const on = html(<DialPanel conn={CONN} initialMode="assistant" initialNumber="030 1234567" initialTask="Frag nach." />)
+    const dis = (h: string) => /<button[^>]*data-voip-dial-start="1"[^>]*disabled=""|<button[^>]*disabled=""[^>]*data-voip-dial-start="1"/.test(h)
+    expect(dis(off)).toBe(true)
+    expect(dis(on)).toBe(false)
+  })
+  it("Fehler task_required hat einen Text", () => {
+    expect(dialErrorKey("task_required")).toBe("dial.error.task_required")
+    expect(inst.t("dial.error.task_required")).not.toBe("dial.error.task_required")
+  })
+  it("Notiz: Ergebnis wird angezeigt, Zurückrufen nur mit Nummer", () => {
+    const c = (p: Partial<CallEntry>): CallEntry => ({
+      id: 1, started_at: "2026-10-25T12:00:00+00:00", number: "•••567", result: "assistant_end", codec: "PCMA",
+      rtp_out: 1, rtp_in: 1, is_test: false, heard: null, turns: 2, notes: {}, notes_read: true, direction: "in", ...p,
+    })
+    const h = html(<CallList calls={[
+      c({ id: 1, direction: "out", notes: { result: "Termin Di 10 Uhr möglich, nicht gebucht." } }),
+      c({ id: 2, notes: { name: "Erika Musterfrau", callback_number: "030 1234567" } }),
+      c({ id: 3, notes: { name: "Ohne Nummer" } }),
+    ]} onCallback={() => undefined} />)
+    expect(h).toContain("Termin Di 10 Uhr möglich, nicht gebucht.")
+    expect(h).toContain('data-voip-result="1"')
+    expect((h.match(/data-voip-callback="/g) ?? []).length).toBe(1)
+    expect(h).toContain('data-voip-callback="2"')
+  })
+  it("Ohne onCallback kein Knopf", () => {
+    const h = html(<CallList calls={[{
+      id: 2, started_at: "2026-10-25T12:00:00+00:00", number: "•••567", result: "assistant_end", codec: "PCMA",
+      rtp_out: 1, rtp_in: 1, is_test: false, heard: null, turns: 2, notes: { callback_number: "030 1234567" },
+      notes_read: true, direction: "in",
+    }]} />)
+    expect(h).not.toContain("data-voip-callback")
+  })
+  it("Abschnitt der Anrufliste im Reiter Telefonaufträge", () => {
+    const h = html(<DialPanel conn={CONN} />)
+    expect(h).toContain('data-voip-dial-calls="1"')
+  })
+})

@@ -103,11 +103,19 @@ class DialIn(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     number: str = Field(min_length=1, max_length=40)
     text: str = Field("", max_length=500)
+    mode: Literal["greeting", "assistant"] = "greeting"
+    task: str = Field("", max_length=1000)
+    may_share: str = Field("", max_length=1000)
 
     @field_validator("number", "text")
     @classmethod
     def _clean(cls, v: str) -> str:
         return _no_controls(v, newlines=False)
+
+    @field_validator("task", "may_share")
+    @classmethod
+    def _clean_multi(cls, v: str) -> str:
+        return _no_controls(v)
 
 
 class RulesIn(BaseModel):
@@ -127,6 +135,8 @@ def _dial_fail(e: Exception):
         raise coded(status.HTTP_409_CONFLICT, "line_busy") from None
     if isinstance(e, outbound.Limit):
         raise coded(status.HTTP_429_TOO_MANY_REQUESTS, e.code) from None
+    if isinstance(e, outbound.TaskRequired):
+        raise coded(status.HTTP_400_BAD_REQUEST, "task_required") from None
     _fail(e)
 
 
@@ -135,7 +145,7 @@ def dial(body: DialIn, auth: Auth) -> dict:
     from . import outbound
 
     try:
-        return outbound.dial(auth.user_id, body.number, body.text)
+        return outbound.dial(auth.user_id, body.number, body.text, body.mode, body.task, body.may_share)
     except Exception as e:  # noqa: BLE001 - _dial_fail ordnet zu
         _dial_fail(e)
 
@@ -158,5 +168,15 @@ def dial_rules(body: RulesIn, auth: Auth) -> dict:
 
     try:
         return outbound.set_rules(auth.user_id, body.allow_premium, body.allow_foreign)
+    except Exception as e:  # noqa: BLE001
+        _fail(e)
+
+
+@router.get("/connection/calls/{call_id}/callback")
+def callback(call_id: int, auth: Auth) -> dict:
+    try:
+        return calls.callback(auth.user_id, call_id)
+    except calls.NoCallbackNumber:
+        raise coded(status.HTTP_404_NOT_FOUND, "no_callback_number") from None
     except Exception as e:  # noqa: BLE001
         _fail(e)

@@ -119,6 +119,9 @@ def talk(call: OutboundCall, ok: message.Message) -> None:
         call._bye()
         return
     threading.Thread(target=call._listen, args=(offer.address,), daemon=True).start()
+    if call._assistant is not None:
+        _converse(call, offer, pt)
+        return
     call._stream(offer, pt)
     if call._ended.is_set():
         return                                                  # Gegenseite hat aufgelegt (BYE schon beantwortet)
@@ -128,3 +131,31 @@ def talk(call: OutboundCall, ok: message.Message) -> None:
         call._end("answered")
     if call.result != "remote_hangup":
         call._bye()
+
+
+def _converse(call: OutboundCall, offer: sdp.Offer, pt: int) -> None:
+    """Gespräch mit Auftrag (3b): Gesprächsschleife aus 2b mit ausgehendem Systemtext (agent/prompt_out.py)."""
+    from ..agent import conversation, prompt_out
+    from ..media import g711, rtp
+
+    a = call._assistant
+    limit = call._max
+
+    def say(text: str, interrupted) -> bool:
+        audio = a["tts"](text, call.codec)[: int(limit * 8000)]
+        sent = rtp.send_stream(call.rtp_sock, (offer.address, offer.port), audio, payload_type=pt,
+                               stop=lambda: interrupted() or call._ended.is_set() or call._hangup.is_set(),
+                               silence=g711.SILENCE[call.codec])
+        call.rtp_out += sent
+        return sent * 160 >= len(audio)
+
+    options = {"max_seconds": conversation.ASSISTANT_MAX_SECONDS, "messages": prompt_out.build_messages,
+               "greet": prompt_out.greeting, "opening": True, **a.get("options", {})}
+    conv = conversation.Conversation(cfg=a["cfg"], llm=a["llm"], stt=a["stt"], say=say, frames=call._voice,
+                                     hangup=lambda: call._ended.is_set() or call._hangup.is_set(), **options)
+    result = conv.run()
+    call.turns, call.notes = result.turns, result.notes
+    if call._ended.is_set():
+        return                                                  # Gegenseite hat aufgelegt (BYE schon beantwortet)
+    call._end("hung_up" if call._hangup.is_set() else result.reason)
+    call._bye()

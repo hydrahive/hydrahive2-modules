@@ -89,6 +89,7 @@ export interface CallNotes {
   open_questions?: string[]
   needs_review?: boolean
   summary?: string
+  result?: string
 }
 
 export interface AssistantSettings {
@@ -117,6 +118,16 @@ export interface CallEntry {
   notes: CallNotes
   notes_read: boolean
   direction: "in" | "out"
+}
+
+export type DialMode = "greeting" | "assistant"
+
+export interface DialRequest {
+  number: string
+  text: string
+  mode: DialMode
+  task: string
+  may_share: string
 }
 
 /** Laufender bzw. letzter ausgehender Anruf (GET /connection/dial). */
