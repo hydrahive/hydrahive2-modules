@@ -2,7 +2,7 @@
 export const callsDe = {
   title: "Anrufe annehmen",
   answer: "Anrufe annehmen",
-  answer_help: "An: HydraHive nimmt ab, spricht die Ansage und legt auf. Aus: HydraHive lehnt ab – andere Telefone derselben Rufnummer klingeln weiter.",
+  answer_help: "An: HydraHive nimmt ab – je nach Modus unten mit Ansage oder Telefon-Assistent. Aus: HydraHive lehnt ab – andere Telefone derselben Rufnummer klingeln weiter.",
   greeting: "Ansage",
   greeting_help: "Wird von der lokalen Sprachausgabe (Piper) vorgelesen. Leer lassen für die Vorgabe. Höchstens 500 Zeichen.",
   greeting_save: "Ansage speichern",
@@ -41,7 +41,7 @@ export type CallsTexts = typeof callsDe
 export const callsEn: CallsTexts = {
   title: "Answer calls",
   answer: "Answer calls",
-  answer_help: "On: HydraHive picks up, plays the announcement and hangs up. Off: HydraHive declines – other phones on the same number keep ringing.",
+  answer_help: "On: HydraHive picks up – with the announcement or the phone assistant, depending on the mode below. Off: HydraHive declines – other phones on the same number keep ringing.",
   greeting: "Announcement",
   greeting_help: "Read out by the local speech output (Piper). Leave empty for the default. At most 500 characters.",
   greeting_save: "Save announcement",
