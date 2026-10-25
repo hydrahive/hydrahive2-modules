@@ -103,7 +103,17 @@ def _config(row) -> dict:
             "interval": row["register_interval"], "rtp_ports": (row["rtp_port_min"], row["rtp_port_max"]),
             "call_policy": lambda cid=row["id"]: calls.policy(cid),
             "call_record": lambda info, cid=row["id"]: calls.record(cid, info),
-            "call_assistant": lambda cid=row["id"]: assistant.bundle(cid)}
+            "call_assistant": lambda cid=row["id"]: assistant.bundle(cid),
+            "call_butler": butler_hooks(row["id"])}
+
+
+def butler_hooks(cid: str) -> dict:
+    """Butler „Anruf kommt rein“ (PLAN-BUTLER B1) für den Anruf-Verteiler dieser Verbindung."""
+    from . import butler_events
+    from .sip.dispatch import butler_decide
+
+    return {"decide": lambda number: butler_decide(cid, number), "has_flows": lambda: butler_events.has_flows(cid),
+            "greeting_text": lambda: calls.greeting_of(cid), "assistant_settings": lambda: assistant.bundle_any(cid)}
 
 
 def _start(row) -> None:

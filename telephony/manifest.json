@@ -1,8 +1,8 @@
 {
   "id": "telephony",
   "name": "VoIP",
-  "version": "0.10.1",
-  "description": "Telefonassistent für die FRITZ!Box und andere SIP-Anlagen – in Entwicklung. Verbindet HydraHive mit der Anlage und nimmt Anrufe mit einer Ansage oder dem KI-Telefon-Assistenten an (Anliegen aufnehmen, Fragen aus eigenem Wissenstext beantworten, Notiz). Ruft auf Knopfdruck selbst an – mit Ansage oder mit dem Assistenten und einem Auftrag; Rückruf aus einer Notiz. Kontakte folgen.",
+  "version": "0.11.0",
+  "description": "Telefonassistent für die FRITZ!Box und andere SIP-Anlagen – in Entwicklung. Verbindet HydraHive mit der Anlage und nimmt Anrufe mit einer Ansage oder dem KI-Telefon-Assistenten an (Anliegen aufnehmen, Fragen aus eigenem Wissenstext beantworten, Notiz). Ruft auf Knopfdruck selbst an – mit Ansage oder mit dem Assistenten und einem Auftrag; Rückruf aus einer Notiz. Im Butler: Auslöser „Anruf kommt rein“ (annehmen, ablehnen, besetzt je Nummer/Zeit). Kontakte folgen.",
   "icon": "PhoneCall",
   "nav_group": "working",
   "permissions": [],

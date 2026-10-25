@@ -22,11 +22,12 @@ class CallSession:
     def __init__(self, *, sock: socket.socket, invite: message.Message, remote: tuple[str, int], local_ip: str,
                  offer: sdp.Offer, pt: int, codec: str, rtp_sock: socket.socket, audio: Callable[[], bytes],
                  ring_seconds: float, ack_timeout: float, max_seconds: float,
-                 on_finish: Callable[[CallSession], None], assistant: dict | None = None) -> None:
+                 on_finish: Callable[[CallSession], None], assistant: dict | None = None,
+                 prepare: Callable[[CallSession], bool] | None = None) -> None:
         self.sock, self.invite, self.remote, self.local_ip = sock, invite, remote, local_ip
         self.offer, self.pt, self.codec, self.rtp_sock = offer, pt, codec, rtp_sock
         self._audio, self._ring, self._ack_timeout, self._max = audio, ring_seconds, ack_timeout, max_seconds
-        self._on_finish = on_finish
+        self._on_finish, self._prepare = on_finish, prepare        # prepare: Butler-Entscheidung (incoming_plan)
         self._assistant = assistant                             # None = nur Ansage (2a); sonst Telefon-Assistent (2b)
         self._voice: queue.Queue[bytes | None] = queue.Queue(maxsize=500)
         self.turns, self.notes = 0, {}
@@ -112,6 +113,8 @@ class CallSession:
     def _run(self) -> None:
         try:
             self.respond(180, "Ringing")
+            if self._prepare is not None and self._prepare(self):
+                return                                          # Butler: abgelehnt/besetzt oder schon aufgelegt
             ring_end = time.monotonic() + self._ring
             audio = self._audio()                               # Ansage vorbereiten, während es klingelt
             if self._ended.wait(max(0.0, ring_end - time.monotonic())):

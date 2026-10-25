@@ -44,7 +44,7 @@ class SipAgent:
                  retry_delays: tuple[float, ...] = (15, 30, 60, 120, 300),
                  call_policy: Callable[[], str | None] | None = None, call_record: Callable[[dict], None] | None = None,
                  rtp_ports: tuple[int, int] = (7078, 7109), call_options: dict | None = None,
-                 call_assistant: Callable[[], dict | None] | None = None) -> None:
+                 call_assistant: Callable[[], dict | None] | None = None, call_butler: dict | None = None) -> None:
         self.connection_id = connection_id
         self._state = RegState(user=user, password=password, domain=domain, target=target, local=bind,
                                display_name=display_name)
@@ -62,6 +62,8 @@ class SipAgent:
                                     record=self._record, **(call_options or {}))
         if call_assistant is not None:
             self.calls.assistant = call_assistant
+        for k, fn in (call_butler or {}).items():                # Butler „Anruf kommt rein“ (connections.butler_hooks)
+            setattr(self.calls, k, fn)
 
     def __repr__(self) -> str:
         return f"SipAgent({self.connection_id!r}, status={self.status!r})"

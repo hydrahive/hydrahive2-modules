@@ -185,3 +185,10 @@ def callback(user_id: str, call_id: int) -> dict:
     task = (f"Rückruf an {who}. Anliegen laut Notiz: {about}. Sag, dass die Nachricht angekommen ist, "
             "frag nach, worum es genau geht und wann ein Gespräch passt. Nichts zusagen.")
     return {"number": number, "task": task[:1000]}
+
+
+def greeting_of(cid: str) -> str:
+    """Ansagetext der Verbindung (für „Mit Ansage annehmen“ ohne eigenen Text)."""
+    with db() as c:
+        row = c.execute("SELECT greeting FROM module_telephony_connections WHERE id=?", (cid,)).fetchone()
+    return greeting_text(row) if row else DEFAULT_GREETING
