@@ -1,7 +1,6 @@
 export interface TelephonyFeatures {
   setup: boolean
-  registration_probe: boolean
-  incoming_call_probe: boolean
+  registration: boolean
   inbound_calls: boolean
   outbound_calls: boolean
   archive: boolean
@@ -9,39 +8,11 @@ export interface TelephonyFeatures {
 
 export interface TelephonyStatus {
   module: "telephony"
-  stage: "foundation"
-  status: "not_configured"
-  configured: false
+  stage: "connection"
+  status: ConnectionStatus
+  configured: boolean
   telephony_available: false
-  probe_target: {
-    registrar: string
-    port: number
-  }
   features: TelephonyFeatures
-}
-
-export type RegistrationProbeOutcome =
-  | "registered"
-  | "auth_failed"
-  | "registration_failed"
-  | "timeout"
-  | "runtime_unavailable"
-  | "busy"
-  | "incoming_answered"
-  | "no_incoming_call"
-  | "caller_cancelled"
-  | "answer_failed"
-  | "media_failed"
-
-export interface RegistrationProbeRequest {
-  registrar: string
-  port: number
-  username: string
-  password: string
-}
-
-export interface RegistrationProbeResponse {
-  outcome: RegistrationProbeOutcome
 }
 
 export type VoIPSection =
@@ -52,3 +23,48 @@ export type VoIPSection =
   | "agent"
   | "settings"
   | "members"
+
+export type Pbx = "fritzbox" | "sip"
+
+export type ConnectionStatus =
+  | "not_configured"
+  | "disconnected"
+  | "connecting"
+  | "registered"
+  | "auth_failed"
+  | "not_found"
+  | "unreachable"
+  | "rejected"
+  | "blocked"
+  | "port_in_use"
+  | "secret_invalid"
+
+export interface ConnectionFields {
+  pbx: Pbx
+  display_name: string
+  registrar: string
+  registrar_port: number
+  username: string
+  own_number: string
+  local_sip_port: number
+  rtp_port_min: number
+  rtp_port_max: number
+  register_interval: number
+}
+
+/** PUT-Body: Kennwort leer = beim Ändern unverändert. */
+export interface ConnectionIn extends ConnectionFields {
+  password: string
+}
+
+export type Connection =
+  | { configured: false; status: "not_configured" }
+  | (ConnectionFields & {
+      configured: true
+      has_password: true
+      enabled: boolean
+      status: ConnectionStatus
+      status_at: string | null
+      created_at: string
+      updated_at: string
+    })

@@ -5,7 +5,7 @@ import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { FoundationOverview } from "./_FoundationOverview"
 import { SectionPlaceholder } from "./_SectionPlaceholder"
-import { RegistrationProbeSettings } from "./RegistrationProbeSettings"
+import { ConnectionSettings } from "./ConnectionSettings"
 import { telephonyApi } from "./api"
 import { sections } from "./sections"
 import type { TelephonyStatus, VoIPSection } from "./types"
@@ -37,6 +37,9 @@ export function VoIPPage() {
       .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
   }, [])
+  useEffect(() => {
+    if (active === "overview") void telephonyApi.status().then(setStatus).catch(() => undefined)
+  }, [active])
   const activeDefinition = sections.find((section) => section.id === active) ?? sections[0]
 
   return (
@@ -51,8 +54,9 @@ export function VoIPPage() {
               <p className="text-sm text-zinc-500">{t("subtitle")}</p>
             </div>
           </div>
-          <span className="w-fit rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-400">
-            {t("foundation")} · {t("not_configured")}
+          <span data-voip-badge={status?.status ?? "unknown"}
+            className="w-fit rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-400">
+            {t("in_development")} · {t(`conn.status.${status?.status ?? "not_configured"}.title`)}
           </span>
         </header>
 
@@ -85,13 +89,10 @@ export function VoIPPage() {
             </button>
           </div>
         )}
-        {!loading && !error && active === "overview" && <FoundationOverview loaded={status?.stage === "foundation"} />}
-        {!loading && !error && active === "settings" && status && (
-          <RegistrationProbeSettings
-            registrar={status.probe_target.registrar}
-            port={status.probe_target.port}
-          />
+        {!loading && !error && active === "overview" && status && (
+          <FoundationOverview status={status.status} onSetup={() => setActive("settings")} />
         )}
+        {!loading && !error && active === "settings" && <ConnectionSettings />}
         {!loading && !error && active !== "overview" && active !== "settings" && (
           <SectionPlaceholder section={active} icon={activeDefinition.icon} />
         )}
