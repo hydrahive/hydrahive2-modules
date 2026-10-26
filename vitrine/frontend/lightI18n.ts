@@ -1,4 +1,4 @@
-/** S8 Licht: Texte (werden in index.tsx in den Namensraum „vitrine“ eingehängt). */
+/** S8 Licht + Reiter: Texte (werden in index.tsx in den Namensraum „vitrine“ eingehängt). */
 export const lightI18n = {
   de: {
     light_title: "Beleuchtung (Mainboard)",
@@ -19,6 +19,9 @@ export const lightI18n = {
     light_no_device: "Beleuchtung nicht gefunden",
     light_invalid: "Bitte prüfen: Farbe, Effekt, Helligkeit (0–100), Blinkzeit (0–600 s) oder Dauer (2–60 s).",
     rule_light: "Lichtfarbe bei diesem Anlass", rule_light_none: "keine (Licht wie sonst)",
+    tab_overview: "Übersicht", tab_program: "Programm", tab_display: "Anzeige", tab_dashboard: "Statuszentrale",
+    tab_light: "Beleuchtung", tab_bluetooth: "Bluetooth",
+    tab_dirty: "nicht gespeichert", tab_invalid: "ungültige Werte", unsaved: "Nicht gespeichert",
   },
   en: {
     light_title: "Lighting (mainboard)",
@@ -39,5 +42,8 @@ export const lightI18n = {
     light_no_device: "Lighting not found",
     light_invalid: "Please check: colour, effect, brightness (0–100), flash time (0–600 s) or duration (2–60 s).",
     rule_light: "Light colour for this occasion", rule_light_none: "none (light as usual)",
+    tab_overview: "Overview", tab_program: "Programme", tab_display: "Display", tab_dashboard: "Status centre",
+    tab_light: "Lighting", tab_bluetooth: "Bluetooth",
+    tab_dirty: "not saved", tab_invalid: "invalid values", unsaved: "Not saved",
   },
 }

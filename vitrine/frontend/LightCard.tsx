@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Lightbulb } from "lucide-react"
 import { vitrineApi } from "./api"
@@ -9,20 +9,13 @@ const field = "rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1 text
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(v)))
 
 /** S8: Mainboard-Licht – Schalter, Helligkeit, Farbe je Zustand und Jahreszeit, Vorschau, aktueller Stand. */
-export function LightCard({ light: raw, onChange }: { light: LightCfg | undefined; onChange: (l: LightCfg) => void }) {
+export function LightCard({ light: raw, status: st, onChange }: {
+  light: LightCfg | undefined; status: LightStatus | null; onChange: (l: LightCfg) => void
+}) {
   const { t } = useTranslation("vitrine")
   const light = normalizeLight(raw)
   const errs = lightErrors(light)
-  const [st, setSt] = useState<LightStatus | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
-
-  useEffect(() => {
-    let alive = true
-    const load = () => vitrineApi.light().then((s) => { if (alive) setSt(s) }).catch(() => {})
-    load()
-    const id = window.setInterval(load, 5000)
-    return () => { alive = false; window.clearInterval(id) }
-  }, [])
 
   const set = (patch: Partial<LightCfg>) => onChange({ ...light, ...patch })
   const setState = (s: (typeof LIGHT_STATES)[number], v: LookValue & { enabled?: boolean; seconds?: number }) =>
