@@ -39,7 +39,7 @@ def _run(box: dict, script: str = "light-install.sh", *, with_openrgb: bool = Fa
     if not with_openrgb:
         (box["bin"] / "openrgb").unlink(missing_ok=True)
     e = {**os.environ, "PATH": path, "VITRINE_LIGHT_RULE": str(box["tmp"] / "72.rules"), "USER_NAME": "hydrahive",
-         "DATA": str(box["tmp"] / "data"), **env}
+         "DATA": str(box["tmp"] / "data"), "VITRINE_SYS_HIDRAW": str(box["tmp"] / "keine-geraete"), **env}
     return subprocess.run(["bash", str(EXT / script)], env=e, capture_output=True, text=True, timeout=30)
 
 
@@ -62,7 +62,37 @@ def test_mit_lichtchip_openrgb_und_regel(box) -> None:
     rule = (box["tmp"] / "rule.txt").read_text()
     assert 'SUBSYSTEM=="hidraw"' in rule and 'ATTRS{idVendor}=="048d"' in rule and 'ATTRS{idProduct}=="5711"' in rule
     assert 'GROUP="hydrahive"' in rule and 'MODE="0660"' in rule
-    assert any(x.startswith("udevadm trigger") and "hidraw" in x for x in c), c
+    assert any(x == "udevadm control --reload-rules" for x in c), c
+
+
+def test_regel_setzt_benannte_gruppe_in_der_acl(box) -> None:
+    """Live .2 (26.10.): Die Kiosk-Sitzung (uaccess) legt eine ACL mit `group::---` auf das hidraw-Gerät – die überstimmt
+    GROUP=hydrahive (Maske gilt nur für Einträge, die Gruppe des Besitzers zählt nicht). Erst ein benannter
+    ACL-Eintrag `group:hydrahive:rw` gab der Vitrine Zugriff, auch nach erneutem uaccess (am Gerät geprüft)."""
+    (box["tmp"] / "lsusb.txt").write_text(LSUSB_IT5711)
+    _run(box)
+    rule = (box["tmp"] / "rule.txt").read_text()
+    run = next(ln for ln in rule.splitlines() if "RUN+=" in ln)
+    assert 'RUN+="/usr/bin/setfacl -m g:hydrahive:rw $devnode"' in run
+    assert 'SUBSYSTEM=="hidraw"' in run and 'ATTRS{idVendor}=="048d"' in run and 'ATTRS{idProduct}=="5711"' in run
+
+
+def test_regel_wird_auf_die_vorhandenen_geraete_angewendet(box) -> None:
+    """Live .2: `udevadm trigger --attr-match=idVendor=048d` fand nichts – das Attribut sitzt am USB-Elterngerät, nicht am
+    hidraw-Gerät. Die Regel griff erst nach `udevadm trigger` mit dem Pfad der Geräte."""
+    (box["tmp"] / "lsusb.txt").write_text(LSUSB_IT5711)
+    sysfs = box["tmp"] / "sys" / "class" / "hidraw"
+    for n, hid in (("hidraw0", "0003:0000048D:00005711"), ("hidraw1", "0003:0000048D:00005711"),
+                   ("hidraw2", "0003:000005AC:00000265")):                 # so steht es auf .2 in device/uevent
+        (sysfs / n / "device").mkdir(parents=True)
+        (sysfs / n / "device" / "uevent").write_text(f"DRIVER=hid-generic\nHID_ID={hid}\n")
+    _run(box, VITRINE_SYS_HIDRAW=str(sysfs))
+    trig = [x for x in _calls(box) if x.startswith("udevadm trigger")]
+    assert trig, _calls(box)
+    assert all("--attr-match" not in x for x in trig), trig
+    joined = " ".join(trig)
+    assert str(sysfs / "hidraw0") in joined and str(sysfs / "hidraw1") in joined and "hidraw2" not in joined
+    assert any(x.startswith("udevadm settle") for x in _calls(box))
 
 
 def test_openrgb_schon_da_kein_apt(box) -> None:
