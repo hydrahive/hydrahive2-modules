@@ -47,6 +47,12 @@ Ein Sendestudio in HydraHive:
 ## Aufbau (Weg A, von Till gewählt)
 
 ```
+                                                       Hörer (Browser, VLC, Handy) – ohne Anmeldung
+                                                                     │  http://<server>:8800/
+                                                         nginx-Server „Hörer-Seite“ (eigener Port)
+                                                          ├─ /          statische Seite mit Player
+                                                          ├─ /stream    → Icecast (127.0.0.1)
+                                                          └─ /jetzt     → Icecast-Status (nur Titel)
 NAS (nur lesen) ──SMB──▶  Modul radio (HydraHive-Backend)
                            ├─ Bibliothek: Einlesen, Suche, Rotation (SQLite + FTS5)
                            ├─ Steuerung: Playlist-Wahl, Sendeplan, Live-Knopf
@@ -61,15 +67,58 @@ NAS (nur lesen) ──SMB──▶  Modul radio (HydraHive-Backend)
   eigene Prozesse, als `has_service` des Moduls (Etappe 2).
 - Das **Modul entscheidet, was läuft**. Liquidsoap fragt das Modul nur nach dem nächsten Titel. So bleiben Rotation,
   Sendeplan und Wünsche Python-Code mit Tests. Die Liquidsoap-Konfiguration bleibt klein.
-- **Gehört wird über HydraHive:** nginx leitet `/radio/stream` an Icecast weiter. Icecast lauscht nur auf 127.0.0.1.
-  So gibt es keinen zusätzlich offenen Port, und Heimnetz und Tailnet funktionieren wie die übrige Oberfläche.
+- **Hören ohne HydraHive (Till, 26.10.):** Hörer brauchen kein HydraHive-Konto und keine Anmeldung. Sie sehen nichts
+  von HydraHive und kommen nie an ein Modell (LLM) heran. Dafür gibt es eine **eigene Radio-Seite auf einem eigenen
+  Port**, siehe „Hörer-Seite“.
+- Icecast lauscht nur auf 127.0.0.1. Nach außen spricht ausschließlich die Hörer-Seite.
+
+## Hörer-Seite (Till, 26.10.: „auch Hörer ohne HydraHive, nur ein Streamplayer, extra Port, kein LLM-Kontakt“)
+
+**Grundsatz: völlig getrennt von HydraHive.** Die Hörer-Seite ist ein **eigener nginx-Server-Block** auf einem eigenen
+Port (Standard **8800**, einstellbar). Er kennt nur drei Wege und sonst nichts:
+
+| Weg | Ziel | Inhalt |
+|---|---|---|
+| `/` | statische Dateien unter `/var/lib/hydrahive2/radio/public/` | eine HTML-Seite mit Player |
+| `/stream` (und `/stream.mp3`, `/stream.m3u`) | `127.0.0.1:<icecast>/radio.mp3` | der Audio-Stream |
+| `/jetzt` | `127.0.0.1:<icecast>/status-json.xsl` | „Jetzt läuft“ (nur Künstler/Titel, per nginx gefiltert) |
+
+**Bewusst nicht vorhanden:**
+- keine Weiterleitung an das HydraHive-Backend (`127.0.0.1:8001`) und kein `/api`;
+- keine Anmeldung und keine Cookies;
+- keine Module, kein Chat und kein Agent. Ein Modell ist auf keinem Weg erreichbar.
+Alles andere liefert 404.
+- **Admin-Teil von Icecast** (`/admin`) ist über die Hörer-Seite nicht erreichbar. Nur über 127.0.0.1.
+- **Die Seite selbst:**
+  - Reines HTML, CSS und kleines JavaScript, ohne Fremd-Dateien von außen (keine CDNs, keine Schriften, kein Tracking).
+  - Inhalt: Sendername, Logo, Play/Pause, Lautstärke, „Jetzt läuft“ (fragt `/jetzt` alle 15 s), die letzten Titel und
+    Links zum Öffnen in VLC/iTunes (`.m3u`/`.pls`).
+  - Funktioniert auf dem Handy.
+  - `Content-Security-Policy: default-src 'self'` und weitere Sicherheits-Kopfzeilen wie bei der Haupt-Oberfläche.
+- **Gestaltung im Studio:** Sendername, Untertitel, Logo und Farben trägt man im Modul ein (Reiter „Hörer-Seite“). Das
+  Modul **erzeugt daraus statische Dateien**. Die Hörer-Seite ruft also nie HydraHive auf, um sich anzuzeigen.
+- **Erreichbarkeit:** Wo Hörer herkommen dürfen, ist einstellbar:
+  - **„Heimnetz und Tailscale“** (Standard): nginx erlaubt nur private Adressen (`10/8`, `172.16/12`, `192.168/16`),
+    Tailscale (`100.64/10`) und `127.0.0.1`. Alles andere bekommt 403.
+  - **„Alle“:** für Hörer aus dem Internet. Dafür muss Till den Port am Router selbst freigeben. Das Modul öffnet am
+    Router nichts. Der Hinweis dazu steht in der Oberfläche.
+  - **„Aus“:** Die Hörer-Seite ist nicht erreichbar, nur der interne Stream läuft.
+- **Schutz vor Überlast:**
+  - Höchstzahl gleichzeitiger Hörer (Icecast `max-listeners`, Standard 50, einstellbar).
+  - nginx begrenzt Verbindungen je Adresse.
+- **Hörerzahl** erscheint im Studio (aus dem Icecast-Status), ohne Adressen zu speichern.
+- **Externe Ziele (laut.fm)** sind davon unabhängig. Dort hören die Hörer über laut.fm, nicht über diesen Port.
+
+**Wann:** Die Hörer-Seite kommt mit **Etappe 2** (Sendebetrieb), weil es vorher keinen Stream gibt. Etappe 1 bleibt
+die Bibliothek.
 
 ## Etappen
 
 Je Etappe gilt dieselbe Reihenfolge: Bauplan-Nachtrag, rote Tests, Code, Prüfung, PR, Tills OK.
 
 1. **Bibliothek** (dieser Bauplan): einlesen, durchsuchen, anhören im Browser.
-2. **Sendebetrieb:** Icecast und Liquidsoap als Dienst, AutoDJ mit Rotation und Überblendung, Stream im Heimnetz.
+2. **Sendebetrieb und Hörer-Seite:** Icecast und Liquidsoap als Dienst, AutoDJ mit Rotation und Überblendung, eigene
+   Hörer-Seite auf eigenem Port (ohne HydraHive, ohne Anmeldung).
 3. **Live-Studio:** Mikrofon im Browser, Jingles, Musik absenken („Ducking“), „Jetzt läuft“, Wünsche.
 4. **Auf Sendung:** externe Ziele mit Zugangsdaten aus dem Safe, Senden ein und aus, Zustand sichtbar.
 5. **Sendeplan:** Zeitfenster mit Regeln (z. B. „morgens Pop, abends Rock“) und Sendungen.
@@ -190,8 +239,14 @@ auf das NAS.
   - Gleicher Künstler frühestens nach 60 min, gleicher Titel frühestens nach 3 Tagen (einstellbar).
   - Weiche Überblendung, gleiche Lautheit (ReplayGain oder Liquidsoap-Normalisierung).
   - Stille am Titelende wird abgeschnitten.
-- **Stream** `/radio/stream` über nginx (MP3 192k, optional AAC), dazu eine Seite „Jetzt läuft“ mit den letzten
-  Titeln.
+- **Stream** über die Hörer-Seite (MP3 192k, optional AAC). Der nginx-Server-Block wird vom Modul geschrieben
+  (`/etc/nginx/sites-available/hydrahive-radio`). Vor dem Neuladen läuft `nginx -t`, die alte Fassung bleibt bei
+  Fehlern.
+- **Tests für die Abschottung:**
+  - Die erzeugte nginx-Konfiguration enthält nur `/`, `/stream*` und `/jetzt`.
+  - Sie enthält keinen Weg zum HydraHive-Port.
+  - Die Adressregeln passen zur gewählten Erreichbarkeit.
+  - Auf hydratest: `/api/health` über den Radio-Port antwortet mit 404.
 - **Offen:** Ob Liquidsoap direkt per SMB lesen kann, oder ob das Modul die Datei als HTTP-Quelle hinreicht. Vorgesehen
   ist Letzteres, weil es kein Einbinden und kein root braucht.
 
@@ -215,3 +270,4 @@ auf das NAS.
 2. **Erstes Einlesen:** Ist es in Ordnung, wenn es nachts läuft (etwa 1 h mit 4 Strängen) und das NAS dabei
    beschäftigt ist? Oder lieber gedrosselt mit 1 Strang (etwa 3 h)?
 3. **Modulname:** „Radio“ oder ein eigener Name?
+4. **Hörer-Seite:** Port 8800 recht? Standard „Heimnetz und Tailscale“, oder sollen von Anfang an alle hören dürfen?
