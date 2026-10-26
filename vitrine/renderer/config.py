@@ -6,7 +6,7 @@ import copy
 import json
 from pathlib import Path
 
-from . import dash_layout
+from . import dash_layout, light_config
 
 DEFAULTS: dict = {
     "rules": [],
@@ -17,6 +17,7 @@ DEFAULTS: dict = {
     "message_seconds": 15,      # Standard-Dauer einer Einblendung (5–120); Fehler bleiben länger
     "dashboard_return_seconds": 120,   # Dashboard → zurück zum Video nach so vielen Sekunden ohne Eingabe (30–1800)
     "dashboard": dash_layout.normalize({}),            # Statuszentrale S2/S4 – Prüfung in dash_layout
+    "light": light_config.normalize({}),               # S8 Mainboard-Licht – Prüfung in light_config
 }
 
 
@@ -55,6 +56,7 @@ def load(data_dir: Path) -> dict:
     if _int_in(raw.get("dashboard_return_seconds"), *RETURN_RANGE):
         out["dashboard_return_seconds"] = raw["dashboard_return_seconds"]
     out["dashboard"] = dash_layout.normalize(raw.get("dashboard"))
+    out["light"] = light_config.normalize(raw.get("light"))
     return out
 
 

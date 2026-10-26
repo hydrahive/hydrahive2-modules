@@ -31,6 +31,9 @@ SUBSYSTEM==\"usb\", ATTR{idVendor}==\"33c3\", ATTR{idProduct}==\"0e02\", MODE=\"
 EOF
 udevadm control --reload-rules && udevadm trigger --subsystem-match=usb --attr-match=idVendor=33c3"
 
+# --- Mainboard-Licht (S8, SPEC-LICHT.md) – darf die Installation nie abbrechen ---
+USER_NAME="${USER_NAME}" DATA="${DATA}" bash "${MODULE_ROOT}/extension/light-install.sh" || true
+
 # --- Kiosk (Statuszentrale per Maus, SPEC-STATUSZENTRALE.md) ---
 # Nur unter Linux mit apt + sddm + Firefox und nur, wenn kein echter Monitor angeschlossen ist (dann gehört der
 # Anmeldebildschirm niemandem). Abschalten: Datei ${DATA}/kiosk.off anlegen.

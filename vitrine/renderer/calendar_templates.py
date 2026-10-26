@@ -1,4 +1,5 @@
-"""Vorlagen für Kalender-Regeln (im Cockpit wählbar).
+"""Vorlagen für Kalender-Regeln (im Cockpit wählbar). S8: mit Vorschlag für die Lichtfarbe (Jahreszeiten nicht – die
+kommen aus den Licht-Einstellungen).
 
 Chanukka/Ramadan/Zuckerfest: Termine berechnet am 18.10.2026 mit `convertdate` (hebräischer Kalender,
 25. Kislew; ab dem Vorabend, an dem das erste Licht brennt) und `hijridate` (Umm-al-Qura-Kalender; Ramadan 1.–letzter
@@ -52,3 +53,17 @@ TEMPLATES = [
     {"name": "Herbst", "kind": "season", "season": "autumn", "priority": 10},
     {"name": "Winter", "kind": "season", "season": "winter", "priority": 10},
 ]
+
+# S8: Lichtfarbe + Effekt je Vorlage (Vorschlag; im Regel-Editor änderbar oder abschaltbar)
+_LIGHT = {
+    "Neujahr": ("FFFFFF", "static"), "Valentinstag": ("FF4F9A", "breathing"), "Karneval": ("FF00C8", "flashing"),
+    "Ostern": ("FFF06A", "static"), "Muttertag": ("FF7FBF", "static"), "Pfingsten": ("FFE066", "static"),
+    "Halloween": ("FF6A00", "breathing"), "St. Martin": ("FFA040", "breathing"), "Advent": ("FFB347", "static"),
+    "1. Advent": ("FFB347", "static"), "2. Advent": ("FFB347", "static"), "3. Advent": ("FFB347", "static"),
+    "4. Advent": ("FFB347", "static"), "Nikolaus": ("FF2020", "static"), "Weihnachten": ("FF1A1A", "breathing"),
+    "Silvester": ("FFFFFF", "flashing"), "Chanukka": ("4F8BFF", "static"), "Ramadan": ("3DDC84", "static"),
+    "Zuckerfest": ("3DDC84", "breathing"),
+}
+for _t in TEMPLATES:
+    if _t["name"] in _LIGHT:
+        _t["light_color"], _t["light_effect"] = _LIGHT[_t["name"]]
