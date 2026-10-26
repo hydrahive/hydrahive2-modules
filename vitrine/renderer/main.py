@@ -1,7 +1,7 @@
 """Vitrine-Dienst: Programm (Kalender/Nacht) → Video + Overlay → Display. Verbindet sich selbst neu.
 
 Start: python -m renderer.main  (Umgebung: VITRINE_DATA = Modul-Datenverzeichnis)
-Für das Backend: <data>/state.json (Status) und <data>/preview.jpg (Vorschau, 270×480).
+Für das Backend: <data>/state.json (Status), <data>/preview.jpg (Vorschau, 270×480), <data>/light.json (S8).
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from typing import Callable, Iterable
 import usb.core
 from PIL import Image
 
-from . import aic, bt_runner, cached_play, cards, config, hydra_state, inbox, mode, night, preview, program, scene, sysinfo, video, warmer
+from . import aic, bt_runner, cached_play, cards, config, hydra_state, inbox, light_runner, mode, night, preview, program, scene, sysinfo, video, warmer
 from . import play_dashboard as dash_play
 from .frames import _connect_real, encode, fallback_frame, write_preview  # noqa: F401 - auch von Tests genutzt
 
@@ -30,7 +30,6 @@ log = logging.getLogger("vitrine")
 
 class _Switch(Exception):
     """Programm hat sich geändert → Bildquelle neu aufbauen."""
-
 
 class Runner:
     def __init__(self, *, data_dir: Path, connect: Callable = _connect_real,
@@ -191,7 +190,8 @@ def main() -> None:
     data = Path(os.environ.get("VITRINE_DATA", "/var/lib/hydrahive2/vitrine"))
     warm = warmer.Warmer(data / "cache", frames=lambda src, w, h, fps: video.frames(
         video.prepare(Path(src), data / "cache", w, h, fps), w, h, fps, loop=False))
-    bt_runner.start(data)                              # S7: eigener Thread, Fehler dort stoppen das Display nie
+    bt_runner.start(data)                              # S7/S8: eigene Threads (Bluetooth, Mainboard-Licht) –
+    light_runner.start(data)                           # Fehler dort stoppen das Display nie
     Runner(data_dir=data, quality=int(os.environ.get("VITRINE_QUALITY", "80")), warmer=warm,
            dashboard=dash_play.from_env()).run()
 

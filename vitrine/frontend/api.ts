@@ -31,6 +31,7 @@ export interface Night {
 }
 
 import type { DashboardCfg } from "./dashLayout"
+import type { LightCfg, LightStatus } from "./light"
 
 export interface VitrineConfig {
   rules: Rule[]
@@ -45,6 +46,8 @@ export interface VitrineConfig {
   dashboard_return_seconds: number
   /** Statuszentrale S2/S4: Tasks von, GitHub (nur lesend), Anordnung und Einstellungen je Bereich. */
   dashboard: DashboardCfg
+  /** S8: Mainboard-Licht (fehlt bei altem Backend → Vorgaben im Cockpit). */
+  light?: LightCfg
 }
 
 export interface VideoFile {
@@ -117,6 +120,9 @@ export const vitrineApi = {
   btScan: () => api.post<{ started: boolean }>(`${BASE}/bluetooth/scan`, {}),
   btPair: (address: string) => api.post<void>(`${BASE}/bluetooth/pair`, { address }),
   btRemove: (address: string) => api.delete<void>(`${BASE}/bluetooth/${encodeURIComponent(address)}`),
+  light: () => api.get<LightStatus>(`${BASE}/light`),
+  /** Licht zeigt 15 s diesen Zustand. */
+  lightPreview: (state: string) => api.post<{ state: string; seconds: number }>(`${BASE}/light/preview`, { state }),
   simulate: (at: string) => api.post<Simulation>(`${BASE}/simulate`, { at }),
   /** Display zeigt 30 s das Programm dieses Zeitpunkts. */
   startPreview: (at: string) => api.post<{ at: string; seconds: number }>(`${BASE}/preview`, { at }),

@@ -20,6 +20,9 @@ export interface Rule {
   weekday?: number
   days?: number
   dates?: Period[]
+  /** S8: Lichtfarbe (RRGGBB) und Effekt bei diesem Anlass – optional. */
+  light_color?: string
+  light_effect?: "static" | "breathing" | "flashing" | "off"
 }
 
 export interface Template {

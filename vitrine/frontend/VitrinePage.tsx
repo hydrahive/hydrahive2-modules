@@ -12,6 +12,8 @@ import { DashboardCard } from "./DashboardCard"
 import { SettingsCard } from "./SettingsCard"
 import { MessagesCard } from "./MessagesCard"
 import { BluetoothCard } from "./BluetoothCard"
+import { LightCard } from "./LightCard"
+import { lightErrors, normalizeLight } from "./light"
 
 export function VitrinePage() {
   const { t } = useTranslation("vitrine")
@@ -32,7 +34,8 @@ export function VitrinePage() {
   }, [loadVideos])
 
   const dirty = config !== null && JSON.stringify(config) !== saved
-  const invalid = config?.rules.some((r) => ruleErrors(r).length > 0) ?? false
+  const invalid = (config?.rules.some((r) => ruleErrors(r).length > 0) ?? false)
+    || (config !== null && lightErrors(normalizeLight(config.light)).length > 0)
 
   async function save() {
     if (!config) return
@@ -72,6 +75,7 @@ export function VitrinePage() {
           {config && <>
             <RuleList rules={config.rules} templates={templates} videos={videos} onChange={(rules) => setConfig({ ...config, rules })} />
             <SettingsCard config={config} onChange={setConfig} />
+            <LightCard light={config.light} onChange={(light) => setConfig({ ...config, light })} />
             <DashboardCard config={config} onChange={setConfig} />
           </>}
           <VideoList videos={videos} onChange={loadVideos} />

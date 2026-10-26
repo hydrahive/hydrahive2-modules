@@ -315,7 +315,7 @@ nichts am Server.
 ### Bewusst nicht in S5
 - Kein automatisches Blättern, keine Wischgesten (kein Touch), keine Seitennamen.
 
-## S6 — Chat am Gehäuse (Entscheidungen Till 19.10.2026)
+## S6 — Chat am Gehäuse (Entscheidungen Till 19.10.2026; abgenommen von Till am 26.10.2026)
 
 Am Gehäuse mit Hydra schreiben: Eingabe über eine Bluetooth-Tastatur (Koppeln: eigener Task), Antwort am Display.
 Till hat **Option B** gewählt: Chat mit dem **vollen Buddy** (alle Werkzeuge), weil im Haushalt nur 2 Personen sind.
@@ -378,7 +378,7 @@ Till hat **Option B** gewählt: Chat mit dem **vollen Buddy** (alle Werkzeuge), 
 4. Antwort zuerst am Stück; Streaming als spätere Etappe.
 5. Zurück zum Video nach 2 min ohne Eingabe; nicht während Hydra antwortet.
 
-## S7 — Bluetooth-Geräte koppeln (Till 21.10.2026: „an beide Stellen“, Kiosk und Cockpit)
+## S7 — Bluetooth-Geräte koppeln (Till 21.10.2026: „an beide Stellen“, Kiosk und Cockpit; abgenommen von Till am 26.10.2026)
 
 Am 21.10. hat das Koppeln der Rapoo-Tastatur (E9300G) von Hand über eine Stunde gedauert. S7 macht daraus einen Knopf, an
 **beiden Stellen**: auf dem Gehäuse-Display (Kiosk) und in der Vitrine-Seite im Cockpit.
@@ -483,7 +483,8 @@ Am 21.10. hat das Koppeln der Rapoo-Tastatur (E9300G) von Hand über eine Stunde
 5. **S5 Seiten:** Bereiche fest auf Seiten 1–3, Knubbel unten zum Blättern
 6. **S6 Chat:** eigene Seite, BT-Tastatur, voller Buddy in eigener Session, Antwort am Stück
 7. **S7 Bluetooth:** Geräte suchen und koppeln, am Kiosk und im Cockpit
-8. danach: Streaming im Chat, Sprache, Knöpfe mit PIN
+8. **S8 Licht:** Mainboard-Beleuchtung als Statusanzeige (eigene Spec `SPEC-LICHT.md`)
+9. danach: Streaming im Chat, Sprache, Knöpfe mit PIN
 
 ## Akzeptanzkriterien
 
