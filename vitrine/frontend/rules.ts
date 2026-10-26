@@ -186,3 +186,13 @@ export function dashboardInfo(st: { mode?: string | null; dashboard?: string | n
   if (d === "bereit") return { mode, state: "ready", reason: null }
   return { mode, state: "unavailable", reason: d.replace(/^nicht verfügbar:\s*/, "") }
 }
+
+/** Status-Zeile ohne Bild (Kopf der Seite und Reiter Übersicht). */
+export function statusLabel(t: (k: string) => string, st: Parameters<typeof displayState>[0] & { night?: string | null } | null): {
+  text: string; ok: boolean
+} {
+  const ds = displayState(st)
+  const text = ds === "loading" ? "…" : ds === "stopped" ? t("state_stopped") : ds === "no_display" ? t("state_no_display")
+    : ds === "night" ? t(`night_${st?.night}`) : t("state_running")
+  return { text, ok: !!(st?.running && st.connected) }
+}
