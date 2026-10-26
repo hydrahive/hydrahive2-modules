@@ -1,4 +1,4 @@
-# Vitrine S8 — Mainboard-Beleuchtung als Statusanzeige (Entwurf, wartet auf Tills Freigabe)
+# Vitrine S8 — Mainboard-Beleuchtung als Statusanzeige (freigegeben von Till am 26.10.2026)
 
 ## Was
 
@@ -30,27 +30,49 @@ Till, 26.10.2026: „Die leuchtet nachts extrem hell und wabbert nur in verschie
 
 ### Lichtzustände
 
-Die Vitrine entscheidet alle paar Sekunden, welcher Zustand gilt. Wichtigster zuerst:
+Die Vitrine entscheidet alle 2 s, welcher Zustand gilt. Wichtigster zuerst:
 
-| Zustand | Wann | Standard |
+| Zustand | Wann | Vorgabe (alles im Cockpit änderbar) |
 |---|---|---|
-| **Aus** | Nachtmodus aktiv (gleiches Zeitfenster wie das Display) oder Licht im Cockpit ausgeschaltet | aus |
-| **Fehler** | ungelesene Meldung der Art `error` (z. B. aus `errors_log`) | rot, blinkt 20 s, danach rot stehend bis „Gelesen“ bzw. bis sie aus dem 24-h-Verlauf fällt |
-| **Wartet auf dich** | ungelesene Meldung der Art `warning` | gelb stehend |
-| **Hydra arbeitet** | mindestens ein Agent läuft (`hydra.json` → `agents > 0`) | blau atmend |
-| **Anlass** | eine Kalenderregel mit Lichtfarbe ist aktiv (z. B. Halloween, Advent) | Farbe der Regel, stehend |
-| **Ruhe** | sonst | warmweiß, gedimmt |
+| **Aus** | Nachtmodus aktiv (gleiches Zeitfenster wie das Display, abschaltbar) oder Licht im Cockpit ausgeschaltet | aus |
+| **Fehler** | ungelesene Meldung der Art `error` | rot; die ersten 20 s blinkend, danach stehend bis „Gelesen“ bzw. bis sie aus dem 24-h-Verlauf fällt |
+| **Wartet auf dich** | ungelesene Meldung der Art `warning` | gelb, stehend |
+| **Fertig** | ein Agent war aktiv und ist fertig (Agenten-Zahl fällt auf 0) | grün, 5 s – **Vorgabe aus**, einschaltbar |
+| **Hydra arbeitet** | mindestens ein Agent läuft (`hydra.json` → `agents > 0`) | blau, atmend |
+| **Anlass** | eine Kalenderregel mit eigener Lichtfarbe ist aktiv (Halloween, Advent, Weihnachten …) | Farbe der Regel |
+| **Jahreszeit** | sonst | Frühling hellgrün, Sommer warmweiß, Herbst bernstein, Winter kühlweiß |
 
-- Meldungen der Arten `info`/`success` ändern das Licht nicht (sonst blinkt es bei jedem Kleinkram).
-- „Hydra arbeitet“ steht absichtlich **unter** Fehler/Warnung: Ein offener Fehler soll nicht durch blaues Atmen verdeckt
-  werden.
-- Ist `hydra.json` älter als 2 min (HydraHive läuft nicht), gilt **Ruhe** – kein falsches „arbeitet“.
+- Meldungen der Art `info` ändern das Licht nicht.
+- „Hydra arbeitet“ steht **unter** Fehler/Warnung: Ein offener Fehler wird nicht von blauem Atmen verdeckt.
+- Ist `hydra.json` älter als 2 min (HydraHive läuft nicht), gilt der Ruhe-Zustand (Anlass/Jahreszeit), kein falsches
+  „arbeitet“.
+- **Anlass** wirkt auch ohne Video: Für das Licht zählt jede passende, eingeschaltete Regel mit Lichtfarbe (höchste
+  Priorität gewinnt, gleiche Priorität → erste in der Liste). Die Vorlagen bekommen Vorschläge (Halloween orange,
+  Advent warmes Gold, Weihnachten rot, Silvester weiß blinkend, Ostern hellgelb, Valentinstag rosa, St. Martin
+  bernstein …); bestehende Regeln haben keine Lichtfarbe, bis Till eine setzt.
+
+### Einstellungen (Till: „so viel wie möglich im Admin steuern“)
+
+Alles in der Vitrine-Seite im Cockpit, Karte **Beleuchtung**:
+
+- **Beleuchtung steuern** an/aus. Aus = die Vitrine fasst das Licht nicht an.
+- **Helligkeit** 0–100 %, Vorgabe **80 %** (Till: „kann höher sein“).
+- **Nachts aus** an/aus (folgt dem Zeitfenster des Nachtmodus).
+- Je Zustand (Fehler, Wartet, Fertig, Arbeitet): **Effekt** (stehend, atmend, blinkend, aus), **Farbe**, **Tempo**
+  (0–100, nur bei atmend/blinkend), eigene **Helligkeit** (leer = allgemeine).
+- Fehler: **Blinkzeit** am Anfang (0–600 s, Vorgabe 20). Fertig: **an/aus** und **Dauer** (2–60 s, Vorgabe 5).
+- **Jahreszeiten:** je eine Farbe und ein Effekt für Frühling, Sommer, Herbst, Winter; Schalter „Jahreszeit-Farben“
+  (aus = eine feste Ruhe-Farbe).
+- **Anlässe:** im Regel-Editor je Regel ein optionales Feld **Lichtfarbe** + **Effekt**.
+- **Vorschau:** Knopf je Zustand – setzt das Licht 15 s darauf, danach zurück.
+- Anzeige: gefundenes Gerät, aktueller Zustand (mit Farbe), letzter Fehler.
 
 ### Helligkeit
 
-- Eine Grundhelligkeit für alles (Standard **30 %**), damit das Licht im Wohnzimmer nicht blendet.
-- **Gemessen wird beim Bau**, ob der IT5711 im Modus „Static“ die Helligkeit annimmt (`-b`). Wenn nicht, wird die Farbe
-  selbst abgedunkelt (z. B. 30 % von FF0000 = 4D0000) – sieht gleich aus.
+- OpenRGB nimmt `-b 0–100` für alle Effekte an (Quelle: OpenRGB `RGBController_GigabyteRGBFusion2USB.cpp`, alle Modi
+  mit `MODE_FLAG_HAS_BRIGHTNESS`; „Breathing“ höchstens 100 wegen einer Eigenheit des Chips). OpenRGB prüft den Wert
+  **nicht** (`-b 150` gab rc 0, am 26.10. getestet) → die Vitrine begrenzt selbst auf 0–100.
+- Ob der IT5711 die Helligkeit sichtbar umsetzt, prüft Till bei der Abnahme. Falls nicht: Farbe selbst abdunkeln.
 
 ### Wie das Licht gesetzt wird
 
@@ -74,14 +96,9 @@ Die Vitrine entscheidet alle paar Sekunden, welcher Zustand gilt. Wichtigster zu
   nutzen) – entfernen nur auf Tills Wunsch.
 - Der Benutzer-Dienst `openrgb.service` aus dem Paket bleibt aus.
 
-### Cockpit (Vitrine-Seite, neue Karte „Beleuchtung“)
+### Cockpit
 
-- Schalter **Beleuchtung steuern** (an/aus). Aus = die Vitrine fasst das Licht nicht an (es bleibt, wie es ist).
-- **Grundhelligkeit** (0–100 %).
-- Farbe je Zustand (Fehler, Wartet, Arbeitet, Ruhe) mit Vorgabe; Kalender-Regeln bekommen ein optionales Feld
-  **Lichtfarbe** im Regel-Editor.
-- **Zustand prüfen**: Knopf „Vorschau“ je Zustand – setzt das Licht 10 s auf diesen Zustand, danach zurück.
-- Anzeige: gefundenes Gerät (Name, Chip), aktueller Zustand, letzter Fehler.
+Siehe „Einstellungen“ oben (Karte **Beleuchtung** auf der Vitrine-Seite, Lichtfarbe im Regel-Editor).
 
 ### Nicht in S8
 
@@ -98,18 +115,22 @@ Die Vitrine entscheidet alle paar Sekunden, welcher Zustand gilt. Wichtigster zu
 ## Akzeptanz
 
 - Nach der Installation wechselt das Licht nicht mehr selbst die Farbe; tagsüber Ruhe (warmweiß gedimmt).
-- Agent läuft → binnen 10 s blau atmend; fertig → zurück.
+- Agent läuft → binnen 10 s blau atmend; fertig → zurück (bzw. 5 s grün, wenn eingeschaltet).
 - Fehler-Meldung → rot blinkend, nach 20 s rot stehend; „Gelesen“ → binnen 10 s zurück.
 - Nachtmodus-Zeitfenster → Licht aus; danach wieder an.
+- Am 31.10. (Regel Halloween mit Lichtfarbe) → orange; am 01.11. Herbst-Farbe (Test mit festem Datum).
+- Jede Einstellung im Cockpit wirkt binnen 10 s; ungültige Werte lehnen Server und Browser ab.
 - Schalter „Beleuchtung steuern“ aus → die Vitrine setzt nichts mehr.
 - OpenRGB fehlt / Board nicht gefunden → Display läuft unverändert, Cockpit zeigt „Beleuchtung nicht gefunden“.
 - Last: Licht-Thread im Mittel < 1 % eines Kerns (Aufruf nur bei Änderung).
 - Tests: Zustands-Wahl (Reihenfolge), Befehlszeile (feste Argumente, Prüfung der Farben), nur bei Änderung, Wiederholen
   alle 10 min, Fehler stoppen den Dienst nicht, Schema, Installer-Regel nur für `048d:5711`.
 
-## Offene Fragen an Till
+## Entscheidungen (Till, 26.10.2026)
 
-1. **Farben** so lassen (Ruhe warmweiß gedimmt, arbeitet blau atmend, wartet gelb, Fehler rot)?
-2. **Grundhelligkeit** 30 % als Start ok?
-3. **Info/Erfolg** wirklich ohne Licht – oder z. B. kurz grün (5 s), wenn ein Agent fertig ist?
-4. Bei **Ruhe** lieber eine Farbe (warmweiß) oder ganz aus (nur Zustände leuchten)?
+1. Bauen wie vorgeschlagen (Farben je Zustand).
+2. Helligkeit höher als 30 % und im Admin einstellbar → Vorgabe 80 %.
+3. Farben nach Jahreszeit und Anlass, im Admin einstellbar.
+4. „So viel wie möglich im Admin steuern lassen.“
+Nicht ausdrücklich beantwortet, daher einstellbar mit vorsichtiger Vorgabe: „Fertig“ kurz grün (Vorgabe aus),
+Ruhe = Jahreszeit-Farbe (abschaltbar → feste Ruhe-Farbe oder Effekt „aus“).
