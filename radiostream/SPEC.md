@@ -1,6 +1,6 @@
-# Radio – eigenes Webradio-Sendestudio
+# Radiostream – eigenes Webradio-Sendestudio
 
-> Neues Modul `radio`. Idee von Till (26.10.2026): Früher hatte er ein eigenes Webradio-Sendestudio. Die Musik liegt auf
+> Neues Modul `radiostream` (Name von Till, 26.10.). Idee von Till (26.10.2026): Früher hatte er ein eigenes Webradio-Sendestudio. Die Musik liegt auf
 > dem NAS. Gehört wird zuhause und über Tailscale. Dazu kommt Live-Senden für einen Bekannten mit Lizenz
 > (My-Hitradio24 über laut.fm). Task 3506120a.
 > **Status: Plan. Gebaut wird erst nach Tills Freigabe, Etappe für Etappe.**
@@ -53,7 +53,7 @@ Ein Sendestudio in HydraHive:
                                                           ├─ /          statische Seite mit Player
                                                           ├─ /stream    → Icecast (127.0.0.1)
                                                           └─ /jetzt     → Icecast-Status (nur Titel)
-NAS (nur lesen) ──SMB──▶  Modul radio (HydraHive-Backend)
+NAS (nur lesen) ──SMB──▶  Modul radiostream (HydraHive-Backend)
                            ├─ Bibliothek: Einlesen, Suche, Rotation (SQLite + FTS5)
                            ├─ Steuerung: Playlist-Wahl, Sendeplan, Live-Knopf
                            └─ HTTP-Schnittstelle nur für Liquidsoap („nächster Titel“, Datei holen)
@@ -75,11 +75,11 @@ NAS (nur lesen) ──SMB──▶  Modul radio (HydraHive-Backend)
 ## Hörer-Seite (Till, 26.10.: „auch Hörer ohne HydraHive, nur ein Streamplayer, extra Port, kein LLM-Kontakt“)
 
 **Grundsatz: völlig getrennt von HydraHive.** Die Hörer-Seite ist ein **eigener nginx-Server-Block** auf einem eigenen
-Port (Standard **8800**, einstellbar). Er kennt nur drei Wege und sonst nichts:
+Port (**8800**, einstellbar; Till 26.10.). Er kennt nur drei Wege und sonst nichts:
 
 | Weg | Ziel | Inhalt |
 |---|---|---|
-| `/` | statische Dateien unter `/var/lib/hydrahive2/radio/public/` | eine HTML-Seite mit Player |
+| `/` | statische Dateien unter `/var/lib/hydrahive2/radiostream/public/` | eine HTML-Seite mit Player |
 | `/stream` (und `/stream.mp3`, `/stream.m3u`) | `127.0.0.1:<icecast>/radio.mp3` | der Audio-Stream |
 | `/jetzt` | `127.0.0.1:<icecast>/status-json.xsl` | „Jetzt läuft“ (nur Künstler/Titel, per nginx gefiltert) |
 
@@ -98,10 +98,10 @@ Alles andere liefert 404.
 - **Gestaltung im Studio:** Sendername, Untertitel, Logo und Farben trägt man im Modul ein (Reiter „Hörer-Seite“). Das
   Modul **erzeugt daraus statische Dateien**. Die Hörer-Seite ruft also nie HydraHive auf, um sich anzuzeigen.
 - **Erreichbarkeit:** Wo Hörer herkommen dürfen, ist einstellbar:
-  - **„Heimnetz und Tailscale“** (Standard): nginx erlaubt nur private Adressen (`10/8`, `172.16/12`, `192.168/16`),
+  - **„Heimnetz und Tailscale“:** nginx erlaubt nur private Adressen (`10/8`, `172.16/12`, `192.168/16`),
     Tailscale (`100.64/10`) und `127.0.0.1`. Alles andere bekommt 403.
-  - **„Alle“:** für Hörer aus dem Internet. Dafür muss Till den Port am Router selbst freigeben. Das Modul öffnet am
-    Router nichts. Der Hinweis dazu steht in der Oberfläche.
+  - **„Alle“** (Standard, Till 26.10.): für Hörer aus dem Internet. Den Port leitet Till selbst durch Firewall und
+    Fritzbox. Das Modul öffnet am Router nichts. Der Hinweis dazu steht in der Oberfläche.
   - **„Aus“:** Die Hörer-Seite ist nicht erreichbar, nur der interne Stream läuft.
 - **Schutz vor Überlast:**
   - Höchstzahl gleichzeitiger Hörer (Icecast `max-listeners`, Standard 50, einstellbar).
@@ -126,7 +126,7 @@ Je Etappe gilt dieselbe Reihenfolge: Bauplan-Nachtrag, rote Tests, Code, Prüfun
 
 ## Bauplan Etappe 1 – Bibliothek (26.10.)
 
-### Einstellungen (Oberfläche → Radio → Einstellungen, nur Admins)
+### Einstellungen (Oberfläche → Radiostream → Einstellungen, nur Admins)
 
 - **Musikquelle:**
   - Adresse `smb://host/freigabe[/unterordner]`.
@@ -148,7 +148,8 @@ Je Etappe gilt dieselbe Reihenfolge: Bauplan-Nachtrag, rote Tests, Code, Prüfun
   Kommen sie wieder, sind sie wieder da. Später geht so keine Abspiel-Historie verloren.
 - **Hintergrund:**
   - Läuft in einem Hintergrund-Thread, nie in der Ereignisschleife.
-  - Höchstens 4 Stränge parallel (Konstante), um NAS und Plex nicht zu überlasten.
+  - **Ein Strang** (Till 26.10.: „gemütlich reicht“). Erstes Einlesen etwa 3 h, NAS und Plex bleiben entspannt.
+    Die Zahl ist eine Konstante; mehr Stränge nur nach Rücksprache.
   - Speichern in Paketen zu 500 Titeln. Ein Neustart setzt am letzten Paket fort und fängt nicht von vorn an.
 - **Fortschritt** sichtbar: Ordner durchgesehen, Titel neu/geändert/fehlend, Fehler, geschätzte Restzeit, Abbrechen.
 - **Automatisch:** `register_job` prüft stündlich, ob ein Durchgang fällig ist (Standard: täglich um 4 Uhr). Beim
@@ -158,21 +159,21 @@ Je Etappe gilt dieselbe Reihenfolge: Bauplan-Nachtrag, rote Tests, Code, Prüfun
 
 ### Daten (Modul-DB, Migration `001_library.sql`)
 
-- `module_radio_sources`: `source_id`, `url` (ohne Passwort), `credential_name`, `owner`, `last_scan_*`, `state`.
-- `module_radio_tracks`:
+- `module_radiostream_sources`: `source_id`, `url` (ohne Passwort), `credential_name`, `owner`, `last_scan_*`, `state`.
+- `module_radiostream_tracks`:
   - `track_id` (stabil: Hash aus `source_id` und Pfad), `source_id`, `rel_path` (einmalig je Quelle), `size`, `mtime`.
   - `artist`, `album_artist`, `title`, `album`, `genre`, `year`, `track_no`, `duration_s`, `bitrate`, `sample_rate`,
     `format`, `replaygain_db`.
   - `state` (`ok`, `missing`, `error`), `error_code`, `first_seen`, `last_seen`.
-- `module_radio_tracks_fts`: FTS5 über Künstler, Titel, Album und Genre (Inhalt aus `tracks`, per Trigger aktuell).
-- `module_radio_scan_errors`: Pfad, Code, Zeitpunkt (höchstens die letzten 5.000).
+- `module_radiostream_tracks_fts`: FTS5 über Künstler, Titel, Album und Genre (Inhalt aus `tracks`, per Trigger aktuell).
+- `module_radiostream_scan_errors`: Pfad, Code, Zeitpunkt (höchstens die letzten 5.000).
 - Indizes auf `(source_id, rel_path)`, `artist`, `genre`, `year`, `state`.
 
 ### Abspielen im Browser (nur zum Vorhören)
 
-- `GET /api/modules/radio/tracks/{id}/audio` liest die Datei per SMB und reicht sie mit `Range` durch.
+- `GET /api/modules/radiostream/tracks/{id}/audio` liest die Datei per SMB und reicht sie mit `Range` durch.
 - **FLAC/WMA** werden für das Vorhören mit ffmpeg nach MP3 192k umgewandelt, ohne Zwischendatei.
-- Nur angemeldete Nutzer mit der Freigabe `module.radio`.
+- Nur angemeldete Nutzer mit der Freigabe `module.radiostream`.
 
 ### Schnittstellen
 
@@ -185,10 +186,11 @@ Alle Schnittstellen verlangen eine Anmeldung. Einstellungen und Einlesen sind nu
   - Blättern mit Cursor, höchstens 200 Titel je Seite.
 - `GET /stats`: Anzahl der Titel, Gesamtdauer, Formate, die Top-Genres und Jahrzehnte, Fehlerzahl.
 - `GET /artists` und `GET /genres`: Listen mit Anzahl.
-- **Fehler** über `coded()` mit eigenem Text in Deutsch und Englisch. Codes sind zum Beispiel `radio_source_unreachable`,
-  `radio_auth_failed`, `radio_share_not_found`, `radio_scan_running`, `radio_not_configured`.
+- **Fehler** über `coded()` mit eigenem Text in Deutsch und Englisch. Codes sind zum Beispiel `radiostream_source_unreachable`,
+  `radiostream_auth_failed`, `radiostream_share_not_found`, `radiostream_scan_running`,
+  `radiostream_not_configured`.
 
-### Oberfläche (Modul-Seite „Radio“)
+### Oberfläche (Modul-Seite „Radiostream“)
 
 - **Reiter „Bibliothek“** (Etappe 1 sichtbar, die übrigen Reiter erscheinen erst mit ihren Etappen):
   - Oben Zahlen: Titel, Spielzeit, Künstler, Genres. Daneben der Stand des Einlesens mit Fortschrittsbalken.
@@ -201,8 +203,8 @@ Alle Schnittstellen verlangen eine Anmeldung. Einstellungen und Einlesen sind nu
 
 ### Manifest
 
-- `id: radio`, Name „Radio“, Symbol `Radio`, `nav_group: working`.
-- Freigabe `module.radio` (Standard `admin_only`).
+- `id: radiostream`, Name „Radiostream“, Symbol `Radio`, `nav_group: working`.
+- Freigabe `module.radiostream` (Standard `admin_only`).
 - `has_service: false`. Die Dienste kommen erst in Etappe 2.
 - **Abhängigkeit mutagen:** Module bringen bisher keine Python-Pakete mit. Zwei Wege:
   - **(a)** mutagen kommt in die Kern-Abhängigkeiten (`core/pyproject.toml`). Das ist ein kleiner Kern-PR vorab.
@@ -233,14 +235,14 @@ auf das NAS.
 ## Spätere Etappen (Grobskizze, je Etappe eigener Bauplan)
 
 **Etappe 2 – Sendebetrieb:**
-- `extension/install.sh` installiert `icecast2` und `liquidsoap` (apt). Dienste `hydrahive-radio-icecast` und
-  `hydrahive-radio-liquidsoap`, nur auf 127.0.0.1. Passwörter werden erzeugt und liegen in `/etc/hydrahive2`, 0600.
+- `extension/install.sh` installiert `icecast2` und `liquidsoap` (apt). Dienste `hydrahive-radiostream-icecast` und
+  `hydrahive-radiostream-liquidsoap`, nur auf 127.0.0.1. Passwörter werden erzeugt und liegen in `/etc/hydrahive2`, 0600.
 - **AutoDJ:**
   - Gleicher Künstler frühestens nach 60 min, gleicher Titel frühestens nach 3 Tagen (einstellbar).
   - Weiche Überblendung, gleiche Lautheit (ReplayGain oder Liquidsoap-Normalisierung).
   - Stille am Titelende wird abgeschnitten.
 - **Stream** über die Hörer-Seite (MP3 192k, optional AAC). Der nginx-Server-Block wird vom Modul geschrieben
-  (`/etc/nginx/sites-available/hydrahive-radio`). Vor dem Neuladen läuft `nginx -t`, die alte Fassung bleibt bei
+  (`/etc/nginx/sites-available/hydrahive-radiostream`). Vor dem Neuladen läuft `nginx -t`, die alte Fassung bleibt bei
   Fehlern.
 - **Tests für die Abschottung:**
   - Die erzeugte nginx-Konfiguration enthält nur `/`, `/stream*` und `/jetzt`.
@@ -264,10 +266,14 @@ auf das NAS.
 
 **Etappe 5 – Sendeplan:** Wochenraster, Regeln je Zeitfenster (Genre, Jahrzehnt, Playlist), Sondersendungen.
 
-## Offene Fragen an Till
+## Entscheidungen (Till, 26.10.2026)
 
-1. **mutagen:** in den Kern (Empfehlung) oder als Kopie im Modul?
-2. **Erstes Einlesen:** Ist es in Ordnung, wenn es nachts läuft (etwa 1 h mit 4 Strängen) und das NAS dabei
-   beschäftigt ist? Oder lieber gedrosselt mit 1 Strang (etwa 3 h)?
-3. **Modulname:** „Radio“ oder ein eigener Name?
-4. **Hörer-Seite:** Port 8800 recht? Standard „Heimnetz und Tailscale“, oder sollen von Anfang an alle hören dürfen?
+1. **mutagen kommt fest in den Kern** (`core/pyproject.toml`). Das ist ein eigener kleiner Kern-PR vor Etappe 1, damit
+   jedes Update es mitbringt.
+2. **Erstes Einlesen gemütlich:** ein Strang, etwa 3 h.
+3. **Name:** „Radiostream“, Modul-ID `radiostream`.
+4. **Hörer-Seite:** Port 8800, Standard-Erreichbarkeit „Alle“. Firewall und Fritzbox richtet Till selbst ein.
+
+**Hinweis:** Hörer aus dem Internet über den eigenen Port machen den Server selbst zu einem öffentlichen Sender. Die
+Lizenz von My-Hitradio24 gilt für deren Sendung bei laut.fm (Etappe 4), nicht automatisch für diesen Port. Was über
+8800 öffentlich läuft, verantwortet Till.
