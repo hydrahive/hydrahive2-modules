@@ -38,9 +38,24 @@ vendor="${found%%:*}"
 product="${found##*:}"
 [[ "${vendor}${product}" =~ ^[0-9a-f]{8}$ && "${USER_NAME}" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || {
   echo "Vitrine-Licht: unerwarteter Gerätename oder Nutzer – nichts eingerichtet"; exit 0; }
+# Nur GROUP reicht nicht (live .2, 26.10.): Mit angemeldeter Kiosk-Sitzung legt uaccess eine ACL mit `group::---` auf
+# das Gerät, die überstimmt die Gruppe. Ein benannter ACL-Eintrag für die HydraHive-Gruppe übersteht uaccess.
+match="SUBSYSTEM==\\\"hidraw\\\", ATTRS{idVendor}==\\\"${vendor}\\\", ATTRS{idProduct}==\\\"${product}\\\""
 sudo -n bash -c "printf '%s\n' '# HydraHive Vitrine S8: Mainboard-Licht (${found}) für die HydraHive-Gruppe' \
-  'SUBSYSTEM==\"hidraw\", ATTRS{idVendor}==\"${vendor}\", ATTRS{idProduct}==\"${product}\", MODE=\"0660\", GROUP=\"${USER_NAME}\"' \
-  | tee '${RULE}' >/dev/null
-udevadm control --reload-rules && udevadm trigger --subsystem-match=hidraw --attr-match=idVendor=${vendor}" \
+  \"${match}, MODE=\\\"0660\\\", GROUP=\\\"${USER_NAME}\\\"\" \
+  \"${match}, RUN+=\\\"/usr/bin/setfacl -m g:${USER_NAME}:rw \\\$devnode\\\"\" \
+  | tee '${RULE}' >/dev/null && udevadm control --reload-rules" \
   || { echo "Vitrine-Licht: Regel nicht angelegt"; exit 0; }
-echo "Vitrine-Licht: eingerichtet (${found}, Regel ${RULE})"
+
+# Vorhandene Geräte jetzt anwenden. Nicht mit --attr-match: idVendor sitzt am USB-Elterngerät, nicht am hidraw-Gerät
+# (live .2: der Filter fand nichts). Stattdessen die hidraw-Geräte mit passender HID_ID heraussuchen.
+SYS="${VITRINE_SYS_HIDRAW:-/sys/class/hidraw}"
+want="$(printf '0003:0000%s:0000%s' "${vendor^^}" "${product^^}")"
+devs=()
+for d in "${SYS}"/hidraw*; do
+  grep -qx "HID_ID=${want}" "${d}/device/uevent" 2>/dev/null && devs+=("${d}")
+done
+if [ "${#devs[@]}" -gt 0 ]; then
+  sudo -n bash -c "udevadm trigger --action=change ${devs[*]} && udevadm settle" || true
+fi
+echo "Vitrine-Licht: eingerichtet (${found}, Regel ${RULE}, ${#devs[@]} Gerät(e) angewendet)"

@@ -134,3 +134,14 @@ Siehe „Einstellungen“ oben (Karte **Beleuchtung** auf der Vitrine-Seite, Lic
 4. „So viel wie möglich im Admin steuern lassen.“
 Nicht ausdrücklich beantwortet, daher einstellbar mit vorsichtiger Vorgabe: „Fertig“ kurz grün (Vorgabe aus),
 Ruhe = Jahreszeit-Farbe (abschaltbar → feste Ruhe-Farbe oder Effekt „aus“).
+
+## Nachtrag 26.10.2026 – Abnahme auf .2 (0.14.0 → 0.14.1)
+
+- 0.14.0 fand das Board nicht: Die angemeldete Kiosk-Sitzung (uaccess) legt eine ACL mit `group::---` auf das
+  hidraw-Gerät, die überstimmt `GROUP=hydrahive`. Dazu fand `udevadm trigger --attr-match=idVendor=…` nichts, weil das
+  Attribut am USB-Elterngerät sitzt – die Regel griff nach der Installation gar nicht.
+- 0.14.1: Die Regel setzt zusätzlich per `RUN+="/usr/bin/setfacl -m g:<dienstnutzer>:rw $devnode"` einen benannten
+  ACL-Eintrag (übersteht uaccess, am Gerät mit `udevadm trigger --action=add` geprüft); der Installer wendet die Regel
+  auf die hidraw-Geräte mit passender `HID_ID` an.
+- Till 26.10.: „nun leuchtet es und geht alles“.
+
