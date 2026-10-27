@@ -299,3 +299,103 @@ def test_kein_zweiter_lauf_gleichzeitig(db_ready):
         scan_state.finish()
     assert scan_state.try_begin() is True
     scan_state.finish()
+
+
+# --- Befund hydratest 27.10.: SMB baute nach ~4 min neu auf und kannte die Anmeldung nicht mehr --------------------
+
+def test_jeder_smb_zugriff_bringt_die_anmeldung_mit(monkeypatch):
+    """smbclient meldet sich bei einem Neuaufbau nur mit den Angaben des jeweiligen Aufrufs an. Ohne username/password
+    in jedem Aufruf brach das Einlesen nach 2.086 von 175.465 Titeln mit SMBAuthenticationError ab."""
+    from backend import smb_source
+    calls = []
+
+    class Entry:
+        def __init__(self, name, d):
+            self.name, self._d = name, d
+
+        def is_dir(self):
+            return self._d
+
+        def is_file(self):
+            return not self._d
+
+        def stat(self):
+            class S:
+                st_size, st_mtime = 3, 4.0
+            return S()
+
+    class FakeSmb:
+        def register_session(self, host, **kw):
+            calls.append(("register", host, kw.get("username"), kw.get("password")))
+
+        def listdir(self, path, **kw):
+            calls.append(("listdir", path, kw.get("username"), kw.get("password")))
+            return []
+
+        def scandir(self, path, **kw):
+            calls.append(("scandir", path, kw.get("username"), kw.get("password")))
+            return [Entry("a.mp3", False)] if path.endswith("Musik") else []
+
+        def open_file(self, path, mode="r", **kw):
+            calls.append(("open", path, kw.get("username"), kw.get("password")))
+            import io
+            return io.BytesIO(b"x")
+
+        def delete_session(self, host, **kw):
+            pass
+
+    import sys
+    monkeypatch.setitem(sys.modules, "smbclient", FakeSmb())
+    conn = smb_source._SmbConn("nas.test", "Musik", "musik", "pw", "")
+    list(conn.walk())
+    conn.top_dirs()
+    conn.open("a.mp3").read()
+    conn.close()
+    for c in calls:
+        assert c[2:] == ("musik", "pw"), c
+
+
+def test_smb_anmeldefehler_mittendrin_wird_zum_fehlercode():
+    """smbprotocol-Fehler sind keine OSError – sie dürfen den Durchgang nicht als ‚unbekannter Fehler‘ abbrechen."""
+    from backend import smb_source
+    from smbprotocol.exceptions import SMBAuthenticationError
+    assert smb_source._map_error(SMBAuthenticationError("Failed to authenticate")).code == "radiostream_auth_failed"
+
+
+def test_lesefehler_der_freigabe_mittendrin_bricht_nicht_ab(source, fake_share, monkeypatch):
+    """Ein Fehler beim Öffnen einer einzelnen Datei (auch ein SMB-Fehler, keine OSError) landet in der Fehlerliste."""
+    from smbprotocol.exceptions import SMBException
+    fake_share.put("A/B/01 x.mp3", audio("mp3", title="x"))
+    fake_share.put("A/B/02 y.mp3", audio("mp3", title="y"))
+    orig = scanner._read_tags
+
+    def flaky(conn, rel):
+        if rel.endswith("01 x.mp3"):
+            raise SMBException("Verbindung kurz weg")
+        return orig(conn, rel)
+
+    monkeypatch.setattr(scanner, "_read_tags", flaky)
+    r = _scan()
+    assert r.added == 1 and r.errors == 1 and r.cancelled is False
+    assert {e["rel_path"]: e["code"] for e in library.scan_errors()} == {"A/B/01 x.mp3": "read_failed"}
+
+
+def test_verbindung_bricht_ganz_weg_durchgang_endet_mit_fehler(source, fake_share, monkeypatch):
+    """Ist die Freigabe mitten im Durchgang ganz weg (Ordner nicht mehr lesbar), endet der Lauf geordnet mit Fehlercode
+    statt mit einem Absturz – und markiert nichts als verschwunden."""
+    from backend.smb_source import SourceError
+    fake_share.put("A/B/01 x.mp3", audio("mp3"))
+    _scan()
+
+    def walk_dies(self):
+        raise SourceError("radiostream_source_unreachable")
+        yield  # pragma: no cover
+
+    from smb_fake import _Conn
+    monkeypatch.setattr(_Conn, "walk", walk_dies)
+    with pytest.raises(SourceError):
+        _scan()
+    assert settings_store.get()["last_scan_error"] == "radiostream_source_unreachable"
+    assert _track("A/B/01 x.mp3")["state"] == "ok"
+    from backend import scan_state
+    assert scan_state.snapshot()["running"] is False
