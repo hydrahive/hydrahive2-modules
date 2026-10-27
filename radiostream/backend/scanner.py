@@ -83,7 +83,9 @@ def _process(conn, source_id: str, known: dict, seen: set, res: ScanResult) -> b
                 batch.append((rel, size, mtime, _read_tags(conn, rel)))
             except tags.TagError:
                 errors.append((rel, "unreadable_tags"))
-            except OSError:
+            except SourceError:
+                raise
+            except Exception:  # noqa: BLE001 – OSError oder SMB-Fehler: diese eine Datei ist nicht lesbar
                 errors.append((rel, "read_failed"))
             scan_state.add(done=1)
             if len(batch) + len(errors) >= BATCH:
@@ -111,7 +113,11 @@ def run_scan() -> ScanResult:
         source_id = src["source_id"]
         known = library.known(source_id)
         seen: set[str] = set()
-        complete = _process(conn, source_id, known, seen, res) and not scan_state.cancelled()
+        try:
+            complete = _process(conn, source_id, known, seen, res) and not scan_state.cancelled()
+        except SourceError as exc:   # Freigabe mitten im Durchgang ganz weg: geordnet beenden, nichts als fehlend
+            settings_store.mark("error", error=exc.code)
+            raise
         if complete:
             gone = [rel for rel, (_, _, st) in known.items() if rel not in seen and st != "missing"]
             res.missing = library.set_state(source_id, gone, "missing")

@@ -63,7 +63,7 @@ def _connect(host: str, share: str, user: str, password: str, base: str = ""):
 
 def _map_error(exc: Exception) -> SourceError:
     text = f"{type(exc).__name__} {exc}".lower()
-    if "logon" in text or "access_denied" in text or "access is denied" in text or "authentication" in text:
+    if "logon" in text or "access_denied" in text or "access is denied" in text or "authenticat" in text:
         return SourceError("radiostream_auth_failed")
     if "bad_network_name" in text or "object_name_not_found" in text or "object_path_not_found" in text:
         return SourceError("radiostream_share_not_found")
@@ -71,14 +71,19 @@ def _map_error(exc: Exception) -> SourceError:
 
 
 class _SmbConn:
+    """Verbindung zur Freigabe. Die Anmeldung geht bei JEDEM Aufruf mit (`self._auth`): smbclient baut eine
+    abgelaufene Verbindung selbst neu auf, nutzt dafür aber nur die Angaben des jeweiligen Aufrufs – ohne sie brach das
+    Einlesen auf hydratest nach ~4 min ab (27.10.2026, SMBAuthenticationError nach 2.086 von 175.465 Titeln)."""
+
     def __init__(self, host: str, share: str, user: str, password: str, base: str):
         import smbclient  # aus smbprotocol
         self._smb = smbclient
         self._host = host
+        self._auth = {"username": user, "password": password, "connection_timeout": 15}
         self._root = rf"\\{host}\{share}" + ("\\" + base.replace("/", "\\") if base else "")
         try:
-            smbclient.register_session(host, username=user, password=password, connection_timeout=15)
-            smbclient.listdir(self._root)
+            smbclient.register_session(host, **self._auth)
+            smbclient.listdir(self._root, **self._auth)
         except Exception as exc:  # noqa: BLE001 – Fehler des Fremdsystems → verständlicher Code
             logger.info("Radiostream: Verbindung zu %s fehlgeschlagen: %s", host, type(exc).__name__)
             raise _map_error(exc) from None
@@ -87,7 +92,7 @@ class _SmbConn:
         return self._root + ("\\" + rel.replace("/", "\\") if rel else "")
 
     def top_dirs(self) -> list[str]:
-        return sorted(e.name for e in self._smb.scandir(self._root) if e.is_dir())
+        return sorted(e.name for e in self._smb.scandir(self._root, **self._auth) if e.is_dir())
 
     def walk(self):
         """(rel_dir, [(name, size, mtime_int), …]) je Ordner, Ordner in fester Reihenfolge."""
@@ -96,10 +101,12 @@ class _SmbConn:
             rel = stack.pop()
             files, dirs = [], []
             try:
-                entries = list(self._smb.scandir(self._abs(rel)))
+                entries = list(self._smb.scandir(self._abs(rel), **self._auth))
             except OSError as exc:
                 logger.info("Radiostream: Ordner nicht lesbar (%s): %s", rel or "/", type(exc).__name__)
                 continue
+            except Exception as exc:  # noqa: BLE001 – smbprotocol-Fehler sind keine OSError: Verbindung ganz weg
+                raise _map_error(exc) from None
             for e in entries:
                 if e.is_dir():
                     dirs.append(f"{rel}/{e.name}" if rel else e.name)
@@ -110,7 +117,12 @@ class _SmbConn:
             stack.extend(sorted(dirs, reverse=True))
 
     def open(self, rel_path: str):
-        return self._smb.open_file(self._abs(rel_path), mode="rb")
+        try:
+            return self._smb.open_file(self._abs(rel_path), mode="rb", **self._auth)
+        except OSError:
+            raise
+        except Exception as exc:  # noqa: BLE001 – smbprotocol-Fehler → wie ein Lesefehler dieser einen Datei
+            raise OSError(type(exc).__name__) from None
 
     def close(self) -> None:
         try:
