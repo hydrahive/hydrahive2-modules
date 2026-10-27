@@ -347,3 +347,10 @@ def test_range_ausserhalb_der_datei(client, user_headers, filled):
     size = len(client.get(f"{P}/tracks/{tid}/audio", headers=user_headers).content)
     r = client.get(f"{P}/tracks/{tid}/audio", headers={**user_headers, "Range": f"bytes={size + 10}-"})
     assert r.status_code == 200 and len(r.content) == size       # ungültiger Bereich → ganze Datei
+
+
+def test_range_genau_am_ende_ist_ungueltig(client, user_headers, filled):
+    tid = _id(client, user_headers, "Dancing Queen")
+    size = len(client.get(f"{P}/tracks/{tid}/audio", headers=user_headers).content)
+    r = client.get(f"{P}/tracks/{tid}/audio", headers={**user_headers, "Range": f"bytes={size}-{size + 5}"})
+    assert r.status_code == 200 and len(r.content) == size

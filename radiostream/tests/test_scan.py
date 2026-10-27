@@ -355,6 +355,33 @@ def test_jeder_smb_zugriff_bringt_die_anmeldung_mit(monkeypatch):
         assert c[2:] == ("musik", "pw"), c
 
 
+def test_ordner_bei_smb_fehler_mittendrin_gibt_fehlercode(monkeypatch):
+    """Ein SMB-Fehler beim Durchsehen eines Ordners (Verbindung ganz weg) wird zum Fehlercode, nicht übersprungen."""
+    import sys
+
+    from backend import smb_source
+    from smbprotocol.exceptions import SMBAuthenticationError
+
+    class FakeSmb:
+        def register_session(self, host, **kw):
+            pass
+
+        def listdir(self, path, **kw):
+            return []
+
+        def scandir(self, path, **kw):
+            raise SMBAuthenticationError("Failed to authenticate with server")
+
+        def delete_session(self, host, **kw):
+            pass
+
+    monkeypatch.setitem(sys.modules, "smbclient", FakeSmb())
+    conn = smb_source._SmbConn("nas.test", "Musik", "musik", "pw", "")
+    with pytest.raises(smb_source.SourceError) as e:
+        list(conn.walk())
+    assert e.value.code == "radiostream_auth_failed"
+
+
 def test_smb_anmeldefehler_mittendrin_wird_zum_fehlercode():
     """smbprotocol-Fehler sind keine OSError – sie dürfen den Durchgang nicht als ‚unbekannter Fehler‘ abbrechen."""
     from backend import smb_source
