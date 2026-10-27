@@ -68,15 +68,12 @@ def _migrate() -> None:
 
 @pytest.fixture
 def db_ready(setup_test_env):
-    """Tabellen da; nach dem Test sind alle Zeilen des Moduls wieder weg (nur eigene Tabellen)."""
+    """Tabellen da; nach dem Test nur die im Test neu angelegten Zeilen weg (only_own_rows)."""
     _migrate()
-    yield
-    from hydrahive.db.connection import db
-    with db() as conn:
-        for t in TABLES:
-            conn.execute(f"DELETE FROM {t}")
-        conn.commit()
     from backend import scan_state
+    scan_state.reset()
+    with only_own_rows(*TABLES):
+        yield
     scan_state.reset()
 
 
