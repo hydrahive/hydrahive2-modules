@@ -148,8 +148,11 @@ Je Etappe gilt dieselbe Reihenfolge: Bauplan-Nachtrag, rote Tests, Code, Prüfun
   Kommen sie wieder, sind sie wieder da. Später geht so keine Abspiel-Historie verloren.
 - **Hintergrund:**
   - Läuft in einem Hintergrund-Thread, nie in der Ereignisschleife.
-  - **Ein Strang** (Till 26.10.: „gemütlich reicht“). Erstes Einlesen etwa 3 h, NAS und Plex bleiben entspannt.
-    Die Zahl ist eine Konstante; mehr Stränge nur nach Rücksprache.
+  - **Ein Strang** (Till 26.10.: „gemütlich reicht“). NAS und Plex bleiben entspannt. Die Zahl ist eine Konstante;
+    mehr Stränge nur nach Rücksprache.
+  - **Gemessen auf hydratest (27.10.):** etwa 7,7 Titel/s statt der vorab geschätzten 15/s, also etwa 6 h für das
+    erste Einlesen. Gelesen werden je Datei nur 70–180 KB; die Zeit geht in Hin und Her je Datei (etwa 50–80 ms:
+    Öffnen, mehrere Sprünge in der Datei). Mehr Stränge würden das fast linear beschleunigen.
   - Speichern in Paketen zu 500 Titeln. Ein Neustart setzt am letzten Paket fort und fängt nicht von vorn an.
 - **Fortschritt** sichtbar: Ordner durchgesehen, Titel neu/geändert/fehlend, Fehler, geschätzte Restzeit, Abbrechen.
 - **Automatisch:** `register_job` prüft stündlich, ob ein Durchgang fällig ist (Standard: täglich um 4 Uhr). Beim
@@ -168,6 +171,16 @@ Je Etappe gilt dieselbe Reihenfolge: Bauplan-Nachtrag, rote Tests, Code, Prüfun
 - `module_radiostream_tracks_fts`: FTS5 über Künstler, Titel, Album und Genre (Inhalt aus `tracks`, per Trigger aktuell).
 - `module_radiostream_scan_errors`: Pfad, Code, Zeitpunkt (höchstens die letzten 5.000).
 - Indizes auf `(source_id, rel_path)`, `artist`, `genre`, `year`, `state`.
+
+### Befund während der Probe (27.10.)
+
+- **Abbruch nach etwa 4 min** (2.086 von 175.465 Titeln): smbclient baut eine abgelaufene Verbindung selbst neu auf,
+  meldet sich dabei aber nur mit den Angaben des jeweiligen Aufrufs an. Ohne Benutzer und Passwort kam
+  `SMBAuthenticationError`. **Behoben:** Jeder Zugriff (Auflisten, Durchsehen, Öffnen) gibt die Anmeldung mit.
+- SMB-Fehler sind keine `OSError`. Beim Öffnen einer Datei landen sie in der Fehlerliste (`read_failed`). Beim
+  Durchsehen eines Ordners beenden sie den Durchgang geordnet mit Fehlercode, und es wird nichts als fehlend markiert.
+- **`molkewolke.local`** wird auf hydratest nicht aufgelöst (kein mDNS, `libnss-mdns` fehlt). Auf dem Hauptserver
+  geht es. Für die Probe stand deshalb `smb://192.168.178.3/Plex_Musik/` in den Einstellungen.
 
 ### Abspielen im Browser (nur zum Vorhören)
 
