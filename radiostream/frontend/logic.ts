@@ -61,6 +61,5 @@ export function audioUrl(trackId: string, token: string): string {
 /** Safe-Eintrag, dessen Adresse zur Musikquelle passt (Schrägstrich am Ende egal). */
 export function matchCredential(creds: { name: string; url_pattern: string }[], url: string): string | null {
   const norm = (u: string) => u.trim().replace(/\/+$/, "").toLowerCase()
-  if (!url.trim()) return null
   return creds.find((c) => norm(c.url_pattern) === norm(url))?.name ?? null
 }

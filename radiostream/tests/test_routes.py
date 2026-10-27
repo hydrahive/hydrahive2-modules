@@ -311,3 +311,39 @@ def test_quelle_wechseln_loescht_nichts(client, admin_headers, filled, safe):
     s = client.get(f"{P}/stats", headers=admin_headers).json()
     assert s["tracks"] == 4
     assert settings_store.get()["url"] == "smb://nas.test/Musik2"
+
+
+
+# --- Nachschärfung nach Mutanten (27.10.) ------------------------------------------------------------------------
+
+def test_jahresgrenzen_inklusive(client, user_headers, filled):
+    y = client.get(f"{P}/tracks", headers=user_headers, params={"year_from": 1986, "year_to": 1991}).json()["items"]
+    assert {i["title"] for i in y} == {"One Vision", "The Show Must Go On"}
+
+
+def test_cursor_bei_genau_voller_seite(client, user_headers, filled):
+    a = client.get(f"{P}/tracks", headers=user_headers, params={"limit": 4}).json()
+    assert len(a["items"]) == 4 and a["next_cursor"] is None
+
+
+def test_genre_filter_ohne_gross_klein(client, user_headers, filled):
+    g = client.get(f"{P}/tracks", headers=user_headers, params={"genre": "rock"}).json()["items"]
+    assert {i["title"] for i in g} == {"The Show Must Go On", "One Vision"}
+
+
+def test_safe_auswahl_nur_benutzer_passwort(client, admin_headers, safe):
+    from hydrahive.credentials.models import Credential
+    from hydrahive.credentials.store import delete_credential, save_credential
+    save_credential("boss", Credential(name="tok", type="bearer", value="x", url_pattern="https://x.test/*"))
+    try:
+        names = [i["name"] for i in client.get(f"{P}/credentials", headers=admin_headers).json()["items"]]
+        assert "plexmusik" in names and "tok" not in names
+    finally:
+        delete_credential("boss", "tok")
+
+
+def test_range_ausserhalb_der_datei(client, user_headers, filled):
+    tid = _id(client, user_headers, "Dancing Queen")
+    size = len(client.get(f"{P}/tracks/{tid}/audio", headers=user_headers).content)
+    r = client.get(f"{P}/tracks/{tid}/audio", headers={**user_headers, "Range": f"bytes={size + 10}-"})
+    assert r.status_code == 200 and len(r.content) == size       # ungültiger Bereich → ganze Datei

@@ -42,6 +42,12 @@ def test_neue_titel_mit_tags(source, fake_share):
     assert f["format"] == "flac" and f["year"] == 1991 and f["album_artist"] == "Queen"
 
 
+def test_titelnummer_aus_dem_tag_vor_dem_pfad(source, fake_share):
+    fake_share.put("A/Album/01 Lied.mp3", audio("mp3", title="Lied", tracknumber="7/12"))
+    _scan()
+    assert _track("A/Album/01 Lied.mp3")["track_no"] == 7
+
+
 def test_ohne_tags_aus_dem_pfad(source, fake_share):
     fake_share.put("Nena/99 Luftballons/03 - Leuchtturm.mp3", audio("mp3"))
     fake_share.put("Einzeln/Track.flac", audio("flac"))
@@ -58,8 +64,9 @@ def test_nur_audio_dateien(source, fake_share):
     fake_share.put("A/B/liste.m3u", b"x")
     fake_share.put("A/B/01 Lied.MP3", audio("mp3"))
     r = _scan()
-    assert r.added == 1
-    assert library.count() == 1
+    assert r.added == 1 and r.errors == 0           # Bilder/Listen sind keine Fehler, sie werden übergangen
+    assert library.count() == 1 and library.scan_errors() == []
+    assert set(fake_share.opened) == {"A/B/01 Lied.MP3"}
 
 
 def test_unveraenderte_werden_nicht_geoeffnet(source, fake_share):
@@ -232,3 +239,63 @@ def test_fortschritt_wird_gemeldet(source, fake_share):
     assert st["running"] is False
     assert st["dirs_seen"] == 1 and st["files_seen"] == 3 and st["added"] == 3
     assert st["finished_at"] and st["started_at"]
+
+
+
+# --- Nachschärfung nach Mutanten (27.10.) ------------------------------------------------------------------------
+
+def test_kuenstler_aus_dem_tag_hat_vorrang_vor_dem_pfad(source, fake_share):
+    fake_share.put("Diverse/Sampler/01 x.mp3", audio("mp3", artist="Echter Künstler", title="x"))
+    fake_share.put("Diverse/Sampler/02 y.mp3", audio("mp3", albumartist="Nur Albumkünstler", title="y"))
+    _scan()
+    assert _track("Diverse/Sampler/01 x.mp3")["artist"] == "Echter Künstler"
+    assert _track("Diverse/Sampler/02 y.mp3")["artist"] == "Nur Albumkünstler"
+
+
+def test_fehlender_titel_kommt_geaendert_zurueck(source, fake_share):
+    fake_share.put("A/B/01 x.mp3", audio("mp3", title="alt"), mtime=1)
+    _scan()
+    fake_share.remove("A/B/01 x.mp3")
+    _scan()
+    assert _track("A/B/01 x.mp3")["state"] == "missing"
+    fake_share.put("A/B/01 x.mp3", audio("mp3", title="neu"), mtime=2)
+    _scan()
+    t = _track("A/B/01 x.mp3")
+    assert t["state"] == "ok" and t["title"] == "neu"
+
+
+def test_reparierte_datei_verschwindet_aus_der_fehlerliste(source, fake_share):
+    fake_share.put("A/B/01 x.mp3", b"keine musik", mtime=1)
+    _scan()
+    assert [e["rel_path"] for e in library.scan_errors()] == ["A/B/01 x.mp3"]
+    fake_share.put("A/B/01 x.mp3", audio("mp3"), mtime=2)
+    _scan()
+    assert library.scan_errors() == []
+
+
+def test_titel_id_haengt_an_quelle_und_pfad():
+    a = library.track_id("main", "A/B/01 x.mp3")
+    assert a == library.track_id("main", "A/B/01 x.mp3")
+    assert a != library.track_id("main", "A/B/02 x.mp3")
+    assert a != library.track_id("zwei", "A/B/01 x.mp3")
+    assert a.startswith("t_") and len(a) == 26
+
+
+def test_zaehlt_nur_vorhandene(source, fake_share):
+    fake_share.put("A/B/01 x.mp3", audio("mp3"))
+    fake_share.put("A/B/02 y.mp3", audio("mp3"))
+    _scan()
+    fake_share.remove("A/B/01 x.mp3")
+    _scan()
+    assert library.count() == 1
+
+
+def test_kein_zweiter_lauf_gleichzeitig(db_ready):
+    from backend import scan_state
+    assert scan_state.try_begin() is True
+    try:
+        assert scan_state.try_begin() is False
+    finally:
+        scan_state.finish()
+    assert scan_state.try_begin() is True
+    scan_state.finish()
