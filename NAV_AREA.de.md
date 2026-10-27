@@ -38,7 +38,7 @@ Erlaubte Kennungen, festgelegt im Kern in `frontend/src/features/startdesk/areas
 
 | Bereich | Module |
 |---|---|
-| medien | studio, atelier, videoeditor, tonstudio, musicplayer |
+| medien | studio, atelier, videoeditor, tonstudio, musicplayer, radiostream |
 | schreiben | storyteller, notizbuch, scratchpad, diagramme, blueprint |
 | wissen | deepresearch, archiver, legal (`/recht`), opentor |
 | agenten | tickets |

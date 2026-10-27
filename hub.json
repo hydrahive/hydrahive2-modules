@@ -154,6 +154,11 @@
       "id": "mailbox",
       "name": "Mailbox",
       "path": "mailbox"
+    },
+    {
+      "id": "radiostream",
+      "name": "Radiostream",
+      "path": "radiostream"
     }
   ]
 }
