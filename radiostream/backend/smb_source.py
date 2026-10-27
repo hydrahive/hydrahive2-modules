@@ -115,5 +115,5 @@ class _SmbConn:
     def close(self) -> None:
         try:
             self._smb.delete_session(self._host)
-        except Exception:  # noqa: BLE001 – Aufräumen darf nie stören
-            pass
+        except Exception as exc:  # noqa: BLE001 – Aufräumen darf nie stören
+            logger.debug("Radiostream: Sitzung schließen: %s", type(exc).__name__)

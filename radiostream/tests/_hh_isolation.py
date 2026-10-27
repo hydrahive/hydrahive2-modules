@@ -93,27 +93,27 @@ def assert_isolated(when: str) -> None:
 
 # --- pytest-Hooks (conftest.py importiert sie, pytest registriert sie dort) ---
 
-def pytest_configure(config):  # noqa: ARG001
+def pytest_configure(config):
     assert_isolated("vor dem Einsammeln")
 
 
-def pytest_collection_finish(session):  # noqa: ARG001
+def pytest_collection_finish(session):
     assert_isolated("nach dem Einsammeln")
 
 
 @pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_setup(item):  # noqa: ARG001
+def pytest_runtest_setup(item):
     yield
     assert_isolated("nach dem Test-Setup")
 
 
 @pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_call(item):  # noqa: ARG001
+def pytest_runtest_call(item):
     yield
     assert_isolated("nach dem Test")
 
 
-def pytest_unconfigure(config):  # noqa: ARG001
+def pytest_unconfigure(config):
     shutil.rmtree(TEST_ROOT, ignore_errors=True)
 
 

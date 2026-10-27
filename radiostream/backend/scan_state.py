@@ -30,10 +30,9 @@ def try_begin() -> bool:
             return False
         # Ein neuer Durchgang beginnt immer ohne Abbruch-Wunsch (ein „Abbrechen“ ohne laufenden Durchgang
         # darf den nächsten nicht sofort stoppen).
-        reset_values = dict(running=True, started_at=_now(), finished_at=None, dirs_seen=0, files_seen=0, todo=0,
-                            done=0, added=0, updated=0, unchanged=0, missing=0, errors=0, error_code=None,
-                            _t0=time.monotonic(), cancel=False)
-        _state.update(reset_values)
+        _state.update({"running": True, "started_at": _now(), "finished_at": None, "dirs_seen": 0, "files_seen": 0,
+                       "todo": 0, "done": 0, "added": 0, "updated": 0, "unchanged": 0, "missing": 0, "errors": 0,
+                       "error_code": None, "_t0": time.monotonic(), "cancel": False})
         return True
 
 

@@ -16,7 +16,7 @@ def _now() -> str:
 
 def get() -> dict | None:
     with db() as conn:
-        row = conn.execute(f"SELECT {_COLS} FROM module_radiostream_sources WHERE source_id = ?",  # noqa: S608
+        row = conn.execute(f"SELECT {_COLS} FROM module_radiostream_sources WHERE source_id = ?",
                            (SOURCE_ID,)).fetchone()
     return dict(row) if row else None
 
@@ -44,6 +44,6 @@ def mark(state: str, *, started: bool = False, finished: bool = False, error: st
         sets.append("last_scan_finished = ?")
         args.append(now)
     with db() as conn:
-        conn.execute(f"UPDATE module_radiostream_sources SET {', '.join(sets)} WHERE source_id = ?",  # noqa: S608
+        conn.execute(f"UPDATE module_radiostream_sources SET {', '.join(sets)} WHERE source_id = ?",
                      (*args, SOURCE_ID))
         conn.commit()

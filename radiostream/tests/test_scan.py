@@ -6,9 +6,8 @@ Fortsetzen nach Abbruch, ein Strang, nur lesen. Nie ein echtes SMB.
 from __future__ import annotations
 
 import pytest
-from smb_fake import audio
-
 from backend import library, scanner, settings_store
+from smb_fake import audio
 
 
 @pytest.fixture

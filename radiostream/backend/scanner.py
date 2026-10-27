@@ -133,6 +133,6 @@ def start_in_background() -> None:
             run_scan()
         except SourceError as exc:
             logger.info("Radiostream: Einlesen nicht möglich: %s", exc.code)
-        except Exception:  # noqa: BLE001 – Hintergrund darf nie still sterben
+        except Exception:
             logger.exception("Radiostream: Einlesen abgebrochen")
     threading.Thread(target=_run, name="radiostream-scan", daemon=True).start()

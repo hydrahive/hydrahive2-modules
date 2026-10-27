@@ -59,7 +59,7 @@ def tracks(*, q: str = "", artist: str = "", genre: str = "", fmt: str = "", yea
                      "(?, ?, ?, ?, ?)")
         args.extend(key)
     cols = ", ".join(f"t.{c}" for c in PUBLIC)
-    sql = (f"SELECT {cols} FROM module_radiostream_tracks t {join} WHERE {' AND '.join(where)} "  # noqa: S608
+    sql = (f"SELECT {cols} FROM module_radiostream_tracks t {join} WHERE {' AND '.join(where)} "
            "ORDER BY lower(t.artist), lower(t.album), COALESCE(t.track_no, 0), lower(t.title), t.track_id "
            "LIMIT ?")
     with db() as conn:

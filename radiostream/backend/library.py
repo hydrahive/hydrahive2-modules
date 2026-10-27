@@ -36,7 +36,7 @@ def upsert_batch(source_id: str, items: list[tuple[str, int, int, dict]]) -> Non
     with db() as conn:
         for rel, size, mtime, tags in items:
             conn.execute(
-                f"INSERT INTO module_radiostream_tracks (track_id, source_id, rel_path, size, mtime, {cols}, state, "  # noqa: S608
+                f"INSERT INTO module_radiostream_tracks (track_id, source_id, rel_path, size, mtime, {cols}, state, "
                 f"error_code, first_seen, last_seen) VALUES (?, ?, ?, ?, ?, {marks}, 'ok', NULL, ?, ?) "
                 f"ON CONFLICT(source_id, rel_path) DO UPDATE SET size = excluded.size, mtime = excluded.mtime, {upd}, "
                 "state = 'ok', error_code = NULL, last_seen = excluded.last_seen",
@@ -54,9 +54,10 @@ def set_state(source_id: str, rel_paths: list[str], state: str) -> int:
     with db() as conn:
         for i in range(0, len(rel_paths), 500):
             chunk = rel_paths[i:i + 500]
+            marks = ",".join("?" for _ in chunk)
             cur = conn.execute(
                 "UPDATE module_radiostream_tracks SET state = ?, last_seen = ? WHERE source_id = ? AND rel_path IN "
-                "(%s) AND state != ?" % ",".join("?" for _ in chunk), (state, _now(), source_id, *chunk, state))  # noqa: S608
+                f"({marks}) AND state != ?", (state, _now(), source_id, *chunk, state))
             n += cur.rowcount
         conn.commit()
     return n

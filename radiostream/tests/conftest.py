@@ -74,7 +74,7 @@ def db_ready(setup_test_env):
     from hydrahive.db.connection import db
     with db() as conn:
         for t in TABLES:
-            conn.execute(f"DELETE FROM {t}")  # noqa: S608 - feste Tabellennamen
+            conn.execute(f"DELETE FROM {t}")
         conn.commit()
     from backend import scan_state
     scan_state.reset()
@@ -131,9 +131,8 @@ def safe(setup_test_env):
 @pytest.fixture
 def fake_share(monkeypatch):
     """Ordnerbaum im Speicher statt SMB (smb_fake.FakeShare); merkt sich Anmeldungen und gelesene Dateien."""
-    from smb_fake import FakeShare
-
     from backend import smb_source
+    from smb_fake import FakeShare
     share = FakeShare()
     monkeypatch.setattr(smb_source, "_connect", share.connect)
     return share

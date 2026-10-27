@@ -6,7 +6,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import StreamingResponse
-from hydrahive.api.middleware.auth import AuthPrincipal, require_principal, require_principal_or_query
+from hydrahive.api.middleware.auth import (
+    AuthPrincipal,
+    require_principal,
+    require_principal_or_query,
+)
 from hydrahive.api.middleware.errors import coded
 from hydrahive.credentials.store import list_credentials
 from pydantic import BaseModel, Field
@@ -104,7 +108,7 @@ def cancel_scan(p: Principal):
 
 @router.get("/tracks")
 def list_tracks(p: Principal, q: str = Query("", max_length=200), artist: str = Query("", max_length=300),
-                genre: str = Query("", max_length=100), format: str = Query("", max_length=10),  # noqa: A002
+                genre: str = Query("", max_length=100), format: str = Query("", max_length=10),
                 year_from: int | None = Query(None, ge=0, le=3000), year_to: int | None = Query(None, ge=0, le=3000),
                 state: str = Query("ok", pattern="^(ok|missing)$"), limit: int = Query(100, ge=1, le=200),
                 cursor: str = Query("", max_length=1000)):

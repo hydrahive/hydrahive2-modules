@@ -7,10 +7,9 @@ from __future__ import annotations
 import logging
 
 import pytest
+from backend import scanner, settings_store
 from conftest import MOD_PREFIX, SECRET
 from smb_fake import audio
-
-from backend import scanner, settings_store
 
 P = MOD_PREFIX
 
