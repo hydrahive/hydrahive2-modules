@@ -20,9 +20,11 @@ async def test_status_im_standby_ohne_sender(configured):
 
 async def test_schluessel_geht_nur_in_die_kopfzeile(configured):
     await client.status()
+    await client.set_channel("ZDF")
+    await client.set_volume("+1")
     sent = [c for c in configured.calls if c[1] != "getInterfaceInformation"]
     assert sent and all(c[4].get("X-Auth-PSK") == PSK for c in sent)
-    assert all(PSK not in repr(c[2]) for c in configured.calls)
+    assert all(PSK not in repr(c[2]) for c in configured.calls)         # nie in den Parametern
 
 
 async def test_senderliste_mit_version_die_der_tv_kann(configured):
@@ -77,13 +79,15 @@ async def test_lautstaerke_absolut_und_relativ(configured):
     assert (await client.set_volume("+3"))["volume"] == 18
 
 
-@pytest.mark.parametrize("value", ["61", "100", "+50", "-21", "+21"])
-async def test_lautstaerke_grenzen(configured, value):
-    configured.volume = 40
+@pytest.mark.parametrize(("start", "value"), [(40, "61"), (40, "100"), (40, "+50"), (40, "-21"), (40, "+21"),
+                                              (50, "61"), (55, "+6"), (58, "70")])
+async def test_lautstaerke_grenzen(configured, start, value):
+    """(50, „61“) und (55, „+6“) reißen nur die Obergrenze 60, nicht die Schritt-Grenze 20."""
+    configured.volume = start
     with pytest.raises(client.TVError) as e:
         await client.set_volume(value)
     assert e.value.code == "tv_volume_limit"
-    assert configured.volume == 40
+    assert configured.volume == start
 
 
 @pytest.mark.parametrize("value", ["laut", "", "1.5", "++2", "-"])
@@ -144,3 +148,39 @@ async def test_fehler_klar_benannt_und_ohne_schluessel(configured, mode, psk, co
 
 async def test_verbindung_testen(configured):
     assert await client.test() == {"ok": True, "model": "KD-60XF8305", "power": "on"}
+
+
+async def test_eigene_grenze_aus_den_einstellungen(configured):
+    from backend import settings_store
+    settings_store.save(name="TV", address="192.168.178.186", psk=None, volume_limit=30, user="admin")
+    configured.volume = 25
+    with pytest.raises(client.TVError) as e:
+        await client.set_volume("31")
+    assert e.value.code == "tv_volume_limit"
+    assert (await client.set_volume("30"))["volume"] == 30
+
+
+async def test_404_im_fehlerfeld_heisst_neustart(configured, monkeypatch):
+    """Der echte TV antwortete mit HTTP 200 und {"error": [404, "Not Found"]}, nicht nur mit HTTP 404."""
+    from backend import client as c
+
+    async def http200_mit_404(ip, service, method, params, version, psk):
+        return 200, {"error": [404, "Not Found"]}
+    monkeypatch.setattr(c, "_post", http200_mit_404)
+    with pytest.raises(client.TVError) as e:
+        await client.status()
+    assert e.value.code == "tv_needs_restart"
+
+
+async def test_umschalten_meldet_was_der_tv_wirklich_zeigt(configured, monkeypatch):
+    """Ignoriert der TV den Befehl, muss das Ergebnis den alten Sender zeigen – nicht den gewünschten."""
+    real = configured.handle
+
+    def ignore_set(ip, service, method, params, version, headers):
+        if method == "setPlayContent":
+            configured.calls.append((service, method, params, version, dict(headers)))
+            return 200, {"result": []}
+        return real(ip, service, method, params, version, headers)
+    monkeypatch.setattr(configured, "handle", ignore_set)
+    s = await client.set_channel("ZDF")
+    assert s["channel"] == {"number": 6, "name": "SAT.1"}

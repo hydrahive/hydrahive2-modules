@@ -35,6 +35,7 @@ def test_erstes_speichern_braucht_schluessel(client, fake_tv):
 
 
 def test_verbindung_testen(client, configured):
+    assert client.post(f"{P}/test", headers=login(client, "testuser")).status_code == 403
     r = client.post(f"{P}/test", headers=login(client, "admin"))
     assert r.status_code == 200 and r.json() == {"ok": True, "model": "KD-60XF8305", "power": "on"}
 
@@ -42,7 +43,8 @@ def test_verbindung_testen(client, configured):
 def test_status_und_listen_fuer_alle(client, configured):
     h = login(client, "testuser")
     assert client.get(f"{P}/status", headers=h).json()["channel"]["name"] == "SAT.1"
-    assert len(client.get(f"{P}/channels", headers=h).json()) == 6
+    chs = client.get(f"{P}/channels", headers=h).json()
+    assert len(chs) == 6 and chs[1] == {"number": 2, "name": "ZDF HD"}      # ohne interne Sony-Adresse (uri)
     assert client.get(f"{P}/apps", headers=h).json()[0] == {"name": "Netflix"}
 
 
