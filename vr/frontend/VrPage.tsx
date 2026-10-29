@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { vrApi, type Headset } from "./api"
 import { PairCard } from "./PairCard"
+import leerBild from "./assets/leer.webp"
 
 /** VR-Brillen: koppeln per QR, gekoppelte Brillen sehen und entfernen. Jeder nur seine eigenen. */
 export function VrPage() {
@@ -45,7 +46,7 @@ export function VrPage() {
           <span>{t("headsets")}</span>
           <span>{t("online", { count: online })}</span>
         </div>
-        {headsets.length === 0 && <p className="px-4 py-6 text-sm text-zinc-500">{t("empty")}</p>}
+        {headsets.length === 0 && <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-sm text-zinc-500">{t("empty")}</p></div>}
         {headsets.map((h) => (
           <div key={h.id} className="flex items-center justify-between border-b border-white/5 px-4 py-3 last:border-0">
             <div>
