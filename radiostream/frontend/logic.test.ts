@@ -58,6 +58,13 @@ describe("Radiostream: Logik (Etappe 1)", () => {
     expect(scanLabel({ running: true, done: 30, todo: 120, files_seen: 500, eta_s: 125 })).toEqual({ key: "scan.running", pct: 25, eta_min: 3 })
     expect(scanLabel({ running: true, done: 0, todo: 0, files_seen: 40, eta_s: null })).toEqual({ key: "scan.listing", pct: null, eta_min: null })
     expect(scanLabel({ running: false, done: 0, todo: 0, files_seen: 0, eta_s: null })).toEqual({ key: "scan.idle", pct: null, eta_min: null })
+    // Abgebrochen (z. B. Neustart mittendrin): klar sagen statt „Bereit“ – Befund Hauptserver 29.10.2026
+    expect(scanLabel({ running: false, done: 0, todo: 0, files_seen: 0, eta_s: null }, "radiostream_scan_interrupted"))
+      .toEqual({ key: "scan.interrupted", pct: null, eta_min: null })
+    expect(scanLabel({ running: true, done: 30, todo: 120, files_seen: 500, eta_s: 125 }, "radiostream_scan_interrupted"))
+      .toEqual({ key: "scan.running", pct: 25, eta_min: 3 })
+    expect(scanLabel({ running: false, done: 0, todo: 0, files_seen: 0, eta_s: null }, "radiostream_auth_failed"))
+      .toEqual({ key: "scan.idle", pct: null, eta_min: null })
   })
 
   it("Vorhören mit Anmeldung über ?token= (der Player kann keinen Kopf senden)", () => {

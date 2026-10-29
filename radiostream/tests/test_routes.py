@@ -354,3 +354,14 @@ def test_range_genau_am_ende_ist_ungueltig(client, user_headers, filled):
     size = len(client.get(f"{P}/tracks/{tid}/audio", headers=user_headers).content)
     r = client.get(f"{P}/tracks/{tid}/audio", headers={**user_headers, "Range": f"bytes={size}-{size + 5}"})
     assert r.status_code == 200 and len(r.content) == size
+
+
+def test_abgebrochenes_einlesen_steht_in_den_einstellungen(client, admin_headers, safe):
+    """Die Seite bekommt den Grund, damit sie „abgebrochen – bitte neu starten“ zeigen kann."""
+    from backend import nightly, settings_store
+    settings_store.save(owner="boss", url="smb://nas.test/Musik", credential_name=safe)
+    settings_store.mark("scanning", started=True)
+    nightly.recover_interrupted()
+    r = client.get("/api/modules/radiostream/settings", headers=admin_headers)
+    assert r.status_code == 200
+    assert r.json()["state"] == "error" and r.json()["last_scan_error"] == "radiostream_scan_interrupted"
