@@ -56,8 +56,8 @@ Modul (Python, HydraHive-Backend)                    Liquidsoap (Dienst)        
      entsteht;
    - Gespielt-Liste in einer eigenen Tabelle `module_radiostream_plays` (Titel, Zeit), 30 Tage aufbewahrt.
 3. **Zuspielung an Liquidsoap (`feed`-Routen)**:
-   - `GET /api/modules/radiostream/feed/next`: gibt die URL des nächsten Titels zurück und trägt ihn als gespielt ein.
-   - `GET /api/modules/radiostream/feed/file/<track_id>`: liefert die Datei vom NAS als Strom. MP3 und FLAC gehen
+   - `GET /api/module-device/radiostream/feed/next`: gibt den nächsten Titel zurück und trägt ihn als gespielt ein.
+   - `GET /api/module-device/radiostream/feed/file/<track_id>`: liefert die Datei vom NAS als Strom. MP3 und FLAC gehen
      unverändert durch, Liquidsoap dekodiert selbst.
    - **Nur mit Feed-Schlüssel** (Kopfzeile) und **nur von 127.0.0.1**. Ohne Schlüssel kommt 403. Der Schlüssel öffnet
      nichts anderes.
@@ -144,3 +144,23 @@ Modul (Python, HydraHive-Backend)                    Liquidsoap (Dienst)        
    Erreichbarkeit, Höchstzahl Hörer. Nichts fest im Code, keine Datei von Hand. Voreinstellung Sendername
    „Radiostream“.
 3. **Sperren bleiben:** gleicher Künstler frühestens nach 60 min, gleicher Titel frühestens nach 3 Tagen.
+
+## Nachtrag beim Bau (29.10.2026)
+
+Abweichungen vom Plan, alle auf hydratest mit echter Musik vom NAS geprüft:
+
+- **Zuspielung als Geräte-Weg** `/api/module-device/radiostream/feed/…` statt `/api/modules/…`. Unter `/api/modules`
+  verlangt der Kern eine HydraHive-Anmeldung – Liquidsoap bekam 401. Der Geräte-Weg des Kerns hängt zwingend den
+  Feed-Schlüssel (`require_feed`: Schlüssel + 127.0.0.1) und eine Ratenbremse davor.
+- **Titel über ein eigenes Liquidsoap-Protokoll** `radiostream:<id>.<mp3|flac>`: Liquidsoap schickt bei normalen
+  http-Adressen keine Kopfzeile mit. Das Protokoll lädt `/feed/file` mit Schlüssel in eine Temp-Datei, die danach
+  gelöscht wird.
+- **Steuerung über eine Steuerdatei** `/run/hydrahive-radiostream/radio.sock` (0600) statt eines Netz-Ports.
+- **„Jetzt läuft“** schreibt Liquidsoap selbst als `jetzt.json` (Künstler, Titel, die letzten 10) in den Ordner der
+  Hörer-Seite; `/jetzt` liefert diese Datei, statt den Icecast-Status zu filtern. An den Metadaten, nicht am
+  Titelwechsel – nach der Überblendung kommt der neue Titel nur als Metadaten an.
+- **Hörer-Seite** liegt unter `/var/www/hydrahive-radiostream/` (nginx darf `/var/lib/hydrahive2` nicht lesen).
+- **Pausenzeichen**: install.sh erzeugt einen kurzen Dreiklang mit Stille als Notschleife; fehlt er, Stille.
+- **Nach Neustart/Update** setzt das Modul den Sender einmal mit der aktuellen Fassung neu auf (Konfiguration +
+  Hörer-Seite). Neu gestartet wird nur, wenn sich die Konfiguration geändert hat – sonst fliegen keine Hörer raus.
+- Reiter heißen jetzt **Bibliothek · Sender · Quelle** (die Überschrift „Musikquelle“ stand sonst doppelt).
