@@ -2,6 +2,7 @@ import { PhoneIncoming, PhoneOutgoing } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { callTone, hasNote, noteLine, shortTime } from "./callsLogic"
 import type { CallEntry } from "./types"
+import leerBild from "./assets/leer.webp"
 
 const DOT = { ok: "bg-emerald-400", warn: "bg-amber-400", idle: "bg-zinc-500" }
 
@@ -10,7 +11,7 @@ export function CallList({ calls, onRead, onCallback }: {
   calls: CallEntry[]; onRead?: (id: number) => void; onCallback?: (id: number) => void
 }) {
   const { t } = useTranslation("voip")
-  if (calls.length === 0) return <p className="text-sm text-zinc-500">{t("calls.none")}</p>
+  if (calls.length === 0) return <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-sm text-zinc-500">{t("calls.none")}</p></div>
   return (
     <div>
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">{t("calls.recent")}</p>
