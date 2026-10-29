@@ -26,6 +26,7 @@ const de = {
       cancel: "Abbrechen",
       last: "Zuletzt eingelesen: {{when}}",
       never: "Noch nie eingelesen",
+      interrupted: "Das letzte Einlesen wurde unterbrochen – bitte noch einmal starten. Was schon da ist, bleibt erhalten.",
       started: "Einlesen läuft im Hintergrund – du kannst die Seite verlassen.",
     },
     settings: {
@@ -53,6 +54,7 @@ const de = {
       radiostream_auth_failed: "Die Freigabe lehnt die Anmeldung ab – Benutzer oder Passwort im Safe prüfen.",
       radiostream_share_not_found: "Diese Freigabe gibt es auf dem Server nicht.",
       radiostream_scan_running: "Die Bibliothek wird gerade schon eingelesen.",
+      radiostream_scan_interrupted: "Das Einlesen wurde unterbrochen.",
       radiostream_track_not_found: "Diesen Titel gibt es nicht (mehr).",
       radiostream_track_unavailable: "Die Datei ist auf dem NAS gerade nicht lesbar.",
       radiostream_admin_only: "Das dürfen nur Admins.",
@@ -87,6 +89,7 @@ const en = {
       cancel: "Cancel",
       last: "Last read in: {{when}}",
       never: "Never read in yet",
+      interrupted: "The last read-in was interrupted – please start it again. What is already there is kept.",
       started: "Reading in runs in the background – you can leave this page.",
     },
     settings: {
@@ -114,6 +117,7 @@ const en = {
       radiostream_auth_failed: "The share refuses the login – check user or password in the safe.",
       radiostream_share_not_found: "This share doesn't exist on the server.",
       radiostream_scan_running: "The library is already being read in.",
+      radiostream_scan_interrupted: "The read-in was interrupted.",
       radiostream_track_not_found: "This track doesn't exist (any more).",
       radiostream_track_unavailable: "The file can't be read on the NAS right now.",
       radiostream_admin_only: "Only admins can do that.",

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { cancelScan, getScan, startScan, type Scan } from "./api"
+import { cancelScan, getScan, getSource, startScan, type Scan } from "./api"
 import { errorKey, scanLabel } from "./logic"
 
 /** Stand des Einlesens mit Fortschritt; Admins können starten/abbrechen. Fragt während des Laufs alle 3 s nach. */
@@ -8,16 +8,20 @@ export function ScanBox({ isAdmin, configured, onFinished }: { isAdmin: boolean;
   const { t } = useTranslation("radiostream")
   const [scan, setScan] = useState<Scan | null>(null)
   const [msg, setMsg] = useState("")
+  const [lastError, setLastError] = useState<string | null>(null)
 
-  const load = useCallback(() => getScan().then(setScan).catch(() => {}), [])
+  const load = useCallback(() => {
+    getScan().then(setScan).catch(() => {})
+    if (isAdmin) getSource().then((s) => setLastError(s.last_scan_error)).catch(() => {})
+  }, [isAdmin])
   useEffect(() => { load() }, [load])
   useEffect(() => {
     if (!scan?.running) return
-    const h = setTimeout(() => getScan().then((s) => { setScan(s); if (!s.running) onFinished() }).catch(() => {}), 3000)
+    const h = setTimeout(() => getScan().then((s) => { setScan(s); if (!s.running) { setLastError(null); onFinished() } }).catch(() => {}), 3000)
     return () => clearTimeout(h)
   }, [scan, onFinished])
 
-  const lbl = scan ? scanLabel(scan) : { key: "scan.idle", pct: null, eta_min: null }
+  const lbl = scan ? scanLabel(scan, lastError) : { key: "scan.idle", pct: null, eta_min: null }
   const start = () => startScan().then(() => { setMsg(t("scan.started")); load() }).catch((e) => setMsg(t(errorKey(e))))
   const stop = () => cancelScan().then(setScan).catch((e) => setMsg(t(errorKey(e))))
 

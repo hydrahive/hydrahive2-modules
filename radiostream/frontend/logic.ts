@@ -3,7 +3,7 @@
 export const BASE = "/modules/radiostream"
 const ERR = new Set(["radiostream_not_configured", "radiostream_url_invalid", "radiostream_credential_invalid",
   "radiostream_source_unreachable", "radiostream_auth_failed", "radiostream_share_not_found", "radiostream_scan_running",
-  "radiostream_track_not_found", "radiostream_track_unavailable", "radiostream_admin_only"])
+  "radiostream_track_not_found", "radiostream_track_unavailable", "radiostream_admin_only", "radiostream_scan_interrupted"])
 
 export interface Filter { q: string; genre: string; decade: string; format: string; missing: boolean }
 export interface ScanState { running: boolean; done: number; todo: number; files_seen: number; eta_s: number | null }
@@ -48,7 +48,8 @@ export function fmtTotal(s: number): { days: number; hours: number } {
   return { days: Math.floor(s / 86400), hours: Math.floor((s % 86400) / 3600) }
 }
 
-export function scanLabel(s: ScanState): { key: string; pct: number | null; eta_min: number | null } {
+export function scanLabel(s: ScanState, lastError: string | null = null): { key: string; pct: number | null; eta_min: number | null } {
+  if (!s.running && lastError === "radiostream_scan_interrupted") return { key: "scan.interrupted", pct: null, eta_min: null }
   if (!s.running) return { key: "scan.idle", pct: null, eta_min: null }
   if (!s.todo) return { key: "scan.listing", pct: null, eta_min: null }
   return { key: "scan.running", pct: Math.floor((s.done / s.todo) * 100), eta_min: s.eta_s == null ? null : Math.ceil(s.eta_s / 60) }
