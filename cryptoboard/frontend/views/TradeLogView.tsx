@@ -8,6 +8,7 @@ import { ImportDialog } from "../components/ImportDialog"
 import { TxForm } from "../components/TxForm"
 import { fmtPrice, fmtQty } from "../format"
 import type { Transaction, TxKind } from "../types"
+import { EmptyHint } from "../components/EmptyHint"
 
 const C = rgbFor("/cryptoboard")
 const VS = "eur"
@@ -99,7 +100,7 @@ export function TradeLogView() {
       <CollapsibleBox boxId="cryptoboard-tradelog" color={C} title={t("nav_tradelog")}>
         <div className="box-b">
           {txs.length === 0 ? (
-            <p className="py-6 text-center text-sm text-zinc-500">{t("tx_empty")}</p>
+            <EmptyHint text={t("tx_empty")} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

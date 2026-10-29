@@ -7,6 +7,7 @@ import { cryptoApi } from "../api"
 import { AddressForm } from "../components/AddressForm"
 import { fmtPrice, fmtQty } from "../format"
 import type { WalletBalances, WalletTokenAgg } from "../types"
+import { EmptyHint } from "../components/EmptyHint"
 
 const C = rgbFor("/cryptoboard")
 const VS = "eur"
@@ -121,7 +122,7 @@ export function WalletsView() {
       <CollapsibleBox boxId="cryptoboard-tokens" color={C} icon={<Coins size={14} />} title={t("wl_tokens")}>
         <div className="box-b">
           {tokens.length === 0 ? (
-            <p className="py-6 text-center text-sm text-zinc-500">{rows.length === 0 ? t("wl_empty") : t("wl_tokens_empty")}</p>
+            <EmptyHint text={rows.length === 0 ? t("wl_empty") : t("wl_tokens_empty")} />
           ) : (
             <>
               <ul className="divide-y divide-white/[4%]">
@@ -137,7 +138,7 @@ export function WalletsView() {
       <CollapsibleBox boxId="cryptoboard-wallets" color={C} icon={<Wallet size={14} />} title={t("wl_addresses")}>
         <div className="box-b">
           {rows.length === 0 ? (
-            <p className="py-6 text-center text-sm text-zinc-500">{t("wl_empty")}</p>
+            <EmptyHint text={t("wl_empty")} />
           ) : (
             <ul className="divide-y divide-white/[4%]">
               {rows.map((r) => (

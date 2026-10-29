@@ -9,6 +9,7 @@ import { FearGreedGauge } from "../components/FearGreedGauge"
 import { PriceCard } from "../components/PriceCard"
 import type { MarketRow, WatchItem } from "../types"
 import { useVs } from "../vsContext"
+import { EmptyHint } from "../components/EmptyHint"
 
 const C = rgbFor("/cryptoboard")
 
@@ -56,7 +57,7 @@ export function DashboardView() {
       <CollapsibleBox boxId="cryptoboard-watchlist" color={C} icon={<Star size={14} />} title={t("watchlist")}>
         <div className="box-b">
           {watchRows.length === 0 ? (
-            <p className="py-4 text-center text-sm text-zinc-500">{t("watchlist_empty")}</p>
+            <EmptyHint text={t("watchlist_empty")} />
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
               {watchRows.map((r) => (

@@ -8,6 +8,7 @@ import { StatCard } from "../components/StatCard"
 import { ValueChart } from "../components/ValueChart"
 import { fmtPrice, fmtPct, fmtSigned } from "../format"
 import type { PortfolioStats, ValueHistory } from "../types"
+import { EmptyHint } from "../components/EmptyHint"
 
 const C = rgbFor("/cryptoboard")
 const VS = "eur"
@@ -57,7 +58,7 @@ export function AnalyticsView() {
       <CollapsibleBox boxId="cryptoboard-valuechart" color={C} icon={<TrendingUp size={14} />} title={t("an_value_history")}>
         <div className="box-b py-3">
           {empty ? (
-            <p className="py-10 text-center text-sm text-zinc-500">{t("an_empty")}</p>
+            <EmptyHint text={t("an_empty")} />
           ) : (
             <>
               <ValueChart points={history!.points} vs={VS} />
