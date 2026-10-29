@@ -38,7 +38,9 @@ describe("Seite Fernseher", () => {
 
   it("Läuft gerade: aus, stumm, App", () => {
     expect(renderToStaticMarkup(<NowPlaying status={{ ...ON, power: "standby" }} />)).toContain("now.off")
-    expect(renderToStaticMarkup(<NowPlaying status={{ ...ON, muted: true }} />)).toContain("now.muted")
+    const muted = renderToStaticMarkup(<NowPlaying status={{ ...ON, muted: true, volume: 0 }} />)
+    expect(muted).toContain("now.muted")
+    expect(muted).not.toContain("now.volume")                // der TV meldet bei stumm 0 – das nicht anzeigen
     expect(renderToStaticMarkup(<NowPlaying status={{ ...ON, channel: null, program: "" }} />)).toContain("now.app")
   })
 
@@ -50,6 +52,11 @@ describe("Seite Fernseher", () => {
     const off = renderToStaticMarkup(<Remote status={{ ...ON, power: "standby" }} onChange={() => {}} />)
     expect(off).toContain("remote.on")
     expect((off.match(/disabled=""/g) ?? []).length).toBe(3)
+  })
+
+  it("Fernbedienung hat ein Suchfeld für Sender", () => {
+    const html = renderToStaticMarkup(<Remote status={ON} onChange={() => {}} />)
+    expect(html).not.toContain("remote.search")              // ohne geladene Sender noch nichts
   })
 
   it("Einrichten: Schlüsselfeld ist ein Passwortfeld ohne Vorbelegung, mit Hinweis, wo man ihn am TV setzt", () => {
