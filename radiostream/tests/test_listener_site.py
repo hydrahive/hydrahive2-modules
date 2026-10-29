@@ -7,7 +7,6 @@ from __future__ import annotations
 import re
 
 import pytest
-
 from backend import listener_site as ls
 from backend import service_files as sf
 
@@ -95,6 +94,9 @@ def test_jetzt_ist_die_fertige_datei_ohne_cache():
     assert "default_type application/json;" in block
     assert "proxy_pass" not in block
     assert 'add_header Cache-Control "no-store" always;' in block
+    # eigenes add_header → nginx erbt die Sicherheits-Kopfzeilen nicht, sie müssen hier noch einmal stehen
+    for h in ("Content-Security-Policy", "X-Content-Type-Options", "Referrer-Policy", "X-Frame-Options"):
+        assert f"add_header {h} " in block
 
 
 def test_m3u_zeigt_auf_den_eigenen_stream():
@@ -132,3 +134,11 @@ def test_seite_spielt_stream_und_fragt_jetzt_alle_15_sekunden():
     assert 'href="stream.m3u"' in files["index.html"]
     assert "innerHTML" not in files["radio.js"]
     assert '<meta name="viewport" content="width=device-width, initial-scale=1">' in files["index.html"]
+
+
+def test_startseite_ueber_try_files_nicht_alias():
+    """alias bei „location = /“ hängt index.html noch einmal an (hydratest 29.10.: 500)."""
+    c = _conf()
+    block = c[c.index("location = / {"):]
+    block = block[:block.index("}")]
+    assert "root /var/www/radio;" in block and "try_files /index.html =404;" in block and "alias" not in block
