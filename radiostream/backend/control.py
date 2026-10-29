@@ -56,7 +56,8 @@ def _write_private(path: Path, text: str) -> None:
     os.replace(tmp, path)
 
 
-def write_config() -> None:
+def write_config() -> bool:
+    """Schreibt beide Konfigurationen. True, wenn sich etwas geändert hat (dann muss der Sender neu starten)."""
     src_pw = feed_auth.read_secret("RADIOSTREAM_SOURCE_PASSWORD")
     admin_pw = feed_auth.read_secret("RADIOSTREAM_ADMIN_PASSWORD")
     key = feed_auth.read_secret("RADIOSTREAM_FEED_KEY")
@@ -65,13 +66,16 @@ def write_config() -> None:
     st = station.get()
     data = DATA_DIR()
     pause = data / "pausenzeichen.mp3"
-    _write_private(CONFIG_DIR() / "icecast.xml", service_files.icecast_xml(
+    ice_path, liq_path = CONFIG_DIR() / "icecast.xml", data / "radio.liq"
+    before = [p.read_text() if p.is_file() else None for p in (ice_path, liq_path)]
+    _write_private(ice_path, service_files.icecast_xml(
         source_password=src_pw, admin_password=admin_pw, max_listeners=int(st["max_listeners"]), name=st["name"],
         log_dir=str(data / "log")))
-    _write_private(data / "radio.liq", service_files.liquidsoap_script(
+    _write_private(liq_path, service_files.liquidsoap_script(
         feed_base=f"http://127.0.0.1:{settings.port}/api/module-device/radiostream", feed_key=key, source_password=src_pw,
         name=st["name"], subtitle=st["subtitle"], fallback_file=str(pause) if pause.is_file() else "",
         control_socket=str(SOCKET), now_file=str(WEB_DIR / "jetzt.json")))
+    return before != [p.read_text() for p in (ice_path, liq_path)]
 
 
 def start() -> None:
@@ -87,12 +91,15 @@ def start() -> None:
 
 def refresh_after_restart() -> bool:
     """Nach Neustart oder Modul-Update: Läuft der Sender laut Merker, alles aus der aktuellen Modulfassung neu
-    schreiben (Konfiguration, Hörer-Seite) und neu starten. install.sh nutzt nur die alten Dateien. Fehler hier dürfen
-    den Kern nie stören – sie stehen dann im Reiter „Sender“ (läuft nicht)."""
+    schreiben (Konfiguration, Hörer-Seite). Neu gestartet wird nur, wenn sich die Konfiguration geändert hat oder der
+    Sender steht – sonst flögen bei jedem HydraHive-Neustart die Hörer raus. Fehler stören den Kern nie."""
     if not (DATA_DIR() / "sender.on").exists():
         return False
     try:
-        start()
+        if write_config() or not status()["running"]:
+            start()
+        else:
+            apply_listener_site()
     except (ControlError, OSError):
         return False
     return True
