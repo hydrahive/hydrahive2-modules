@@ -9,6 +9,7 @@ import { RigsPanel } from "./components/RigsPanel"
 import { SettingsPanel } from "./components/SettingsPanel"
 import { isStale, minutesSince } from "./format"
 import { useMining } from "./useMining"
+import leerBild from "./assets/leer.webp"
 
 export function MiningPage() {
   const { t } = useTranslation("mining")
@@ -53,7 +54,7 @@ export function MiningPage() {
 
       {overview && overview.rows.length > 0 && <CoinTable rows={overview.rows} hasEur={overview.usd_per_eur !== null} />}
       {overview && overview.rows.length === 0 && (
-        <div className="rounded-lg border border-white/10 p-4 text-sm text-zinc-400">{t("empty")}</div>
+        <div className="rounded-lg border border-white/10"><div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-sm text-zinc-400">{t("empty")}</p></div></div>
       )}
       {overview && <p className="text-xs text-zinc-500">{t("reference_note", { date: overview.reference.fetched })} {t("estimated_note")}</p>}
 
