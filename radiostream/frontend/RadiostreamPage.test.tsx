@@ -19,11 +19,13 @@ describe("Seite Radiostream (Etappe 1: Bibliothek)", () => {
     for (const k of ["title", "tab.library", "search_placeholder", "filter.all_genres", "filter.all_decades", "filter.all_formats"]) expect(html).toContain(k)
   })
 
-  it("Admin sieht Einstellungen, Nutzer nicht", () => {
+  it("Admin sieht Musikquelle, Nutzer nicht; Sender sehen alle", () => {
     role.value = "admin"
     expect(renderToStaticMarkup(<RadiostreamPage />)).toContain("tab.settings")
+    expect(renderToStaticMarkup(<RadiostreamPage />)).toContain("tab.station")
     role.value = "user"
     expect(renderToStaticMarkup(<RadiostreamPage />)).not.toContain("tab.settings")
+    expect(renderToStaticMarkup(<RadiostreamPage />)).toContain("tab.station")
     role.value = "admin"
   })
 

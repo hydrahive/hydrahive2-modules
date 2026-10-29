@@ -145,3 +145,17 @@ async def test_tick_raeumt_zuerst_auf_und_holt_dann_nach(db_ready, safe, started
     await nightly.tick()
     assert settings_store.get()["last_scan_error"] == "radiostream_scan_interrupted"
     assert started == [1]
+
+
+def test_einmal_nach_dem_start_wird_der_sender_aufgefrischt(monkeypatch):
+    import asyncio
+
+    from backend import control, nightly
+    calls = []
+    monkeypatch.setattr(control, "refresh_after_restart", lambda: calls.append(1) or True)
+    monkeypatch.setattr(nightly, "due", lambda now=None: False)
+    monkeypatch.setattr(nightly, "recover_interrupted", lambda: False)
+    monkeypatch.setattr(nightly, "_refreshed", False)
+    asyncio.run(nightly.tick())
+    asyncio.run(nightly.tick())
+    assert calls == [1]

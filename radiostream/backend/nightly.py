@@ -39,7 +39,17 @@ def due(now: datetime | None = None) -> bool:
     return last.astimezone(now.tzinfo).date() < now.date()
 
 
+_refreshed = False
+
+
 async def tick() -> None:
+    global _refreshed
+    if not _refreshed:                      # einmal je Prozess: Sender mit der aktuellen Modulfassung neu aufsetzen
+        _refreshed = True
+        import asyncio
+
+        from . import control
+        await asyncio.to_thread(control.refresh_after_restart)
     recover_interrupted()
     if due(_now()):
         scanner.start_in_background()

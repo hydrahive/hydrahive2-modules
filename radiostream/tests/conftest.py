@@ -30,7 +30,9 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 MOD_PREFIX = "/api/modules/radiostream"
-TABLES = ("module_radiostream_sources", "module_radiostream_tracks", "module_radiostream_scan_errors")
+DEVICE_PREFIX = "/api/module-device/radiostream"
+TABLES = ("module_radiostream_sources", "module_radiostream_tracks", "module_radiostream_scan_errors",
+          "module_radiostream_plays", "module_radiostream_station", "access_capability_grants", "access_audit")
 SECRET = "geheim-Passwort-123"
 
 
@@ -53,10 +55,39 @@ def setup_test_env():
             "boss": {"password_hash": ph, "role": "admin"},
         }, indent=2))
 
-        from backend.routes import router
-        from hydrahive.api import main
-        main.app.include_router(router, prefix=MOD_PREFIX)
+        _declare_capabilities()
+        _mount_like_core()
         yield tmp_path
+
+
+def _mount_like_core() -> None:
+    """Router über den echten Kern-Weg einhängen (Muster musicplayer/tests/conftest.py): Modul-Tor vor /api/modules,
+    Geräte-Router (Zuspielung) unter /api/module-device mit require_feed. So fällt auf, wenn ein Weg falsch hängt
+    (hydratest 29.10.: Zuspielung lag hinter der Anmeldung → 401 für Liquidsoap)."""
+    import backend
+    from hydrahive.api import main
+    from hydrahive.modules.context import ModuleContext
+    from hydrahive.modules.manifest import ModuleManifest
+    from hydrahive.modules.registry import REGISTRY, LoadedModule
+
+    ctx = ModuleContext("radiostream")
+    backend.register(ctx)
+    saved = dict(REGISTRY)
+    REGISTRY.clear()
+    REGISTRY["radiostream"] = LoadedModule(name="radiostream", manifest=ModuleManifest.load(MODULE_DIR / "manifest.json"),
+                                           path=MODULE_DIR, ctx=ctx, loaded=True)
+    try:
+        main.mount_module_routers(main.app)
+    finally:
+        REGISTRY.clear()
+        REGISTRY.update(saved)
+
+
+def _declare_capabilities() -> None:
+    """Freigaben aus dem Manifest bekannt machen (wie der Kern beim Laden), sonst gälte radiostream.control als offen."""
+    from hydrahive.access.capabilities import catalog
+    from hydrahive.modules.manifest import ModuleManifest
+    catalog().register_module(ModuleManifest.load(MODULE_DIR / "manifest.json"))
 
 
 def _migrate() -> None:
@@ -73,8 +104,18 @@ def db_ready(setup_test_env):
     from backend import scan_state
     scan_state.reset()
     with only_own_rows(*TABLES):
+        _grant_module_to_user()
         yield
     scan_state.reset()
+
+
+def _grant_module_to_user() -> None:
+    """Das Modul ist admin_only (Manifest). Ein Admin gibt es dem Test-Nutzer frei – wie im echten Betrieb über die
+    Freigaben. radiostream.control bekommt er NICHT."""
+    from hydrahive.access import grants
+    from hydrahive.api.middleware.users import get_by_username
+    uid = get_by_username("testuser")["user_id"]
+    grants.grant("module.radiostream", "user", uid, "use", actor_id="test")
 
 
 @pytest.fixture
