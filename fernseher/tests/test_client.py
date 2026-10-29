@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from backend import client
 from conftest import CHANNELS, PSK
 

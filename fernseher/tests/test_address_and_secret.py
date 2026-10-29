@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from backend import psk_crypto as tv_secrets
 from backend import settings_store, validators
 
