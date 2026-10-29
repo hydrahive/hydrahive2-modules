@@ -45,6 +45,7 @@ describe("Fernseher – Hilfsfunktionen", () => {
     expect(filterChannels(all, "ZDF neo").map((c) => c.number)).toEqual([12])
     expect(filterChannels(all, "bibel").map((c) => c.number)).toEqual([200])
     expect(filterChannels(all, "200").map((c) => c.number)).toEqual([200])
+    expect(filterChannels(all, "20").map((c) => c.number)).toEqual([20])          // nicht auch 120, 200 …
     expect(filterChannels(all, "Sender").length).toBe(20)
   })
 })

@@ -8,6 +8,7 @@ const de = {
     remote: {
       heading: "Fernbedienung", on: "Einschalten", off: "Ausschalten", louder: "Lauter", quieter: "Leiser",
       mute: "Stumm", unmute: "Ton an", channels: "Sender", apps: "Apps", only_admin: "Bedienen darf nur, wer dafür freigeschaltet ist.",
+      search: "Sender suchen (Name oder Platz)", no_match: "Kein Sender gefunden.",
     },
     setup: {
       heading: "Einrichten", name: "Name", name_example: "z. B. TV Wohnzimmer", address: "Adresse im Heimnetz",
@@ -33,6 +34,7 @@ const de = {
       tv_volume_limit: "So laut geht es nicht – es gibt eine Obergrenze zum Schutz.",
       tv_volume_invalid: "Die Lautstärke bitte als Zahl angeben.",
       tv_upstream_error: "Der Fernseher meldet einen Fehler.",
+      tv_switch_failed: "Der Fernseher hat nicht umgeschaltet. Bitte noch einmal versuchen.",
     },
   },
 }
@@ -46,6 +48,7 @@ const en = {
     remote: {
       heading: "Remote", on: "Turn on", off: "Turn off", louder: "Louder", quieter: "Quieter",
       mute: "Mute", unmute: "Sound on", channels: "Channels", apps: "Apps", only_admin: "Only people with permission can control the TV.",
+      search: "Search channel (name or number)", no_match: "No channel found.",
     },
     setup: {
       heading: "Set up", name: "Name", name_example: "e.g. Living room TV", address: "Address in your home network",
@@ -71,6 +74,7 @@ const en = {
       tv_volume_limit: "It can't get that loud – there is a safety limit.",
       tv_volume_invalid: "Please give the volume as a number.",
       tv_upstream_error: "The TV reports an error.",
+      tv_switch_failed: "The TV didn't switch. Please try again.",
     },
   },
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Minus, Plus, Power, Volume2, VolumeX } from "lucide-react"
 import { getApps, getChannels, setChannel, setMute, setPower, setVolume, startApp, type TvStatus } from "./api"
-import { errorKey, stepVolume } from "./logic"
+import { errorKey, filterChannels, stepVolume } from "./logic"
 
 const BTN = "flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-2 text-sm text-zinc-100 hover:bg-zinc-700 disabled:opacity-40"
 
@@ -13,7 +13,9 @@ export function Remote({ status, onChange }: { status: TvStatus; onChange: (s: T
   const [apps, setApps] = useState<{ name: string }[]>([])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  const [query, setQuery] = useState("")
   const on = status.power === "on"
+  const shown = filterChannels(channels, query)
 
   useEffect(() => {
     if (!on) return
@@ -47,8 +49,11 @@ export function Remote({ status, onChange }: { status: TvStatus; onChange: (s: T
       {on && channels.length > 0 && (
         <div>
           <h3 className="mb-2 text-sm text-zinc-300">{t("remote.channels")}</h3>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("remote.search")}
+            aria-label={t("remote.search")} className="mb-2 w-full rounded border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100" />
+          {shown.length === 0 && <p className="text-sm text-zinc-400">{t("remote.no_match")}</p>}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {channels.map((c) => (
+            {shown.map((c) => (
               <button key={`${c.number}-${c.name}`} disabled={busy} onClick={() => run(() => setChannel(String(c.number)))}
                 className={`${BTN} justify-start ${status.channel?.name === c.name ? "ring-1 ring-emerald-400/60" : ""}`}>
                 <span className="w-7 text-right text-xs text-zinc-500">{c.number}</span>

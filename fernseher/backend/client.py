@@ -5,6 +5,7 @@ taucht in keiner Fehlermeldung auf. Schaltende Funktionen lesen danach nach und 
 """
 from __future__ import annotations
 
+import asyncio
 import time
 
 import httpx
@@ -17,11 +18,16 @@ __all__ = ["TVError"]
 _TIMEOUT = 6.0
 _CACHE_SECONDS = 60.0
 _MAX_STEP = 20
+_SWITCH_WAIT = 1.5          # Sekunden bis zum Nachlesen; aus einer App heraus braucht der TV einen Moment
 _cache: dict[str, tuple[float, list]] = {}
 
 
 def clear_cache() -> None:
     _cache.clear()
+
+
+async def _sleep(seconds: float) -> None:          # in Tests ersetzt
+    await asyncio.sleep(seconds)
 
 
 async def _post(ip: str, service: str, method: str, params: list, version: str, psk: str) -> tuple[int, dict]:
@@ -130,9 +136,17 @@ async def find_channel(query: str) -> dict:
 
 
 async def set_channel(query: str) -> dict:
+    """Umschalten und nachlesen. Gemessen am KD-60XF8305 (29.10.): Ist eine App vorne, holt der erste Befehl nur in
+    den Fernsehmodus, erst der zweite wechselt den Sender. Deshalb: nachlesen, höchstens einmal wiederholen, und
+    wenn der Sender danach nicht stimmt, ehrlich tv_switch_failed melden statt Erfolg vorzutäuschen."""
     ch = await find_channel(query)
-    await _call("avContent", "setPlayContent", {"uri": ch["uri"]})
-    return await status()
+    for attempt in range(2):
+        await _call("avContent", "setPlayContent", {"uri": ch["uri"]})
+        await _sleep(_SWITCH_WAIT)
+        now = await status()
+        if now["channel"] and now["channel"]["name"] == ch["name"]:
+            return now
+    raise TVError("tv_switch_failed", f"Der Fernseher hat nicht auf „{ch['name']}“ umgeschaltet.")
 
 
 def _target_volume(value: str, current: int) -> int:
