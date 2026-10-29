@@ -6,6 +6,7 @@ import { rgbFor } from "@/shared/colors"
 import { cryptoApi } from "../api"
 import { AlertForm } from "../components/AlertForm"
 import type { Alert, AlertEvent } from "../types"
+import { EmptyHint } from "../components/EmptyHint"
 
 const C = rgbFor("/cryptoboard")
 
@@ -67,7 +68,7 @@ export function AlertsView() {
       <CollapsibleBox boxId="cryptoboard-alert-rules" color={C} icon={<Bell size={14} />} title={t("al_rules")}>
         <div className="box-b">
           {alerts.length === 0 ? (
-            <p className="py-5 text-center text-sm text-zinc-500">{t("al_empty")}</p>
+            <EmptyHint text={t("al_empty")} />
           ) : (
             <ul className="divide-y divide-white/[4%]">
               {alerts.map((a) => (

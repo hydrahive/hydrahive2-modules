@@ -10,6 +10,7 @@ import { PnlCard } from "../components/PnlCard"
 import { TxForm } from "../components/TxForm"
 import { fmtPct, fmtPrice, fmtQty, fmtSigned, trendClass } from "../format"
 import type { PortfolioSummary } from "../types"
+import { EmptyHint } from "../components/EmptyHint"
 
 const C = rgbFor("/cryptoboard")
 const VS = "eur"
@@ -76,7 +77,7 @@ export function PortfolioView() {
       <CollapsibleBox boxId="cryptoboard-holdings" color={C} icon={<Wallet size={14} />} title={t("pf_holdings")}>
         <div className="box-b">
           {positions.length === 0 ? (
-            <p className="py-6 text-center text-sm text-zinc-500">{t("pf_empty")}</p>
+            <EmptyHint text={t("pf_empty")} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
