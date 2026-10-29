@@ -4,6 +4,7 @@ import { atelierApi } from "./api"
 import { CameraControls } from "./CameraControls"
 import { ShotStoryboard } from "./ShotStoryboard"
 import type { AtelierCharacter, MediaModel, PresetCatalog, Scene, Screenplay, SceneInput } from "./types"
+import { AtelierEmpty } from "./AtelierEmpty"
 
 interface Props {
   projectId: string
@@ -289,8 +290,8 @@ export function DirectorPanel({ projectId, characters, presets }: Props) {
       )}
 
       {scenes.length === 0 && (
-        <div className="text-slate-500 text-xs p-3 text-center border border-dashed border-slate-700 rounded">
-          {t("scenes_empty")}
+        <div className="rounded border border-dashed border-slate-700">
+          <AtelierEmpty text={t("scenes_empty")} />
         </div>
       )}
 

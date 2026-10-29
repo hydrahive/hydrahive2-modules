@@ -4,6 +4,7 @@ import { atelierApi, fileUrl } from "./api"
 import { VideoGenerationDialog } from "./VideoGenerationDialog"
 import { PromptView } from "./PromptView"
 import type { AtelierCharacter, GalleryItem } from "./types"
+import { AtelierEmpty } from "./AtelierEmpty"
 
 interface Props {
   projectId: string
@@ -86,7 +87,7 @@ export function ImageGalleryPanel({ projectId, items, characters, onPromoted, on
           ))}
         </div>
       </div>
-      {items.length === 0 && <p className="text-xs text-slate-500">{t("gallery_empty")}</p>}
+      {items.length === 0 && <AtelierEmpty text={t("gallery_empty")} />}
 
       <div className={viewSize === "list" ? "flex flex-col gap-2" : "grid gap-2"} style={gridStyle}>
         {items.map((it) => (

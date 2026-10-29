@@ -4,6 +4,7 @@ import type { VideoMeta } from "../videoeditor/types"
 import { videoeditorApi } from "../videoeditor/api"
 import { EditorView } from "../videoeditor/EditorView"
 import { BrowseDialog } from "../videoeditor/BrowseDialog"
+import { AtelierEmpty } from "./AtelierEmpty"
 
 interface Props {
   projectId: string
@@ -80,8 +81,8 @@ export function AtelierCutPanel({ projectId }: Props) {
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       {files.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center text-sm text-slate-500">
-          {t("cut_empty")}
+        <div className="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-2">
+          <AtelierEmpty text={t("cut_empty")} />
         </div>
       ) : (
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
