@@ -130,3 +130,17 @@ def test_zuletzt_gespielt_neueste_zuerst(db_ready):
     r = rotation.recent(limit=5)
     assert [(x["track_id"], x["artist"], x["title"]) for x in r] == [("q1", "Queen", "One Vision"),
                                                                      ("a1", "ABBA", "Waterloo")]
+
+
+def test_grosse_bibliothek_waehlt_nie_fehlende(db_ready):
+    """Ab einer gewissen Größe wird per Stichprobe gewählt – auch dort nie ‚missing‘ (sonst Stille im Sender)."""
+    from hydrahive.db.connection import db
+    with db() as conn:
+        conn.executemany(
+            "INSERT INTO module_radiostream_tracks (track_id, source_id, rel_path, size, mtime, artist, title, format, "
+            "state, first_seen, last_seen) VALUES (?, 'main', ?, 1, 1, ?, 'T', 'mp3', ?, 'x', 'x')",
+            [(f"g{i}", f"K{i}/g{i}.mp3", f"K{i}", "ok" if i % 10 == 0 else "missing") for i in range(2000)])
+        conn.commit()
+    for i in range(40):
+        got = rotation.pick(now=T0, rng=random.Random(i))
+        assert int(got["track_id"][1:]) % 10 == 0, got
