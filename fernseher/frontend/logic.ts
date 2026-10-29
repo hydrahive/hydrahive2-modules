@@ -5,7 +5,7 @@ export const BASE = "/modules/fernseher"
 export const ERROR_CODES = new Set([
   "tv_not_configured", "tv_unreachable", "tv_auth_failed", "tv_needs_restart", "tv_address_not_local",
   "tv_psk_missing", "tv_settings_invalid", "tv_channel_unknown", "tv_channel_ambiguous", "tv_app_unknown",
-  "tv_volume_limit", "tv_volume_invalid", "tv_upstream_error", "tv_switch_failed",
+  "tv_volume_limit", "tv_volume_invalid", "tv_upstream_error", "tv_switch_failed", "tv_is_off",
 ])
 
 export function errorKey(e: unknown): string {

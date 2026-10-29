@@ -17,7 +17,7 @@ Auth = Annotated[tuple[str, str], Depends(require_auth)]
 Admin = Annotated[tuple[str, str], Depends(require_admin)]
 
 _HTTP = {"tv_not_configured": 503, "tv_unreachable": 504, "tv_needs_restart": 409, "tv_auth_failed": 502,
-         "tv_upstream_error": 502, "tv_channel_unknown": 404, "tv_app_unknown": 404, "tv_channel_ambiguous": 409, "tv_switch_failed": 409,
+         "tv_upstream_error": 502, "tv_channel_unknown": 404, "tv_app_unknown": 404, "tv_channel_ambiguous": 409, "tv_switch_failed": 409, "tv_is_off": 409,
          "tv_volume_limit": 400, "tv_volume_invalid": 400}
 
 

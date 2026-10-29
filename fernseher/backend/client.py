@@ -12,12 +12,13 @@ import httpx
 
 from . import matching, settings_store
 from .client_errors import TVError
+from .volume import MAX_STEP as _MAX_STEP
+from .volume import target as _target_volume
 
 __all__ = ["TVError"]
 
 _TIMEOUT = 6.0
 _CACHE_SECONDS = 60.0
-_MAX_STEP = 20
 _SWITCH_WAIT = 1.5          # Sekunden bis zum Nachlesen; aus einer App heraus braucht der TV einen Moment
 _cache: dict[str, tuple[float, list]] = {}
 
@@ -58,6 +59,8 @@ async def _call(service: str, method: str, params: dict | None = None, version: 
                                           "einmal ganz neu starten (Netzstecker).")
     if err and err[0] in (401, 403):
         raise TVError("tv_auth_failed", "Der Fernseher lehnt den Schlüssel ab.")
+    if err and err[0] == 40005:                       # „Display Is Turned off“ (gemessen im Standby)
+        raise TVError("tv_is_off", "Der Fernseher ist aus.")
     if err:
         raise TVError("tv_upstream_error", f"Fernseher meldet Fehler {err[0]} bei {method}.")
     if status >= 400:
@@ -100,11 +103,20 @@ async def _volume() -> tuple[int, bool]:
 
 
 async def status() -> dict:
+    """Im Standby fragt der TV Ton und Sender nicht ab (40005) – dann bleiben sie leer, das ist kein Fehler."""
     power = await _power()
-    channel, program = (await _playing()) if power == "on" else (None, "")
+    if power != "on":
+        return {"power": power, "channel": None, "program": "", "volume": None, "muted": None,
+                "model": await _model()}
+    channel, program = await _playing()
     volume, muted = await _volume()
     return {"power": power, "channel": channel, "program": program, "volume": volume, "muted": muted,
             "model": await _model()}
+
+
+async def _require_on() -> None:
+    if await _power() != "on":
+        raise TVError("tv_is_off", "Der Fernseher ist aus. Erst einschalten.")
 
 
 async def test() -> dict:
@@ -140,6 +152,7 @@ async def set_channel(query: str) -> dict:
     den Fernsehmodus, erst der zweite wechselt den Sender. Deshalb: nachlesen, höchstens einmal wiederholen, und
     wenn der Sender danach nicht stimmt, ehrlich tv_switch_failed melden statt Erfolg vorzutäuschen."""
     ch = await find_channel(query)
+    await _require_on()
     for attempt in range(2):
         await _call("avContent", "setPlayContent", {"uri": ch["uri"]})
         await _sleep(_SWITCH_WAIT)
@@ -149,24 +162,10 @@ async def set_channel(query: str) -> dict:
     raise TVError("tv_switch_failed", f"Der Fernseher hat nicht auf „{ch['name']}“ umgeschaltet.")
 
 
-def _target_volume(value: str, current: int) -> int:
-    """Zielwert aus „20“, „+3“ oder „-5“. Unter 0 wird 0, über 100 wird 100."""
-    v = (value or "").strip()
-    sign = v[:1] if v[:1] in "+-" else ""
-    digits = v[1:] if sign else v
-    if not digits.isdigit():
-        raise TVError("tv_volume_invalid", "Lautstärke als Zahl 0–100 oder +n/-n angeben.")
-    n = int(digits)
-    if sign == "+":
-        return min(100, current + n)
-    if sign == "-":
-        return max(0, current - n)
-    return min(100, n)
-
-
 async def set_volume(value: str) -> dict:
     """Schutz (SPEC): nie über der Grenze aus den Einstellungen, und höchstens _MAX_STEP auf einmal – in beide
     Richtungen gemessen am angefragten Schritt, damit „-50“ nicht zufällig durchrutscht, wenn der TV leise ist."""
+    await _require_on()
     current, _ = await _volume()
     target = _target_volume(value, current)
     v = value.strip()
@@ -179,6 +178,7 @@ async def set_volume(value: str) -> dict:
 
 
 async def set_mute(on: bool) -> dict:
+    await _require_on()
     await _call("audio", "setAudioMute", {"status": bool(on)})
     return await status()
 

@@ -12,7 +12,7 @@ describe("Fernseher – Hilfsfunktionen", () => {
   it("kennt alle Codes des Backends", () => {
     expect([...ERROR_CODES].sort()).toEqual([
       "tv_address_not_local", "tv_app_unknown", "tv_auth_failed", "tv_channel_ambiguous", "tv_channel_unknown",
-      "tv_needs_restart", "tv_not_configured", "tv_psk_missing", "tv_settings_invalid", "tv_switch_failed",
+      "tv_is_off", "tv_needs_restart", "tv_not_configured", "tv_psk_missing", "tv_settings_invalid", "tv_switch_failed",
       "tv_unreachable", "tv_upstream_error", "tv_volume_invalid", "tv_volume_limit",
     ])
   })

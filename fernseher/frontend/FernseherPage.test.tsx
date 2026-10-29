@@ -37,7 +37,7 @@ describe("Seite Fernseher", () => {
   })
 
   it("Läuft gerade: aus, stumm, App", () => {
-    expect(renderToStaticMarkup(<NowPlaying status={{ ...ON, power: "standby" }} />)).toContain("now.off")
+    expect(renderToStaticMarkup(<NowPlaying status={{ ...ON, power: "standby", volume: null, muted: null, channel: null }} />)).toContain("now.off")
     const muted = renderToStaticMarkup(<NowPlaying status={{ ...ON, muted: true, volume: 0 }} />)
     expect(muted).toContain("now.muted")
     expect(muted).not.toContain("now.volume")                // der TV meldet bei stumm 0 – das nicht anzeigen
@@ -49,7 +49,7 @@ describe("Seite Fernseher", () => {
     expect(on).toContain("remote.off")
     expect(on).toContain("remote.louder")
     expect(on).toContain("remote.mute")
-    const off = renderToStaticMarkup(<Remote status={{ ...ON, power: "standby" }} onChange={() => {}} />)
+    const off = renderToStaticMarkup(<Remote status={{ ...ON, power: "standby", volume: null, muted: null }} onChange={() => {}} />)
     expect(off).toContain("remote.on")
     expect((off.match(/disabled=""/g) ?? []).length).toBe(3)
   })

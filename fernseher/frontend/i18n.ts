@@ -35,6 +35,7 @@ const de = {
       tv_volume_invalid: "Die Lautstärke bitte als Zahl angeben.",
       tv_upstream_error: "Der Fernseher meldet einen Fehler.",
       tv_switch_failed: "Der Fernseher hat nicht umgeschaltet. Bitte noch einmal versuchen.",
+      tv_is_off: "Der Fernseher ist aus. Erst einschalten.",
     },
   },
 }
@@ -75,6 +76,7 @@ const en = {
       tv_volume_invalid: "Please give the volume as a number.",
       tv_upstream_error: "The TV reports an error.",
       tv_switch_failed: "The TV didn't switch. Please try again.",
+      tv_is_off: "The TV is off. Turn it on first.",
     },
   },
 }
