@@ -3,7 +3,7 @@ const de = {
   radiostream: {
     title: "Radiostream",
     subtitle: "Dein eigenes Radio aus der Musik auf dem NAS – mit eigener Seite zum Zuhören.",
-    tab: { library: "Bibliothek", station: "Sender", settings: "Musikquelle" },
+    tab: { library: "Bibliothek", station: "Sender", settings: "Quelle" },
     search_placeholder: "Künstler, Titel oder Album suchen …",
     filter: { all_genres: "Alle Genres", all_decades: "Alle Jahrzehnte", all_formats: "Alle Formate", missing: "Nicht mehr da" },
     decade: "{{decade}}er",
@@ -105,7 +105,7 @@ const en = {
   radiostream: {
     title: "Radiostream",
     subtitle: "Your own radio from the music on your NAS – with its own page for listeners.",
-    tab: { library: "Library", station: "Station", settings: "Music source" },
+    tab: { library: "Library", station: "Station", settings: "Source" },
     search_placeholder: "Search artist, title or album …",
     filter: { all_genres: "All genres", all_decades: "All decades", all_formats: "All formats", missing: "No longer there" },
     decade: "{{decade}}s",
