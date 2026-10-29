@@ -9,6 +9,7 @@ import { EditorView } from "./EditorView"
 import { BrowseDialog } from "./BrowseDialog"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
+import leerBild from "./assets/leer.webp"
 
 export function VideoEditorPage() {
   const { t } = useTranslation("videoeditor")
@@ -100,7 +101,7 @@ export function VideoEditorPage() {
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       {files.length === 0 ? (
-        <p className="text-sm text-zinc-500">{t("empty")}</p>
+        <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-sm text-zinc-500">{t("empty")}</p></div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {files.map((f) => (
