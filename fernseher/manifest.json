@@ -1,7 +1,7 @@
 {
   "id": "fernseher",
   "name": "Fernseher",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Steuert deinen Sony-Fernseher im Heimnetz: sehen, was läuft, Sender wechseln, Lautstärke, Ein/Aus und Apps. Agenten können ihn direkt bedienen.",
   "icon": "Tv",
   "nav_group": "working",
