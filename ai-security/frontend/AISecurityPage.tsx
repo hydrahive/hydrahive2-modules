@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck, XCircle } from "luci
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { aiSecurityApi, type AISecurityHealth, type AISecurityScan } from "./api"
+import leerBild from "./assets/leer.webp"
 
 const text: Record<string, Record<string, string>> = {
   de: {
@@ -156,7 +157,7 @@ export function AISecurityPage() {
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <div className="rounded-xl border bg-card p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold">{labels.recent}</h2>
-          {scans.length === 0 ? <p className="text-sm text-muted-foreground">{labels.empty}</p> : (
+          {scans.length === 0 ? <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-sm text-muted-foreground">{labels.empty}</p></div> : (
             <div className="space-y-2">
               {scans.map((scan) => (
                 <button key={scan.id} className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left text-sm ${selectedScan?.id === scan.id ? "border-primary bg-primary/5" : ""}`} onClick={() => setSelectedScan(scan)}>
