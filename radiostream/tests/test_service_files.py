@@ -12,7 +12,8 @@ from backend import service_files as sf
 _ICE = dict(source_password="q<u&e>lle", admin_password="ad\"min", max_listeners=20, name="Molke <FM> & Co",
             log_dir="/var/log/hydrahive2/radiostream")
 _LIQ = dict(feed_base="http://127.0.0.1:8001/api/modules/radiostream", feed_key="FEEDKEY-123",
-            source_password="QUELLE-456", name="Molke FM", subtitle="rund um die Uhr", fallback_file="/x/stille.mp3")
+            source_password="QUELLE-456", name="Molke FM", subtitle="rund um die Uhr", fallback_file="/x/stille.mp3",
+            control_socket="/run/x/radio.sock", now_file="/var/x/jetzt.json")
 
 
 def test_icecast_ist_gueltiges_xml_und_nur_lokal():
@@ -54,9 +55,21 @@ def test_liquidsoap_sendet_nur_an_lokales_icecast_mit_passwort():
     assert "%mp3(bitrate=192)" in out and "public=false" in out
 
 
-def test_liquidsoap_steuerung_nur_lokal():
+def test_liquidsoap_steuerung_nur_ueber_eigene_datei():
+    """Kein Netz-Port für die Steuerung: nur eine Unix-Steuerdatei, die nur der Besitzer öffnen darf (0600 = 384)."""
     s = sf.liquidsoap_script(**_LIQ)
-    assert 'settings.server.telnet.bind_addr.set("127.0.0.1")' in s
+    assert "settings.server.socket.set(true)" in s
+    assert 'settings.server.socket.path.set("/run/x/radio.sock")' in s
+    assert "settings.server.socket.permissions.set(384)" in s
+    assert "telnet" not in s
+
+
+def test_jetzt_laeuft_nur_kuenstler_und_titel_an_den_metadaten():
+    s = sf.liquidsoap_script(**_LIQ)
+    assert 'json.stringify({artist=m["artist"], title=m["title"]})' in s
+    assert '"/var/x/jetzt.json"' in s
+    assert "source.on_metadata(radio, write_now)" in s
+    assert 'if m["title"] != "" or m["artist"] != "" then' in s
 
 
 def test_liquidsoap_schickt_feed_schluessel_bei_beiden_abrufen():

@@ -67,7 +67,7 @@ def icecast_xml(*, source_password: str, admin_password: str, max_listeners: int
 
 
 def liquidsoap_script(*, feed_base: str, feed_key: str, source_password: str, name: str, subtitle: str,
-                      fallback_file: str) -> str:
+                      fallback_file: str, control_socket: str, now_file: str) -> str:
     """Programm: Modul fragt den Titel (request.dynamic), gleiche Lautheit, weiche Überblendung, MP3 192k an Icecast.
 
     Fehlt der nächste Titel (NAS weg, Modul neu gestartet), läuft eine leise Notschleife statt Stille."""
@@ -75,9 +75,9 @@ def liquidsoap_script(*, feed_base: str, feed_key: str, source_password: str, na
 settings.log.stdout.set(true)
 settings.log.file.set(false)
 settings.log.level.set(3)
-settings.server.telnet.set(true)
-settings.server.telnet.bind_addr.set("127.0.0.1")
-settings.server.telnet.port.set(8811)
+settings.server.socket.set(true)
+settings.server.socket.path.set({_liq(control_socket)})
+settings.server.socket.permissions.set(384)
 
 feed_key = {_liq(feed_key)}
 feed_base = {_liq(feed_base)}
@@ -115,12 +115,21 @@ def next_track() =
   end
 end
 
-auto = request.dynamic(id="autodj", retry_delay=3.0, prefetch=2, next_track)
+auto = request.dynamic(id="autodj", retry_delay=3.0, prefetch=3, next_track)
 auto = normalize(auto)
 auto = crossfade(duration=3.0, fade_out=3.0, fade_in=1.0, auto)
 notschleife = amplify(0.3, single(id="notschleife", {_liq(fallback_file)}))
 radio = fallback(id="programm", track_sensitive=false, [auto, notschleife])
 radio = mksafe(radio)
+
+# „Jetzt läuft“ für die Hörer-Seite: nur Künstler und Titel. An den Metadaten, nicht am Titelwechsel – nach der
+# Überblendung kommt der neue Titel nur als Metadaten an (Probe hydratest 29.10.). Leere Meldungen überschreiben nichts.
+def write_now(m) =
+  if m["title"] != "" or m["artist"] != "" then
+    file.write(data=json.stringify({{artist=m["artist"], title=m["title"]}}), {_liq(now_file)})
+  end
+end
+radio = source.on_metadata(radio, write_now)
 
 output.icecast(%mp3(bitrate=192), id="sender",
   host="127.0.0.1", port={ICECAST_PORT}, password={_liq(source_password)}, mount={_liq(MOUNT)},
