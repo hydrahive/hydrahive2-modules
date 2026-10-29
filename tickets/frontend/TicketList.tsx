@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { Input, Select } from "@/shared/ui"
 import type { Ticket, TicketPriority, TicketStatus } from "./types"
 import type { TicketFilters } from "./api"
+import leerBild from "./assets/leer.webp"
 
 interface Props {
   tickets: Ticket[]
@@ -107,7 +108,7 @@ export function TicketList({ tickets, filters, loading, activeId, onFiltersChang
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {loading ? <div className="space-y-2 p-1">{[1, 2, 3, 4].map((item) => <div key={item} className="h-[76px] animate-pulse rounded-[8px] bg-[#111b29]" />)}</div> : tickets.length === 0 ? (
           <div className="flex h-full min-h-[180px] flex-col items-center justify-center px-5 text-center">
-            <div className="mb-3 grid h-9 w-9 place-items-center rounded-[8px] border border-[#253247] bg-[#111b29] text-[#607188]"><Inbox size={17} /></div>
+            <img src={leerBild} alt="" loading="lazy" draggable={false} className="mb-3 h-24 w-24 select-none object-contain" />
             <p className="text-xs font-medium text-[#a9b5c6]">{t("empty")}</p>
             <p className="mt-1 text-[11px] leading-relaxed text-[#607188]">{t("emptyHint")}</p>
           </div>
