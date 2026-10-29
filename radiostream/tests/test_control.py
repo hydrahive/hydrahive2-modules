@@ -229,10 +229,13 @@ def test_hoerer_seite_abgelehnt_alte_bleibt(fake_system, db_ready):
 
 def test_hoerer_seite_aus_entfernt_den_block(fake_system, db_ready):
     from backend import station
+    control.apply_listener_site()
+    assert (fake_system["data"] / "nginx.conf").exists()
     station.save(user="boss", reach="off")
     control.apply_listener_site()
     script = [c for c in fake_system["calls"] if "hydrahive-radiostream" in c][-1]
-    assert "rm -f /etc/nginx/sites-enabled/hydrahive-radiostream" in script
+    assert "rm -f /etc/nginx/sites-enabled/hydrahive-radiostream /etc/nginx/sites-available/hydrahive-radiostream" \
+        in script
     assert not (fake_system["data"] / "nginx.conf").exists()
 
 
@@ -259,6 +262,39 @@ def test_start_wendet_auch_die_hoerer_seite_an(fake_system, db_ready):
 
 def test_stop_nimmt_die_hoerer_seite_weg(fake_system, db_ready):
     control.start()
+    assert (fake_system["data"] / "nginx.conf").exists()
+    n = len(fake_system["calls"])
     control.stop()
-    assert "rm -f /etc/nginx/sites-enabled/hydrahive-radiostream" in fake_system["calls"][-1] or \
-        any("rm -f /etc/nginx/sites-enabled/hydrahive-radiostream" in c for c in fake_system["calls"][-2:])
+    after = fake_system["calls"][n:]
+    assert any("rm -f /etc/nginx/sites-enabled/hydrahive-radiostream" in c for c in after)
+    assert not (fake_system["data"] / "nginx.conf").exists()
+
+
+def test_hoerer_seite_fuer_nginx_lesbar(fake_system, db_ready):
+    control.apply_listener_site()
+    for name in ("index.html", "radio.css", "radio.js"):
+        assert stat.S_IMODE((fake_system["web"] / name).stat().st_mode) == 0o644
+
+
+@pytest.mark.parametrize("ausgabe, belegt", [
+    ("", False),
+    ('LISTEN 0 511 0.0.0.0:8800 0.0.0.0:* users:(("nginx",pid=5,fd=59))', False),
+    ('LISTEN 0 4096 0.0.0.0:8800 0.0.0.0:* users:(("python3",pid=7,fd=3))', True),
+    ('LISTEN 0 511 0.0.0.0:8800 0.0.0.0:* users:(("nginx",pid=5,fd=59))\n'
+     'LISTEN 0 4096 [::]:8800 [::]:* users:(("gitea",pid=9,fd=3))', True),
+])
+def test_port_pruefung_ueber_root_und_nginx_ist_unserer(ausgabe, belegt):
+    from backend import listener_apply
+    calls = []
+
+    def root(script):
+        calls.append(script)
+        return 0, ausgabe
+
+    assert listener_apply.port_taken_by_other(8800, root) is belegt
+    assert calls == ["ss -Hltnp 'sport = :8800'"]
+
+
+def test_port_pruefung_fehlgeschlagen_gilt_als_frei():
+    from backend import listener_apply
+    assert listener_apply.port_taken_by_other(8800, lambda s: (1, 'users:(("x",pid=1))')) is False

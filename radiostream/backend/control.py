@@ -15,7 +15,7 @@ from pathlib import Path
 
 from hydrahive.settings import settings
 
-from . import feed_auth, service_files, station
+from . import feed_auth, listener_apply, service_files, station
 
 UNITS = ("hydrahive-radiostream-icecast", "hydrahive-radiostream-liquidsoap")
 WEB_DIR = Path("/var/www/hydrahive-radiostream")
@@ -82,11 +82,36 @@ def start() -> None:
     if rc != 0:
         raise ControlError("radiostream_service_failed")
     (DATA_DIR() / "sender.on").touch()
+    apply_listener_site()
 
 
 def stop() -> None:
     (DATA_DIR() / "sender.on").unlink(missing_ok=True)
     _root(f"systemctl disable --now {' '.join(reversed(UNITS))}")
+    listener_apply.remove(_root, DATA_DIR())
+
+
+def _port_taken_by_other(port: int) -> bool:
+    return listener_apply.port_taken_by_other(port, _root)
+
+
+def apply_listener_site() -> None:
+    st = station.get()
+    if st["reach"] == "off":
+        listener_apply.remove(_root, DATA_DIR())
+        return
+    if _port_taken_by_other(int(st["listen_port"])):
+        raise ControlError("radiostream_port_in_use")
+    if not listener_apply.apply(st, root=_root, data_dir=DATA_DIR(), web_dir=WEB_DIR, write=_write_public):
+        raise ControlError("radiostream_nginx_failed")
+
+
+def _write_public(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".neu")
+    tmp.write_text(text)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, path)
 
 
 def _active(unit: str) -> bool:
