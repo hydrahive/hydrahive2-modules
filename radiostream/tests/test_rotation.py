@@ -6,7 +6,6 @@ import random
 from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from backend import rotation
 
 T0 = datetime(2026, 10, 30, 12, 0, tzinfo=UTC)
