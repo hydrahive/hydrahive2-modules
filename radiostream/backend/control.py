@@ -85,6 +85,19 @@ def start() -> None:
     apply_listener_site()
 
 
+def refresh_after_restart() -> bool:
+    """Nach Neustart oder Modul-Update: Läuft der Sender laut Merker, alles aus der aktuellen Modulfassung neu
+    schreiben (Konfiguration, Hörer-Seite) und neu starten. install.sh nutzt nur die alten Dateien. Fehler hier dürfen
+    den Kern nie stören – sie stehen dann im Reiter „Sender“ (läuft nicht)."""
+    if not (DATA_DIR() / "sender.on").exists():
+        return False
+    try:
+        start()
+    except (ControlError, OSError):
+        return False
+    return True
+
+
 def stop() -> None:
     (DATA_DIR() / "sender.on").unlink(missing_ok=True)
     _root(f"systemctl disable --now {' '.join(reversed(UNITS))}")
