@@ -329,3 +329,29 @@ def test_nach_neustart_fehler_bricht_nichts_ab(fake_system, db_ready):
     (fake_system["data"] / "sender.on").touch()
     fake_system["state"]["fail"].add("enable")
     assert control.refresh_after_restart() is False
+
+
+def test_nach_neustart_ohne_aenderung_kein_neustart_des_senders(fake_system, db_ready):
+    """Gleiche Konfiguration + Sender läuft → nur die Hörer-Seite auffrischen, Hörer fliegen nicht raus."""
+    control.start()
+    fake_system["calls"].clear()
+    assert control.refresh_after_restart() is True
+    assert not any("systemctl restart" in c or "enable --now" in c for c in fake_system["calls"])
+    assert any("nginx -t" in c for c in fake_system["calls"])
+
+
+def test_nach_neustart_mit_aenderung_neustart(fake_system, db_ready):
+    from backend import station
+    control.start()
+    station.save(user="boss", name="Neuer Name")
+    fake_system["calls"].clear()
+    assert control.refresh_after_restart() is True
+    assert any("systemctl restart" in c for c in fake_system["calls"])
+
+
+def test_nach_neustart_sender_steht_wird_gestartet(fake_system, db_ready):
+    control.start()
+    fake_system["state"]["active"].clear()
+    fake_system["calls"].clear()
+    assert control.refresh_after_restart() is True
+    assert any("enable --now" in c for c in fake_system["calls"])
