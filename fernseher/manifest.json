@@ -1,0 +1,30 @@
+{
+  "id": "fernseher",
+  "name": "Fernseher",
+  "version": "0.1.0",
+  "description": "Steuert deinen Sony-Fernseher im Heimnetz: sehen, was läuft, Sender wechseln, Lautstärke, Ein/Aus und Apps. Agenten können ihn direkt bedienen.",
+  "icon": "Tv",
+  "nav_group": "working",
+  "permissions": [],
+  "capabilities": [
+    {
+      "id": "module.fernseher",
+      "label": "Fernseher ansehen",
+      "default": "everyone"
+    },
+    {
+      "id": "fernseher.control",
+      "label": "Fernseher bedienen",
+      "default": "admin_only",
+      "tools": [
+        "tv_sender",
+        "tv_lautstaerke",
+        "tv_power",
+        "tv_app"
+      ]
+    }
+  ],
+  "has_service": false,
+  "default_agent_tools": true,
+  "min_core_version": "2.0.0"
+}
