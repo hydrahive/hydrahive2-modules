@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { musicApi } from "./api"
 import { trackSubtitle } from "./mediaUtils"
 import type { LibraryPermissions, MediaKind, Track } from "./types"
+import leerBild from "./assets/leer.webp"
 
 export function TrackList({ projectId, kind, tracks, activeId, permissions, onSelect, onRemove, tall = false }: {
   projectId: string
@@ -18,9 +19,7 @@ export function TrackList({ projectId, kind, tracks, activeId, permissions, onSe
   const { t } = useTranslation("musicplayer")
   if (!tracks.length) {
     return (
-      <p className="rounded-[4px] border border-dashed border-[#2a364b] bg-[#0d1420] px-3 py-4 text-center text-[11px] text-[#8d9ab0]">
-        {t("mp_empty")}
-      </p>
+      <div className="rounded-[4px] border border-dashed border-[#2a364b] bg-[#0d1420]"><div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-[11px] text-[#8d9ab0]">{t("mp_empty")}</p></div></div>
     )
   }
   const Icon = kind === "video" ? Video : Music
