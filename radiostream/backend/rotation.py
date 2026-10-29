@@ -36,15 +36,15 @@ def _candidates(conn, rng: random.Random) -> list[dict]:
     if lo is None:
         return []
     if hi - lo < _SAMPLE * 4:
-        rows = conn.execute("SELECT track_id, artist, album_artist, title FROM module_radiostream_tracks "
+        rows = conn.execute("SELECT track_id, artist, album_artist, title, format FROM module_radiostream_tracks "
                             "WHERE state = 'ok'").fetchall()
     else:
         ids = [rng.randint(lo, hi) for _ in range(_SAMPLE * 2)]
         marks = ",".join("?" * len(ids))
-        rows = conn.execute("SELECT track_id, artist, album_artist, title FROM module_radiostream_tracks "
+        rows = conn.execute("SELECT track_id, artist, album_artist, title, format FROM module_radiostream_tracks "
                             f"WHERE state = 'ok' AND rowid IN ({marks})", ids).fetchall()
         if not rows:
-            rows = conn.execute("SELECT track_id, artist, album_artist, title FROM module_radiostream_tracks "
+            rows = conn.execute("SELECT track_id, artist, album_artist, title, format FROM module_radiostream_tracks "
                                 "WHERE state = 'ok' LIMIT ?", (_SAMPLE,)).fetchall()
     out = [dict(r) for r in rows]
     rng.shuffle(out)

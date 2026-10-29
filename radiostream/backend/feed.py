@@ -1,7 +1,9 @@
 """Zuspielung an Liquidsoap (PLAN-E2.md): /feed/next nennt den nächsten Titel, /feed/file/<id> liefert ihn.
 
 Liquidsoap fragt /feed/next per request.dynamic. Die Antwort ist eine Liquidsoap-Anfrage mit Künstler und Titel
-(für „Jetzt läuft“) und der URL der Datei. Den Schlüssel schickt Liquidsoap selbst als Kopfzeile mit.
+(für „Jetzt läuft“) und dem Kürzel `radiostream:<track_id>.<mp3|flac>`. Dieses Kürzel löst das eigene Protokoll im
+Liquidsoap-Skript auf (service_files.py): Es lädt /feed/file/<id> MIT Feed-Schlüssel in eine Temp-Datei. Eine
+normale http-URL ginge nicht, weil Liquidsoap dabei keine Kopfzeile mitschickt.
 """
 from __future__ import annotations
 
@@ -17,7 +19,6 @@ from .smb_source import SourceError, open_source
 
 router = APIRouter()
 Feed = Annotated[None, Depends(require_feed)]
-INTERNAL_BASE = "http://127.0.0.1:{port}/api/modules/radiostream"
 _MEDIA = {"mp3": "audio/mpeg", "flac": "audio/flac"}
 
 
@@ -32,10 +33,9 @@ def feed_next(_: Feed) -> str:
     except rotation.NothingToPlay:
         raise coded(status.HTTP_503_SERVICE_UNAVAILABLE, "radiostream_library_empty")
     rotation.record(t["track_id"], t["artist"], album_artist=t.get("album_artist", ""))
-    from hydrahive.settings import settings
-    base = INTERNAL_BASE.format(port=getattr(settings, "port", 8001))
+    ext = "flac" if t["format"] == "flac" else "mp3"
     return f'annotate:artist="{_q(t["artist"] or t.get("album_artist", ""))}",title="{_q(t["title"])}":' \
-           f'{base}/feed/file/{t["track_id"]}\n'
+           f'radiostream:{t["track_id"]}.{ext}\n'
 
 
 @router.get("/feed/file/{track_id}")

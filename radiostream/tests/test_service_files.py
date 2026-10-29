@@ -1,0 +1,85 @@
+"""Konfiguration für Icecast und Liquidsoap (PLAN-E2.md „Sendebetrieb“).
+
+Geprüft wird nur der erzeugte Text. Ob Liquidsoap ihn annimmt, prüft die Probe auf hydratest (`liquidsoap --check`).
+"""
+from __future__ import annotations
+
+import re
+from xml.etree import ElementTree as ET
+
+from backend import service_files as sf
+
+_ICE = dict(source_password="q<u&e>lle", admin_password="ad\"min", max_listeners=20, name="Molke <FM> & Co",
+            log_dir="/var/log/hydrahive2/radiostream")
+_LIQ = dict(feed_base="http://127.0.0.1:8001/api/modules/radiostream", feed_key="FEEDKEY-123",
+            source_password="QUELLE-456", name="Molke FM", subtitle="rund um die Uhr", fallback_file="/x/stille.mp3")
+
+
+def test_icecast_ist_gueltiges_xml_und_nur_lokal():
+    root = ET.fromstring(sf.icecast_xml(**_ICE))
+    sock = root.find("listen-socket")
+    assert sock.findtext("bind-address") == "127.0.0.1"
+    assert sock.findtext("port") == str(sf.ICECAST_PORT)
+    assert len(root.findall("listen-socket")) == 1
+
+
+def test_icecast_passwoerter_und_name_sauber_maskiert():
+    root = ET.fromstring(sf.icecast_xml(**_ICE))
+    auth = root.find("authentication")
+    assert auth.findtext("source-password") == "q<u&e>lle"
+    assert auth.findtext("admin-password") == 'ad"min'
+    assert root.find("mount").findtext("stream-name") == "Molke <FM> & Co"
+
+
+def test_icecast_hoererzahl_am_mount_und_genug_plaetze_insgesamt():
+    root = ET.fromstring(sf.icecast_xml(**_ICE))
+    mount = root.find("mount")
+    assert mount.findtext("mount-name") == sf.MOUNT
+    assert mount.findtext("max-listeners") == "20"
+    assert int(root.find("limits").findtext("clients")) > 20
+    assert mount.findtext("public") == "0"
+    assert root.find("security").findtext("chroot") == "0"
+
+
+def _strings(script: str) -> list[str]:
+    """Alle Liquidsoap-Zeichenketten (mit \\" und \\\\ maskiert)."""
+    return re.findall(r'"((?:[^"\\]|\\.)*)"', script)
+
+
+def test_liquidsoap_sendet_nur_an_lokales_icecast_mit_passwort():
+    s = sf.liquidsoap_script(**_LIQ)
+    out = s[s.index("output.icecast("):]
+    assert 'host="127.0.0.1"' in out and f"port={sf.ICECAST_PORT}" in out
+    assert 'password="QUELLE-456"' in out and f'mount="{sf.MOUNT}"' in out
+    assert "%mp3(bitrate=192)" in out and "public=false" in out
+
+
+def test_liquidsoap_steuerung_nur_lokal():
+    s = sf.liquidsoap_script(**_LIQ)
+    assert 'settings.server.telnet.bind_addr.set("127.0.0.1")' in s
+
+
+def test_liquidsoap_schickt_feed_schluessel_bei_beiden_abrufen():
+    s = sf.liquidsoap_script(**_LIQ)
+    assert 'feed_key = "FEEDKEY-123"' in s
+    assert s.count('("X-Radiostream-Feed", feed_key)') == 2
+    assert '"#{feed_base}/feed/next"' in s and '"#{feed_base}/feed/file/' in s
+    assert 'protocol.add("radiostream", fetch_track, temporary=true' in s
+
+
+def test_liquidsoap_programm_mit_ueberblendung_lautheit_und_notschleife():
+    s = sf.liquidsoap_script(**_LIQ)
+    assert "request.dynamic(" in s and "normalize(auto)" in s and "crossfade(" in s
+    assert 'single(id="notschleife", "/x/stille.mp3")' in s
+    assert "fallback(" in s and "mksafe(radio)" in s
+
+
+def test_name_mit_anfuehrungszeichen_bricht_das_skript_nicht():
+    boese = dict(_LIQ, name='X" ; output.dummy(blank()) ; "', subtitle="a\\\nb", feed_key='k"ey')
+    s = sf.liquidsoap_script(**boese)
+    assert "output.dummy" not in s.replace('X\\" ; output.dummy(blank()) ; \\"', "")
+    assert 'name="X\\" ; output.dummy(blank()) ; \\""' in s
+    assert 'description="a\\\\ b"' in s
+    assert 'feed_key = "k\\"ey"' in s
+    for line in s.splitlines():
+        assert line.count('"') - line.count('\\"') in (0, 2, 4, 6, 8, 10, 12), line

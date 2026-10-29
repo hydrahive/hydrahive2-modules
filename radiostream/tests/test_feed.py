@@ -6,6 +6,7 @@ Der Schlüssel liegt in /etc/hydrahive2/radiostream/secrets.env (Test: eigene Da
 from __future__ import annotations
 
 import logging
+import re
 
 import pytest
 from backend import feed_auth, rotation, scanner
@@ -39,7 +40,7 @@ def test_naechster_titel_mit_schluessel(client, library):
     r = client.get(f"{P}/feed/next", headers=_h())
     assert r.status_code == 200
     body = r.text.strip()
-    assert body.startswith("annotate:") and f"{P}/feed/file/" in body
+    assert body.startswith("annotate:") and ":radiostream:t_" in body
     assert KEY not in body                                       # Liquidsoap schickt ihn selbst als Kopfzeile
 
 
@@ -86,9 +87,9 @@ def test_benutzeranmeldung_oeffnet_den_feed_nicht(client, library, admin_headers
 
 
 def test_datei_wird_gestreamt(client, library):
-    url = client.get(f"{P}/feed/next", headers=_h()).text.strip().split(":", 1)[1].split('"')[-1].lstrip(":")
-    path = url[url.index(P):]
-    r = client.get(path, headers=_h())
+    uri = client.get(f"{P}/feed/next", headers=_h()).text.strip().rsplit('":', 1)[1]
+    track_id = uri.removeprefix("radiostream:").rsplit(".", 1)[0]
+    r = client.get(f"{P}/feed/file/{track_id}", headers=_h())
     assert r.status_code == 200 and len(r.content) > 1000
     assert r.headers["content-type"] in ("audio/mpeg", "audio/flac", "application/octet-stream")
 
@@ -141,5 +142,5 @@ neu', artist = 'A\\"B'""")
     body = client.get(f"{P}/feed/next", headers=_h()).text
     assert body.count('"') == 4                                  # genau artist="…" und title="…"
     assert body.count("\n") == 1 and body.endswith("\n")         # eine Zeile, kein eingeschleuster Umbruch
-    meta, url = body.rstrip("\n").rsplit('":', 1)
-    assert url.startswith("http://127.0.0.1:") and "/feed/file/" in url
+    meta, uri = body.rstrip("\n").rsplit('":', 1)
+    assert re.fullmatch(r"radiostream:t_[0-9a-f]{24}\.(mp3|flac)", uri)
