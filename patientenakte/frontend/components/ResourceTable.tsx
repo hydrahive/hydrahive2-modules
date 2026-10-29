@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next"
 import type { CSSProperties } from "react"
 import { rgbFor } from "@/shared/colors"
 import { EmptyState } from "@/shared/EmptyState"
+import leerBild from "../assets/leer.webp"
 
 interface Column<T> {
   key: string
@@ -19,7 +20,7 @@ export function ResourceTable<T extends Record<string, unknown>>({ rows, columns
   const { t } = useTranslation("akte")
   const empty = emptyText ?? t("akte.no_entries")
   if (rows.length === 0) {
-    return <EmptyState src="/illustrations/empty-akte.png" hint={empty} />
+    return <EmptyState src={leerBild} hint={empty} />
   }
   return (
     <div className="box overflow-hidden" style={{ "--c": rgbFor("/akte") } as CSSProperties}>
