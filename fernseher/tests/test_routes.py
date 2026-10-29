@@ -88,3 +88,15 @@ def test_umschalten_nicht_gelungen_409(client, configured):
     configured.ignore_switch = True
     r = client.post(f"{P}/channel", json={"sender": "ZDF"}, headers=login(client, "admin"))
     assert r.status_code == 409 and r.json()["detail"]["code"] == "tv_switch_failed"
+
+
+def test_status_im_standby_ist_kein_fehler(client, configured):
+    configured.power = "standby"
+    r = client.get(f"{P}/status", headers=login(client, "testuser"))
+    assert r.status_code == 200 and r.json()["power"] == "standby"
+
+
+def test_schalten_im_standby_409(client, configured):
+    configured.power = "standby"
+    r = client.post(f"{P}/volume", json={"wert": "+1"}, headers=login(client, "admin"))
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "tv_is_off"

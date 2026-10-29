@@ -13,9 +13,27 @@ async def test_status_liest_alles(configured):
 
 
 async def test_status_im_standby_ohne_sender(configured):
+    """Gemessen 29.10.: im Standby antworten Ton und Sender mit 40005 „Display Is Turned off“ – das ist „aus“."""
     configured.power = "standby"
     s = await client.status()
-    assert s["power"] == "standby" and s["channel"] is None and s["program"] == ""
+    assert s == {"power": "standby", "channel": None, "program": "", "volume": None, "muted": None,
+                 "model": "KD-60XF8305"}
+    assert not any(c[1] == "getPlayingContentInfo" for c in configured.calls)
+
+
+async def test_lautstaerke_im_standby_klarer_fehler(configured):
+    configured.power = "standby"
+    with pytest.raises(client.TVError) as e:
+        await client.set_volume("+1")
+    assert e.value.code == "tv_is_off"
+
+
+async def test_sender_im_standby_klarer_fehler(configured):
+    configured.power = "standby"
+    with pytest.raises(client.TVError) as e:
+        await client.set_channel("ZDF")
+    assert e.value.code == "tv_is_off"
+    assert not any(c[1] == "setPlayContent" for c in configured.calls)
 
 
 async def test_schluessel_geht_nur_in_die_kopfzeile(configured):
@@ -108,7 +126,8 @@ async def test_stumm(configured):
 
 
 async def test_ein_aus(configured):
-    assert (await client.set_power(False))["power"] == "standby"
+    off = await client.set_power(False)
+    assert off["power"] == "standby" and off["volume"] is None
     assert (await client.set_power(True))["power"] == "on"
 
 

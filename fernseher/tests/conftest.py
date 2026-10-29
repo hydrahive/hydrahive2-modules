@@ -141,7 +141,9 @@ class FakeTV:
             self.power = "active" if p.get("status") else "standby"
             return 200, {"result": []}
         if (service, method) == ("avContent", "getPlayingContentInfo"):
-            if self.power != "active" or self.app_open:
+            if self.power != "active":
+                return 200, {"error": [40005, "Display Is Turned off"]}
+            if self.app_open:
                 return 200, {"error": [7, "Illegal State"]}
             return 200, {"result": [{**self.playing, "source": "tv:dvbt", "programTitle": "Sendung " + self.playing["title"]}]}
         if (service, method) == ("avContent", "getContentList"):
@@ -161,6 +163,8 @@ class FakeTV:
             self.playing = hit[0]
             return 200, {"result": []}
         if (service, method) == ("audio", "getVolumeInformation"):
+            if self.power != "active":                 # gemessen 29.10.: im Standby 40005
+                return 200, {"error": [40005, "Display Is Turned off"]}
             return 200, {"result": [[{"target": "speaker", "volume": self.volume, "mute": self.mute,
                                       "maxVolume": 100, "minVolume": 0}]]}
         if (service, method) == ("audio", "setAudioVolume"):
