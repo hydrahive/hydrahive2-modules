@@ -1,5 +1,6 @@
 import { api } from "@/shared/api-client"
 import { BASE, tracksQuery, type Filter, type ScanState } from "./logic"
+import type { Station, StationSettings } from "./stationLogic"
 
 export interface Track {
   track_id: string; artist: string; album_artist: string; title: string; album: string; genre: string
@@ -24,3 +25,8 @@ export const saveSource = (url: string, credential_name: string) => api.put<Sour
 export const testSource = (url: string, credential_name: string) =>
   api.post<{ ok: boolean; top_dirs: number }>(`${BASE}/settings/test`, { url, credential_name })
 export const getCredentials = () => api.get<{ items: { name: string; url_pattern: string }[] }>(`${BASE}/credentials`)
+export const getStation = () => api.get<Station>(`${BASE}/station`)
+export const startStation = () => api.post<Station>(`${BASE}/station/start`, {})
+export const stopStation = () => api.post<Station>(`${BASE}/station/stop`, {})
+export const skipTitle = () => api.post<Station>(`${BASE}/station/skip`, {})
+export const saveStation = (v: StationSettings) => api.put<Station>(`${BASE}/station/settings`, v)

@@ -4,10 +4,11 @@ import { useAuthStore } from "@/features/auth/useAuthStore"
 import { getSource } from "./api"
 import { Library } from "./Library"
 import { SettingsPanel } from "./SettingsPanel"
+import { StationPanel } from "./StationPanel"
 
-type Tab = "library" | "settings"
+type Tab = "library" | "station" | "settings"
 
-/** Modulseite Radiostream (SPEC Etappe 1): Reiter Bibliothek; Admins zusätzlich Einstellungen. */
+/** Modulseite Radiostream: Reiter Bibliothek und Sender (alle); Admins zusätzlich Musikquelle. */
 export function RadiostreamPage() {
   const { t } = useTranslation("radiostream")
   const isAdmin = useAuthStore((s: { role?: string | null }) => s.role) === "admin"
@@ -21,7 +22,7 @@ export function RadiostreamPage() {
   }, [isAdmin, rev])
   const configured = !isAdmin || hasSource
 
-  const tabs: Tab[] = isAdmin ? ["library", "settings"] : ["library"]
+  const tabs: Tab[] = isAdmin ? ["library", "station", "settings"] : ["library", "station"]
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-4">
       <header className="space-y-1">
@@ -36,9 +37,9 @@ export function RadiostreamPage() {
           </button>
         ))}
       </nav>
-      {tab === "library"
-        ? <Library key={rev} isAdmin={isAdmin} configured={configured} />
-        : <SettingsPanel onSaved={() => { setRev((r) => r + 1); setTab("library") }} />}
+      {tab === "library" && <Library key={rev} isAdmin={isAdmin} configured={configured} />}
+      {tab === "station" && <StationPanel />}
+      {tab === "settings" && <SettingsPanel onSaved={() => { setRev((r) => r + 1); setTab("library") }} />}
     </div>
   )
 }

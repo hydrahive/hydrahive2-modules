@@ -21,7 +21,7 @@ const view = (s: Partial<Station>) => renderToStaticMarkup(
 describe("Reiter Sender (Etappe 2)", () => {
   it("läuft: Jetzt läuft, Hörerzahl, zuletzt gespielt, Stoppen und Überspringen", () => {
     const html = view({})
-    for (const s of ["station.on_air", "Queen", "One Vision", "station.listeners:{\"count\":4}", "ABBA", "SOS",
+    for (const s of ["station.on_air", "Queen", "One Vision", "station.listeners:{&quot;count&quot;:4}", "ABBA", "SOS",
       "station.stop", "station.skip"]) expect(html).toContain(s)
     expect(html).not.toContain(">station.start<")
   })
@@ -31,6 +31,7 @@ describe("Reiter Sender (Etappe 2)", () => {
     expect(html).toContain("station.off")
     expect(html).toContain("station.start")
     expect(html).not.toContain("station.skip")
+    expect(html).not.toContain("station.listeners")
   })
 
   it("ohne Freigabe: sieht alles, aber keine Knöpfe und keine Einstellungen", () => {
