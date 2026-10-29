@@ -9,6 +9,8 @@ KNOWN: dict[str, str] = {
     "radiostream_auth_failed": "Anmeldung an der Freigabe abgelehnt – Benutzer oder Passwort prüfen.",
     "radiostream_share_not_found": "Diese Freigabe gibt es auf dem Server nicht.",
     "radiostream_scan_running": "Die Bibliothek wird gerade eingelesen.",
+    "radiostream_feed_forbidden": "Kein Zugriff.",
+    "radiostream_library_empty": "Es gibt noch nichts zu spielen.",
     "radiostream_scan_interrupted": "Das Einlesen wurde unterbrochen (z. B. durch einen Neustart).",
     "radiostream_track_not_found": "Titel nicht gefunden.",
     "radiostream_track_unavailable": "Die Datei ist auf dem Server gerade nicht lesbar.",

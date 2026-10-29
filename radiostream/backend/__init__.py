@@ -5,11 +5,12 @@ register(ctx) → Router /api/modules/radiostream, Migration 001_library.sql, Jo
 """
 from __future__ import annotations
 
-from . import nightly
+from . import feed, nightly
 from .routes import router
 
 
 def register(ctx) -> None:
     ctx.register_migrations("migrations")
     ctx.register_router(router)
+    ctx.register_router(feed.router)
     ctx.register_job("radiostream-nightly-scan", nightly.tick, interval_seconds=3600, initial_delay_seconds=120)

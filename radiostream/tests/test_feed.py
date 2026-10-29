@@ -113,3 +113,33 @@ def test_schluessel_nie_im_log(client, library, caplog):
 def test_vergleich_zeitkonstant():
     import inspect
     assert "compare_digest" in inspect.getsource(feed_auth)
+
+
+def test_leerer_schluessel_in_der_datei_sperrt_alles(client, library, monkeypatch, tmp_path):
+    """Leerer Wert in der Datei + leerer Kopf darf NICHT als „gleich“ durchgehen."""
+    f = tmp_path / "leer.env"
+    f.write_text("RADIOSTREAM_FEED_KEY=\n")
+    monkeypatch.setattr(feed_auth, "SECRETS_FILE", f)
+    for hdr in ({}, {"X-Radiostream-Feed": ""}):
+        assert client.get(f"{P}/feed/next", headers=hdr).status_code == 403
+
+
+def test_nur_der_genaue_name_zaehlt(monkeypatch, tmp_path):
+    f = tmp_path / "s.env"
+    f.write_text("OLD_RADIOSTREAM_FEED_KEY=falsch\nRADIOSTREAM_FEED_KEY_BACKUP=auch-falsch\nRADIOSTREAM_FEED_KEY=richtig\n")
+    monkeypatch.setattr(feed_auth, "SECRETS_FILE", f)
+    assert feed_auth.read_secret("RADIOSTREAM_FEED_KEY") == "richtig"
+
+
+def test_titel_mit_anfuehrungszeichen_bricht_die_anweisung_nicht(client, library):
+    """Ein Titel mit " oder Zeilenumbruch darf die Liquidsoap-Anweisung nicht beenden oder umlenken."""
+    from hydrahive.db.connection import db
+    with db() as conn:
+        conn.execute("""UPDATE module_radiostream_tracks SET title = 'Böse",title="x":http://8.8.8.8/x
+neu', artist = 'A\\"B'""")
+        conn.commit()
+    body = client.get(f"{P}/feed/next", headers=_h()).text
+    assert body.count('"') == 4                                  # genau artist="…" und title="…"
+    assert body.count("\n") == 1 and body.endswith("\n")         # eine Zeile, kein eingeschleuster Umbruch
+    meta, url = body.rstrip("\n").rsplit('":', 1)
+    assert url.startswith("http://127.0.0.1:") and "/feed/file/" in url
