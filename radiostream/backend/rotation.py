@@ -7,7 +7,7 @@ Stille entsteht. Zufällig gewählt; nur Titel im Zustand ok.
 from __future__ import annotations
 
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from hydrahive.db.connection import db
 
@@ -26,7 +26,7 @@ def artist_key(artist: str, album_artist: str = "") -> str:
 
 
 def _iso(t: datetime) -> str:
-    return t.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return t.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _candidates(conn, rng: random.Random) -> list[dict]:
@@ -52,7 +52,7 @@ def _candidates(conn, rng: random.Random) -> list[dict]:
 
 
 def pick(*, now: datetime | None = None, rng: random.Random | None = None) -> dict:
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     rng = rng or random.Random()
     cfg = station.get()
     artist_since = _iso(now - timedelta(minutes=cfg["artist_gap_min"]))
@@ -79,12 +79,12 @@ def pick(*, now: datetime | None = None, rng: random.Random | None = None) -> di
 def record(track_id: str, artist: str, *, at: datetime | None = None, album_artist: str = "") -> None:
     with db() as conn:
         conn.execute("INSERT INTO module_radiostream_plays (track_id, artist_key, played_at) VALUES (?, ?, ?)",
-                     (track_id, artist_key(artist, album_artist), _iso(at or datetime.now(timezone.utc))))
+                     (track_id, artist_key(artist, album_artist), _iso(at or datetime.now(UTC))))
         conn.commit()
 
 
 def prune(*, now: datetime | None = None) -> int:
-    since = _iso((now or datetime.now(timezone.utc)) - timedelta(days=KEEP_DAYS))
+    since = _iso((now or datetime.now(UTC)) - timedelta(days=KEEP_DAYS))
     with db() as conn:
         n = conn.execute("DELETE FROM module_radiostream_plays WHERE played_at < ?", (since,)).rowcount
         conn.commit()

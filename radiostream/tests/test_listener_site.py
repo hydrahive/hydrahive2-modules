@@ -18,7 +18,7 @@ def _conf(**kw) -> str:
 
 
 def _locations(conf: str) -> list[str]:
-    return re.findall(r"^\s*location\s+([^{]+?)\s*\{", conf, re.M)
+    return re.findall(r"^\s*location\s+([^{]+?)\s*\{", conf, re.MULTILINE)
 
 
 def test_nur_die_drei_wege_und_sonst_404():

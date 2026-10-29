@@ -3,12 +3,13 @@ nur Titel im Zustand ok, nie Stille – bei Bedarf Sperren schrittweise lockern.
 from __future__ import annotations
 
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
+
 from backend import rotation
 
-T0 = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
+T0 = datetime(2026, 10, 30, 12, 0, tzinfo=UTC)
 
 
 def _add(track_id, artist, title="T", state="ok", album_artist=""):

@@ -22,11 +22,11 @@ WEB_DIR = Path("/var/www/hydrahive-radiostream")
 SOCKET = Path("/run/hydrahive-radiostream/radio.sock")
 
 
-def DATA_DIR() -> Path:  # noqa: N802 - in Tests ersetzbar
+def DATA_DIR() -> Path:  # in Tests ersetzbar
     return settings.data_dir / "radiostream"
 
 
-def CONFIG_DIR() -> Path:  # noqa: N802 - in Tests ersetzbar
+def CONFIG_DIR() -> Path:  # in Tests ersetzbar
     return settings.config_dir / "radiostream"
 
 
@@ -38,7 +38,7 @@ class ControlError(RuntimeError):
 
 def _root(script: str) -> tuple[int, str]:
     cmd = ["bash", "-c", script] if os.getuid() == 0 else ["sudo", "-n", "bash", "-c", script]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
     return r.returncode, (r.stdout + r.stderr).strip()
 
 

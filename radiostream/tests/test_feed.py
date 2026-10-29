@@ -142,5 +142,5 @@ neu', artist = 'A\\"B'""")
     body = client.get(f"{P}/feed/next", headers=_h()).text
     assert body.count('"') == 4                                  # genau artist="…" und title="…"
     assert body.count("\n") == 1 and body.endswith("\n")         # eine Zeile, kein eingeschleuster Umbruch
-    meta, uri = body.rstrip("\n").rsplit('":', 1)
+    _meta, uri = body.rstrip("\n").rsplit('":', 1)
     assert re.fullmatch(r"radiostream:t_[0-9a-f]{24}\.(mp3|flac)", uri)

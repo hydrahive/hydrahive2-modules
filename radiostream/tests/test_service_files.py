@@ -9,11 +9,11 @@ from xml.etree import ElementTree as ET
 
 from backend import service_files as sf
 
-_ICE = dict(source_password="q<u&e>lle", admin_password="ad\"min", max_listeners=20, name="Molke <FM> & Co",
-            log_dir="/var/log/hydrahive2/radiostream")
-_LIQ = dict(feed_base="http://127.0.0.1:8001/api/modules/radiostream", feed_key="FEEDKEY-123",
-            source_password="QUELLE-456", name="Molke FM", subtitle="rund um die Uhr", fallback_file="/x/stille.mp3",
-            control_socket="/run/x/radio.sock", now_file="/var/x/jetzt.json")
+_ICE = {"source_password": "q<u&e>lle", "admin_password": "ad\"min", "max_listeners": 20, "name": "Molke <FM> & Co",
+        "log_dir": "/var/log/hydrahive2/radiostream"}
+_LIQ = {"feed_base": "http://127.0.0.1:8001/api/modules/radiostream", "feed_key": "FEEDKEY-123",
+        "source_password": "QUELLE-456", "name": "Molke FM", "subtitle": "rund um die Uhr",
+        "fallback_file": "/x/stille.mp3", "control_socket": "/run/x/radio.sock", "now_file": "/var/x/jetzt.json"}
 
 
 def test_icecast_ist_gueltiges_xml_und_nur_lokal():
@@ -91,7 +91,7 @@ def test_liquidsoap_programm_mit_ueberblendung_lautheit_und_notschleife():
 
 
 def test_name_mit_anfuehrungszeichen_bricht_das_skript_nicht():
-    boese = dict(_LIQ, name='X" ; output.dummy(blank()) ; "', subtitle="a\\\nb", feed_key='k"ey')
+    boese = {**_LIQ, "name": 'X" ; output.dummy(blank()) ; "', "subtitle": "a\\\nb", "feed_key": 'k"ey'}
     s = sf.liquidsoap_script(**boese)
     assert "output.dummy" not in s.replace('X\\" ; output.dummy(blank()) ; \\"', "")
     assert 'name="X\\" ; output.dummy(blank()) ; \\""' in s
@@ -102,5 +102,5 @@ def test_name_mit_anfuehrungszeichen_bricht_das_skript_nicht():
 
 
 def test_ohne_pausenzeichen_stille_statt_absturz():
-    s = sf.liquidsoap_script(**dict(_LIQ, fallback_file=""))
+    s = sf.liquidsoap_script(**{**_LIQ, "fallback_file": ""})
     assert 'notschleife = blank(id="notschleife")' in s and "single(" not in s

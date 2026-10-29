@@ -280,8 +280,8 @@ def test_hoerer_seite_fuer_nginx_lesbar(fake_system, db_ready):
     ("", False),
     ('LISTEN 0 511 0.0.0.0:8800 0.0.0.0:* users:(("nginx",pid=5,fd=59))', False),
     ('LISTEN 0 4096 0.0.0.0:8800 0.0.0.0:* users:(("python3",pid=7,fd=3))', True),
-    ('LISTEN 0 511 0.0.0.0:8800 0.0.0.0:* users:(("nginx",pid=5,fd=59))\n'
-     'LISTEN 0 4096 [::]:8800 [::]:* users:(("gitea",pid=9,fd=3))', True),
+    (('LISTEN 0 511 0.0.0.0:8800 0.0.0.0:* users:(("nginx",pid=5,fd=59))\n'
+      'LISTEN 0 4096 [::]:8800 [::]:* users:(("gitea",pid=9,fd=3))'), True),
 ])
 def test_port_pruefung_ueber_root_und_nginx_ist_unserer(ausgabe, belegt):
     from backend import listener_apply
