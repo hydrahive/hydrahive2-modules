@@ -66,7 +66,10 @@ def test_liquidsoap_steuerung_nur_ueber_eigene_datei():
 
 def test_jetzt_laeuft_nur_kuenstler_und_titel_an_den_metadaten():
     s = sf.liquidsoap_script(**_LIQ)
-    assert 'json.stringify({artist=m["artist"], title=m["title"]})' in s
+    assert 'jetzt = {artist=m["artist"], title=m["title"]}' in s
+    assert "json.stringify({artist=jetzt.artist, title=jetzt.title, recent=zuletzt()})" in s
+    assert "zuletzt := list.prefix(10, list.add(jetzt, zuletzt()))" in s
+    assert "file.write(perms=420," in s
     assert '"/var/x/jetzt.json"' in s
     assert "source.on_metadata(radio, write_now)" in s
     assert 'if m["title"] != "" or m["artist"] != "" then' in s

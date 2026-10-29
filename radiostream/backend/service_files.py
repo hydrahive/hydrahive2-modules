@@ -129,11 +129,16 @@ notschleife = {_fallback(fallback_file)}
 radio = fallback(id="programm", track_sensitive=false, [auto, notschleife])
 radio = mksafe(radio)
 
-# „Jetzt läuft“ für die Hörer-Seite: nur Künstler und Titel. An den Metadaten, nicht am Titelwechsel – nach der
-# Überblendung kommt der neue Titel nur als Metadaten an (Probe hydratest 29.10.). Leere Meldungen überschreiben nichts.
+# „Jetzt läuft“ für die Hörer-Seite: nur Künstler und Titel, dazu die letzten 10. An den Metadaten, nicht am
+# Titelwechsel – nach der Überblendung kommt der neue Titel nur als Metadaten an (Probe hydratest 29.10.).
+# Leere Meldungen (Notschleife) überschreiben nichts. Die Datei ist für nginx lesbar (0644).
+zuletzt = ref([])
 def write_now(m) =
   if m["title"] != "" or m["artist"] != "" then
-    file.write(data=json.stringify({{artist=m["artist"], title=m["title"]}}), {_liq(now_file)})
+    jetzt = {{artist=m["artist"], title=m["title"]}}
+    file.write(perms=420, data=json.stringify({{artist=jetzt.artist, title=jetzt.title, recent=zuletzt()}}),
+      {_liq(now_file)})
+    zuletzt := list.prefix(10, list.add(jetzt, zuletzt()))
   end
 end
 radio = source.on_metadata(radio, write_now)
