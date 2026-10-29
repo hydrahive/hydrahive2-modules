@@ -1,6 +1,6 @@
 # Radiostream – Bauplan Etappe 2: Sendebetrieb und Hörer-Seite
 
-> Status: **Plan.** Gebaut wird erst nach Tills Freigabe. Grundlage: `SPEC.md` (Abschnitte „Aufbau“, „Hörer-Seite“,
+> Status: **Freigegeben (Till, 29.10.2026).** Grundlage: `SPEC.md` (Abschnitte „Aufbau“, „Hörer-Seite“,
 > „Spätere Etappen – Etappe 2“). Stand 29.10.2026, Bibliothek auf dem Hauptserver vollständig: 175.462 Titel,
 > 0 Fehler, rund 498 Tage Musik.
 
@@ -137,9 +137,10 @@ Modul (Python, HydraHive-Backend)                    Liquidsoap (Dienst)        
 - Wünsche und Bewertungen
 - AAC als zweiter Stream (kann später dazu)
 
-## Fragen an Till
+## Entscheidungen (Till, 29.10.2026)
 
-1. **Hörer-Port 8800 und „Alle“** wie am 26.10. entschieden, oder für den Anfang erst „Heimnetz und Tailscale“, bis du
-   den Router freigegeben hast?
-2. **Sendername** für die Hörer-Seite?
-3. **Sperren** 60 min Künstler und 3 Tage Titel so lassen?
+1. **Erreichbarkeit „Alle“ auf Port 8800 bleibt** (wie am 26.10.). Firewall und Fritzbox richtet Till selbst ein.
+2. **Alles einstellbar in der Oberfläche** (Reiter „Sender“, nur Admins): Sendername, Untertitel, Sperren, Port,
+   Erreichbarkeit, Höchstzahl Hörer. Nichts fest im Code, keine Datei von Hand. Voreinstellung Sendername
+   „Radiostream“.
+3. **Sperren bleiben:** gleicher Künstler frühestens nach 60 min, gleicher Titel frühestens nach 3 Tagen.
