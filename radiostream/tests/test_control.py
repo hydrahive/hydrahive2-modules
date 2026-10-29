@@ -9,7 +9,6 @@ import json
 import stat
 
 import pytest
-
 from backend import control, feed_auth
 
 
@@ -56,6 +55,37 @@ def test_konfiguration_wird_geschrieben_nur_fuer_den_besitzer(fake_system, db_re
         assert stat.S_IMODE(f.stat().st_mode) == 0o600
 
 
+def test_konfiguration_ist_nie_fuer_andere_lesbar_auch_nicht_kurz(fake_system, db_ready, monkeypatch):
+    """Die Temp-Datei wird schon mit 0600 angelegt (nicht erst danach umgestellt) – auch bei umask 000."""
+    import os as _os
+    seen = []
+    real_replace = _os.replace
+
+    def spy(a, b):
+        seen.append(stat.S_IMODE(_os.stat(a).st_mode))
+        return real_replace(a, b)
+
+    monkeypatch.setattr(control.os, "replace", spy)
+    monkeypatch.setattr(control.os, "chmod", lambda *a, **k: None)
+    old = _os.umask(0)
+    try:
+        control.write_config()
+    finally:
+        _os.umask(old)
+    assert seen and all(m == 0o600 for m in seen)
+
+
+def test_konfiguration_wird_bei_jedem_schreiben_wieder_0600(fake_system, db_ready):
+    control.write_config()
+    liq = fake_system["data"] / "radio.liq"
+    liq.chmod(0o644)
+    neu = liq.with_suffix(".liq.neu")
+    neu.write_text("alt")
+    neu.chmod(0o644)
+    control.write_config()
+    assert stat.S_IMODE(liq.stat().st_mode) == 0o600
+
+
 def test_konfiguration_nimmt_sendernamen_und_hoererzahl(fake_system, db_ready):
     from backend import station
     station.save(user="boss", name="Molke FM", max_listeners=7)
@@ -64,8 +94,12 @@ def test_konfiguration_nimmt_sendernamen_und_hoererzahl(fake_system, db_ready):
     assert "<max-listeners>7</max-listeners>" in (fake_system["cfg"] / "icecast.xml").read_text()
 
 
-def test_ohne_passwoerter_kein_start(fake_system, db_ready):
-    (fake_system["cfg"] / "secrets.env").write_text("")
+@pytest.mark.parametrize("fehlt", ["RADIOSTREAM_SOURCE_PASSWORD", "RADIOSTREAM_ADMIN_PASSWORD",
+                                   "RADIOSTREAM_FEED_KEY", "alle"])
+def test_ohne_passwoerter_kein_start(fake_system, db_ready, fehlt):
+    alle = {"RADIOSTREAM_SOURCE_PASSWORD": "q", "RADIOSTREAM_ADMIN_PASSWORD": "a", "RADIOSTREAM_FEED_KEY": "f"}
+    rest = {} if fehlt == "alle" else {k: v for k, v in alle.items() if k != fehlt}
+    (fake_system["cfg"] / "secrets.env").write_text("".join(f"{k}={v}\n" for k, v in rest.items()))
     with pytest.raises(control.ControlError) as e:
         control.start()
     assert e.value.code == "radiostream_service_missing"
@@ -82,8 +116,10 @@ def test_ohne_dienste_kein_start(fake_system, db_ready, monkeypatch):
 def test_start_schreibt_konfiguration_startet_beide_und_merkt_sich_das(fake_system, db_ready):
     control.start()
     assert (fake_system["data"] / "radio.liq").exists()
-    assert any(c.startswith("systemctl enable --now") and all(u in c for u in control.UNITS)
-               for c in fake_system["calls"])
+    starts = [c for c in fake_system["calls"] if c.startswith("systemctl enable --now")]
+    assert len(starts) == 1
+    first = starts[0].split("&&")[0].split()
+    assert all(u in first for u in control.UNITS)
     assert (fake_system["data"] / "sender.on").exists()
     assert control.status()["running"] is True
 
@@ -99,8 +135,8 @@ def test_start_fehlgeschlagen_klare_meldung_und_kein_merker(fake_system, db_read
 def test_stop_haelt_beide_an_und_vergisst_den_merker(fake_system, db_ready):
     control.start()
     control.stop()
-    assert any(c.startswith("systemctl disable --now") and all(u in c for u in control.UNITS)
-               for c in fake_system["calls"])
+    stops = [c for c in fake_system["calls"] if c.startswith("systemctl disable --now")]
+    assert stops and all(u in stops[-1].split() for u in control.UNITS)
     assert not (fake_system["data"] / "sender.on").exists()
     assert control.status()["running"] is False
 
@@ -150,6 +186,12 @@ def test_hoererzahl_aus_icecast_ohne_adressen(fake_system, monkeypatch):
 def test_hoererzahl_robust(fake_system, monkeypatch, body):
     monkeypatch.setattr(control, "_icecast_status", lambda: body)
     assert control.listeners() in (0, 5)
+
+
+def test_hoererzahl_zaehlt_alle_mounts(fake_system, monkeypatch):
+    body = {"icestats": {"source": [{"listeners": 2}, {"listeners": 3}]}}
+    monkeypatch.setattr(control, "_icecast_status", lambda: body)
+    assert control.listeners() == 5
 
 
 def test_root_befehle_ohne_fremde_eingaben(fake_system, db_ready):

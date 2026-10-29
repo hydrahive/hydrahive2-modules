@@ -96,3 +96,8 @@ def test_name_mit_anfuehrungszeichen_bricht_das_skript_nicht():
     assert 'feed_key = "k\\"ey"' in s
     for line in s.splitlines():
         assert line.count('"') - line.count('\\"') in (0, 2, 4, 6, 8, 10, 12), line
+
+
+def test_ohne_pausenzeichen_stille_statt_absturz():
+    s = sf.liquidsoap_script(**dict(_LIQ, fallback_file=""))
+    assert 'notschleife = blank(id="notschleife")' in s and "single(" not in s

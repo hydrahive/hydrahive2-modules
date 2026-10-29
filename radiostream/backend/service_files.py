@@ -17,6 +17,13 @@ def _liq(s: str) -> str:
     return '"' + str(s).replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ") + '"'
 
 
+def _fallback(path: str) -> str:
+    """Pausenzeichen in Schleife; fehlt die Datei, Stille (sonst startet Liquidsoap gar nicht)."""
+    if not path:
+        return 'blank(id="notschleife")'
+    return f'amplify(0.3, single(id="notschleife", {_liq(path)}))'
+
+
 def icecast_xml(*, source_password: str, admin_password: str, max_listeners: int, name: str, log_dir: str) -> str:
     e = escape
     return f"""<icecast>
@@ -118,7 +125,7 @@ end
 auto = request.dynamic(id="autodj", retry_delay=3.0, prefetch=3, next_track)
 auto = normalize(auto)
 auto = crossfade(duration=3.0, fade_out=3.0, fade_in=1.0, auto)
-notschleife = amplify(0.3, single(id="notschleife", {_liq(fallback_file)}))
+notschleife = {_fallback(fallback_file)}
 radio = fallback(id="programm", track_sensitive=false, [auto, notschleife])
 radio = mksafe(radio)
 

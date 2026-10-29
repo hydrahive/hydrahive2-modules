@@ -15,4 +15,11 @@ KNOWN: dict[str, str] = {
     "radiostream_track_not_found": "Titel nicht gefunden.",
     "radiostream_track_unavailable": "Die Datei ist auf dem Server gerade nicht lesbar.",
     "radiostream_admin_only": "Das dürfen nur Admins.",
+    "radiostream_service_missing": "Der Sender ist auf diesem Server noch nicht eingerichtet.",
+    "radiostream_service_failed": "Der Sender startet nicht.",
+    "radiostream_not_running": "Der Sender ist aus.",
+    "radiostream_station_invalid": "Diese Einstellung ist ungültig.",
+    "radiostream_port_invalid": "Dieser Port geht nicht (erlaubt 1024–65535, nicht 8001, 8810, 3001).",
+    "radiostream_port_in_use": "Dieser Port ist schon belegt.",
+    "radiostream_nginx_failed": "Die Hörer-Seite wurde abgelehnt – die alte bleibt.",
 }
