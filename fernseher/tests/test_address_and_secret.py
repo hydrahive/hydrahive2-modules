@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from backend import secrets as tv_secrets
+from backend import psk_crypto as tv_secrets
 from backend import settings_store, validators
 
 
@@ -34,11 +34,15 @@ def test_kaputter_schluessel_wird_abgelehnt(bad):
         tv_secrets.open_(bad)
 
 
-def test_veraenderter_schluessel_wird_erkannt():
+@pytest.mark.parametrize("pos", [0, 5, 12, 20, -1])
+def test_veraenderter_schluessel_wird_erkannt(pos):
+    """Ein Byte des echten Inhalts kippen (nicht ein Füllzeichen der Base64-Form – das war zufällig wirkungslos)."""
+    import base64
     sealed = tv_secrets.seal("abc")
-    flipped = sealed[:-3] + ("A" if sealed[-3] != "A" else "B") + sealed[-2:]
+    raw = bytearray(base64.urlsafe_b64decode(sealed[len(tv_secrets.PREFIX):] + "=="))
+    raw[pos] ^= 0x01
     with pytest.raises(tv_secrets.SecretError):
-        tv_secrets.open_(flipped)
+        tv_secrets.open_(tv_secrets.PREFIX + base64.urlsafe_b64encode(bytes(raw)).decode())
 
 
 def test_speichern_legt_keinen_klartext_ab():

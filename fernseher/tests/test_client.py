@@ -52,10 +52,18 @@ async def test_sender_unbekannt(configured):
     assert e.value.code == "tv_channel_unknown"
 
 
+async def test_eindeutiger_anfang_wird_genommen(configured):
+    assert (await client.find_channel("zdf i"))["name"] == "ZDFinfo HD"
+
+
 async def test_sender_mehrdeutig_fragt_nach(configured):
+    """„zdfn“ passt nur auf ZDFneo, „zdf“ genau auf ZDF – aber „das“? Hier zwei Sender mit gleichem Anfang."""
+    configured_list = [{"number": 20, "name": "Sport1"}, {"number": 21, "name": "Sport1+"},
+                       {"number": 22, "name": "Sportdigital"}]
+    from backend import matching
     with pytest.raises(client.TVError) as e:
-        await client.find_channel("zdf i")          # passt nicht eindeutig, darf nicht raten
-    assert e.value.code in ("tv_channel_ambiguous", "tv_channel_unknown")
+        matching.pick_channel([{**c, "uri": "u"} for c in configured_list], "spor")
+    assert e.value.code == "tv_channel_ambiguous" and "Sport1" in str(e.value) and "Sportdigital" in str(e.value)
 
 
 async def test_umschalten_und_nachlesen(configured):
