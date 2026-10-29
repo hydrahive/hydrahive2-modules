@@ -134,6 +134,8 @@ def test_seite_spielt_stream_und_fragt_jetzt_alle_15_sekunden():
     assert 'href="stream.m3u"' in files["index.html"]
     assert "innerHTML" not in files["radio.js"]
     assert '<meta name="viewport" content="width=device-width, initial-scale=1">' in files["index.html"]
+    # leeres Inline-Symbol: sonst fragt der Browser /favicon.ico ab → 404 in der Konsole (hydratest 29.10.)
+    assert '<link rel="icon" href="data:,">' in files["index.html"]
 
 
 def test_startseite_ueber_try_files_nicht_alias():

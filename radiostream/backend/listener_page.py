@@ -12,6 +12,7 @@ HTML = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <title>{{NAME}}</title>
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="radio.css">
 <script src="radio.js" defer></script>
 </head>
