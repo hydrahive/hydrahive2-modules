@@ -4,6 +4,7 @@ import { atelierApi, fileUrl } from "./api"
 import { VideoGenerationDialog, type VideoInitial } from "./VideoGenerationDialog"
 import { PromptView } from "./PromptView"
 import type { GalleryItem, VideoJob } from "./types"
+import { AtelierEmpty } from "./AtelierEmpty"
 
 interface Props {
   projectId: string
@@ -94,7 +95,7 @@ export function ClipLibraryPanel({ projectId, refAbsPath }: Props) {
         />
       )}
 
-      {jobs.length === 0 && <p className="text-xs text-slate-500">{t("video_empty")}</p>}
+      {jobs.length === 0 && <AtelierEmpty text={t("video_empty")} />}
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
         {jobs.map((job) => (
           <VideoCard

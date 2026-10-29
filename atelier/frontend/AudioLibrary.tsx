@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
 import type { AudioLibraryItem } from "./types"
+import { AtelierEmpty } from "./AtelierEmpty"
 
 interface Props {
   projectId: string
@@ -23,7 +24,7 @@ export function AudioLibrary({ projectId, items, refAbsPath, onChanged }: Props)
   return (
     <div className="flex flex-col gap-2">
       <h3 className="text-sm font-semibold text-slate-200">🎵 {t("audio_library")}</h3>
-      {items.length === 0 && <p className="text-xs text-slate-500">{t("audio_library_empty")}</p>}
+      {items.length === 0 && <AtelierEmpty text={t("audio_library_empty")} />}
       <ul className="flex flex-col gap-2">
         {items.map((item) => (
           <li key={item.rel} className="group rounded border border-slate-700 bg-slate-800/50 p-2 flex flex-col gap-1.5">

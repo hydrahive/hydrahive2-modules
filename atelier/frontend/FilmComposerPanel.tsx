@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { atelierApi, fileUrl } from "./api"
 import type { AudioLibraryItem, FilmJob, VideoJob } from "./types"
+import { AtelierEmpty } from "./AtelierEmpty"
 
 interface Props {
   projectId: string
@@ -71,9 +72,7 @@ export function FilmComposerPanel({ projectId, refAbsPath, audioLibrary }: Props
     <div className="flex flex-col gap-2">
       <h3 className="text-sm font-semibold text-slate-200">🎞️ {t("film_title")}</h3>
 
-      {clips.length === 0 && jobs.length === 0 && (
-        <p className="text-xs text-slate-500">{t("film_empty")}</p>
-      )}
+      {clips.length === 0 && jobs.length === 0 && <AtelierEmpty text={t("film_empty")} />}
 
       {clips.length > 0 && (
         <>
