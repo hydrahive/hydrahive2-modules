@@ -41,6 +41,7 @@ def fake_system(monkeypatch, tmp_path):
     monkeypatch.setattr(control, "DATA_DIR", lambda: data)
     monkeypatch.setattr(control, "CONFIG_DIR", lambda: cfg)
     monkeypatch.setattr(control, "WEB_DIR", web)
+    monkeypatch.setattr(control, "_port_taken_by_other", lambda port: False)
     monkeypatch.setattr(feed_auth, "SECRETS_FILE", cfg / "secrets.env")
     return {"calls": calls, "state": state, "data": data, "cfg": cfg, "web": web}
 
@@ -201,3 +202,63 @@ def test_root_befehle_ohne_fremde_eingaben(fake_system, db_ready):
     control.start()
     control.stop()
     assert all("rm -rf" not in c for c in fake_system["calls"])
+
+
+# --- Hörer-Seite anwenden (PLAN-E2.md Punkt 5) ---------------------------------------------------------------------
+
+def test_hoerer_seite_schreibt_dateien_und_laedt_nginx(fake_system, db_ready):
+    control.apply_listener_site()
+    web = fake_system["web"]
+    assert {p.name for p in web.iterdir()} >= {"index.html", "radio.css", "radio.js"}
+    assert (fake_system["data"] / "nginx.conf").read_text().startswith("# Erzeugt von HydraHive Radiostream")
+    script = [c for c in fake_system["calls"] if "nginx -t" in c][-1]
+    assert script.index("nginx -t") < script.index("systemctl reload nginx")
+    assert "/etc/nginx/sites-enabled/hydrahive-radiostream" in script
+
+
+def test_hoerer_seite_abgelehnt_alte_bleibt(fake_system, db_ready):
+    fake_system["state"]["fail"].add("nginx -t")
+    with pytest.raises(control.ControlError) as e:
+        control.apply_listener_site()
+    assert e.value.code == "radiostream_nginx_failed"
+    script = [c for c in fake_system["calls"] if "nginx -t" in c][-1]
+    # vor dem Test gesichert, bei Fehler zurückgelegt – nie reload mit kaputter Fassung
+    assert "cp -a" in script and ".alt" in script
+    assert script.index("nginx -t") < script.index("systemctl reload nginx")
+
+
+def test_hoerer_seite_aus_entfernt_den_block(fake_system, db_ready):
+    from backend import station
+    station.save(user="boss", reach="off")
+    control.apply_listener_site()
+    script = [c for c in fake_system["calls"] if "hydrahive-radiostream" in c][-1]
+    assert "rm -f /etc/nginx/sites-enabled/hydrahive-radiostream" in script
+    assert not (fake_system["data"] / "nginx.conf").exists()
+
+
+def test_hoerer_seite_root_befehl_ohne_einstellungen(fake_system, db_ready):
+    from backend import station
+    station.save(user="boss", name="X'; rm -rf / #", subtitle="$(reboot)")
+    control.apply_listener_site()
+    for c in fake_system["calls"]:
+        assert "rm -rf /" not in c and "reboot" not in c
+
+
+def test_port_belegt_von_fremdem_dienst(fake_system, db_ready, monkeypatch):
+    monkeypatch.setattr(control, "_port_taken_by_other", lambda port: True)
+    with pytest.raises(control.ControlError) as e:
+        control.apply_listener_site()
+    assert e.value.code == "radiostream_port_in_use"
+    assert not any("nginx -t" in c for c in fake_system["calls"])
+
+
+def test_start_wendet_auch_die_hoerer_seite_an(fake_system, db_ready):
+    control.start()
+    assert any("nginx -t" in c for c in fake_system["calls"])
+
+
+def test_stop_nimmt_die_hoerer_seite_weg(fake_system, db_ready):
+    control.start()
+    control.stop()
+    assert "rm -f /etc/nginx/sites-enabled/hydrahive-radiostream" in fake_system["calls"][-1] or \
+        any("rm -f /etc/nginx/sites-enabled/hydrahive-radiostream" in c for c in fake_system["calls"][-2:])
