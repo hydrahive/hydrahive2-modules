@@ -56,10 +56,20 @@ def setup_test_env():
 
         from backend.feed import router as feed_router
         from backend.routes import router
+        from backend.station_routes import router as station_router
         from hydrahive.api import main
         main.app.include_router(router, prefix=MOD_PREFIX)
         main.app.include_router(feed_router, prefix=MOD_PREFIX)
+        main.app.include_router(station_router, prefix=MOD_PREFIX)
+        _declare_capabilities()
         yield tmp_path
+
+
+def _declare_capabilities() -> None:
+    """Freigaben aus dem Manifest bekannt machen (wie der Kern beim Laden), sonst gälte radiostream.control als offen."""
+    from hydrahive.access.capabilities import catalog
+    from hydrahive.modules.manifest import ModuleManifest
+    catalog().register_module(ModuleManifest.load(MODULE_DIR / "manifest.json"))
 
 
 def _migrate() -> None:

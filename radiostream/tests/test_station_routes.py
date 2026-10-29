@@ -39,9 +39,14 @@ def test_status_sehen_alle_mit_modul(client, user_headers, fake_control, db_read
     assert r.status_code == 200
     d = r.json()
     assert d["running"] is False and d["installed"] is True
-    assert d["now"] == {"artist": "Künstler", "title": "Titel"} and d["listeners"] == 3
+    assert d["now"] == {"artist": "Künstler", "title": "Titel"} and d["listeners"] == 0   # aus → keine Hörer
     assert d["settings"]["name"] == "Radiostream" and d["settings"]["listen_port"] == 8800
     assert isinstance(d["recent"], list) and "can_control" in d
+
+
+def test_hoerer_nur_bei_laufendem_sender(client, user_headers, fake_control, db_ready):
+    fake_control["state"]["running"] = True
+    assert client.get(f"{P}/station", headers=user_headers).json()["listeners"] == 3
 
 
 def test_status_sagt_ob_man_steuern_darf(client, user_headers, admin_headers, fake_control, db_ready):
