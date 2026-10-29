@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Plus, Trash2, PenTool } from "lucide-react"
 import { HelpButton } from "@/i18n/HelpButton"
 import type { BoardMeta } from "./types"
+import leerBild from "./assets/leer.webp"
 
 interface Props {
   boards: BoardMeta[]
@@ -54,7 +55,7 @@ export function BoardSidebar({ boards, activeId, onSelect, onCreate, onDelete }:
 
       <div className="flex-1 overflow-y-auto p-2">
         {boards.length === 0 ? (
-          <p className="px-2 py-3 text-xs text-zinc-600">Noch keine Boards — oben „+" klicken.</p>
+          <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-xs text-zinc-600">Noch keine Boards — oben „+" klicken.</p></div>
         ) : (
           <ul className="space-y-1">
             {boards.map((b) => (
