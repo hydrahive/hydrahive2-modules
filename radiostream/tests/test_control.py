@@ -308,3 +308,24 @@ def test_port_pruefung_ueber_root_und_nginx_ist_unserer(ausgabe, belegt):
 def test_port_pruefung_fehlgeschlagen_gilt_als_frei():
     from backend import listener_apply
     assert listener_apply.port_taken_by_other(8800, lambda s: (1, 'users:(("x",pid=1))')) is False
+
+
+# --- Nach Neustart/Update: Konfiguration aus der aktuellen Modulfassung (PLAN-E2.md Punkt 1) ---------------------
+
+def test_nach_neustart_wird_alles_neu_geschrieben_wenn_der_sender_an_ist(fake_system, db_ready):
+    (fake_system["data"] / "sender.on").touch()
+    (fake_system["web"] / "index.html").write_text("alte Fassung")
+    assert control.refresh_after_restart() is True
+    assert "alte Fassung" not in (fake_system["web"] / "index.html").read_text()
+    assert any(c.startswith("systemctl enable --now") for c in fake_system["calls"])
+
+
+def test_nach_neustart_nichts_wenn_der_sender_aus_ist(fake_system, db_ready):
+    assert control.refresh_after_restart() is False
+    assert fake_system["calls"] == []
+
+
+def test_nach_neustart_fehler_bricht_nichts_ab(fake_system, db_ready):
+    (fake_system["data"] / "sender.on").touch()
+    fake_system["state"]["fail"].add("enable")
+    assert control.refresh_after_restart() is False
