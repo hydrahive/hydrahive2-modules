@@ -7,18 +7,17 @@ normale http-URL ginge nicht, weil Liquidsoap dabei keine Kopfzeile mitschickt.
 """
 from __future__ import annotations
 
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, status
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from hydrahive.api.middleware.errors import coded
 
 from . import audio, library, rotation, settings_store
-from .feed_auth import require_feed
 from .smb_source import SourceError, open_source
 
+# Geräte-Router: Der Kern hängt ihn unter /api/module-device/radiostream ein, OHNE Benutzer-Anmeldung, aber zwingend
+# mit require_feed (Schlüssel + 127.0.0.1) und Rate-Limit. Unter /api/modules/… läge sonst die Anmeldung davor
+# (hydratest 29.10.: Liquidsoap bekam 401).
 router = APIRouter()
-Feed = Annotated[None, Depends(require_feed)]
 _MEDIA = {"mp3": "audio/mpeg", "flac": "audio/flac"}
 
 
@@ -27,7 +26,7 @@ def _q(text: str) -> str:
 
 
 @router.get("/feed/next", response_class=PlainTextResponse)
-def feed_next(_: Feed) -> str:
+def feed_next() -> str:
     try:
         t = rotation.pick()
     except rotation.NothingToPlay:
@@ -39,7 +38,7 @@ def feed_next(_: Feed) -> str:
 
 
 @router.get("/feed/file/{track_id}")
-def feed_file(track_id: str, _: Feed):
+def feed_file(track_id: str):
     t = library.by_id(track_id)
     src = settings_store.get()
     if t is None or src is None:

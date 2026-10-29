@@ -87,6 +87,16 @@ def test_konfiguration_wird_bei_jedem_schreiben_wieder_0600(fake_system, db_read
     assert stat.S_IMODE(liq.stat().st_mode) == 0o600
 
 
+def test_liquidsoap_fragt_den_geraete_weg_ohne_anmeldung(fake_system, db_ready):
+    """Die Zuspielung hängt unter /api/module-device (ohne HydraHive-Anmeldung). Unter /api/modules bekäme Liquidsoap
+    401 (hydratest 29.10.)."""
+    from hydrahive.settings import settings
+    control.write_config()
+    liq = (fake_system["data"] / "radio.liq").read_text()
+    assert f'feed_base = "http://127.0.0.1:{settings.port}/api/module-device/radiostream"' in liq
+    assert "/api/modules/" not in liq
+
+
 def test_konfiguration_nimmt_sendernamen_und_hoererzahl(fake_system, db_ready):
     from backend import station
     station.save(user="boss", name="Molke FM", max_listeners=7)

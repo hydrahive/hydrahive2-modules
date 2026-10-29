@@ -69,7 +69,7 @@ def write_config() -> None:
         source_password=src_pw, admin_password=admin_pw, max_listeners=int(st["max_listeners"]), name=st["name"],
         log_dir=str(data / "log")))
     _write_private(data / "radio.liq", service_files.liquidsoap_script(
-        feed_base=f"http://127.0.0.1:{settings.port}/api/modules/radiostream", feed_key=key, source_password=src_pw,
+        feed_base=f"http://127.0.0.1:{settings.port}/api/module-device/radiostream", feed_key=key, source_password=src_pw,
         name=st["name"], subtitle=st["subtitle"], fallback_file=str(pause) if pause.is_file() else "",
         control_socket=str(SOCKET), now_file=str(WEB_DIR / "jetzt.json")))
 
