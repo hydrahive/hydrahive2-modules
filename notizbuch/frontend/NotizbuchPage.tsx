@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import ReactMarkdown from "react-markdown"
 import { api } from "@/shared/api-client"
 import { HelpButton } from "@/i18n/HelpButton"
+import leerBild from "./assets/leer.webp"
 
 interface NoteListItem {
   id: number
@@ -94,7 +95,7 @@ export function NotizbuchPage() {
           </button>
           <HelpButton topic="notizbuch" />
         </div>
-        {list.length === 0 && <p className="text-zinc-600 text-sm py-2">{t("empty")}</p>}
+        {list.length === 0 && <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-zinc-600 text-sm">{t("empty")}</p></div>}
         {list.map((n) => (
           <button
             key={n.id}
