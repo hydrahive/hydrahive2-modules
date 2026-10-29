@@ -4,6 +4,7 @@ import { caseApi, type CaseListItem } from "./api"
 import { CASE_STATUS, deadlineLight, dueText, errorText } from "./caseFormat"
 import { shortDate } from "./legalFormat"
 import { CaseNew } from "./CaseNew"
+import { EmptyCases } from "./EmptyCases"
 import { Light } from "./Light"
 
 /** Reiter „Fälle“: eigene und Mitglieds-Fälle mit Ampel der nächsten Frist; „Neuer Fall“ öffnet das Aufnahmeformular. */
@@ -28,7 +29,7 @@ export function CaseList({ onOpen }: { onOpen: (pid: string) => void }) {
         </button>
       </div>
       {error && <p className="text-xs text-rose-300">{error}</p>}
-      {cases && cases.length === 0 && <p className="text-sm text-[#8d9ab0]">Noch keine Fälle.</p>}
+      {cases && cases.length === 0 && <EmptyCases />}
       {cases && cases.length > 0 && (
         <table className="w-full text-left text-sm">
           <thead className="text-[11px] uppercase text-[#68758a]">
