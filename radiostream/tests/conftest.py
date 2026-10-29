@@ -30,7 +30,8 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 MOD_PREFIX = "/api/modules/radiostream"
-TABLES = ("module_radiostream_sources", "module_radiostream_tracks", "module_radiostream_scan_errors")
+TABLES = ("module_radiostream_sources", "module_radiostream_tracks", "module_radiostream_scan_errors",
+          "module_radiostream_plays", "module_radiostream_station")
 SECRET = "geheim-Passwort-123"
 
 
