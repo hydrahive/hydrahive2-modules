@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { tonstudioApi } from "./api"
 import { errText } from "./errors"
 import type { SongSummary } from "./types"
+import leerBild from "./assets/leer.webp"
 
 interface Props {
   projectId: string
@@ -58,7 +59,7 @@ export function SongList({ projectId, songs, trash, onChanged }: Props) {
         </button>
       </form>
       {error && <p className="text-xs text-red-400">{error}</p>}
-      {songs.length === 0 && <p className="text-xs text-[#8d9ab0]">{t("songs_empty")}</p>}
+      {songs.length === 0 && <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-xs text-[#8d9ab0]">{t("songs_empty")}</p></div>}
       <ul className="flex flex-col gap-1">
         {songs.map((s) => (
           <li key={s.id} className="group flex items-center gap-2 rounded border border-[#2a364b] bg-[#111827] px-2 py-1.5">
