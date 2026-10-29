@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { Film, Trash2, Upload } from "lucide-react"
 import { vitrineApi, type VideoFile } from "./api"
 import { sizeLabel } from "./rules"
+import leerBild from "./assets/leer.webp"
 
 export function VideoList({ videos, onChange }: { videos: VideoFile[]; onChange: () => void }) {
   const { t } = useTranslation("vitrine")
@@ -37,7 +38,7 @@ export function VideoList({ videos, onChange }: { videos: VideoFile[]; onChange:
       <p className="text-xs text-[#718097]">{t("videos_hint")}</p>
       {err && <p className="text-xs text-rose-300">{err}</p>}
       {videos.length === 0
-        ? <p className="rounded-[4px] border border-dashed border-[#2a364b] p-4 text-center text-xs text-[#718097]">{t("no_videos")}</p>
+        ? <div className="rounded-[4px] border border-dashed border-[#2a364b]"><div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-xs text-[#718097]">{t("no_videos")}</p></div></div>
         : (
           <ul className="divide-y divide-[#1c2638] rounded-[4px] border border-[#2a364b] bg-[#111827]">
             {videos.map((v) => (
