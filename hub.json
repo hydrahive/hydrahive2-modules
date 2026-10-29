@@ -71,6 +71,11 @@
       "path": "homeassistant"
     },
     {
+      "id": "fernseher",
+      "name": "Fernseher",
+      "path": "fernseher"
+    },
+    {
       "id": "blueprint",
       "name": "Blueprint",
       "path": "blueprint"

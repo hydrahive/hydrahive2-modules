@@ -43,7 +43,7 @@ Erlaubte Kennungen, festgelegt im Kern in `frontend/src/features/startdesk/areas
 | wissen | deepresearch, archiver, legal (`/recht`), opentor |
 | agenten | tickets |
 | kommunikation | mailbox, telephony (`/voip`), voice |
-| zuhause | haushaltsbuch, patientenakte (`/akte`), homeassistant, cryptoboard, mining, vitrine |
+| zuhause | haushaltsbuch, patientenakte (`/akte`), homeassistant, fernseher, cryptoboard, mining, vitrine |
 | freizeit | mediacenter, boardgames, minigames, vr |
 | verwaltung | ai-security |
 

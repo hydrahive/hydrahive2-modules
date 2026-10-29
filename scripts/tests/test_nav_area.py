@@ -24,7 +24,7 @@ EXPECTED = {
     "tickets": "agenten",
     "mailbox": "kommunikation", "telephony": "kommunikation", "voice": "kommunikation",
     "haushaltsbuch": "zuhause", "patientenakte": "zuhause", "homeassistant": "zuhause", "cryptoboard": "zuhause",
-    "mining": "zuhause", "vitrine": "zuhause",
+    "mining": "zuhause", "vitrine": "zuhause", "fernseher": "zuhause",
     "mediacenter": "freizeit", "boardgames": "freizeit", "minigames": "freizeit", "vr": "freizeit",
     "ai-security": "verwaltung",
 }
