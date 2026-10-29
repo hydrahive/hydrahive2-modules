@@ -82,3 +82,9 @@ def test_admin_schaltet(client, configured):
 def test_lautstaerke_grenze_400(client, configured):
     r = client.post(f"{P}/volume", json={"wert": "99"}, headers=login(client, "admin"))
     assert r.status_code == 400 and r.json()["detail"]["code"] == "tv_volume_limit"
+
+
+def test_umschalten_nicht_gelungen_409(client, configured):
+    configured.ignore_switch = True
+    r = client.post(f"{P}/channel", json={"sender": "ZDF"}, headers=login(client, "admin"))
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "tv_switch_failed"

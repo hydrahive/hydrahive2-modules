@@ -121,6 +121,8 @@ class FakeTV:
         self.calls: list[tuple[str, str, list, str, dict]] = []
         self.psk = PSK
         self.mode = "ok"          # ok | unreachable | needs_restart
+        self.app_open = False     # wie am echten TV: erstes setPlayContent holt nur aus der App
+        self.ignore_switch = False
 
     def handle(self, ip: str, service: str, method: str, params: list, version: str, headers: dict):
         self.calls.append((service, method, params, version, dict(headers)))
@@ -139,7 +141,7 @@ class FakeTV:
             self.power = "active" if p.get("status") else "standby"
             return 200, {"result": []}
         if (service, method) == ("avContent", "getPlayingContentInfo"):
-            if self.power != "active":
+            if self.power != "active" or self.app_open:
                 return 200, {"error": [7, "Illegal State"]}
             return 200, {"result": [{**self.playing, "source": "tv:dvbt", "programTitle": "Sendung " + self.playing["title"]}]}
         if (service, method) == ("avContent", "getContentList"):
@@ -151,6 +153,11 @@ class FakeTV:
             hit = [c for c in CHANNELS if c["uri"] == p.get("uri")]
             if not hit:
                 return 200, {"error": [3, "Illegal Argument"]}
+            if self.ignore_switch:
+                return 200, {"result": []}
+            if self.app_open:
+                self.app_open = False
+                return 200, {"result": []}
             self.playing = hit[0]
             return 200, {"result": []}
         if (service, method) == ("audio", "getVolumeInformation"):
@@ -174,6 +181,10 @@ class FakeTV:
 def fake_tv(monkeypatch):
     tv = FakeTV()
     from backend import client as tv_client
+
+    async def no_wait(_s):
+        return None
+    monkeypatch.setattr(tv_client, "_sleep", no_wait)
 
     async def fake_post(ip, service, method, params, version, psk):
         headers = {"X-Auth-PSK": psk} if psk else {}

@@ -172,15 +172,28 @@ async def test_404_im_fehlerfeld_heisst_neustart(configured, monkeypatch):
     assert e.value.code == "tv_needs_restart"
 
 
-async def test_umschalten_meldet_was_der_tv_wirklich_zeigt(configured, monkeypatch):
-    """Ignoriert der TV den Befehl, muss das Ergebnis den alten Sender zeigen – nicht den gewünschten."""
-    real = configured.handle
+async def test_umschalten_ignoriert_meldet_klar_statt_erfolg(configured):
+    """Bleibt der TV auf dem alten Sender, kommt ein Fehler – kein vorgetäuschter Erfolg."""
+    configured.ignore_switch = True
+    with pytest.raises(client.TVError) as e:
+        await client.set_channel("ZDF")
+    assert e.value.code == "tv_switch_failed" and configured.playing["title"] == "SAT.1"
+    assert sum(1 for c in configured.calls if c[1] == "setPlayContent") == 2      # einmal wiederholt, nicht öfter
 
-    def ignore_set(ip, service, method, params, version, headers):
-        if method == "setPlayContent":
-            configured.calls.append((service, method, params, version, dict(headers)))
-            return 200, {"result": []}
-        return real(ip, service, method, params, version, headers)
-    monkeypatch.setattr(configured, "handle", ignore_set)
+
+async def test_umschalten_aus_einer_app_wiederholt_einmal(configured):
+    """Gemessen 29.10.: aus einer App heraus wirkt erst der zweite Befehl."""
+    configured.app_open = True
     s = await client.set_channel("ZDF")
+    assert s["channel"] == {"number": 2, "name": "ZDF HD"}
+    assert sum(1 for c in configured.calls if c[1] == "setPlayContent") == 2
+
+
+async def test_umschalten_im_normalfall_nur_ein_befehl(configured):
+    await client.set_channel("kabel eins")
+    assert sum(1 for c in configured.calls if c[1] == "setPlayContent") == 1
+
+
+async def test_umschalten_auf_aktuellen_sender_ist_erfolg(configured):
+    s = await client.set_channel("SAT.1")
     assert s["channel"] == {"number": 6, "name": "SAT.1"}

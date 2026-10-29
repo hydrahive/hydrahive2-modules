@@ -99,3 +99,15 @@ async def test_kein_schluessel_in_ergebnissen(configured, name):
 async def test_nicht_eingerichtet(fake_tv):
     r = await _tool("tv_status").execute({}, _ctx())
     assert not r.success and "tv_not_configured" in r.error
+
+
+async def test_sender_aus_app_heraus(configured):
+    configured.app_open = True
+    r = await _tool("tv_sender").execute({"sender": "ZDF"}, _ctx())
+    assert r.success and r.output["channel"] == {"number": 2, "name": "ZDF HD"}
+
+
+async def test_sender_nicht_gewechselt_ist_fehler(configured):
+    configured.ignore_switch = True
+    r = await _tool("tv_sender").execute({"sender": "ZDF"}, _ctx())
+    assert not r.success and "tv_switch_failed" in r.error
