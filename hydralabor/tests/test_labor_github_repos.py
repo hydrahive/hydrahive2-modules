@@ -125,3 +125,12 @@ def test_fork_abgelehnt_sofort_ohne_warten(fake_github):
         run(github_repos.ensure_fork(TOKEN, "nutzer", "core"))
     gets = [c for c in fake_github.calls if c["method"] == "GET"]
     assert len(gets) == 1                                            # nur die erste Nachschau, kein Warten
+
+
+@pytest.mark.parametrize("login", ["hydrahive", "HydraHive"])
+def test_eigentuemer_konto_klare_meldung(fake_github, login):
+    """Dem Konto, dem HydraHive gehört, kann GitHub keinen Fork anlegen – eigene, verständliche Meldung, nichts tun."""
+    with pytest.raises(github_repos.GitHubError) as e:
+        run(github_repos.ensure_fork(TOKEN, login, "core"))
+    assert e.value.code == "labor_github_owner_account"
+    assert fake_github.calls == []
