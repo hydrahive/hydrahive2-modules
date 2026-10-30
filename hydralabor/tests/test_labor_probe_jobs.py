@@ -100,7 +100,7 @@ def test_bauen_meldet_fortschritt(lab):
 def test_starten_zwei_dienste_als_labor(lab):
     run(probe.start(report=lambda _k: None))
     s = next(x for x in _execs(lab) if "systemd-run" in x)
-    assert s.count("systemd-run") == 2
+    assert s.count("systemd-run") == 3                         # Backend, Auslieferer, Neustart-Wächter
     assert "--unit hh-probe-back --uid 1000 --gid 1000" in s and "--unit hh-probe-front --uid 1000 --gid 1000" in s
     assert "-p EnvironmentFile=/work/.probe/env" in s
     assert "--host 127.0.0.1 --port 8002" in s
@@ -116,7 +116,7 @@ def test_starten_neustart_waechter(lab):
     assert ("systemd-run -q --collect --unit hh-probe-restart "
             "--path-property=PathExists=/work/.probe/data/.restart_request") in s
     assert "rm -f /work/.probe/data/.restart_request; systemctl restart hh-probe-back" in s
-    assert s.index("hh-probe-restart") > s.index("--unit hh-probe-back")       # erst wenn das Backend läuft
+    assert s.index("--unit hh-probe-restart") > s.index("--unit hh-probe-back")  # erst wenn das Backend läuft
     assert "rm -f /work/.probe/data/.restart_request; systemctl stop hh-probe-restart.path" in s.split(
         "--unit hh-probe-back")[0]                                              # alte Anforderung/alter Wächter weg
 
