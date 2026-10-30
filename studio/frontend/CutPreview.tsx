@@ -23,13 +23,13 @@ interface Props {
   overlay?: React.ReactNode
 }
 
-const frame = "relative flex aspect-video max-h-full w-full items-center justify-center overflow-hidden rounded-[4px] border border-[#223048] bg-black"
+const frame = "relative flex aspect-video max-h-full w-full items-center justify-center overflow-hidden rounded-[4px] border border-[rgb(var(--hh-s-rand,34_48_72))] bg-black"
 
 /** Vorschau im Reiter „Schneiden“: spielt den ganzen Film über alle Clips (Video, Standbild, Platzhalter, Lücke). */
 export function CutPreview({ clips, base, fps, time, total, playing, current: c, onSeek, onPlay, bindVideo, sound, overlay }: Props) {
   const { t } = useTranslation("studio")
   const next = nextMediaClip(clips, time)
-  const btn = "rounded-[4px] p-1.5 text-[#c3ccdd] hover:bg-[#111827] hover:text-white disabled:opacity-30"
+  const btn = "rounded-[4px] p-1.5 text-[#c3ccdd] hover:bg-[rgb(var(--hh-s-hebung,17_24_39))] hover:text-white disabled:opacity-30"
   return (
     <section className="flex h-full min-h-0 flex-col items-center justify-center gap-2 p-3" data-studio-panel="preview">
       <div className="flex min-h-0 w-full flex-1 items-center justify-center">
@@ -65,8 +65,8 @@ export function CutPreview({ clips, base, fps, time, total, playing, current: c,
         <button type="button" className={btn} disabled={!total} title={t("frame_forward")} onClick={() => onSeek(time + 1 / fps)}><StepForward size={14} /></button>
         <button type="button" className={btn} disabled={!total} title={t("goto_end")} onClick={() => onSeek(total)}><SkipForward size={14} /></button>
         <span className="ml-2 font-mono text-xs text-[#e8eef8]" data-studio-timecode>{timecode(time, fps)}</span>
-        <span className="font-mono text-xs text-[#68758a]">/ {timecode(total, fps)}</span>
-        {c && <span className="ml-auto truncate text-[11px] text-[#8d9ab0]" data-cut-current>{c.label}</span>}
+        <span className="font-mono text-xs text-[#9aa7bc]">/ {timecode(total, fps)}</span>
+        {c && <span className="ml-auto truncate text-[11px] text-[#9aa7bc]" data-cut-current>{c.label}</span>}
       </div>
     </section>
   )

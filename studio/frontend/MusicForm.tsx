@@ -15,9 +15,9 @@ export function MusicForm({ defaults, job, busy, onRun, onClose }: Props) {
   const { t } = useTranslation("studio")
   return (
     <Backdrop onClose={onClose} label={t("music_title")}>
-      <div className="flex items-center gap-2 border-b border-[#2a364b] px-4 py-2.5 text-sm font-black text-[#e8eef8]"><Music size={15} /> {t("music_title")}</div>
+      <div className="flex items-center gap-2 border-b border-[rgb(var(--hh-s-rand,42_54_75))] px-4 py-2.5 text-sm font-black text-[#e8eef8]"><Music size={15} /> {t("music_title")}</div>
       {defaults ? <Body d={defaults} job={job} busy={busy} onRun={onRun} onClose={onClose} />
-        : <p className="p-4 text-xs text-[#8d9ab0]">{t("loading")}</p>}
+        : <p className="p-4 text-xs text-[#9aa7bc]">{t("loading")}</p>}
     </Backdrop>
   )
 }
@@ -52,11 +52,11 @@ function Body({ d, job, busy, onRun, onClose }: { d: MusicDefaults } & Omit<Prop
         <input type="number" min={MUSIC_MIN} max={MUSIC_MAX} step={1} value={seconds} onChange={(e) => setSeconds(Number(e.target.value))}
           className={`${fieldCls} w-28`} data-music-seconds />
       </label>
-      <p className="text-[#8d9ab0]">{t("music_model", { model: d.model })} · {t("music_cost")}</p>
+      <p className="text-[#9aa7bc]">{t("music_model", { model: d.model })} · {t("music_cost")}</p>
       {running && <p className="flex items-center gap-1.5 text-[#69d7ff]"><Loader2 size={12} className="animate-spin" /> {t("music_running")}</p>}
       {error && !running && <p className="text-[#ff6b8a]" role="alert">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
-        <button type="button" onClick={onClose} className="rounded-[4px] border border-[#2a364b] px-3 py-1.5 font-bold text-[#c3ccdd] hover:border-[#46617f]">{t("music_close")}</button>
+        <button type="button" onClick={onClose} className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 font-bold text-[#c3ccdd] hover:border-[rgb(var(--hh-s-rand-hover,70_97_127))]">{t("music_close")}</button>
         <button type="button" disabled={busy || running || !valid} data-music-run
           onClick={() => onRun({ description: text.trim(), seconds, ...(target ? { scene_id: target } : {}) })}
           className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-40">

@@ -4,7 +4,7 @@ import { fileUrl } from "@/shared/files"
 import type { Plan, Selection } from "./planApi"
 import { fileOf, sceneOf } from "./planLogic"
 
-const frame = "flex aspect-video max-h-full w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-[4px] border border-[#223048] bg-black p-4 text-center"
+const frame = "flex aspect-video max-h-full w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-[4px] border border-[rgb(var(--hh-s-rand,34_48_72))] bg-black p-4 text-center"
 
 function Picture({ src, alt }: { src: string; alt: string }) {
   return <img src={fileUrl(src)} alt={alt} className="min-h-0 max-w-full flex-1 object-contain" />
@@ -13,7 +13,7 @@ function Picture({ src, alt }: { src: string; alt: string }) {
 /** Planen, Mitte: Bild des gewählten Shots, der Szene (erstes Shot-Bild) oder Referenzbild des Bausteins. */
 export function PlanPreview({ plan, selection }: { plan: Plan | null; selection: Selection | null }) {
   const { t } = useTranslation("studio")
-  if (!plan || !selection) return <div className={`${frame} text-xs text-[#68758a]`} data-plan-preview="none">{t("plan_pick")}</div>
+  if (!plan || !selection) return <div className={`${frame} text-xs text-[#9aa7bc]`} data-plan-preview="none">{t("plan_pick")}</div>
   if (selection.kind === "head") {
     const h = plan.screenplay
     return (
@@ -21,7 +21,7 @@ export function PlanPreview({ plan, selection }: { plan: Plan | null; selection:
         <Clapperboard size={34} className="text-[#46617f]" />
         <span className="text-base font-black text-[#e8eef8]">{h.title || t("untitled")}</span>
         {h.logline && <span className="max-w-[80%] text-xs text-[#c3ccdd]">{h.logline}</span>}
-        <span className="text-[10px] text-[#68758a]">{t("scene_count", { count: plan.scenes.length })} · {h.aspect_ratio}</span>
+        <span className="text-[10px] text-[#9aa7bc]">{t("scene_count", { count: plan.scenes.length })} · {h.aspect_ratio}</span>
       </div>
     )
   }

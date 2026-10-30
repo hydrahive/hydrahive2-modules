@@ -36,7 +36,7 @@ export function CutArea({ mixing, cut, cp, ed, mixer, every, waves, items, onNot
   if (!mixing) return timeline
   return (
     <div className="flex h-full min-h-0">
-      <div className="w-[420px] min-w-[340px] shrink-0 border-r border-[#2a364b]" data-mixer-area>
+      <div className="w-[420px] min-w-[340px] shrink-0 border-r border-[rgb(var(--hh-s-rand,42_54_75))]" data-mixer-area>
         <MixerPanel mixer={mixer} counts={countsOf(cut.timeline)} playing={cp.playing} onTrack={ed.onTrackMix} onDuck={ed.onDuck}
           onMusic={onMusic} musicRunning={musicRunning} />
       </div>

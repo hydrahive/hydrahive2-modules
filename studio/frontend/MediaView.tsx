@@ -8,9 +8,9 @@ import { previewMode } from "./libraryView"
 export function MediaView({ item, bind }: { item: LibraryItem | null; bind: (el: HTMLMediaElement | null) => void }) {
   const { t } = useTranslation("studio")
   const mode = previewMode(item)
-  const frame = "flex aspect-video max-h-full w-full items-center justify-center overflow-hidden rounded-[4px] border border-[#223048] bg-black"
+  const frame = "flex aspect-video max-h-full w-full items-center justify-center overflow-hidden rounded-[4px] border border-[rgb(var(--hh-s-rand,34_48_72))] bg-black"
   if (!item || mode === "none") {
-    return <div className={`${frame} text-xs text-[#68758a]`} data-studio-preview="none">{t("preview_empty")}</div>
+    return <div className={`${frame} text-xs text-[#9aa7bc]`} data-studio-preview="none">{t("preview_empty")}</div>
   }
   if (mode === "video") {
     return (
@@ -33,7 +33,7 @@ export function MediaView({ item, bind }: { item: LibraryItem | null; bind: (el:
     )
   }
   return (
-    <div className={`${frame} flex-col gap-3 bg-gradient-to-br from-[#1c2940] to-[#080b11]`}>
+    <div className={`${frame} flex-col gap-3 bg-gradient-to-br from-[#1c2940] to-[rgb(var(--hh-s-grund,8_11_17))]`}>
       <Music size={40} className="text-[#69d7ff]" />
       <span className="max-w-[80%] truncate text-sm text-[#e8eef8]">{item.name}</span>
       <audio key={item.id} ref={bind} src={fileUrl(item.abs)} preload="metadata" data-studio-preview="audio" />

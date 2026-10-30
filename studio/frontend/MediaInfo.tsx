@@ -3,7 +3,7 @@ import type { LibraryItem } from "./api"
 import { formatSize } from "./libraryView"
 import { MediaActions } from "./MediaActions"
 
-const label = "block text-[10px] font-bold uppercase tracking-wide text-[#68758a]"
+const label = "block text-[10px] font-bold uppercase tracking-wide text-[#9aa7bc]"
 
 /** Rechts: Angaben zum gewählten Medium der Bibliothek (oder ein Hinweis, wenn nichts gewählt ist). */
 export function MediaInfo({ item, onDelete, onCreateElement }: { item: LibraryItem | null; onDelete?: (item: LibraryItem) => void
@@ -11,9 +11,9 @@ export function MediaInfo({ item, onDelete, onCreateElement }: { item: LibraryIt
   const { t } = useTranslation("studio")
   return (
     <section className="flex h-full min-h-0 flex-col overflow-y-auto p-3" data-studio-panel="inspector">
-      <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("properties")}</h2>
+      <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9aa7bc]">{t("properties")}</h2>
       {item ? <><ItemInfo item={item} />{onDelete && <MediaActions item={item} onDelete={() => onDelete(item)}
-        onCreateElement={onCreateElement && ((k) => onCreateElement(item, k))} />}</> : <p className="mt-3 text-xs text-[#68758a]">{t("pick_medium")}</p>}
+        onCreateElement={onCreateElement && ((k) => onCreateElement(item, k))} />}</> : <p className="mt-3 text-xs text-[#9aa7bc]">{t("pick_medium")}</p>}
     </section>
   )
 }
@@ -34,11 +34,11 @@ function ItemInfo({ item }: { item: LibraryItem }) {
       <p className="break-words font-bold text-[#e8eef8]">{item.name}</p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
         {rows.map(([k, v]) => (
-          <div key={k} className="contents"><dt className="text-[#8d9ab0]">{k}</dt><dd className="break-all text-right text-[#e8eef8]">{v}</dd></div>
+          <div key={k} className="contents"><dt className="text-[#9aa7bc]">{k}</dt><dd className="break-all text-right text-[#e8eef8]">{v}</dd></div>
         ))}
       </dl>
       {item.prompt && (
-        <div><span className={label}>{t("prompt")}</span><p className="mt-1 whitespace-pre-wrap rounded-[4px] bg-[#111827] p-2 text-[#c3ccdd]">{item.prompt}</p></div>
+        <div><span className={label}>{t("prompt")}</span><p className="mt-1 whitespace-pre-wrap rounded-[4px] bg-[rgb(var(--hh-s-innen,17_24_39))] p-2 text-[#c3ccdd]">{item.prompt}</p></div>
       )}
     </div>
   )

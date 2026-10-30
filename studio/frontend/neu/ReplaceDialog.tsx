@@ -23,8 +23,8 @@ export function ReplaceDialog({ count, busy, onReplace, onAppend, onClose, title
             {busy && <Loader2 size={14} className="animate-spin" />}{yes ?? t("guided.replace_yes")}
           </button>
           <button type="button" onClick={onAppend} disabled={busy}
-            className="rounded-[8px] border border-[#46617f] px-4 py-2 text-sm font-bold text-[#e8eef8] hover:bg-[#1c2940] disabled:opacity-50">{other ?? t("guided.replace_append")}</button>
-          <button type="button" onClick={onClose} className="rounded-[8px] px-4 py-2 text-sm text-[#8d9ab0] hover:text-[#e8eef8]">{t("cancel")}</button>
+            className="rounded-[8px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-4 py-2 text-sm font-bold text-[#e8eef8] hover:bg-[#1c2940] disabled:opacity-50">{other ?? t("guided.replace_append")}</button>
+          <button type="button" onClick={onClose} className="rounded-[8px] px-4 py-2 text-sm text-[#9aa7bc] hover:text-[#e8eef8]">{t("cancel")}</button>
         </div>
       </div>
     </Backdrop>

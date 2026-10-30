@@ -25,8 +25,8 @@ export function MixerPanel({ mixer, counts, playing, onTrack, onDuck, onMusic, m
   const hears = audibleTracks(mixer.tracks)
   return (
     <section className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto p-3" data-mixer aria-description={t("mix_hint")}>
-      <div className="flex flex-wrap items-center gap-3 text-xs text-[#8d9ab0]">
-        <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]" title={t("mix_hint")}>{t("mix_title")}</h2>
+      <div className="flex flex-wrap items-center gap-3 text-xs text-[#9aa7bc]">
+        <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9aa7bc]" title={t("mix_hint")}>{t("mix_title")}</h2>
         <label className="ml-auto flex cursor-pointer items-center gap-2 text-[#c3ccdd]" title={t("mix_duck_hint")}>
           <input type="checkbox" checked={mixer.duck} onChange={(e) => onDuck(e.target.checked)} data-mix-duck className="accent-[#69d7ff]" />
           {t("mix_duck")}
@@ -37,10 +37,10 @@ export function MixerPanel({ mixer, counts, playing, onTrack, onDuck, onMusic, m
           live={hears.has(ch.id)} playing={playing} onChange={(v) => onTrack(ch.id, v)} />)}
       </div>
       <button type="button" onClick={onMusic} disabled={musicRunning} title={t("music_open_hint")} data-music-open
-        className="flex items-center justify-center gap-1.5 rounded-[4px] border border-[#46617f] px-3 py-1.5 text-xs font-black text-[#69d7ff] hover:border-[#69d7ff] disabled:opacity-50">
+        className="flex items-center justify-center gap-1.5 rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-3 py-1.5 text-xs font-black text-[#69d7ff] hover:border-[#69d7ff] disabled:opacity-50">
         {musicRunning ? <Loader2 size={12} className="animate-spin" /> : <Music size={12} />} {t("music_open")}
       </button>
-      {musicRunning && <p className="text-[11px] text-[#8d9ab0]" data-music-status>{t("music_running")}</p>}
+      {musicRunning && <p className="text-[11px] text-[#9aa7bc]" data-music-status>{t("music_running")}</p>}
     </section>
   )
 }
@@ -50,13 +50,13 @@ function Channel({ id, label, Icon, v, count, live, playing, onChange }: {
 }) {
   const { t } = useTranslation("studio")
   const db = v.gain_db ?? 0
-  const btn = (on: boolean, color: string) => `rounded-[4px] border px-2 py-0.5 text-[10px] font-black ${on ? color : "border-[#2a364b] text-[#8d9ab0] hover:border-[#46617f]"}`
+  const btn = (on: boolean, color: string) => `rounded-[4px] border px-2 py-0.5 text-[10px] font-black ${on ? color : "border-[rgb(var(--hh-s-rand,42_54_75))] text-[#9aa7bc] hover:border-[rgb(var(--hh-s-rand-hover,70_97_127))]"}`
   return (
-    <div className={`flex flex-col gap-1.5 rounded-[6px] border p-2 ${live ? "border-[#2a364b] bg-[#0d1420]" : "border-[#2a364b]/50 bg-[#0d1420]/40 opacity-60"}`}
+    <div className={`flex flex-col gap-1.5 rounded-[6px] border p-2 ${live ? "border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))]" : "border-[rgb(var(--hh-s-rand,42_54_75)/0.5)] bg-[rgb(var(--hh-s-tief,13_20_32)/0.4)] opacity-60"}`}
       data-mix-channel={id} data-mix-live={live ? "1" : undefined}>
       <div className="flex items-center gap-1.5 text-xs font-bold text-[#e8eef8]">
         <Icon size={13} className="shrink-0" /> <span className="truncate">{label}</span>
-        <span className="ml-auto text-[10px] font-normal text-[#68758a]">{t("mix_clips", { count })}</span>
+        <span className="ml-auto text-[10px] font-normal text-[#9aa7bc]">{t("mix_clips", { count })}</span>
       </div>
       <div className="flex items-center gap-2">
         <input type="range" min={GAIN_MIN} max={GAIN_MAX} step={0.5} value={db} aria-label={t("mix_volume_of", { name: label })}
@@ -90,7 +90,7 @@ function Meter({ id, playing }: { id: TrackId; playing: boolean }) {
     return () => { cancelAnimationFrame(raf); setLevel(0) }
   }, [id, playing])
   return (
-    <div className="relative h-1.5 overflow-hidden rounded-[2px] bg-[#111827]" data-mix-meter={id} aria-hidden>
+    <div className="relative h-1.5 overflow-hidden rounded-[2px] bg-[rgb(var(--hh-s-innen,17_24_39))]" data-mix-meter={id} aria-hidden>
       <span className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#2a7f62] via-[#e6c35c] to-[#ff6b8a]" style={{ width: `${Math.round(level * 100)}%` }} />
     </div>
   )

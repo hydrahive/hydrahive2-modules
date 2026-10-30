@@ -16,6 +16,6 @@ export function Splitter({ dir, onDrag, label }: { dir: "x" | "y"; onDrag: (delt
   return (
     <div role="separator" aria-orientation={dir === "x" ? "vertical" : "horizontal"} aria-label={label} data-studio-splitter={dir}
       onPointerDown={start}
-      className={`shrink-0 bg-[#1e2738] transition-colors hover:bg-[#69d7ff] ${dir === "x" ? "w-1 cursor-col-resize" : "h-1 cursor-row-resize"}`} />
+      className={`shrink-0 bg-[rgb(var(--hh-s-rand,30_39_56))] transition-colors hover:bg-[#69d7ff] ${dir === "x" ? "w-1 cursor-col-resize" : "h-1 cursor-row-resize"}`} />
   )
 }

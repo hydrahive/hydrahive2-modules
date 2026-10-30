@@ -78,9 +78,9 @@ export function AudioTrack({ id, clips, view, time, selected, waveforms, perSeco
   }
 
   return (
-    <div className={`relative flex h-12 border-b border-[#1e2738] ${silent ? "opacity-45" : ""}`} data-studio-track={id === "A1" ? "voice" : "music"}
+    <div className={`relative flex h-12 border-b border-[rgb(var(--hh-s-rand,30_39_56))] ${silent ? "opacity-45" : ""}`} data-studio-track={id === "A1" ? "voice" : "music"}
       data-track-silent={silent ? "1" : undefined}>
-      <div className="flex w-24 shrink-0 items-center gap-1 border-r border-[#1e2738] bg-[#0d1420] px-2 text-[10px] font-bold text-[#8d9ab0]"
+      <div className="flex w-24 shrink-0 items-center gap-1 border-r border-[rgb(var(--hh-s-rand,30_39_56))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 text-[10px] font-bold text-[#9aa7bc]"
         title={silent ? t("mix_track_silent") : undefined}>
         {silent ? <VolumeX size={11} className="shrink-0 text-[#ff6b8a]" /> : <Icon size={11} className="shrink-0" />} {id} {t(id === "A1" ? "cut_track_voice" : "cut_track_music")}
       </div>

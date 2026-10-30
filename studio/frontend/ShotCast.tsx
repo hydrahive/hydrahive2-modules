@@ -8,8 +8,8 @@ export function ShotCast({ shot, elements }: { shot: Shot; elements: PlanElement
   const { t } = useTranslation("studio")
   const list = castNames(shot.cast, elements)
   return (
-    <div className="space-y-1 rounded-[4px] bg-[#0d1420] px-2 py-1.5" data-shot-cast-box>
-      <p className="text-[10px] font-bold uppercase tracking-wide text-[#68758a]">{t("shot_cast_title")}</p>
+    <div className="space-y-1 rounded-[4px] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1.5" data-shot-cast-box>
+      <p className="text-[10px] font-bold uppercase tracking-wide text-[#9aa7bc]">{t("shot_cast_title")}</p>
       {list.length ? (
         <div className="flex flex-wrap gap-1">
           {list.map((c) => (
@@ -18,8 +18,8 @@ export function ShotCast({ shot, elements }: { shot: Shot; elements: PlanElement
             </span>
           ))}
         </div>
-      ) : <p className="text-[11px] text-[#8d9ab0]">{t("shot_cast_none")}</p>}
-      <p className="text-[10px] leading-relaxed text-[#68758a]">{t("shot_cast_hint")}</p>
+      ) : <p className="text-[11px] text-[#9aa7bc]">{t("shot_cast_none")}</p>}
+      <p className="text-[10px] leading-relaxed text-[#9aa7bc]">{t("shot_cast_hint")}</p>
     </div>
   )
 }

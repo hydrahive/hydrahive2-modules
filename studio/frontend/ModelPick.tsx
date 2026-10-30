@@ -19,12 +19,12 @@ export function ModelPick({ kind, value, catalog, onChange }: Props) {
   const label = t(`gen.${kind}`)
   let body: React.ReactNode
   if (!catalog) {
-    body = <p className="mt-1 flex items-center gap-1.5 text-[11px] text-[#68758a]"><Loader2 size={11} className="animate-spin" /> {t("loading")}</p>
+    body = <p className="mt-1 flex items-center gap-1.5 text-[11px] text-[#9aa7bc]"><Loader2 size={11} className="animate-spin" /> {t("loading")}</p>
   } else if (!catalog.models.length) {
     body = (
       <>
         <input value={value} maxLength={200} onChange={(e) => onChange(e.target.value)} data-field={name} aria-label={label} className={fieldCls} />
-        <p className="mt-1 text-[10px] leading-relaxed text-[#68758a]">{t("model_catalog_empty")}</p>
+        <p className="mt-1 text-[10px] leading-relaxed text-[#9aa7bc]">{t("model_catalog_empty")}</p>
       </>
     )
   } else {

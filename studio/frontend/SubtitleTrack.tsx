@@ -11,8 +11,8 @@ export function SubtitleTrack({ cues, view, time, selected, onSelect, onSeek }: 
   const { t } = useTranslation("studio")
   const visible = cues.filter((c) => c.end > view.start && c.start < view.start + view.span)
   return (
-    <div className="flex h-9 border-b border-[#1e2738]" data-sub-track>
-      <div className="flex w-24 shrink-0 items-center gap-1.5 border-r border-[#1e2738] px-2 text-[10px] font-bold text-[#8d9ab0]">
+    <div className="flex h-9 border-b border-[rgb(var(--hh-s-rand,30_39_56))]" data-sub-track>
+      <div className="flex w-24 shrink-0 items-center gap-1.5 border-r border-[rgb(var(--hh-s-rand,30_39_56))] px-2 text-[10px] font-bold text-[#9aa7bc]">
         <Captions size={12} /> {t("sub_track")}
       </div>
       <div className="relative min-w-0 flex-1 overflow-hidden">
@@ -22,7 +22,7 @@ export function SubtitleTrack({ cues, view, time, selected, onSelect, onSeek }: 
             <button key={c.id} type="button" aria-pressed={c.id === selected} title={c.text} data-sub-box={c.id}
               style={{ left: pct(left), width: pct(right - left) }} onClick={() => { onSelect(c.id); onSeek(c.start) }}
               className={`absolute inset-y-1 truncate rounded-[3px] border px-1 text-left text-[10px] leading-6 ${c.id === selected
-                ? "border-[#69d7ff] bg-[#69d7ff]/25 text-white" : "border-[#46617f] bg-[#1c2940] text-[#c3ccdd] hover:border-[#69d7ff]"}`}>
+                ? "border-[#69d7ff] bg-[#69d7ff]/25 text-white" : "border-[rgb(var(--hh-s-rand-hover,70_97_127))] bg-[#1c2940] text-[#c3ccdd] hover:border-[#69d7ff]"}`}>
               {c.text.replace(/\n/g, " ")}
             </button>
           )

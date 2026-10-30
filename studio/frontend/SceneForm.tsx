@@ -34,7 +34,7 @@ export function SceneForm({ scene, elements, presets, busy, onSave, onDelete }: 
         <legend className="col-span-2"><Label>{t("f.camera")}</Label></legend>
         {CAMERA_KEYS.map((k) => (
           <label key={k} className="block" data-scene-camera={k}>
-            <span className="text-[10px] text-[#8d9ab0]">{t(`cam_group.${k}`)}</span>
+            <span className="text-[10px] text-[#9aa7bc]">{t(`cam_group.${k}`)}</span>
             <select value={s.camera[k] ?? ""} className={fieldCls}
               onChange={(e) => { const { [k]: _old, ...rest } = s.camera; set("camera", e.target.value ? { ...rest, [k]: e.target.value } : rest) }}>
               <option value="">{t("cam_any")}</option>
@@ -45,10 +45,10 @@ export function SceneForm({ scene, elements, presets, busy, onSave, onDelete }: 
       </fieldset>
       <div>
         <Label>{t("elements")}</Label>
-        {!elements.length && <p className="mt-1 text-[11px] text-[#68758a]">{t("no_elements")}</p>}
+        {!elements.length && <p className="mt-1 text-[11px] text-[#9aa7bc]">{t("no_elements")}</p>}
         <div className="mt-1 flex flex-wrap gap-1">
           {elements.map((e) => (
-            <label key={e.id} className="flex items-center gap-1 rounded-full bg-[#111827] px-2 py-0.5 text-[11px] text-[#c3ccdd]">
+            <label key={e.id} className="flex items-center gap-1 rounded-full bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-0.5 text-[11px] text-[#c3ccdd]">
               <input type="checkbox" checked={s.element_ids.includes(e.id)} onChange={() => toggle(e.id)} data-scene-element={e.id} /> {e.name}
             </label>
           ))}
@@ -57,21 +57,21 @@ export function SceneForm({ scene, elements, presets, busy, onSave, onDelete }: 
       <div className="space-y-2">
         <Label>{t("f.dialogues")}</Label>
         {s.dialogues.map((d, i) => (
-          <div key={i} className="space-y-1 rounded-[4px] border border-[#2a364b] p-2" data-scene-dialogue={i}>
+          <div key={i} className="space-y-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-2" data-scene-dialogue={i}>
             <div className="flex gap-1">
               <select value={d.element_id} onChange={(e) => line(i, { element_id: e.target.value })} className={`${fieldCls} mt-0`} aria-label={t("f.speaker")}>
                 <option value="">{t("f.narrator")}</option>
                 {elements.filter((e) => e.kind === "character").map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
               <button type="button" onClick={() => set("dialogues", s.dialogues.filter((_, j) => j !== i))} aria-label={t("delete")}
-                className="rounded p-1 text-[#68758a] hover:text-[#ff6b8a]"><X size={12} /></button>
+                className="rounded p-1 text-[#9aa7bc] hover:text-[#ff6b8a]"><X size={12} /></button>
             </div>
             <textarea rows={2} maxLength={2000} value={d.line} onChange={(e) => line(i, { line: e.target.value })} className={fieldCls} aria-label={t("f.line")} />
             <input value={d.emotion} maxLength={50} placeholder={t("f.emotion")} onChange={(e) => line(i, { emotion: e.target.value })} className={fieldCls} />
           </div>
         ))}
         <button type="button" onClick={() => set("dialogues", [...s.dialogues, { element_id: "", line: "", emotion: "" }])} disabled={s.dialogues.length >= 100}
-          className="flex items-center gap-1 text-[11px] text-[#8d9ab0] hover:text-[#e8eef8]" data-scene-add-dialogue><Plus size={12} /> {t("f.add_dialogue")}</button>
+          className="flex items-center gap-1 text-[11px] text-[#9aa7bc] hover:text-[#e8eef8]" data-scene-add-dialogue><Plus size={12} /> {t("f.add_dialogue")}</button>
       </div>
       <FormActions busy={busy} dirty={dirty} onDelete={onDelete}
         onSave={() => onSave({ title: s.title, description: s.description, location: s.location, time_of_day: s.time_of_day,

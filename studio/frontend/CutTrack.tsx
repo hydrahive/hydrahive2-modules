@@ -70,8 +70,8 @@ export function CutTrack({ clips, base, view, time, selected, edit, onSelect, on
   }
 
   return (
-    <div className="relative flex h-16 border-b border-[#1e2738]" data-studio-track="video">
-      <div className="flex w-24 shrink-0 items-center gap-1 border-r border-[#1e2738] bg-[#0d1420] px-2 text-[10px] font-bold text-[#8d9ab0]">V1 {t("cut_track_video")}</div>
+    <div className="relative flex h-16 border-b border-[rgb(var(--hh-s-rand,30_39_56))]" data-studio-track="video">
+      <div className="flex w-24 shrink-0 items-center gap-1 border-r border-[rgb(var(--hh-s-rand,30_39_56))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 text-[10px] font-bold text-[#9aa7bc]">V1 {t("cut_track_video")}</div>
       <div ref={lane} className="relative min-w-0 flex-1 overflow-hidden" data-cut-dropzone={edit ? "1" : undefined}
         onPointerDown={(e) => { if (e.target === e.currentTarget) onSeek(timeAt(e.currentTarget, e.clientX, view)) }}
         onDragOver={(e) => {

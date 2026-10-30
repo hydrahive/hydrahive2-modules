@@ -22,11 +22,11 @@ export function FreeGallery({ items, plan, busy, onAssign, onTimeline, onDelete 
   const { t } = useTranslation("studio")
   const list = freeImages(items)
   const choices = shotChoices(plan)
-  if (!list.length) return <p className="max-w-sm text-center text-xs leading-relaxed text-[#8d9ab0]" data-free-none>{t("free_none")}</p>
+  if (!list.length) return <p className="max-w-sm text-center text-xs leading-relaxed text-[#9aa7bc]" data-free-none>{t("free_none")}</p>
   return (
     <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(220px,1fr))] content-start gap-3 self-start" data-free-gallery>
       {list.map((i) => <Card key={i.id} item={i} choices={choices} busy={busy} onAssign={onAssign} onTimeline={onTimeline} onDelete={onDelete} />)}
-      {!choices.length && <p className="col-span-full text-[11px] text-[#68758a]">{t("free_no_shots")}</p>}
+      {!choices.length && <p className="col-span-full text-[11px] text-[#9aa7bc]">{t("free_no_shots")}</p>}
     </div>
   )
 }
@@ -34,11 +34,11 @@ export function FreeGallery({ items, plan, busy, onAssign, onTimeline, onDelete 
 function Card({ item, choices, busy, onAssign, onTimeline, onDelete }: { item: LibraryItem; choices: ReturnType<typeof shotChoices> } & Omit<Props, "items" | "plan">) {
   const { t } = useTranslation("studio")
   const [target, setTarget] = useState("")
-  const btn = "flex flex-1 items-center justify-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 text-[11px] font-bold text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-40"
+  const btn = "flex flex-1 items-center justify-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-[11px] font-bold text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-40"
   return (
-    <figure className="space-y-1.5 rounded-[6px] border border-[#2a364b] bg-[#0d1420] p-2" data-free-image={item.rel}>
+    <figure className="space-y-1.5 rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-2" data-free-image={item.rel}>
       <img src={fileUrl(item.abs)} alt={item.prompt || item.name} loading="lazy" className="aspect-video w-full rounded-[3px] bg-black object-contain" />
-      {item.prompt && <figcaption className="line-clamp-2 text-[10px] text-[#8d9ab0]" title={item.prompt}>{item.prompt}</figcaption>}
+      {item.prompt && <figcaption className="line-clamp-2 text-[10px] text-[#9aa7bc]" title={item.prompt}>{item.prompt}</figcaption>}
       {choices.length > 0 && (
         <div className="flex gap-1">
           <select value={target} onChange={(e) => setTarget(e.target.value)} aria-label={t("free_assign_to")} className={`${fieldCls} mt-0 min-w-0 flex-1 py-0.5 text-[11px]`}>
@@ -56,7 +56,7 @@ function Card({ item, choices, busy, onAssign, onTimeline, onDelete }: { item: L
       </button>
       {onDelete && (
         <button type="button" onClick={() => onDelete(item)} disabled={busy} data-free-delete={item.rel}
-          className="flex w-full items-center justify-center gap-1 rounded-[4px] px-2 py-1 text-[11px] text-[#8d9ab0] hover:text-[#ff6b8a] disabled:opacity-40">
+          className="flex w-full items-center justify-center gap-1 rounded-[4px] px-2 py-1 text-[11px] text-[#9aa7bc] hover:text-[#ff6b8a] disabled:opacity-40">
           <Trash2 size={11} /> {t("media_delete")}
         </button>
       )}

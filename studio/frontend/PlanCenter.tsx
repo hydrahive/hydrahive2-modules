@@ -23,9 +23,9 @@ export function PlanCenter({ plan, selection, atelier, books, busy, onStart, onI
   if (plan && !plan.scenes.length) body = <StartCard atelier={atelier} books={books} busy={busy} onStart={onStart} onImport={onImport} onIdea={onIdea} onBook={onBook} />
   else if (plan && !selection) {
     body = (
-      <div className="max-w-sm space-y-3 text-center text-xs leading-relaxed text-[#8d9ab0]" data-plan-pick>
+      <div className="max-w-sm space-y-3 text-center text-xs leading-relaxed text-[#9aa7bc]" data-plan-pick>
         <p>{t("plan_pick_scene")}</p>
-        <button type="button" onClick={onHead} className="rounded-[4px] border border-[#46617f] px-3 py-1.5 font-bold text-[#69d7ff] hover:bg-[#1c2940]">
+        <button type="button" onClick={onHead} className="rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-3 py-1.5 font-bold text-[#69d7ff] hover:bg-[#1c2940]">
           {t("plan_edit_head")}
         </button>
       </div>

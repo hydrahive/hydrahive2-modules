@@ -9,7 +9,7 @@ import type { CastActions } from "./useCast"
 
 export function CastIntro({ names, open, onAdd }: { names: string[]; open: number; onAdd: (k: "character" | "place") => void }) {
   const { t } = useTranslation("studio")
-  const btn = "inline-flex items-center justify-center gap-2 rounded-[8px] border border-[#46617f] px-4 py-2.5 text-sm font-bold text-[#e8eef8] hover:bg-[#1c2940]"
+  const btn = "inline-flex items-center justify-center gap-2 rounded-[8px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-4 py-2.5 text-sm font-bold text-[#e8eef8] hover:bg-[#1c2940]"
   return (
     <div className="mb-4 space-y-3" data-guided-open={open}>
       <p className="rounded-[10px] border border-[#69d7ff]/30 bg-[#69d7ff]/5 p-3 text-sm text-[#cdeeff]">
@@ -18,7 +18,7 @@ export function CastIntro({ names, open, onAdd }: { names: string[]; open: numbe
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className={btn} onClick={() => onAdd("character")}><User size={16} /> {t("guided.add_character")}</button>
         <button type="button" className={btn} onClick={() => onAdd("place")}><MapPin size={16} /> {t("guided.add_place")}</button>
-        <span className="text-xs text-[#8d9ab0]">{t("guided.add_hint")}</span>
+        <span className="text-xs text-[#9aa7bc]">{t("guided.add_hint")}</span>
       </div>
     </div>
   )

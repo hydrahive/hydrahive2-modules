@@ -22,9 +22,9 @@ export function ElementFromImageDialog({ kind, suggestion, busy, onConfirm, onCl
         <label className="block"><span className="text-sm text-[#e8eef8]">{t("media_as_name")}</span>
           <input autoFocus value={name} maxLength={200} onChange={(e) => setName(e.target.value)} className={fieldCls} data-media-as-name />
         </label>
-        <p className="leading-relaxed text-[#8d9ab0]">{t("media_as_hint")}</p>
+        <p className="leading-relaxed text-[#9aa7bc]">{t("media_as_hint")}</p>
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-[#8d9ab0] hover:text-[#e8eef8]">{t("cancel")}</button>
+          <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-[#9aa7bc] hover:text-[#e8eef8]">{t("cancel")}</button>
           <button type="submit" disabled={busy || !name.trim()} data-media-as-confirm
             className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-50">
             {busy && <Loader2 size={13} className="animate-spin" />} {t("media_as_create")}

@@ -18,7 +18,7 @@ interface Props {
   onDecompose: () => void
 }
 
-const arrow = "rounded p-0.5 text-[#68758a] hover:bg-[#1c2940] hover:text-[#e8eef8] disabled:opacity-30 disabled:hover:bg-transparent"
+const arrow = "rounded p-0.5 text-[#9aa7bc] hover:bg-[#1c2940] hover:text-[#e8eef8] disabled:opacity-30 disabled:hover:bg-transparent"
 
 /** Planen, unten: Shots der gewählten Szene – anklicken, sortieren, hinzufügen, per Regie-Agent zerlegen. */
 export function StoryboardPanel({ scene, base, selected, busy, runningShots = [], batchMenu, onSelect, onAdd, onMove, onDecompose }: Props) {
@@ -26,27 +26,27 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
   const running = busy === "decompose"
   return (
     <section className="flex h-full min-h-0 flex-col" data-studio-panel="storyboard">
-      <div className="flex h-8 shrink-0 items-center gap-2 border-b border-[#2a364b] px-3 text-[11px] text-[#8d9ab0]">
-        <span className="font-black uppercase tracking-[0.14em] text-[#68758a]">{t("storyboard")}</span>
+      <div className="flex h-8 shrink-0 items-center gap-2 border-b border-[rgb(var(--hh-s-rand,42_54_75))] px-3 text-[11px] text-[#9aa7bc]">
+        <span className="font-black uppercase tracking-[0.14em] text-[#9aa7bc]">{t("storyboard")}</span>
         {scene && <span className="truncate">{scene.title || t("untitled")}</span>}
-        {scene && scene.shots.length > 0 && <span className="shrink-0 text-[#68758a]" data-storyboard-duration>{t("scene_duration", { seconds: sceneDuration(scene) })}</span>}
+        {scene && scene.shots.length > 0 && <span className="shrink-0 text-[#9aa7bc]" data-storyboard-duration>{t("scene_duration", { seconds: sceneDuration(scene) })}</span>}
         <span className="ml-auto" />
         {batchMenu}
         {scene && scene.shots.length > 0 && (
           <button type="button" onClick={onAdd} disabled={running} data-storyboard-add-bar title={t("add_shot")}
-            className="flex shrink-0 items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-0.5 font-bold text-[#c3ccdd] hover:bg-[#1c2940] disabled:opacity-50">
+            className="flex shrink-0 items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-0.5 font-bold text-[#c3ccdd] hover:bg-[#1c2940] disabled:opacity-50">
             <Plus size={12} /> {t("add_shot_short")}
           </button>
         )}
         {scene && scene.shots.length > 0 && (
           <button type="button" onClick={onDecompose} disabled={running} data-storyboard-decompose title={t("decompose_hint")}
-            className="flex shrink-0 items-center gap-1.5 rounded-[4px] border border-[#46617f] px-2 py-0.5 font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
+            className="flex shrink-0 items-center gap-1.5 rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-2 py-0.5 font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
             {running ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} {running ? t("decompose_running") : t("decompose")}
            <Costs />
         </button>
         )}
       </div>
-      {!scene ? <p className="p-3 text-xs text-[#68758a]">{t("storyboard_pick_scene")}</p> : (
+      {!scene ? <p className="p-3 text-xs text-[#9aa7bc]">{t("storyboard_pick_scene")}</p> : (
         <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-3">
           {!scene.shots.length && (
             <div className="flex flex-wrap items-stretch gap-3 self-center" data-storyboard-empty>
@@ -57,9 +57,9 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
           {scene.shots.map((s, i) => {
             const img = fileOf(base, s.image_rel)
             return (
-              <div key={s.id} className={`flex w-44 shrink-0 flex-col overflow-hidden rounded-[4px] border ${s.id === selected ? "border-[#69d7ff]" : "border-[#2a364b]"} bg-[#111827]`}>
+              <div key={s.id} className={`flex w-44 shrink-0 flex-col overflow-hidden rounded-[4px] border ${s.id === selected ? "border-[#69d7ff]" : "border-[rgb(var(--hh-s-rand,42_54_75))]"} bg-[rgb(var(--hh-s-innen,17_24_39))]`}>
                 <button type="button" onClick={() => onSelect(s.id)} data-storyboard-shot={s.id} title={s.prompt} className="flex flex-col text-left">
-                  <span className="relative grid aspect-video place-items-center overflow-hidden bg-[#0d1420]">
+                  <span className="relative grid aspect-video place-items-center overflow-hidden bg-[rgb(var(--hh-s-tief,13_20_32))]">
                     {img ? <img src={fileUrl(img)} alt="" loading="lazy" className="h-full w-full object-cover" />
                       : <Clapperboard size={18} className="text-[#46617f]" />}
                     {s.video_rel && (
@@ -75,7 +75,7 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
                   </span>
                   <span className="px-2 pt-1.5 text-[11px]">
                     <span className="block font-bold text-[#e8eef8]">{t("shot", { n: i + 1 })} · {s.duration} s</span>
-                    <span className="block truncate text-[#8d9ab0]">{s.prompt || (s.shot ? t(`cam.shot.${s.shot}`) : "")}</span>
+                    <span className="block truncate text-[#9aa7bc]">{s.prompt || (s.shot ? t(`cam.shot.${s.shot}`) : "")}</span>
                   </span>
                 </button>
                 <span className="flex justify-end gap-0.5 px-1 pb-1">
@@ -87,7 +87,7 @@ export function StoryboardPanel({ scene, base, selected, busy, runningShots = []
           })}
           {scene.shots.length > 0 && (
             <button type="button" onClick={onAdd} disabled={running} data-storyboard-add title={t("add_shot")} aria-label={t("add_shot")}
-              className="grid w-24 shrink-0 place-items-center rounded-[4px] border border-dashed border-[#2a364b] text-[#68758a] hover:text-[#e8eef8] disabled:opacity-40">
+              className="grid w-24 shrink-0 place-items-center rounded-[4px] border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] text-[#9aa7bc] hover:text-[#e8eef8] disabled:opacity-40">
               <Plus size={18} />
             </button>
           )}
@@ -103,12 +103,12 @@ function EmptyWay({ icon, label, hint, onClick, disabled, primary = false, busy 
   marker: "add" | "decompose"
 }) {
   return (
-    <div className={`flex w-60 flex-col gap-1.5 rounded-[6px] border p-3 ${primary ? "border-[#69d7ff]/50 bg-[#69d7ff]/5" : "border-[#2a364b]"}`}>
+    <div className={`flex w-60 flex-col gap-1.5 rounded-[6px] border p-3 ${primary ? "border-[#69d7ff]/50 bg-[#69d7ff]/5" : "border-[rgb(var(--hh-s-rand,42_54_75))]"}`}>
       <button type="button" onClick={onClick} disabled={disabled} {...(marker === "add" ? { "data-storyboard-add": true } : { "data-storyboard-decompose": true })}
         className={`flex items-center justify-center gap-1.5 rounded-[4px] px-3 py-1.5 text-xs font-black disabled:opacity-50 ${primary ? "bg-[#69d7ff] text-[#08111c]" : "border border-[#69d7ff] text-[#69d7ff] hover:bg-[#1c2940]"}`}>
         {busy ? <Loader2 size={14} className="animate-spin" /> : icon} {label}
       </button>
-      <span className="text-[11px] leading-relaxed text-[#8d9ab0]">{hint}</span>
+      <span className="text-[11px] leading-relaxed text-[#9aa7bc]">{hint}</span>
     </div>
   )
 }

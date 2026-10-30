@@ -22,7 +22,7 @@ function CardText({ card, n, onText }: { card: Card; n: number; onText: Props["o
   return (
     <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} maxLength={4000} aria-label={t("guided.scene_n", { n })}
       onBlur={() => { if (text.trim() && text !== card.text) onText(card.id, text.trim()) }} placeholder={t("guided.scene_placeholder")}
-      className="min-w-0 flex-1 resize-none rounded-[6px] border border-transparent bg-transparent p-1 text-base text-[#e8eef8] outline-none hover:border-[#2a364b] focus:border-[#69d7ff]" />
+      className="min-w-0 flex-1 resize-none rounded-[6px] border border-transparent bg-transparent p-1 text-base text-[#e8eef8] outline-none hover:border-[rgb(var(--hh-s-rand-hover,42_54_75))] focus:border-[#69d7ff]" />
   )
 }
 
@@ -31,10 +31,10 @@ export function IdeaCards({ cards, saved, busy, onText, onMove, onDelete, onAdd 
   return (
     <section className="mt-6">
       <h2 className="mb-1 text-xl font-black text-[#f2f6fc]">{t("guided.story_title", { count: cards.length })}</h2>
-      <p className="mb-3 text-sm text-[#8d9ab0]">{t("guided.story_text")}</p>
+      <p className="mb-3 text-sm text-[#9aa7bc]">{t("guided.story_text")}</p>
       <ol className="space-y-2">
         {cards.map((c, i) => (
-          <li key={c.id} className="flex items-start gap-3 rounded-[10px] border border-[#2a364b] bg-[#0e1420] p-3" data-guided-card={c.id}>
+          <li key={c.id} className="flex items-start gap-3 rounded-[10px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,14_20_32))] p-3" data-guided-card={c.id}>
             <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#1c2940] text-sm font-black text-[#69d7ff]">{i + 1}</span>
             <CardText key={`${c.id}:${c.text}`} card={c} n={i + 1} onText={onText} />
             <div className="flex shrink-0 items-center gap-1">
