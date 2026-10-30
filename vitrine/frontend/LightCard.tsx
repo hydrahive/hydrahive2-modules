@@ -33,7 +33,7 @@ export function LightCard({ light: raw, status: st, onChange }: {
 
       <div className="flex flex-wrap items-center gap-2 rounded-[4px] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2 text-xs text-[#c8d2df]">
         {!st?.available ? <span className="text-[#9aa7bc]">{t("light_no_status")}</span> : <>
-          <span className="h-3 w-3 rounded-full border border-white/20" style={{ background: st.effect === "off" || !st.color ? "#000" : toPicker(st.color) }} />
+          <span className="h-3 w-3 rounded-full border border-[rgb(var(--hh-s-rand-hover,70_97_127))]" style={{ background: st.effect === "off" || !st.color ? "#000" : toPicker(st.color) }} />
           <span>{st.device ?? t("light_no_device")}</span>
           {st.state && <span className="text-[#9aa7bc]">· {t(`light_state_${st.state}`, { defaultValue: st.state })}{st.label ? ` (${st.label})` : ""}</span>}
           {st.preview && <span className="text-amber-200">· {t("light_preview")}</span>}

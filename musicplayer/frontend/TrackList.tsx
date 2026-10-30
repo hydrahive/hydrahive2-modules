@@ -32,7 +32,7 @@ export function TrackList({ projectId, kind, tracks, activeId, permissions, onSe
           <div
             key={track.id}
             className={`flex min-w-0 items-center rounded-[4px] border ${active
-              ? "border-fuchsia-400/35 bg-fuchsia-500/10"
+              ? "border-[#69d7ff]/35 bg-[#69d7ff]/10"
               : "border-transparent bg-[rgb(var(--hh-s-innen,17_24_39))] hover:border-[rgb(var(--hh-s-rand-hover,42_54_75))]"}`}
           >
             <button type="button" onClick={() => onSelect(track)} className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left">

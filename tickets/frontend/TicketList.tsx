@@ -21,7 +21,7 @@ const statuses: TicketStatus[] = ["open", "triaged", "in_progress", "waiting", "
 const priorities: TicketPriority[] = ["low", "normal", "high", "urgent"]
 
 const priorityDot: Record<TicketPriority, string> = {
-  low: "bg-zinc-500",
+  low: "bg-[rgb(var(--hh-s-rand-hover,70_97_127))]",
   normal: "bg-sky-400",
   high: "bg-amber-400",
   urgent: "bg-orange-400",
@@ -30,10 +30,10 @@ const priorityDot: Record<TicketPriority, string> = {
 const statusBadge: Record<TicketStatus, string> = {
   open: "border-sky-400/25 bg-sky-400/10 text-sky-200",
   triaged: "border-cyan-400/25 bg-cyan-400/10 text-cyan-200",
-  in_progress: "border-violet-400/25 bg-violet-400/10 text-violet-200",
+  in_progress: "border-[#69d7ff]/25 bg-[#69d7ff]/10 text-[#69d7ff]",
   waiting: "border-amber-400/25 bg-amber-400/10 text-amber-200",
   resolved: "border-emerald-400/25 bg-emerald-400/10 text-emerald-200",
-  closed: "border-zinc-500/25 bg-zinc-500/10 text-zinc-300",
+  closed: "border-[rgb(var(--hh-s-rand-hover,70_97_127)/0.25)] bg-[rgb(var(--hh-s-rand-hover,70_97_127)/0.1)] text-[#c8d2df]",
   cancelled: "border-orange-400/25 bg-orange-400/10 text-orange-200",
 }
 

@@ -63,7 +63,7 @@ export function MusicPlayerProjectView({ projectId, large = false }: { projectId
             onClick={() => chooseKind(item)}
             aria-pressed={kind === item}
             className={`flex-1 rounded-[3px] px-2 py-1 text-xs font-bold ${kind === item
-              ? "bg-fuchsia-500/20 text-fuchsia-100"
+              ? "bg-[#69d7ff]/20 text-[#c8f2ff]"
               : "text-[#9aa7bc] hover:text-[#e8eef8]"}`}
           >
             {t(`mp_${item}`)}

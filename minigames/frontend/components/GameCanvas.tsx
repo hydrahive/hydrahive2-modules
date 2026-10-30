@@ -36,7 +36,7 @@ export function GameCanvas({ game, size = 480, onScore, onGameOver }: Props) {
       ref={canvasRef}
       width={size}
       height={size}
-      className="rounded-lg border border-white/[8%] bg-zinc-950 max-w-full touch-none"
+      className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] max-w-full touch-none"
       style={{ imageRendering: "pixelated" }}
     />
   )

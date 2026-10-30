@@ -71,7 +71,7 @@ export function AtelierCutPanel({ projectId }: Props) {
         <button
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="rounded border border-violet-500/30 bg-violet-500/10 px-3 py-1.5 text-xs text-violet-200 hover:bg-violet-500/20 disabled:opacity-40"
+          className="rounded border border-[#69d7ff]/30 bg-[#69d7ff]/10 px-3 py-1.5 text-xs text-[#69d7ff] hover:bg-[#69d7ff]/20 disabled:opacity-40"
         >
           {uploading ? t("uploading") : t("cut_upload")}
         </button>
@@ -90,7 +90,7 @@ export function AtelierCutPanel({ projectId }: Props) {
             <button
               key={f.file_id}
               onClick={() => setOpenFile(f)}
-              className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/40 text-left transition-colors hover:border-violet-500/50"
+              className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/40 text-left transition-colors hover:border-[#69d7ff]/50"
             >
               <div className="grid aspect-video place-items-center bg-black/40 text-xs text-slate-500">
                 {f.width}×{f.height}

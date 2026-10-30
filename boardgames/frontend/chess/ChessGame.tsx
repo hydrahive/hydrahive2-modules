@@ -23,7 +23,7 @@ export function ChessGame(_: BoardGameProps) {
   if (!mode) {
     return (
       <div className="flex flex-col items-center gap-4 p-6">
-        <h3 className="text-base font-semibold text-zinc-200">{t("bg_choose_mode")}</h3>
+        <h3 className="text-base font-semibold text-[#e8eef8]">{t("bg_choose_mode")}</h3>
         <div className="flex flex-col gap-2 w-56">
           <ModeButton emoji="👥" label={t("bg_mode_hotseat")} onClick={() => setMode("hotseat")} />
           <ModeButton emoji="🤖" label={t("bg_mode_ai")} onClick={() => setMode("ai")} />
@@ -39,7 +39,7 @@ export function ChessGame(_: BoardGameProps) {
 function ModeButton({ emoji, label, onClick }: { emoji: string; label: string; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="px-4 py-3 rounded-lg border border-white/10 bg-white/[4%] text-zinc-200 hover:bg-white/[8%] transition-colors">
+      className="px-4 py-3 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] transition-colors">
       {emoji} {label}
     </button>
   )
@@ -64,13 +64,13 @@ function ModelPicker({ onPick, onBack }: { onPick: (model: string) => void; onBa
 
   return (
     <div className="flex flex-col items-center gap-4 p-6 w-72">
-      <h3 className="text-base font-semibold text-zinc-200">{t("bg_pick_model")}</h3>
-      {loading && <p className="text-sm text-zinc-400">{t("bg_loading")}</p>}
+      <h3 className="text-base font-semibold text-[#e8eef8]">{t("bg_pick_model")}</h3>
+      {loading && <p className="text-sm text-[#c8d2df]">{t("bg_loading")}</p>}
       {err && <p className="text-sm text-red-400">{t("bg_models_error")}</p>}
       {!loading && !err && (
         <>
           <select value={sel} onChange={(e) => setSel(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-sm text-zinc-200">
+            className="w-full px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] border border-[rgb(var(--hh-s-rand,42_54_75))] text-sm text-[#e8eef8]">
             {models.map((m) => (
               <option key={m.id} value={m.id}>{m.label}{m.is_free ? " · free" : ""}</option>
             ))}
@@ -81,7 +81,7 @@ function ModelPicker({ onPick, onBack }: { onPick: (model: string) => void; onBa
           </button>
         </>
       )}
-      <button onClick={onBack} className="text-xs text-zinc-400 hover:text-zinc-200">← {t("bg_back")}</button>
+      <button onClick={onBack} className="text-xs text-[#c8d2df] hover:text-[#e8eef8]">← {t("bg_back")}</button>
     </div>
   )
 }
@@ -99,16 +99,16 @@ function ChessBoard({ mode, model, onBack }: { mode: GameMode; model: string; on
   return (
     <div className="flex flex-col items-center gap-3 p-4">
       <div className="flex items-center gap-3 w-full max-w-[480px]">
-        <span className="text-sm font-medium text-zinc-200">{status}</span>
+        <span className="text-sm font-medium text-[#e8eef8]">{status}</span>
         <div className="ml-auto flex gap-2">
           <button onClick={g.reset}
-            className="px-3 py-1.5 rounded-lg bg-white/[5%] text-xs text-zinc-300 hover:bg-white/[9%]">{t("bg_new_game")}</button>
+            className="px-3 py-1.5 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{t("bg_new_game")}</button>
           <button onClick={onBack}
-            className="px-3 py-1.5 rounded-lg bg-white/[5%] text-xs text-zinc-400 hover:bg-white/[9%]">{t("bg_mode")}</button>
+            className="px-3 py-1.5 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{t("bg_mode")}</button>
         </div>
       </div>
 
-      <div className="grid grid-cols-8 rounded-lg overflow-hidden border border-white/10 shadow-lg select-none"
+      <div className="grid grid-cols-8 rounded-lg overflow-hidden border border-[rgb(var(--hh-s-rand,42_54_75))] shadow-lg select-none"
         style={{ width: "min(480px, 90vw)", height: "min(480px, 90vw)" }}>
         {Array.from({ length: 64 }, (_, sq) => {
           const dark = (fileOf(sq) + rankOf(sq)) % 2 === 1
@@ -137,9 +137,9 @@ function ChessBoard({ mode, model, onBack }: { mode: GameMode; model: string; on
           )
         })}
       </div>
-      {mode === "ai" && <p className="text-[11px] text-zinc-500">{t("bg_ai_hint")}</p>}
+      {mode === "ai" && <p className="text-[11px] text-[#9aa7bc]">{t("bg_ai_hint")}</p>}
       {mode === "llm" && (
-        <p className="text-[11px] text-zinc-500">
+        <p className="text-[11px] text-[#9aa7bc]">
           🧠 {model}{g.moveSource === "fallback" ? ` · ${t("bg_llm_fallback")}` : ""}
         </p>
       )}

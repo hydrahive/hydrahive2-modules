@@ -203,7 +203,7 @@ function VideoCard({ job, refAbsPath, onOpen, onDelete, onRepeat, onContinue, co
         <div className="flex flex-wrap gap-1">
           <button onClick={onRepeat} className="rounded bg-slate-700/80 px-2 py-1 text-[10px] hover:bg-slate-600">🔁 {t("repeat_video")}</button>
           {isDone && (
-            <button onClick={onContinue} disabled={continuing} className="rounded bg-violet-600/80 px-2 py-1 text-[10px] hover:bg-violet-500 disabled:opacity-40">
+            <button onClick={onContinue} disabled={continuing} className="rounded bg-[#69d7ff]/80 px-2 py-1 text-[10px] hover:bg-[#1b3d56] disabled:opacity-40">
               {continuing ? t("continue_extracting") : `⏩ ${t("continue_video")}`}
             </button>
           )}
@@ -247,7 +247,7 @@ function VideoOverlay({ job, src, onClose, onRepeat, onContinue, onDelete, conti
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={onRepeat} className="rounded bg-slate-700 px-3 py-1 hover:bg-slate-600">🔁 {t("repeat_video")}</button>
-            <button onClick={onContinue} disabled={continuing} className="rounded bg-violet-600 px-3 py-1 hover:bg-violet-500 disabled:opacity-40">
+            <button onClick={onContinue} disabled={continuing} className="rounded bg-[#163248] px-3 py-1 hover:bg-[#1b3d56] disabled:opacity-40">
               {continuing ? t("continue_extracting") : `⏩ ${t("continue_video")}`}
             </button>
             <button className="rounded bg-sky-700/80 px-3 py-1 text-sky-100 opacity-60" title={t("cut_coming_title")}>✂️ {t("tab_cut")}</button>
