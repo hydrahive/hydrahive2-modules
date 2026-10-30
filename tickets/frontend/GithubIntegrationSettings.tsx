@@ -102,22 +102,22 @@ export function GithubIntegrationSettings() {
 
   const selectedAlreadyConnected = connections.some((connection) => `${connection.owner}/${connection.repository}` === selectedRepo)
 
-  return <section className="border-t border-[#1f2a3b] p-3">
+  return <section className="border-t border-[rgb(var(--hh-s-rand,31_42_59))] p-3">
     <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#c8d2df]"><GitBranch size={14} className="text-[#69d7ff]" />{t("githubSettings")}</div>
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <ProjectPicker current={projectId || null} projects={projects} onPick={pickProject} busy={projectsLoading || busy} />
-        {projectsLoading && <span className="text-[10px] text-[#607188]">{t("githubProjectsLoading")}</span>}
+        {projectsLoading && <span className="text-[10px] text-[#9aa7bc]">{t("githubProjectsLoading")}</span>}
       </div>
       {projectsError && <p className="text-[10px] text-orange-200">{t("githubProjectsError")}</p>}
-      {!projectsLoading && !projectsError && projects.length === 0 && <p className="text-[10px] text-[#607188]">{t("githubProjectsEmpty")}</p>}
-      <Select value={selectedRepo} onChange={(event) => setSelectedRepo(event.target.value)} disabled={!projectId || repoLoading || busy} className="h-8 border-[#253247] bg-[#111b29] text-[11px]"><option value="">{t("githubChooseRepository")}</option>{repoChoices.map((repo) => <option key={repo.key} value={repo.key}>{repo.label}{connections.some((connection) => `${connection.owner}/${connection.repository}` === repo.key) ? ` · ${t("githubConnected")}` : ""}</option>)}</Select>
-      {repoLoading && <p className="text-[10px] text-[#607188]">{t("githubReposLoading")}</p>}
+      {!projectsLoading && !projectsError && projects.length === 0 && <p className="text-[10px] text-[#9aa7bc]">{t("githubProjectsEmpty")}</p>}
+      <Select value={selectedRepo} onChange={(event) => setSelectedRepo(event.target.value)} disabled={!projectId || repoLoading || busy} className="h-8 border-[rgb(var(--hh-s-rand,37_50_71))] bg-[rgb(var(--hh-s-innen,17_27_41))] text-[11px]"><option value="">{t("githubChooseRepository")}</option>{repoChoices.map((repo) => <option key={repo.key} value={repo.key}>{repo.label}{connections.some((connection) => `${connection.owner}/${connection.repository}` === repo.key) ? ` · ${t("githubConnected")}` : ""}</option>)}</Select>
+      {repoLoading && <p className="text-[10px] text-[#9aa7bc]">{t("githubReposLoading")}</p>}
       {repoError && <p className="text-[10px] text-orange-200">{t("githubReposError")}</p>}
-      {!repoLoading && !repoError && projectId && repoChoices.length === 0 && <p className="text-[10px] text-[#607188]">{t("githubReposEmpty")}</p>}
-      <button type="button" disabled={busy || !projectId || !selectedRepo || selectedAlreadyConnected} onClick={() => void create()} className="inline-flex w-full items-center justify-center gap-1 rounded border border-[#2b4058] bg-[#111b29] px-2 py-1.5 text-[11px] text-[#a8dff2] hover:border-[#69d7ff]/60 disabled:opacity-40"><Plus size={12} />{selectedAlreadyConnected ? t("githubAlreadyConnectedShort") : t("githubAdd")}</button>
+      {!repoLoading && !repoError && projectId && repoChoices.length === 0 && <p className="text-[10px] text-[#9aa7bc]">{t("githubReposEmpty")}</p>}
+      <button type="button" disabled={busy || !projectId || !selectedRepo || selectedAlreadyConnected} onClick={() => void create()} className="inline-flex w-full items-center justify-center gap-1 rounded border border-[#2b4058] bg-[rgb(var(--hh-s-innen,17_27_41))] px-2 py-1.5 text-[11px] text-[#a8dff2] hover:border-[#69d7ff]/60 disabled:opacity-40"><Plus size={12} />{selectedAlreadyConnected ? t("githubAlreadyConnectedShort") : t("githubAdd")}</button>
       {message && <p className="text-[10px] text-orange-200">{message}</p>}
-      {connections.map((connection) => <div key={connection.id} className="flex items-center gap-2 rounded border border-[#1f2a3b] bg-[#0d1420] px-2 py-1.5 text-[10px] text-[#91a3b8]"><span className="min-w-0 flex-1 truncate">{connection.owner}/{connection.repository}</span><Select value={connection.sync_mode} onChange={(event) => void setMode(connection.id, event.target.value as "read_only" | "push" | "bidirectional")} disabled={busy} className="h-7 w-[108px] border-[#253247] bg-[#111b29] text-[10px]"><option value="read_only">{t("githubModeReadOnly")}</option><option value="push">{t("githubModePush")}</option><option value="bidirectional">{t("githubModeBidirectional")}</option></Select><button type="button" disabled={busy} onClick={() => void disable(connection.id)} className="text-[#607188] hover:text-orange-200" title={t("githubDisable")}><Trash2 size={12} /></button></div>)}
+      {connections.map((connection) => <div key={connection.id} className="flex items-center gap-2 rounded border border-[rgb(var(--hh-s-rand,31_42_59))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1.5 text-[10px] text-[#91a3b8]"><span className="min-w-0 flex-1 truncate">{connection.owner}/{connection.repository}</span><Select value={connection.sync_mode} onChange={(event) => void setMode(connection.id, event.target.value as "read_only" | "push" | "bidirectional")} disabled={busy} className="h-7 w-[108px] border-[rgb(var(--hh-s-rand,37_50_71))] bg-[rgb(var(--hh-s-innen,17_27_41))] text-[10px]"><option value="read_only">{t("githubModeReadOnly")}</option><option value="push">{t("githubModePush")}</option><option value="bidirectional">{t("githubModeBidirectional")}</option></Select><button type="button" disabled={busy} onClick={() => void disable(connection.id)} className="text-[#9aa7bc] hover:text-orange-200" title={t("githubDisable")}><Trash2 size={12} /></button></div>)}
     </div>
   </section>
 }

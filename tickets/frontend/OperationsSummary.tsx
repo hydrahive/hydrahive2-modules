@@ -14,7 +14,7 @@ export function OperationsSummary({ summary }: Props) {
     { label: t("dashboard.mine"), value: summary.mine, icon: UserRound, tone: "text-violet-300" },
     { label: t("dashboard.unassigned"), value: summary.unassigned, icon: CheckCircle2, tone: "text-emerald-300" },
   ]
-  return <div className="grid grid-cols-2 gap-2 border-b border-[#1f2a3b] bg-[#0b131f] p-3 sm:grid-cols-5">
-    {cards.map(({ label, value, icon: Icon, tone }) => <div key={label} className="rounded-[6px] border border-[#1f2a3b] bg-[#111b29] px-3 py-2"><div className={`mb-1 flex items-center gap-1.5 text-[10px] ${tone}`}><Icon size={12} />{label}</div><div className="text-lg font-semibold text-[#e8eef8]">{value}</div></div>)}
+  return <div className="grid grid-cols-2 gap-2 border-b border-[rgb(var(--hh-s-rand,31_42_59))] bg-[#0b131f] p-3 sm:grid-cols-5">
+    {cards.map(({ label, value, icon: Icon, tone }) => <div key={label} className="rounded-[6px] border border-[rgb(var(--hh-s-rand,31_42_59))] bg-[rgb(var(--hh-s-innen,17_27_41))] px-3 py-2"><div className={`mb-1 flex items-center gap-1.5 text-[10px] ${tone}`}><Icon size={12} />{label}</div><div className="text-lg font-semibold text-[#e8eef8]">{value}</div></div>)}
   </div>
 }

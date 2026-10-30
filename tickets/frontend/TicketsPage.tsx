@@ -94,18 +94,18 @@ export function TicketsPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#080b11] text-[#e8eef8]">
+    <div className="flex h-full min-h-0 flex-col bg-[rgb(var(--hh-s-grund,8_11_17))] text-[#e8eef8]">
       <CockpitTopbar active="/tickets" context={t("subtitle")} />
-      <header className="flex min-h-[68px] shrink-0 items-center justify-between border-b border-[#1f2a3b] bg-[#0d1420] px-4 lg:px-6">
+      <header className="flex min-h-[68px] shrink-0 items-center justify-between border-b border-[rgb(var(--hh-s-rand,31_42_59))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-4 lg:px-6">
         <div className="flex items-center gap-3">
           <div className="grid h-9 w-9 place-items-center rounded-[8px] border border-[#2b4058] bg-[#132235] text-[#69d7ff]"><TicketIcon size={18} /></div>
           <div>
             <div className="flex items-center gap-2"><h1 className="text-[15px] font-semibold tracking-[-0.01em] text-[#f1f5fb]">{t("title")}</h1><span className="rounded-[4px] border border-[#29405a] bg-[#122234] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#76dfff]">{t("internalBadge")}</span></div>
-            <p className="mt-0.5 hidden text-[11px] text-[#718096] sm:block">{t("subtitle")}</p>
+            <p className="mt-0.5 hidden text-[11px] text-[#9aa7bc] sm:block">{t("subtitle")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => setWorkspace((current) => current === "github" ? "tickets" : "github")} className={`inline-flex items-center gap-2 rounded-[7px] border px-3 py-2 text-xs font-semibold transition-colors ${workspace === "github" ? "border-[#69d7ff] bg-[#163248] text-[#c8f2ff]" : "border-[#2b4058] bg-[#111b29] text-[#a8dff2] hover:border-[#69d7ff]/60"}`}><GitBranch size={14} />{t("githubWorkbench")}</button>
+          <button type="button" onClick={() => setWorkspace((current) => current === "github" ? "tickets" : "github")} className={`inline-flex items-center gap-2 rounded-[7px] border px-3 py-2 text-xs font-semibold transition-colors ${workspace === "github" ? "border-[#69d7ff] bg-[#163248] text-[#c8f2ff]" : "border-[#2b4058] bg-[rgb(var(--hh-s-innen,17_27_41))] text-[#a8dff2] hover:border-[#69d7ff]/60"}`}><GitBranch size={14} />{t("githubWorkbench")}</button>
           <Notifications onSelect={(id) => void selectTicket(id)} />
           <button onClick={startCreating} className="inline-flex items-center gap-2 rounded-[7px] border border-[#3b83a8] bg-[#163248] px-3 py-2 text-xs font-semibold text-[#c8f2ff] transition-colors hover:border-[#69d7ff] hover:bg-[#1b3d56]"><Plus size={14} />{t("newTicket")}</button>
         </div>
@@ -116,14 +116,14 @@ export function TicketsPage() {
         <OperationsSummary summary={dashboard} />
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <div className="flex min-h-0 flex-col lg:w-[292px]">
-            {selectedIds.length > 0 && <div className="flex items-center gap-2 border-b border-[#1f2a3b] bg-[#111b29] px-3 py-2"><span className="text-[10px] text-[#a9b5c6]">{selectedIds.length} {t("selected")}</span><Select value="" onChange={(event) => { if (event.target.value) void bulkSetPriority(event.target.value as TicketPriority) }} className="h-7 border-[#253247] bg-[#0d1420] text-[10px]"><option value="">{t("bulkPriority")}</option><option value="low">{t("priority.low")}</option><option value="normal">{t("priority.normal")}</option><option value="high">{t("priority.high")}</option><option value="urgent">{t("priority.urgent")}</option></Select><button onClick={() => setSelectedIds([])} className="ml-auto text-[10px] text-[#718096] hover:text-[#e8eef8]">{t("cancel")}</button></div>}
+            {selectedIds.length > 0 && <div className="flex items-center gap-2 border-b border-[rgb(var(--hh-s-rand,31_42_59))] bg-[rgb(var(--hh-s-innen,17_27_41))] px-3 py-2"><span className="text-[10px] text-[#a9b5c6]">{selectedIds.length} {t("selected")}</span><Select value="" onChange={(event) => { if (event.target.value) void bulkSetPriority(event.target.value as TicketPriority) }} className="h-7 border-[rgb(var(--hh-s-rand,37_50_71))] bg-[rgb(var(--hh-s-tief,13_20_32))] text-[10px]"><option value="">{t("bulkPriority")}</option><option value="low">{t("priority.low")}</option><option value="normal">{t("priority.normal")}</option><option value="high">{t("priority.high")}</option><option value="urgent">{t("priority.urgent")}</option></Select><button onClick={() => setSelectedIds([])} className="ml-auto text-[10px] text-[#9aa7bc] hover:text-[#e8eef8]">{t("cancel")}</button></div>}
             <SavedViews views={views} filters={filters} onApply={setFilters} onChanged={reloadViews} />
             <TicketList tickets={tickets} filters={filters} loading={loading} activeId={active?.id ?? null} selectedIds={selectedIds} onToggleSelect={toggleSelected} onFiltersChange={setFilters} onSelect={(id) => void selectTicket(id)} onNew={startCreating} />
             <TeamSettings teams={teams} onChanged={reloadTeams} />
             <SlaProfileSettings />
             <GithubIntegrationSettings />
           </div>
-          {creating ? <main className="min-h-0 flex-1 overflow-y-auto bg-[#0a1019] p-4 lg:p-8"><TicketForm onCreated={created} onCancel={() => setCreating(false)} /></main> : active ? <TicketDetail ticket={active} teams={teams} onUpdated={(ticket) => { setActive(ticket); void reload() }} /> : <main className="flex min-h-0 flex-1 items-center justify-center bg-[#0a1019] p-8 text-center"><div className="max-w-sm"><div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-[10px] border border-[#253247] bg-[#111b29] text-[#607188]"><TicketIcon size={21} /></div><h2 className="text-sm font-semibold text-[#c8d2df]">{t("selectTicketTitle")}</h2><p className="mt-2 text-xs leading-relaxed text-[#68788e]">{t("selectTicket")}</p><button onClick={startCreating} className="mt-5 inline-flex items-center gap-2 rounded-[7px] border border-[#2b4058] bg-[#111b29] px-3 py-2 text-xs font-semibold text-[#a8dff2] hover:border-[#69d7ff]/60 hover:bg-[#163248]"><Plus size={14} />{t("newTicket")}</button></div></main>}
+          {creating ? <main className="min-h-0 flex-1 overflow-y-auto bg-[#0a1019] p-4 lg:p-8"><TicketForm onCreated={created} onCancel={() => setCreating(false)} /></main> : active ? <TicketDetail ticket={active} teams={teams} onUpdated={(ticket) => { setActive(ticket); void reload() }} /> : <main className="flex min-h-0 flex-1 items-center justify-center bg-[#0a1019] p-8 text-center"><div className="max-w-sm"><div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-[10px] border border-[rgb(var(--hh-s-rand,37_50_71))] bg-[rgb(var(--hh-s-innen,17_27_41))] text-[#9aa7bc]"><TicketIcon size={21} /></div><h2 className="text-sm font-semibold text-[#c8d2df]">{t("selectTicketTitle")}</h2><p className="mt-2 text-xs leading-relaxed text-[#68788e]">{t("selectTicket")}</p><button onClick={startCreating} className="mt-5 inline-flex items-center gap-2 rounded-[7px] border border-[#2b4058] bg-[rgb(var(--hh-s-innen,17_27_41))] px-3 py-2 text-xs font-semibold text-[#a8dff2] hover:border-[#69d7ff]/60 hover:bg-[#163248]"><Plus size={14} />{t("newTicket")}</button></div></main>}
         </div>
       </>}
 

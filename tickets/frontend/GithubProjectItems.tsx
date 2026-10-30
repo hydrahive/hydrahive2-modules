@@ -90,22 +90,22 @@ export function GithubProjectItems() {
     setError(false)
   }
 
-  return <section className="border-t border-[#1f2a3b] p-3">
+  return <section className="border-t border-[rgb(var(--hh-s-rand,31_42_59))] p-3">
     <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#c8d2df]"><FolderGit2 size={14} className="text-[#69d7ff]" />{t("githubItemsTitle")}</div>
     <div className="space-y-2">
       <ProjectPicker current={projectId || null} projects={projects} onPick={pickProject} busy={loading} />
-      <Select value={connectionId} onChange={(event) => setConnectionId(event.target.value)} disabled={loading || connections.length === 0} className="h-8 border-[#253247] bg-[#111b29] text-[11px]"><option value="">{t("githubChooseConnection")}</option>{connections.map((connection) => <option key={connection.id} value={connection.id}>{connection.owner}/{connection.repository}</option>)}</Select>
-      <Select value={githubProjectId} onChange={(event) => setGithubProjectId(event.target.value)} disabled={loading || githubProjects.length === 0} className="h-8 border-[#253247] bg-[#111b29] text-[11px]"><option value="">{t("githubChooseProject")}</option>{githubProjects.map((project) => <option key={project.id} value={String(project.number)}>{project.title}</option>)}</Select>
-      {loading && <div className="flex items-center gap-1 text-[10px] text-[#607188]"><Loader2 size={11} className="animate-spin" />{t("githubItemsLoading")}</div>}
-      {issuesLoading && <div className="flex items-center gap-1 text-[10px] text-[#607188]"><Loader2 size={11} className="animate-spin" />{t("githubIssuesLoading")}</div>}
+      <Select value={connectionId} onChange={(event) => setConnectionId(event.target.value)} disabled={loading || connections.length === 0} className="h-8 border-[rgb(var(--hh-s-rand,37_50_71))] bg-[rgb(var(--hh-s-innen,17_27_41))] text-[11px]"><option value="">{t("githubChooseConnection")}</option>{connections.map((connection) => <option key={connection.id} value={connection.id}>{connection.owner}/{connection.repository}</option>)}</Select>
+      <Select value={githubProjectId} onChange={(event) => setGithubProjectId(event.target.value)} disabled={loading || githubProjects.length === 0} className="h-8 border-[rgb(var(--hh-s-rand,37_50_71))] bg-[rgb(var(--hh-s-innen,17_27_41))] text-[11px]"><option value="">{t("githubChooseProject")}</option>{githubProjects.map((project) => <option key={project.id} value={String(project.number)}>{project.title}</option>)}</Select>
+      {loading && <div className="flex items-center gap-1 text-[10px] text-[#9aa7bc]"><Loader2 size={11} className="animate-spin" />{t("githubItemsLoading")}</div>}
+      {issuesLoading && <div className="flex items-center gap-1 text-[10px] text-[#9aa7bc]"><Loader2 size={11} className="animate-spin" />{t("githubIssuesLoading")}</div>}
       {error && <p className="text-[10px] text-orange-200">{t("githubItemsError")}</p>}
       {issuesError && <p className="text-[10px] text-orange-200">{t("githubIssuesError")}</p>}
-      {connectionId && !issuesLoading && !issuesError && issues.length === 0 && <p className="text-[10px] text-[#607188]">{t("githubIssuesEmpty")}</p>}
-      {issues.map((issue) => <div key={issue.id} className="flex items-center gap-2 rounded border border-[#1f2a3b] bg-[#0d1420] px-2 py-1.5 text-[10px] text-[#91a3b8]"><span className="min-w-0 flex-1 truncate">#{issue.number} {issue.title}</span><span className="text-[9px] text-[#607188]">{t("githubIssueOpen")}</span><a href={issue.url} target="_blank" rel="noreferrer" className="text-[#69d7ff] hover:text-[#c8f2ff]" title={t("githubOpenItem")}><ExternalLink size={12} /></a></div>)}
-      {!loading && !error && projectId && connections.length === 0 && <p className="text-[10px] text-[#607188]">{t("githubItemsNoConnection")}</p>}
-      {!loading && !error && connectionId && githubProjects.length === 0 && <p className="text-[10px] text-[#607188]">{t("githubItemsNoProjects")}</p>}
-      {!loading && !error && githubProjectId && items.length === 0 && <p className="text-[10px] text-[#607188]">{t("githubItemsEmpty")}</p>}
-      {items.map((item) => item.content && <div key={item.id} className="flex items-center gap-2 rounded border border-[#1f2a3b] bg-[#0d1420] px-2 py-1.5 text-[10px] text-[#91a3b8]"><span className="min-w-0 flex-1 truncate">{item.content.title ?? t("githubItemsUntitled")}</span>{item.content.state && <span className="text-[9px] uppercase text-[#607188]">{item.content.state}</span>}{item.content.url && <a href={item.content.url} target="_blank" rel="noreferrer" className="text-[#69d7ff] hover:text-[#c8f2ff]" title={t("githubOpenItem")}><ExternalLink size={12} /></a>}</div>)}
+      {connectionId && !issuesLoading && !issuesError && issues.length === 0 && <p className="text-[10px] text-[#9aa7bc]">{t("githubIssuesEmpty")}</p>}
+      {issues.map((issue) => <div key={issue.id} className="flex items-center gap-2 rounded border border-[rgb(var(--hh-s-rand,31_42_59))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1.5 text-[10px] text-[#91a3b8]"><span className="min-w-0 flex-1 truncate">#{issue.number} {issue.title}</span><span className="text-[9px] text-[#9aa7bc]">{t("githubIssueOpen")}</span><a href={issue.url} target="_blank" rel="noreferrer" className="text-[#69d7ff] hover:text-[#c8f2ff]" title={t("githubOpenItem")}><ExternalLink size={12} /></a></div>)}
+      {!loading && !error && projectId && connections.length === 0 && <p className="text-[10px] text-[#9aa7bc]">{t("githubItemsNoConnection")}</p>}
+      {!loading && !error && connectionId && githubProjects.length === 0 && <p className="text-[10px] text-[#9aa7bc]">{t("githubItemsNoProjects")}</p>}
+      {!loading && !error && githubProjectId && items.length === 0 && <p className="text-[10px] text-[#9aa7bc]">{t("githubItemsEmpty")}</p>}
+      {items.map((item) => item.content && <div key={item.id} className="flex items-center gap-2 rounded border border-[rgb(var(--hh-s-rand,31_42_59))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1.5 text-[10px] text-[#91a3b8]"><span className="min-w-0 flex-1 truncate">{item.content.title ?? t("githubItemsUntitled")}</span>{item.content.state && <span className="text-[9px] uppercase text-[#9aa7bc]">{item.content.state}</span>}{item.content.url && <a href={item.content.url} target="_blank" rel="noreferrer" className="text-[#69d7ff] hover:text-[#c8f2ff]" title={t("githubOpenItem")}><ExternalLink size={12} /></a>}</div>)}
     </div>
   </section>
 }
