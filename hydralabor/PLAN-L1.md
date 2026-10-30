@@ -24,6 +24,9 @@
 2. **ACL `hhlabor-acl`**:
    - egress `reject` nach `10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16,
      127.0.0.0/8, fc00::/7, fe80::/10` (auch die eigene Gateway-IP liegt darin).
+   - egress `reject` zusätzlich nach **allen eigenen Adressen des Servers** (`ip -j addr`), auch öffentlichen.
+     Sonst käme ein Labor auf einem VPS über die öffentliche IP an die eigene HydraHive-Oberfläche. „Netz prüfen“
+     gleicht die Liste ab, wenn sich die Adressen des Servers ändern.
    - egress `allow` sonst. DNS geht über dnsmasq des Netzes – das ist nicht über das ACL gesperrt (gemessen).
    - ingress: nichts erlauben.
    - **Probe nach dem Anlegen** (Pflicht, sonst Abbruch): aus dem Container `10.x.0.1:443`, Server-IP:443 und
@@ -86,7 +89,7 @@ Lange Schritte (Einrichtung ~5–15 min) laufen im Hintergrund als Auftrag; die 
 - Mutanten, Gegenprobe, volle Reihe; **echt auf hydratest**: Assistent komplett, Netzprobe, 12 Ausbruchsproben aus K1
   jetzt mit Netzsperre (443 muss zu sein), Testlauf, Zurücksetzen, Entfernen; E2E 4 Breiten.
 
-## Offen für Till
+## Entscheidungen (Till, 30.10.)
 
-1. Grenzen Standard 2 CPU / 4 GB RAM / 20 GB ok?
-2. Heimnetz-Sperre gilt auch für Tailscale (100.64/10) – ok? (Vorschlag: ja.)
+1. Grenzen Standard 2 CPU / 4 GB RAM / 20 GB: ja (im Assistenten änderbar).
+2. Sperre gilt auch für Tailscale (100.64/10): ja.
