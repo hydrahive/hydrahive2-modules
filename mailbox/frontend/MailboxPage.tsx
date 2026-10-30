@@ -109,7 +109,7 @@ export function MailboxPage() {
       <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
         <Mail size={32} className="text-[#69d7ff]" />
         <h1 className="text-xl font-bold text-[#e8eef8]">Mailbox</h1>
-        <p className="max-w-md text-sm text-[#8d9ab0]">Webmail für alle deine Konten. Jede Mail wird vollständig archiviert – auch wenn sie auf dem Server gelöscht wird.</p>
+        <p className="max-w-md text-sm text-[#9aa7bc]">Webmail für alle deine Konten. Jede Mail wird vollständig archiviert – auch wenn sie auf dem Server gelöscht wird.</p>
         <button type="button" onClick={() => setDialog(true)} data-mbx-first="1"
           className="rounded-[4px] border border-[#69d7ff]/50 bg-[#69d7ff]/15 px-4 py-2 text-sm font-semibold text-[#69d7ff]">Erstes Konto hinzufügen</button>
         <MsAppButton />
@@ -121,9 +121,9 @@ export function MailboxPage() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-2 p-3">
       <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); setApplied(q.trim()) }} role="search">
-        <Search size={16} className="text-[#8d9ab0]" />
+        <Search size={16} className="text-[#9aa7bc]" />
         <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Suchen in allen Mails …" aria-label="Suche" list="mbx-filter"
-          className="min-w-0 flex-1 rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-2 py-1.5 text-sm text-[#e8eef8]" />
+          className="min-w-0 flex-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_31))] px-2 py-1.5 text-sm text-[#e8eef8]" />
         <datalist id="mbx-filter">{FILTER_HELP.map(([k, label]) => <option key={k} value={k}>{label}</option>)}</datalist>
         {!fulltext && <span className="text-[11px] text-amber-200" title="SQLite ohne FTS5">Suche nur in Betreff/Kopf</span>}
         <HelpButton topic={HELP_TOPIC} />
@@ -144,7 +144,7 @@ export function MailboxPage() {
           <FolderTree accounts={accounts} folders={folders} selection={sel} onSelect={(s) => { setSel(s); setOpen(null) }}
             onAddAccount={() => setDialog(true)} onSync={(id) => void sync(id)} draftCount={drafts.length} onSettings={setSettings} />
         </div>
-        <div className={`min-h-0 rounded-[4px] border border-[#2a364b] bg-[#0b1220] ${open ? "hidden md:block" : ""}`}>
+        <div className={`min-h-0 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,11_18_32))] ${open ? "hidden md:block" : ""}`}>
           {sel.kind === "drafts" ? <DraftList drafts={drafts} onOpen={(d) => { setOpen(null); cmp.openDraft(d) }} /> :
           <div className="flex h-full min-h-0 flex-col">
             <BulkBar items={items} selected={bulk.checked} busy={bulk.busy} onAct={(a) => void bulk.act(a)} onClear={bulk.clear} />
@@ -167,7 +167,7 @@ export function MailboxPage() {
                 onChanged={(a, n) => void changed(a, n)} />
               <MessageView key={open.id} mail={open} images={images} onImages={() => setImages(true)} />
             </div>
-          ) : <p className="p-6 text-center text-sm text-[#718097]">Mail auswählen</p>}
+          ) : <p className="p-6 text-center text-sm text-[#9aa7bc]">Mail auswählen</p>}
         </div>
       </div>
       {settings && accounts.find((a) => a.id === settings) && (
@@ -189,7 +189,7 @@ function NotifyToggle() {
   }
   return (
     <button type="button" onClick={() => void flip()} title={t("notify.enable")} aria-label={t("notify.enable")} aria-pressed={on}
-      data-mbx-notify={on ? "on" : "off"} className={`rounded-[4px] border px-2 py-1.5 ${on ? "border-[#69d7ff]/50 text-[#69d7ff]" : "border-[#2a364b] text-[#8d9ab0]"}`}>
+      data-mbx-notify={on ? "on" : "off"} className={`rounded-[4px] border px-2 py-1.5 ${on ? "border-[#69d7ff]/50 text-[#69d7ff]" : "border-[rgb(var(--hh-s-rand,42_54_75))] text-[#9aa7bc]"}`}>
       <Bell size={14} /></button>
   )
 }

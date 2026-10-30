@@ -33,12 +33,12 @@ export function MsAccountPart({ address, label, ready, onSaved }: Props) {
   }, [s.state, s.flow, address, label, onSaved, t])
 
   if (ready === false) return <p className="text-xs text-amber-200" data-mbx-ms-off="1">{t("ms.err.notConfigured")}</p>
-  if (!address.includes("@")) return <p className="text-xs text-[#8d9ab0]">{t("ms.needAddress")}</p>
+  if (!address.includes("@")) return <p className="text-xs text-[#9aa7bc]">{t("ms.needAddress")}</p>
   return (
     <div className="space-y-2">
-      <p className="text-[11px] text-[#718097]">{t("ms.explain")}</p>
+      <p className="text-[11px] text-[#9aa7bc]">{t("ms.explain")}</p>
       <MsSignInView state={s.state} flow={s.flow} errKey={s.errKey} detail={s.detail} onStart={() => void s.start()} />
-      {saving && <p className="text-xs text-[#8d9ab0]">{t("ms.saving")}</p>}
+      {saving && <p className="text-xs text-[#9aa7bc]">{t("ms.saving")}</p>}
       {err && <p className="text-xs text-rose-300" data-mbx-error="1">{err}</p>}
     </div>
   )

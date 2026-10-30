@@ -12,7 +12,7 @@ interface Props {
   onChanged: (action: MailAction, note: string | null) => void
 }
 
-const BTN = "inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-0.5 text-xs text-[#c8d2df] hover:bg-[#1c2638] disabled:opacity-40"
+const BTN = "inline-flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-0.5 text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,28_38_56))] disabled:opacity-40"
 
 /** Aktionen zur geöffneten Mail. Antworten geht immer (auch aus dem Archiv); Server-Aktionen nur, solange die Mail
  *  noch auf dem Server liegt. Löschen fragt nach und sagt dazu: die Mail bleibt im Archiv. */
@@ -47,7 +47,7 @@ export function MessageActions({ mail, folders, onCompose, onChanged }: Props) {
       <button type="button" className={BTN} onClick={() => onCompose("forward")} data-mbx-reply="forward"><Forward size={12} />{t("compose.forward")}</button>
       {onServer ? (
         <>
-          <span className="mx-1 h-4 w-px bg-[#2a364b]" />
+          <span className="mx-1 h-4 w-px bg-[rgb(var(--hh-s-rand,42_54_75))]" />
           <button type="button" className={BTN} disabled={busy} onClick={() => void act(mail.seen ? "unseen" : "seen")} data-mbx-act="seen">
             {mail.seen ? <Mail size={12} /> : <MailOpen size={12} />}{t(mail.seen ? "action.markUnread" : "action.markRead")}</button>
           <button type="button" className={BTN} disabled={busy} onClick={() => void act(mail.flagged ? "unflag" : "flag")} data-mbx-act="flag">
@@ -66,7 +66,7 @@ export function MessageActions({ mail, folders, onCompose, onChanged }: Props) {
           <button type="button" className={`${BTN} hover:text-rose-300`} disabled={busy} onClick={() => void act("delete")} data-mbx-act="delete">
             <Trash2 size={12} />{t(inTrash ? "action.deleteForever" : "action.delete")}</button>
         </>
-      ) : <span className="text-[11px] text-[#718097]" data-mbx-archive-only="1">{t("action.archiveOnly")}</span>}
+      ) : <span className="text-[11px] text-[#9aa7bc]" data-mbx-archive-only="1">{t("action.archiveOnly")}</span>}
       {note && <span role="status" className="text-[11px] text-amber-200">{note}</span>}
     </div>
   )
