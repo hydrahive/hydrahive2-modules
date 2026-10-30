@@ -69,3 +69,22 @@
 2. Port **8443** (gemessen frei auf .2 und hydratest am 30.10.). Nur Heimnetz/Tailscale, nicht ins Internet.
 3. **Annahme** (nicht ausdrücklich beantwortet): Plugins als drittes Ziel beim Einreichen bleiben außerhalb von L3
    und kommen als eigene kleine Etappe danach.
+
+## Nachtrag: Anmeldung an der Durchreiche (30.10., nach Freigabe gelesen)
+
+- Das Login des echten HydraHive liegt im Browser im `sessionStorage` und wird bei einer Navigation **nicht**
+  mitgeschickt. Ein Link auf `:8443` hat also keine Anmeldung.
+- Muster im Kern: **AgentLink-Dashboard** (`api/routes/_agentlink_dashboard.py`): eigener, kurzlebiger, signierter
+  Cookie, nur für Admins ausgestellt, nginx prüft per `auth_request` (Signatur, Ablauf, Nutzer existiert noch und ist
+  Admin). Kein Login-Token, öffnet keine API.
+- Für L3 genauso, aber **im Modul** (keine Kern-Änderung):
+  1. `POST /api/modules/hydralabor/probe/open` (nur Admin) → einmaliges Ticket (zufällig, 60 s gültig, einmal
+     benutzbar) und die Adresse `https://<host>:8443/__labor_login?t=<ticket>`.
+  2. nginx auf 8443 leitet `/__labor_login` an das Modul (über die interne Adresse `127.0.0.1:8001`); das Modul löst
+     das Ticket ein und setzt ein Cookie `hh_labor_probe` (HttpOnly, Secure, SameSite=Strict, Pfad `/`, 8 h,
+     signiert mit zweckgebundenem Schlüssel aus `HH_SECRET_KEY`), dann Weiterleitung auf `/`.
+  3. Jede andere Anfrage auf 8443: `auth_request` an `/api/modules/hydralabor/probe/auth` (Cookie prüfen wie beim
+     AgentLink-Dashboard) → 204 oder 401. Erst dann `proxy_pass` ins Labor.
+  4. Das Cookie gilt nur für `<host>:8443` – Cookies trennen nicht nach Port, aber das Cookie heißt anders als alles
+     im echten HydraHive und öffnet dort nichts. `Cookie`-Kopf wird beim Weiterreichen an die Probe auf das
+     Probe-eigene beschränkt (das Labor-Cookie wird entfernt).
