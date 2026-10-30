@@ -32,12 +32,16 @@ def seen():
 @pytest.fixture
 def client(dist, seen):
     def backend(req: httpx.Request) -> httpx.Response:
+        req.read()                                             # Inhalt merken, bevor der Strom weg ist
         seen.append(req)
         if req.url.path == "/api/stream":
-            return httpx.Response(200, content=iter([b"data: a\n\n", b"data: b\n\n"]),
+            return httpx.Response(200, stream=httpx.ByteStream(b"data: a\n\ndata: b\n\n"),
                                   headers={"content-type": "text/event-stream"})
-        return httpx.Response(201, json={"pfad": req.url.path, "q": req.url.query.decode()},
-                              headers={"x-aus-backend": "1", "set-cookie": "probe=1; Path=/"})
+        import json
+        body = json.dumps({"pfad": req.url.path, "q": req.url.query.decode()}).encode()
+        # Wie ein echter Server: Antwort als Strom (httpx liest fertigen Inhalt sonst schon beim Bauen).
+        return httpx.Response(201, stream=httpx.ByteStream(body), headers={
+            "content-type": "application/json", "x-aus-backend": "1", "set-cookie": "probe=1; Path=/"})
     app = front.make_app(dist, "http://127.0.0.1:8002", transport=httpx.MockTransport(backend))
     with TestClient(app) as c:
         yield c
@@ -97,3 +101,14 @@ def test_ohne_dist_klare_seite(tmp_path):
     with TestClient(app) as c:
         r = c.get("/")
     assert r.status_code == 503 and "noch nicht gebaut" in r.text
+
+
+def test_asset_name_nur_aus_assets(client, dist):
+    """Ein Asset-Pfad zeigt nur in dist/assets – nicht in dist selbst (dort liegt z. B. index.html und mehr)."""
+    (dist / "nur-oben.js").write_text("oben")
+    assert client.get("/assets/nur-oben.js").text == "<html>Probe-App</html>"
+
+
+def test_host_kopf_nicht_weitergereicht(client, seen):
+    client.get("/api/x", headers={"Host": "fremd.example"})
+    assert seen[-1].headers["host"] == "127.0.0.1:8002"
