@@ -23,7 +23,7 @@ const ERR = new Set(["labor_busy", "labor_not_ready", "labor_already_ready", "la
   "labor_project_failed", "labor_model_unavailable", "labor_incus_missing", "labor_incus_too_old", "labor_storage_low",
   "labor_memory_low", "labor_core_too_old", "admin_only",
   "labor_github_denied", "labor_github_expired", "labor_github_failed", "labor_github_fork_failed",
-  "labor_github_name_taken", "labor_github_not_configured", "labor_github_not_connected", "labor_github_not_started",
+  "labor_github_name_taken", "labor_github_owner_account", "labor_github_not_configured", "labor_github_not_connected", "labor_github_not_started",
   "labor_github_rate_limited", "labor_github_scope", "labor_github_unreachable", "labor_github_url",
   "labor_report_failed", "labor_submit_bundle_invalid", "labor_submit_git_failed", "labor_submit_nothing",
   "labor_submit_pr_failed", "labor_submit_protected", "labor_submit_push_failed", "labor_submit_secret",

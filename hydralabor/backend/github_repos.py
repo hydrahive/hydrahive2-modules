@@ -35,6 +35,8 @@ async def _fork_state(token: str, full: str, parent: str) -> bool:
 
 async def ensure_fork(token: str, login: str, target: str) -> str:
     parent = TARGETS[target]
+    if login.lower() == parent.split("/")[0].lower():
+        raise GitHubError("labor_github_owner_account")       # eigenes Repo lässt sich nicht forken
     full = f"{login}/{parent.split('/')[1]}"
     if await _fork_state(token, full, parent):
         return full
