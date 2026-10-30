@@ -7,8 +7,9 @@ import pytest
 from backend import probe_auth, state
 
 B = "/api/modules/hydralabor"
-LOGIN = "/api/modules/hydralabor/probe/login"
-AUTH = "/api/modules/hydralabor/probe/auth"
+# Ohne HydraHive-Login (Browser auf :8443 bzw. nginx auth_request) → Geräte-Weg des Kerns mit Bremse.
+LOGIN = "/api/module-device/hydralabor/probe/login"
+AUTH = "/api/module-device/hydralabor/probe/auth"
 
 
 @pytest.fixture
@@ -29,6 +30,10 @@ def ticket_from(client, headers, host="labor.example"):
     return url.split("t=", 1)[1]
 
 
+def test_ticket_ohne_login(client, ready):
+    assert client.post(B + "/probe/open", json={}).status_code == 401
+
+
 def test_ticket_nur_fuer_admins(client, user_headers, ready):
     assert client.post(B + "/probe/open", headers=user_headers, json={}).status_code == 403
 
@@ -44,8 +49,9 @@ def test_ticket_einloesen_setzt_cookie(client, admin_headers, ready):
     assert r.status_code == 303 and r.headers["location"] == "/"
     sc = r.headers["set-cookie"]
     assert sc.startswith("hh_labor_probe=")
+    parts = [x.strip().lower() for x in sc.split(";")]
     for part in ("HttpOnly", "Secure", "SameSite=strict", "Path=/", "Max-Age=28800"):
-        assert part.lower() in sc.lower()
+        assert part.lower() in parts
 
 
 def test_ticket_nur_einmal(client, admin_headers, ready):
@@ -134,3 +140,36 @@ def test_adresse_aus_host(client, admin_headers, ready, host):
 def test_komischer_host_abgelehnt(client, admin_headers, ready, host):
     r = client.post(B + "/probe/open", headers={**admin_headers, "Host": host}, json={})
     assert r.status_code == 400
+
+
+def test_nicht_unter_login_pfad(client, ready):
+    """Unter /api/modules/… gäbe es die Prüfung nur mit HydraHive-Login – dort darf sie nicht hängen."""
+    client.cookies.clear()
+    assert client.get("/api/modules/hydralabor/probe/auth").status_code in (401, 404)
+    assert client.get("/api/modules/hydralabor/probe/login", params={"t": "x"}).status_code in (401, 404)
+
+
+def test_tickets_begrenzt(client, admin_headers, ready):
+    for _ in range(probe_auth.MAX_TICKETS + 5):
+        ticket_from(client, admin_headers)
+    assert len(probe_auth._tickets) <= probe_auth.MAX_TICKETS
+
+
+def test_host_mit_port_wird_8443(client, admin_headers, ready):
+    r = client.post(B + "/probe/open", headers={**admin_headers, "Host": "labor.example:8001"}, json={})
+    assert r.json()["url"].startswith("https://labor.example:8443/__labor_login?t=")
+
+
+def test_ticket_nutzer_kein_admin_mehr(client, admin_headers, ready, monkeypatch):
+    t = ticket_from(client, admin_headers)
+    from hydrahive.api.middleware import users
+    real = users.get_by_id
+    monkeypatch.setattr(users, "get_by_id", lambda uid: {**(real(uid) or {}), "role": "user"})
+    assert client.get(LOGIN, params={"t": t}, follow_redirects=False).status_code == 401
+
+
+def test_zu_langes_cookie_trotz_signatur(ready, monkeypatch):
+    monkeypatch.setattr(probe_auth, "_is_admin", lambda uid: True)
+    assert probe_auth.admin_from(probe_auth.issue_cookie("u"))
+    long = probe_auth.issue_cookie("u" * 600)
+    assert len(long) > probe_auth._MAX_LEN and not probe_auth.admin_from(long)
