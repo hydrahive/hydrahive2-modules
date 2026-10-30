@@ -27,9 +27,9 @@ export function FearGreedGauge() {
     return () => { alive = false }
   }, [])
 
-  if (loading) return <p className="text-xs text-zinc-500 py-3 text-center">{t("loading")}</p>
+  if (loading) return <p className="text-xs text-[#9aa7bc] py-3 text-center">{t("loading")}</p>
   const v = data?.current?.value
-  if (v == null) return <p className="text-xs text-zinc-500 py-3 text-center">{t("fng_unavailable")}</p>
+  if (v == null) return <p className="text-xs text-[#9aa7bc] py-3 text-center">{t("fng_unavailable")}</p>
 
   const R = 54
   const CIRC = Math.PI * R                 // Halbkreis-Länge
@@ -44,10 +44,10 @@ export function FearGreedGauge() {
         {/* Wert-Bogen */}
         <path d="M 11 65 A 54 54 0 0 1 119 65" fill="none" stroke={color} strokeWidth="10"
           strokeLinecap="round" strokeDasharray={`${filled} ${CIRC}`} />
-        <text x="65" y="55" textAnchor="middle" className="fill-zinc-100" style={{ fontSize: 22, fontWeight: 700 }}>{v}</text>
+        <text x="65" y="55" textAnchor="middle" className="fill-[#e8eef8]" style={{ fontSize: 22, fontWeight: 700 }}>{v}</text>
       </svg>
       <div className="text-sm font-medium -mt-1" style={{ color }}>{data?.current?.classification ?? "—"}</div>
-      <div className="text-[10px] text-zinc-600 mt-0.5">{t("fng_title")}</div>
+      <div className="text-[10px] text-[#9aa7bc] mt-0.5">{t("fng_title")}</div>
     </div>
   )
 }

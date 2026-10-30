@@ -2,7 +2,6 @@ import { ListPlus, Star } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CollapsibleBox } from "@/shared/CollapsibleBox"
-import { rgbFor } from "@/shared/colors"
 import { cryptoApi } from "../api"
 import { CoinRow } from "../components/CoinRow"
 import { FearGreedGauge } from "../components/FearGreedGauge"
@@ -11,7 +10,7 @@ import type { MarketRow, WatchItem } from "../types"
 import { useVs } from "../vsContext"
 import { EmptyHint } from "../components/EmptyHint"
 
-const C = rgbFor("/cryptoboard")
+const C = "105 215 255"
 
 export function DashboardView() {
   const { t } = useTranslation("cryptoboard")
@@ -50,7 +49,7 @@ export function DashboardView() {
 
   return (
     <div className="p-5 space-y-4 max-w-6xl mx-auto">
-      <div className="rounded-xl border border-white/[6%] bg-white/[2%]">
+      <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))]">
         <FearGreedGauge />
       </div>
 
@@ -70,7 +69,7 @@ export function DashboardView() {
 
       <CollapsibleBox boxId="cryptoboard-top" color={C} icon={<ListPlus size={14} />} title={t("top_coins")}>
         <div className="box-b">
-          <div className="flex items-center gap-3 px-2 pb-1.5 text-[10px] uppercase tracking-wider text-zinc-600 border-b border-white/[5%]">
+          <div className="flex items-center gap-3 px-2 pb-1.5 text-[10px] uppercase tracking-wider text-[#9aa7bc] border-b border-[rgb(var(--hh-s-rand,42_54_75))]">
             <span className="w-6 text-right shrink-0">#</span>
             <span className="flex-1">Coin</span>
             <span className="w-24 text-right shrink-0">{t("col_price")}</span>
@@ -87,7 +86,7 @@ export function DashboardView() {
         </div>
       </CollapsibleBox>
 
-      {loading && <p className="text-center text-xs text-zinc-600">{t("loading")}</p>}
+      {loading && <p className="text-center text-xs text-[#9aa7bc]">{t("loading")}</p>}
     </div>
   )
 }

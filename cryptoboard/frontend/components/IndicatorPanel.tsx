@@ -43,8 +43,8 @@ export function IndicatorPanel({ coinId, vs }: Props) {
     return () => { alive = false }
   }, [coinId, vs])
 
-  if (loading) return <p className="text-xs text-zinc-500 py-4 text-center">{t("loading")}</p>
-  if (!data || data.prices.length < 2) return <p className="text-xs text-zinc-600 py-4 text-center">—</p>
+  if (loading) return <p className="text-xs text-[#9aa7bc] py-4 text-center">{t("loading")}</p>
+  if (!data || data.prices.length < 2) return <p className="text-xs text-[#9aa7bc] py-4 text-center">—</p>
 
   const points: Point[] = data.times.map((ts, i) => ({
     ts,
@@ -113,7 +113,7 @@ export function IndicatorPanel({ coinId, vs }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[11px] font-medium text-zinc-400 mb-1 px-1">{title}</div>
+      <div className="text-[11px] font-medium text-[#c8d2df] mb-1 px-1">{title}</div>
       {children}
     </div>
   )

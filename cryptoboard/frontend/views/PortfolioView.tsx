@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { CollapsibleBox } from "@/shared/CollapsibleBox"
-import { rgbFor } from "@/shared/colors"
 import { cryptoApi } from "../api"
 import { AllocationDonut } from "../components/AllocationDonut"
 import { PnlCard } from "../components/PnlCard"
@@ -12,7 +11,7 @@ import { fmtPct, fmtPrice, fmtQty, fmtSigned, trendClass } from "../format"
 import type { PortfolioSummary } from "../types"
 import { EmptyHint } from "../components/EmptyHint"
 
-const C = rgbFor("/cryptoboard")
+const C = "105 215 255"
 const VS = "eur"
 
 export function PortfolioView() {
@@ -32,7 +31,7 @@ export function PortfolioView() {
 
   useEffect(() => { void load() }, [load])
 
-  if (loading && !data) return <p className="p-8 text-center text-sm text-zinc-500">{t("loading")}</p>
+  if (loading && !data) return <p className="p-8 text-center text-sm text-[#9aa7bc]">{t("loading")}</p>
 
   const tot = data?.totals
   const positions = data?.positions ?? []
@@ -62,13 +61,13 @@ export function PortfolioView() {
 
       {/* Trade hinzufügen */}
       {adding ? (
-        <div className="rounded-xl border border-white/[8%] bg-white/[2%] p-4">
-          <h3 className="text-sm font-semibold text-zinc-200 mb-3">{t("tx_add_title")}</h3>
+        <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] p-4">
+          <h3 className="text-sm font-semibold text-[#e8eef8] mb-3">{t("tx_add_title")}</h3>
           <TxForm onSaved={() => { setAdding(false); void load() }} onCancel={() => setAdding(false)} />
         </div>
       ) : (
         <button onClick={() => setAdding(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[4%] text-sm text-zinc-300 hover:bg-white/[7%] transition-colors">
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] transition-colors">
           <Plus size={15} /> {t("tx_add_title")}
         </button>
       )}
@@ -82,7 +81,7 @@ export function PortfolioView() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-[11px] text-zinc-500 border-b border-white/[6%]">
+                  <tr className="text-[11px] text-[#9aa7bc] border-b border-[rgb(var(--hh-s-rand,42_54_75))]">
                     <th className="text-left font-medium py-2 px-2">{t("pf_col_coin")}</th>
                     <th className="text-right font-medium px-2">{t("pf_col_qty")}</th>
                     <th className="text-right font-medium px-2 hidden sm:table-cell">{t("pf_col_avg")}</th>
@@ -94,18 +93,18 @@ export function PortfolioView() {
                 </thead>
                 <tbody>
                   {positions.map((p) => (
-                    <tr key={p.coin_id} className={`border-b border-white/[3%] hover:bg-white/[2%] ${!p.is_open ? "opacity-50" : ""}`}>
+                    <tr key={p.coin_id} className={`border-b border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] ${!p.is_open ? "opacity-50" : ""}`}>
                       <td className="py-2.5 px-2">
                         <Link to={`/cryptoboard/coin/${p.coin_id}`} className="flex items-center gap-2 min-w-0">
                           {p.image && <img src={p.image} alt="" className="w-5 h-5 rounded-full shrink-0" />}
-                          <span className="text-zinc-100 truncate">{p.name || p.coin_id}</span>
-                          <span className="text-[10px] text-zinc-500 font-mono uppercase shrink-0">{p.symbol}</span>
+                          <span className="text-[#e8eef8] truncate">{p.name || p.coin_id}</span>
+                          <span className="text-[10px] text-[#9aa7bc] font-mono uppercase shrink-0">{p.symbol}</span>
                         </Link>
                       </td>
-                      <td className="text-right tabular-nums px-2 text-zinc-300">{fmtQty(p.quantity)}</td>
-                      <td className="text-right tabular-nums px-2 text-zinc-400 hidden sm:table-cell">{fmtPrice(p.avg_cost, VS)}</td>
-                      <td className="text-right tabular-nums px-2 text-zinc-300">{fmtPrice(p.price, VS)}</td>
-                      <td className="text-right tabular-nums px-2 text-zinc-100">{fmtPrice(p.value, VS)}</td>
+                      <td className="text-right tabular-nums px-2 text-[#c8d2df]">{fmtQty(p.quantity)}</td>
+                      <td className="text-right tabular-nums px-2 text-[#c8d2df] hidden sm:table-cell">{fmtPrice(p.avg_cost, VS)}</td>
+                      <td className="text-right tabular-nums px-2 text-[#c8d2df]">{fmtPrice(p.price, VS)}</td>
+                      <td className="text-right tabular-nums px-2 text-[#e8eef8]">{fmtPrice(p.value, VS)}</td>
                       <td className={`text-right tabular-nums px-2 ${trendClass(p.unrealized_pnl)}`}>
                         {p.is_open ? (
                           <div className="leading-tight">
@@ -113,10 +112,10 @@ export function PortfolioView() {
                             <div className="text-[10px]">{fmtPct(p.unrealized_pct)}</div>
                           </div>
                         ) : (
-                          <span className="text-zinc-600">{t("pf_closed")}</span>
+                          <span className="text-[#9aa7bc]">{t("pf_closed")}</span>
                         )}
                       </td>
-                      <td className="text-right tabular-nums px-2 text-zinc-400 hidden md:table-cell">{p.is_open ? `${p.allocation.toFixed(1)} %` : "—"}</td>
+                      <td className="text-right tabular-nums px-2 text-[#c8d2df] hidden md:table-cell">{p.is_open ? `${p.allocation.toFixed(1)} %` : "—"}</td>
                     </tr>
                   ))}
                 </tbody>

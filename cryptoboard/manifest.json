@@ -1,7 +1,7 @@
 {
   "id": "cryptoboard",
   "name": "Cryptoboard",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "vault": true,
   "description": "Live-Dashboard für Kryptowährungs-Kurse mit Charts und Watchlist. Behalte Preise und Entwicklungen im Blick, ohne die Plattform zu verlassen.",
   "icon": "CandlestickChart",

@@ -4,7 +4,6 @@ import { Link, useParams } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { LineChart } from "lucide-react"
 import { CollapsibleBox } from "@/shared/CollapsibleBox"
-import { rgbFor } from "@/shared/colors"
 import { cryptoApi } from "../api"
 import { IndicatorPanel } from "../components/IndicatorPanel"
 import { PriceChart } from "../components/PriceChart"
@@ -12,7 +11,7 @@ import { fmtCompact, fmtPct, fmtPrice, fmtSupply, trendClass } from "../format"
 import type { CoinDetail, WatchItem } from "../types"
 import { useVs } from "../vsContext"
 
-const C = rgbFor("/cryptoboard")
+const C = "105 215 255"
 
 const TIMEFRAMES = [
   { key: "tf_24h", days: "1" },
@@ -54,7 +53,7 @@ export function CoinDetailView() {
   }
 
   if (err) return <div className="p-5 text-sm text-rose-400">{t("error")}</div>
-  if (!coin) return <div className="p-5 text-sm text-zinc-500">{t("loading")}</div>
+  if (!coin) return <div className="p-5 text-sm text-[#9aa7bc]">{t("loading")}</div>
 
   const stats = [
     { label: t("rank"), value: coin.market_cap_rank ? `#${coin.market_cap_rank}` : "—" },
@@ -69,7 +68,7 @@ export function CoinDetailView() {
 
   return (
     <div className="p-5 max-w-5xl mx-auto space-y-4">
-      <Link to="/cryptoboard" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+      <Link to="/cryptoboard" className="inline-flex items-center gap-1.5 text-xs text-[#9aa7bc] hover:text-[#c8d2df] transition-colors">
         <ArrowLeft size={13} />
         {t("back")}
       </Link>
@@ -79,29 +78,29 @@ export function CoinDetailView() {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-white">{coin.name}</h2>
-            <span className="text-sm text-zinc-500 font-mono uppercase">{coin.symbol}</span>
+            <span className="text-sm text-[#9aa7bc] font-mono uppercase">{coin.symbol}</span>
           </div>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-2xl font-semibold text-zinc-50 tabular-nums">{fmtPrice(coin.price, vs)}</span>
+            <span className="text-2xl font-semibold text-[#e8eef8] tabular-nums">{fmtPrice(coin.price, vs)}</span>
             <span className={`text-sm font-mono tabular-nums ${trendClass(coin.change_24h)}`}>{fmtPct(coin.change_24h)} (24h)</span>
           </div>
         </div>
         <button
           onClick={toggleWatch}
-          className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${watched ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-white/10 text-zinc-300 hover:bg-white/5"}`}
+          className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${watched ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-[rgb(var(--hh-s-rand,42_54_75))] text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"}`}
         >
           {watched ? <Check size={14} /> : <Plus size={14} />}
           {watched ? t("remove_watch") : t("add_watch")}
         </button>
       </div>
 
-      <div className="rounded-xl border border-white/[6%] bg-white/[2%] p-3">
+      <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] p-3">
         <div className="flex justify-end gap-1 mb-2">
           {TIMEFRAMES.map((tf) => (
             <button
               key={tf.days}
               onClick={() => setDays(tf.days)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${days === tf.days ? "bg-white/10 text-white" : "text-zinc-500 hover:text-zinc-300"}`}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${days === tf.days ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#9aa7bc] hover:text-[#c8d2df]"}`}
             >
               {t(tf.key)}
             </button>
@@ -112,9 +111,9 @@ export function CoinDetailView() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-lg border border-white/[6%] bg-white/[2%] p-3">
-            <div className="text-[10px] uppercase tracking-wider text-zinc-500">{s.label}</div>
-            <div className="mt-0.5 text-sm font-semibold text-zinc-100 tabular-nums">{s.value}</div>
+          <div key={s.label} className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] p-3">
+            <div className="text-[10px] uppercase tracking-wider text-[#9aa7bc]">{s.label}</div>
+            <div className="mt-0.5 text-sm font-semibold text-[#e8eef8] tabular-nums">{s.value}</div>
           </div>
         ))}
       </div>
@@ -126,7 +125,7 @@ export function CoinDetailView() {
       </CollapsibleBox>
 
       {coin.description && (
-        <p className="text-xs text-zinc-500 leading-relaxed">
+        <p className="text-xs text-[#9aa7bc] leading-relaxed">
           {coin.description}
           {coin.description.length >= 500 ? "…" : ""}
         </p>
