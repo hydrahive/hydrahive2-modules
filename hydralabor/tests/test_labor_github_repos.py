@@ -91,3 +91,37 @@ def test_ratenbegrenzung(fake_github):
     with pytest.raises(github_repos.GitHubError) as e:
         run(github_repos.ensure_fork(TOKEN, "nutzer", "core"))
     assert e.value.code == "labor_github_rate_limited"
+
+
+def test_fork_mit_sofortantwort_200(fake_github, monkeypatch):
+    """GitHub antwortet auf „Fork anlegen“ meist 202, manchmal 200 (Fork existierte schon im Hintergrund)."""
+    real = fake_github.request
+
+    async def ok200(method, url, **kw):
+        st, body, hdr = await real(method, url, **kw)
+        return (200 if method == "POST" and url.endswith("/forks") else st), body, hdr
+    monkeypatch.setattr(github_repos.github_api, "request", ok200)
+    assert run(github_repos.ensure_fork(TOKEN, "nutzer", "core")) == "nutzer/hydrahive2.0"
+
+
+def test_repo_ohne_eltern_angabe_ist_kein_passender_fork(fake_github):
+    fake_github.repos["nutzer/hydrahive2.0"] = {"fork": True, "parent": ""}
+    with pytest.raises(github_repos.GitHubError) as e:
+        run(github_repos.ensure_fork(TOKEN, "nutzer", "core"))
+    assert e.value.code == "labor_github_name_taken"
+
+
+def test_kein_fork_trotz_eltern_angabe(fake_github):
+    """Nur fork=True zählt – eine Eltern-Angabe allein (z. B. Vorlage-Repo) reicht nicht."""
+    fake_github.repos["nutzer/hydrahive2.0"] = {"fork": False, "parent": "hydrahive/hydrahive2.0"}
+    with pytest.raises(github_repos.GitHubError) as e:
+        run(github_repos.ensure_fork(TOKEN, "nutzer", "core"))
+    assert e.value.code == "labor_github_name_taken"
+
+
+def test_fork_abgelehnt_sofort_ohne_warten(fake_github):
+    fake_github.fail["POST https://api.github.com/repos/hydrahive/hydrahive2.0/forks"] = (403, {"message": "x"})
+    with pytest.raises(github_repos.GitHubError):
+        run(github_repos.ensure_fork(TOKEN, "nutzer", "core"))
+    gets = [c for c in fake_github.calls if c["method"] == "GET"]
+    assert len(gets) == 1                                            # nur die erste Nachschau, kein Warten

@@ -146,4 +146,6 @@ def fake_github(monkeypatch):
     async def no_wait(_s):
         return None
     monkeypatch.setattr(github_auth.asyncio, "sleep", no_wait)
+    from backend import github_repos
+    monkeypatch.setattr(github_repos, "_STEP", 0)
     return gh

@@ -25,10 +25,10 @@ class FakeGitHub:
     async def request(self, method: str, url: str, *, token: str = "", data: dict | None = None,
                       json: dict | None = None) -> tuple[int, dict, dict]:
         self.calls.append({"method": method, "url": url, "token": token, "data": data, "json": json})
+        hdr = {"x-ratelimit-remaining": self.rate_left}
         for key, ans in self.fail.items():
             if key in f"{method} {url}":
-                return ans[0], ans[1], {}
-        hdr = {"x-ratelimit-remaining": self.rate_left}
+                return ans[0], ans[1], hdr
         if url == "https://github.com/login/device/code":
             return 200, {"device_code": "DEV123", "user_code": "ABCD-1234",
                          "verification_uri": "https://github.com/login/device", "expires_in": 900, "interval": 5}, {}
@@ -45,7 +45,7 @@ class FakeGitHub:
             if name in self.repos:
                 r = self.repos[name]
                 return 200, {"full_name": name, "fork": r["fork"],
-                             "parent": {"full_name": r.get("parent", "")} if r["fork"] else None}, hdr
+                             "parent": {"full_name": r.get("parent", "")} if r.get("parent") is not None else None}, hdr
             if "/pulls/" in name:
                 n = int(name.rsplit("/", 1)[1])
                 pr = next((p for p in self.pulls if p["number"] == n), None)
