@@ -56,22 +56,22 @@ export function GhostChapterMode({ state, scene, onOpenScene }: Props) {
 
   return (
     <div className="st-ghost-chapter space-y-3">
-      <p className="text-xs text-zinc-400">{t("run_intro")}</p>
+      <p className="text-xs text-[#c8d2df]">{t("run_intro")}</p>
       {run.run && <RunProgress run={run.run} book={book} canWrite={canWrite} onCancel={() => { void run.cancel() }} onOpenScene={onOpenScene} />}
       {!run.active && (
-        <fieldset className="space-y-2 text-xs text-zinc-400" disabled={!canWrite}>
+        <fieldset className="space-y-2 text-xs text-[#c8d2df]" disabled={!canWrite}>
           <legend className="mb-1">{t("run_scope")}</legend>
           <div className="flex flex-wrap gap-1" role="radiogroup">
             {(["chapter", "from", "book"] as const).map((s) => (
               <button key={s} type="button" role="radio" aria-checked={scope === s} onClick={() => setScope(s)}
-                className={`rounded-lg border px-2 py-1 ${scope === s ? "border-violet-400 bg-violet-500/15 text-violet-100" : "border-white/10 hover:bg-white/5"}`}>
+                className={`rounded-lg border px-2 py-1 ${scope === s ? "border-[#69d7ff] bg-[#69d7ff]/15 text-[#c8f2ff]" : "border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"}`}>
                 {t(`run_scope_${s}`)}
               </button>
             ))}
           </div>
           <label className="flex items-center gap-2"><input type="checkbox" checked={skipFilled} onChange={(e) => setSkipFilled(e.target.checked)} />{t("run_skip_filled")}</label>
           {est && (
-            <p className="st-run-estimate text-[11px] text-zinc-400">
+            <p className="st-run-estimate text-[11px] text-[#c8d2df]">
               {t("run_estimate", { scenes: est.scenes, total: n(totalTokens(est)), out: n(est.output_tokens), in: n(est.input_tokens), model: est.model || t("ghost_model_default") })}
               {cost && <> · {t("run_cost", { cents: cost.cents })}</>}
               {(est.skipped_filled > 0 || est.skipped_no_summary > 0) && <> · {t("run_skipped", { filled: est.skipped_filled, nosum: est.skipped_no_summary })}</>}
@@ -81,7 +81,7 @@ export function GhostChapterMode({ state, scene, onOpenScene }: Props) {
           {over && est && <p className="st-run-over rounded border border-amber-400/30 bg-amber-400/5 px-2 py-1 text-amber-200">
             {t("run_over_limit", { total: n(totalTokens(est)), limit: n(limit) })}</p>}
           <button onClick={() => { void run.start(req, over) }} disabled={!est || est.scenes === 0}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-40">
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#163248] px-3 py-2 text-sm font-semibold text-white hover:bg-[#1b3d56] disabled:opacity-40">
             <BookOpenText className="h-4 w-4" />{over ? t("run_start_over", { scenes: est?.scenes ?? 0 }) : t("run_start", { scenes: est?.scenes ?? 0 })}
           </button>
         </fieldset>

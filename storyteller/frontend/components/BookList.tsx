@@ -77,66 +77,66 @@ export function BookList({ projectId, projectName, onOpen, onProjectCreated, can
       <DraftImport projectId={projectId} onDone={load} />
       {lastBook && last && (
         <button onClick={() => onOpen(lastBook.id, last.sceneId)}
-          className="flex w-full items-center gap-4 rounded-xl border border-violet-400/30 bg-violet-500/10 p-4 text-left hover:bg-violet-500/15">
-          <Feather className="h-6 w-6 shrink-0 text-violet-300" />
+          className="flex w-full items-center gap-4 rounded-xl border border-[#69d7ff]/30 bg-[#69d7ff]/10 p-4 text-left hover:bg-[#69d7ff]/15">
+          <Feather className="h-6 w-6 shrink-0 text-[#69d7ff]" />
           <div className="min-w-0">
-            <div className="text-xs font-semibold uppercase tracking-wider text-violet-300">{t("continue_last")}</div>
-            <div className="truncate text-base font-semibold text-zinc-100">{lastBook.title}</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-[#69d7ff]">{t("continue_last")}</div>
+            <div className="truncate text-base font-semibold text-[#e8eef8]">{lastBook.title}</div>
           </div>
         </button>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-zinc-300">{t("books")}</h2>
+        <h2 className="text-sm font-semibold text-[#c8d2df]">{t("books")}</h2>
         <div className="flex gap-2">
           <button onClick={() => { void sample() }} disabled={busy}
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/5 disabled:opacity-50">
+            className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] disabled:opacity-50">
             {t("sample_book")}
           </button>
           <button onClick={() => setCreating(true)} disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50">
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#163248] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#1b3d56] disabled:opacity-50">
             <Plus className="h-4 w-4" />{t("new_book")}
           </button>
         </div>
       </div>
       {error && <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200" role="alert">{error}</p>}
 
-      {books === null ? <p className="text-sm text-zinc-500">…</p> : books.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-zinc-500">{t("books_empty")}</p>
+      {books === null ? <p className="text-sm text-[#9aa7bc]">…</p> : books.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] p-8 text-center text-sm text-[#9aa7bc]">{t("books_empty")}</p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {books.map((b) => (
-            <li key={b.id} className="group flex flex-col rounded-xl border border-white/10 bg-zinc-900/50 p-4">
+            <li key={b.id} className="group flex flex-col rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] p-4">
               <div className="flex items-start gap-3">
-                <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-zinc-500" />
+                <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-[#9aa7bc]" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold text-zinc-100">{b.title}</div>
-                  <div className="text-xs text-zinc-500">
+                  <div className="truncate font-semibold text-[#e8eef8]">{b.title}</div>
+                  <div className="text-xs text-[#9aa7bc]">
                     {t(`kind_${b.kind}`)} · {t("words_n", { n: b.words.toLocaleString(i18n.language) })}
                     {" · "}{t("edited_at", { when: fmt(b.updated_at) })}
                   </div>
-                  {b.idea && <p className="mt-2 line-clamp-2 text-sm text-zinc-400">{b.idea}</p>}
+                  {b.idea && <p className="mt-2 line-clamp-2 text-sm text-[#c8d2df]">{b.idea}</p>}
                 </div>
               </div>
               <div className="mt-3 flex justify-end gap-2">
                 {canMove(canCreateProject, b) && (
                   <button onClick={() => { void moveOut(b) }} disabled={busy} title={t("move_hint")}
-                    className="st-move-book mr-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-zinc-400 hover:bg-white/5 hover:text-zinc-200 disabled:opacity-50">
+                    className="st-move-book mr-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] hover:text-[#e8eef8] disabled:opacity-50">
                     <FolderInput className="h-3.5 w-3.5" />{t("move_book")}
                   </button>
                 )}
                 <button onClick={() => { void remove(b) }} title={t("delete_book")} aria-label={t("delete_book")}
-                  className="rounded-lg p-1.5 text-zinc-500 opacity-60 hover:bg-red-500/10 hover:text-red-300 group-hover:opacity-100">
+                  className="rounded-lg p-1.5 text-[#9aa7bc] opacity-60 hover:bg-red-500/10 hover:text-red-300 group-hover:opacity-100">
                   <Trash2 className="h-4 w-4" />
                 </button>
                 <button onClick={() => onOpen(b.id)}
-                  className="rounded-lg border border-white/10 px-3 py-1 text-sm text-zinc-200 hover:bg-white/5">{t("open")}</button>
+                  className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1 text-sm text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{t("open")}</button>
               </div>
             </li>
           ))}
         </ul>
       )}
-      {busy && <p className="text-sm text-zinc-500" role="status">{t("nb_creating")}</p>}
+      {busy && <p className="text-sm text-[#9aa7bc]" role="status">{t("nb_creating")}</p>}
       {/* A3: Papierkorb – Schreibrecht prüft der Server (Leser bekommen 403 und eine Meldung). */}
       <TrashBooks key={books?.length ?? -1} projectId={projectId} canWrite onRestored={() => load()} />
       {creating && <NewBookDialog onCancel={() => setCreating(false)} canCreateProject={canCreateProject} currentProjectName={projectName}

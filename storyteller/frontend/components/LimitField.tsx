@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 import { limitCents, parseLimit } from "../costLimit"
 import type { BookState } from "../useBook"
 
-const field = "rounded-lg border border-white/10 bg-zinc-950 px-2 py-1 text-sm text-zinc-100"
+const field = "rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1 text-sm text-[#e8eef8]"
 
 interface Props {
   state: BookState
@@ -41,7 +41,7 @@ export function LimitField({ state, price }: Props) {
   const cents = price && saved ? limitCents(price, saved) : null
 
   return (
-    <fieldset className="st-limit space-y-1 text-xs text-zinc-400" disabled={!canWrite}>
+    <fieldset className="st-limit space-y-1 text-xs text-[#c8d2df]" disabled={!canWrite}>
       <legend className="mb-1">{t("run_limit")}</legend>
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-1.5">
@@ -53,12 +53,12 @@ export function LimitField({ state, price }: Props) {
               autoFocus={!saved} className={`st-limit-input ${field} w-32 ${valid || raw === "" ? "" : "border-red-400/60"}`}
               onChange={(e) => setDraft(e.target.value)} onBlur={commit} />
             <span>{t("run_limit_tokens")}</span>
-            {cents && <span className="text-zinc-500">{t("run_limit_cents", { cents, model: price?.model || t("ghost_model_default") })}</span>}
+            {cents && <span className="text-[#9aa7bc]">{t("run_limit_cents", { cents, model: price?.model || t("ghost_model_default") })}</span>}
           </>
-        ) : <span className="text-zinc-500">{t("run_limit_none")}</span>}
+        ) : <span className="text-[#9aa7bc]">{t("run_limit_none")}</span>}
       </div>
       {on && !valid && raw !== "" && <p className="text-red-300">{t("run_limit_invalid")}</p>}
-      <p className="text-[11px] text-zinc-500">{t("run_limit_help")}</p>
+      <p className="text-[11px] text-[#9aa7bc]">{t("run_limit_help")}</p>
     </fieldset>
   )
 }

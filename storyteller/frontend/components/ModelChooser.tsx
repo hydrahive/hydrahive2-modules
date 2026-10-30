@@ -35,25 +35,25 @@ export function ModelChooser({ value, onChange, compact = false, label: caption,
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0 text-xs text-zinc-400">
+        <div className="min-w-0 text-xs text-[#c8d2df]">
           {!compact && <span className="mr-1">{caption ?? t("ai_model_label")}</span>}
-          <span className="st-model font-mono text-zinc-200" title={label}>{label}</span>
+          <span className="st-model font-mono text-[#e8eef8]" title={label}>{label}</span>
         </div>
         <button onClick={() => setOpen((o) => !o)} aria-expanded={open}
-          className="inline-flex shrink-0 items-center gap-0.5 rounded px-2 py-0.5 text-xs text-violet-300 hover:bg-violet-500/10">
+          className="inline-flex shrink-0 items-center gap-0.5 rounded px-2 py-0.5 text-xs text-[#69d7ff] hover:bg-[#69d7ff]/10">
           {t("ai_model_change")}{open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </button>
       </div>
       {open && (
-        <div className="space-y-2 rounded-lg border border-white/10 bg-zinc-950/60 p-2">
-          <label className="flex items-center gap-2 text-xs text-zinc-300">
+        <div className="space-y-2 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32)/0.6)] p-2">
+          <label className="flex items-center gap-2 text-xs text-[#c8d2df]">
             <input type="radio" checked={!value} onChange={() => onChange("")} />
             {fallback ? t("ai_model_use_inherited", { model: fallback }) : t("ai_model_use_standard", { model: catalog?.standard || "…" })}
           </label>
           {error && <p className="text-xs text-red-300">{t("ai_models_failed", { error })}</p>}
           {catalog
             ? <AgentModelPicker value={value} catalog={catalog.models} onChange={onChange} />
-            : !error && <p className="text-xs text-zinc-500">…</p>}
+            : !error && <p className="text-xs text-[#9aa7bc]">…</p>}
         </div>
       )}
     </div>

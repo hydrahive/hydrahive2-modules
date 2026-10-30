@@ -51,29 +51,29 @@ export function ProposalHistory({ state, sceneId }: Props) {
 
   return (
     <section className="st-proposal-history space-y-1">
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 text-xs font-semibold text-zinc-400 hover:text-zinc-200">
+      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 text-xs font-semibold text-[#c8d2df] hover:text-[#e8eef8]">
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         <History className="h-3.5 w-3.5" />{t("history_title")}{rows ? ` (${rows.length})` : ""}
       </button>
-      {open && rows && rows.length === 0 && <p className="text-xs text-zinc-600">{t("history_none")}</p>}
+      {open && rows && rows.length === 0 && <p className="text-xs text-[#9aa7bc]">{t("history_none")}</p>}
       {open && rows && rows.length > 0 && (
         <ul className="space-y-1 text-xs">
           {rows.map((e) => (
-            <li key={`${e.kind}-${e.id}`} className="st-history-entry space-y-1 rounded border border-white/5 px-2 py-1 text-zinc-400">
+            <li key={`${e.kind}-${e.id}`} className="st-history-entry space-y-1 rounded border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-[#c8d2df]">
               <div className="flex flex-wrap items-center gap-x-2">
-                <span className="text-zinc-300">{t(`history_kind_${e.kind}`)}</span>
+                <span className="text-[#c8d2df]">{t(`history_kind_${e.kind}`)}</span>
                 <span>{t("history_from", { who: originLabel(e, t) })}</span>
-                <span className="text-zinc-500">{fmt(e.at)}</span>
-                {e.kind === "text" && <span className="text-zinc-500">{t("history_words", { n: e.words ?? 0 })}</span>}
-                <span className="text-zinc-500">· {e.reason === "discarded" ? t("history_discarded")
+                <span className="text-[#9aa7bc]">{fmt(e.at)}</span>
+                {e.kind === "text" && <span className="text-[#9aa7bc]">{t("history_words", { n: e.words ?? 0 })}</span>}
+                <span className="text-[#9aa7bc]">· {e.reason === "discarded" ? t("history_discarded")
                   : e.reason === "restored_over" ? t("history_restored_over")
                   : t("history_replaced_by", { who: originLabel({ author: e.replaced_by }, t) })}</span>
                 <span className="ml-auto flex gap-2">
-                  <button onClick={() => { void view(e) }} className="text-violet-300 hover:underline">{t(shown?.id === e.id ? "proposal_hide" : "proposal_view")}</button>
-                  {canWrite && <button onClick={() => { void restore(e) }} className="st-history-restore text-violet-300 hover:underline">{t("history_restore")}</button>}
+                  <button onClick={() => { void view(e) }} className="text-[#69d7ff] hover:underline">{t(shown?.id === e.id ? "proposal_hide" : "proposal_view")}</button>
+                  {canWrite && <button onClick={() => { void restore(e) }} className="st-history-restore text-[#69d7ff] hover:underline">{t("history_restore")}</button>}
                 </span>
               </div>
-              {shown?.id === e.id && <div className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded bg-black/20 p-2 font-serif text-sm text-zinc-200">{shown.text}</div>}
+              {shown?.id === e.id && <div className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded bg-black/20 p-2 font-serif text-sm text-[#e8eef8]">{shown.text}</div>}
             </li>
           ))}
         </ul>

@@ -20,13 +20,13 @@ export function TrashChapters({ rows, kind, canWrite, onRestore }: Props) {
   return (
     <ul className="mt-1 space-y-1">
       {rows.map((c) => (
-        <li key={c.id} className="st-trash-chapter rounded border border-white/10 px-2 py-1 text-xs text-zinc-400">
-          <p className="break-words font-semibold text-zinc-300" title={c.title}>{t("trash_chapter_label", { title: c.title })}</p>
-          <p className="text-[11px] text-zinc-500">
+        <li key={c.id} className="st-trash-chapter rounded border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-xs text-[#c8d2df]">
+          <p className="break-words font-semibold text-[#c8d2df]" title={c.title}>{t("trash_chapter_label", { title: c.title })}</p>
+          <p className="text-[11px] text-[#9aa7bc]">
             {t("trash_deleted_at", { when: fmt(c.deleted_at) })} · {t(`trash_chapter_n_${unit}`, { count: c.scenes })} · {t("words_n", { n: c.words })}
           </p>
           {canWrite && <button onClick={() => onRestore(c)} title={t("trash_restore")}
-            className="st-trash-restore-chapter mt-0.5 inline-flex items-center gap-1 text-violet-300 hover:underline">
+            className="st-trash-restore-chapter mt-0.5 inline-flex items-center gap-1 text-[#69d7ff] hover:underline">
             <RotateCcw className="h-3 w-3" />{t("trash_restore")}</button>}
         </li>
       ))}

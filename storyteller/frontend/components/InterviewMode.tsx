@@ -15,7 +15,7 @@ import { useInterview } from "../useInterview"
 import { DictateButton } from "./DictateButton"
 import { RunProgress } from "./RunProgress"
 
-const field = "w-full rounded border border-white/10 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 placeholder:text-zinc-600"
+const field = "w-full rounded border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1 text-sm text-[#e8eef8] placeholder:text-[#9aa7bc]"
 
 interface Props { state: BookState; scene: Scene; onOpenScene: (id: string) => void }
 
@@ -54,7 +54,7 @@ export function InterviewMode({ state, scene, onOpenScene }: Props) {
   if (!chapter) return null
   return (
     <div className="st-interview space-y-3">
-      <p className="text-xs text-zinc-400">{t("interview_intro", { chapter: chapter.title })}</p>
+      <p className="text-xs text-[#c8d2df]">{t("interview_intro", { chapter: chapter.title })}</p>
       {iv.state === "conflict" && (
         <div className="rounded border border-amber-400/30 bg-amber-400/5 px-2 py-1.5 text-xs text-amber-200">
           <p>{t("interview_conflict")}</p>
@@ -65,15 +65,15 @@ export function InterviewMode({ state, scene, onOpenScene }: Props) {
         </div>
       )}
       {iv.state === "failed" && <p className="text-xs text-red-300" role="alert">{t("interview_save_failed")} <button className="underline" onClick={() => { void iv.retry() }}>{t("save_retry")}</button></p>}
-      <p className="st-interview-count text-xs text-zinc-300">{t("interview_count", { answered, total: iv.questions.length })}</p>
+      <p className="st-interview-count text-xs text-[#c8d2df]">{t("interview_count", { answered, total: iv.questions.length })}</p>
       <ol className="space-y-3">
         {iv.questions.map((q, i) => (
-          <li key={q.id} className="space-y-1 rounded border border-white/5 p-2">
+          <li key={q.id} className="space-y-1 rounded border border-[rgb(var(--hh-s-rand,42_54_75))] p-2">
             <div className="flex items-start gap-1">
-              <span className="pt-1 text-xs text-zinc-500">{i + 1}.</span>
+              <span className="pt-1 text-xs text-[#9aa7bc]">{i + 1}.</span>
               <input className={`${field} font-semibold`} value={q.question} readOnly={!canWrite} aria-label={t("interview_question")}
                 onChange={(e) => iv.change(editQuestion(iv.questions, q.id, e.target.value))} />
-              {canWrite && <button title={t("outline_remove")} onClick={() => iv.change(removeQuestion(iv.questions, q.id))} className="pt-1 text-zinc-500 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button>}
+              {canWrite && <button title={t("outline_remove")} onClick={() => iv.change(removeQuestion(iv.questions, q.id))} className="pt-1 text-[#9aa7bc] hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button>}
             </div>
             <textarea className={`${field} min-h-[72px]`} value={q.answer} readOnly={!canWrite} placeholder={t("interview_answer_ph")}
               aria-label={t("interview_answer")} onChange={(e) => iv.change(editAnswer(iv.questions, q.id, e.target.value))} />
@@ -83,7 +83,7 @@ export function InterviewMode({ state, scene, onOpenScene }: Props) {
       </ol>
       {canWrite && (
         <button onClick={() => { void suggest() }} disabled={busy || iv.questions.length >= MAX_QUESTIONS || iv.state === "loading"}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5 disabled:opacity-40">
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-2 text-sm text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] disabled:opacity-40">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircleQuestion className="h-4 w-4" />}
           {iv.questions.length ? t("interview_more") : t("interview_suggest")}
         </button>
@@ -93,24 +93,24 @@ export function InterviewMode({ state, scene, onOpenScene }: Props) {
       )}
       {!run.active && !est && (
         <button onClick={() => { void prepare() }} disabled={!canWrite || answered === 0}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-40">
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#163248] px-3 py-2 text-sm font-semibold text-white hover:bg-[#1b3d56] disabled:opacity-40">
           <BookOpenText className="h-4 w-4" />{t("interview_write")}
         </button>
       )}
       {!run.active && est && (
-        <div className="st-interview-confirm space-y-2 rounded-lg border border-violet-400/30 bg-violet-500/5 p-2 text-xs text-zinc-300">
+        <div className="st-interview-confirm space-y-2 rounded-lg border border-[#69d7ff]/30 bg-[#69d7ff]/5 p-2 text-xs text-[#c8d2df]">
           <p>{t("interview_confirm", { scenes: est.scenes, total: totalTokens(est).toLocaleString(i18n.language), model: est.model || t("ghost_model_default") })}
             {est.cost_micros !== null && <> · {t("run_cost", { cents: (est.cost_micros / 1000).toFixed(2) })}</>}</p>
           {over && <p className="text-amber-200">{t("run_over_limit", { total: totalTokens(est).toLocaleString(i18n.language), limit: est.limit_tokens.toLocaleString(i18n.language) })}</p>}
           <div className="flex gap-2">
-            <button onClick={() => { void write() }} className="flex-1 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-violet-500">
+            <button onClick={() => { void write() }} className="flex-1 rounded-lg bg-[#163248] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#1b3d56]">
               {over ? t("run_start_over", { scenes: est.scenes }) : t("run_start", { scenes: est.scenes })}
             </button>
-            <button onClick={() => setEst(null)} className="rounded-lg border border-white/10 px-3 text-sm">{t("ghost_stop")}</button>
+            <button onClick={() => setEst(null)} className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 text-sm">{t("ghost_stop")}</button>
           </div>
         </div>
       )}
-      {answered === 0 && canWrite && <p className="text-[11px] text-zinc-500">{t("interview_need_answer")}</p>}
+      {answered === 0 && canWrite && <p className="text-[11px] text-[#9aa7bc]">{t("interview_need_answer")}</p>}
       {(error || run.error) && <p className="st-ai-error rounded border border-red-400/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-200" role="alert">
         {error || t(`ai_err_${run.error?.code}`, { defaultValue: run.error?.message || run.error?.code })}</p>}
     </div>

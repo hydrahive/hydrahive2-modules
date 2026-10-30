@@ -8,7 +8,7 @@ import { StoryApiError } from "../api"
 import { chapterSummaryApi, isDirty, type ChapterSummary } from "../chapterSummary"
 import type { BookState } from "../useBook"
 
-const field = "w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
+const field = "w-full rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2.5 py-1.5 text-sm text-[#e8eef8] placeholder:text-[#9aa7bc]"
 const EMPTY: ChapterSummary = { summary: "", version: 0, updated_at: "" }
 
 interface Props { state: BookState; chapterId: string; chapterTitle: string }
@@ -60,33 +60,33 @@ export function ChapterSummaryBox({ state, chapterId, chapterTitle }: Props) {
   }
 
   return (
-    <section className="space-y-1.5 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+    <section className="space-y-1.5 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] p-2.5">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="truncate text-xs font-semibold text-zinc-400">{t("chapter_summary_title", { title: chapterTitle })}</h3>
+        <h3 className="truncate text-xs font-semibold text-[#c8d2df]">{t("chapter_summary_title", { title: chapterTitle })}</h3>
         {canWrite && proposal === null && (
           <button onClick={() => { void generate() }} disabled={!!busy} title={t("chapter_summary_generate_hint")}
-            className="flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-xs text-violet-300 hover:bg-violet-500/10 disabled:opacity-40">
+            className="flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-xs text-[#69d7ff] hover:bg-[#69d7ff]/10 disabled:opacity-40">
             {busy === "generate" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
             {t("chapter_summary_generate")}
           </button>
         )}
       </div>
       {proposal !== null && (
-        <div className="space-y-1.5 rounded-lg border border-violet-400/30 bg-violet-500/5 p-2">
-          <p className="text-[11px] font-semibold text-violet-300">{t("chapter_summary_proposal")}</p>
-          <p className="whitespace-pre-wrap text-sm text-zinc-200">{proposal}</p>
+        <div className="space-y-1.5 rounded-lg border border-[#69d7ff]/30 bg-[#69d7ff]/5 p-2">
+          <p className="text-[11px] font-semibold text-[#69d7ff]">{t("chapter_summary_proposal")}</p>
+          <p className="whitespace-pre-wrap text-sm text-[#e8eef8]">{proposal}</p>
           <div className="flex gap-2">
             <button onClick={() => { void accept() }} disabled={!!busy}
-              className="rounded bg-violet-600 px-2.5 py-0.5 text-xs text-white hover:bg-violet-500 disabled:opacity-40">{t("chapter_summary_accept")}</button>
+              className="rounded bg-[#163248] px-2.5 py-0.5 text-xs text-white hover:bg-[#1b3d56] disabled:opacity-40">{t("chapter_summary_accept")}</button>
             <button onClick={() => setProposal(null)} disabled={!!busy}
-              className="rounded px-2.5 py-0.5 text-xs text-zinc-400 hover:bg-white/5">{t("chapter_summary_discard")}</button>
+              className="rounded px-2.5 py-0.5 text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{t("chapter_summary_discard")}</button>
           </div>
         </div>
       )}
       <textarea className={`${field} min-h-[64px]`} value={draft} readOnly={!canWrite} disabled={busy === "load"}
         placeholder={t("chapter_summary_ph")} maxLength={4000}
         onChange={(e) => setDraft(e.target.value)} onBlur={() => { void save(draft) }} />
-      <p className="text-[11px] text-zinc-600">{busy === "save" ? t("chapter_summary_saving") : t("chapter_summary_hint")}</p>
+      <p className="text-[11px] text-[#9aa7bc]">{busy === "save" ? t("chapter_summary_saving") : t("chapter_summary_hint")}</p>
       {error && <p className="text-xs text-red-300">{error}</p>}
     </section>
   )
