@@ -54,21 +54,21 @@ export function ArchiveBox({ selectedDrive, projects, onJobStart }: Props) {
     >
       <div className="p-4 space-y-3">
         {selectedDrive ? (
-          <p className="text-xs text-zinc-500">
-            Quelle: <span className="text-zinc-300">{selectedDrive.mountpoint}</span>
+          <p className="text-xs text-[#9aa7bc]">
+            Quelle: <span className="text-[#c8d2df]">{selectedDrive.mountpoint}</span>
           </p>
         ) : (
           <input
             value={customPath}
             onChange={e => setCustomPath(e.target.value)}
             placeholder="Pfad manuell: /media/<user>/..."
-            className="w-full rounded-lg bg-zinc-900 border border-white/[8%] px-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500/50"
+            className="w-full rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-xs text-[#e8eef8] placeholder-[#9aa7bc] focus:outline-none focus:border-[#69d7ff]/50"
           />
         )}
         <select
           value={selectedProject}
           onChange={e => setSelectedProject(e.target.value)}
-          className="w-full rounded-lg bg-zinc-900 border border-white/[8%] px-3 py-1.5 text-sm text-zinc-100 focus:outline-none focus:border-violet-500/50 [&>option]:bg-zinc-900"
+          className="w-full rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#e8eef8] focus:outline-none focus:border-[#69d7ff]/50 [&>option]:bg-[rgb(var(--hh-s-box,21_28_43))]"
         >
           <option value="">Zielprojekt wählen…</option>
           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -77,12 +77,12 @@ export function ArchiveBox({ selectedDrive, projects, onJobStart }: Props) {
           value={folderName}
           onChange={e => setFolderName(e.target.value)}
           placeholder="Unterordner-Name, z.B. HDD_2010_Blau"
-          className="w-full rounded-lg bg-zinc-900 border border-white/[8%] px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-violet-500/50"
+          className="w-full rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#e8eef8] placeholder-[#9aa7bc] focus:outline-none focus:border-[#69d7ff]/50"
         />
         <button
           onClick={handleStart}
           disabled={!canStart}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#163248] hover:bg-[#1b3d56] disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
         >
           <Play size={13} />
           {starting ? "Starte…" : "HDD → Projekt"}

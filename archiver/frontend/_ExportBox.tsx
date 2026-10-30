@@ -54,13 +54,13 @@ export function ExportBox({ drives, projects, onJobStart }: Props) {
       defaultCollapsed
     >
       <div className="p-4 space-y-3">
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-[#9aa7bc]">
           Spiegelt den Projekt-Workspace auf das Laufwerk.
         </p>
         <select
           value={selectedProject}
           onChange={e => setSelectedProject(e.target.value)}
-          className="w-full rounded-lg bg-zinc-900 border border-white/[8%] px-3 py-1.5 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500/50 [&>option]:bg-zinc-900"
+          className="w-full rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#e8eef8] focus:outline-none focus:border-emerald-500/50 [&>option]:bg-[rgb(var(--hh-s-box,21_28_43))]"
         >
           <option value="">Quell-Projekt wählen…</option>
           {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -68,7 +68,7 @@ export function ExportBox({ drives, projects, onJobStart }: Props) {
         <select
           value={selectedDriveDevice}
           onChange={e => setSelectedDriveDevice(e.target.value)}
-          className="w-full rounded-lg bg-zinc-900 border border-white/[8%] px-3 py-1.5 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500/50 [&>option]:bg-zinc-900"
+          className="w-full rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#e8eef8] focus:outline-none focus:border-emerald-500/50 [&>option]:bg-[rgb(var(--hh-s-box,21_28_43))]"
         >
           <option value="">Ziellaufwerk wählen…</option>
           {mountedDrives.map(d => (
@@ -81,7 +81,7 @@ export function ExportBox({ drives, projects, onJobStart }: Props) {
           value={folderName}
           onChange={e => setFolderName(e.target.value)}
           placeholder="Zielordner auf Laufwerk, z.B. Backup_2026"
-          className="w-full rounded-lg bg-zinc-900 border border-white/[8%] px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50"
+          className="w-full rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#e8eef8] placeholder-[#9aa7bc] focus:outline-none focus:border-emerald-500/50"
         />
         <button
           onClick={handleStart}

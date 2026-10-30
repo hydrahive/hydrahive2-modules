@@ -46,7 +46,7 @@ export function DiagnoseBox({ drive }: Props) {
   const healthColor =
     smartResult?.health === "PASSED" ? "text-emerald-400"
     : smartResult?.health === "FAILED" ? "text-rose-400"
-    : "text-zinc-400"
+    : "text-[#c8d2df]"
 
   return (
     <CollapsibleBox
@@ -58,7 +58,7 @@ export function DiagnoseBox({ drive }: Props) {
     >
       <div className="p-4 space-y-4">
         {!drive ? (
-          <p className="text-xs text-zinc-600">Kein Laufwerk ausgewählt.</p>
+          <p className="text-xs text-[#9aa7bc]">Kein Laufwerk ausgewählt.</p>
         ) : (
           <>
             <div className="space-y-2">
@@ -79,7 +79,7 @@ export function DiagnoseBox({ drive }: Props) {
                 )}
               </div>
               {smartResult?.raw && (
-                <pre className="bg-black/30 rounded-lg p-2 text-[10px] font-mono text-zinc-400 h-36 overflow-y-auto whitespace-pre-wrap break-all">
+                <pre className="bg-black/30 rounded-lg p-2 text-[10px] font-mono text-[#c8d2df] h-36 overflow-y-auto whitespace-pre-wrap break-all">
                   {smartResult.raw}
                 </pre>
               )}
@@ -97,9 +97,9 @@ export function DiagnoseBox({ drive }: Props) {
               {dmesgLines !== null && (
                 <pre className="bg-black/30 rounded-lg p-2 text-[10px] font-mono h-36 overflow-y-auto whitespace-pre-wrap break-all">
                   {dmesgLines.length === 0
-                    ? <span className="text-zinc-600">Keine Treffer im dmesg-Log.</span>
+                    ? <span className="text-[#9aa7bc]">Keine Treffer im dmesg-Log.</span>
                     : dmesgLines.map((l, i) => (
-                        <div key={i} className={l.toLowerCase().includes("error") ? "text-rose-400" : "text-zinc-400"}>
+                        <div key={i} className={l.toLowerCase().includes("error") ? "text-rose-400" : "text-[#c8d2df]"}>
                           {l}
                         </div>
                       ))

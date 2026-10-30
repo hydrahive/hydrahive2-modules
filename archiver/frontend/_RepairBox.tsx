@@ -55,7 +55,7 @@ export function RepairBox({ drive }: Props) {
   const fsckVisible = drive && !ntfsVisible
 
   const statusIcon =
-    status === "running" ? <Loader2 size={13} className="text-violet-400 animate-spin" />
+    status === "running" ? <Loader2 size={13} className="text-[#69d7ff] animate-spin" />
     : status === "done" ? <CheckCircle size={13} className="text-emerald-400" />
     : status === "failed" ? <XCircle size={13} className="text-rose-400" />
     : null
@@ -70,10 +70,10 @@ export function RepairBox({ drive }: Props) {
     >
       <div className="p-4 space-y-3">
         {!drive ? (
-          <p className="text-xs text-zinc-600">Kein Laufwerk ausgewählt.</p>
+          <p className="text-xs text-[#9aa7bc]">Kein Laufwerk ausgewählt.</p>
         ) : (
           <>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-[#9aa7bc]">
               Laufwerk wird vor der Reparatur automatisch ausgehängt.
             </p>
             <div className="flex items-center gap-2 flex-wrap">
@@ -100,13 +100,13 @@ export function RepairBox({ drive }: Props) {
               {status === "running" && (
                 <button
                   onClick={handleStop}
-                  className="px-2 py-1 rounded text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors"
+                  className="px-2 py-1 rounded text-[11px] text-[#c8d2df] hover:text-[#e8eef8] transition-colors"
                 >
                   Abbrechen
                 </button>
               )}
               {statusIcon && (
-                <span className="flex items-center gap-1 text-xs text-zinc-400">
+                <span className="flex items-center gap-1 text-xs text-[#c8d2df]">
                   {statusIcon}
                   {status === "done" ? "Fertig" : status === "failed" ? "Fehler" : "Läuft…"}
                 </span>
@@ -115,7 +115,7 @@ export function RepairBox({ drive }: Props) {
             {lines.length > 0 && (
               <pre
                 ref={logRef}
-                className="bg-black/30 rounded-lg p-2 text-[10px] font-mono text-zinc-400 h-40 overflow-y-auto whitespace-pre-wrap break-all"
+                className="bg-black/30 rounded-lg p-2 text-[10px] font-mono text-[#c8d2df] h-40 overflow-y-auto whitespace-pre-wrap break-all"
               >
                 {lines.map((l, i) => (
                   <div key={i} className={l.toLowerCase().includes("error") || l.toLowerCase().includes("fehler") ? "text-rose-400" : ""}>
