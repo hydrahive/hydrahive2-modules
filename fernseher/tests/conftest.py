@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pytest
-from _hh_isolation import (
+from _hh_isolation import (  # noqa: F401 - pytest-Hooks, über conftest registriert
     isolated_root,
     only_own_files,
     only_own_rows,
