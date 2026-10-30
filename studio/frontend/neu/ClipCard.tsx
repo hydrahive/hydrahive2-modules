@@ -33,19 +33,19 @@ export function ClipCard({ card, base, format, jobs, busy, model, onMove, onStil
   const ratio = format === "9:16" ? "aspect-[9/16] max-h-[420px]" : "aspect-video"
   const off = busy || running
   return (
-    <article className="flex flex-col gap-2 rounded-[12px] border border-[#2a364b] bg-[#0e1420] p-3" data-guided-clip={s.id} data-motion={state}>
+    <article className="flex flex-col gap-2 rounded-[12px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,14_20_32))] p-3" data-guided-clip={s.id} data-motion={state}>
       <div className="flex items-start gap-2">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#1c2940] text-xs font-black text-[#69d7ff]">{card.n}</span>
         <p className="text-sm leading-snug text-[#e8eef8]">
-          {card.part > 0 && <span className="mr-1 font-bold text-[#8d9ab0]">{t("guided.part", { n: card.part })} ·</span>}{card.text}
+          {card.part > 0 && <span className="mr-1 font-bold text-[#9aa7bc]">{t("guided.part", { n: card.part })} ·</span>}{card.text}
         </p>
       </div>
-      <div className={`relative mx-auto w-full overflow-hidden rounded-[8px] bg-[#080b11] ${ratio}`}>
+      <div className={`relative mx-auto w-full overflow-hidden rounded-[8px] bg-[rgb(var(--hh-s-grund,8_11_17))] ${ratio}`}>
         {state === "moving" && s.video_rel
           ? <video src={fileUrl(fileOf(base, s.video_rel))} muted loop autoPlay playsInline className="h-full w-full object-cover" />
           : s.image_rel
             ? <img src={fileUrl(fileOf(base, s.image_rel))} alt={card.text} className="h-full w-full object-cover" />
-            : <div className="grid h-full place-items-center p-4 text-center text-sm text-[#8d9ab0]">{t("guided.need_image")}</div>}
+            : <div className="grid h-full place-items-center p-4 text-center text-sm text-[#9aa7bc]">{t("guided.need_image")}</div>}
         {running && <div className="absolute inset-0 grid place-items-center bg-black/60 text-sm text-white"><span className="flex items-center gap-2"><Loader2 className="animate-spin" size={18} /> {t("guided.motion_busy")}</span></div>}
         {state === "moving" && <span className="absolute left-2 top-2 rounded-full bg-[#3ddc97] px-2 py-0.5 text-xs font-bold text-[#04140d]">{t("guided.moving_badge")}</span>}
         {state === "still" && <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-xs font-bold text-white">{t("guided.still_badge", { n: s.duration })}</span>}

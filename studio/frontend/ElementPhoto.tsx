@@ -29,12 +29,12 @@ export function ElementPhoto({ element, base, busy, uploading, describing, onUpl
   return (
     <div data-element-photo onDragOver={(e) => { if (onUpload && isFileDrag(e.dataTransfer)) { e.preventDefault(); setOver(true) } }} onDragLeave={() => setOver(false)}
       onDrop={(e) => { if (!isFileDrag(e.dataTransfer)) return; e.preventDefault(); setOver(false); take(filesFromDrop(e.dataTransfer)) }}
-      className={`space-y-2 rounded-[6px] border border-dashed p-2 ${over ? "border-[#69d7ff] bg-[#1c2940]" : "border-[#46617f] bg-[#0d1420]"}`}>
+      className={`space-y-2 rounded-[6px] border border-dashed p-2 ${over ? "border-[#69d7ff] bg-[#1c2940]" : "border-[rgb(var(--hh-s-rand-hover,70_97_127))] bg-[rgb(var(--hh-s-tief,13_20_32))]"}`}>
       <input ref={input} type="file" accept={acceptFor("reference")} hidden onChange={(e) => { take(Array.from(e.target.files ?? [])); e.target.value = "" }} />
       {refs.length ? (
         <div className="grid grid-cols-2 gap-1.5">
           {refs.map((r) => (
-            <span key={r} className="relative aspect-square overflow-hidden rounded-[4px] bg-[#111827]" data-element-ref={r}>
+            <span key={r} className="relative aspect-square overflow-hidden rounded-[4px] bg-[rgb(var(--hh-s-innen,17_24_39))]" data-element-ref={r}>
               <img src={fileUrl(fileOf(base, r))} alt="" className="h-full w-full object-cover" />
               <button type="button" onClick={() => onRemove(r)} aria-label={t("photo_remove")} title={t("photo_remove")}
                 className="absolute right-1 top-1 rounded bg-black/75 p-0.5 text-[#e8eef8] hover:text-[#ff6b8a]"><X size={12} /></button>
@@ -47,10 +47,10 @@ export function ElementPhoto({ element, base, busy, uploading, describing, onUpl
         {uploading ? <Loader2 size={refs.length ? 14 : 22} className="animate-spin" /> : <ImagePlus size={refs.length ? 14 : 22} />}
         {refs.length ? t(full ? "upload_reference_full" : "photo_more") : t("photo_drop")}
       </button>}
-      <p className="text-[10px] leading-relaxed text-[#8d9ab0]">{t("photo_why", { name: element.name || t("untitled") })}</p>
+      <p className="text-[10px] leading-relaxed text-[#9aa7bc]">{t("photo_why", { name: element.name || t("untitled") })}</p>
       {refs.length > 0 && onDescribe && (
         <button type="button" onClick={onDescribe} disabled={busy || describing} data-element-describe
-          className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#46617f] py-1.5 text-[11px] font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
+          className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] py-1.5 text-[11px] font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
           {describing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} {describing ? t("photo_describing") : t("photo_describe")}
         </button>
       )}

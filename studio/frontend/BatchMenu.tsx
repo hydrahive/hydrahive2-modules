@@ -10,10 +10,10 @@ export function BatchMenu({ running, onPick }: { running: boolean; onPick: (k: B
   return (
     <div className="relative shrink-0">
       <button type="button" onClick={() => setOpen((o) => !o)} disabled={running} data-batch-open aria-expanded={open}
-        className="flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-0.5 font-bold text-[#c3ccdd] hover:bg-[#1c2940] disabled:opacity-50">
+        className="flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-0.5 font-bold text-[#c3ccdd] hover:bg-[#1c2940] disabled:opacity-50">
         <Layers size={12} /> {t("batch_menu")} <ChevronDown size={11} />
       </button>
-      <ul className={`absolute right-0 top-full z-20 mt-1 w-60 overflow-hidden rounded-[4px] border border-[#46617f] bg-[#0e1420] shadow-xl ${open ? "" : "hidden"}`} role="menu">
+      <ul className={`absolute right-0 top-full z-20 mt-1 w-60 overflow-hidden rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] bg-[rgb(var(--hh-s-tief,14_20_32))] shadow-xl ${open ? "" : "hidden"}`} role="menu">
         {BATCH_KINDS.map((k) => (
           <li key={k}>
             <button type="button" role="menuitem" data-batch-pick={k} onClick={() => { setOpen(false); onPick(k) }}

@@ -31,8 +31,8 @@ export function FreeForm({ form, catalog, images, job, busy, onChange, onRun }: 
   const failed = job?.progress?.failed ?? 0
   return (
     <section className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3 text-xs" data-studio-panel="inspector" data-free-form>
-      <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("free_title")}</h2>
-      <p className="leading-relaxed text-[#8d9ab0]">{t("free_text")}</p>
+      <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9aa7bc]">{t("free_title")}</h2>
+      <p className="leading-relaxed text-[#9aa7bc]">{t("free_text")}</p>
       <label className="block">
         <Label>{t("free_prompt")}</Label>
         <textarea rows={4} maxLength={MAX_FREE_PROMPT} value={form.prompt} onChange={(e) => set({ prompt: e.target.value })}
@@ -49,7 +49,7 @@ export function FreeForm({ form, catalog, images, job, busy, onChange, onRun }: 
         <div className="mt-1 flex gap-1" role="group" aria-label={t("free_count")}>
           {COUNTS.map((n) => (
             <button key={n} type="button" onClick={() => set({ count: n })} aria-pressed={n === form.count} data-free-count={n}
-              className={`w-8 rounded-[4px] border py-1 font-bold ${n === form.count ? "border-[#69d7ff] bg-[#1c2940] text-[#69d7ff]" : "border-[#2a364b] text-[#8d9ab0] hover:text-[#e8eef8]"}`}>
+              className={`w-8 rounded-[4px] border py-1 font-bold ${n === form.count ? "border-[#69d7ff] bg-[#1c2940] text-[#69d7ff]" : "border-[rgb(var(--hh-s-rand,42_54_75))] text-[#9aa7bc] hover:text-[#e8eef8]"}`}>
               {n}
             </button>
           ))}
@@ -64,7 +64,7 @@ export function FreeForm({ form, catalog, images, job, busy, onChange, onRun }: 
               return (
                 <button key={i.id} type="button" onClick={() => set({ refs: toggleRef(form.refs, i.rel) })} aria-pressed={on} data-free-ref={i.rel}
                   disabled={!on && form.refs.length >= MAX_FREE_REFS} title={i.name} aria-label={i.name}
-                  className={`aspect-square overflow-hidden rounded-[3px] border disabled:opacity-30 ${on ? "border-[#69d7ff]" : "border-transparent hover:border-[#46617f]"}`}>
+                  className={`aspect-square overflow-hidden rounded-[3px] border disabled:opacity-30 ${on ? "border-[#69d7ff]" : "border-transparent hover:border-[rgb(var(--hh-s-rand-hover,70_97_127))]"}`}>
                   <img src={fileUrl(i.abs)} alt="" loading="lazy" className="h-full w-full object-cover" />
                 </button>
               )
@@ -72,7 +72,7 @@ export function FreeForm({ form, catalog, images, job, busy, onChange, onRun }: 
           </div>
         </div>
       )}
-      <p className="rounded-[4px] border border-[#46617f] bg-[#111827] px-2.5 py-2 leading-relaxed text-[#8d9ab0]">{t("free_cost")}</p>
+      <p className="rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2.5 py-2 leading-relaxed text-[#9aa7bc]">{t("free_cost")}</p>
       <button type="button" onClick={onRun} disabled={busy || running || !freeValid(form)} data-free-run
         className="flex items-center justify-center gap-1.5 rounded-[4px] bg-[#69d7ff] py-1.5 font-black text-[#08111c] disabled:opacity-50">
         {running ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />} {t("free_run", { count: form.count })}

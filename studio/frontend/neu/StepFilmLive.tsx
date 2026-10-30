@@ -15,9 +15,9 @@ import type { FilmActions } from "./useFilm"
 
 function Toggle({ on, label, hint, onChange }: { on: boolean; label: string; hint: string; onChange: (v: boolean) => void }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-[10px] border border-[#2a364b] p-3 hover:bg-[#1c2940]/40">
+    <label className="flex cursor-pointer items-start gap-3 rounded-[10px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-3 hover:bg-[#1c2940]/40">
       <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked)} className="mt-1 h-5 w-5 accent-[#3ddc97]" />
-      <span><span className="block text-base font-bold text-[#f2f6fc]">{label}</span><span className="text-sm text-[#8d9ab0]">{hint}</span></span>
+      <span><span className="block text-base font-bold text-[#f2f6fc]">{label}</span><span className="text-sm text-[#9aa7bc]">{hint}</span></span>
     </label>
   )
 }
@@ -47,8 +47,8 @@ export function FilmPanel({ films, job, extras, costs, busy, onExtras, onMake, o
       {running ? (
         <div className="space-y-2 rounded-[10px] border border-[#69d7ff]/40 bg-[#69d7ff]/5 p-3 text-sm text-[#cdeeff]">
           <p className="flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> {t(`guided.film_step.${job.progress?.current || "timeline"}`)}</p>
-          <p className="text-xs text-[#8d9ab0]">{t("guided.film_n", { done: job.progress?.done ?? 0, total: job.progress?.total ?? 5 })}</p>
-          <button type="button" onClick={onStop} className="inline-flex items-center gap-1 rounded-[6px] border border-[#46617f] px-3 py-1.5 text-xs font-bold text-[#e8eef8] hover:bg-[#1c2940]">
+          <p className="text-xs text-[#9aa7bc]">{t("guided.film_n", { done: job.progress?.done ?? 0, total: job.progress?.total ?? 5 })}</p>
+          <button type="button" onClick={onStop} className="inline-flex items-center gap-1 rounded-[6px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-3 py-1.5 text-xs font-bold text-[#e8eef8] hover:bg-[#1c2940]">
             <Square size={12} /> {t("guided.stop")}
           </button>
         </div>

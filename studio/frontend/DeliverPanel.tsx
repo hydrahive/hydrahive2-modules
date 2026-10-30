@@ -42,11 +42,11 @@ export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = 
   const full = queueFull(queue)
   return (
     <section className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-4 text-xs text-[#c3ccdd]" data-studio-panel="deliver">
-      <div className="space-y-2 rounded-[6px] border border-[#46617f] bg-[#0e1420] p-3">
+      <div className="space-y-2 rounded-[6px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] bg-[rgb(var(--hh-s-tief,14_20_32))] p-3">
         {!sum.clips ? (
           <>
             <p data-deliver-empty>{t("deliver_empty")}</p>
-            <button type="button" onClick={onCut} className="flex items-center gap-1.5 rounded-[4px] border border-[#46617f] px-2.5 py-1 font-bold text-[#69d7ff] hover:bg-[#1c2940]">
+            <button type="button" onClick={onCut} className="flex items-center gap-1.5 rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-2.5 py-1 font-bold text-[#69d7ff] hover:bg-[#1c2940]">
               {t("soon_to_cut")} <ArrowRight size={12} />
             </button>
           </>
@@ -54,7 +54,7 @@ export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = 
           <>
             <p className="text-sm text-[#e8eef8]">{t("deliver_summary", { length: minutes(sum.seconds), clips: sum.clips })}</p>
             {sum.placeholders > 0 && <p className="text-[#ffb86b]">{t("deliver_placeholders", { count: sum.placeholders })}</p>}
-            <p className="text-[#8d9ab0]">{t("deliver_hint")}</p>
+            <p className="text-[#9aa7bc]">{t("deliver_hint")}</p>
           </>
         )}
         <DeliverPreset preset={preset} screenplay={aspect} onChange={onPreset} />
@@ -63,7 +63,7 @@ export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = 
             <input type="checkbox" checked={withSubtitles} onChange={(e) => onWithSubtitles?.(e.target.checked)} data-deliver-subtitles className="accent-[#69d7ff]" />
             {t("deliver_subtitles", { names: subtitleLanguages.map((l) => t(`lang.${l}`)).join(", ") })}
           </label>
-        ) : <p className="text-[#68758a]">{t("deliver_subtitles_none")}</p>}
+        ) : <p className="text-[#9aa7bc]">{t("deliver_subtitles_none")}</p>}
         <button type="button" onClick={onRender} disabled={busy || full || !sum.clips} data-deliver-run
           className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-50">
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Film size={13} />} {t("deliver_run")}
@@ -72,26 +72,26 @@ export function DeliverPanel({ clips, aspect, renders, queue = [], cancelling = 
         {error && <p className="text-[#ff6b8a]" data-deliver-error>{error}</p>}
         <RenderQueue jobs={queue} cancelling={cancelling} onCancel={onCancel} />
       </div>
-      <h3 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("deliver_films")}</h3>
-      {!renders ? <p className="flex items-center gap-1.5 text-[#68758a]"><Loader2 size={12} className="animate-spin" /> {t("loading")}</p>
-        : !renders.length ? <p className="text-[#68758a]">{t("deliver_none")}</p> : (
+      <h3 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9aa7bc]">{t("deliver_films")}</h3>
+      {!renders ? <p className="flex items-center gap-1.5 text-[#9aa7bc]"><Loader2 size={12} className="animate-spin" /> {t("loading")}</p>
+        : !renders.length ? <p className="text-[#9aa7bc]">{t("deliver_none")}</p> : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
           {renders.map((r) => (
-            <figure key={r.rel} className="space-y-1.5 rounded-[6px] border border-[#2a364b] bg-[#0d1420] p-2" data-deliver-film={r.rel}>
+            <figure key={r.rel} className="space-y-1.5 rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-2" data-deliver-film={r.rel}>
               <video src={fileUrl(r.abs)} controls preload="metadata" className="aspect-video w-full rounded-[3px] bg-black object-contain" />
               <figcaption className="space-y-1">
                 <p className="text-[#e8eef8]">{(r.created_at || "").slice(0, 16).replace("T", " ")}</p>
-                <p className="text-[#8d9ab0]">{t("deliver_film_info", { length: minutes(r.duration ?? 0), width: r.width, height: r.height })}</p>
-                {presetLabel(t, r) && <p className="text-[#8d9ab0]" data-deliver-preset>{presetLabel(t, r)}</p>}
-                {!!r.subtitles?.length && <p className="text-[#8d9ab0]">{t("deliver_film_subtitles", { names: r.subtitles.map((l) => t(`lang.${l}`)).join(", ") })}</p>}
+                <p className="text-[#9aa7bc]">{t("deliver_film_info", { length: minutes(r.duration ?? 0), width: r.width, height: r.height })}</p>
+                {presetLabel(t, r) && <p className="text-[#9aa7bc]" data-deliver-preset>{presetLabel(t, r)}</p>}
+                {!!r.subtitles?.length && <p className="text-[#9aa7bc]">{t("deliver_film_subtitles", { names: r.subtitles.map((l) => t(`lang.${l}`)).join(", ") })}</p>}
                 {!!r.missing && <p className="text-[#ffb86b]">{t("deliver_missing", { count: r.missing })}</p>}
                 <a href={fileUrl(r.abs)} download={downloadName(r)}
-                  className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 font-bold text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940]">
+                  className="inline-flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 font-bold text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940]">
                   <Download size={12} /> {t("deliver_download")}
                 </a>
                 {onDeleteFilm && (
                   <button type="button" onClick={() => onDeleteFilm(r)} data-deliver-delete={r.rel}
-                    className="ml-1.5 inline-flex items-center gap-1 rounded-[4px] px-2 py-1 text-[#8d9ab0] hover:text-[#ff6b8a]"><Trash2 size={12} /> {t("media_delete")}</button>
+                    className="ml-1.5 inline-flex items-center gap-1 rounded-[4px] px-2 py-1 text-[#9aa7bc] hover:text-[#ff6b8a]"><Trash2 size={12} /> {t("media_delete")}</button>
                 )}
               </figcaption>
             </figure>

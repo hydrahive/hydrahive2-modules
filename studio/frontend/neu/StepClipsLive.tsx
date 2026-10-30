@@ -18,7 +18,7 @@ export function ClipsHead({ left, total, batch, model, busy, onAll, onStop }: {
     return (
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[10px] border border-[#69d7ff]/40 bg-[#69d7ff]/5 p-3 text-sm text-[#cdeeff]">
         <Loader2 size={16} className="animate-spin" /> {t("guided.batch_progress", { done: batch.progress.done, total: batch.progress.total })}
-        <button type="button" onClick={onStop} className="ml-auto inline-flex items-center gap-1 rounded-[6px] border border-[#46617f] px-3 py-1.5 text-xs font-bold text-[#e8eef8] hover:bg-[#1c2940]">
+        <button type="button" onClick={onStop} className="ml-auto inline-flex items-center gap-1 rounded-[6px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-3 py-1.5 text-xs font-bold text-[#e8eef8] hover:bg-[#1c2940]">
           <Square size={12} /> {t("guided.stop")}
         </button>
       </div>
@@ -31,7 +31,7 @@ export function ClipsHead({ left, total, batch, model, busy, onAll, onStop }: {
         className="inline-flex items-center gap-2 rounded-[8px] bg-[#3ddc97] px-4 py-2.5 text-sm font-bold text-[#04140d] hover:bg-[#5ee6aa] disabled:opacity-50">
         <Clapperboard size={16} /> {left === total ? t("guided.all_motion") : t("guided.rest_motion", { count: left })}<Costs model={model || undefined} />
       </button>
-      <span className="text-sm text-[#8d9ab0]">{t("guided.motion_hint")}</span>
+      <span className="text-sm text-[#9aa7bc]">{t("guided.motion_hint")}</span>
     </div>
   )
 }
@@ -45,9 +45,9 @@ export function StepClipsLive({ g, cl }: { g: GuidedState; cl: ClipActions }) {
     <div>
       <StepHead n={4} title={t("guided.step.4.title")} text={t("guided.clips_head")} />
       {!cards.length ? (
-        <div className="space-y-3 rounded-[10px] border border-[#2a364b] p-6 text-base text-[#c3ccdd]">
+        <div className="space-y-3 rounded-[10px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-6 text-base text-[#c3ccdd]">
           <p>{t("guided.no_scenes")}</p>
-          <button type="button" onClick={() => g.setStep(1)} className="rounded-[8px] border border-[#46617f] px-4 py-2 text-sm font-bold text-[#e8eef8] hover:bg-[#1c2940]">{t("guided.to_idea")}</button>
+          <button type="button" onClick={() => g.setStep(1)} className="rounded-[8px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-4 py-2 text-sm font-bold text-[#e8eef8] hover:bg-[#1c2940]">{t("guided.to_idea")}</button>
         </div>
       ) : (
         <>

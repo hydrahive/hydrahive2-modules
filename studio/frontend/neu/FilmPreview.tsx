@@ -24,7 +24,7 @@ export function FilmPreview({ plan }: { plan: Plan | null }) {
   return (
     <section>
       <div className={`relative mx-auto overflow-hidden rounded-[12px] bg-black ${tall ? "aspect-[9/16] max-h-[560px]" : "aspect-video"}`}>
-        {!cur ? <div className="grid h-full place-items-center text-[#8d9ab0]">{t("guided.preview_empty")}</div>
+        {!cur ? <div className="grid h-full place-items-center text-[#9aa7bc]">{t("guided.preview_empty")}</div>
           : cur.kind === "video"
             ? <video key={`${i}:${cur.rel}`} src={fileUrl(fileOf(base, cur.rel))} muted autoPlay={playing} playsInline className="h-full w-full object-cover" />
             : <img key={`${i}:${cur.rel}`} src={fileUrl(fileOf(base, cur.rel))} alt={cur.text} className="h-full w-full object-cover" />}

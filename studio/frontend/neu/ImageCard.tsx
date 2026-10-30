@@ -30,7 +30,7 @@ export function Face({ el, base, size = 20 }: { el: PlanElement; base: string; s
   const pic = faceOf(el)
   return pic
     ? <img src={fileUrl(fileOf(base, pic))} alt="" style={{ width: size, height: size }} className="rounded-full object-cover" />
-    : <span style={{ width: size, height: size }} className="grid place-items-center rounded-full bg-[#2a364b] text-[10px] font-black text-[#e8eef8]">{el.name.slice(0, 1).toUpperCase()}</span>
+    : <span style={{ width: size, height: size }} className="grid place-items-center rounded-full bg-[rgb(var(--hh-s-hebung,42_54_75))] text-[10px] font-black text-[#e8eef8]">{el.name.slice(0, 1).toUpperCase()}</span>
 }
 
 export function ImageCard({ card, base, format, elements, jobs, busy, model, onMake, onFlip, onDrop, onCast, onChange }: Props) {
@@ -44,17 +44,17 @@ export function ImageCard({ card, base, format, elements, jobs, busy, model, onM
   const pos = s.variants.indexOf(s.image_rel ?? "")
   const cast = s.cast ?? []
   return (
-    <article className="flex flex-col gap-2 rounded-[12px] border border-[#2a364b] bg-[#0e1420] p-3" data-guided-image={s.id}>
+    <article className="flex flex-col gap-2 rounded-[12px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,14_20_32))] p-3" data-guided-image={s.id}>
       <div className="flex items-start gap-2">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#1c2940] text-xs font-black text-[#69d7ff]">{card.n}</span>
         <p className="text-sm leading-snug text-[#e8eef8]">
-          {card.part > 0 && <span className="mr-1 font-bold text-[#8d9ab0]">{t("guided.part", { n: card.part })} ·</span>}{card.text}
+          {card.part > 0 && <span className="mr-1 font-bold text-[#9aa7bc]">{t("guided.part", { n: card.part })} ·</span>}{card.text}
         </p>
       </div>
-      <div className={`relative mx-auto w-full overflow-hidden rounded-[8px] bg-[#080b11] ${ratio}`}>
+      <div className={`relative mx-auto w-full overflow-hidden rounded-[8px] bg-[rgb(var(--hh-s-grund,8_11_17))] ${ratio}`}>
         {s.image_rel
           ? <img src={fileUrl(fileOf(base, s.image_rel))} alt={card.text} className="h-full w-full object-cover" />
-          : <div className="grid h-full place-items-center text-center text-sm text-[#8d9ab0]"><span><ImageIcon className="mx-auto mb-1" size={26} />{t("guided.no_image")}</span></div>}
+          : <div className="grid h-full place-items-center text-center text-sm text-[#9aa7bc]"><span><ImageIcon className="mx-auto mb-1" size={26} />{t("guided.no_image")}</span></div>}
         {running && <div className="absolute inset-0 grid place-items-center bg-black/60 text-sm text-white"><span className="flex items-center gap-2"><Loader2 className="animate-spin" size={18} /> {t("guided.image_busy")}</span></div>}
         {s.variants.length > 1 && !running && (
           <>
@@ -66,7 +66,7 @@ export function ImageCard({ card, base, format, elements, jobs, busy, model, onM
       </div>
       {elements.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-[#8d9ab0]">{t("guided.with")}</span>
+          <span className="text-xs text-[#9aa7bc]">{t("guided.with")}</span>
           {elements.map((e) => {
             const on = cast.includes(e.id)
             return (
@@ -79,16 +79,16 @@ export function ImageCard({ card, base, format, elements, jobs, busy, model, onM
         </div>
       )}
       {s.image_rel && (
-        <div className="space-y-1.5 rounded-[8px] bg-[#080b11] p-2">
+        <div className="space-y-1.5 rounded-[8px] bg-[rgb(var(--hh-s-grund,8_11_17))] p-2">
           <textarea value={change} onChange={(e) => setChange(e.target.value)} rows={2} maxLength={1000} aria-label={t("guided.change_label")}
             placeholder={t("guided.change_placeholder")}
-            className="w-full resize-none rounded-[6px] border border-[#2a364b] bg-[#0e1420] p-2 text-sm text-[#e8eef8] outline-none focus:border-[#69d7ff]" />
+            className="w-full resize-none rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,14_20_32))] p-2 text-sm text-[#e8eef8] outline-none focus:border-[#69d7ff]" />
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" data-guided-change disabled={busy || running || !change.trim()} onClick={() => { onChange(change.trim()); setChange("") }}
               className="inline-flex items-center gap-2 rounded-[8px] bg-[#3ddc97] px-3 py-1.5 text-sm font-bold text-[#04140d] hover:bg-[#5ee6aa] disabled:opacity-50">
               <PenLine size={14} /> {t("guided.change_image")}<Costs model={model || undefined} />
             </button>
-            <span className="text-xs text-[#8d9ab0]">{t("guided.change_hint")}</span>
+            <span className="text-xs text-[#9aa7bc]">{t("guided.change_hint")}</span>
           </div>
         </div>
       )}

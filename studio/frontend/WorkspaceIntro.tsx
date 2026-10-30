@@ -11,13 +11,13 @@ export function WorkspaceIntro({ workspace, open, onToggle, onGo }: { workspace:
   if (!open) {
     return (
       <button type="button" onClick={onToggle} aria-label={t("intro_show")} title={t("intro_show")} data-studio-intro="closed"
-        className="absolute right-2 top-[2.85rem] z-10 rounded-full p-1 text-[#68758a] hover:bg-[#111827] hover:text-[#69d7ff]">
+        className="absolute right-2 top-[2.85rem] z-10 rounded-full p-1 text-[#9aa7bc] hover:bg-[rgb(var(--hh-s-hebung,17_24_39))] hover:text-[#69d7ff]">
         <Info size={13} />
       </button>
     )
   }
   return (
-    <div className="flex shrink-0 items-start gap-2 border-b border-[#2a364b] bg-[#0f1726] px-3 py-1.5 text-[11px] leading-relaxed text-[#c3ccdd]" data-studio-intro={workspace}>
+    <div className="flex shrink-0 items-start gap-2 border-b border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#0f1726] px-3 py-1.5 text-[11px] leading-relaxed text-[#c3ccdd]" data-studio-intro={workspace}>
       <Info size={13} className="mt-0.5 shrink-0 text-[#69d7ff]" />
       <p className="min-w-0 flex-1">
         <b className="mr-1.5 text-[#e8eef8]">{t("intro_step", { n: stepOf(workspace), total: WORKSPACES.length, name: t(`ws.${workspace}`) })}</b>
@@ -25,11 +25,11 @@ export function WorkspaceIntro({ workspace, open, onToggle, onGo }: { workspace:
       </p>
       {onGo && next && (
         <button type="button" onClick={() => onGo(next)} data-intro-next={next}
-          className="flex shrink-0 items-center gap-1 rounded-[4px] border border-[#46617f] px-2 py-0.5 font-bold text-[#69d7ff] hover:bg-[#1c2940]">
+          className="flex shrink-0 items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-2 py-0.5 font-bold text-[#69d7ff] hover:bg-[#1c2940]">
           {t("intro_next", { name: t(`ws.${next}`) })} <ArrowRight size={11} />
         </button>
       )}
-      <button type="button" onClick={onToggle} aria-label={t("intro_hide")} title={t("intro_hide")} className="rounded p-0.5 text-[#68758a] hover:text-[#e8eef8]">
+      <button type="button" onClick={onToggle} aria-label={t("intro_hide")} title={t("intro_hide")} className="rounded p-0.5 text-[#9aa7bc] hover:text-[#e8eef8]">
         <X size={12} />
       </button>
     </div>

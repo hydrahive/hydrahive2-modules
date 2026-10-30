@@ -23,9 +23,9 @@ export function PlanInspector({ p, shots, images, jobs = [], upload, onDeleteMed
   const catalogs = useModelCatalogs(sel?.kind === "head")          // erst laden, wenn das Drehbuch-Formular offen ist
   const voices = useVoices(p.projectId, plan?.screenplay.models.voice ?? "", sel?.kind === "shot")   // Stimmen erst beim Shot
   let body: React.ReactNode = (
-    <div className="mt-3 space-y-2 text-xs leading-relaxed text-[#8d9ab0]" data-plan-inspector-empty>
+    <div className="mt-3 space-y-2 text-xs leading-relaxed text-[#9aa7bc]" data-plan-inspector-empty>
       <p>{t("plan_inspector_empty")}</p>
-      {plan && <button type="button" onClick={() => p.select({ kind: "head" })} className="rounded-[4px] border border-[#46617f] px-2.5 py-1 font-bold text-[#69d7ff] hover:bg-[#1c2940]">{t("plan_edit_head")}</button>}
+      {plan && <button type="button" onClick={() => p.select({ kind: "head" })} className="rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-2.5 py-1 font-bold text-[#69d7ff] hover:bg-[#1c2940]">{t("plan_edit_head")}</button>}
     </div>
   )
   if (plan && sel?.kind === "head") {
@@ -60,7 +60,7 @@ export function PlanInspector({ p, shots, images, jobs = [], upload, onDeleteMed
   }
   return (
     <section className="flex h-full min-h-0 flex-col overflow-y-auto p-3" data-studio-panel="inspector">
-      <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("properties")}</h2>
+      <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9aa7bc]">{t("properties")}</h2>
       {p.error && <p className="mt-2 rounded-[4px] border border-[#ff6b8a]/40 bg-[#ff6b8a]/10 px-2 py-1.5 text-xs text-[#ff6b8a]" data-plan-error>{p.error}</p>}
       {body}
     </section>

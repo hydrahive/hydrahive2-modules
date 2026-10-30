@@ -24,8 +24,8 @@ export function BookPick({ books, bookId, chapters, busy, error, onBook, onToggl
   return (
     <div className="space-y-3 p-4 text-xs text-[#c3ccdd]" data-book-pick>
       <h3 className="text-sm font-black text-[#e8eef8]">{t("book_title")}</h3>
-      <p className="leading-relaxed text-[#8d9ab0]">{t("book_text")}</p>
-      {!books ? <p className="flex items-center gap-1.5 text-[#68758a]"><Loader2 size={12} className="animate-spin" /> {t("loading")}</p>
+      <p className="leading-relaxed text-[#9aa7bc]">{t("book_text")}</p>
+      {!books ? <p className="flex items-center gap-1.5 text-[#9aa7bc]"><Loader2 size={12} className="animate-spin" /> {t("loading")}</p>
         : !books.length ? <p>{t("book_none")}</p> : (
           <>
             <label className="block">
@@ -35,23 +35,23 @@ export function BookPick({ books, bookId, chapters, busy, error, onBook, onToggl
               </select>
             </label>
             {book && (
-              <fieldset className="max-h-[32vh] space-y-1 overflow-y-auto rounded-[4px] border border-[#2a364b] p-2">
+              <fieldset className="max-h-[32vh] space-y-1 overflow-y-auto rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-2">
                 <legend className="px-1"><Label>{t("book_chapters")}</Label></legend>
                 {book.chapters.map((c) => (
                   <label key={c.id} className="flex items-center gap-2">
                     <input type="checkbox" checked={chapters.includes(c.id)} onChange={() => onToggle(c.id)} disabled={busy} />
                     <span className="truncate text-[#e8eef8]">{c.title || t("untitled")}</span>
-                    <span className="ml-auto shrink-0 text-[10px] text-[#68758a]">{t("scene_count", { count: c.scenes })}</span>
+                    <span className="ml-auto shrink-0 text-[10px] text-[#9aa7bc]">{t("scene_count", { count: c.scenes })}</span>
                   </label>
                 ))}
               </fieldset>
             )}
-            <p className="text-[#8d9ab0]">{t("book_scenes", { count })}</p>
+            <p className="text-[#9aa7bc]">{t("book_scenes", { count })}</p>
           </>
         )}
       {error && <p className="text-[#ff6b8a]" data-book-error>{error}</p>}
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-[#8d9ab0] hover:text-[#e8eef8]">{t("cancel")}</button>
+        <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-[#9aa7bc] hover:text-[#e8eef8]">{t("cancel")}</button>
         {!!books?.length && (
           <button type="button" onClick={onRun} disabled={busy || !count} data-book-run
             className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-50">

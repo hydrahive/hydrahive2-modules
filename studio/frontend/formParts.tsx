@@ -1,8 +1,8 @@
 import { Check, Loader2, Save, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-export const fieldCls = "mt-1 w-full rounded-[4px] border border-[#46617f] bg-[#111827] px-2 py-1 text-xs text-[#e8eef8] outline-none focus:border-[#69d7ff]"
-const labelCls = "block text-[10px] font-bold uppercase tracking-wide text-[#68758a]"
+export const fieldCls = "mt-1 w-full rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1 text-xs text-[#e8eef8] outline-none focus:border-[#69d7ff]"
+const labelCls = "block text-[10px] font-bold uppercase tracking-wide text-[#9aa7bc]"
 
 /** Beschriftetes Eingabefeld (einzeilig oder mehrzeilig). */
 export function Field({ label, value, onChange, rows, max, name }: {

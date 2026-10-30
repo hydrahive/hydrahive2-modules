@@ -50,11 +50,11 @@ export function ElementForm({ element, base, images, busy, onSave, onDelete, onU
       <ColorPick label={t("f.palette")} colors={e.palette} onChange={(c) => set("palette", c)} />
       {!full && pickable.length > 0 && (
         <details data-element-refs>
-          <summary className="cursor-pointer text-[11px] text-[#8d9ab0] hover:text-[#e8eef8]">{t("f.add_reference")}</summary>
+          <summary className="cursor-pointer text-[11px] text-[#9aa7bc] hover:text-[#e8eef8]">{t("f.add_reference")}</summary>
           <div className="mt-1 grid max-h-40 grid-cols-4 gap-1 overflow-y-auto">
             {pickable.map((i) => (
               <button key={i.id} type="button" onClick={() => set("references", [...e.references, i.rel])} data-element-pick={i.rel} title={i.name}
-                className="aspect-square overflow-hidden rounded-[3px] bg-[#111827] hover:outline hover:outline-1 hover:outline-[#69d7ff]">
+                className="aspect-square overflow-hidden rounded-[3px] bg-[rgb(var(--hh-s-innen,17_24_39))] hover:outline hover:outline-1 hover:outline-[#69d7ff]">
                 <img src={fileUrl(i.abs)} alt="" loading="lazy" className="h-full w-full object-cover" />
               </button>
             ))}

@@ -7,7 +7,7 @@ export function ClipMixForm({ clip, onChange }: { clip: TimelineClip; onChange: 
   const { t } = useTranslation("studio")
   const len = clip.out - clip.in
   const db = clip.gain_db ?? 0
-  const num = "w-16 rounded-[4px] border border-[#2a364b] bg-[#0b111b] px-1.5 py-0.5 text-right text-[#e8eef8]"
+  const num = "w-16 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#0b111b] px-1.5 py-0.5 text-right text-[#e8eef8]"
   const fade = (key: "fade_in" | "fade_out", label: string) => (
     <label className="flex items-center justify-between gap-2">
       <span>{label}</span>
@@ -18,7 +18,7 @@ export function ClipMixForm({ clip, onChange }: { clip: TimelineClip; onChange: 
     </label>
   )
   return (
-    <div className="space-y-2 rounded-[4px] border border-[#2a364b] p-2.5 text-[#8d9ab0]" data-clip-mix={clip.id}>
+    <div className="space-y-2 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-2.5 text-[#9aa7bc]" data-clip-mix={clip.id}>
       <label className="block">
         <span className="flex justify-between"><span>{t("mix_clip_volume")}</span><span className="font-mono text-[#e8eef8]">{dbText(db)}</span></span>
         <input type="range" min={GAIN_MIN} max={GAIN_MAX} step={0.5} value={db} aria-label={t("mix_clip_volume")} className="mt-1 w-full accent-[#69d7ff]"

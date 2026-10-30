@@ -35,7 +35,7 @@ export function ShotImage({ shot, base, job, onGenerate, model, onChoose, onDele
             <span key={v} className="relative">
               <button type="button" onClick={() => onChoose(v)} data-shot-variant={v} aria-pressed={v === shot.image_rel}
                 title={t("image_choose")}
-                className={`block aspect-video w-full overflow-hidden rounded-[3px] border ${v === shot.image_rel ? "border-[#69d7ff]" : "border-transparent hover:border-[#46617f]"}`}>
+                className={`block aspect-video w-full overflow-hidden rounded-[3px] border ${v === shot.image_rel ? "border-[#69d7ff]" : "border-transparent hover:border-[rgb(var(--hh-s-rand-hover,70_97_127))]"}`}>
                 <img src={fileUrl(fileOf(base, v))} alt="" loading="lazy" className="h-full w-full object-cover" />
               </button>
               {onDelete && (
@@ -45,9 +45,9 @@ export function ShotImage({ shot, base, job, onGenerate, model, onChoose, onDele
             </span>
           ))}
         </div>
-      ) : <p className="text-[11px] text-[#68758a]">{t("image_none")}</p>}
+      ) : <p className="text-[11px] text-[#9aa7bc]">{t("image_none")}</p>}
       <button type="button" onClick={onGenerate} disabled={running} data-shot-generate
-        className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#46617f] py-1.5 text-xs font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
+        className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] py-1.5 text-xs font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
         {running ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}
         {running ? t("image_running") : variants.length ? t("image_again") : t("image_generate")}
        <Costs model={model} />

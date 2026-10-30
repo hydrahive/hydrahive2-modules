@@ -24,18 +24,18 @@ function Steps({ g, filmDone, onHelp }: { g: GuidedState; filmDone: boolean; onH
   const done = { ...doneSteps(g.plan), 5: filmDone }
   const title = g.plan?.screenplay.title
   return (
-    <nav aria-label={t("guided.steps")} className="flex w-64 shrink-0 flex-col gap-1 overflow-y-auto border-r border-[#1c2433] bg-[#0b111b] p-4">
-      <label className="mb-3 block text-xs text-[#8d9ab0]">
+    <nav aria-label={t("guided.steps")} className="flex w-64 shrink-0 flex-col gap-1 overflow-y-auto border-r border-[rgb(var(--hh-s-rand,28_36_51))] bg-[#0b111b] p-4">
+      <label className="mb-3 block text-xs text-[#9aa7bc]">
         {t("guided.project")}
         <select value={g.pid} onChange={(e) => g.setPid(e.target.value)} aria-label={t("guided.project")}
-          className="mt-1 w-full rounded-[6px] border border-[#2a364b] bg-[#080b11] px-2 py-1.5 text-sm text-[#e8eef8]">
+          className="mt-1 w-full rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-grund,8_11_17))] px-2 py-1.5 text-sm text-[#e8eef8]">
           {(g.projects ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </label>
-      <button type="button" onClick={onHelp} className="mb-3 flex items-center gap-1.5 self-start rounded-[6px] border border-[#2a364b] px-2.5 py-1.5 text-xs font-bold text-[#c3ccdd] hover:bg-[#1c2940]">
+      <button type="button" onClick={onHelp} className="mb-3 flex items-center gap-1.5 self-start rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2.5 py-1.5 text-xs font-bold text-[#c3ccdd] hover:bg-[#1c2940]">
         <CircleHelp size={14} /> {t("guided.help_open")}
       </button>
-      <div className="mb-1 text-xs font-black uppercase tracking-[0.2em] text-[#8d9ab0]">{t("guided.mine")}</div>
+      <div className="mb-1 text-xs font-black uppercase tracking-[0.2em] text-[#9aa7bc]">{t("guided.mine")}</div>
       <div className="mb-3 line-clamp-2 text-base font-bold leading-snug text-[#f2f6fc]">{title || t("guided.new_film")}</div>
       {STEP_IDS.map((n) => {
         const Icon = ICONS[n]
@@ -43,17 +43,17 @@ function Steps({ g, filmDone, onHelp }: { g: GuidedState; filmDone: boolean; onH
         return (
           <button key={n} type="button" onClick={() => g.setStep(n)} aria-current={active ? "step" : undefined}
             className={`flex items-center gap-3 rounded-[10px] px-3 py-3 text-left ${active ? "bg-[#69d7ff]/15 ring-1 ring-[#69d7ff]/60" : "hover:bg-[#1c2940]/60"}`}>
-            <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-black ${done[n] ? "bg-[#3ddc97] text-[#04140d]" : active ? "bg-[#69d7ff] text-[#06111c]" : "bg-[#1c2940] text-[#8d9ab0]"}`}>
+            <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-black ${done[n] ? "bg-[#3ddc97] text-[#04140d]" : active ? "bg-[#69d7ff] text-[#06111c]" : "bg-[#1c2940] text-[#9aa7bc]"}`}>
               {done[n] ? <Check size={18} /> : n}
             </span>
             <span className="min-w-0">
               <span className={`flex items-center gap-1.5 text-base font-bold ${active ? "text-[#f2f6fc]" : "text-[#c3ccdd]"}`}><Icon size={15} /> {t(`guided.step.${n}.title`)}</span>
-              <span className="block text-xs text-[#8d9ab0]">{t(`guided.step.${n}.hint`)}</span>
+              <span className="block text-xs text-[#9aa7bc]">{t(`guided.step.${n}.hint`)}</span>
             </span>
           </button>
         )
       })}
-      <div className="mt-auto space-y-2 border-t border-[#1c2433] pt-3 text-xs text-[#8d9ab0]">
+      <div className="mt-auto space-y-2 border-t border-[rgb(var(--hh-s-rand,28_36_51))] pt-3 text-xs text-[#9aa7bc]">
         <p>{t("guided.costs_text")}</p>
         <p>{t("guided.pro_text")}</p>
         <a href="/studio/profi" className="font-semibold text-[#69d7ff] underline">{t("guided.pro_link")}</a>
@@ -71,9 +71,9 @@ function Footer({ g }: { g: GuidedState }) {
     : g.step === 3 && noImage ? t("guided.gap.3", { count: noImage })
     : g.step === 4 && motionLeft(g.plan) ? t("guided.gap.4", { count: motionLeft(g.plan) }) : ""
   return (
-    <footer className="flex items-center gap-4 border-t border-[#1c2433] bg-[#0b111b] px-8 py-4">
+    <footer className="flex items-center gap-4 border-t border-[rgb(var(--hh-s-rand,28_36_51))] bg-[#0b111b] px-8 py-4">
       {g.step > 1 ? <button type="button" onClick={() => g.setStep((g.step - 1) as StepId)} className="flex items-center gap-2 text-sm font-semibold text-[#c3ccdd] hover:text-white"><ArrowLeft size={16} /> {t("guided.back")}</button> : <span />}
-      <span className="ml-auto text-sm text-[#8d9ab0]">{gap}</span>
+      <span className="ml-auto text-sm text-[#9aa7bc]">{gap}</span>
       {g.step < 5 && (
         <button type="button" onClick={() => g.setStep(next)} disabled={g.step === 1 && !g.plan?.scenes.length}
           className="flex items-center gap-2 rounded-[10px] bg-[#69d7ff] px-6 py-3 text-base font-black text-[#06111c] hover:bg-[#8fe2ff] disabled:opacity-40">
@@ -93,7 +93,7 @@ export function GuidedPage() {
   const cl = useClips(g, g.step === 4)
   const f = useFilm(g, g.step === 5)
   return (
-    <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
+    <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]" hideHeader>
       <CockpitTopbar active="/studio" context={t("title")} />
       <div className="flex min-h-0 flex-1 text-[#e8eef8]" data-guided-root>
         <Steps g={g} filmDone={f.films.length > 0} onHelp={() => setHelp(true)} />
@@ -101,7 +101,7 @@ export function GuidedPage() {
           <main className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
             <div className="mx-auto max-w-6xl">
               {g.projects && g.projects.length === 0
-                ? <p className="rounded-[10px] border border-[#2a364b] p-6 text-base text-[#c3ccdd]">{t("guided.no_project")}</p>
+                ? <p className="rounded-[10px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-6 text-base text-[#c3ccdd]">{t("guided.no_project")}</p>
                 : g.step === 1 ? <StepIdeaLive g={g} /> : g.step === 2 ? <StepCastLive g={g} c={c} />
                   : g.step === 3 ? <StepImagesLive g={g} im={im} />
                   : g.step === 4 ? <StepClipsLive g={g} cl={cl} /> : <StepFilmLive g={g} f={f} />}

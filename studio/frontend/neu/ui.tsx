@@ -8,7 +8,7 @@ export function BigButton({ children, onClick, busy, disabled, tone = "main", co
 }) {
   const look = tone === "main" ? "bg-[#3ddc97] text-[#04140d] hover:bg-[#5ee6aa]"
     : tone === "danger" ? "border border-[#ff7a7a]/60 text-[#ff9b9b] hover:bg-[#ff7a7a]/10"
-    : "border border-[#46617f] text-[#e8eef8] hover:bg-[#1c2940]"
+    : "border border-[rgb(var(--hh-s-rand-hover,70_97_127))] text-[#e8eef8] hover:bg-[#1c2940]"
   return (
     <button type="button" onClick={onClick} disabled={busy || disabled}
       className={`inline-flex items-center gap-2 rounded-[8px] px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${look}`}>
@@ -22,7 +22,7 @@ export function BigButton({ children, onClick, busy, disabled, tone = "main", co
 export function SmallButton({ children, onClick, disabled, label }: { children: ReactNode; onClick: () => void; disabled?: boolean; label?: string }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} aria-label={label} title={label}
-      className="inline-flex items-center gap-1 rounded-[6px] border border-[#2a364b] px-2.5 py-1.5 text-xs font-semibold text-[#c3ccdd] hover:bg-[#1c2940] disabled:opacity-40">
+      className="inline-flex items-center gap-1 rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2.5 py-1.5 text-xs font-semibold text-[#c3ccdd] hover:bg-[#1c2940] disabled:opacity-40">
       {children}
     </button>
   )

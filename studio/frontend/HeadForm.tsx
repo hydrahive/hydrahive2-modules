@@ -46,7 +46,7 @@ export function HeadForm({ head, busy, onSave, catalogs = {} }: Props) {
           <ModelPick key={k} kind={k} value={h.models[k]} catalog={catalogs[k] ?? null}
             onChange={(v) => set("models", { ...h.models, [k]: v })} />
         ))}
-        <p className="text-[10px] leading-relaxed text-[#68758a]">{t("f.models_hint")}</p>
+        <p className="text-[10px] leading-relaxed text-[#9aa7bc]">{t("f.models_hint")}</p>
       </fieldset>
       <Field name="style" label={t("f.style")} value={h.look.style} max={2000} rows={2} onChange={(v) => set("look", { ...h.look, style: v })} />
       <ColorPick label={t("f.palette")} colors={h.look.palette} onChange={(c) => set("look", { ...h.look, palette: c })} />

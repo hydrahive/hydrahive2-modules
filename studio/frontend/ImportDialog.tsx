@@ -20,9 +20,9 @@ export function ImportDialog({ preview, busy, onRun, onClose }: Props) {
         <h3 className="text-sm font-black text-[#e8eef8]">{t("import_title")}</h3>
         <p>{t("import_counts", importAmounts(t, preview))}</p>
         {preview.look && <p>{t("import_look")}</p>}
-        <p className="rounded-[4px] border border-[#46617f] bg-[#111827] px-2.5 py-2 leading-relaxed text-[#8d9ab0]">{t("import_hint")}</p>
+        <p className="rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2.5 py-2 leading-relaxed text-[#9aa7bc]">{t("import_hint")}</p>
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-[#8d9ab0] hover:text-[#e8eef8]">{t("cancel")}</button>
+          <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-[#9aa7bc] hover:text-[#e8eef8]">{t("cancel")}</button>
           <button type="button" onClick={onRun} disabled={busy} data-import-run
             className="flex items-center gap-1.5 rounded-[4px] bg-[#69d7ff] px-3 py-1.5 font-black text-[#08111c] disabled:opacity-50">
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />} {t("import_run")}

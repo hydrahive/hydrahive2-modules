@@ -25,11 +25,11 @@ export function HowTo({ onGo }: { onGo: (w: Workspace) => void }) {
           </li>
         ))}
       </ol>
-      <div className="space-y-2 border-t border-[#2a364b] pt-3">
+      <div className="space-y-2 border-t border-[rgb(var(--hh-s-rand,42_54_75))] pt-3">
         {MORE.map((k) => (
-          <div key={k} className="rounded-[4px] border border-[#46617f] bg-[#111827] px-2.5 py-2" data-howto-more={k}>
+          <div key={k} className="rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2.5 py-2" data-howto-more={k}>
             <p className="font-bold text-[#e8eef8]">{t(`howto_more.${k}.title`)}</p>
-            <p className="mt-0.5 leading-relaxed text-[#8d9ab0]">{t(`howto_more.${k}.text`)}</p>
+            <p className="mt-0.5 leading-relaxed text-[#9aa7bc]">{t(`howto_more.${k}.text`)}</p>
           </div>
         ))}
       </div>

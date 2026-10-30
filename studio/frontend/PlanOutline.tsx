@@ -4,9 +4,9 @@ import { ELEMENT_KINDS, type ElementKind, type ImportPreview, type Plan, type Se
 import { importAmounts, showImport } from "./planLogic"
 
 const ICON: Record<ElementKind, typeof User> = { character: User, place: MapPin, object: Package }
-const row = (active: boolean) => `flex w-full min-w-0 items-center gap-1.5 rounded-[4px] px-1.5 py-1 text-left text-xs ${active ? "bg-[#1c2940] text-[#69d7ff]" : "text-[#e8eef8] hover:bg-[#111827]"}`
-const heading = "flex items-center justify-between px-1 pb-1 text-[10px] font-bold uppercase tracking-wide text-[#68758a]"
-const addBtn = "flex items-center gap-0.5 rounded-[4px] border border-[#2a364b] px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940]"
+const row = (active: boolean) => `flex w-full min-w-0 items-center gap-1.5 rounded-[4px] px-1.5 py-1 text-left text-xs ${active ? "bg-[#1c2940] text-[#69d7ff]" : "text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,17_24_39))]"}`
+const heading = "flex items-center justify-between px-1 pb-1 text-[10px] font-bold uppercase tracking-wide text-[#9aa7bc]"
+const addBtn = "flex items-center gap-0.5 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-[#69d7ff] hover:border-[#69d7ff] hover:bg-[#1c2940]"
 
 interface Props {
   plan: Plan
@@ -52,18 +52,18 @@ export function PlanOutline({ plan, preview, selection, onSelect, onMove, onAddS
             <li key={s.id} className="group flex items-center gap-0.5">
               <button type="button" onClick={() => onSelect({ kind: "scene", id: s.id })} data-plan-scene={s.id}
                 aria-current={is("scene", s.id) || undefined} className={row(is("scene", s.id))}>
-                <span className="w-5 shrink-0 text-right text-[10px] text-[#68758a]">{i + 1}</span>
+                <span className="w-5 shrink-0 text-right text-[10px] text-[#9aa7bc]">{i + 1}</span>
                 <span className="truncate">{s.title || t("untitled")}</span>
-                <span className="ml-auto shrink-0 text-[10px] text-[#68758a]">{s.shots.length ? t("shot_count", { count: s.shots.length }) : ""}</span>
+                <span className="ml-auto shrink-0 text-[10px] text-[#9aa7bc]">{s.shots.length ? t("shot_count", { count: s.shots.length }) : ""}</span>
               </button>
               <button type="button" onClick={() => onMove(s.id, -1)} disabled={i === 0} data-plan-move={`${s.id}:-1`} aria-label={t("move_up")}
-                className="rounded p-0.5 text-[#68758a] hover:text-[#e8eef8] disabled:opacity-30"><ChevronUp size={12} /></button>
+                className="rounded p-0.5 text-[#9aa7bc] hover:text-[#e8eef8] disabled:opacity-30"><ChevronUp size={12} /></button>
               <button type="button" onClick={() => onMove(s.id, 1)} disabled={i === plan.scenes.length - 1} data-plan-move={`${s.id}:1`} aria-label={t("move_down")}
-                className="rounded p-0.5 text-[#68758a] hover:text-[#e8eef8] disabled:opacity-30"><ChevronDown size={12} /></button>
+                className="rounded p-0.5 text-[#9aa7bc] hover:text-[#e8eef8] disabled:opacity-30"><ChevronDown size={12} /></button>
             </li>
           ))}
         </ol>
-        {!plan.scenes.length && <p className="px-1.5 text-[11px] text-[#68758a]" data-plan-no-scenes>{t("no_scenes")}</p>}
+        {!plan.scenes.length && <p className="px-1.5 text-[11px] text-[#9aa7bc]" data-plan-no-scenes>{t("no_scenes")}</p>}
         {/* Mehr Szenen auf einmal (werden angehängt); ohne Szenen bietet das Startfeld dieselben Wege – keine Doppelung */}
         {plan.scenes.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1 px-1">
@@ -90,14 +90,14 @@ export function PlanOutline({ plan, preview, selection, onSelect, onMove, onAddS
               <li key={e.id}>
                 <button type="button" onClick={() => onSelect({ kind: "element", id: e.id })} data-plan-element={e.id}
                   aria-current={is("element", e.id) || undefined} className={row(is("element", e.id))}>
-                  <Icon size={12} className="shrink-0 text-[#8d9ab0]" />
+                  <Icon size={12} className="shrink-0 text-[#9aa7bc]" />
                   <span className="truncate">{e.name}</span>
                 </button>
               </li>
             )
           })}
         </ul>
-        {!plan.elements.length && <p className="px-1.5 text-[11px] text-[#68758a]">{t("no_elements")}</p>}
+        {!plan.elements.length && <p className="px-1.5 text-[11px] text-[#9aa7bc]">{t("no_elements")}</p>}
       </div>
     </div>
   )

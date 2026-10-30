@@ -34,11 +34,11 @@ interface Props {
 const ICON = { character: User, place: MapPin, object: Package }
 const btn = "inline-flex items-center gap-2 rounded-[8px] px-4 py-2.5 text-sm font-bold disabled:opacity-50"
 const main = `${btn} bg-[#3ddc97] text-[#04140d] hover:bg-[#5ee6aa]`
-const plain = `${btn} border border-[#46617f] text-[#e8eef8] hover:bg-[#1c2940]`
+const plain = `${btn} border border-[rgb(var(--hh-s-rand-hover,70_97_127))] text-[#e8eef8] hover:bg-[#1c2940]`
 
 function Field({ value, label, rows, placeholder, onSave }: { value: string; label: string; rows?: number; placeholder?: string; onSave: (v: string) => void }) {
   const [v, setV] = useState(value)
-  const cls = "w-full rounded-[6px] border border-[#2a364b] bg-[#080b11] px-2 py-1.5 text-[#f2f6fc] outline-none focus:border-[#69d7ff]"
+  const cls = "w-full rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-grund,8_11_17))] px-2 py-1.5 text-[#f2f6fc] outline-none focus:border-[#69d7ff]"
   const blur = () => { if (v.trim() && v !== value) onSave(v.trim()) }
   return rows
     ? <textarea value={v} onChange={(e) => setV(e.target.value)} onBlur={blur} rows={rows} aria-label={label} placeholder={placeholder} maxLength={4000} className={`${cls} text-sm`} />
@@ -55,7 +55,7 @@ export function PersonCard(p: Props) {
   const job = p.jobs.filter((j) => j.kind === "probe" && j.target === p.el.id).sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null
   const pick = (files: File[]) => { if (files[0]) p.onPhoto(files[0]) }
   return (
-    <article data-guided-person={p.el.id} className={`flex flex-col gap-3 rounded-[12px] border p-4 ${state === "approved" ? "border-[#3ddc97]/60 bg-[#3ddc97]/5" : "border-[#2a364b] bg-[#0e1420]"}`}>
+    <article data-guided-person={p.el.id} className={`flex flex-col gap-3 rounded-[12px] border p-4 ${state === "approved" ? "border-[#3ddc97]/60 bg-[#3ddc97]/5" : "border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,14_20_32))]"}`}>
       <div className="flex items-center gap-2">
         <Icon size={18} className="shrink-0 text-[#69d7ff]" />
         <Field key={`n:${p.el.name}`} value={p.el.name} label={t("guided.name")} onSave={p.onName} />
@@ -66,11 +66,11 @@ export function PersonCard(p: Props) {
         <div className="grid gap-2">
           <label onDragOver={(e) => { if (isFileDrag(e.dataTransfer)) { e.preventDefault(); setOver(true) } }} onDragLeave={() => setOver(false)}
             onDrop={(e) => { e.preventDefault(); setOver(false); pick(filesFromDrop(e.dataTransfer)) }}
-            className={`flex cursor-pointer flex-col items-center gap-2 rounded-[10px] border-2 border-dashed p-6 text-center text-sm text-[#c3ccdd] hover:border-[#69d7ff] ${over ? "border-[#69d7ff] bg-[#69d7ff]/10" : "border-[#46617f]"}`}>
+            className={`flex cursor-pointer flex-col items-center gap-2 rounded-[10px] border-2 border-dashed p-6 text-center text-sm text-[#c3ccdd] hover:border-[#69d7ff] ${over ? "border-[#69d7ff] bg-[#69d7ff]/10" : "border-[rgb(var(--hh-s-rand-hover,70_97_127))]"}`}>
             <input type="file" accept={acceptFor("reference")} className="sr-only" onChange={(e) => { pick(Array.from(e.target.files ?? [])); e.target.value = "" }} />
             {photo ? <img src={fileUrl(fileOf(p.base, photo))} alt={t("guided.your_photo")} className="h-24 rounded-[6px] object-cover" /> : <ImagePlus size={28} className="text-[#69d7ff]" />}
             <span className="font-bold">{t("guided.photo_drop")}</span>
-            <span className="text-xs text-[#8d9ab0]">{t("guided.photo_hint")}</span>
+            <span className="text-xs text-[#9aa7bc]">{t("guided.photo_hint")}</span>
           </label>
           {photo && <button type="button" className={main} onClick={p.onProbe} disabled={p.busy}><Wand2 size={16} /> {t("guided.probe_show")}<Costs model={p.imageModel || undefined} /></button>}
           <button type="button" className={plain} onClick={() => p.onNoPhoto(true)} disabled={p.busy}><Wand2 size={16} /> {t("guided.no_photo", { what })}</button>
@@ -78,16 +78,16 @@ export function PersonCard(p: Props) {
       )}
 
       {photo && state !== "busy" && (
-        <div className="space-y-1 rounded-[10px] bg-[#080b11] p-3" data-guided-looks>
+        <div className="space-y-1 rounded-[10px] bg-[rgb(var(--hh-s-grund,8_11_17))] p-3" data-guided-looks>
           <Field key={`l:${p.el.description}`} value={p.el.description} label={t("guided.looks", { name: p.el.name })} rows={2}
             placeholder={t("guided.description_placeholder")} onSave={p.onDescription} />
-          <p className="text-xs text-[#8d9ab0]">{t("guided.looks_hint")}</p>
+          <p className="text-xs text-[#9aa7bc]">{t("guided.looks_hint")}</p>
           <SmallButton onClick={p.onRedescribe} disabled={p.busy}>{t("guided.redescribe")}<Costs model={undefined} /></SmallButton>
         </div>
       )}
 
       {state === "busy" && (
-        <div className="flex items-center gap-3 rounded-[10px] bg-[#080b11] p-6 text-sm text-[#c3ccdd]">
+        <div className="flex items-center gap-3 rounded-[10px] bg-[rgb(var(--hh-s-grund,8_11_17))] p-6 text-sm text-[#c3ccdd]">
           <Loader2 size={20} className="animate-spin text-[#69d7ff]" /> {t(p.uploading ? "guided.uploading" : "guided.probe_busy")}
         </div>
       )}
@@ -103,9 +103,9 @@ export function PersonCard(p: Props) {
         <div className="space-y-2">
           <div className={`grid gap-2 ${photo ? "grid-cols-[1fr_2fr]" : "grid-cols-1"}`}>
             {photo && <figure><img src={fileUrl(fileOf(p.base, photo))} alt={t("guided.your_photo")} className="aspect-square w-full rounded-[8px] object-cover" />
-              <figcaption className="mt-1 text-center text-xs text-[#8d9ab0]">{t("guided.your_photo")}</figcaption></figure>}
+              <figcaption className="mt-1 text-center text-xs text-[#9aa7bc]">{t("guided.your_photo")}</figcaption></figure>}
             <figure><img src={fileUrl(fileOf(p.base, p.el.probe_rel))} alt={t("guided.probe_caption", { name: p.el.name })} className="aspect-video w-full rounded-[8px] object-cover" />
-              <figcaption className="mt-1 text-center text-xs text-[#8d9ab0]">{t("guided.probe_caption", { name: p.el.name })}</figcaption></figure>
+              <figcaption className="mt-1 text-center text-xs text-[#9aa7bc]">{t("guided.probe_caption", { name: p.el.name })}</figcaption></figure>
           </div>
           {state === "probe" ? (
             <div className="flex flex-wrap gap-2">
@@ -123,7 +123,7 @@ export function PersonCard(p: Props) {
       )}
 
       {state === "no_photo" && (
-        <div className="space-y-2 rounded-[10px] bg-[#080b11] p-3 text-sm text-[#c3ccdd]">
+        <div className="space-y-2 rounded-[10px] bg-[rgb(var(--hh-s-grund,8_11_17))] p-3 text-sm text-[#c3ccdd]">
           <p>{t("guided.invents", { what })}</p>
           <Field key={`d:${p.el.description}`} value={p.el.description} label={t("guided.description")} rows={2} placeholder={t("guided.description_placeholder")} onSave={p.onDescription} />
           <div className="flex flex-wrap gap-2">

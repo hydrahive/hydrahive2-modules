@@ -33,11 +33,11 @@ export function ShotVideo({ shot, base, job, onGenerate, model, onDelete }: Prop
       )}
       {video && onDelete && shot.video_rel && !running && (
         <button type="button" onClick={() => onDelete(shot.video_rel as string)} data-shot-video-delete
-          className="flex items-center gap-1 text-[11px] text-[#8d9ab0] hover:text-[#ff6b8a]"><Trash2 size={11} /> {t("video_delete")}</button>
+          className="flex items-center gap-1 text-[11px] text-[#9aa7bc] hover:text-[#ff6b8a]"><Trash2 size={11} /> {t("video_delete")}</button>
       )}
-      {!shot.image_rel && <p className="text-[11px] text-[#68758a]">{t("video_needs_image")}</p>}
+      {!shot.image_rel && <p className="text-[11px] text-[#9aa7bc]">{t("video_needs_image")}</p>}
       <button type="button" onClick={onGenerate} disabled={running || !shot.image_rel} data-shot-video-generate
-        className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#46617f] py-1.5 text-xs font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
+        className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] py-1.5 text-xs font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
         {running ? <Loader2 size={13} className="animate-spin" /> : <Film size={13} />}
         {running ? t("video_running") : video ? t("video_again") : t("video_generate", { seconds: shot.duration })}
        <Costs model={model} />

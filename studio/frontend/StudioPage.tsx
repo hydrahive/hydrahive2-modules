@@ -57,7 +57,7 @@ import { useUploads } from "./useUploads"
 import { useStudioState } from "./useStudioState"
 import type { Workspace } from "./workspaces"
 
-const toastCls = "pointer-events-none fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-[4px] border border-[#46617f] bg-[#0e1420] px-3 py-1.5 text-xs text-[#c3ccdd]"
+const toastCls = "pointer-events-none fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-[4px] border border-[rgb(var(--hh-s-rand-hover,70_97_127))] bg-[rgb(var(--hh-s-tief,14_20_32))] px-3 py-1.5 text-xs text-[#c3ccdd]"
 
 /** Studio: Planen und Erzeugen arbeiten auf dem Drehbuch, Schneiden, Ton, Untertitel und Ausgabe auf der Schnittfassung. */
 export function StudioPage() {
@@ -111,7 +111,7 @@ export function StudioPage() {
   const mu = useMusic(lib.projectId, editing(s.workspace), ed.addMusic, (x) => cut.setNotice(x), () => void lib.reload())
   const selShot = p.selection?.kind === "shot" ? p.selection : null
   return (
-    <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
+    <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]" hideHeader>
       <CockpitTopbar active="/studio" context={t("title")} />
       <div className="relative flex min-h-0 flex-1 flex-col text-[#e8eef8]" data-studio-root data-studio-ws={s.workspace}>
         <StudioHeader projects={lib.projects} projectId={lib.projectId} onProject={lib.setProjectId} onReload={reload}
@@ -129,7 +129,7 @@ export function StudioPage() {
         ) : <>
         <div className="flex min-h-0 flex-col" style={{ flex: `${100 - s.layout.timeline} 1 0` }}>
           <div className="flex min-h-0 flex-1">
-            <div className="min-w-0 border-r border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.library}%` }}>
+            <div className="min-w-0 border-r border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#0b111b]" style={{ width: `${s.layout.library}%` }}>
               {subbing ? st.left : planning ? <PlanSidebar p={plan} library={library} books={books} onIdea={dr.openIdea} onBook={dr.openBook} />
                 : generating ? (
                   <div className="flex h-full min-h-0 flex-col">
@@ -160,7 +160,7 @@ export function StudioPage() {
                     playing={s.player.playing} onPlay={s.player.toggle} onSeek={s.seek} />}
             </div>
             <Splitter dir="x" label={t("resize_inspector")} onDrag={(d) => s.drag("inspector", d)} />
-            <div className="min-w-0 border-l border-[#2a364b] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
+            <div className="min-w-0 border-l border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#0b111b]" style={{ width: `${s.layout.inspector}%` }}>
               {subbing && !s.item ? st.right : planning && !s.item ? <PlanInspector p={plan} shots={sh} jobs={jobs.jobs} images={lib.items.filter((i) => i.kind === "image")} upload={up} onDeleteMedia={md.ask} />
                 : freeOpen ? <FreeForm form={fr.form} catalog={imageCatalog} images={lib.items.filter((i) => i.kind === "image")} job={freeJob}
                     busy={p.busy} onChange={fr.setForm} onRun={() => void fr.run()} />
@@ -175,7 +175,7 @@ export function StudioPage() {
           </div>
         </div>
         <Splitter dir="y" label={t("resize_timeline")} onDrag={(d) => s.drag("timeline", d)} />
-        <div className="min-h-0 border-t border-[#2a364b] bg-[#0b111b]" style={{ flex: `${s.layout.timeline} 1 0` }}>
+        <div className="min-h-0 border-t border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#0b111b]" style={{ flex: `${s.layout.timeline} 1 0` }}>
           {shotsWs
             ? <StoryboardPanel scene={scene} base={p.plan?.base ?? ""} selected={p.selection?.kind === "shot" ? p.selection.id : null} busy={sh.busy}
                 runningShots={jobs.jobs.filter((j) => j.status === "running" || j.status === "queued").map((j) => j.target)}

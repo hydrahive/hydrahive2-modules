@@ -35,44 +35,44 @@ export function LibraryPanel({ items, loading, error, truncated, selected, onSel
       onDragLeave={(e) => { if (e.currentTarget === e.target) setOver(false) }}
       onDrop={(e) => { if (!onUpload || !isFileDrag(e.dataTransfer)) return; e.preventDefault(); setOver(false); onUpload(filesFromDrop(e.dataTransfer)) }}>
       <div className="flex items-center justify-between px-3 pt-2">
-        <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#68758a]">{t("library")}</h2>
-        <span className="text-[10px] text-[#68758a]" data-library-count={items.length}>{t("library_count", { count: items.length })}</span>
+        <h2 className="text-[11px] font-black uppercase tracking-[0.14em] text-[#9aa7bc]">{t("library")}</h2>
+        <span className="text-[10px] text-[#9aa7bc]" data-library-count={items.length}>{t("library_count", { count: items.length })}</span>
       </div>
       {onUpload && (
         <div className="px-3 pt-2">
           <input ref={fileInput} type="file" multiple accept={acceptFor("library")} hidden
             onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ""; if (f.length) onUpload(f) }} />
           <button type="button" onClick={() => fileInput.current?.click()} disabled={uploading} data-library-upload title={t("upload_drop_hint")}
-            className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-dashed border-[#46617f] px-2 py-1 text-[11px] font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
+            className="flex w-full items-center justify-center gap-1.5 rounded-[4px] border border-dashed border-[rgb(var(--hh-s-rand-hover,70_97_127))] px-2 py-1 text-[11px] font-bold text-[#69d7ff] hover:bg-[#1c2940] disabled:opacity-50">
             {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} {t(uploading ? "upload_running" : "upload_open")}
           </button>
-          <p className="pt-1 text-[10px] text-[#68758a]">{t("upload_drop_hint")}</p>
+          <p className="pt-1 text-[10px] text-[#9aa7bc]">{t("upload_drop_hint")}</p>
         </div>
       )}
       <div className="flex flex-wrap gap-1 px-3 pt-2">
         {FILTERS.map((f) => (
           <button key={f} type="button" data-library-filter={f} aria-pressed={f === filter} onClick={() => setFilter(f)}
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${f === filter ? "bg-[#69d7ff] text-[#08111c]" : "bg-[#111827] text-[#8d9ab0]"}`}>
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${f === filter ? "bg-[#69d7ff] text-[#08111c]" : "bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#9aa7bc]"}`}>
             {t(`kind.${f}`)}
           </button>
         ))}
       </div>
-      <label className="mx-3 mt-2 flex items-center gap-1.5 rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1">
-        <Search size={12} className="text-[#68758a]" />
+      <label className="mx-3 mt-2 flex items-center gap-1.5 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1">
+        <Search size={12} className="text-[#9aa7bc]" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")}
-          className="w-full bg-transparent text-xs text-[#e8eef8] outline-none placeholder:text-[#68758a]" />
+          className="w-full bg-transparent text-xs text-[#e8eef8] outline-none placeholder:text-[#9aa7bc]" />
       </label>
       <div className="mt-2 min-h-0 flex-1 space-y-3 overflow-y-auto px-2 pb-3">
-        {loading && <p className="flex items-center gap-1.5 px-2 text-xs text-[#68758a]"><Loader2 size={12} className="animate-spin" /> {t("loading")}</p>}
+        {loading && <p className="flex items-center gap-1.5 px-2 text-xs text-[#9aa7bc]"><Loader2 size={12} className="animate-spin" /> {t("loading")}</p>}
         {error && <p className="px-2 text-xs text-[#ff6b8a]" data-library-error>{error}</p>}
         {groups.map((g) => (
           <div key={g.group}>
-            <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wide text-[#68758a]">{t(`origin.${g.group}`)}</p>
+            <p className="px-1 pb-1 text-[10px] font-bold uppercase tracking-wide text-[#9aa7bc]">{t(`origin.${g.group}`)}</p>
             <ul className="space-y-0.5">{g.items.map((m) => <Item key={m.id} m={m} active={m.id === selected} onSelect={onSelect} />)}</ul>
           </div>
         ))}
         {!loading && !error && !groups.length && (
-          <p className="px-2 text-xs leading-relaxed text-[#68758a]" data-library-empty>{items.length ? t("library_empty") : t("library_none")}</p>
+          <p className="px-2 text-xs leading-relaxed text-[#9aa7bc]" data-library-empty>{items.length ? t("library_empty") : t("library_none")}</p>
         )}
         {truncated && <p className="px-2 text-[10px] text-[#ffb86b]">{t("library_truncated")}</p>}
       </div>
@@ -87,7 +87,7 @@ function Thumb({ m }: { m: LibraryItem }) {
     <span className="relative grid h-8 w-12 shrink-0 place-items-center overflow-hidden rounded-[3px] bg-[#1c2940]">
       {src ? <img src={fileUrl(src)} alt="" loading="lazy" className="h-full w-full object-cover" />
         : m.kind === "video" ? <video src={`${fileUrl(m.abs)}#t=0.5`} preload="metadata" muted className="h-full w-full object-cover" />
-          : <Icon size={13} className="text-[#8d9ab0]" />}
+          : <Icon size={13} className="text-[#9aa7bc]" />}
     </span>
   )
 }
@@ -99,11 +99,11 @@ function Item({ m, active, onSelect }: { m: LibraryItem; active: boolean; onSele
       <button type="button" data-library-item={m.id} data-library-kind={m.kind} onClick={() => onSelect(m.id)} title={m.prompt ?? m.name}
         draggable={m.kind !== "element"}
         onDragStart={(e) => { e.dataTransfer.setData(MEDIA_MIME, m.id); e.dataTransfer.effectAllowed = "copy" }}
-        className={`flex w-full items-center gap-2 rounded-[4px] px-1.5 py-1 text-left ${active ? "bg-[#1c2940]" : "hover:bg-[#111827]"}`}>
+        className={`flex w-full items-center gap-2 rounded-[4px] px-1.5 py-1 text-left ${active ? "bg-[#1c2940]" : "hover:bg-[rgb(var(--hh-s-hebung,17_24_39))]"}`}>
         <Thumb m={m} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-xs text-[#e8eef8]">{m.name}</span>
-          <span className="block truncate text-[10px] text-[#68758a]">
+          <span className="block truncate text-[10px] text-[#9aa7bc]">
             {t(`kind.${m.kind}`)}{m.duration ? ` · ${m.duration} s` : ""} · {t(`source.${m.source}`)}
           </span>
         </span>

@@ -60,7 +60,7 @@ export function ShotForm({ shot, index, elements, presets, busy, onSave, onDelet
       </div>
       <Field name="prompt" label={t("f.shot_prompt")} value={s.prompt} max={2000} rows={5} onChange={(v) => setS({ ...s, prompt: v })} />
       <Field name="speech" label={t("f.speech")} value={s.speech ?? ""} max={1000} rows={3} onChange={(v) => setS({ ...s, speech: v })} />
-      {voices === null ? <p className="text-[11px] text-[#68758a]" data-shot-voice-loading>{t("voices_loading")}</p> : voices.length ? (
+      {voices === null ? <p className="text-[11px] text-[#9aa7bc]" data-shot-voice-loading>{t("voices_loading")}</p> : voices.length ? (
         <label className="block"><Label>{t("f.voice")}</Label>
           <select value={s.voice ?? ""} onChange={(e) => setS({ ...s, voice: e.target.value })} className={fieldCls} data-shot-voice>
             <option value="">{t("voice_default")}</option>
@@ -68,20 +68,20 @@ export function ShotForm({ shot, index, elements, presets, busy, onSave, onDelet
             {s.voice && !voices.includes(s.voice) && <option value={s.voice}>{s.voice}</option>}
           </select>
         </label>
-      ) : <p className="text-[11px] text-[#68758a]">{t("voice_only_default")}</p>}
+      ) : <p className="text-[11px] text-[#9aa7bc]">{t("voice_only_default")}</p>}
       {onSpeech && <ShotSpeech shot={shot} base={base} job={speechJob} onGenerate={onSpeech} model={models.voice} />}
       <ShotCast shot={shot} elements={elements} />
       <details>
-        <summary className="cursor-pointer text-[11px] text-[#8d9ab0] hover:text-[#e8eef8]">{t("shot_extra_elements")}</summary>
+        <summary className="cursor-pointer text-[11px] text-[#9aa7bc] hover:text-[#e8eef8]">{t("shot_extra_elements")}</summary>
         <div className="mt-1 flex flex-wrap gap-1">
           {elements.map((e) => (
-            <label key={e.id} className="flex items-center gap-1 rounded-full bg-[#111827] px-2 py-0.5 text-[11px] text-[#c3ccdd]">
+            <label key={e.id} className="flex items-center gap-1 rounded-full bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-0.5 text-[11px] text-[#c3ccdd]">
               <input type="checkbox" checked={s.element_ids.includes(e.id)} onChange={() => toggle(e.id)} data-shot-element={e.id} /> {e.name}
             </label>
           ))}
         </div>
       </details>
-      <p className="text-[11px] text-[#8d9ab0]">{t("f.status")}: <span className="text-[#e8eef8]">{t(`shot_status.${shot.status}`, { defaultValue: shot.status })}</span></p>
+      <p className="text-[11px] text-[#9aa7bc]">{t("f.status")}: <span className="text-[#e8eef8]">{t(`shot_status.${shot.status}`, { defaultValue: shot.status })}</span></p>
       <FormActions busy={busy} dirty={dirty} onDelete={onDelete}
         onSave={() => onSave(shotChanges(s))} />
     </div>
