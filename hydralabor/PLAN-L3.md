@@ -100,3 +100,36 @@
 - **Eingehende Regel** `ingress allow source=<Gateway>/32 protocol=tcp destination_port=8001`: Server → Labor:8001
   **200**, andere Ports zu. Aus dem Labor bleiben Gateway (443/8001), Server, Router, `.2` **zu**, Internet offen.
   Messung danach wieder entfernt.
+
+## Umgesetzt (0.3.0, 30./31.10.)
+
+- **Auslieferer** `probe/front.py` (im Labor, als `labor`, root-eigen unter `/opt/hh-labor-probe`, vom Labor-Agenten
+  nicht änderbar): `dist` + `/api` gestreamt an das Probe-Backend `127.0.0.1:8002`.
+- **Probe-Dienste** per `systemd-run` im Container, beide als `labor`; eigene Daten unter `/work/.probe`
+  (Schlüssel + Admin-Passwort beim ersten Bau, 0600). Discord/WhatsApp/Mail/Teamchat/Update-Check/AgentLink aus,
+  Modul-Hub = Labor-Ordner.
+- **Anmeldung** wie geplant (Ticket 60 s → Cookie 8 h → `auth_request`). Ticket-Einlösen und Prüfung laufen über den
+  Geräte-Weg des Kerns (`/api/module-device/hydralabor/…`, ohne HydraHive-Login, mit Bremse je Adresse); nginx merkt
+  sich ein gültiges Ergebnis 30 s je Cookie.
+- **nginx :8443**: nur Heimnetz/Tailscale, keine Cookies an die Probe, keine `Set-Cookie` von der Probe (Cookies
+  trennen nicht nach Port), CSP `connect-src 'self'` / `form-action 'self'`, Rücknahme bei `nginx -t`.
+- Freigabe + nginx erst, **wenn die Probe antwortet**; Stoppen, Zurücksetzen und Entfernen räumen nginx-Block,
+  eingehende Regel und Zwischenspeicher ab (nur was im Zustand steht).
+
+## Echt geprüft (hydratest, 30./31.10.)
+
+- Bau 15–21 s, Start 3–6 s. Browser: „Probe öffnen“ → neuer Tab auf :8443 → Anmeldeseite der Probe → mit den
+  angezeigten Daten angemeldet. Änderung im Labor → „Neu bauen“ → sofort in der Probe sichtbar.
+- Ohne Cookie, mit falschem Cookie, mit dem Login des echten HydraHive: 401. Ticket zweimal: 401. Probe-Cookie am
+  echten HydraHive: 401. Im Browser nur das Probe-Cookie; die Probe sieht die Anmeldung des echten HydraHive nicht.
+- Aus dem Labor bleiben Server (443/8001/8443/22), Router, `.2` und `hhnat0` **zu**, Internet offen.
+- Stoppen/Zurücksetzen/Entfernen: kein nginx-Block, keine Regel, kein Zwischenspeicher, Port 8443 zu.
+- E2E 1600/1280/393/375 (Kasten + neuer Tab), ältere Labor-E2E grün.
+- **Befund unterwegs:** `incus file push --create-dirs` legt den Ordner mit 0750 an → `labor` konnte den Auslieferer
+  nicht lesen (nur im frischen Labor sichtbar). Ordner wird jetzt selbst mit 755 angelegt.
+
+## Nicht getestet
+
+- Zugriff von außerhalb des Heimnetzes (nur per `deny all` im Block abgesichert, nicht von außen gemessen).
+- Server ohne Tailscale/mit öffentlicher IP (VPS), anderer Port als 8443, nicht-Ubuntu-Server.
+- Module in der Probe installieren (Modulverwaltung der Probe zeigt auf den Labor-Ordner – nicht durchgeklickt).
