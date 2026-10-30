@@ -46,15 +46,15 @@ def setup_test_env():
             "testuser": {"password_hash": ph, "role": "user"},
             "boss": {"password_hash": ph, "role": "admin"},
         }, indent=2))
+        from hydrahive.db import init_db
+        from hydrahive.modules.migrations import apply_module_migrations
+        init_db()                               # Projekte löschen braucht die Kern-Tabellen (smb_mounts …)
+        apply_module_migrations("hydralabor", MODULE_DIR / "migrations")
         yield tmp_path
 
 
 @pytest.fixture
 def db_ready(setup_test_env):
-    from hydrahive.db import init_db
-    from hydrahive.modules.migrations import apply_module_migrations
-    init_db()
-    apply_module_migrations("hydralabor", MODULE_DIR / "migrations")
     with only_own_rows(*TABLES):
         yield
 
