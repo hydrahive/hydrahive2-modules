@@ -95,16 +95,28 @@ def test_token_nirgends_auf_platte(world, local_target, monkeypatch):
     assert len(pushes) == 1
     env = pushes[0]
     assert env.get("GIT_CONFIG_COUNT") == "1" and env.get("GIT_CONFIG_KEY_0") == "http.extraHeader"
-    assert TOKEN in env["GIT_CONFIG_VALUE_0"]
+    import base64
+    kind, _, val = env["GIT_CONFIG_VALUE_0"].removeprefix("Authorization: ").partition(" ")
+    assert kind == "Basic" and base64.b64decode(val).decode() == f"x-access-token:{TOKEN}"
     fetches = [env for args, env in calls if "fetch" in args]
     assert fetches and all(TOKEN not in str(e) for e in fetches)       # beim Holen aus dem Bündel kein Token
 
 
-def test_nur_labor_branch_name_erlaubt(world, local_target):
-    for bad in ["main", "refs/heads/main", "labor/../main", "labor/x y", "-f", "labor/x:main"]:
+def test_nur_labor_branch_name_erlaubt(world, local_target, monkeypatch):
+    """Abgelehnt, BEVOR git läuft – nicht erst, weil git selbst den Namen nicht mag."""
+    calls = []
+
+    async def no_git(args, **kw):
+        calls.append(args)
+        return 0
+    monkeypatch.setattr(push, "_git", no_git)
+    for bad in ["main", "refs/heads/main", "labor/../main", "labor/x y", "-f", "labor/x:main", "labor/-x",
+                "labor/X", "labor/a/b", "labor/x;rm", "labor/" + "a" * 82, "labor/x\nmain", "labor/"]:
+        world["bundle"].write_bytes(b"x")
         with pytest.raises(push.PushError):
             run(push.push_bundle(world["bundle"], fork="nutzer/hydrahive2.0", target="core",
                                  branch=bad, token=TOKEN, workdir=world["work"]))
+    assert calls == []
 
 
 @pytest.mark.parametrize("fork", ["hydrahive/hydrahive2.0", "nutzer/../hydrahive2.0", "nutzer/andere", "nutzer"])
@@ -136,3 +148,43 @@ def test_echte_urls():
     assert push._remote_url("nutzer/hydrahive2.0") == "https://github.com/nutzer/hydrahive2.0.git"
     assert push._base_url("core") == "https://github.com/hydrahive/hydrahive2.0.git"
     assert push._base_url("modules") == "https://github.com/hydrahive/hydrahive2-modules.git"
+
+
+def test_arbeits_repo_ist_bare(world, local_target, monkeypatch):
+    """Kein Checkout auf dem Server: init mit --bare, und es entstehen keine Labor-Dateien im Arbeitsordner."""
+    seen = []
+    real = push._git
+
+    async def spy(args, *, cwd, env, timeout=300):
+        rc = await real(args, cwd=cwd, env=env, timeout=timeout)
+        if args[0] == "fetch" and str(world["bundle"]) in args:
+            seen.append(sorted(p.name for p in Path(cwd).iterdir()))
+        if args[0] == "init":
+            seen.append(args)
+        return rc
+    monkeypatch.setattr(push, "_git", spy)
+    run(push.push_bundle(world["bundle"], fork="nutzer/hydrahive2.0", target="core", branch="labor/x-1", token=TOKEN,
+                         workdir=world["work"]))
+    assert seen[0] == ["init", "-q", "--bare", "."]
+    assert "neu.txt" not in seen[1] and "HEAD" in seen[1]
+
+
+@pytest.mark.parametrize("step", ["init", "base"])
+def test_vorbereitung_scheitert(world, local_target, monkeypatch, step):
+    real = push._git
+    later: list[str] = []
+
+    async def failing(args, *, cwd, env, timeout=300):
+        if (step == "init" and args[0] == "init") or (step == "base" and "refs/base/main" in " ".join(args)):
+            later.append("fail")
+            return 1
+        later.append(args[0])
+        return await real(args, cwd=cwd, env=env, timeout=timeout)
+    monkeypatch.setattr(push, "_git", failing)
+    with pytest.raises(push.PushError) as e:
+        run(push.push_bundle(world["bundle"], fork="nutzer/hydrahive2.0", target="core", branch="labor/x-1",
+                             token=TOKEN, workdir=world["work"]))
+    assert e.value.code == "labor_submit_push_failed"
+    assert later[-1] == "fail"                                       # direkt danach Schluss, kein weiterer git-Aufruf
+    heads = git("for-each-ref", "--format=%(refname)", cwd=world["fork"])
+    assert "labor/" not in heads                                     # nichts geschoben
