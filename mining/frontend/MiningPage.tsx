@@ -24,12 +24,12 @@ export function MiningPage() {
     <div className="mx-auto max-w-5xl space-y-5 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
-          <p className="text-xs text-zinc-500">{t("subtitle")}</p>
+          <h1 className="text-lg font-semibold text-[#e8eef8]">{t("title")}</h1>
+          <p className="text-xs text-[#9aa7bc]">{t("subtitle")}</p>
         </div>
         {canControl && (
           <button onClick={refreshNow} disabled={loading}
-            className="flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700 disabled:opacity-40">
+            className="flex items-center gap-1.5 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] disabled:opacity-40">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             <span>{t("refresh")}</span>
           </button>
@@ -40,23 +40,23 @@ export function MiningPage() {
 
       <RigsPanel canControl={canControl} powerActive={(config?.power_mode ?? "off") !== "off"} />
 
-      <h2 className="pt-2 text-sm font-semibold text-zinc-200">{t("earnings_title")}</h2>
+      <h2 className="pt-2 text-sm font-semibold text-[#e8eef8]">{t("earnings_title")}</h2>
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <label className="text-zinc-400">{t("gpu")}</label>
+        <label className="text-[#c8d2df]">{t("gpu")}</label>
         <select value={gpu} onChange={(e) => setGpu(e.target.value)}
-          className="rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100">
+          className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2 text-[#e8eef8]">
           {gpus.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
         </select>
-        <span className={stale ? "text-amber-300" : "text-zinc-500"}>
+        <span className={stale ? "text-amber-300" : "text-[#9aa7bc]"}>
           {age === null ? t("never_fetched") : stale ? t("stale", { min: age }) : t("fresh", { min: age })}
         </span>
       </div>
 
       {overview && overview.rows.length > 0 && <CoinTable rows={overview.rows} hasEur={overview.usd_per_eur !== null} />}
       {overview && overview.rows.length === 0 && (
-        <div className="rounded-lg border border-white/10"><div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-sm text-zinc-400">{t("empty")}</p></div></div>
+        <div className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))]"><div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-sm text-[#c8d2df]">{t("empty")}</p></div></div>
       )}
-      {overview && <p className="text-xs text-zinc-500">{t("reference_note", { date: overview.reference.fetched })} {t("estimated_note")}</p>}
+      {overview && <p className="text-xs text-[#9aa7bc]">{t("reference_note", { date: overview.reference.fetched })} {t("estimated_note")}</p>}
 
       <ClorePanel usdPerEur={overview?.usd_per_eur ?? null} />
 

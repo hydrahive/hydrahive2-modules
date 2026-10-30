@@ -41,32 +41,32 @@ export function HistoryChart() {
     ? { day: "2-digit", month: "2-digit", hour: "2-digit" } : { hour: "2-digit", minute: "2-digit" })
 
   return (
-    <section className="space-y-3 rounded-xl border border-white/10 bg-zinc-900/40 p-4">
+    <section className="space-y-3 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-zinc-200">
+        <h2 className="text-sm font-semibold text-[#e8eef8]">
           {t("history_title")}
           {total !== null && <span className="ml-2 font-normal text-emerald-300">{t("history_total", { v: total.toFixed(2) })}</span>}
         </h2>
         <div className="flex flex-wrap gap-1">
           {METRICS.map((m) => (
             <button key={m} onClick={() => setMetric(m)}
-              className={`${tab} ${metric === m ? "bg-emerald-600 text-white" : "text-zinc-400 hover:bg-white/10"}`}>
+              className={`${tab} ${metric === m ? "bg-emerald-600 text-white" : "text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"}`}>
               {t(`history_m_${m}`)}
             </button>
           ))}
-          <span className="mx-1 w-px bg-white/10" />
+          <span className="mx-1 w-px bg-[rgb(var(--hh-s-hebung,27_37_54))]" />
           {RANGES.map((h) => (
             <button key={h} onClick={() => setHours(h)}
-              className={`${tab} ${hours === h ? "bg-zinc-700 text-white" : "text-zinc-400 hover:bg-white/10"}`}>
+              className={`${tab} ${hours === h ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"}`}>
               {t(`history_r_${h}`)}
             </button>
           ))}
         </div>
       </div>
       {error && <div className="text-xs text-rose-300">{error}</div>}
-      {!perCard(metric) && <p className="text-xs text-zinc-500">{t("history_per_rig_hint")}</p>}
+      {!perCard(metric) && <p className="text-xs text-[#9aa7bc]">{t("history_per_rig_hint")}</p>}
       {rows.length < 2 ? (
-        <div className="grid h-64 place-items-center text-sm text-zinc-500">{t("history_empty")}</div>
+        <div className="grid h-64 place-items-center text-sm text-[#9aa7bc]">{t("history_empty")}</div>
       ) : (
         <ResponsiveContainer width="100%" height={310}>
           <LineChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>

@@ -18,8 +18,8 @@ export const BADGE_CLASS: Record<RigBadge, string> = {
   pending: "bg-amber-500/20 text-amber-300",
   online: "bg-emerald-500/20 text-emerald-300",
   offline: "bg-rose-500/20 text-rose-300",
-  disabled: "bg-zinc-700/60 text-zinc-300",
-  revoked: "bg-zinc-800 text-zinc-500",
+  disabled: "bg-[rgb(var(--hh-s-hebung,27_37_54)/0.6)] text-[#c8d2df]",
+  revoked: "bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#9aa7bc]",
 }
 
 /** Gültige Rig-Namen wie im Backend (pairing.NAME_RE): auch Kryptex-Worker-Name. */

@@ -8,12 +8,12 @@ export function RigCards({ cards }: { cards: GpuCard[] }) {
   const { t } = useTranslation("mining")
   if (cards.length < 2) return null
   return (
-    <details className="mt-1 text-xs text-zinc-400">
-      <summary className="cursor-pointer select-none text-zinc-500 hover:text-zinc-300">
+    <details className="mt-1 text-xs text-[#c8d2df]">
+      <summary className="cursor-pointer select-none text-[#9aa7bc] hover:text-[#c8d2df]">
         {t("cards_show", { n: cards.length })}
       </summary>
       <table className="mt-1 w-full min-w-[22rem]">
-        <thead className="text-zinc-500">
+        <thead className="text-[#9aa7bc]">
           <tr>
             <th className="py-0.5 pr-3 text-left font-normal">#</th>
             <th className="py-0.5 pr-3 text-left font-normal">{t("gpu")}</th>
@@ -25,9 +25,9 @@ export function RigCards({ cards }: { cards: GpuCard[] }) {
         </thead>
         <tbody>
           {cards.map((c, i) => (
-            <tr key={c.pci ?? i} className="border-t border-white/5">
-              <td className="py-0.5 pr-3 text-zinc-500">{i + 1}</td>
-              <td className="py-0.5 pr-3 text-zinc-300">{c.gpu_model ?? "—"}</td>
+            <tr key={c.pci ?? i} className="border-t border-[rgb(var(--hh-s-rand,42_54_75))]">
+              <td className="py-0.5 pr-3 text-[#9aa7bc]">{i + 1}</td>
+              <td className="py-0.5 pr-3 text-[#c8d2df]">{c.gpu_model ?? "—"}</td>
               <td className="py-0.5 pr-3 text-right tabular-nums">{fmt(c.temp_c, "°C")}</td>
               <td className="py-0.5 pr-3 text-right tabular-nums">{fmt(c.power_w, "W")}</td>
               <td className="py-0.5 pr-3 text-right tabular-nums">{fmt(c.util_pct, "%")}</td>

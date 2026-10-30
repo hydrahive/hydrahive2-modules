@@ -13,7 +13,7 @@ export function RigActivity({ rig }: { rig: Rig }) {
     <div className="space-y-0.5">
       {lines.map((l) => (
         <div key={l.vendor ?? "all"}>
-          {l.vendor && <span className="mr-1.5 rounded bg-white/10 px-1 text-[10px] text-zinc-300">{VENDOR_LABEL[l.vendor] ?? l.vendor}</span>}
+          {l.vendor && <span className="mr-1.5 rounded bg-[rgb(var(--hh-s-hebung,27_37_54))] px-1 text-[10px] text-[#c8d2df]">{VENDOR_LABEL[l.vendor] ?? l.vendor}</span>}
           <Line a={l.activity} hashrate={l.hashrate} accepted={l.vendor ? null : rep?.accepted} error={l.vendor ? null : rep?.error} />
         </div>
       ))}
@@ -26,7 +26,7 @@ function Line({ a, hashrate, accepted, error }: {
 }) {
   const { t } = useTranslation("mining")
   if (a.kind === "stopped") {
-    return <span className="text-zinc-500">{t(stopReasonKey(a.reason))}</span>
+    return <span className="text-[#9aa7bc]">{t(stopReasonKey(a.reason))}</span>
   }
   const hr = formatHashrate(hashrate)
   const shares = accepted ? ` · ${t("shares", { n: accepted })}` : ""
