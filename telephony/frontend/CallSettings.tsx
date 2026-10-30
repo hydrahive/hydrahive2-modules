@@ -79,15 +79,15 @@ export function CallSettings({ conn }: { conn: Configured }) {
   const registered = conn.status === "registered"
 
   return (
-    <section className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5" data-voip-calls="1">
-      <h3 className="flex items-center gap-2 font-semibold text-zinc-100">
-        <PhoneIncoming size={17} className="text-indigo-300" /> {t("calls.title")}
+    <section className="space-y-4 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] p-5" data-voip-calls="1">
+      <h3 className="flex items-center gap-2 font-semibold text-[#e8eef8]">
+        <PhoneIncoming size={17} className="text-[#69d7ff]" /> {t("calls.title")}
       </h3>
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-zinc-200">{t("calls.answer")}</p>
-          <p className="mt-0.5 text-xs leading-5 text-zinc-500">{t("calls.answer_help")}</p>
+          <p className="text-sm text-[#e8eef8]">{t("calls.answer")}</p>
+          <p className="mt-0.5 text-xs leading-5 text-[#9aa7bc]">{t("calls.answer_help")}</p>
         </div>
         <Switch checked={answer} disabled={busy} onChange={(v) => void toggle(v)} label={t("calls.answer")} />
       </div>
@@ -95,22 +95,22 @@ export function CallSettings({ conn }: { conn: Configured }) {
       <AssistantFields key={JSON.stringify(assistant)} saved={assistant} busy={busy}
         onSave={(next) => saveAssistant(next)} />
 
-      {assistant.mode === "greeting" && <label className="block space-y-1.5 text-sm text-zinc-300">
+      {assistant.mode === "greeting" && <label className="block space-y-1.5 text-sm text-[#c8d2df]">
         <span>{t("calls.greeting")}</span>
-        <textarea className="min-h-24 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-indigo-500"
+        <textarea className="min-h-24 w-full rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2 text-sm text-[#e8eef8] outline-none focus:border-[#69d7ff]"
           value={greeting} maxLength={500} placeholder={conn.greeting_default} data-voip-greeting="1"
           onChange={(e) => { setSaved(false); setGreeting(e.target.value) }} />
-        <span className="block text-xs text-zinc-500">{t("calls.greeting_help")}</span>
+        <span className="block text-xs text-[#9aa7bc]">{t("calls.greeting_help")}</span>
       </label>}
 
       <div className="flex flex-wrap items-center gap-2">
         {assistant.mode === "greeting" && (
-          <button type="button" className={`${btn} bg-zinc-800 text-zinc-100 hover:bg-zinc-700`} disabled={busy || !dirty}
+          <button type="button" className={`${btn} bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]`} disabled={busy || !dirty}
             onClick={() => void save()} data-voip-calls-save="1">
             <Save size={15} /> {t("calls.greeting_save")}
           </button>
         )}
-        <button type="button" className={`${btn} bg-indigo-500 text-white hover:bg-indigo-400`}
+        <button type="button" className={`${btn} bg-[#163248] text-white hover:bg-[#1b3d56]`}
           disabled={busy || !registered || left > 0} onClick={() => void startTest()} data-voip-test-call="1"
           title={registered ? undefined : t("calls.test_needs_connection")}>
           {busy ? <Loader2 size={15} className="animate-spin" /> : <Timer size={15} />}
@@ -118,7 +118,7 @@ export function CallSettings({ conn }: { conn: Configured }) {
         </button>
         {saved && !error && <span className="text-sm text-emerald-300">{t("conn.saved")}</span>}
       </div>
-      {left > 0 && <p className="text-sm text-indigo-200" data-voip-test-hint="1">{t("calls.test_hint")}</p>}
+      {left > 0 && <p className="text-sm text-[#69d7ff]" data-voip-test-hint="1">{t("calls.test_hint")}</p>}
       {error && <p role="alert" className="text-sm text-red-300">{t(`conn.errors.${error}`)}</p>}
 
       {pending && (
@@ -127,7 +127,7 @@ export function CallSettings({ conn }: { conn: Configured }) {
           <div className="mt-3 flex gap-2">
             <button type="button" className={`${btn} bg-emerald-600 text-white hover:bg-emerald-500`} disabled={busy}
               onClick={() => void confirm(pending.id, true)}>{t("calls.heard_yes")}</button>
-            <button type="button" className={`${btn} bg-zinc-800 text-zinc-100 hover:bg-zinc-700`} disabled={busy}
+            <button type="button" className={`${btn} bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]`} disabled={busy}
               onClick={() => void confirm(pending.id, false)}>{t("calls.heard_no")}</button>
           </div>
         </div>

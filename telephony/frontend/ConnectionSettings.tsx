@@ -59,17 +59,17 @@ export function ConnectionSettings() {
   return (
     <section className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]" aria-labelledby="voip-conn-title">
       <div className="space-y-4">
-        <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-5">
-          <h2 id="voip-conn-title" className="flex items-center gap-2 font-semibold text-zinc-100">
-            <PhoneCall size={18} className="text-indigo-300" /> {t("conn.title")}
+        <div className="rounded-xl border border-[#69d7ff]/20 bg-[#69d7ff]/5 p-5">
+          <h2 id="voip-conn-title" className="flex items-center gap-2 font-semibold text-[#e8eef8]">
+            <PhoneCall size={18} className="text-[#69d7ff]" /> {t("conn.title")}
           </h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-400">{t("conn.intro")}</p>
+          <p className="mt-2 text-sm leading-6 text-[#c8d2df]">{t("conn.intro")}</p>
           <p className="mt-2 text-xs leading-5 text-amber-200/80">{t("conn.stage_notice")}</p>
         </div>
 
         <ConnectionStatusBox status={status} />
 
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] p-5">
           <ConnectionForm form={form} hasPassword={configured} disabled={busy !== null}
             onChange={(p) => { setSaved(false); setForm((f) => ({ ...f, ...p })) }} />
 
@@ -77,19 +77,19 @@ export function ConnectionSettings() {
           {saved && !error && <p className="mt-4 text-sm text-emerald-300">{t("conn.saved")}</p>}
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <button type="button" data-voip-save="1" className={`${btn} bg-zinc-800 text-zinc-100 hover:bg-zinc-700`}
+            <button type="button" data-voip-save="1" className={`${btn} bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]`}
               disabled={busy !== null || !dirty || !canSave(form, configured)}
               onClick={() => void run("save", () => telephonyApi.saveConnection(form))}>
               {busy === "save" ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
               {busy === "save" ? t("conn.saving") : t("conn.save")}
             </button>
             {configured && conn.enabled ? (
-              <button type="button" data-voip-disconnect="1" className={`${btn} bg-zinc-800 text-zinc-100 hover:bg-zinc-700`}
+              <button type="button" data-voip-disconnect="1" className={`${btn} bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]`}
                 disabled={busy !== null} onClick={() => void run("disconnect", telephonyApi.disconnect)}>
                 <Unplug size={15} /> {t("conn.disconnect")}
               </button>
             ) : null}
-            <button type="button" data-voip-connect="1" className={`${btn} bg-indigo-500 text-white hover:bg-indigo-400`}
+            <button type="button" data-voip-connect="1" className={`${btn} bg-[#163248] text-white hover:bg-[#1b3d56]`}
               disabled={busy !== null || !configured || dirty} title={dirty ? t("conn.save_first") : undefined}
               onClick={() => void run("connect", telephonyApi.connect)}>
               {busy === "connect" ? <Loader2 size={15} className="animate-spin" /> : <PlugZap size={15} />}
@@ -102,7 +102,7 @@ export function ConnectionSettings() {
               </button>
             )}
           </div>
-          {dirty && configured && <p className="mt-2 text-xs text-zinc-500">{t("conn.save_first")}</p>}
+          {dirty && configured && <p className="mt-2 text-xs text-[#9aa7bc]">{t("conn.save_first")}</p>}
         </div>
 
         {configured && <CallSettings key={conn.updated_at} conn={conn} />}

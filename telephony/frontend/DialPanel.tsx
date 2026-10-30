@@ -10,7 +10,7 @@ import type { CallEntry, Connection, DialMode, DialStatus } from "./types"
 
 type Configured = Extract<Connection, { configured: true }>
 const btn = "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
-const field = "w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none"
+const field = "w-full rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2 text-sm text-[#e8eef8] focus:border-[#69d7ff] focus:outline-none"
 
 interface Props {
   conn: Configured
@@ -68,10 +68,10 @@ export function DialPanel({ conn, initialNumber = "", initialMode = "greeting", 
 
   return (
     <div className="space-y-5">
-      <section className="space-y-5 rounded-xl border border-zinc-800 bg-zinc-900/40 p-5" data-voip-dial="1">
+      <section className="space-y-5 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-5" data-voip-dial="1">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-100"><PhoneCall size={17} /> {t("dial.title")}</h2>
-          <p className="mt-1 text-sm text-zinc-400">{t("dial.intro")}</p>
+          <h2 className="flex items-center gap-2 text-base font-semibold text-[#e8eef8]"><PhoneCall size={17} /> {t("dial.title")}</h2>
+          <p className="mt-1 text-sm text-[#c8d2df]">{t("dial.intro")}</p>
         </div>
         {!registered && (
           <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-200"
@@ -80,39 +80,39 @@ export function DialPanel({ conn, initialNumber = "", initialMode = "greeting", 
         <DialModePicker mode={mode} onChange={setMode} />
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block space-y-1 text-sm">
-            <span className="text-zinc-300">{t("dial.number")}</span>
+            <span className="text-[#c8d2df]">{t("dial.number")}</span>
             <input className={field} inputMode="tel" autoComplete="off" value={number} data-voip-dial-number="1"
               onChange={(e) => setNumber(cleanNumberInput(e.target.value))} placeholder="030 1234567" />
-            <span className="text-xs text-zinc-500">{t("dial.number_help")}</span>
+            <span className="text-xs text-[#9aa7bc]">{t("dial.number_help")}</span>
           </label>
           {mode === "greeting" ? (
             <label className="block space-y-1 text-sm">
-              <span className="text-zinc-300">{t("dial.text")}</span>
+              <span className="text-[#c8d2df]">{t("dial.text")}</span>
               <textarea className={`${field} min-h-20`} maxLength={500} value={text} data-voip-dial-text="1"
                 onChange={(e) => setText(e.target.value)} />
-              <span className="text-xs text-zinc-500">{t("dial.text_help")}</span>
+              <span className="text-xs text-[#9aa7bc]">{t("dial.text_help")}</span>
             </label>
           ) : (
             <div className="space-y-4">
               <label className="block space-y-1 text-sm">
-                <span className="text-zinc-300">{t("dial.task")}</span>
+                <span className="text-[#c8d2df]">{t("dial.task")}</span>
                 <textarea className={`${field} min-h-24`} maxLength={1000} value={task} data-voip-dial-task="1"
                   onChange={(e) => setTask(e.target.value)} />
-                <span className="text-xs text-zinc-500">{t("dial.task_help")}</span>
+                <span className="text-xs text-[#9aa7bc]">{t("dial.task_help")}</span>
               </label>
               <label className="block space-y-1 text-sm">
-                <span className="text-zinc-300">{t("dial.share")}</span>
+                <span className="text-[#c8d2df]">{t("dial.share")}</span>
                 <textarea className={`${field} min-h-16`} maxLength={1000} value={share} data-voip-dial-share="1"
                   onChange={(e) => setShare(e.target.value)} />
-                <span className="text-xs text-zinc-500">{t("dial.share_help")}</span>
+                <span className="text-xs text-[#9aa7bc]">{t("dial.share_help")}</span>
               </label>
             </div>
           )}
         </div>
-        {mode === "assistant" && <p className="text-xs text-zinc-400">{t("dial.assistant_info")}</p>}
+        {mode === "assistant" && <p className="text-xs text-[#c8d2df]">{t("dial.assistant_info")}</p>}
         <div className="flex flex-wrap items-center gap-3">
           {!call.active ? (
-            <button type="button" className={`${btn} bg-indigo-500 text-white hover:bg-indigo-400`} data-voip-dial-start="1"
+            <button type="button" className={`${btn} bg-[#163248] text-white hover:bg-[#1b3d56]`} data-voip-dial-start="1"
               disabled={!ready} onClick={() => void start()}>
               {busy ? <Loader2 size={15} className="animate-spin" /> : <PhoneCall size={15} />} {t(`dial.start_${mode}`)}
             </button>
@@ -123,21 +123,21 @@ export function DialPanel({ conn, initialNumber = "", initialMode = "greeting", 
             </button>
           )}
           {call.active && call.state && (
-            <span className="text-sm text-zinc-300" role="status" data-voip-dial-state={call.state}>
+            <span className="text-sm text-[#c8d2df]" role="status" data-voip-dial-state={call.state}>
               {t(dialStateKey(call.state), { number: call.number })}
             </span>
           )}
           {!call.active && call.state && call.result && (
-            <span className="text-sm text-zinc-400" data-voip-dial-last="1">
+            <span className="text-sm text-[#c8d2df]" data-voip-dial-last="1">
               {t("dial.last", { number: call.number, result: t(`calls.result.${call.result}`) })}
             </span>
           )}
         </div>
         {error && <p role="alert" className="text-sm text-red-300">{t(error)}</p>}
-        <p className="text-xs text-zinc-500">{t("dial.limits")}</p>
+        <p className="text-xs text-[#9aa7bc]">{t("dial.limits")}</p>
         <DialRules conn={conn} onError={setError} />
       </section>
-      <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5" data-voip-dial-calls="1">
+      <section className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-5" data-voip-dial-calls="1">
         <CallList calls={calls} onRead={(id) => void markRead(id)} onCallback={(id) => void callback(id)} />
       </section>
     </div>

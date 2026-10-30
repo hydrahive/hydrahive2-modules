@@ -34,34 +34,34 @@ export function FoundationOverview({ status, onSetup }: Props) {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map(({ icon: Icon, label, value, ready }) => (
-          <div key={label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+          <div key={label} className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.6)] p-4">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</span>
-              <Icon size={17} className={ready ? "text-emerald-400" : "text-zinc-600"} />
+              <span className="text-xs font-medium uppercase tracking-wide text-[#9aa7bc]">{label}</span>
+              <Icon size={17} className={ready ? "text-emerald-400" : "text-[#9aa7bc]"} />
             </div>
-            <p className="text-sm font-medium text-zinc-200">{value}</p>
+            <p className="text-sm font-medium text-[#e8eef8]">{value}</p>
           </div>
         ))}
       </div>
 
-      <section className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
+      <section className="space-y-4 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-6">
         <ConnectionStatusBox status={status} />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-2xl text-sm leading-6 text-zinc-400">{t("setup_description")}</p>
+          <p className="max-w-2xl text-sm leading-6 text-[#c8d2df]">{t("setup_description")}</p>
           <button type="button" onClick={onSetup} data-voip-goto-settings="1"
-            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-400">
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#163248] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1b3d56]">
             <Settings2 size={16} />
             {registered ? t("setup_action_edit") : t("setup_action")}
           </button>
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-800 bg-zinc-950/30 p-5">
-        <h2 className="text-sm font-semibold text-zinc-200">{t("next_title")}</h2>
+      <section className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32)/0.3)] p-5">
+        <h2 className="text-sm font-semibold text-[#e8eef8]">{t("next_title")}</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {planned.map(({ icon: Icon, text }) => (
-            <div key={text} className="flex items-center gap-3 text-sm text-zinc-400">
-              <span className="rounded-lg bg-zinc-800/70 p-2 text-zinc-500"><Icon size={15} /></span>
+            <div key={text} className="flex items-center gap-3 text-sm text-[#c8d2df]">
+              <span className="rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39)/0.7)] p-2 text-[#9aa7bc]"><Icon size={15} /></span>
               {text}
             </div>
           ))}
