@@ -1,8 +1,8 @@
 # Hydra-Labor – sicher an HydraHive mitbauen
 
 > Neues Modul `hydralabor`. Idee von Till (30.10.2026), Task 2dbf77c4.
-> **Status: Plan. Gebaut wird erst nach Tills Freigabe, Etappe für Etappe.**
-> Name vorläufig: „Hydra-Labor“. „Werkstatt“ ist im Kern schon ein Bereich (`/werkstatt`).
+> **Status: Plan, Fragen von Till beantwortet (30.10.). Gebaut wird erst nach Tills Freigabe, Etappe für Etappe.**
+> Name: „Hydra-Labor“ (Till 30.10.). „Werkstatt“ ist im Kern schon ein Bereich (`/werkstatt`).
 
 ## Problem
 
@@ -21,7 +21,8 @@ eine andere Ausführung ist vorgesehen („Implementations decide on isolation l
 2. **Ohne Vorwissen einrichten:** Ein Einrichtungs-Assistent führt Schritt für Schritt durch, mit Knöpfen, ohne
    Terminal, ohne Git-Kenntnisse.
 3. **Beitragen ohne Git:** „Änderung einreichen“ und „Fehler melden“ per Knopf. Daraus werden ein PR bzw. ein Issue
-   bei `hydrahive/hydrahive2.0` (Kern) oder `hydrahive/hydrahive2-modules` (Module). Till prüft und übernimmt.
+   bei `hydrahive/hydrahive2.0` (Kern), `hydrahive/hydrahive2-modules` (Module) oder optional
+   `hydrahive/hydrahive2-plugins` (Plugins). Till prüft und übernimmt.
 4. **Zurück auf Anfang:** Ein Knopf setzt den Container auf den letzten guten Stand zurück.
 
 ## Rahmen (Entscheidungen Till, 30.10.)
@@ -92,7 +93,8 @@ Jeder Schritt hat einen Knopf und zeigt grün/rot mit Erklärung in einfachen Wo
    - Der Token liegt **verschlüsselt im Modul** (Master-Schlüssel des Kerns), nie im Container, nie in Logs.
    - Ohne GitHub-Konto: Link „Konto anlegen“, danach weiter.
 3. **Labor anlegen**: Knopf „Labor anlegen“. Das Modul macht:
-   - einen Fork von `hydrahive/hydrahive2.0` (und auf Wunsch `hydrahive2-modules`) beim Nutzer, falls noch keiner da ist;
+   - einen Fork von `hydrahive/hydrahive2.0` und `hydrahive2-modules` beim Nutzer, falls noch keiner da ist;
+     `hydrahive2-plugins` nur, wenn der Nutzer das Häkchen „Auch an Plugins mitarbeiten“ setzt (Standard aus);
    - ein Projekt „Hydra-Labor“ mit Ausführung im Container;
    - den Container (Ubuntu wie der Server, Grenzen Standard 2 CPU / 4 GB RAM / 20 GB, Netz NAT, kein Zugang zum Heimnetz);
    - im Container: Klon des Forks (ohne Zugangsdaten), Python-Umgebung, Node, Testabhängigkeiten. Fortschritt mit
@@ -119,14 +121,19 @@ Der Assistent kann jederzeit fortgesetzt werden. Bricht ein Schritt ab, zeigt er
 
 - Stand des Containers (läuft / aus), belegter Platz, aktueller Branch, geänderte Dateien.
 - **„Testlauf“**: startet die Tests im Container und zeigt das Ergebnis.
-- **„Probe-HydraHive starten“**: startet im Container ein HydraHive aus dem Labor-Stand auf einem eigenen Port.
-  Nur auf dem Server selbst erreichbar und über einen Link im Modul (Weiterleitung mit Anmeldung). So probiert der
-  Nutzer seine Änderung aus, ohne sein echtes System anzufassen.
+- **Probe-Installation** (Till 30.10.: gewünscht): Knopf „Probe-HydraHive starten“.
+  - Im Container läuft ein vollständiges HydraHive aus dem Labor-Stand (Backend + gebaute Oberfläche), mit eigenen
+    leeren Daten und eigenem Test-Admin. Es hat keinen Zugriff auf die Daten des echten Systems.
+  - Erreichbar nur über das Modul: Link „Probe öffnen“, der Kern leitet mit Anmeldung des Admins durch (kein offener
+    Port nach außen).
+  - Knöpfe „Probe neu bauen“ (nach Änderungen) und „Probe stoppen“. Bauzeit und Speicher vorher messen.
+  - Module aus dem Labor lassen sich in der Probe installieren, um sie auszuprobieren.
 - **„Zurücksetzen“** mit eigenem Dialog: auf „frisch“ oder auf einen eigenen Schnappschuss („Stand merken“).
 
 ### Änderung einreichen
 
-Knopf „Änderung einreichen“ → Dialog: Titel, „Was ändert sich und warum?“ (2–3 Sätze), Ziel (Kern oder Module).
+Knopf „Änderung einreichen“ → Dialog: Titel, „Was ändert sich und warum?“ (2–3 Sätze), Ziel (Kern, Module oder –
+wenn eingerichtet – Plugins). Das Ziel ergibt sich meist aus den geänderten Dateien; der Dialog schlägt es vor.
 Das Modul macht dann:
 
 1. **Vorprüfung im Container**, alles muss grün sein:
@@ -150,8 +157,9 @@ ein Issue mit Label `labor`.
 
 ### Rechte
 
-- Freigabe `module.hydralabor`: Standard `admin_only` (das Labor belegt Rechner und Platz).
-- Ein Labor je Nutzer. Admins sehen alle Labore ihres Servers.
+- **Nur Admins** (Till 30.10.): Freigabe `module.hydralabor` fest `admin_only`. Das Labor belegt Rechner und Platz
+  und arbeitet mit einem GitHub-Konto.
+- Ein Labor je Server.
 
 ## Etappen
 
@@ -159,13 +167,14 @@ ein Issue mit Label `labor`.
 2. **L1 (Modul):** Assistent Schritte 1, 3, 4, 5 (ohne GitHub), Labor-Seite, Testlauf, Zurücksetzen.
    Damit ist das System schon sicher, auch ohne Einreichen.
 3. **L2 (Modul):** GitHub-Verbindung (Device-Flow), Fork, „Änderung einreichen“, „Fehler melden“, Status.
-4. **L3 (Modul):** Probe-HydraHive im Container, Schnappschüsse verwalten, Anleitung im Hilfe-Bereich (de/en).
+4. **L3 (Modul):** Probe-Installation im Container, Schnappschüsse verwalten, Plugins als drittes Ziel,
+   Anleitung im Hilfe-Bereich (de/en).
 
 ## Was Till vorher einrichten muss
 
 - **GitHub-OAuth-App „HydraHive Labor“** in der Organisation `hydrahive`, mit Device-Flow an. Die Client-ID ist
   öffentlich und darf im Modul stehen (beim Device-Flow gibt es kein Client-Secret).
-- Label `labor` in beiden Repos. Optional eine Vorlage für PRs aus dem Labor.
+- Label `labor` in den Repos (Kern, Module, Plugins). Optional eine Vorlage für PRs aus dem Labor.
 
 ## Prüfung
 
@@ -176,12 +185,12 @@ ein Issue mit Label `labor`.
 - Echte Probe auf hydratest: Assistent komplett durchklicken, mit einem Test-GitHub-Konto einen PR an ein
   **Test-Repo** stellen (nicht an das echte), zurücksetzen, E2E in 4 Breiten.
 
-## Offen (für Till)
+## Entscheidungen (Till, 30.10.)
 
-1. Name: „Hydra-Labor“ ok?
-2. Wer darf ein Labor anlegen: nur Admins (Vorschlag) oder auch Nutzer mit Freigabe?
-3. Probe-HydraHive im Container (L3): gewünscht, oder reichen Tests?
-4. Sollen Einreichungen auch an andere Repos gehen können (z. B. Plugins), oder nur Kern und Module?
+1. Name „Hydra-Labor“: ja.
+2. Nur Admins legen ein Labor an.
+3. Probe-Installation im Container: ja (Etappe L3).
+4. Ziele: Kern und Module; Plugins optional, wenn eingerichtet.
 
 ## Nicht in diesem Plan
 
