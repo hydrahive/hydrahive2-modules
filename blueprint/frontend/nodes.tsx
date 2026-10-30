@@ -22,7 +22,7 @@ const DOT = { width: 9, height: 9 }
 const FLOW_COLOR: Record<string, { border: string; bg: string; text: string; dot: string }> = {
   event: { border: "border-amber-500/60", bg: "bg-amber-950/40", text: "text-amber-300", dot: "#f59e0b" },
   action: { border: "border-sky-500/60", bg: "bg-sky-950/40", text: "text-sky-300", dot: "#0ea5e9" },
-  datasource: { border: "border-violet-500/60", bg: "bg-violet-950/40", text: "text-violet-300", dot: "#8b5cf6" },
+  datasource: { border: "border-[#69d7ff]/60", bg: "bg-[#69d7ff]/40", text: "text-[#69d7ff]", dot: "#8b5cf6" },
   condition: { border: "border-blue-500/60", bg: "bg-blue-950/40", text: "text-blue-300", dot: "#3b82f6" },
   display: { border: "border-emerald-500/60", bg: "bg-emerald-950/40", text: "text-emerald-300", dot: "#10b981" },
   note: { border: "border-yellow-500/50", bg: "bg-yellow-950/30", text: "text-yellow-200", dot: "#eab308" },
@@ -45,7 +45,7 @@ function Shell({ data, selected, children, accent, resizeColor }: {
         handleStyle={{ width: 8, height: 8 }}
       />
       <div className={`flex h-full w-full flex-col overflow-hidden rounded-xl border-2 px-3 py-2 shadow-lg select-none ${accent} ${
-        selected ? "ring-2 ring-white/30" : ""
+        selected ? "ring-2 ring-[rgb(var(--hh-s-rand-hover,70_97_127))]" : ""
       }`}>
         <div className="mb-0.5 flex items-center gap-1.5">
           <Icon size={12} />
@@ -68,7 +68,7 @@ export function LayoutNodeComp({ data, selected }: NodeProps) {
       <Handle type="target" position={Position.Top} id="in"
         style={{ ...DOT, background: "#71717a", border: "2px solid #52525b" }} />
       <Shell data={data} selected={selected} resizeColor="#a1a1aa"
-        accent="border-zinc-600/70 bg-zinc-800/70 text-zinc-200" />
+        accent="border-[rgb(var(--hh-s-rand-hover,70_97_127)/0.7)] bg-[rgb(var(--hh-s-innen,17_24_39)/0.7)] text-[#e8eef8]" />
       <Handle type="source" position={Position.Bottom} id="out"
         style={{ ...DOT, background: "#71717a", border: "2px solid #52525b" }} />
     </div>

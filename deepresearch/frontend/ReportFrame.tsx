@@ -54,10 +54,10 @@ export function ReportFrame({ runId }: { runId: string }) {
     )
   }
   if (!html) {
-    return <div className="text-zinc-500 text-sm p-4">Lade Bericht …</div>
+    return <div className="text-[#9aa7bc] text-sm p-4">Lade Bericht …</div>
   }
 
-  const btn = "px-3 py-1.5 rounded-lg text-sm bg-white/5 text-zinc-300 hover:bg-white/10 border border-white/10"
+  const btn = "px-3 py-1.5 rounded-lg text-sm bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] border border-[rgb(var(--hh-s-rand,42_54_75))]"
   return (
     <div className="flex flex-col h-full min-h-[80vh]">
       <div className="flex justify-end gap-2 mb-2">
@@ -69,7 +69,7 @@ export function ReportFrame({ runId }: { runId: string }) {
         srcDoc={html}
         title="Deep Research Report"
         sandbox="allow-same-origin allow-popups allow-downloads"
-        className="flex-1 w-full rounded-xl border border-white/10 bg-[#fbf9f4]"
+        className="flex-1 w-full rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#fbf9f4]"
       />
     </div>
   )

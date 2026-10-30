@@ -27,14 +27,14 @@ function EditorInner({ boardId, boardName }: Props) {
   }
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex items-center gap-3 border-b border-white/8 px-4 py-2.5">
-        <span className="text-sm font-medium text-zinc-200">{boardName}</span>
-        <span className="text-xs text-zinc-600">{b.saved ? "gespeichert" : "speichert…"}</span>
+      <div className="flex items-center gap-3 border-b border-[rgb(var(--hh-s-rand,42_54_75))] px-4 py-2.5">
+        <span className="text-sm font-medium text-[#e8eef8]">{boardName}</span>
+        <span className="text-xs text-[#9aa7bc]">{b.saved ? "gespeichert" : "speichert…"}</span>
         <button
           type="button"
           onClick={() => void copyAsText()}
           title="Board als Text kopieren, zum Einfügen in einen Chat"
-          className="ml-auto flex items-center gap-1.5 rounded-md border border-white/10 px-2 py-1 text-xs text-zinc-300 hover:bg-white/5"
+          className="ml-auto flex items-center gap-1.5 rounded-md border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"
         >
           <Copy size={13} />
           {copied === "ok" ? "Kopiert" : copied === "fail" ? "Kopieren nicht möglich" : "Als Text kopieren"}

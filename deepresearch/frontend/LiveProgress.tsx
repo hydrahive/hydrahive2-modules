@@ -34,7 +34,7 @@ export function LiveProgress({ run }: { run: Run }) {
   const pct = Math.min(100, Math.round(((p.round ?? 0) / MAX_ROUNDS) * 100))
 
   return (
-    <div className="dro rounded-2xl border border-white/10 bg-zinc-900/40 p-5">
+    <div className="dro rounded-2xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-5">
       <style>{`
         @property --dro-a{syntax:'<angle>';initial-value:0deg;inherits:false}
         @keyframes dro-spin{to{--dro-a:360deg}}
@@ -49,11 +49,11 @@ export function LiveProgress({ run }: { run: Run }) {
         @media (prefers-reduced-motion:reduce){.dro::after{animation:none;opacity:.4}}
       `}</style>
 
-      <h1 className="text-lg font-semibold text-zinc-100 mb-4">{run.question}</h1>
+      <h1 className="text-lg font-semibold text-[#e8eef8] mb-4">{run.question}</h1>
 
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm text-zinc-300 truncate">{phaseLabel(run)}</span>
-        <span className="font-mono text-xs text-zinc-500">{fmt(p.elapsed_s ?? 0)}</span>
+        <span className="text-sm text-[#c8d2df] truncate">{phaseLabel(run)}</span>
+        <span className="font-mono text-xs text-[#9aa7bc]">{fmt(p.elapsed_s ?? 0)}</span>
       </div>
 
       <ResearchSynapse
@@ -63,14 +63,14 @@ export function LiveProgress({ run }: { run: Run }) {
         query={run.question}
       />
 
-      <div className="mt-3 h-1.5 rounded-full bg-white/5 overflow-hidden">
+      <div className="mt-3 h-1.5 rounded-full bg-[rgb(var(--hh-s-innen,17_24_39))] overflow-hidden">
         <div className="h-full transition-all duration-700" style={{ width: `${pct}%`, background: "var(--accent, #b8543a)" }} />
       </div>
 
-      <div className="mt-3 flex gap-5 font-mono text-[0.7rem] uppercase tracking-wider text-zinc-500">
-        <span>Runde <b className="text-zinc-300">{p.round ?? 0}</b></span>
-        <span><b className="text-zinc-300">{p.total_sources ?? 0}</b> Quellen</span>
-        <span><b className="text-zinc-300">{p.total_findings ?? 0}</b> Funde</span>
+      <div className="mt-3 flex gap-5 font-mono text-[0.7rem] uppercase tracking-wider text-[#9aa7bc]">
+        <span>Runde <b className="text-[#c8d2df]">{p.round ?? 0}</b></span>
+        <span><b className="text-[#c8d2df]">{p.total_sources ?? 0}</b> Quellen</span>
+        <span><b className="text-[#c8d2df]">{p.total_findings ?? 0}</b> Funde</span>
       </div>
     </div>
   )
