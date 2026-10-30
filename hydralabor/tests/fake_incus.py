@@ -76,6 +76,9 @@ class FakeIncus:
             self.containers[name] = {"args": a, "running": True}
             return 0, "", ""
         if a[0] == "list":
+            if a[-1] == "ns":
+                return 0, "".join(f"{n},{'RUNNING' if c['running'] else 'STOPPED'}\n"
+                                  for n, c in self.containers.items()), ""
             if a[-1] == "n":
                 return 0, "\n".join(self.containers), ""
             return 0, "\n".join(f"{n},{'RUNNING' if c['running'] else 'STOPPED'}" for n, c in self.containers.items()), ""

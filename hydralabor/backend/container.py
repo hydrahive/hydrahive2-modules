@@ -101,6 +101,11 @@ async def launch_and_probe(limits: Limits) -> dict:
         raise
 
 
+async def running() -> bool:
+    rc, out, _ = await incus.run("list", "--format", "csv", "-c", "ns")
+    return rc == 0 and any(line.split(",")[:2] == [NAME, "RUNNING"] for line in out.splitlines())
+
+
 async def stop() -> None:
     await incus.run("stop", NAME, "--force", timeout=120)
 

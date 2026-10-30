@@ -27,12 +27,32 @@ def started(monkeypatch):
     return calls
 
 
-@pytest.mark.parametrize(("method", "path"), [("get", "/state"), ("post", "/checks"), ("post", "/create"),
+@pytest.mark.parametrize(("method", "path"), [("get", "/state"), ("get", "/models"), ("post", "/checks"), ("post", "/create"),
                                               ("post", "/reset"), ("post", "/probe"), ("post", "/test"),
                                               ("post", "/remove"), ("post", "/start"), ("post", "/stop")])
 def test_nur_admins(client, user_headers, clean, method, path):
-    r = getattr(client, method)(B + path, headers=user_headers, json={})
+    kw = {"json": {}} if method == "post" else {}
+    r = getattr(client, method)(B + path, headers=user_headers, **kw)
     assert r.status_code == 403
+
+
+@pytest.fixture
+def user_with_module_grant(db_ready):
+    """Ein Admin gibt das Modul versehentlich einem normalen Nutzer frei – die Schnittstelle muss trotzdem sperren."""
+    from hydrahive.access import grants
+    from hydrahive.api.middleware.users import get_by_username
+    uid = get_by_username("testuser")["user_id"]
+    grants.grant("module.hydralabor", "user", uid, "use", actor_id="test")
+    yield
+    grants.revoke("module.hydralabor", "user", uid, actor_id="test")
+
+
+@pytest.mark.parametrize(("method", "path"), [("get", "/state"), ("get", "/models"), ("post", "/create"),
+                                              ("post", "/remove"), ("post", "/stop")])
+def test_auch_mit_modulfreigabe_nur_admins(client, user_headers, clean, user_with_module_grant, method, path):
+    kw = {"json": {"model": MODEL, "confirm": "LABOR"}} if method == "post" else {}
+    r = getattr(client, method)(B + path, headers=user_headers, **kw)
+    assert r.status_code == 403 and r.json()["detail"]["code"] == "admin_only"
 
 
 def test_ohne_anmeldung(client, clean):
@@ -71,11 +91,19 @@ def test_anlegen_speichert_wahl_und_startet(client, admin_headers, clean, starte
 
 
 @pytest.mark.parametrize("body", [{"model": MODEL, "cpu": 0}, {"model": MODEL, "ram_mb": 512},
-                                  {"model": MODEL, "disk_gb": 5000}, {"model": ""}, {},
+                                  {"model": MODEL, "disk_gb": 5000}, {"model": ""}, {}, {"model": "x" * 201},
                                   {"model": MODEL, "cpu": 2, "extra": 1}])
 def test_anlegen_ungueltig(client, admin_headers, clean, started, body):
     r = client.post(B + "/create", headers=admin_headers, json=body)
     assert r.status_code in (400, 422) and started == []
+
+
+def test_leeres_modell_von_schnittstelle_abgelehnt(client, admin_headers, clean, started, monkeypatch):
+    """Nicht erst im Kern: dessen Prüfung winkt ohne Modell-Liste alles durch (auch Leeres würde dann scheitern)."""
+    from backend import lab_project
+    monkeypatch.setattr(lab_project, "_check_model", lambda m: None)
+    r = client.post(B + "/create", headers=admin_headers, json={"model": ""})
+    assert r.status_code == 422 and started == []
 
 
 def test_anlegen_unbekanntes_modell(client, admin_headers, clean, started, monkeypatch):
