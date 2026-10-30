@@ -104,3 +104,43 @@ def test_name_mit_anfuehrungszeichen_bricht_das_skript_nicht():
 def test_ohne_pausenzeichen_stille_statt_absturz():
     s = sf.liquidsoap_script(**{**_LIQ, "fallback_file": ""})
     assert 'notschleife = blank(id="notschleife")' in s and "single(" not in s
+
+
+# --- Liquidsoap 2.2 (Ubuntu 24.04) UND 2.4 (26.04, Hauptserver) – Befund 30.10.2026 -----------------------------
+# 2.4 lehnt das 2.2-Skript ab: protocol.add erwartet string? statt [string], null() ist veraltet, on_metadata ist eine
+# Methode der Quelle. Das Skript wählt den passenden Teil mit %ifversion zur Ladezeit von Liquidsoap.
+
+def _blocks(s: str) -> tuple[str, str]:
+    """(Teil für >= 2.3, Teil für ältere) aller %ifversion-Blöcke zusammen."""
+    new, old = [], []
+    for part in s.split("%ifversion >= 2.3.0\n")[1:]:
+        a, rest = part.split("%else\n", 1)
+        b = rest.split("%endif", 1)[0]
+        new.append(a)
+        old.append(b)
+    return "".join(new), "".join(old)
+
+
+def test_skript_hat_teile_fuer_alt_und_neu():
+    s = sf.liquidsoap_script(**_LIQ)
+    assert s.count("%ifversion >= 2.3.0\n") == 3 and s.count("%endif") == 3
+    new, old = _blocks(s)
+    assert "if ok then tmp else null end" in new and "if ok then [tmp] else [] end" in old
+    assert "def no_request() = null end" in new and "def no_request() = null() end" in old
+    assert "radio.on_metadata(synchronous=false, write_now)" in new
+    assert "radio = source.on_metadata(radio, write_now)" in old
+
+
+def test_ausserhalb_der_bloecke_keine_versionsabhaengigen_aufrufe():
+    s = sf.liquidsoap_script(**_LIQ)
+    outside = s
+    for part in s.split("%ifversion >= 2.3.0\n")[1:]:
+        outside = outside.replace(part.split("%endif", 1)[0], "")
+    assert "null()" not in outside and "source.on_metadata" not in outside and "[tmp]" not in outside
+    assert outside.count("no_request()") == 2
+
+
+def test_temp_datei_bei_fehler_geloescht_in_beiden_fassungen():
+    s = sf.liquidsoap_script(**_LIQ)
+    assert "if not ok() then file.remove(tmp) end" in s
+    assert "(ok(), tmp)" in s
