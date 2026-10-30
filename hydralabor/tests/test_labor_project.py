@@ -117,8 +117,30 @@ def test_container_fehlt_kein_halbes_projekt(setup_test_env, monkeypatch):
 
 
 def test_unbekanntes_modell(setup_test_env, monkeypatch):
+    from hydrahive.agents import _validation
+    from hydrahive.projects import config as project_config
     from hydrahive.projects import execution
     monkeypatch.setattr(execution, "_container_exists", lambda name: True)
+    monkeypatch.setattr(_validation, "_available_models", lambda: {MODEL})
+    before = {p["id"] for p in project_config.list_all()}
     with pytest.raises(container.LaborError) as e:
         lab_project.create(admin="boss", model="gibt-es-nicht-xyz")
     assert e.value.code == "labor_model_unavailable"
+    assert {p["id"] for p in project_config.list_all()} == before
+
+
+def test_mcp_server_werden_geleert_auch_wenn_kern_welche_mitgibt(setup_test_env, monkeypatch):
+    from hydrahive.agents import config as agent_config
+    from hydrahive.projects import execution
+    monkeypatch.setattr(execution, "_container_exists", lambda name: True)
+    orig = agent_config.create
+
+    def with_mcp(*a, **k):
+        k["mcp_servers"] = ["srv-filesystem"]
+        return orig(*a, **k)
+    monkeypatch.setattr(agent_config, "create", with_mcp)
+    out = lab_project.create(admin="boss", model=MODEL)
+    try:
+        assert _agent(out["agent_id"])["mcp_servers"] == []
+    finally:
+        lab_project.remove(out)
