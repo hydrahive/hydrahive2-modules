@@ -26,7 +26,7 @@ export function BluetoothCard() {
   return (
     <section className="space-y-2">
       <h2 className="flex items-center gap-2 text-sm font-bold text-[#e8eef8]"><Bluetooth size={14} className="text-[#69d7ff]" />{t("bt_title")}</h2>
-      <p className="text-xs text-[#718097]">{t("bt_hint")}</p>
+      <p className="text-xs text-[#9aa7bc]">{t("bt_hint")}</p>
       {err && <p className="text-xs text-rose-300">{err}</p>}
       {v && <BluetoothList v={v} onScan={() => void run(vitrineApi.btScan)}
         onPair={(a) => void run(() => vitrineApi.btPair(a))}
