@@ -16,6 +16,8 @@ from . import checks, container, jobs, lab_project, state
 from .container import LaborError, Limits
 
 router = APIRouter()
+# Routen, die Aufträge starten, sind async: jobs.start braucht die laufende Ereignisschleife (sync-Routen laufen in
+# einem Thread ohne – Befund hydratest 30.10.: 500 und Zustand hing auf „läuft“).
 Admin = Annotated[AuthPrincipal, Depends(require_admin_principal)]
 _PUBLIC = ("step", "running", "progress", "error_code", "error_step", "model", "cpu", "ram_mb", "disk_gb",
            "last_net_ok", "last_test")
@@ -83,7 +85,7 @@ async def run_checks(p: Admin, body: LimitsIn) -> dict:
 
 
 @router.post("/create", status_code=status.HTTP_202_ACCEPTED)
-def create(p: Admin, body: CreateIn) -> dict:
+async def create(p: Admin, body: CreateIn) -> dict:
     lim = _limits(body)
     if state.get()["step"] == "ready":
         raise coded(status.HTTP_409_CONFLICT, "labor_already_ready")
@@ -98,25 +100,25 @@ def create(p: Admin, body: CreateIn) -> dict:
 
 
 @router.post("/reset", status_code=status.HTTP_202_ACCEPTED)
-def reset(p: Admin, body: Empty) -> dict:
+async def reset(p: Admin, body: Empty) -> dict:
     _ready()
     return _start("reset")
 
 
 @router.post("/probe", status_code=status.HTTP_202_ACCEPTED)
-def probe(p: Admin, body: Empty) -> dict:
+async def probe(p: Admin, body: Empty) -> dict:
     _ready()
     return _start("probe")
 
 
 @router.post("/test", status_code=status.HTTP_202_ACCEPTED)
-def test(p: Admin, body: Empty) -> dict:
+async def test(p: Admin, body: Empty) -> dict:
     _ready()
     return _start("test")
 
 
 @router.post("/remove", status_code=status.HTTP_202_ACCEPTED)
-def remove(p: Admin, body: RemoveIn) -> dict:
+async def remove(p: Admin, body: RemoveIn) -> dict:
     if body.confirm != "LABOR":
         raise coded(status.HTTP_400_BAD_REQUEST, "labor_confirm_missing")
     return _start("remove")

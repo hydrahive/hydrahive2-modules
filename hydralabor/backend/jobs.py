@@ -134,7 +134,11 @@ def start(name: str) -> bool:
         raise KeyError(name)
     if not state.begin(name):
         return False
-    task = asyncio.get_running_loop().create_task(_run(name))
+    try:
+        task = asyncio.get_running_loop().create_task(_run(name))
+    except RuntimeError:
+        state.finish(error_code="labor_failed")              # nicht auf „läuft“ hängen bleiben
+        raise
     _tasks.add(task)
     task.add_done_callback(_tasks.discard)
     return True
