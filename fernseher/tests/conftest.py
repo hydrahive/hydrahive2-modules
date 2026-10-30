@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pytest  # noqa: E402
 from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
     isolated_root,
     only_own_files,
@@ -21,8 +22,6 @@ from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest r
     pytest_unconfigure,
     remove_test_tree,
 )
-
-import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
@@ -50,8 +49,8 @@ def setup_test_env():
             "testuser": {"password_hash": ph, "role": "user"},
             "admin": {"password_hash": ph, "role": "admin"},
         }, indent=2))
-        from hydrahive.api import main
         from backend.routes import router
+        from hydrahive.api import main
         main.app.include_router(router, prefix=MOD_PREFIX)
         yield tmp_path
 
