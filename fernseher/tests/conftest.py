@@ -165,11 +165,15 @@ class FakeTV:
         if (service, method) == ("audio", "getVolumeInformation"):
             if self.power != "active":                 # gemessen 29.10.: im Standby 40005
                 return 200, {"error": [40005, "Display Is Turned off"]}
-            if self.output == "audioSystem":         # gemessen 29.10.: Receiver liefert eigene Skala
-                return 200, {"result": [[{"target": "speaker", "volume": self.volume, "mute": self.mute,
-                                          "maxVolume": 100, "minVolume": 0, "outputTerminal": "audioSystem"}]]}
+            # gemessen 30.10.: Die Antwort nennt die Ausgabe NICHT – die steht nur in getSoundSettings 1.1
             return 200, {"result": [[{"target": "speaker", "volume": self.volume, "mute": self.mute,
-                                      "maxVolume": 100, "minVolume": 0, "outputTerminal": self.output}]]}
+                                      "maxVolume": 100, "minVolume": 0}]]}
+        if (service, method) == ("audio", "getSoundSettings"):
+            if version != "1.1":
+                return 200, {"error": [12, "No Such Method"]}
+            if self.output is None:                  # ältere Firmware ohne diese Methode
+                return 200, {"error": [12, "No Such Method"]}
+            return 200, {"result": [[{"target": "outputTerminal", "currentValue": self.output}]]}
         if (service, method) == ("audio", "setAudioVolume"):
             v = str(p.get("volume"))
             self.volume = self.volume + int(v) if v[:1] in "+-" else int(v)

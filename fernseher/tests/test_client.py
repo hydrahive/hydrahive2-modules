@@ -256,3 +256,18 @@ async def test_unbekannte_ausgabe_bleibt_ehrlich(configured):
     configured.output = "headphone"
     s = await client.status()
     assert s["output"] == "other"
+
+
+async def test_ausgabe_aus_den_toneinstellungen_mit_version_1_1(configured):
+    configured.output = "audioSystem"
+    await client.status()
+    asked = [c for c in configured.calls if c[1] == "getSoundSettings"]
+    assert asked and all(c[3] == "1.1" for c in asked)
+    assert asked[0][2] == [{"target": "outputTerminal"}]
+
+
+async def test_ohne_toneinstellungen_unbekannt_statt_fehler(configured):
+    """Kennt der TV getSoundSettings nicht, bleibt der Status lesbar – Ausgabe unbekannt."""
+    configured.output = None
+    s = await client.status()
+    assert s["power"] == "on" and s["volume"] == 14 and s["output"] == "other"
