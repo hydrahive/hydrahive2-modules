@@ -131,3 +131,20 @@ def test_trennen(gh, cid):
 def test_start_waehrend_warten_ist_pending(gh, cid):
     run(github_auth.start())
     assert github_auth.status()["pending"] is True
+
+
+@pytest.mark.parametrize("key", ["POST https://github.com/login/device/code"])
+def test_start_github_lehnt_ab(gh, cid, key):
+    gh.fail[key] = (422, {"error": "device_flow_disabled"})
+    with pytest.raises(github_auth.GitHubError) as e:
+        run(github_auth.start())
+    assert e.value.code == "labor_github_failed"
+    assert github_auth.status()["pending"] is False
+
+
+def test_nutzer_abfrage_scheitert_nichts_gespeichert(gh, cid):
+    gh.fail["GET https://api.github.com/user"] = (401, {"message": "Bad credentials"})
+    run(github_auth.start())
+    with pytest.raises(github_auth.GitHubError) as e:
+        run(github_auth.wait())
+    assert e.value.code == "labor_github_failed" and github_auth.token() == ""
