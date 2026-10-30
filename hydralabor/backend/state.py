@@ -15,7 +15,7 @@ STEPS = ("start", "ready")
 PARTS = ("network", "container", "setup", "snapshot", "project")
 _T = "module_hydralabor_state"
 _COLS = ("step", "running", "progress", "error_code", "error_step", "model", "admin", "cpu", "ram_mb", "disk_gb", "made",
-         "last_net_ok", "last_test", "updated_at")
+         "last_net_ok", "last_test", "submit_in", "submit_out", "updated_at")
 
 
 def _now() -> str:
@@ -34,6 +34,8 @@ def get() -> dict:
     out = dict(zip(_COLS, row, strict=True))
     out["made"] = json.loads(out["made"] or "{}")
     out["last_test"] = json.loads(out["last_test"] or "{}")
+    out["submit_in"] = json.loads(out["submit_in"] or "{}")
+    out["submit_out"] = json.loads(out["submit_out"] or "{}")
     return out
 
 
@@ -105,6 +107,14 @@ def net_ok() -> None:
 
 def set_test(result: dict) -> None:
     _set(last_test=json.dumps({**result, "at": _now()}, sort_keys=True))
+
+
+def set_submit_in(data: dict) -> None:
+    _set(submit_in=json.dumps(data, sort_keys=True), submit_out="{}")
+
+
+def set_submit_out(data: dict) -> None:
+    _set(submit_out=json.dumps(data, sort_keys=True))
 
 
 def recover_after_restart() -> None:

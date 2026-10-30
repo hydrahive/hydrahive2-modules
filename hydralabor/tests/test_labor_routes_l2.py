@@ -161,3 +161,51 @@ def test_einreichungen_liste_und_aktualisieren(client, admin_headers, clean, mon
 
 def test_einreichen_steht_in_auftraegen():
     assert "submit" in jobs.JOBS
+
+
+@pytest.fixture
+def user_with_module_grant(db_ready):
+    from hydrahive.access import grants
+    from hydrahive.api.middleware.users import get_by_username
+    uid = get_by_username("testuser")["user_id"]
+    grants.grant("module.hydralabor", "user", uid, "use", actor_id="test")
+    yield
+    grants.revoke("module.hydralabor", "user", uid, actor_id="test")
+
+
+@pytest.mark.parametrize(("method", "path"), [("get", "/github"), ("post", "/github/connect"),
+                                              ("post", "/github/disconnect"), ("post", "/report"),
+                                              ("get", "/submissions")])
+def test_auch_mit_modulfreigabe_nur_admins(client, user_headers, clean, user_with_module_grant, method, path):
+    kw = {"json": {"target": "core", "title": "T", "what": "W"}} if method == "post" else {}
+    r = getattr(client, method)(B + path, headers=user_headers, **kw)
+    assert r.status_code == 403 and r.json()["detail"]["code"] == "admin_only"
+
+
+def test_trennen_loescht_wirklich(client, admin_headers, clean):
+    from hydrahive.credentials import _crypto
+    from hydrahive.db.connection import db
+    from hydrahive.settings import settings
+    with db() as c:
+        c.execute("INSERT OR REPLACE INTO module_hydralabor_github (id, token_enc, login, user_id) VALUES (1, ?, 'n', 1)",
+                  (_crypto.encrypt("gho_x", settings.data_dir),))
+        c.commit()
+    r = client.post(B + "/github/disconnect", headers=admin_headers, json={})
+    assert r.json()["connected"] is False and github_auth.token() == ""
+
+
+def test_neues_einreichen_loescht_altes_ergebnis(client, admin_headers, clean, monkeypatch):
+    """Während des neuen Laufs darf nicht der alte PR-Link als Ergebnis dastehen."""
+    during = {}
+
+    async def slow(target, title, body, *, report):
+        during.update(state.get()["submit_out"])
+        return {"number": 9, "url": "u"}
+    monkeypatch.setattr(submit, "submit", slow)
+    state.set_step("ready")
+    state.set_submit_out({"number": 1, "url": "alt"})
+    client.post(B + "/submit", headers=admin_headers, json={"target": "core", "title": "T", "body": ""})
+    wait_idle()
+    assert during == {}
+    assert state.get()["submit_out"] == {"number": 9, "url": "u"}
+    assert state.get()["submit_in"]["title"] == "T"
