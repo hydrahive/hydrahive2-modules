@@ -28,12 +28,12 @@ export function LetterPrint({ letter, onClose }: { letter: Letter; onClose: () =
   return createPortal(
     <div id="legal-print" className="fixed inset-0 z-[200] overflow-auto bg-[#2b313c]">
       <style>{css}</style>
-      <div className="no-print sticky top-0 z-10 flex items-center gap-2 bg-[#0d131d] px-4 py-2 text-sm text-[#e8eef8]">
+      <div className="no-print sticky top-0 z-10 flex items-center gap-2 bg-[rgb(var(--hh-s-tief,13_19_29))] px-4 py-2 text-sm text-[#e8eef8]">
         <span className="flex-1">Druckansicht – DIN 5008 Form B. Gelb = Platzhalter, vor dem Druck füllen.</span>
         <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1 rounded-[4px] bg-[#1d4ed8] px-3 py-1 text-white">
           <Printer size={14} />Drucken / als PDF speichern
         </button>
-        <button type="button" onClick={onClose} className="rounded-[4px] border border-[#2a364b] p-1"><X size={14} /></button>
+        <button type="button" onClick={onClose} className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-1"><X size={14} /></button>
       </div>
       <div className="sheet relative mx-auto my-6 bg-white shadow-xl" style={{ width: "210mm", minHeight: "297mm" }}>
         {DIN.foldMm.map((y) => <div key={y} style={{ position: "absolute", left: "5mm", top: mm(y), width: "4mm", borderTop: "0.2mm solid #000" }} />)}

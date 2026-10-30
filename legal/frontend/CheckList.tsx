@@ -4,7 +4,7 @@ import { CHECK_LABEL, checkSummary, type CheckResult } from "./letterFormat"
 /** Prüfliste eines Briefs (ohne KI, vom Backend). Nichts blockiert – sie zeigt nur, was fehlt. */
 export function CheckList({ check }: { check: CheckResult | null }) {
   const s = checkSummary(check)
-  if (!check) return <p className="text-xs text-[#68758a]">Prüfliste lädt …</p>
+  if (!check) return <p className="text-xs text-[#9aa7bc]">Prüfliste lädt …</p>
   return (
     <div className="space-y-2 text-xs">
       <p className={s.ok ? "text-emerald-300" : "text-amber-200"}>
@@ -16,7 +16,7 @@ export function CheckList({ check }: { check: CheckResult | null }) {
             {i.ok ? <Check size={13} className="mt-0.5 shrink-0 text-emerald-400" /> : <X size={13} className="mt-0.5 shrink-0 text-rose-400" />}
             <span>
               <span className={i.ok ? "text-[#d7deea]" : "font-semibold text-[#e8eef8]"}>{CHECK_LABEL[i.key] ?? i.key}</span>
-              {!i.ok && i.hint && <span className="block text-[#8d9ab0]">{i.hint}</span>}
+              {!i.ok && i.hint && <span className="block text-[#9aa7bc]">{i.hint}</span>}
             </span>
           </li>
         ))}

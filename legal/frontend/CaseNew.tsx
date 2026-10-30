@@ -4,9 +4,9 @@ import { caseFormErrors, errorText, modelState } from "./caseFormat"
 import { CaseModel } from "./CaseModel"
 import { useModelCatalog } from "./useModelCatalog"
 
-const input = "w-full rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1.5 text-sm text-[#e8eef8]"
+const input = "w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1.5 text-sm text-[#e8eef8]"
 const label = "block text-xs font-semibold text-[#d7deea]"
-const hint = "mt-0.5 block text-[11px] font-normal leading-4 text-[#68758a]"
+const hint = "mt-0.5 block text-[11px] font-normal leading-4 text-[#9aa7bc]"
 
 /** Aufnahmeformular „Neuer Fall“ (Spec §4.3). Pflicht: Titel + Bundesland. Legt Projekt + Rechts-Agent an. */
 export function CaseNew({ onCancel, onCreated }: { onCancel: () => void; onCreated: (pid: string) => void }) {
@@ -35,9 +35,9 @@ export function CaseNew({ onCancel, onCreated }: { onCancel: () => void; onCreat
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} className="min-h-0 max-w-3xl space-y-3 overflow-y-auto rounded-[4px] border border-[#2a364b] bg-[#0d131d] p-4">
+    <form onSubmit={(e) => void submit(e)} className="min-h-0 max-w-3xl space-y-3 overflow-y-auto rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_29))] p-4">
       <h2 className="text-lg font-bold text-[#e8eef8]">Neuer Fall</h2>
-      <p className="text-xs leading-5 text-[#8d9ab0]">
+      <p className="text-xs leading-5 text-[#9aa7bc]">
         Der Fall wird ein eigenes Projekt mit einem Rechts-Agenten. Der Agent sucht Normen, rechnet Fristen und macht
         Vorschläge – er verschickt nichts und ändert die Akte nicht selbst. Felder mit * sind Pflicht, alles andere kannst du später ergänzen.
       </p>
@@ -72,13 +72,13 @@ export function CaseNew({ onCancel, onCreated }: { onCancel: () => void; onCreat
         </label>
       </div>
       <CaseModel catalog={catalog} value={model} onChange={setModel} error={touched ? errs.model : undefined} />
-      <p className="text-[11px] leading-4 text-[#68758a]">Bekannte Fristen trägst du danach in der Fallakte unter „Fristen“ ein – dort wird mit Rechenweg gerechnet.</p>
+      <p className="text-[11px] leading-4 text-[#9aa7bc]">Bekannte Fristen trägst du danach in der Fallakte unter „Fristen“ ein – dort wird mit Rechenweg gerechnet.</p>
       {error && <p className="text-xs text-rose-300">{error}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={busy} className="rounded-[4px] bg-[#1d4ed8] px-3 py-1.5 text-sm text-white disabled:opacity-50">
           {busy ? "Lege an …" : "Fall anlegen"}
         </button>
-        <button type="button" onClick={onCancel} className="rounded-[4px] border border-[#2a364b] px-3 py-1.5 text-sm text-[#d7deea]">Abbrechen</button>
+        <button type="button" onClick={onCancel} className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#d7deea]">Abbrechen</button>
       </div>
     </form>
   )

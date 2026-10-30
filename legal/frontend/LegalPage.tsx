@@ -10,7 +10,7 @@ type Tab = "cases" | "laws"
 export function LegalPage() {
   const [tab, setTab] = useState<Tab>("cases")
   const [openCase, setOpenCase] = useState<string | null>(null)
-  const tabClass = (t: Tab) => (tab === t ? "border-b-2 border-[#69d7ff] px-2 pb-1 font-semibold text-[#e8eef8]" : "px-2 pb-1 text-[#8d9ab0] hover:text-[#d7deea]")
+  const tabClass = (t: Tab) => (tab === t ? "border-b-2 border-[#69d7ff] px-2 pb-1 font-semibold text-[#e8eef8]" : "px-2 pb-1 text-[#9aa7bc] hover:text-[#d7deea]")
   return (
     <div className="flex h-full min-h-0 flex-col gap-[10px] p-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
@@ -19,7 +19,7 @@ export function LegalPage() {
           Keine Rechtsberatung. Bei Fristen, Klagen und Unsicherheit: Anwalt oder Beratungsstelle.
         </p>
       </header>
-      <nav className="flex gap-2 border-b border-[#2a364b] text-sm">
+      <nav className="flex gap-2 border-b border-[rgb(var(--hh-s-rand,42_54_75))] text-sm">
         <button type="button" className={tabClass("cases")} onClick={() => setTab("cases")}>Fälle</button>
         <button type="button" className={tabClass("laws")} onClick={() => setTab("laws")}>Gesetze</button>
       </nav>

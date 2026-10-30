@@ -20,9 +20,9 @@ export function CaseList({ onOpen }: { onOpen: (pid: string) => void }) {
     return <CaseNew onCancel={() => setCreating(false)} onCreated={(pid) => { setCreating(false); onOpen(pid) }} />
   }
   return (
-    <section className="min-h-0 space-y-3 overflow-y-auto rounded-[4px] border border-[#2a364b] bg-[#0d131d] p-3">
+    <section className="min-h-0 space-y-3 overflow-y-auto rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_29))] p-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-[#8d9ab0]">Jeder Fall ist ein eigenes Projekt mit Rechts-Agent. Mitglieder siehst du im Projekt.</p>
+        <p className="text-xs text-[#9aa7bc]">Jeder Fall ist ein eigenes Projekt mit Rechts-Agent. Mitglieder siehst du im Projekt.</p>
         <button type="button" onClick={() => setCreating(true)}
           className="inline-flex items-center gap-1 rounded-[4px] bg-[#1d4ed8] px-3 py-1.5 text-sm text-white">
           <Plus size={14} />Neuer Fall
@@ -32,15 +32,15 @@ export function CaseList({ onOpen }: { onOpen: (pid: string) => void }) {
       {cases && cases.length === 0 && <EmptyCases />}
       {cases && cases.length > 0 && (
         <table className="w-full text-left text-sm">
-          <thead className="text-[11px] uppercase text-[#68758a]">
+          <thead className="text-[11px] uppercase text-[#9aa7bc]">
             <tr><th className="py-1">Fall</th><th>Status</th><th>Nächste Frist</th><th>Geändert</th><th /></tr>
           </thead>
           <tbody>
             {cases.map((c) => (
-              <tr key={c.project_id} className="border-t border-[#1d2636]">
+              <tr key={c.project_id} className="border-t border-[rgb(var(--hh-s-rand,29_38_54))]">
                 <td className="py-1.5">
                   <span className="font-semibold text-[#e8eef8]">{c.title}</span>
-                  {c.area && <span className="ml-2 text-xs text-[#8d9ab0]">{c.area}</span>}
+                  {c.area && <span className="ml-2 text-xs text-[#9aa7bc]">{c.area}</span>}
                 </td>
                 <td className="text-xs text-[#d7deea]">{CASE_STATUS[c.status] ?? c.status}</td>
                 <td className="text-xs text-[#d7deea]">
@@ -49,12 +49,12 @@ export function CaseList({ onOpen }: { onOpen: (pid: string) => void }) {
                       <Light value={deadlineLight({ ...c.next_deadline, status: "open" })} />
                       {shortDate(c.next_deadline.due_date)} · {dueText(c.next_deadline.due_date)} · {c.next_deadline.label}
                     </span>
-                  ) : <span className="text-[#68758a]">–</span>}
+                  ) : <span className="text-[#9aa7bc]">–</span>}
                 </td>
-                <td className="text-xs text-[#8d9ab0]">{shortDate(c.updated_at)}</td>
+                <td className="text-xs text-[#9aa7bc]">{shortDate(c.updated_at)}</td>
                 <td className="text-right">
                   <button type="button" onClick={() => onOpen(c.project_id)}
-                    className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-0.5 text-xs text-[#69d7ff] hover:bg-[#172133]">
+                    className="inline-flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-0.5 text-xs text-[#69d7ff] hover:bg-[rgb(var(--hh-s-hebung,23_33_51))]">
                     <FolderOpen size={12} />Öffnen
                   </button>
                 </td>
