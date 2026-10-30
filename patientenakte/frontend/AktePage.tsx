@@ -23,8 +23,8 @@ export function AktePage() {
           <FolderHeart size={18} className="text-rose-400" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold text-zinc-100">{t("page_title")}</h1>
-          <p className="text-xs text-zinc-500">{t("page_subtitle")}</p>
+          <h1 className="text-lg font-semibold text-[#e8eef8]">{t("page_title")}</h1>
+          <p className="text-xs text-[#9aa7bc]">{t("page_subtitle")}</p>
         </div>
         <HelpButton topic="patientenakte" />
       </div>

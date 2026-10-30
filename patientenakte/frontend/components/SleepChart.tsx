@@ -20,9 +20,9 @@ function CustomTooltip({ active, payload, label }: {
   const h = Math.floor(total / 60)
   const m = total % 60
   return (
-    <div className="bg-zinc-900 border border-white/[8%] rounded-lg px-3 py-2 text-xs">
-      <p className="text-zinc-400">{label}</p>
-      <p className="text-zinc-100 font-medium">{h}h {m}m</p>
+    <div className="bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] rounded-lg px-3 py-2 text-xs">
+      <p className="text-[#c8d2df]">{label}</p>
+      <p className="text-[#e8eef8] font-medium">{h}h {m}m</p>
     </div>
   )
 }
@@ -36,7 +36,7 @@ export function SleepChart({ summary }: Props) {
 
   if (!sleep || sleep.days.length === 0) {
     return (
-      <p className="text-zinc-600 text-sm text-center py-8">
+      <p className="text-[#9aa7bc] text-sm text-center py-8">
         Keine Schlaf-Daten für diesen Zeitraum.
       </p>
     )
@@ -51,21 +51,21 @@ export function SleepChart({ summary }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4 text-xs text-zinc-500">
+      <div className="flex items-center gap-4 text-xs text-[#9aa7bc]">
         <span>
           Durchschnitt:{" "}
-          <span className="text-zinc-300 font-medium">
+          <span className="text-[#c8d2df] font-medium">
             {Math.floor(avg / 60)}h {Math.floor(avg % 60)}m
           </span>
         </span>
-        <span className="text-zinc-700">|</span>
+        <span className="text-[#46617f]">|</span>
         <span>
           Empfehlung:{" "}
           <span className="text-emerald-400 font-medium">7–9h</span>
         </span>
       </div>
 
-      <div className="rounded-xl border border-white/[6%] bg-zinc-900/40 p-4">
+      <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-4">
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />

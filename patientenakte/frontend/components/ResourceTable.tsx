@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next"
 import type { CSSProperties } from "react"
-import { rgbFor } from "@/shared/colors"
 import { EmptyState } from "@/shared/EmptyState"
 import leerBild from "../assets/leer.webp"
 
@@ -23,12 +22,12 @@ export function ResourceTable<T extends Record<string, unknown>>({ rows, columns
     return <EmptyState src={leerBild} hint={empty} />
   }
   return (
-    <div className="box overflow-hidden" style={{ "--c": rgbFor("/akte") } as CSSProperties}>
+    <div className="box overflow-hidden" style={{ "--c": "105 215 255" } as CSSProperties}>
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-white/[6%] bg-zinc-900/50">
+          <tr className="border-b border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.5)]">
             {columns.map((col) => (
-              <th key={col.key} className="px-4 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              <th key={col.key} className="px-4 py-2 text-left text-xs font-medium text-[#9aa7bc] uppercase tracking-wider">
                 {col.label}
               </th>
             ))}
@@ -36,9 +35,9 @@ export function ResourceTable<T extends Record<string, unknown>>({ rows, columns
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={String(row.id ?? i)} className="border-b border-white/[4%] hover:bg-white/[2%] transition-colors">
+            <tr key={String(row.id ?? i)} className="border-b border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] transition-colors">
               {columns.map((col) => (
-                <td key={col.key} className="px-4 py-3 text-zinc-300">
+                <td key={col.key} className="px-4 py-3 text-[#c8d2df]">
                   {col.render ? col.render(row) : String(row[col.key] ?? "")}
                 </td>
               ))}

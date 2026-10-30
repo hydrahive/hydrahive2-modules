@@ -3,7 +3,6 @@ import { useEffect, useState, type CSSProperties } from "react"
 import { useNavigate } from "react-router-dom"
 import { akteApi, type AktePatient } from "../api"
 import { useAkteSchema } from "../useAkteSchema"
-import { rgbFor } from "@/shared/colors"
 
 function calcAge(geb: string): number {
   const birth = new Date(geb)
@@ -105,53 +104,53 @@ export function AkteDashboard({ onSaved }: Props) {
   if (akte === null) {
     return (
       <div className="space-y-6">
-        <div className="box overflow-hidden p-8 text-center space-y-4" style={{ "--c": rgbFor("/akte") } as CSSProperties}>
+        <div className="box overflow-hidden p-8 text-center space-y-4" style={{ "--c": "105 215 255" } as CSSProperties}>
           <div className="text-4xl">🗂</div>
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100 mb-1">Meine Patientenakte</h2>
-            <p className="text-sm text-zinc-500">Lege jetzt deine eigene Akte an — alles an einem Ort, privat und sicher.</p>
+            <h2 className="text-lg font-semibold text-[#e8eef8] mb-1">Meine Patientenakte</h2>
+            <p className="text-sm text-[#9aa7bc]">Lege jetzt deine eigene Akte an — alles an einem Ort, privat und sicher.</p>
           </div>
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <form onSubmit={handleCreate} className="max-w-sm mx-auto space-y-3 text-left">
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1 text-xs text-zinc-400">
+              <label className="flex flex-col gap-1 text-xs text-[#c8d2df]">
                 Vorname
                 <input
                   required
                   value={form.vorname}
                   onChange={(e) => setForm((f) => ({ ...f, vorname: e.target.value }))}
-                  className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600"
+                  className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8] placeholder-[#9aa7bc]"
                   placeholder="Max"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-xs text-zinc-400">
+              <label className="flex flex-col gap-1 text-xs text-[#c8d2df]">
                 Nachname
                 <input
                   required
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600"
+                  className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8] placeholder-[#9aa7bc]"
                   placeholder="Mustermann"
                 />
               </label>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1 text-xs text-zinc-400">
+              <label className="flex flex-col gap-1 text-xs text-[#c8d2df]">
                 Geburtsdatum
                 <input
                   required
                   type="date"
                   value={form.geburtsdatum}
                   onChange={(e) => setForm((f) => ({ ...f, geburtsdatum: e.target.value }))}
-                  className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+                  className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8]"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-xs text-zinc-400">
+              <label className="flex flex-col gap-1 text-xs text-[#c8d2df]">
                 Geschlecht
                 <select
                   value={form.geschlecht}
                   onChange={(e) => setForm((f) => ({ ...f, geschlecht: e.target.value }))}
-                  className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+                  className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8]"
                 >
                   <option value="m">Männlich</option>
                   <option value="w">Weiblich</option>
@@ -176,9 +175,9 @@ export function AkteDashboard({ onSaved }: Props) {
   if (akte === "loading") {
     return (
       <div className="space-y-4">
-        <div className="h-24 rounded-xl bg-zinc-900/50 animate-pulse" />
+        <div className="h-24 rounded-xl bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] animate-pulse" />
         <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-xl bg-zinc-900/50 animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-xl bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] animate-pulse" />)}
         </div>
       </div>
     )
@@ -190,17 +189,17 @@ export function AkteDashboard({ onSaved }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="box overflow-hidden p-5" style={{ "--c": rgbFor("/akte") } as CSSProperties}>
+      <div className="box overflow-hidden p-5" style={{ "--c": "105 215 255" } as CSSProperties}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl">
               {akte.vorname?.[0]}{akte.name?.[0]}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-zinc-100">
+              <h2 className="text-xl font-bold text-[#e8eef8]">
                 {akte.vorname} {akte.name}
               </h2>
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-[#9aa7bc]">
                 {new Date(akte.geburtsdatum).toLocaleDateString("de-DE")}
                 {" · "}{age} Jahre
                 {" · "}{akte.geschlecht === "m" ? "♂ Männlich" : akte.geschlecht === "w" ? "♀ Weiblich" : "⚥ Divers"}
@@ -209,52 +208,52 @@ export function AkteDashboard({ onSaved }: Props) {
           </div>
           <button
             onClick={() => setEditing((e) => !e)}
-            className="text-xs text-zinc-500 hover:text-zinc-300 px-3 py-1.5 rounded-lg border border-white/[6%] hover:bg-white/[4%] transition-colors"
+            className="text-xs text-[#9aa7bc] hover:text-[#c8d2df] px-3 py-1.5 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] transition-colors"
           >
             {editing ? t("akte.cancel") : t("akte.edit")}
           </button>
         </div>
 
         {editing && (
-          <form onSubmit={handleUpdate} className="mt-4 pt-4 border-t border-white/[6%] space-y-3">
+          <form onSubmit={handleUpdate} className="mt-4 pt-4 border-t border-[rgb(var(--hh-s-rand,42_54_75))] space-y-3">
             {error && <p className="text-red-400 text-sm">{error}</p>}
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1 text-xs text-zinc-400">
+              <label className="flex flex-col gap-1 text-xs text-[#c8d2df]">
                 Vorname
                 <input
                   required
                   value={form.vorname}
                   onChange={(e) => setForm((f) => ({ ...f, vorname: e.target.value }))}
-                  className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+                  className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8]"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-xs text-zinc-400">
+              <label className="flex flex-col gap-1 text-xs text-[#c8d2df]">
                 Nachname
                 <input
                   required
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+                  className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8]"
                 />
               </label>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1 text-xs text-zinc-400">
+              <label className="flex flex-col gap-1 text-xs text-[#c8d2df]">
                 Geburtsdatum
                 <input
                   required
                   type="date"
                   value={form.geburtsdatum}
                   onChange={(e) => setForm((f) => ({ ...f, geburtsdatum: e.target.value }))}
-                  className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+                  className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8]"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-xs text-zinc-400">
+              <label className="flex flex-col gap-1 text-xs text-[#c8d2df]">
                 Geschlecht
                 <select
                   value={form.geschlecht}
                   onChange={(e) => setForm((f) => ({ ...f, geschlecht: e.target.value }))}
-                  className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+                  className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8]"
                 >
                   <option value="m">Männlich</option>
                   <option value="w">Weiblich</option>
@@ -280,11 +279,11 @@ export function AkteDashboard({ onSaved }: Props) {
             <div
               key={key}
               onClick={() => navigate(`/akte/${key}`)}
-              className="box overflow-hidden p-4 cursor-pointer hover:bg-white/[2%] transition-colors"
-              style={{ "--c": rgbFor("/akte") } as CSSProperties}
+              className="box overflow-hidden p-4 cursor-pointer hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] transition-colors"
+              style={{ "--c": "105 215 255" } as CSSProperties}
             >
-              <div className="text-2xl font-bold text-zinc-100">{summary[key] ?? 0}</div>
-              <div className="text-xs text-zinc-500 mt-0.5 capitalize">
+              <div className="text-2xl font-bold text-[#e8eef8]">{summary[key] ?? 0}</div>
+              <div className="text-xs text-[#9aa7bc] mt-0.5 capitalize">
                 {key === "practitioners" ? "Ärzte" : key}
               </div>
             </div>
@@ -300,14 +299,14 @@ export function AkteDashboard({ onSaved }: Props) {
             <h3 className="text-sm font-semibold text-red-300 mb-2">🔴 Aktive Diagnosen</h3>
             <ul className="space-y-1">
               {conditions.slice(0, 5).map((c: any) => (
-                <li key={c.id} className="text-sm text-zinc-300">
-                  <span className="text-zinc-500 mr-2">●</span>
+                <li key={c.id} className="text-sm text-[#c8d2df]">
+                  <span className="text-[#9aa7bc] mr-2">●</span>
                   {c.label}
-                  {c.record?.icd_code && <span className="ml-2 text-zinc-600 text-xs">{c.record.icd_code}</span>}
+                  {c.record?.icd_code && <span className="ml-2 text-[#9aa7bc] text-xs">{c.record.icd_code}</span>}
                 </li>
               ))}
               {conditions.length > 5 && (
-                <li className="text-xs text-zinc-600">+{conditions.length - 5} weitere</li>
+                <li className="text-xs text-[#9aa7bc]">+{conditions.length - 5} weitere</li>
               )}
             </ul>
           </div>
@@ -319,7 +318,7 @@ export function AkteDashboard({ onSaved }: Props) {
             <h3 className="text-sm font-semibold text-orange-300 mb-2">⚠️ Allergien</h3>
             <ul className="space-y-1">
               {allergies.slice(0, 5).map((a: any) => (
-                <li key={a.id} className="text-sm text-zinc-300">
+                <li key={a.id} className="text-sm text-[#c8d2df]">
                   <span className="text-orange-400 mr-2">●</span>
                   {a.label}
                 </li>
@@ -334,10 +333,10 @@ export function AkteDashboard({ onSaved }: Props) {
             <h3 className="text-sm font-semibold text-blue-300 mb-2">💊 Dauermedikation</h3>
             <ul className="space-y-1">
               {medications.slice(0, 5).map((m: any) => (
-                <li key={m.id} className="text-sm text-zinc-300">
+                <li key={m.id} className="text-sm text-[#c8d2df]">
                   <span className="text-blue-400 mr-2">●</span>
                   {m.label}
-                  {m.record?.dosierung && <span className="ml-2 text-zinc-500 text-xs">— {m.record.dosierung}</span>}
+                  {m.record?.dosierung && <span className="ml-2 text-[#9aa7bc] text-xs">— {m.record.dosierung}</span>}
                 </li>
               ))}
             </ul>

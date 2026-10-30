@@ -13,12 +13,12 @@ function Card({ title, info, hint, empty, onDelete, children }: {
 }) {
   const { t } = useTranslation("akte")
   return (
-    <div className="rounded-xl border border-white/[6%] bg-zinc-900/40 p-4 space-y-3">
+    <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-zinc-100">{title}</p>
-          <p className="text-xs text-zinc-500">{empty ? t("deletion.nothing") : info}</p>
-          {hint && <p className="mt-1 text-xs text-zinc-500">{hint}</p>}
+          <p className="text-sm font-medium text-[#e8eef8]">{title}</p>
+          <p className="text-xs text-[#9aa7bc]">{empty ? t("deletion.nothing") : info}</p>
+          {hint && <p className="mt-1 text-xs text-[#9aa7bc]">{hint}</p>}
         </div>
         <button onClick={onDelete} disabled={empty}
           className="shrink-0 px-3 py-1.5 rounded-lg text-xs border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 disabled:opacity-30">
@@ -70,17 +70,17 @@ export function DataDeletionView() {
   }
 
   if (loadError) return <p className="text-sm text-rose-400">{t("deletion.load_failed")}</p>
-  if (!ov) return <p className="text-sm text-zinc-500">{t("deletion.loading")}</p>
+  if (!ov) return <p className="text-sm text-[#9aa7bc]">{t("deletion.loading")}</p>
 
   const ah = ov.apple_health
   const rangeSet = from !== "" && to !== ""
-  const inputCls = "rounded-lg border border-white/10 bg-zinc-900 px-2 py-1 text-xs text-zinc-200"
+  const inputCls = "rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] px-2 py-1 text-xs text-[#e8eef8]"
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold text-zinc-100">{t("deletion.title")}</h2>
-        <p className="text-xs text-zinc-500 mt-1">{t("deletion.subtitle")}</p>
+        <h2 className="text-base font-semibold text-[#e8eef8]">{t("deletion.title")}</h2>
+        <p className="text-xs text-[#9aa7bc] mt-1">{t("deletion.subtitle")}</p>
       </div>
 
       {message && (
@@ -88,7 +88,7 @@ export function DataDeletionView() {
           ? "border-emerald-500/20 bg-emerald-500/[4%] text-emerald-300"
           : "border-rose-500/20 bg-rose-500/[4%] text-rose-300"}`}>{message.text}</div>
       )}
-      {busy && <p className="text-xs text-zinc-400">{t("deletion.deleting")}</p>}
+      {busy && <p className="text-xs text-[#c8d2df]">{t("deletion.deleting")}</p>}
 
       <Card
         title={t("deletion.apple_health")}
@@ -98,7 +98,7 @@ export function DataDeletionView() {
         empty={ah.raw === 0 && ah.daily === 0}
         onDelete={() => setPending({ scope: "apple_health", range: rangeSet ? { from, to } : undefined })}
       >
-        <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-400">
+        <div className="flex items-center gap-2 flex-wrap text-xs text-[#c8d2df]">
           <span>{t("deletion.range_label")}</span>
           <label className="flex items-center gap-1">{t("deletion.range_from")}
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={inputCls} />

@@ -57,7 +57,7 @@ export function TrendChart({ summary }: Props) {
   const effectiveSelected = metricNames.includes(selected) ? selected : (metricNames[0] ?? "")
 
   if (metricNames.length === 0) {
-    return <p className="text-zinc-600 text-sm text-center py-8">Keine Daten.</p>
+    return <p className="text-[#9aa7bc] text-sm text-center py-8">Keine Daten.</p>
   }
 
   const metric = summary.metrics[effectiveSelected]
@@ -78,7 +78,7 @@ export function TrendChart({ summary }: Props) {
             className={`px-2.5 py-1 rounded-lg text-xs transition-colors border ${
               effectiveSelected === name
                 ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
-                : "text-zinc-500 hover:text-zinc-300 border-white/[6%] hover:bg-white/[4%]"
+                : "text-[#9aa7bc] hover:text-[#c8d2df] border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"
             }`}
           >
             {METRIC_LABELS[name] ?? name}
@@ -88,9 +88,9 @@ export function TrendChart({ summary }: Props) {
 
       {/* Chart */}
       {data.length === 0 ? (
-        <p className="text-zinc-600 text-sm text-center py-8">Keine Daten für diesen Zeitraum.</p>
+        <p className="text-[#9aa7bc] text-sm text-center py-8">Keine Daten für diesen Zeitraum.</p>
       ) : (
-        <div className="rounded-xl border border-white/[6%] bg-zinc-900/40 p-4">
+        <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-4">
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -128,7 +128,7 @@ export function TrendChart({ summary }: Props) {
             </LineChart>
           </ResponsiveContainer>
           {metric?.unit && (
-            <p className="text-[11px] text-zinc-600 mt-1 text-right">
+            <p className="text-[11px] text-[#9aa7bc] mt-1 text-right">
               Einheit: {metric.unit}
             </p>
           )}

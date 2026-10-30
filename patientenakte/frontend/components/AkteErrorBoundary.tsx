@@ -38,15 +38,15 @@ export class AkteErrorBoundary extends Component<Props, State> {
           <h2 className="text-sm font-semibold text-red-300">
             Dieser Bereich konnte nicht geladen werden
           </h2>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-[#c8d2df]">
             Ein Fehler in der Anzeige wurde abgefangen — der Rest der Akte bleibt nutzbar.
           </p>
-          <pre className="text-[11px] text-zinc-500 whitespace-pre-wrap break-words mt-2">
+          <pre className="text-[11px] text-[#9aa7bc] whitespace-pre-wrap break-words mt-2">
             {this.state.error.message}
           </pre>
           <button
             onClick={() => this.setState({ error: null })}
-            className="mt-2 text-xs text-zinc-400 hover:text-zinc-200 px-3 py-1.5 rounded-lg border border-white/[6%] hover:bg-white/[4%] transition-colors"
+            className="mt-2 text-xs text-[#c8d2df] hover:text-[#e8eef8] px-3 py-1.5 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] transition-colors"
           >
             Erneut versuchen
           </button>
