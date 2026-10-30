@@ -93,23 +93,23 @@ export function ArrHandoffButton({ release, status }: Props) {
 
     {targets && <div className="w-full max-w-xs space-y-2 rounded-[6px] border border-violet-400/30 bg-violet-400/[6%] p-2.5">
       <p className="text-[11px] text-[#a9b6c9]">{t("arr.newTitleHint")}</p>
-      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8d9ab0]">
+      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9aa7bc]">
         {t("arr.qualityProfile")}
         <select value={profile ?? ""} onChange={(event) => setProfile(Number(event.target.value))}
-          className="mt-1 w-full rounded-[4px] border border-[#30405a] bg-[#0c121d] px-2 py-1.5 text-xs font-normal text-[#e8eef8]">
+          className="mt-1 w-full rounded-[4px] border border-[#30405a] bg-[rgb(var(--hh-s-tief,12_18_29))] px-2 py-1.5 text-xs font-normal text-[#e8eef8]">
           {targets.quality_profiles.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
         </select>
       </label>
-      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8d9ab0]">
+      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9aa7bc]">
         {t("arr.rootFolder")}
         <select value={folder} onChange={(event) => setFolder(event.target.value)}
-          className="mt-1 w-full rounded-[4px] border border-[#30405a] bg-[#0c121d] px-2 py-1.5 text-xs font-normal text-[#e8eef8]">
+          className="mt-1 w-full rounded-[4px] border border-[#30405a] bg-[rgb(var(--hh-s-tief,12_18_29))] px-2 py-1.5 text-xs font-normal text-[#e8eef8]">
           {targets.root_folders.map((entry) => <option key={entry.path} value={entry.path}>{entry.path}</option>)}
         </select>
       </label>
       <div className="flex gap-2">
         <button type="button" onClick={() => setTargets(null)}
-          className="flex-1 rounded-[4px] border border-[#34445d] px-2 py-1.5 text-xs font-bold text-[#8d9ab0] hover:text-[#d4deeb]">
+          className="flex-1 rounded-[4px] border border-[#34445d] px-2 py-1.5 text-xs font-bold text-[#9aa7bc] hover:text-[#d4deeb]">
           {t("cancel", { defaultValue: "Abbrechen" })}
         </button>
         <button type="button" onClick={() => void send(true)} disabled={busy || !profile || !folder}

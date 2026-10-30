@@ -35,7 +35,7 @@ export function ResultGrid({ response, searched, error, onQueued, status }: Prop
   if (active) return <GroupDetail group={active} onBack={() => setOpenGroup(null)} onQueued={onQueued} status={status} />
 
   return <section className="space-y-3" aria-label={t("results.title")}>
-    <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#8d9ab0]">
+    <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#9aa7bc]">
       <span>{t("results.summary", { total: response.total, eligible: response.eligible })}</span>
       <div className="flex items-center gap-3">
         <span>{t("results.expiry")}</span>
@@ -58,11 +58,11 @@ function ModeButton({ active, onClick, label, children }: {
   active: boolean; onClick: () => void; label: string; children: React.ReactNode
 }) {
   return <button type="button" onClick={onClick} title={label} aria-label={label} aria-pressed={active}
-    className={`rounded-[3px] px-2 py-1 transition ${active ? "bg-cyan-400/20 text-cyan-200" : "text-[#8d9ab0] hover:text-[#d4deeb]"}`}>
+    className={`rounded-[3px] px-2 py-1 transition ${active ? "bg-cyan-400/20 text-cyan-200" : "text-[#9aa7bc] hover:text-[#d4deeb]"}`}>
     {children}
   </button>
 }
 
 function Empty({ text }: { text: string }) {
-  return <div className="rounded-[6px] border border-dashed border-[#2b394f] bg-[#0d141f] px-4 py-10 text-center text-sm text-[#78869d]">{text}</div>
+  return <div className="rounded-[6px] border border-dashed border-[rgb(var(--hh-s-rand,43_57_79))] bg-[rgb(var(--hh-s-tief,13_20_31))] px-4 py-10 text-center text-sm text-[#78869d]">{text}</div>
 }

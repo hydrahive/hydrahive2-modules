@@ -82,12 +82,12 @@ export function MediacenterPage() {
     }
   }
 
-  return <CockpitShell title="Mediacenter" className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
+  return <CockpitShell title="Mediacenter" className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]" hideHeader>
     <CockpitTopbar active="/mediacenter" context={t("subtitle")} />
     <main className="min-h-0 flex-1 overflow-y-auto p-[10px]">
       <div className="mx-auto max-w-7xl space-y-4">
         <header className="flex flex-wrap items-start justify-between gap-3">
-          <div><h1 className="text-xl font-black tracking-tight text-[#e8eef8]">{t("title")}</h1><p className="mt-1 text-sm text-[#8d9ab0]">{t("subtitle")}</p></div>
+          <div><h1 className="text-xl font-black tracking-tight text-[#e8eef8]">{t("title")}</h1><p className="mt-1 text-sm text-[#9aa7bc]">{t("subtitle")}</p></div>
           <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">V2</span>
         </header>
         {statusError && <div className="flex items-center justify-between gap-3 rounded-[4px] border border-rose-500/25 bg-rose-500/[8%] p-3 text-xs text-rose-200" role="alert"><span>{statusError}</span><button type="button" onClick={() => void loadStatus()} className="shrink-0 font-bold underline">{t("connection.retry")}</button></div>}
@@ -96,9 +96,9 @@ export function MediacenterPage() {
           <span>{t("connection.configure")}</span>
           <span className="shrink-0 font-bold underline">{t("views.settings")}</span>
         </button>}
-        <nav className="flex gap-1 overflow-x-auto border-b border-[#263247] pb-px" aria-label={t("views.label")}>
+        <nav className="flex gap-1 overflow-x-auto border-b border-[rgb(var(--hh-s-rand,38_50_71))] pb-px" aria-label={t("views.label")}>
           {VIEWS.map((item) => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => setView(item.id)}
-            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold transition ${view === item.id ? "border-cyan-300 text-cyan-200" : "border-transparent text-[#8d9ab0] hover:text-[#d4deeb]"}`}>
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold transition ${view === item.id ? "border-cyan-300 text-cyan-200" : "border-transparent text-[#9aa7bc] hover:text-[#d4deeb]"}`}>
             <Icon size={14} />{t(`views.${item.id}`)}
           </button> })}
         </nav>
