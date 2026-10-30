@@ -79,7 +79,8 @@ ALL = [
          schema=_obj({"wert": {"type": "string", "description": "Neue Lautstärke 0–100 oder relativ '+3' / '-5'."},
                       "stumm": {"type": "boolean", "description": "true = stumm, false = Ton wieder an."}}),
          description="Ändert die Lautstärke oder schaltet stumm. Es gibt eine Obergrenze und höchstens 20 Schritte "
-                     "auf einmal (Schutz vor zu laut)."),
+                     "auf einmal (Schutz vor zu laut). Leiser geht immer, auch über der Grenze. Läuft der Ton über "
+                     "den Receiver (output receiver im Status), ist das dessen Lautstärke."),
     Tool(name="tv_power", category="action", execute=_power,
          schema=_obj({"an": {"type": "boolean", "description": "true = einschalten, false = ausschalten."}}, ["an"]),
          description="Schaltet den Fernseher ein oder aus (Standby)."),

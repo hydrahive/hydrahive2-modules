@@ -3,7 +3,8 @@ import { BASE } from "./logic"
 
 export interface TvChannel { number: number | null; name: string }
 export interface TvStatus {
-  power: "on" | "standby"; channel: TvChannel | null; program: string; volume: number | null; muted: boolean | null; model: string
+  power: "on" | "standby"; channel: TvChannel | null; program: string; volume: number | null; muted: boolean | null
+  output: "speaker" | "receiver" | "other" | null; model: string
 }
 export interface TvSettings { configured: boolean; name: string; address: string; psk_set: boolean; volume_limit: number }
 

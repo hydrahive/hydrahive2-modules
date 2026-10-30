@@ -95,11 +95,17 @@ async def _playing() -> tuple[dict | None, str]:
     return {"number": num, "name": r.get("title", "")}, r.get("programTitle", "")
 
 
-async def _volume() -> tuple[int, bool]:
+_OUTPUT = {"speaker": "speaker", "audioSystem": "receiver"}
+
+
+async def _volume() -> tuple[int, bool, str]:
+    """Lautstärke, stumm, Ausgabe. Läuft der Ton über den Receiver (outputTerminal audioSystem, gemessen 29.10.),
+    meldet der TV dessen Wert – andere Skala, oft über der eigenen Grenze."""
     res = await _call("audio", "getVolumeInformation")
     rows = res[0] if res else []
     spk = next((v for v in rows if v.get("target") == "speaker"), rows[0] if rows else {})
-    return int(spk.get("volume", 0)), bool(spk.get("mute", False))
+    output = _OUTPUT.get(str(spk.get("outputTerminal") or "speaker"), "other")
+    return int(spk.get("volume", 0)), bool(spk.get("mute", False)), output
 
 
 async def status() -> dict:
@@ -107,11 +113,11 @@ async def status() -> dict:
     power = await _power()
     if power != "on":
         return {"power": power, "channel": None, "program": "", "volume": None, "muted": None,
-                "model": await _model()}
+                "output": None, "model": await _model()}
     channel, program = await _playing()
-    volume, muted = await _volume()
+    volume, muted, output = await _volume()
     return {"power": power, "channel": channel, "program": program, "volume": volume, "muted": muted,
-            "model": await _model()}
+            "output": output, "model": await _model()}
 
 
 async def _require_on() -> None:
@@ -163,15 +169,17 @@ async def set_channel(query: str) -> dict:
 
 
 async def set_volume(value: str) -> dict:
-    """Schutz (SPEC): nie über der Grenze aus den Einstellungen, und höchstens _MAX_STEP auf einmal – in beide
-    Richtungen gemessen am angefragten Schritt, damit „-50“ nicht zufällig durchrutscht, wenn der TV leise ist."""
+    """Schutz (SPEC): nie über die Grenze aus den Einstellungen, und höchstens _MAX_STEP auf einmal – in beide
+    Richtungen gemessen am angefragten Schritt, damit „-50“ nicht zufällig durchrutscht, wenn der TV leise ist.
+    Steht die Lautstärke schon über der Grenze (z. B. Receiver), ist LEISER erlaubt, lauter oder gleich nicht."""
     await _require_on()
-    current, _ = await _volume()
+    current, _, _ = await _volume()
     target = _target_volume(value, current)
     v = value.strip()
     step = int(v[1:]) if v[:1] in "+-" else abs(target - current)
     limit = settings_store.volume_limit()
-    if target > limit or step > _MAX_STEP:
+    too_loud = target > limit and not target < current
+    if too_loud or step > _MAX_STEP:
         raise TVError("tv_volume_limit", f"Höchstens Lautstärke {limit} und höchstens {_MAX_STEP} Schritte auf einmal.")
     await _call("audio", "setAudioVolume", {"target": "speaker", "volume": str(target)})
     return await status()

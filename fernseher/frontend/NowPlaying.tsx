@@ -23,6 +23,7 @@ export function NowPlaying({ status }: { status: TvStatus }) {
       {status.program && <p className="mt-0.5 text-sm text-zinc-300">{status.program}</p>}
       <p className="mt-2 flex items-center gap-1 text-sm text-zinc-400">
         {status.muted ? <><VolumeX size={14} /> {t("now.muted")}</> : t("now.volume", { volume: status.volume })}
+        {status.output === "receiver" && <span className="text-zinc-500">· {t("now.receiver")}</span>}
       </p>
     </section>
   )
