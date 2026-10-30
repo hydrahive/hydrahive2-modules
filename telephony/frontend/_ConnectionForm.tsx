@@ -2,14 +2,14 @@ import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import type { ConnectionIn, Pbx } from "./types"
 
-const input = "w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-indigo-500 disabled:opacity-60"
+const input = "w-full rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2 text-sm text-[#e8eef8] outline-none focus:border-[#69d7ff] disabled:opacity-60"
 
 function Field({ label, help, children }: { label: string; help?: string; children: ReactNode }) {
   return (
-    <label className="block space-y-1.5 text-sm text-zinc-300">
+    <label className="block space-y-1.5 text-sm text-[#c8d2df]">
       <span>{label}</span>
       {children}
-      {help && <span className="block text-xs text-zinc-500">{help}</span>}
+      {help && <span className="block text-xs text-[#9aa7bc]">{help}</span>}
     </label>
   )
 }
@@ -64,9 +64,9 @@ export function ConnectionForm({ form, hasPassword, disabled, onChange }: Props)
         </Field>
       </div>
 
-      <details className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
-        <summary className="cursor-pointer text-sm font-medium text-zinc-300">{t("conn.advanced")}</summary>
-        <p className="mt-2 text-xs text-zinc-500">{t("conn.advanced_help")}</p>
+      <details className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32)/0.4)] p-4">
+        <summary className="cursor-pointer text-sm font-medium text-[#c8d2df]">{t("conn.advanced")}</summary>
+        <p className="mt-2 text-xs text-[#9aa7bc]">{t("conn.advanced_help")}</p>
         <div className="mt-3 grid gap-4 sm:grid-cols-3">
           <Field label={t("conn.local_sip_port")}>
             <input className={input} type="number" min={1024} max={65535} value={form.local_sip_port}
@@ -76,7 +76,7 @@ export function ConnectionForm({ form, hasPassword, disabled, onChange }: Props)
             <div className="flex items-center gap-2">
               <input className={input} type="number" min={1024} max={65534} step={2} value={form.rtp_port_min}
                 data-voip-field="rtp_port_min" onChange={(e) => onChange({ rtp_port_min: num(e.target.value) })} />
-              <span className="text-zinc-500">–</span>
+              <span className="text-[#9aa7bc]">–</span>
               <input className={input} type="number" min={1025} max={65535} value={form.rtp_port_max}
                 data-voip-field="rtp_port_max" onChange={(e) => onChange({ rtp_port_max: num(e.target.value) })} />
             </div>

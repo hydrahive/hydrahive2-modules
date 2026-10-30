@@ -10,11 +10,11 @@ export function DialModePicker({ mode, onChange }: { mode: DialMode; onChange: (
     return (
       <button key={m} type="button" role="radio" aria-checked={on} data-voip-dial-mode={m} onClick={() => onChange(m)}
         className={`flex flex-1 items-start gap-3 rounded-xl border p-4 text-left transition-colors ${on
-          ? "border-indigo-400 bg-indigo-500/15 ring-1 ring-indigo-400/60" : "border-zinc-700 bg-zinc-950/40 hover:border-zinc-500"}`}>
-        <span className={`mt-0.5 rounded-lg p-2 ${on ? "bg-indigo-500/25 text-indigo-200" : "bg-zinc-800 text-zinc-400"}`}><Icon size={18} /></span>
+          ? "border-[#69d7ff] bg-[#69d7ff]/15 ring-1 ring-[#69d7ff]/60" : "border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32)/0.4)] hover:border-[rgb(var(--hh-s-rand-hover,70_97_127))]"}`}>
+        <span className={`mt-0.5 rounded-lg p-2 ${on ? "bg-[#69d7ff]/25 text-[#69d7ff]" : "bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df]"}`}><Icon size={18} /></span>
         <span>
-          <span className={`block text-sm font-semibold ${on ? "text-indigo-100" : "text-zinc-200"}`}>{t(`dial.mode_${m}`)}</span>
-          <span className="mt-0.5 block text-xs text-zinc-400">{t(`dial.mode_${m}_help`)}</span>
+          <span className={`block text-sm font-semibold ${on ? "text-[#c8f2ff]" : "text-[#e8eef8]"}`}>{t(`dial.mode_${m}`)}</span>
+          <span className="mt-0.5 block text-xs text-[#c8d2df]">{t(`dial.mode_${m}_help`)}</span>
         </span>
       </button>
     )
