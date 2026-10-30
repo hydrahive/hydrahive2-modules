@@ -61,7 +61,7 @@ export function VideoEditorPage() {
   const shell = (children: ReactNode) => (
     <CockpitShell
       title={t("title")}
-      className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]"
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]"
       hideHeader
     >
       <CockpitTopbar active="/videoeditor" context={t("title")} />
@@ -70,7 +70,7 @@ export function VideoEditorPage() {
   )
 
   if (projects.length === 0) {
-    return shell(<div className="text-sm text-[#8d9ab0]">{t("no_projects")}</div>)
+    return shell(<div className="text-sm text-[#9aa7bc]">{t("no_projects")}</div>)
   }
 
   if (openFile) {

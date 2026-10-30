@@ -81,7 +81,7 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
   const iconBtn = "rounded-md p-1.5 text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
 
   return (
-    <div className="flex h-[calc(100dvh-9rem)] min-h-[520px] flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0d1119]">
+    <div className="flex h-[calc(100dvh-9rem)] min-h-[520px] flex-col overflow-hidden rounded-xl border border-white/10 bg-[rgb(var(--hh-s-tief,13_17_25))]">
       {!focus && (
         <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2">
           <button onClick={() => { void close() }} className={`${iconBtn} flex items-center gap-1 text-sm`}>
