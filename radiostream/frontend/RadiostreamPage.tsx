@@ -26,13 +26,13 @@ export function RadiostreamPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-4">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-zinc-100">{t("title")}</h1>
-        <p className="text-sm text-zinc-400">{t("subtitle")}</p>
+        <h1 className="text-xl font-semibold text-[#e8eef8]">{t("title")}</h1>
+        <p className="text-sm text-[#c8d2df]">{t("subtitle")}</p>
       </header>
-      <nav className="flex gap-1 border-b border-white/10" role="tablist">
+      <nav className="flex gap-1 border-b border-[rgb(var(--hh-s-rand,42_54_75))]" role="tablist">
         {tabs.map((k) => (
           <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm ${tab === k ? "border-emerald-400 text-zinc-100" : "border-transparent text-zinc-400 hover:text-zinc-200"}`}>
+            className={`-mb-px border-b-2 px-3 py-2 text-sm ${tab === k ? "border-emerald-400 text-[#e8eef8]" : "border-transparent text-[#c8d2df] hover:text-[#e8eef8]"}`}>
             {t(`tab.${k}`)}
           </button>
         ))}
