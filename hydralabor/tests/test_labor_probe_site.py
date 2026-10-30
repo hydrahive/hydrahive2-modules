@@ -55,10 +55,43 @@ def test_login_weg_ohne_pruefung_aber_nur_dieser(conf):
     assert conf.count("proxy_pass http://127.0.0.1:8001") == 2
 
 
-def test_keine_daten_des_echten_hydrahive_an_die_probe(conf):
+def test_keine_cookies_an_die_probe(conf):
+    """Der Kern nutzt keine Cookies (Login per Bearer im sessionStorage, je Ursprung getrennt). Cookies trennen nicht
+    nach Port – ohne Leeren sähe Labor-Code hh_labor_probe und hh_agentlink."""
     root = _loc(conf, "location / {")
-    assert 'proxy_set_header Authorization "";' in root
-    assert "X-Forwarded-For" not in conf and "X-Real-IP" not in conf
+    assert 'proxy_set_header Cookie "";' in root
+    assert "Authorization" not in root                       # Bearer der Probe selbst muss durch
+    assert "X-Forwarded-For" not in root and "X-Real-IP" not in root
+
+
+def test_bremse_je_browser_adresse(conf):
+    for head in ("location = /__labor_auth {", "location = /__labor_login {"):
+        assert "proxy_set_header X-Forwarded-For $remote_addr;" in _loc(conf, head)
+
+
+def test_pruefung_wird_kurz_gemerkt(conf):
+    assert re.search(r"proxy_cache_path /var/cache/hydrahive-labor-probe levels=1 keys_zone=hh_labor_auth:1m "
+                     r"max_size=5m inactive=10m use_temp_path=off;", conf)
+    a = _loc(conf, "location = /__labor_auth {")
+    assert "proxy_cache hh_labor_auth;" in a
+    assert "proxy_cache_key $cookie_hh_labor_probe;" in a
+    assert "proxy_cache_valid 204 30s;" in a
+    assert "proxy_cache_valid 401" not in a and "proxy_cache_valid any" not in a
+    assert "proxy_set_header Cookie $http_cookie;" in a
+
+
+def test_csp_schuetzt_das_echte_hydrahive(conf):
+    m = re.search(r'add_header Content-Security-Policy "([^"]+)" always;', conf)
+    csp = m.group(1)
+    for d in ("default-src 'self'", "connect-src 'self';", "form-action 'self'", "frame-ancestors 'none'",
+              "base-uri 'self'", "object-src 'none'"):
+        assert d in csp
+    assert "wss:" not in csp and "https:" not in csp and "*" not in csp
+
+
+def test_hinweis_ohne_anmeldung(conf):
+    a = _loc(conf, "location @labor_login {")
+    assert "return 401" in a and "Probe öffnen" in a
 
 
 def test_websocket(conf):
@@ -85,9 +118,9 @@ def test_grosse_dateien_und_lange_antworten(conf):
 
 
 @pytest.mark.parametrize("ip", ["", "10.77.0", "10.77.0.256", "10.77.0.5;", "10.77.0.5 x", "fd00::1", "a.b.c.d",
-                                "10.77.0.5\n", "010.77.0.5"])
+                                "10.77.0.5\n", "010.77.0.5", "8.8.8.8", " 10.77.0.5", None])
 def test_nur_echte_ipv4(ip):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="^labor_probe_bad_address$"):
         probe_site.nginx_conf(ip)
 
 
@@ -113,6 +146,7 @@ def test_anwenden_schreibt_datei_und_laedt(tmp_path):
     assert "ln -sf /etc/nginx/sites-available/hydrahive-labor-probe /etc/nginx/sites-enabled/hydrahive-labor-probe" in s
     assert "nginx -t" in s and "systemctl reload nginx" in s
     assert s.index("cp -a") < s.index("install -m 644") < s.index("nginx -t")
+    assert "install -d -m 700 /var/cache/hydrahive-labor-probe" in s
     assert IP not in s                                        # nie Text aus der Laufzeit im root-Befehl
 
 
@@ -137,6 +171,7 @@ def test_entfernen(tmp_path):
     s = root.calls[0]
     assert "rm -f /etc/nginx/sites-enabled/hydrahive-labor-probe /etc/nginx/sites-available/hydrahive-labor-probe" in s
     assert "systemctl reload nginx" in s
+    assert "rm -rf /var/cache/hydrahive-labor-probe" in s
 
 
 def test_entfernen_nur_eigene_datei(tmp_path):
