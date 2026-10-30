@@ -42,7 +42,7 @@ export function ChatDock({ state, sceneId, width, onWidth, onClose }: Props) {
   }
 
   return (
-    <aside className="st-chat-dock relative flex shrink-0 flex-col border-l border-white/10 bg-[#151c2b]" style={{ width }}>
+    <aside className="st-chat-dock relative flex shrink-0 flex-col border-l border-white/10 bg-[rgb(var(--hh-s-box,21_28_43))]" style={{ width }}>
       <div onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label={t("chat_dock_resize")}
         className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize hover:bg-violet-400/30" />
       <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-1.5 text-sm text-zinc-200">

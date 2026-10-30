@@ -114,7 +114,7 @@ export function AISecurityPage() {
   const statusLabel = (status: AISecurityScan["status"]) => labels[status]
 
   return (
-    <CockpitShell title={labels.title} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
+    <CockpitShell title={labels.title} className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]" hideHeader>
       <CockpitTopbar active="/ai-security" context={labels.intro} />
       <main className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className="mx-auto max-w-5xl space-y-6">

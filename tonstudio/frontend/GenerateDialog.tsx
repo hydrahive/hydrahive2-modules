@@ -10,7 +10,7 @@ interface Props {
 }
 
 const EMPTY: MusicRequest = { style: "", description: "", bpm: null, key: null, duration_s: null, instrumental: false, lyrics: "" }
-const input = "rounded bg-[#0d1420] border border-[#2a364b] px-2 py-1 text-sm text-[#e8eef8]"
+const input = "rounded bg-[rgb(var(--hh-s-tief,13_20_32))] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-sm text-[#e8eef8]"
 
 /** Clip erzeugen: Modell aus der Adapter-Liste, anbieterneutraler Auftrag (SPEC.md §6). */
 export function GenerateDialog({ projectId, onDone }: Props) {
@@ -55,7 +55,7 @@ export function GenerateDialog({ projectId, onDone }: Props) {
         {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
       </select>
       {current && (
-        <p className="text-[11px] text-[#8d9ab0]">
+        <p className="text-[11px] text-[#9aa7bc]">
           {[current.lyrics && t("cap_lyrics"), current.image_ref && t("cap_image"), current.audio_ref && t("cap_audio"), current.local && t("cap_local")]
             .filter(Boolean).join(" · ")}
           {current.price_note && ` — ${current.price_note}`}
@@ -75,7 +75,7 @@ export function GenerateDialog({ projectId, onDone }: Props) {
       {!req.instrumental && current?.lyrics && (
         <textarea value={req.lyrics} onChange={(e) => set("lyrics", e.target.value)} placeholder={t("lyrics_placeholder")} maxLength={5000} rows={4} className={input} />
       )}
-      <p className="text-[11px] text-[#8d9ab0]">{t("duration_hint")}</p>
+      <p className="text-[11px] text-[#9aa7bc]">{t("duration_hint")}</p>
       <button onClick={submit} disabled={busy || !model || empty} className="rounded-[4px] bg-[#69d7ff]/15 border border-[#69d7ff]/40 text-[#69d7ff] px-3 py-1.5 text-sm disabled:opacity-40">
         {busy ? t("generating") : t("generate_start")}
       </button>
@@ -83,7 +83,7 @@ export function GenerateDialog({ projectId, onDone }: Props) {
       {last && (
         <p className="text-xs text-emerald-400">
           {t("generated_ok", { name: last.name })}
-          {last.price_note && <span className="text-[#8d9ab0]"> — {last.price_note}</span>}
+          {last.price_note && <span className="text-[#9aa7bc]"> — {last.price_note}</span>}
         </p>
       )}
     </section>

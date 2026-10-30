@@ -52,7 +52,7 @@ export function TonstudioPage() {
   const changed = () => reload(projectId)
 
   return (
-    <CockpitShell title={t("title")} hideHeader className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]">
+    <CockpitShell title={t("title")} hideHeader className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]">
       <CockpitTopbar active="/tonstudio" context={project ? `${t("title")} · ${project.name}` : t("title")} />
       {error && (
         <div className="mx-[10px] mt-[10px] shrink-0 rounded-[4px] border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
@@ -66,12 +66,12 @@ export function TonstudioPage() {
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
               aria-label={t("select_project")}
-              className="w-full rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-3 py-2 text-sm text-[#e8eef8]"
+              className="w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2 text-sm text-[#e8eef8]"
             >
               {projects.length === 0 && <option value="">{t("no_projects")}</option>}
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
-            <p className="mt-2 text-xs text-[#8d9ab0]">{t("m1_hint")}</p>
+            <p className="mt-2 text-xs text-[#9aa7bc]">{t("m1_hint")}</p>
           </CockpitPanel>
           {projectId && (
             <CockpitPanel eyebrow={t("songs")}>
