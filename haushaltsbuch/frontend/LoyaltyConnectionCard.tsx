@@ -30,14 +30,14 @@ export function LoyaltyConnectionCard({ connection, busy, onSync, onHistory, onD
           <h3 className="font-bold text-[#e8eef8]">{connection.alias || PROVIDER[connection.provider]}</h3>
           <span className={`rounded border px-2 py-0.5 text-[11px] font-bold ${warning ? "border-amber-400/35 text-amber-200" : "border-emerald-400/35 text-emerald-200"}`}>{STATUS[connection.status]}</span>
         </div>
-        <p className="mt-1 text-xs text-[#8d9ab0]">{PROVIDER[connection.provider]} · {connection.masked_account} · {connection.visibility === "household" ? "Im Haushalt sichtbar" : "Nur für Besitzer sichtbar"}</p>
-        <p className="mt-2 text-[11px] text-[#718097]">Letzter Erfolg: {connection.last_success_at ? new Date(connection.last_success_at).toLocaleString("de-DE") : "Noch nie"}</p>
+        <p className="mt-1 text-xs text-[#9aa7bc]">{PROVIDER[connection.provider]} · {connection.masked_account} · {connection.visibility === "household" ? "Im Haushalt sichtbar" : "Nur für Besitzer sichtbar"}</p>
+        <p className="mt-2 text-[11px] text-[#9aa7bc]">Letzter Erfolg: {connection.last_success_at ? new Date(connection.last_success_at).toLocaleString("de-DE") : "Noch nie"}</p>
       </div>
       {warning && <ShieldAlert size={18} className="text-amber-200" />}
     </div>
     {!connection.feature_enabled && <p className="mt-3 rounded border border-cyan-400/20 bg-cyan-400/5 p-2 text-xs text-cyan-100">Der direkte Provider-Adapter ist noch nicht freigegeben. Die Verbindung bleibt sicher gespeichert, aber Synchronisierung ist deaktiviert.</p>}
     {connection.last_error_code && <p className="mt-2 text-xs text-rose-200">Letzter Fehler: {connection.last_error_code.replaceAll("_", " ")}</p>}
-    <div className="mt-4 flex flex-wrap gap-2 border-t border-[#263247] pt-3">
+    <div className="mt-4 flex flex-wrap gap-2 border-t border-[rgb(var(--hh-s-rand,38_50_71))] pt-3">
       <Button tone="primary" disabled={!canSync} onClick={onSync}><RefreshCw size={13} className="mr-1 inline" />{canRecoverLegacyAuth ? "Anmeldung erneut prüfen" : "Jetzt synchronisieren"}</Button>
       <Button disabled={busy} onClick={onHistory}><Clock3 size={13} className="mr-1 inline" />Sync-Verlauf</Button>
       <Button tone="danger" disabled={busy} onClick={onDelete}><Trash2 size={13} className="mr-1 inline" />Trennen</Button>

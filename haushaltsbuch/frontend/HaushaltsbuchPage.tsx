@@ -54,8 +54,8 @@ export function HaushaltsbuchPage() {
   else if (household === undefined) content = <LoadingState label="Haushalt wird geladen …" />
   else if (household === null) content = <HouseholdSetup onReady={householdChanged} />
   else content = <>
-    <header className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-xl font-black tracking-tight text-[#e8eef8]">{household.name}</h1><p className="mt-1 text-sm text-[#8d9ab0]">{household.base_currency} · {household.timezone} · {household.current_role === "owner" ? "Eigentümer" : "Mitglied"}</p></div><Button onClick={loadHousehold}>Aktualisieren</Button></header>
-    <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-[#263247] pb-px" aria-label="Haushaltsbuch-Bereiche">{TABS.map((tab) => { const Icon = tab.icon; return <button key={tab.id} type="button" onClick={() => setView(tab.id)} className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold transition ${view === tab.id ? "border-cyan-300 text-cyan-200" : "border-transparent text-[#8d9ab0] hover:text-[#d4deeb]"}`}><Icon size={14} />{tab.label}</button> })}</nav>
+    <header className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-xl font-black tracking-tight text-[#e8eef8]">{household.name}</h1><p className="mt-1 text-sm text-[#9aa7bc]">{household.base_currency} · {household.timezone} · {household.current_role === "owner" ? "Eigentümer" : "Mitglied"}</p></div><Button onClick={loadHousehold}>Aktualisieren</Button></header>
+    <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-[rgb(var(--hh-s-rand,38_50_71))] pb-px" aria-label="Haushaltsbuch-Bereiche">{TABS.map((tab) => { const Icon = tab.icon; return <button key={tab.id} type="button" onClick={() => setView(tab.id)} className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold transition ${view === tab.id ? "border-cyan-300 text-cyan-200" : "border-transparent text-[#9aa7bc] hover:text-[#d4deeb]"}`}><Icon size={14} />{tab.label}</button> })}</nav>
     {view === "dashboard" && <DashboardView household={household} refreshKey={refreshKey} />}
     {view === "transactions" && <TransactionsView household={household} onChanged={changed} />}
     {view === "imports" && <ImportsView baseCurrency={household.base_currency} onChanged={changed} />}
@@ -66,7 +66,7 @@ export function HaushaltsbuchPage() {
     {view === "household" && <HouseholdView household={household} onChanged={householdChanged} />}
   </>
 
-  return <CockpitShell title="Haushaltsbuch" className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
+  return <CockpitShell title="Haushaltsbuch" className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]" hideHeader>
     <CockpitTopbar active="/haushaltsbuch" context="Finanzen, Budgets und Haushalt" />
     <main className="min-h-0 flex-1 overflow-y-auto p-[10px]"><div className="mx-auto max-w-7xl">{content}</div></main>
   </CockpitShell>

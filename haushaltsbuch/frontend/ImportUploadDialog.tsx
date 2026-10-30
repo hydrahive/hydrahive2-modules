@@ -153,9 +153,9 @@ export function ImportUploadDialog({ accounts, baseCurrency, profiles, onProfile
         <Field label="Datei" hint="CAMT XML, MT940 oder CSV; maximal 10 MiB"><Input required type="file" accept=".xml,.mt940,.sta,.txt,.csv,text/csv,application/xml,text/xml" onChange={(event) => setFile(event.target.files?.[0])} /></Field>
         <Field label="Format"><Select value={format} onChange={(event) => setFormat(event.target.value as ImportFormat)}><option value="auto">Automatisch erkennen</option><option value="camt">CAMT V2/V8 (XML)</option><option value="mt940">MT940</option><option value="csv">CSV</option></Select></Field>
       </div>
-      {file && <p className={`text-xs ${file.size > MAX_FILE_SIZE ? "text-rose-200" : "text-[#8d9ab0]"}`}>{file.name} · {(file.size / 1024).toLocaleString("de-DE", { maximumFractionDigits: 1 })} KiB</p>}
-      {csvSelected && <section className="grid gap-4 rounded-[6px] border border-[#2a364b] bg-[#0d1420] p-4">
-        <div><h3 className="font-bold text-[#e8eef8]">CSV-Zuordnung</h3><p className="mt-1 text-xs text-[#8d9ab0]">Die Kopfzeile wird nur lokal im Browser gelesen. Datei und Mapping werden erst beim Upload gemeinsam gesendet.</p></div>
+      {file && <p className={`text-xs ${file.size > MAX_FILE_SIZE ? "text-rose-200" : "text-[#9aa7bc]"}`}>{file.name} · {(file.size / 1024).toLocaleString("de-DE", { maximumFractionDigits: 1 })} KiB</p>}
+      {csvSelected && <section className="grid gap-4 rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-4">
+        <div><h3 className="font-bold text-[#e8eef8]">CSV-Zuordnung</h3><p className="mt-1 text-xs text-[#9aa7bc]">Die Kopfzeile wird nur lokal im Browser gelesen. Datei und Mapping werden erst beim Upload gemeinsam gesendet.</p></div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Profil"><Select value={profileId} onChange={(event) => chooseProfile(event.target.value)}><option value="">Neues Profil</option>{profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}</Select></Field>
           <Field label="Profilname"><Input maxLength={120} value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="z. B. Meine Bank" /></Field>
