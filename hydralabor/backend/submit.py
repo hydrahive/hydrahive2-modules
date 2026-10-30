@@ -42,7 +42,7 @@ def _versions() -> dict[str, str]:
     out = {}
     try:
         from importlib.metadata import version
-        out["hydrahive"] = version("hydrahive")
+        out["hydrahive"] = version("hydrahive-core")     # Paketname des Kerns (core/pyproject.toml)
     except Exception:  # noqa: BLE001 - Version ist nur Zusatzinfo
         out["hydrahive"] = "?"
     for name, m in sorted(REGISTRY.items()):
