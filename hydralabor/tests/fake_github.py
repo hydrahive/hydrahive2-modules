@@ -62,6 +62,8 @@ class FakeGitHub:
                   "state": "open", "merged": False, **(json or {})}
             self.pulls.append(pr)
             return 201, pr, hdr
+        if method == "POST" and api.endswith("/labels"):
+            return 200, {"items": []}, hdr
         if method == "POST" and api.endswith("/issues"):
             n = 500 + len(self.issues)
             iss = {"number": n, "html_url": f"https://github.com/x/y/issues/{n}", **(json or {})}
