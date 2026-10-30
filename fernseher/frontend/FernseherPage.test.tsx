@@ -12,7 +12,7 @@ import { Setup } from "./Setup"
 import { fernseherI18n } from "./i18n"
 import { ERROR_CODES } from "./logic"
 
-const ON = { power: "on" as const, channel: { number: 6, name: "SAT.1" }, program: "Richter Alexander Hold", volume: 14, muted: false, model: "KD-60XF8305" }
+const ON = { power: "on" as const, channel: { number: 6, name: "SAT.1" }, program: "Richter Alexander Hold", volume: 14, muted: false, output: "speaker" as const, model: "KD-60XF8305" }
 
 function keys(o: Record<string, unknown>, p = ""): string[] {
   return Object.entries(o).flatMap(([k, v]) => (v && typeof v === "object" ? keys(v as Record<string, unknown>, `${p}${k}.`) : [`${p}${k}`]))
@@ -42,6 +42,12 @@ describe("Seite Fernseher", () => {
     expect(muted).toContain("now.muted")
     expect(muted).not.toContain("now.volume")                // der TV meldet bei stumm 0 – das nicht anzeigen
     expect(renderToStaticMarkup(<NowPlaying status={{ ...ON, channel: null, program: "" }} />)).toContain("now.app")
+  })
+
+  it("Ton über den Receiver wird dazugeschrieben, über den Fernseher nicht", () => {
+    expect(renderToStaticMarkup(<NowPlaying status={{ ...ON, output: "receiver" }} />)).toContain("now.receiver")
+    expect(renderToStaticMarkup(<NowPlaying status={ON} />)).not.toContain("now.receiver")
+    expect(renderToStaticMarkup(<NowPlaying status={{ ...ON, output: "other" }} />)).not.toContain("now.receiver")
   })
 
   it("Fernbedienung: an → Ausschalten und Lautstärke aktiv; aus → Einschalten, Lautstärke gesperrt", () => {
