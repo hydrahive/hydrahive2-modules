@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest"
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k) }) }))
 vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() => {})), post: vi.fn() } }))
 import { LabPanel } from "./LabPanel"
-import { RemoveDialogView, canRemove } from "./RemoveDialog"
+import { RemoveDialogView } from "./RemoveDialog"
 import { WizardView } from "./Wizard"
-import type { Checks, LabState } from "./logic"
+import { canRemove, type Checks, type LabState } from "./logic"
 
 const S: LabState = {
   step: "start", running: "", progress: "", error_code: "", error_step: "", model: "", cpu: 2, ram_mb: 4096, disk_gb: 20,
@@ -30,6 +30,10 @@ describe("Assistent", () => {
     const html = wiz({ checks: OK, model: "a/m1" })
     expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>wizard.create</)
     for (const k of ["check.incus", "check.storage", "wizard.cpu", "wizard.ram", "wizard.disk", "M1"]) expect(html).toContain(k)
+  })
+
+  it("ohne Modell kein Anlegen, auch wenn alles grün ist", () => {
+    expect(wiz({ checks: OK, model: "" })).toMatch(/<button[^>]*disabled=""[^>]*>wizard.create</)
   })
 
   it("Voraussetzung rot: Grund steht da, Anlegen gesperrt", () => {

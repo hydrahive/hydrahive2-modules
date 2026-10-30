@@ -159,6 +159,11 @@
       "id": "radiostream",
       "name": "Radiostream",
       "path": "radiostream"
+    },
+    {
+      "id": "hydralabor",
+      "name": "Hydra-Labor",
+      "path": "hydralabor"
     }
   ]
 }

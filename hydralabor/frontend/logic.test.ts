@@ -26,8 +26,8 @@ describe("Hydra-Labor: Logik", () => {
   it("Texte ohne Fachbegriffe, beide Sprachen gleich vollständig", () => {
     const flat = (o: unknown, p = ""): string[] => typeof o === "string" ? [p] : Object.entries(o as object).flatMap(([k, v]) => flat(v, p ? `${p}.${k}` : k))
     expect(flat(hydralaborI18n.de).sort()).toEqual(flat(hydralaborI18n.en).sort())
-    const txt = JSON.stringify(hydralaborI18n.de)
-    expect(txt).not.toMatch(/incus|ACL|snapshot|sudo|terminal|\.py|apt-get|bridge|NAT/i)
+    const texts = (o: unknown): string[] => typeof o === "string" ? [o] : Object.values(o as object).flatMap(texts)
+    for (const txt of texts(hydralaborI18n.de)) expect(txt).not.toMatch(/incus|ACL|snapshot|sudo|terminal|\.py|apt-get|bridge|\bNAT\b/i)
   })
 
   it("errorKey: Code aus Antwort oder Zustand, sonst allgemein", () => {

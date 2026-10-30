@@ -41,7 +41,7 @@ Erlaubte Kennungen, festgelegt im Kern in `frontend/src/features/startdesk/areas
 | medien | studio, atelier, videoeditor, tonstudio, musicplayer, radiostream |
 | schreiben | storyteller, notizbuch, scratchpad, diagramme, blueprint |
 | wissen | deepresearch, archiver, legal (`/recht`), opentor |
-| agenten | tickets |
+| agenten | tickets, hydralabor |
 | kommunikation | mailbox, telephony (`/voip`), voice |
 | zuhause | haushaltsbuch, patientenakte (`/akte`), homeassistant, cryptoboard, mining, vitrine |
 | freizeit | mediacenter, boardgames, minigames, vr |
