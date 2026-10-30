@@ -84,7 +84,7 @@ export function AudioTrackStack(p: Props) {
   }, [tracks, view, peaksByClipId, selectedAudio, playhead, canvasH])
 
   return (
-    <div className="flex w-full rounded border border-white/10 overflow-hidden" style={{ background: "#07101a" }}>
+    <div className="flex w-full rounded border border-[rgb(var(--hh-s-rand,42_54_75))] overflow-hidden" style={{ background: "#07101a" }}>
       <AudioTrackHeaders
         originalAudio={edl.originalAudio}
         tracks={tracks}
@@ -95,10 +95,10 @@ export function AudioTrackStack(p: Props) {
           addTrack: () => edl.addTrack(), setOriginalAudio: edl.setOriginalAudio,
         }}
       />
-      <div ref={wrapRef} className="flex-1 min-w-0 select-none border-l border-white/10">
+      <div ref={wrapRef} className="flex-1 min-w-0 select-none border-l border-[rgb(var(--hh-s-rand,42_54_75))]">
         {/* Spacer korrespondierend zur O-Ton-Header-Zeile (kein Canvas nötig) */}
-        <div className="border-b border-white/10 flex items-center px-2" style={{ height: AUDIO_ROW_H }}>
-          <span className="text-[10px] text-zinc-600">Original-Tonspur (aus Video-Timeline)</span>
+        <div className="border-b border-[rgb(var(--hh-s-rand,42_54_75))] flex items-center px-2" style={{ height: AUDIO_ROW_H }}>
+          <span className="text-[10px] text-[#9aa7bc]">Original-Tonspur (aus Video-Timeline)</span>
         </div>
         {canvasH > 0 ? (
           <canvas ref={canvasRef}
@@ -109,7 +109,7 @@ export function AudioTrackStack(p: Props) {
             onWheel={handlers.onWheel}
             style={{ display: "block", cursor: "pointer" }} />
         ) : (
-          <div className="flex items-center px-3 py-4 text-[11px] text-zinc-600" style={{ minHeight: 40 }}>
+          <div className="flex items-center px-3 py-4 text-[11px] text-[#9aa7bc]" style={{ minHeight: 40 }}>
             Keine Audiospuren — „+ Audiospur" links oder „Audio hinzufügen" oben.
           </div>
         )}

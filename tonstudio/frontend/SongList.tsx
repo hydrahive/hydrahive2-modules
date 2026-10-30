@@ -52,26 +52,26 @@ export function SongList({ projectId, songs, trash, onChanged }: Props) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder={t("song_title_placeholder")}
           maxLength={200}
-          className="flex-1 rounded bg-[#0d1420] border border-[#2a364b] px-2 py-1 text-sm text-[#e8eef8]"
+          className="flex-1 rounded bg-[rgb(var(--hh-s-tief,13_20_32))] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-sm text-[#e8eef8]"
         />
         <button type="submit" disabled={!title.trim()} className="rounded-[4px] bg-[#69d7ff]/15 border border-[#69d7ff]/40 text-[#69d7ff] px-3 py-1 text-sm disabled:opacity-40">
           {t("song_new")}
         </button>
       </form>
       {error && <p className="text-xs text-red-400">{error}</p>}
-      {songs.length === 0 && <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-xs text-[#8d9ab0]">{t("songs_empty")}</p></div>}
+      {songs.length === 0 && <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-xs text-[#9aa7bc]">{t("songs_empty")}</p></div>}
       <ul className="flex flex-col gap-1">
         {songs.map((s) => (
-          <li key={s.id} className="group flex items-center gap-2 rounded border border-[#2a364b] bg-[#111827] px-2 py-1.5">
+          <li key={s.id} className="group flex items-center gap-2 rounded border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1.5">
             <span className="flex-1 truncate text-sm text-[#e8eef8]">{s.title}</span>
-            <span className="text-[11px] text-[#8d9ab0]">
+            <span className="text-[11px] text-[#9aa7bc]">
               {[s.bpm ? `${s.bpm} BPM` : "", s.key ?? "", t("song_tracks", { count: s.tracks })].filter(Boolean).join(" · ")}
             </span>
-            <button onClick={() => rename(s.id, s.title)} title={t("song_rename")} className="text-xs text-[#8d9ab0] hover:text-[#e8eef8]">✏️</button>
+            <button onClick={() => rename(s.id, s.title)} title={t("song_rename")} className="text-xs text-[#9aa7bc] hover:text-[#e8eef8]">✏️</button>
             <button
               onClick={() => confirm(t("song_trash_confirm", { title: s.title })) && run(() => tonstudioApi.trashSong(projectId, s.id))}
               title={t("song_trash")}
-              className="text-xs text-[#8d9ab0] hover:text-red-400"
+              className="text-xs text-[#9aa7bc] hover:text-red-400"
             >
               🗑️
             </button>
@@ -86,7 +86,7 @@ export function SongList({ projectId, songs, trash, onChanged }: Props) {
       {showTrash && (
         <ul className="flex flex-col gap-1">
           {trash.map((s) => (
-            <li key={s.id} className="flex items-center gap-2 rounded border border-dashed border-[#2a364b] px-2 py-1 text-xs text-slate-400">
+            <li key={s.id} className="flex items-center gap-2 rounded border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-xs text-slate-400">
               <span className="flex-1 truncate">{s.title}</span>
               <button onClick={() => run(() => tonstudioApi.restoreSong(projectId, s.id))} className="hover:text-[#e8eef8]">
                 ↩️ {t("song_restore")}

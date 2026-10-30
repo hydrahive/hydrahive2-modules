@@ -55,28 +55,28 @@ export function OpenTorPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
+        <h1 className="text-lg font-semibold text-[#e8eef8]">{t("title")}</h1>
         <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">{t("warning")}</p>
       </div>
 
       {error && <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</div>}
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-white/10 bg-zinc-900/60 p-4 text-sm text-zinc-300"><b>{t("status")}</b><br />{status?.enabled ? t("enabled") : t("disabled")}</div>
-        <div className="rounded-lg border border-white/10 bg-zinc-900/60 p-4 text-sm text-zinc-300">Tor: {status?.tor_reachable ? "OK" : "—"}</div>
-        <div className="rounded-lg border border-white/10 bg-zinc-900/60 p-4 text-sm text-zinc-300">Worker: {status?.worker_ready ? "OK" : t("unavailable")}</div>
+        <div className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.6)] p-4 text-sm text-[#c8d2df]"><b>{t("status")}</b><br />{status?.enabled ? t("enabled") : t("disabled")}</div>
+        <div className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.6)] p-4 text-sm text-[#c8d2df]">Tor: {status?.tor_reachable ? "OK" : "—"}</div>
+        <div className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.6)] p-4 text-sm text-[#c8d2df]">Worker: {status?.worker_ready ? "OK" : t("unavailable")}</div>
       </div>
 
-      {isAdmin && policy && <button onClick={toggle} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5">{policy.enabled ? t("adminDisable") : t("adminEnable")}</button>}
+      {isAdmin && policy && <button onClick={toggle} className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-2 text-sm text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{policy.enabled ? t("adminDisable") : t("adminEnable")}</button>}
 
-      <div className="space-y-2 rounded-xl border border-white/10 bg-zinc-900/40 p-4">
-        <label className="block text-sm text-zinc-400">{t("query")}</label>
-        <div className="flex gap-2"><input value={query} onChange={(e) => setQuery(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100" /><button disabled={busy || !query.trim()} onClick={search} className="rounded-lg bg-zinc-700 px-4 py-2 text-sm disabled:opacity-40">{t("search")}</button></div>
-        <label className="block pt-3 text-sm text-zinc-400">{t("fetchUrl")}</label>
-        <div className="flex gap-2"><input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" className="min-w-0 flex-1 rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100" /><button disabled={busy || !url.trim()} onClick={fetchUrl} className="rounded-lg bg-zinc-700 px-4 py-2 text-sm disabled:opacity-40">{t("fetch")}</button></div>
+      <div className="space-y-2 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-4">
+        <label className="block text-sm text-[#c8d2df]">{t("query")}</label>
+        <div className="flex gap-2"><input value={query} onChange={(e) => setQuery(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2 text-sm text-[#e8eef8]" /><button disabled={busy || !query.trim()} onClick={search} className="rounded-lg bg-[rgb(var(--hh-s-hebung,27_37_54))] px-4 py-2 text-sm disabled:opacity-40">{t("search")}</button></div>
+        <label className="block pt-3 text-sm text-[#c8d2df]">{t("fetchUrl")}</label>
+        <div className="flex gap-2"><input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" className="min-w-0 flex-1 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2 text-sm text-[#e8eef8]" /><button disabled={busy || !url.trim()} onClick={fetchUrl} className="rounded-lg bg-[rgb(var(--hh-s-hebung,27_37_54))] px-4 py-2 text-sm disabled:opacity-40">{t("fetch")}</button></div>
       </div>
 
-      <section className="space-y-2"><h2 className="text-sm font-semibold text-zinc-200">{t("results")} <span className="ml-2 text-xs text-amber-300">{results?.data?.content_boundary ?? ""}</span></h2>{!results ? <p className="text-sm text-zinc-500">{t("empty")}</p> : <pre className="max-h-[32rem] overflow-auto rounded-lg border border-white/10 bg-zinc-950 p-4 text-xs text-zinc-300">{JSON.stringify(results, null, 2)}</pre>}</section>
+      <section className="space-y-2"><h2 className="text-sm font-semibold text-[#e8eef8]">{t("results")} <span className="ml-2 text-xs text-amber-300">{results?.data?.content_boundary ?? ""}</span></h2>{!results ? <p className="text-sm text-[#9aa7bc]">{t("empty")}</p> : <pre className="max-h-[32rem] overflow-auto rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-4 text-xs text-[#c8d2df]">{JSON.stringify(results, null, 2)}</pre>}</section>
     </div>
   )
 }

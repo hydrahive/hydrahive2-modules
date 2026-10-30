@@ -78,12 +78,12 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
 
   const showLeft = layout.left && !focus
   const showRight = layout.right && !focus
-  const iconBtn = "rounded-md p-1.5 text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
+  const iconBtn = "rounded-md p-1.5 text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] hover:text-[#e8eef8]"
 
   return (
-    <div className="flex h-[calc(100dvh-9rem)] min-h-[520px] flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0d1119]">
+    <div className="flex h-[calc(100dvh-9rem)] min-h-[520px] flex-col overflow-hidden rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_17_25))]">
       {!focus && (
-        <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2">
+        <header className="flex shrink-0 items-center gap-2 border-b border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-2">
           <button onClick={() => { void close() }} className={`${iconBtn} flex items-center gap-1 text-sm`}>
             <ArrowLeft className="h-4 w-4" />{t("back_books")}
           </button>
@@ -93,23 +93,23 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
           </span>
           <input value={book.title} aria-label={t("nb_title")}
             onChange={(e) => state.change((b) => ({ ...b, title: e.target.value }))}
-            className="min-w-0 flex-1 truncate rounded-md bg-transparent px-2 py-1 text-base font-semibold text-zinc-100 hover:bg-white/5 focus:bg-white/5 focus:outline-none" />
-          <nav className="hidden items-center rounded-lg border border-white/10 p-0.5 text-sm md:flex" aria-label="Ansicht">
-            <span className="rounded-md bg-violet-500/20 px-3 py-1 text-violet-100">{t("view_write")}</span>
+            className="min-w-0 flex-1 truncate rounded-md bg-transparent px-2 py-1 text-base font-semibold text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] focus:bg-[rgb(var(--hh-s-hebung,27_37_54))] focus:outline-none" />
+          <nav className="hidden items-center rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] p-0.5 text-sm md:flex" aria-label="Ansicht">
+            <span className="rounded-md bg-[#69d7ff]/20 px-3 py-1 text-[#c8f2ff]">{t("view_write")}</span>
             {(["view_plan", "view_ask"] as const).map((k) => (
-              <span key={k} title={t("soon")} className="cursor-not-allowed px-3 py-1 text-zinc-600">{t(k)}</span>
+              <span key={k} title={t("soon")} className="cursor-not-allowed px-3 py-1 text-[#9aa7bc]">{t(k)}</span>
             ))}
           </nav>
           <button onClick={() => setLayout((l) => ({ ...l, left: !l.left }))} title={t("toggle_left")} className={iconBtn}><PanelLeft className="h-4 w-4" /></button>
           <button onClick={() => setLayout((l) => ({ ...l, right: !l.right }))} title={t("toggle_right")} className={iconBtn}><PanelRight className="h-4 w-4" /></button>
           {state.canWrite && <button onClick={dock.toggle} title={t("chat_dock_toggle")} aria-pressed={dock.open}
-            className={`${iconBtn} st-chat-dock-toggle ${dock.open ? "bg-violet-500/20 text-violet-100" : ""}`}><MessagesSquare className="h-4 w-4" /></button>}
+            className={`${iconBtn} st-chat-dock-toggle ${dock.open ? "bg-[#69d7ff]/20 text-[#c8f2ff]" : ""}`}><MessagesSquare className="h-4 w-4" /></button>}
           <button onClick={() => setFocus(true)} title={t("focus")} className={iconBtn}><Maximize2 className="h-4 w-4" /></button>
         </header>
       )}
       <div className="flex min-h-0 flex-1">
         {showLeft && (
-          <aside className="st-nav w-64 shrink-0 overflow-y-auto border-r border-white/10">
+          <aside className="st-nav w-64 shrink-0 overflow-y-auto border-r border-[rgb(var(--hh-s-rand,42_54_75))]">
             <Navigator state={state} sceneId={sceneId} entityId={tab === "entity" ? entityId : null}
               onOpenScene={openScene} onOpenEntity={openEntity} />
           </aside>
@@ -132,7 +132,7 @@ export function Workspace({ projectId, projectName, initial, versions, initialSc
         </main>
         {dock.open && !focus && <ChatDock state={state} sceneId={sceneId} width={dock.width} onWidth={dock.setWidth} onClose={dock.close} />}
         {showRight && current && (
-          <aside className="st-context w-80 shrink-0 overflow-y-auto border-l border-white/10">
+          <aside className="st-context w-80 shrink-0 overflow-y-auto border-l border-[rgb(var(--hh-s-rand,42_54_75))]">
             <ContextPanel tab={tab} setTab={setTab} state={state} scene={current.scene}
               entityId={entityId} setEntityId={setEntityId} editorRef={editorRef} onSceneRemoved={(next) => setSceneId(next || first)}
               onOpenScene={openScene} onOpenChat={dock.show} />

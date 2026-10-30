@@ -121,11 +121,11 @@ export function EditorView({ projectId, meta, onBack }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <button onClick={onBack} className="px-2 py-1 text-xs rounded border border-white/10 text-zinc-300 hover:bg-white/5">← Bibliothek</button>
-        <span className="text-sm text-zinc-200 font-medium truncate">{meta.filename}</span>
-        <span className="text-[11px] text-zinc-500">{meta.width}×{meta.height} · {meta.fps}fps · {meta.duration.toFixed(1)}s</span>
+        <button onClick={onBack} className="px-2 py-1 text-xs rounded border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">← Bibliothek</button>
+        <span className="text-sm text-[#e8eef8] font-medium truncate">{meta.filename}</span>
+        <span className="text-[11px] text-[#9aa7bc]">{meta.width}×{meta.height} · {meta.fps}fps · {meta.duration.toFixed(1)}s</span>
         <span className="flex-1" />
-        <span className="text-[11px] text-zinc-500">{edl.saved ? "gespeichert" : "…"}</span>
+        <span className="text-[11px] text-[#9aa7bc]">{edl.saved ? "gespeichert" : "…"}</span>
         <button onClick={() => setShowAudioLib(true)}
           className="px-3 py-1 text-xs rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-200">
           Audio hinzufügen

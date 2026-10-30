@@ -7,8 +7,8 @@ const ICON = { keyboard: Keyboard, mouse: Mouse, headphones: Headphones, speaker
 function Bars({ n, rssi }: { n: number; rssi: number | null }) {
   return (
     <span className="flex shrink-0 items-end gap-0.5" title={rssi !== null ? `${rssi} dBm` : undefined}>
-      {[1, 2, 3, 4].map((i) => <span key={i} className={`w-1 rounded-sm ${i <= n ? "bg-[#69d7ff]" : "bg-[#2a364b]"}`} style={{ height: 3 + i * 3 }} />)}
-      <span className="ml-1 text-[10px] text-[#718097]">{rssi !== null ? `${rssi} dBm` : ""}</span>
+      {[1, 2, 3, 4].map((i) => <span key={i} className={`w-1 rounded-sm ${i <= n ? "bg-[#69d7ff]" : "bg-[rgb(var(--hh-s-rand,42_54_75))]"}`} style={{ height: 3 + i * 3 }} />)}
+      <span className="ml-1 text-[10px] text-[#9aa7bc]">{rssi !== null ? `${rssi} dBm` : ""}</span>
     </span>
   )
 }
@@ -26,13 +26,13 @@ function Row({ d, open, pairing, onPair, onRemove }: RowProps) {
       <Icon size={16} className="shrink-0 text-[#69d7ff]" />
       <span className="min-w-0 flex-1">
         <span className="block truncate font-semibold">{d.name}</span>
-        <span className="block truncate font-mono text-[10px] text-[#718097]">{d.addresses.join(" · ")}</span>
+        <span className="block truncate font-mono text-[10px] text-[#9aa7bc]">{d.addresses.join(" · ")}</span>
       </span>
       <Bars n={d.bars} rssi={d.rssi} />
-      <span className={`w-20 shrink-0 text-xs ${d.connected ? "text-emerald-300" : "text-[#718097]"}`}>{busy ? t("bt_pairing") : state}</span>
+      <span className={`w-20 shrink-0 text-xs ${d.connected ? "text-emerald-300" : "text-[#9aa7bc]"}`}>{busy ? t("bt_pairing") : state}</span>
       {d.paired
         ? <button type="button" data-bt-remove={addr} onClick={() => onRemove(addr)} title={t("bt_remove")} aria-label={t("bt_remove")}
-            className="shrink-0 rounded-[4px] p-1 text-[#718097] hover:bg-rose-500/20 hover:text-rose-200"><Trash2 size={14} /></button>
+            className="shrink-0 rounded-[4px] p-1 text-[#9aa7bc] hover:bg-rose-500/20 hover:text-rose-200"><Trash2 size={14} /></button>
         : open && <button type="button" data-bt-pair={addr} disabled={pairing !== null} onClick={() => onPair(addr)}
             className="shrink-0 rounded-[4px] border border-[#69d7ff]/40 bg-[#69d7ff]/10 px-2 py-1 text-xs font-bold text-[#69d7ff] disabled:opacity-50">
             {t("bt_pair")}</button>}
@@ -45,7 +45,7 @@ export interface BluetoothListProps { v: BtView; onScan: () => void; onPair: (a:
 /** S7: reine Ansicht der Bluetooth-Karte (Laden und Takt in BluetoothCard). Texte nur als Text, nie als HTML. */
 export function BluetoothList({ v, onScan, onPair, onRemove }: BluetoothListProps) {
   const { t } = useTranslation("vitrine")
-  if (!v.available) return <p className="rounded-[4px] border border-dashed border-[#2a364b] p-3 text-center text-xs text-[#718097]">{t("bt_unavailable")}</p>
+  if (!v.available) return <p className="rounded-[4px] border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] p-3 text-center text-xs text-[#9aa7bc]">{t("bt_unavailable")}</p>
   const open = v.window_left > 0
   const pairing = v.pairing?.address ?? null
   const main = v.devices.filter((d) => d.paired || (open && !d.more))
@@ -53,7 +53,7 @@ export function BluetoothList({ v, onScan, onPair, onRemove }: BluetoothListProp
   const row = (d: BtDevice) => <Row key={d.addresses[0]} d={d} open={open} pairing={pairing} onPair={onPair} onRemove={onRemove} />
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-[#718097]">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[#9aa7bc]">
         <span>{v.adapter ? `${v.adapter.name} · ${v.adapter.powered ? t("bt_on") : t("bt_off")}` : ""}</span>
         <button type="button" data-bt-scan="1" disabled={open} onClick={onScan}
           className="ml-auto flex items-center gap-1.5 rounded-[4px] border border-[#69d7ff]/40 bg-[#69d7ff]/10 px-3 py-1.5 text-xs font-bold text-[#69d7ff] disabled:opacity-60">
@@ -69,12 +69,12 @@ export function BluetoothList({ v, onScan, onPair, onRemove }: BluetoothListProp
       )}
       {v.error && <p className="text-xs text-rose-300">{v.error}</p>}
       {main.length === 0
-        ? <p className="rounded-[4px] border border-dashed border-[#2a364b] p-3 text-center text-xs text-[#718097]">{open ? t("bt_searching") : t("bt_none")}</p>
-        : <ul className="divide-y divide-[#1c2638] rounded-[4px] border border-[#2a364b] bg-[#111827]">{main.map(row)}</ul>}
+        ? <p className="rounded-[4px] border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] p-3 text-center text-xs text-[#9aa7bc]">{open ? t("bt_searching") : t("bt_none")}</p>
+        : <ul className="divide-y divide-[rgb(var(--hh-s-rand,28_38_56))] rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))]">{main.map(row)}</ul>}
       {more.length > 0 && (
-        <details className="rounded-[4px] border border-[#2a364b] bg-[#0d1420]">
-          <summary className="cursor-pointer px-3 py-2 text-xs text-[#718097]">{t("bt_more", { n: more.length })}</summary>
-          <ul className="divide-y divide-[#1c2638]">{more.map(row)}</ul>
+        <details className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))]">
+          <summary className="cursor-pointer px-3 py-2 text-xs text-[#9aa7bc]">{t("bt_more", { n: more.length })}</summary>
+          <ul className="divide-y divide-[rgb(var(--hh-s-rand,28_38_56))]">{more.map(row)}</ul>
         </details>
       )}
     </div>

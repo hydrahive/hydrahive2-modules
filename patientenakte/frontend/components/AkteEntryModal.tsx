@@ -68,16 +68,16 @@ export function AkteEntryModal({ entity, title, fields, existing, onClose, onSav
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-white/[8%] bg-zinc-900 p-6 space-y-4"
+        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-zinc-100">
+          <h2 className="text-base font-semibold text-[#e8eef8]">
             {existing ? t("akte.edit") : t("akte.new")}: {title}
           </h2>
           <button
             onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-300 text-xl leading-none"
+            className="text-[#9aa7bc] hover:text-[#c8d2df] text-xl leading-none"
             aria-label={t("akte.close")}
           >
             ×
@@ -90,7 +90,7 @@ export function AkteEntryModal({ entity, title, fields, existing, onClose, onSav
             {fields.map((fd) => (
               <label
                 key={fd.key}
-                className={`flex flex-col gap-1 text-xs text-zinc-400 ${fd.type === "textarea" ? "col-span-2" : ""}`}
+                className={`flex flex-col gap-1 text-xs text-[#c8d2df] ${fd.type === "textarea" ? "col-span-2" : ""}`}
               >
                 {fd.label}{fd.required && <span className="text-rose-400"> *</span>}
                 {fd.type === "textarea" ? (
@@ -98,13 +98,13 @@ export function AkteEntryModal({ entity, title, fields, existing, onClose, onSav
                     value={form[fd.key] ?? ""}
                     onChange={(e) => set(fd.key, e.target.value)}
                     rows={3}
-                    className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600"
+                    className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8] placeholder-[#9aa7bc]"
                   />
                 ) : fd.type === "select" ? (
                   <select
                     value={form[fd.key] ?? ""}
                     onChange={(e) => set(fd.key, e.target.value)}
-                    className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+                    className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8]"
                   >
                     <option value="">—</option>
                     {fd.options.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -116,7 +116,7 @@ export function AkteEntryModal({ entity, title, fields, existing, onClose, onSav
                     value={form[fd.key] ?? ""}
                     onChange={(e) => set(fd.key, e.target.value)}
                     placeholder={fd.placeholder ?? undefined}
-                    className="rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600"
+                    className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8] placeholder-[#9aa7bc]"
                   />
                 )}
               </label>
@@ -126,7 +126,7 @@ export function AkteEntryModal({ entity, title, fields, existing, onClose, onSav
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 rounded-lg border border-white/[6%] hover:bg-white/[4%] transition-colors"
+              className="px-4 py-2 text-sm text-[#c8d2df] hover:text-[#e8eef8] rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] transition-colors"
             >
               Abbrechen
             </button>

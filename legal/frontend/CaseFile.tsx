@@ -15,7 +15,7 @@ const TABS: [Tab, string][] = [["overview", "Übersicht"], ["parties", "Beteilig
 
 function Field({ name, value }: { name: string; value: string }) {
   if (!value) return null
-  return <div><p className="text-[11px] uppercase text-[#68758a]">{name}</p><p className="whitespace-pre-wrap text-sm text-[#e8eef8]">{value}</p></div>
+  return <div><p className="text-[11px] uppercase text-[#9aa7bc]">{name}</p><p className="whitespace-pre-wrap text-sm text-[#e8eef8]">{value}</p></div>
 }
 
 /** Fallakte (Spec §4.3): Reiter Übersicht · Beteiligte · Fristen · Notizen · Vorschläge, Chat mit dem Rechts-Agenten. */
@@ -34,15 +34,15 @@ export function CaseFile({ pid, onBack }: { pid: string; onBack: () => void }) {
 
   return (
     <div className="flex min-h-0 flex-1 gap-[10px]">
-      <section className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-[4px] border border-[#2a364b] bg-[#0d131d] p-3">
+      <section className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_29))] p-3">
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={onBack} className="inline-flex items-center gap-1 text-xs text-[#69d7ff]"><ArrowLeft size={13} />Alle Fälle</button>
           {snap && <h2 className="text-lg font-bold text-[#e8eef8]">{snap.case.title}</h2>}
-          {snap && <span className="text-xs text-[#8d9ab0]">{snap.case.area} · {snap.state_name}</span>}
+          {snap && <span className="text-xs text-[#9aa7bc]">{snap.case.area} · {snap.state_name}</span>}
           <span className="ml-auto flex items-center gap-2">
             {snap && canWrite && (
               <select value={snap.case.status} onChange={(e) => void setStatus(e.target.value as "open")}
-                className="rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1 text-xs text-[#e8eef8]">
+                className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1 text-xs text-[#e8eef8]">
                 {Object.entries(CASE_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             )}
@@ -55,10 +55,10 @@ export function CaseFile({ pid, onBack }: { pid: string; onBack: () => void }) {
           </span>
         </div>
         {error && <p className="text-xs text-rose-300">{error}</p>}
-        <nav className="flex gap-2 border-b border-[#2a364b] text-sm">
+        <nav className="flex gap-2 border-b border-[rgb(var(--hh-s-rand,42_54_75))] text-sm">
           {TABS.map(([k, v]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
-              className={tab === k ? "border-b-2 border-[#69d7ff] px-2 pb-1 font-semibold text-[#e8eef8]" : "px-2 pb-1 text-[#8d9ab0]"}>
+              className={tab === k ? "border-b-2 border-[#69d7ff] px-2 pb-1 font-semibold text-[#e8eef8]" : "px-2 pb-1 text-[#9aa7bc]"}>
               {v}{k === "proposals" && snap?.open_proposals ? ` (${snap.open_proposals})` : ""}
             </button>
           ))}
@@ -70,7 +70,7 @@ export function CaseFile({ pid, onBack }: { pid: string; onBack: () => void }) {
             <Field name="Ziel" value={snap.case.goal} />
             <Field name="Aktenzeichen Gegenseite" value={snap.case.their_ref} />
             <Field name="Eigenes Zeichen" value={snap.case.our_ref} />
-            {!snap.case.summary && !snap.case.facts && <p className="text-sm text-[#8d9ab0]">Noch kein Sachverhalt erfasst.</p>}
+            {!snap.case.summary && !snap.case.facts && <p className="text-sm text-[#9aa7bc]">Noch kein Sachverhalt erfasst.</p>}
           </div>
         )}
         {snap && tab === "parties" && <PartyPanel pid={pid} parties={snap.parties} canWrite={canWrite} onChange={load} />}

@@ -28,13 +28,13 @@ export function PairCard({ onDone }: { onDone: () => void }) {
 
   if (!pairing) {
     return (
-      <div className="space-y-3 rounded-xl border border-amber-500/30 bg-zinc-900/60 p-4">
-        <h3 className="text-sm font-semibold text-zinc-100">{t("pair_title")}</h3>
+      <div className="space-y-3 rounded-xl border border-amber-500/30 bg-[rgb(var(--hh-s-box,21_28_43)/0.6)] p-4">
+        <h3 className="text-sm font-semibold text-[#e8eef8]">{t("pair_title")}</h3>
         <div className="flex flex-wrap items-end gap-2">
-          <label className="flex-1 space-y-1 text-xs text-zinc-400">
+          <label className="flex-1 space-y-1 text-xs text-[#c8d2df]">
             <span>{t("headset_name")}</span>
             <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100" />
+              className="w-full rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2 text-sm text-[#e8eef8]" />
           </label>
           <button onClick={create} className="rounded-lg bg-amber-600 px-3 py-2 text-sm text-white hover:bg-amber-500">
             {t("pair_create")}
@@ -47,17 +47,17 @@ export function PairCard({ onDone }: { onDone: () => void }) {
   const mm = Math.floor(left / 60)
   const ss = String(left % 60).padStart(2, "0")
   return (
-    <div className="flex flex-wrap items-center gap-5 rounded-xl border border-amber-500/30 bg-zinc-900/60 p-4">
-      {left > 0 ? <QrCode matrix={pairing.qr} /> : <div className="grid h-[280px] w-[280px] place-items-center rounded-lg bg-zinc-800 text-sm text-zinc-400">{t("expired")}</div>}
-      <div className="flex-1 space-y-2 text-sm text-zinc-300">
+    <div className="flex flex-wrap items-center gap-5 rounded-xl border border-amber-500/30 bg-[rgb(var(--hh-s-box,21_28_43)/0.6)] p-4">
+      {left > 0 ? <QrCode matrix={pairing.qr} /> : <div className="grid h-[280px] w-[280px] place-items-center rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] text-sm text-[#c8d2df]">{t("expired")}</div>}
+      <div className="flex-1 space-y-2 text-sm text-[#c8d2df]">
         <p>{t("step1")}</p>
         <p>{t("step2")}</p>
-        <p className="text-xs text-zinc-500">{t("valid_for", { time: `${mm}:${ss}` })} · {t("code")}: <span className="font-mono">{pairing.code}</span></p>
+        <p className="text-xs text-[#9aa7bc]">{t("valid_for", { time: `${mm}:${ss}` })} · {t("code")}: <span className="font-mono">{pairing.code}</span></p>
         {pairing.pinned && <p className="text-xs text-emerald-400">{t("pinned")}</p>}
-        <p className="text-xs text-zinc-500">{t("no_key_in_qr")}</p>
+        <p className="text-xs text-[#9aa7bc]">{t("no_key_in_qr")}</p>
         <div className="flex gap-2 pt-1">
           {left === 0 && <button onClick={create} className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs text-white">{t("new_code")}</button>}
-          <button onClick={() => setPairing(null)} className="rounded-lg px-3 py-1.5 text-xs text-zinc-400 hover:bg-white/5">{t("close")}</button>
+          <button onClick={() => setPairing(null)} className="rounded-lg px-3 py-1.5 text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{t("close")}</button>
         </div>
       </div>
     </div>

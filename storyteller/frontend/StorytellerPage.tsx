@@ -82,7 +82,7 @@ export function StorytellerPage() {
 
   if (open && project) {
     return (
-      <Suspense fallback={<div className="p-8 text-sm text-zinc-500">…</div>}>
+      <Suspense fallback={<div className="p-8 text-sm text-[#9aa7bc]">…</div>}>
         <Workspace key={open.book.id} projectId={projectId} projectName={project.name} initial={open.book}
           versions={open.versions} initialSceneId={open.sceneId} canWrite={open.canWrite} proposals={open.proposals} infoProposals={open.infoProposals} entityProposals={open.entityProposals} outlineProposal={open.outlineProposal} restructureProposal={open.restructureProposal} openNotes={open.openNotes}
           onClose={close} />
@@ -94,27 +94,27 @@ export function StorytellerPage() {
     <div className="mx-auto max-w-5xl space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-zinc-100">{t("title")}</h1>
-          <p className="mt-1 text-sm text-zinc-400">{t("subtitle")}</p>
+          <h1 className="text-2xl font-black tracking-tight text-[#e8eef8]">{t("title")}</h1>
+          <p className="mt-1 text-sm text-[#c8d2df]">{t("subtitle")}</p>
         </div>
         {projects && projects.length > 0 && (
-          <label className="flex items-center gap-2 text-sm text-zinc-400">
+          <label className="flex items-center gap-2 text-sm text-[#c8d2df]">
             {t("project")}
             <select value={projectId} onChange={(e) => pickProject(e.target.value)}
-              className="rounded-lg border border-white/10 bg-zinc-900 px-3 py-1.5 text-zinc-100">
+              className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] px-3 py-1.5 text-[#e8eef8]">
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </label>
         )}
       </header>
-      {project && <p className="text-xs text-zinc-500">{t("storage_hint", { name: project.name })}</p>}
+      {project && <p className="text-xs text-[#9aa7bc]">{t("storage_hint", { name: project.name })}</p>}
       {error && <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200" role="alert">{error}</p>}
-      {opening && <p className="text-sm text-zinc-500">{t("opening")}</p>}
+      {opening && <p className="text-sm text-[#9aa7bc]">{t("opening")}</p>}
       {projects === null ? null : projects.length === 0 ? (
         <div className="space-y-3">
-          <p className="text-sm text-zinc-400">{t(canCreateProject ? "project_none_can_create" : "project_none")}</p>
+          <p className="text-sm text-[#c8d2df]">{t(canCreateProject ? "project_none_can_create" : "project_none")}</p>
           {canCreateProject && (
-            <button onClick={() => setFirstBook(true)} className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-violet-500">
+            <button onClick={() => setFirstBook(true)} className="rounded-lg bg-[#163248] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#1b3d56]">
               {t("new_book")}
             </button>
           )}

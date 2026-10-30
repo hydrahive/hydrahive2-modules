@@ -48,7 +48,7 @@ export function BlueprintPage() {
         <BoardEditor boardId={active.id} boardName={active.name} />
       ) : (
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-[#9aa7bc]">
             Board links wählen oder „+" für ein neues.
           </p>
         </div>

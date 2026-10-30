@@ -40,22 +40,22 @@ export function InfoProposalBox({ state, scene, proposal }: Props) {
   }
 
   return (
-    <section className="st-info-proposal space-y-2 rounded-lg border border-violet-400/40 bg-violet-500/10 p-2.5 text-sm text-violet-100">
-      <p className="flex items-center gap-1.5 text-xs font-semibold"><Sparkles className="h-3.5 w-3.5 text-violet-300" />{t("info_proposal_title")}</p>
-      {proposal.author && <p className="text-xs text-violet-200/80">{t("history_from", { who: originLabel(proposal, t) })}</p>}
-      {proposal.note && <p className="text-xs text-violet-200/80">{t("proposal_note", { note: proposal.note })}</p>}
-      {proposal.replaced_from && <p className="st-proposal-replaced text-xs text-violet-200/80">
+    <section className="st-info-proposal space-y-2 rounded-lg border border-[#69d7ff]/40 bg-[#69d7ff]/10 p-2.5 text-sm text-[#c8f2ff]">
+      <p className="flex items-center gap-1.5 text-xs font-semibold"><Sparkles className="h-3.5 w-3.5 text-[#69d7ff]" />{t("info_proposal_title")}</p>
+      {proposal.author && <p className="text-xs text-[#69d7ff]">{t("history_from", { who: originLabel(proposal, t) })}</p>}
+      {proposal.note && <p className="text-xs text-[#69d7ff]">{t("proposal_note", { note: proposal.note })}</p>}
+      {proposal.replaced_from && <p className="st-proposal-replaced text-xs text-[#69d7ff]">
         {t("replaced_hint", { who: originLabel({ author: proposal.replaced_from.author }, t) })}</p>}
       <ul className="space-y-2">
         {rows.map((r) => (
           <li key={r.field} className="space-y-0.5">
-            <label className="flex items-center gap-1.5 text-xs text-zinc-300">
+            <label className="flex items-center gap-1.5 text-xs text-[#c8d2df]">
               <input type="checkbox" disabled={!canWrite || r.same} checked={!r.same && checked[r.field] !== false}
                 onChange={(e) => setChecked((c) => ({ ...c, [r.field]: e.target.checked }))} />
-              {t(`scene_${r.field}`)}{r.same && <span className="text-zinc-500">· {t("info_proposal_same")}</span>}
+              {t(`scene_${r.field}`)}{r.same && <span className="text-[#9aa7bc]">· {t("info_proposal_same")}</span>}
             </label>
-            <p className="st-info-old whitespace-pre-wrap text-xs text-zinc-500 line-through">{show(r.field, r.old)}</p>
-            <p className="st-info-new whitespace-pre-wrap text-xs text-zinc-100">{show(r.field, r.proposed)}</p>
+            <p className="st-info-old whitespace-pre-wrap text-xs text-[#9aa7bc] line-through">{show(r.field, r.old)}</p>
+            <p className="st-info-new whitespace-pre-wrap text-xs text-[#e8eef8]">{show(r.field, r.proposed)}</p>
           </li>
         ))}
       </ul>
@@ -65,7 +65,7 @@ export function InfoProposalBox({ state, scene, proposal }: Props) {
             className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white disabled:opacity-40">
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}{t("info_proposal_accept")}
           </button>
-          <button onClick={() => { void discard() }} disabled={busy} className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs hover:bg-white/10">
+          <button onClick={() => { void discard() }} disabled={busy} className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
             <X className="h-3.5 w-3.5" />{t("ghost_reject")}
           </button>
         </div>

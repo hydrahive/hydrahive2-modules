@@ -5,7 +5,7 @@ import { deadlineLight, dueText, errorText, KIND_LABEL } from "./caseFormat"
 import { shortDate } from "./legalFormat"
 import { Light } from "./Light"
 
-const input = "rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1 text-sm text-[#e8eef8]"
+const input = "rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1 text-sm text-[#e8eef8]"
 
 /** Rechenweg + Hinweise einer Frist (aus dem Backend, §§ 187/188/193 BGB). */
 export function CalcSteps({ steps, warnings }: { steps: string[]; warnings: string[] }) {
@@ -47,17 +47,17 @@ export function DeadlinePanel({ pid, deadlines, canWrite, stateName, onChange }:
 
   return (
     <div className="space-y-4">
-      {deadlines.length === 0 && <p className="text-sm text-[#8d9ab0]">Noch keine Fristen.</p>}
+      {deadlines.length === 0 && <p className="text-sm text-[#9aa7bc]">Noch keine Fristen.</p>}
       <ul className="space-y-1">
         {deadlines.map((d) => (
-          <li key={d.id} className="rounded-[4px] border border-[#1d2636] p-2">
+          <li key={d.id} className="rounded-[4px] border border-[rgb(var(--hh-s-rand,29_38_54))] p-2">
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <Light value={deadlineLight(d)} />
               <button type="button" onClick={() => setOpen(open === d.id ? null : d.id)} className="font-semibold text-[#e8eef8] hover:underline">
                 {shortDate(d.due_date)}
               </button>
               <span className="text-[#d7deea]">{d.label}</span>
-              <span className="text-xs text-[#8d9ab0]">
+              <span className="text-xs text-[#9aa7bc]">
                 {d.status === "open" ? dueText(d.due_date) : d.status === "done" ? "erledigt" : "versäumt"}
                 {" · "}{d.kind === "date" ? "fester Tag" : `${d.amount} ${KIND_LABEL[d.kind]}`} ab {shortDate(d.event_date)}
               </span>
@@ -65,10 +65,10 @@ export function DeadlinePanel({ pid, deadlines, canWrite, stateName, onChange }:
                 <span className="ml-auto flex gap-1">
                   {d.status === "open" && (
                     <button type="button" title="Als erledigt markieren" onClick={() => act(caseApi.setDeadlineStatus(pid, d.id, "done"))}
-                      className="rounded-[4px] border border-[#2a364b] p-1 text-emerald-300 hover:bg-[#172133]"><Check size={12} /></button>
+                      className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-1 text-emerald-300 hover:bg-[rgb(var(--hh-s-hebung,23_33_51))]"><Check size={12} /></button>
                   )}
                   <button type="button" title="Löschen" onClick={() => { if (window.confirm(`Frist „${d.label}“ löschen?`)) act(caseApi.deleteDeadline(pid, d.id)) }}
-                    className="rounded-[4px] border border-[#2a364b] p-1 text-rose-300 hover:bg-[#172133]"><Trash2 size={12} /></button>
+                    className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-1 text-rose-300 hover:bg-[rgb(var(--hh-s-hebung,23_33_51))]"><Trash2 size={12} /></button>
                 </span>
               )}
             </div>
@@ -77,7 +77,7 @@ export function DeadlinePanel({ pid, deadlines, canWrite, stateName, onChange }:
         ))}
       </ul>
       {canWrite && (
-        <div className="space-y-2 rounded-[4px] border border-[#2a364b] p-3">
+        <div className="space-y-2 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-3">
           <h3 className="text-sm font-semibold text-[#e8eef8]">Frist rechnen ({stateName})</h3>
           <div className="flex flex-wrap items-end gap-2 text-xs text-[#d7deea]">
             <label className="flex flex-col">Wofür<input value={f.label} onChange={set("label")} maxLength={200} placeholder="z. B. Widerspruch Bescheid" className={input} /></label>
@@ -95,10 +95,10 @@ export function DeadlinePanel({ pid, deadlines, canWrite, stateName, onChange }:
               </select>
             </label>
             <button type="button" onClick={() => void calc()} disabled={!f.event_date}
-              className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-3 py-1 text-sm disabled:opacity-50"><Calculator size={13} />Rechnen</button>
+              className="inline-flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1 text-sm disabled:opacity-50"><Calculator size={13} />Rechnen</button>
           </div>
           {preview && (
-            <div className="space-y-2 border-t border-[#2a364b] pt-2">
+            <div className="space-y-2 border-t border-[rgb(var(--hh-s-rand,42_54_75))] pt-2">
               <p className="text-sm text-[#e8eef8]">Fristende: <b>{preview.weekday}, {shortDate(preview.due_date)}</b></p>
               <CalcSteps steps={preview.steps} warnings={preview.warnings} />
               <button type="button" onClick={() => void save()} className="rounded-[4px] bg-[#1d4ed8] px-3 py-1 text-sm text-white">In die Akte übernehmen</button>

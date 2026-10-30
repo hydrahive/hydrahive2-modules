@@ -15,7 +15,7 @@ export function NowPlayingBar({ track, playing, onToggle, onOpen }: {
   if (!track) return null
   const label = playing ? t("mp_pause") : t("mp_play")
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-[4px] border border-fuchsia-400/25 bg-fuchsia-500/5 px-2 py-1.5">
+    <div className="flex min-w-0 items-center gap-2 rounded-[4px] border border-[#69d7ff]/25 bg-[#69d7ff]/5 px-2 py-1.5">
       <Equalizer active={playing} color="#d946ef" />
       <button
         type="button"
@@ -30,7 +30,7 @@ export function NowPlayingBar({ track, playing, onToggle, onOpen }: {
         onClick={onToggle}
         title={label}
         aria-label={label}
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-[4px] bg-fuchsia-500/80 text-white hover:bg-fuchsia-400"
+        className="grid h-7 w-7 shrink-0 place-items-center rounded-[4px] bg-[#69d7ff]/80 text-white hover:bg-[#1b3d56]"
       >
         {playing ? <Pause size={13} /> : <Play size={13} />}
       </button>

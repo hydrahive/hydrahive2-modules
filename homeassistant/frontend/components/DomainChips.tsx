@@ -25,12 +25,12 @@ export function DomainChips({ states, favCount, active, onSelect }: Props) {
         className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
           isActive
             ? "border-sky-400/40 bg-sky-500/20 text-sky-200"
-            : "border-white/10 bg-zinc-800/60 text-zinc-300 hover:bg-zinc-700/60"
+            : "border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39)/0.6)] text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54)/0.6)]"
         }`}
       >
         {IconEl}
         <span>{label}</span>
-        <span className={isActive ? "text-sky-300/80" : "text-zinc-500"}>{count}</span>
+        <span className={isActive ? "text-sky-300/80" : "text-[#9aa7bc]"}>{count}</span>
       </button>
     )
   }

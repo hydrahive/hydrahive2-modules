@@ -10,12 +10,12 @@ export function JobsSection({ onSetup }: { onSetup: () => void }) {
   const { t } = useTranslation("voip")
   const [conn, setConn] = useState<Connection | null>(null)
   useEffect(() => { void telephonyApi.connection().then(setConn).catch(() => setConn({ configured: false, status: "not_configured" })) }, [])
-  if (!conn) return <div role="status" className="flex min-h-40 items-center justify-center text-zinc-500"><Loader2 size={17} className="animate-spin" /></div>
+  if (!conn) return <div role="status" className="flex min-h-40 items-center justify-center text-[#9aa7bc]"><Loader2 size={17} className="animate-spin" /></div>
   if (!conn.configured) {
     return (
-      <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 text-sm text-zinc-300" data-voip-jobs-setup="1">
+      <section className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-5 text-sm text-[#c8d2df]" data-voip-jobs-setup="1">
         <p>{t("dial.needs_connection")}</p>
-        <button type="button" onClick={onSetup} className="mt-3 rounded-lg border border-zinc-700 px-3 py-2 text-zinc-200 hover:bg-zinc-800">
+        <button type="button" onClick={onSetup} className="mt-3 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-2 text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
           {t("setup_action")}
         </button>
       </section>

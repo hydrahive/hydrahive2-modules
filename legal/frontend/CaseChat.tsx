@@ -12,12 +12,12 @@ export function CaseChat({ pid, onClose }: { pid: string; onClose: () => void })
   useEffect(() => { caseApi.chat(pid).then(setSession).catch((e) => setError(errorText(e))) }, [pid])
 
   return (
-    <aside className="flex w-[min(560px,45vw)] shrink-0 flex-col rounded-[4px] border border-[#2a364b] bg-[#0d131d]">
-      <div className="flex items-center gap-2 border-b border-[#2a364b] px-3 py-1.5 text-sm text-[#e8eef8]">
+    <aside className="flex w-[min(560px,45vw)] shrink-0 flex-col rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_29))]">
+      <div className="flex items-center gap-2 border-b border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#e8eef8]">
         <span className="flex-1">Rechts-Agent</span>
-        <button type="button" onClick={onClose} title="Schließen" className="rounded p-1 text-[#8d9ab0] hover:bg-white/10"><X size={14} /></button>
+        <button type="button" onClick={onClose} title="Schließen" className="rounded p-1 text-[#9aa7bc] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"><X size={14} /></button>
       </div>
-      <p className="border-b border-[#2a364b] px-3 py-1 text-[11px] leading-4 text-amber-200/80">
+      <p className="border-b border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1 text-[11px] leading-4 text-amber-200/80">
         Keine Rechtsberatung. Der Agent zitiert Normen aus dem Korpus und legt Vorschläge ab – übernehmen musst du selbst.
       </p>
       <div className="min-h-0 flex-1">
@@ -26,7 +26,7 @@ export function CaseChat({ pid, onClose }: { pid: string; onClose: () => void })
           <ChatPane key={session.session_id} deepLinkSid={session.session_id} projectId={pid} showSidePanels={false}
             preferredAgentId={session.agent_id} agentSelectionExplicit />
         ) : !error && (
-          <div className="flex h-full items-center justify-center text-sm text-[#68758a]"><Loader2 size={14} className="mr-2 animate-spin" />Chat wird geöffnet …</div>
+          <div className="flex h-full items-center justify-center text-sm text-[#9aa7bc]"><Loader2 size={14} className="mr-2 animate-spin" />Chat wird geöffnet …</div>
         )}
       </div>
     </aside>

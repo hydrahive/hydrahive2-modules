@@ -25,10 +25,10 @@ export function ClorePanel({ usdPerEur }: { usdPerEur: number | null }) {
   const line = cloreLine(data.last_run, data.enabled)
   const hits = data.hits_24h.slice(0, 8)
   return (
-    <section className="space-y-2 rounded-xl border border-white/10 p-4">
-      <h2 className="text-sm font-semibold text-zinc-200">{t("clore_title")}</h2>
-      <p className="text-xs text-zinc-500">{t("clore_note")}</p>
-      <p className="text-sm text-zinc-300">
+    <section className="space-y-2 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] p-4">
+      <h2 className="text-sm font-semibold text-[#e8eef8]">{t("clore_title")}</h2>
+      <p className="text-xs text-[#9aa7bc]">{t("clore_note")}</p>
+      <p className="text-sm text-[#c8d2df]">
         {line.kind === "off" && t("clore_off")}
         {line.kind === "never" && t("clore_never")}
         {line.kind === "error" && <span className="text-amber-300">{t("clore_error", { error: line.error })}</span>}
@@ -37,23 +37,23 @@ export function ClorePanel({ usdPerEur }: { usdPerEur: number | null }) {
       </p>
       {hits.length > 0 && (
         <table className="w-full text-xs">
-          <thead className="text-zinc-500"><tr>
+          <thead className="text-[#9aa7bc]"><tr>
             <th className="py-1 text-left">{t("clore_col_gpu")}</th><th className="text-left">Coin</th>
             <th className="text-right">{t("clore_col_revenue")}</th><th className="text-right">{t("clore_col_cost")}</th>
             <th className="text-right">ROI</th><th className="text-right">Server</th>
           </tr></thead>
-          <tbody className="text-zinc-300">
+          <tbody className="text-[#c8d2df]">
             {hits.map((h) => {
               const b = bestRoi(h)
               const cost = b.kind === "spot" ? h.cost_spot : h.cost_od
               return (
-                <tr key={`${h.server_id}-${h.ts}`} className="border-t border-white/5">
+                <tr key={`${h.server_id}-${h.ts}`} className="border-t border-[rgb(var(--hh-s-rand,42_54_75))]">
                   <td className="py-1">{gpuLabel(h.gpu, h.count)}{h.source === "measured" ? " ✓" : ""}</td>
                   <td>{h.coin.toUpperCase()}</td>
                   <td className="text-right">{eur(toEur(h.revenue, usdPerEur))}</td>
                   <td className="text-right">{eur(toEur(cost, usdPerEur))}{b.kind === "spot" ? " (Spot)" : ""}</td>
                   <td className="text-right text-emerald-300">{pct(b.roi)}</td>
-                  <td className="text-right text-zinc-500">{h.server_id}{h.seen > 1 ? ` (${h.seen}×)` : ""}</td>
+                  <td className="text-right text-[#9aa7bc]">{h.server_id}{h.seen > 1 ? ` (${h.seen}×)` : ""}</td>
                 </tr>
               )
             })}
@@ -61,7 +61,7 @@ export function ClorePanel({ usdPerEur }: { usdPerEur: number | null }) {
         </table>
       )}
       {data.days.length > 0 && (
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-[#9aa7bc]">
           {data.days.slice(-7).map((d) => t("clore_day", { day: d.day.slice(5), hit: d.runs_with_hits, runs: d.runs })).join(" · ")}
         </p>
       )}

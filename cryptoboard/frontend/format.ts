@@ -31,7 +31,7 @@ export function fmtPct(value: number | null): string {
 
 // Tailwind-Klasse für +/- (grün/rot, neutral bei null).
 export function trendClass(value: number | null): string {
-  if (value == null) return "text-zinc-500"
+  if (value == null) return "text-[#9aa7bc]"
   return value >= 0 ? "text-emerald-400" : "text-rose-400"
 }
 

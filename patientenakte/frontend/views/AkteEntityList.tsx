@@ -54,7 +54,7 @@ export function AkteEntityList({ entity, statusFilter }: Props) {
   }
 
   if (!entitySchema || rows === null) {
-    return <div className="h-48 rounded-xl bg-zinc-900/50 animate-pulse" />
+    return <div className="h-48 rounded-xl bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] animate-pulse" />
   }
 
   const { label, list_columns, ui_fields } = entitySchema
@@ -65,14 +65,14 @@ export function AkteEntityList({ entity, statusFilter }: Props) {
   const labelCol: Column<AkteRecord> = {
     key: "label",
     label: fieldLabel(entitySchema.label_fields[0] ?? "label"),
-    render: (r) => <span className="text-zinc-200">{r.label}</span>,
+    render: (r) => <span className="text-[#e8eef8]">{r.label}</span>,
   }
 
   const dataCols: Column<AkteRecord>[] = list_columns.map((col) => ({
     key: col,
     label: fieldLabel(col),
     render: (r) => (
-      <span className="text-zinc-400 text-xs">
+      <span className="text-[#c8d2df] text-xs">
         {(r.record as Record<string, unknown>)[col]?.toString() ?? "—"}
       </span>
     ),
@@ -82,7 +82,7 @@ export function AkteEntityList({ entity, statusFilter }: Props) {
     key: "sort_date",
     label: "Datum",
     render: (r) => (
-      <span className="text-zinc-500 text-xs">
+      <span className="text-[#9aa7bc] text-xs">
         {r.sort_date ? new Date(r.sort_date).toLocaleDateString("de-DE") : "—"}
       </span>
     ),
@@ -106,7 +106,7 @@ export function AkteEntityList({ entity, statusFilter }: Props) {
         )}
         <button
           onClick={() => setModal({ existing: r })}
-          className="text-zinc-600 hover:text-zinc-300 text-xs transition-colors"
+          className="text-[#9aa7bc] hover:text-[#c8d2df] text-xs transition-colors"
           title={t("akte.edit_title")}
         >
           ✎
@@ -114,7 +114,7 @@ export function AkteEntityList({ entity, statusFilter }: Props) {
         <button
           onClick={() => handleDelete(r.id)}
           disabled={deleting === r.id}
-          className="text-zinc-600 hover:text-red-400 text-xs transition-colors disabled:opacity-50"
+          className="text-[#9aa7bc] hover:text-red-400 text-xs transition-colors disabled:opacity-50"
           title={t("akte.delete_title")}
         >
           ✕
@@ -128,14 +128,14 @@ export function AkteEntityList({ entity, statusFilter }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <h2 className="text-base font-semibold text-zinc-100">{label}</h2>
-        <span className="text-xs text-zinc-600">({rows.length})</span>
+        <h2 className="text-base font-semibold text-[#e8eef8]">{label}</h2>
+        <span className="text-xs text-[#9aa7bc]">({rows.length})</span>
         <input
           type="search"
           placeholder={t("akte.search_placeholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="ml-auto rounded-lg border border-white/[8%] bg-zinc-800 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 w-48"
+          className="ml-auto rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-1.5 text-sm text-[#e8eef8] placeholder-[#9aa7bc] w-48"
         />
         <button
           onClick={() => setModal({})}

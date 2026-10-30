@@ -63,7 +63,7 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
   const chapterCount = book.parts.reduce((k, p) => k + p.chapters.length, 0)
   const rename = (id: string, title: string) => { change((b) => renameNode(b, id, title)); setEditing(null) }
   const Title = ({ id, title, cls }: { id: string; title: string; cls: string }) => editing === id ? (
-    <input autoFocus defaultValue={title} className="w-full rounded bg-zinc-950 px-1 text-sm text-zinc-100"
+    <input autoFocus defaultValue={title} className="w-full rounded bg-[rgb(var(--hh-s-tief,13_20_32))] px-1 text-sm text-[#e8eef8]"
       onBlur={(e) => rename(id, e.target.value)}
       onKeyDown={(e) => { if (e.key === "Enter") rename(id, e.currentTarget.value); if (e.key === "Escape") setEditing(null) }} />
   ) : <span className={cls} onDoubleClick={() => setEditing(id)} title={t("rename")}>{title}</span>
@@ -71,28 +71,28 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
   return (
     <div className="space-y-4 p-2 text-sm">
       <div>
-        <div className="flex items-center justify-between px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+        <div className="flex items-center justify-between px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#9aa7bc]">
           {t("structure")}
         </div>
         {book.parts.map((p) => (
           <div key={p.id}>
-            {book.parts.length > 1 && <Title id={p.id} title={p.title} cls="block px-1 py-1 text-xs font-semibold text-zinc-400" />}
+            {book.parts.length > 1 && <Title id={p.id} title={p.title} cls="block px-1 py-1 text-xs font-semibold text-[#c8d2df]" />}
             {p.chapters.map((c) => (
               <div key={c.id} className="mb-1"
                 onDragOver={(e) => { if (dragRef.current) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setOver(`c:${c.id}`) } }}
                 onDrop={(e) => { e.preventDefault(); dropOn(c.id) }}>
-                <div className={`group flex items-center gap-1 rounded px-1 py-1 ${over === `c:${c.id}` ? "bg-violet-500/10" : ""}`}>
-                  <button onClick={() => setClosed((x) => ({ ...x, [c.id]: !x[c.id] }))} className="text-zinc-500 hover:text-zinc-200" aria-label={c.title}>
+                <div className={`group flex items-center gap-1 rounded px-1 py-1 ${over === `c:${c.id}` ? "bg-[#69d7ff]/10" : ""}`}>
+                  <button onClick={() => setClosed((x) => ({ ...x, [c.id]: !x[c.id] }))} className="text-[#9aa7bc] hover:text-[#e8eef8]" aria-label={c.title}>
                     {closed[c.id] ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
-                  <Title id={c.id} title={c.title} cls="flex-1 truncate font-semibold text-zinc-200" />
+                  <Title id={c.id} title={c.title} cls="flex-1 truncate font-semibold text-[#e8eef8]" />
                   {can && <button disabled={busy} onClick={() => { void create(() => storyApi.addScene(state.projectId, book.id, c.id, names.scene(c.scenes.length + 1))) }}
-                    title={t(del.unit === "scene" ? "add_scene" : "add_section")} aria-label={t(del.unit === "scene" ? "add_scene" : "add_section")} className="text-zinc-600 opacity-0 hover:text-zinc-200 focus:opacity-100 group-hover:opacity-100">
+                    title={t(del.unit === "scene" ? "add_scene" : "add_section")} aria-label={t(del.unit === "scene" ? "add_scene" : "add_section")} className="text-[#9aa7bc] opacity-0 hover:text-[#e8eef8] focus:opacity-100 group-hover:opacity-100">
                     <FilePlus2 className="h-3.5 w-3.5" />
                   </button>}
                   {can && !del.chapterBlocked && <button disabled={del.busy} onClick={() => { void del.deleteChapter(c) }}
                     title={t("delete_chapter")} aria-label={`${t("delete_chapter")}: ${c.title}`}
-                    className="st-delete-chapter text-zinc-600 opacity-0 hover:text-red-300 focus:opacity-100 group-hover:opacity-100">
+                    className="st-delete-chapter text-[#9aa7bc] opacity-0 hover:text-red-300 focus:opacity-100 group-hover:opacity-100">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>}
                 </div>
@@ -103,13 +103,13 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
                       if (dragRef.current && dragRef.current !== s.id) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; setOver(`s:${s.id}`) }
                     }}
                     onDrop={(e) => { e.preventDefault(); e.stopPropagation(); dropOn(c.id, s.id) }}
-                    className={`group/s relative ml-4 border-t-2 ${over === `s:${s.id}` ? "border-violet-400" : "border-transparent"}`}>
+                    className={`group/s relative ml-4 border-t-2 ${over === `s:${s.id}` ? "border-[#69d7ff]" : "border-transparent"}`}>
                     <button onClick={() => onOpenScene(s.id)} aria-current={s.id === sceneId}
                       onKeyDown={(e) => {
                         if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) { e.preventDefault(); change((b) => nudgeScene(b, s.id, e.key === "ArrowUp" ? -1 : 1)) }
                         if (e.key === "F2") { e.preventDefault(); setEditing(s.id) }
                       }}
-                      className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left ${s.id === sceneId ? "bg-violet-500/20 text-violet-100" : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"} ${drag === s.id ? "opacity-40" : ""}`}>
+                      className={`flex w-full items-center gap-2 rounded px-2 py-1 text-left ${s.id === sceneId ? "bg-[#69d7ff]/20 text-[#c8f2ff]" : "text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] hover:text-[#e8eef8]"} ${drag === s.id ? "opacity-40" : ""}`}>
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot(s.status)}`} />
                       <Title id={s.id} title={s.title} cls="truncate" />
                       {(state.proposals[s.id] || state.infoProposals[s.id]) && (
@@ -120,13 +120,13 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
                           title={t("team_open_n", { n: noteCounts[s.id] })}>{noteCounts[s.id]}</span>
                       )}
                       {s.origin !== "human" && (
-                        <Sparkles className={`st-origin ml-auto h-3 w-3 shrink-0 ${s.origin === "ai_draft" ? "text-violet-300" : "text-violet-300/40"}`}
+                        <Sparkles className={`st-origin ml-auto h-3 w-3 shrink-0 ${s.origin === "ai_draft" ? "text-[#69d7ff]" : "text-[#69d7ff]"}`}
                           aria-label={t(`origin_${s.origin}`)}><title>{t(`origin_${s.origin}`)}</title></Sparkles>
                       )}
                     </button>
                     {can && !del.sceneBlocked(c) && <button disabled={del.busy} onClick={() => { void del.deleteScene(s, c) }}
                       title={t(`delete_${del.unit}`)} aria-label={`${t(`delete_${del.unit}`)}: ${s.title}`}
-                      className="st-delete-scene absolute right-1 top-1 rounded bg-zinc-900 p-0.5 text-zinc-600 opacity-0 hover:text-red-300 focus:opacity-100 group-hover/s:opacity-100">
+                      className="st-delete-scene absolute right-1 top-1 rounded bg-[rgb(var(--hh-s-box,21_28_43))] p-0.5 text-[#9aa7bc] opacity-0 hover:text-red-300 focus:opacity-100 group-hover/s:opacity-100">
                       <Trash2 className="h-3 w-3" />
                     </button>}
                   </div>
@@ -134,13 +134,13 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
               </div>
             ))}
             {can && <button disabled={busy} onClick={() => { void create(() => storyApi.addChapter(state.projectId, book.id, p.id, names.chapter(chapterCount + 1), names.scene(1))) }}
-              className="ml-1 mt-1 flex items-center gap-1.5 rounded px-1 py-1 text-xs text-zinc-500 hover:bg-white/5 hover:text-zinc-200">
+              className="ml-1 mt-1 flex items-center gap-1.5 rounded px-1 py-1 text-xs text-[#9aa7bc] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] hover:text-[#e8eef8]">
               <FolderPlus className="h-3.5 w-3.5" />{t("add_chapter")}
             </button>}
           </div>
         ))}
         {(error || del.error) && <p className="px-1 pt-1 text-xs text-red-300" role="alert">{error || del.error}</p>}
-        <p className="px-1 pt-1 text-[11px] text-zinc-600">{t(del.unit === "scene" ? "drag_hint" : "drag_hint_section")} F2 · Alt+↑/↓</p>
+        <p className="px-1 pt-1 text-[11px] text-[#9aa7bc]">{t(del.unit === "scene" ? "drag_hint" : "drag_hint_section")} F2 · Alt+↑/↓</p>
       </div>
       <EntityList book={book} activeId={entityId} onOpen={onOpenEntity} change={change} proposals={state.entityProposals} />
       <TrashScenes state={state} onOpenScene={onOpenScene} />
@@ -149,5 +149,5 @@ export function Navigator({ state, sceneId, entityId, onOpenScene, onOpenEntity 
 }
 
 function dot(status: string): string {
-  return { idea: "bg-zinc-600", draft: "bg-amber-400", revised: "bg-sky-400", done: "bg-emerald-400" }[status] ?? "bg-zinc-600"
+  return { idea: "bg-[rgb(var(--hh-s-rand-hover,70_97_127))]", draft: "bg-amber-400", revised: "bg-sky-400", done: "bg-emerald-400" }[status] ?? "bg-[rgb(var(--hh-s-rand-hover,70_97_127))]"
 }

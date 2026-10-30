@@ -5,18 +5,18 @@ import type { ConnectionStatus } from "./types"
 
 const STYLE: Record<Tone, string> = {
   ok: "border-emerald-500/30 bg-emerald-500/5 text-emerald-200",
-  busy: "border-indigo-500/30 bg-indigo-500/5 text-indigo-200",
+  busy: "border-[#69d7ff]/30 bg-[#69d7ff]/5 text-[#69d7ff]",
   warn: "border-amber-500/30 bg-amber-500/5 text-amber-100",
   error: "border-red-500/30 bg-red-500/5 text-red-200",
-  idle: "border-zinc-700 bg-zinc-900/60 text-zinc-300",
+  idle: "border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.6)] text-[#c8d2df]",
 }
 
 function Icon({ tone }: { tone: Tone }) {
   if (tone === "ok") return <CheckCircle2 size={18} className="text-emerald-400" />
-  if (tone === "busy") return <Loader2 size={18} className="animate-spin text-indigo-300" />
+  if (tone === "busy") return <Loader2 size={18} className="animate-spin text-[#69d7ff]" />
   if (tone === "warn") return <TriangleAlert size={18} className="text-amber-400" />
   if (tone === "error") return <XCircle size={18} className="text-red-400" />
-  return <CircleDashed size={18} className="text-zinc-500" />
+  return <CircleDashed size={18} className="text-[#9aa7bc]" />
 }
 
 /** Stand der Verbindung in einem Satz plus was zu tun ist. */

@@ -10,8 +10,8 @@ import type { PlayerUI } from "./useAudioPlayer"
 import type { LibraryPermissions, Track } from "./types"
 
 const CONTROL_CLASS =
-  "grid h-8 w-8 place-items-center rounded-[4px] border border-transparent text-[#8d9ab0] transition-colors " +
-  "hover:border-[#46617f] hover:bg-[#172133] hover:text-[#e8eef8] " +
+  "grid h-8 w-8 place-items-center rounded-[4px] border border-transparent text-[#9aa7bc] transition-colors " +
+  "hover:border-[rgb(var(--hh-s-rand-hover,70_97_127))] hover:bg-[rgb(var(--hh-s-hebung,23_33_51))] hover:text-[#e8eef8] " +
   "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#69d7ff]"
 
 function fmt(seconds: number): string {
@@ -32,7 +32,7 @@ function ControlButton({ label, active, onClick, children }: {
       aria-label={label}
       aria-pressed={active}
       onClick={onClick}
-      className={`${CONTROL_CLASS} ${active ? "border-fuchsia-400/35 bg-fuchsia-500/10 text-fuchsia-200" : ""}`}
+      className={`${CONTROL_CLASS} ${active ? "border-[#69d7ff]/35 bg-[#69d7ff]/10 text-[#69d7ff]" : ""}`}
     >
       {children}
     </button>
@@ -55,13 +55,13 @@ export function AudioPlayerView({ projectId, tracks, permissions, onRemove, play
 
   return (
     <div className="space-y-3">
-      <div className="rounded-[4px] border border-[#2a364b] bg-[#0d1420] p-3">
+      <div className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-3">
         <p className="mb-2 text-[9px] font-black uppercase tracking-[.15em] text-[#69d7ff]">{t("mp_now_playing")}</p>
         <div className="flex min-w-0 items-center gap-2">
           <Equalizer active={playing} color="#d946ef" />
           <span className="truncate text-xs font-bold text-[#e8eef8]">{activeTrack?.title ?? t("mp_nothing")}</span>
         </div>
-        <div className="mt-3 flex items-center gap-2 text-[9px] text-[#8d9ab0]">
+        <div className="mt-3 flex items-center gap-2 text-[9px] text-[#9aa7bc]">
           <span>{fmt(elapsed)}</span>
           <input
             aria-label={t("mp_seek")}
@@ -71,7 +71,7 @@ export function AudioPlayerView({ projectId, tracks, permissions, onRemove, play
             step={0.1}
             value={elapsed}
             onChange={(e) => seek(Number(e.target.value))}
-            className="flex-1 accent-fuchsia-500"
+            className="flex-1 accent-[#69d7ff]"
           />
           <span>{fmt(duration)}</span>
         </div>
@@ -87,7 +87,7 @@ export function AudioPlayerView({ projectId, tracks, permissions, onRemove, play
             title={playLabel}
             aria-label={playLabel}
             onClick={toggle}
-            className="grid h-9 w-9 place-items-center rounded-[4px] bg-fuchsia-500 text-white hover:bg-fuchsia-400"
+            className="grid h-9 w-9 place-items-center rounded-[4px] bg-[#163248] text-white hover:bg-[#1b3d56]"
           >
             {playing ? <Pause size={16} /> : <Play size={16} />}
           </button>
@@ -102,7 +102,7 @@ export function AudioPlayerView({ projectId, tracks, permissions, onRemove, play
             {repeat === "one" ? <Repeat1 size={14} /> : <Repeat size={14} />}
           </ControlButton>
         </div>
-        <div className="mt-2 flex items-center gap-2 border-t border-[#2a364b] pt-2 text-[#8d9ab0]">
+        <div className="mt-2 flex items-center gap-2 border-t border-[rgb(var(--hh-s-rand,42_54_75))] pt-2 text-[#9aa7bc]">
           <Volume2 size={13} />
           <input
             aria-label={t("mp_volume")}
@@ -112,7 +112,7 @@ export function AudioPlayerView({ projectId, tracks, permissions, onRemove, play
             step={0.01}
             value={volume}
             onChange={(e) => setVolume(Number(e.target.value))}
-            className="flex-1 accent-fuchsia-500"
+            className="flex-1 accent-[#69d7ff]"
           />
         </div>
       </div>

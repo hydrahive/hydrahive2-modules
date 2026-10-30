@@ -27,7 +27,7 @@ export function StationPanel() {
       .catch((e) => setMsg({ ok: false, text: t(stationErrorKey(e)) }))
       .finally(() => setBusy(false))
   }
-  if (!s) return <p className="text-sm text-zinc-400">{msg?.text ?? t("loading")}</p>
+  if (!s) return <p className="text-sm text-[#c8d2df]">{msg?.text ?? t("loading")}</p>
   return <StationView key={rev} s={s} busy={busy} msg={msg} host={window.location.host}
     onStart={() => run(startStation, "station.started")} onStop={() => run(stopStation, "station.stopped")}
     onSkip={() => run(skipTitle, "station.skipped")} onSave={(v: StationSettings) => run(() => saveStation(v), "station.saved")} />

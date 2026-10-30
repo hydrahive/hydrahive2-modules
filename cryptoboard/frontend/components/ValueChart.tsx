@@ -12,7 +12,7 @@ interface Props {
 export function ValueChart({ points, vs = "eur" }: Props) {
   const gid = useId().replace(/:/g, "")
   if (!points || points.length < 2) {
-    return <div className="h-72 grid place-items-center text-sm text-zinc-600">—</div>
+    return <div className="h-72 grid place-items-center text-sm text-[#9aa7bc]">—</div>
   }
   const data = points.map((p) => ({ ts: new Date(p.day).getTime(), v: p.value }))
   const positive = data[data.length - 1].v >= data[0].v

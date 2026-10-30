@@ -19,7 +19,7 @@ export function MsReauth({ account, onDone }: { account: Account; onDone: () => 
   }, [s.state, s.flow, account.id, onDone])
 
   return (
-    <section className="space-y-2 border-t border-[#2a364b] pt-3" data-mbx-ms-reauth="1">
+    <section className="space-y-2 border-t border-[rgb(var(--hh-s-rand,42_54_75))] pt-3" data-mbx-ms-reauth="1">
       <h3 className="text-xs font-semibold text-[#e8eef8]">{t("ms.reauthTitle")}</h3>
       {account.status === "auth_failed" && <p className="text-xs text-rose-300">{t("ms.expiredAccount")}</p>}
       <MsSignInView state={s.state} flow={s.flow} errKey={s.errKey} detail={s.detail} onStart={() => void s.start()} />

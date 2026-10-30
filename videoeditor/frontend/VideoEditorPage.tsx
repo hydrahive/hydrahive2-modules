@@ -61,7 +61,7 @@ export function VideoEditorPage() {
   const shell = (children: ReactNode) => (
     <CockpitShell
       title={t("title")}
-      className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]"
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]"
       hideHeader
     >
       <CockpitTopbar active="/videoeditor" context={t("title")} />
@@ -70,7 +70,7 @@ export function VideoEditorPage() {
   )
 
   if (projects.length === 0) {
-    return shell(<div className="text-sm text-[#8d9ab0]">{t("no_projects")}</div>)
+    return shell(<div className="text-sm text-[#9aa7bc]">{t("no_projects")}</div>)
   }
 
   if (openFile) {
@@ -80,10 +80,10 @@ export function VideoEditorPage() {
   return shell(
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
+        <h1 className="text-lg font-semibold text-[#e8eef8]">{t("title")}</h1>
         <HelpButton topic="videoeditor" />
         <select value={projectId} onChange={(e) => setProjectId(e.target.value)}
-          className="px-2 py-1 text-sm rounded bg-black/30 border border-white/10 text-zinc-200">
+          className="px-2 py-1 text-sm rounded bg-black/30 border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#e8eef8]">
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <span className="flex-1" />
@@ -92,7 +92,7 @@ export function VideoEditorPage() {
           {t("add_from_project")}
         </button>
         <button onClick={() => fileRef.current?.click()} disabled={uploading}
-          className="px-3 py-1.5 text-xs rounded bg-violet-500/15 border border-violet-500/30 text-violet-200 disabled:opacity-40">
+          className="px-3 py-1.5 text-xs rounded bg-[#69d7ff]/15 border border-[#69d7ff]/30 text-[#69d7ff] disabled:opacity-40">
           {uploading ? t("uploading") : t("upload")}
         </button>
         <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={onFile} />
@@ -101,19 +101,19 @@ export function VideoEditorPage() {
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       {files.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-sm text-zinc-500">{t("empty")}</p></div>
+        <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-sm text-[#9aa7bc]">{t("empty")}</p></div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {files.map((f) => (
             <button key={f.file_id} onClick={() => setOpenFile(f)}
-              className="text-left rounded-lg border border-white/10 overflow-hidden hover:border-violet-500/40 transition-colors bg-black/20">
-              <div className="aspect-video bg-black/40 flex items-center justify-center text-zinc-600 text-xs">
+              className="text-left rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] overflow-hidden hover:border-[#69d7ff]/40 transition-colors bg-black/20">
+              <div className="aspect-video bg-black/40 flex items-center justify-center text-[#9aa7bc] text-xs">
                 {f.width}×{f.height}
               </div>
               <div className="p-2">
-                <p className="text-xs text-zinc-200 truncate">{f.filename}</p>
-                <p className="text-[10px] text-zinc-500 truncate">{f.source_rel}</p>
-                <p className="text-[10px] text-zinc-500">{f.duration?.toFixed(1)}s · {f.edl?.timeline?.length ?? 0} {t("clips")}</p>
+                <p className="text-xs text-[#e8eef8] truncate">{f.filename}</p>
+                <p className="text-[10px] text-[#9aa7bc] truncate">{f.source_rel}</p>
+                <p className="text-[10px] text-[#9aa7bc]">{f.duration?.toFixed(1)}s · {f.edl?.timeline?.length ?? 0} {t("clips")}</p>
               </div>
             </button>
           ))}

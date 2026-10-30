@@ -1,7 +1,7 @@
 {
   "id": "radiostream",
   "name": "Radiostream",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Eigenes Webradio aus der Musiksammlung auf dem NAS: Bibliothek einlesen und durchsuchen, AutoDJ mit Überblendung und eigene Hörer-Seite auf eigenem Port (ohne HydraHive-Anmeldung).",
   "icon": "Radio",
   "nav_group": "working",

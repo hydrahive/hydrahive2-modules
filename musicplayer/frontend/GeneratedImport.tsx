@@ -52,17 +52,17 @@ export function GeneratedImport({ projectId, kind, onImported }: {
         type="button"
         onClick={toggle}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-2 text-xs font-bold text-[#c4cedd] hover:border-[#46617f] hover:bg-[#172133]"
+        className="flex w-full items-center gap-2 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-2 text-xs font-bold text-[#c4cedd] hover:border-[rgb(var(--hh-s-rand-hover,70_97_127))] hover:bg-[rgb(var(--hh-s-hebung,23_33_51))]"
       >
         {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         <FolderInput size={12} className="text-[#69d7ff]" />
         <span className="flex-1 text-left">{t("mp_project_sources")}</span>
       </button>
       {open && (
-        <div className="mt-1 max-h-72 space-y-2 overflow-y-auto rounded-[4px] border border-[#2a364b] bg-[#0d1420] p-1">
+        <div className="mt-1 max-h-72 space-y-2 overflow-y-auto rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-1">
           {error && <p className="px-2 py-1 text-[10px] text-rose-300">{error}</p>}
-          {loading && <p className="px-2 py-1 text-[10px] text-[#8d9ab0]">{t("mp_loading")}</p>}
-          {!loading && items.length === 0 && <p className="px-2 py-1 text-[10px] text-[#8d9ab0]">{t("mp_generated_empty")}</p>}
+          {loading && <p className="px-2 py-1 text-[10px] text-[#9aa7bc]">{t("mp_loading")}</p>}
+          {!loading && items.length === 0 && <p className="px-2 py-1 text-[10px] text-[#9aa7bc]">{t("mp_generated_empty")}</p>}
           {groupedSources(items).map(([group, sources]) => (
             <section key={group}>
               <p className="px-2 py-1 text-[9px] font-bold uppercase text-[#69d7ff]">{group}</p>
@@ -73,7 +73,7 @@ export function GeneratedImport({ projectId, kind, onImported }: {
                   ? trackSubtitle({ ...item.meta, prompt: undefined }).text
                   : subtitle.text
                 return (
-                  <div key={item.path} className="flex items-center gap-2 rounded-[4px] bg-[#111827] px-2 py-1.5">
+                  <div key={item.path} className="flex items-center gap-2 rounded-[4px] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1.5">
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[10px] text-[#aab6c8]" title={item.meta.prompt ?? item.path}>{item.title}</span>
                       {details && <span className="block truncate text-[9px] text-[#64748b]">{details}</span>}
@@ -87,7 +87,7 @@ export function GeneratedImport({ projectId, kind, onImported }: {
                           disabled={busy === item.path}
                           title={t("mp_import")}
                           aria-label={t("mp_import")}
-                          className="shrink-0 text-[#8d9ab0] hover:text-fuchsia-200 disabled:opacity-40"
+                          className="shrink-0 text-[#9aa7bc] hover:text-[#69d7ff] disabled:opacity-40"
                         >
                           <Download size={13} />
                         </button>

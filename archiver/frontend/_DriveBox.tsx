@@ -30,7 +30,7 @@ export function DriveBox({
           onClick={onRefresh}
           disabled={loading}
           title="Aktualisieren"
-          className="text-zinc-600 hover:text-zinc-300 transition-colors disabled:opacity-40"
+          className="text-[#9aa7bc] hover:text-[#c8d2df] transition-colors disabled:opacity-40"
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
         </button>
@@ -38,7 +38,7 @@ export function DriveBox({
     >
       <div className="p-4 space-y-2">
         {drives.length === 0 ? (
-          <p className="text-xs text-zinc-600">Kein USB-Laufwerk erkannt.</p>
+          <p className="text-xs text-[#9aa7bc]">Kein USB-Laufwerk erkannt.</p>
         ) : (
           drives.map(d => (
             <div
@@ -46,21 +46,21 @@ export function DriveBox({
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-colors ${
                 d.mountpoint
                   ? selectedDevice === d.device
-                    ? "border-violet-500/50 bg-violet-500/10 text-zinc-100 cursor-pointer"
-                    : "border-white/[6%] hover:border-white/[12%] text-zinc-300 cursor-pointer"
-                  : "border-white/[4%] text-zinc-500"
+                    ? "border-[#69d7ff]/50 bg-[#69d7ff]/10 text-[#e8eef8] cursor-pointer"
+                    : "border-[rgb(var(--hh-s-rand,42_54_75))] hover:border-[rgb(var(--hh-s-rand,42_54_75))] text-[#c8d2df] cursor-pointer"
+                  : "border-[rgb(var(--hh-s-rand,42_54_75))] text-[#9aa7bc]"
               }`}
               onClick={() => onSelect(d)}
             >
-              <HardDrive size={14} className={d.mountpoint ? "text-violet-400" : "text-zinc-600"} />
+              <HardDrive size={14} className={d.mountpoint ? "text-[#69d7ff]" : "text-[#9aa7bc]"} />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{d.label}</div>
-                <div className="text-[11px] text-zinc-500 truncate">
+                <div className="text-[11px] text-[#9aa7bc] truncate">
                   {d.mountpoint
                     ? <span>{d.mountpoint}</span>
                     : <span className="text-amber-500/80">nicht gemountet</span>}
                   {" · "}{d.size}
-                  {d.fstype && <span className="ml-1 text-zinc-600">({d.fstype})</span>}
+                  {d.fstype && <span className="ml-1 text-[#9aa7bc]">({d.fstype})</span>}
                 </div>
               </div>
               {!d.mountpoint ? (
@@ -87,7 +87,7 @@ export function DriveBox({
                     onClick={e => { e.stopPropagation(); onUnmount(d.device, d.mountpoint) }}
                     disabled={mounting === d.device}
                     title="Sauber aushängen"
-                    className="flex items-center gap-1 px-2 py-1 rounded text-[11px] bg-zinc-700/50 border border-white/[6%] text-zinc-400 hover:text-zinc-200 disabled:opacity-40 transition-colors"
+                    className="flex items-center gap-1 px-2 py-1 rounded text-[11px] bg-[rgb(var(--hh-s-hebung,27_37_54)/0.5)] border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#c8d2df] hover:text-[#e8eef8] disabled:opacity-40 transition-colors"
                   >
                     <Unplug size={10} />
                   </button>

@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react"
 import { caseApi, type Party } from "./api"
 import { errorText, PARTY_ROLES, partyRoleLabel } from "./caseFormat"
 
-const input = "rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1 text-sm text-[#e8eef8]"
+const input = "rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1 text-sm text-[#e8eef8]"
 
 /** Reiter „Beteiligte“. */
 export function PartyPanel({ pid, parties, canWrite, onChange }: { pid: string; parties: Party[]; canWrite: boolean; onChange: () => void }) {
@@ -25,21 +25,21 @@ export function PartyPanel({ pid, parties, canWrite, onChange }: { pid: string; 
 
   return (
     <div className="space-y-3">
-      {parties.length === 0 && <p className="text-sm text-[#8d9ab0]">Noch keine Beteiligten.</p>}
+      {parties.length === 0 && <p className="text-sm text-[#9aa7bc]">Noch keine Beteiligten.</p>}
       <ul className="space-y-1">
         {parties.map((p) => (
-          <li key={p.id} className="flex items-start gap-2 rounded-[4px] border border-[#1d2636] p-2 text-sm">
+          <li key={p.id} className="flex items-start gap-2 rounded-[4px] border border-[rgb(var(--hh-s-rand,29_38_54))] p-2 text-sm">
             <div className="flex-1">
-              <p className="text-[#e8eef8]"><b>{p.name}</b> <span className="text-xs text-[#8d9ab0]">({partyRoleLabel(p.role)})</span></p>
-              {(p.address || p.contact) && <p className="text-xs text-[#8d9ab0]">{[p.address, p.contact].filter(Boolean).join(" · ")}</p>}
-              {p.note && <p className="text-xs text-[#68758a]">{p.note}</p>}
+              <p className="text-[#e8eef8]"><b>{p.name}</b> <span className="text-xs text-[#9aa7bc]">({partyRoleLabel(p.role)})</span></p>
+              {(p.address || p.contact) && <p className="text-xs text-[#9aa7bc]">{[p.address, p.contact].filter(Boolean).join(" · ")}</p>}
+              {p.note && <p className="text-xs text-[#9aa7bc]">{p.note}</p>}
             </div>
-            {canWrite && <button type="button" title="Entfernen" onClick={() => void remove(p)} className="rounded-[4px] border border-[#2a364b] p-1 text-rose-300 hover:bg-[#172133]"><Trash2 size={12} /></button>}
+            {canWrite && <button type="button" title="Entfernen" onClick={() => void remove(p)} className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-1 text-rose-300 hover:bg-[rgb(var(--hh-s-hebung,23_33_51))]"><Trash2 size={12} /></button>}
           </li>
         ))}
       </ul>
       {canWrite && (
-        <form onSubmit={(e) => void add(e)} className="flex flex-wrap items-end gap-2 rounded-[4px] border border-[#2a364b] p-3 text-xs text-[#d7deea]">
+        <form onSubmit={(e) => void add(e)} className="flex flex-wrap items-end gap-2 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-3 text-xs text-[#d7deea]">
           <label className="flex flex-col">Rolle
             <select value={f.role} onChange={set("role")} className={input}>{Object.entries(PARTY_ROLES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
           </label>

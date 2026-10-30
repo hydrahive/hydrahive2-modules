@@ -54,15 +54,15 @@ export function Library({ isAdmin, configured }: { isAdmin: boolean; configured:
       <Filters f={f} genres={genres} onChange={setF} />
       {msg && <p className="text-sm text-rose-300">{msg}</p>}
       <audio ref={audio} onEnded={() => setPlaying(null)} onPause={() => setPlaying(null)} className="hidden" preload="none" />
-      {items === null ? <p className="text-sm text-zinc-500">{t("loading")}</p>
+      {items === null ? <p className="text-sm text-[#9aa7bc]">{t("loading")}</p>
         : items.length === 0 ? (
-          <div className="rounded border border-dashed border-white/10 p-6 text-sm text-zinc-400" data-radiostream-empty>
+          <div className="rounded border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] p-6 text-sm text-[#c8d2df]" data-radiostream-empty>
             {filtered ? t("empty_search") : <>{t("empty")} {isAdmin ? t("empty_admin") : t("empty_user")}</>}
           </div>
         ) : (
-          <div className="overflow-hidden rounded border border-white/10">
+          <div className="overflow-hidden rounded border border-[rgb(var(--hh-s-rand,42_54_75))]">
             <table className="w-full table-fixed">
-              <thead className="bg-white/[4%] text-left text-xs uppercase tracking-wide text-zinc-500">
+              <thead className="bg-[rgb(var(--hh-s-innen,17_24_39))] text-left text-xs uppercase tracking-wide text-[#9aa7bc]">
                 <tr>
                   <th className="w-10" />
                   <th className="py-2 pr-3">{t("col.title")}</th>
@@ -76,8 +76,8 @@ export function Library({ isAdmin, configured }: { isAdmin: boolean; configured:
               <tbody>{items.map((it) => <TrackRow key={it.track_id} t={it} playing={playing === it.track_id} onPlay={play} />)}</tbody>
             </table>
             {cursor && (
-              <div className="border-t border-white/10 p-2 text-center">
-                <button type="button" onClick={more} className="rounded px-3 py-1 text-sm text-zinc-300 hover:bg-white/10">{t("more")}</button>
+              <div className="border-t border-[rgb(var(--hh-s-rand,42_54_75))] p-2 text-center">
+                <button type="button" onClick={more} className="rounded px-3 py-1 text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{t("more")}</button>
               </div>
             )}
           </div>

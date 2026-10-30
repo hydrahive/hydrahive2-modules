@@ -72,26 +72,26 @@ export function ImportDialog({ onDone, onCancel }: Props) {
   }
 
   const importable = preview?.transactions.filter((tx) => tx.resolved && !tx.duplicate).length ?? 0
-  const fieldCls = "px-2 py-1 rounded-md bg-zinc-900/70 border border-white/[8%] text-xs text-zinc-200 outline-none"
+  const fieldCls = "px-2 py-1 rounded-md bg-[rgb(var(--hh-s-box,21_28_43)/0.7)] border border-[rgb(var(--hh-s-rand,42_54_75))] text-xs text-[#e8eef8] outline-none"
 
   return (
     <div className="space-y-3">
       {!preview && (
         <button onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-2 px-4 py-3 w-full justify-center rounded-lg border border-dashed border-white/15 text-sm text-zinc-300 hover:bg-white/[3%] transition-colors">
+          className="flex items-center gap-2 px-4 py-3 w-full justify-center rounded-lg border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] transition-colors">
           <Upload size={16} /> {t("imp_choose_file")}
         </button>
       )}
       <input ref={fileRef} type="file" accept=".csv,text/csv,text/plain" onChange={onFile} className="hidden" />
 
-      {busy && <p className="text-xs text-zinc-500 text-center py-2">{t("loading")}</p>}
+      {busy && <p className="text-xs text-[#9aa7bc] text-center py-2">{t("loading")}</p>}
 
       {preview && (
         <>
           {/* Mapping-Korrektur */}
           <div className="flex flex-wrap gap-2">
             {preview.fields.map((f) => (
-              <label key={f} className="flex items-center gap-1 text-[11px] text-zinc-500">
+              <label key={f} className="flex items-center gap-1 text-[11px] text-[#9aa7bc]">
                 {t(`imp_field_${f}`)}
                 <select value={preview.mapping[f] ?? ""} onChange={(e) => changeMapping(f, e.target.value)} className={fieldCls}>
                   <option value="">—</option>
@@ -104,7 +104,7 @@ export function ImportDialog({ onDone, onCancel }: Props) {
           {/* Hinweise */}
           <div className="flex flex-wrap gap-3 text-[11px]">
             <span className="text-emerald-400">{importable} {t("imp_ready")}</span>
-            {preview.duplicate_count > 0 && <span className="text-zinc-500">{preview.duplicate_count} {t("imp_duplicate")}</span>}
+            {preview.duplicate_count > 0 && <span className="text-[#9aa7bc]">{preview.duplicate_count} {t("imp_duplicate")}</span>}
             {preview.unresolved_symbols.length > 0 && <span className="text-amber-400">{t("imp_unresolved")}: {preview.unresolved_symbols.join(", ")}</span>}
             {preview.errors.length > 0 && <span className="text-rose-400">{preview.errors.length} {t("imp_skipped_rows")}</span>}
           </div>
@@ -122,7 +122,7 @@ export function ImportDialog({ onDone, onCancel }: Props) {
             {t("imp_commit")} ({importable})
           </button>
         )}
-        <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-white/[4%] text-zinc-400 text-sm hover:text-zinc-200">
+        <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df] text-sm hover:text-[#e8eef8]">
           {t("tx_cancel")}
         </button>
       </div>

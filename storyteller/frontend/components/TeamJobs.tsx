@@ -85,10 +85,10 @@ export function TeamJobs({ state, sceneId }: Props) {
   const cost = confirm ? costLabel(confirm.est.cost_micros, false) : null
   const list = jobs ?? []
   return (
-    <section className="st-team-jobs space-y-2 rounded-lg border border-white/10 bg-zinc-900/40 p-2">
-      <h3 className="flex items-center gap-1.5 text-xs font-medium text-zinc-300"><Users className="h-3.5 w-3.5" />{t("job_heading")}</h3>
+    <section className="st-team-jobs space-y-2 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-2">
+      <h3 className="flex items-center gap-1.5 text-xs font-medium text-[#c8d2df]"><Users className="h-3.5 w-3.5" />{t("job_heading")}</h3>
       {canWrite && <>
-        <p className="text-[11px] text-zinc-500">{t("job_hint")}</p>
+        <p className="text-[11px] text-[#9aa7bc]">{t("job_hint")}</p>
         <div className="flex flex-wrap gap-1">
           {catalog.map((c) => {
             const place = placeFor(c.scope, sceneId, chapters)
@@ -96,23 +96,23 @@ export function TeamJobs({ state, sceneId }: Props) {
             return (
               <button key={c.key} disabled={!c.available || !place || !!running || !!confirm}
                 title={c.available ? t(`job_scope_${c.scope}`) : t("job_unavailable")} onClick={() => { void ask(c) }}
-                className="st-job-button rounded border border-white/10 px-2 py-0.5 text-xs text-zinc-200 hover:bg-white/10 disabled:opacity-40">
+                className="st-job-button rounded border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-0.5 text-xs text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] disabled:opacity-40">
                 {running && <Loader2 className="mr-1 inline h-3 w-3 animate-spin" />}{t(`job_${c.key}`, { defaultValue: c.label })}
               </button>
             )
           })}
         </div>
         {confirm && (
-          <div className="st-job-confirm space-y-1 rounded border border-violet-400/30 bg-violet-500/10 p-2 text-xs" role="dialog">
-            <p className="text-zinc-100">{t("job_confirm", { label: t(`job_${confirm.entry.key}`), place: confirm.est.place_title })}</p>
-            <p className="text-zinc-400">{cost ? t("job_estimate", { total: n(totalTokens(confirm.est)), cents: cost.cents, model: confirm.est.model })
+          <div className="st-job-confirm space-y-1 rounded border border-[#69d7ff]/30 bg-[#69d7ff]/10 p-2 text-xs" role="dialog">
+            <p className="text-[#e8eef8]">{t("job_confirm", { label: t(`job_${confirm.entry.key}`), place: confirm.est.place_title })}</p>
+            <p className="text-[#c8d2df]">{cost ? t("job_estimate", { total: n(totalTokens(confirm.est)), cents: cost.cents, model: confirm.est.model })
               : t("job_estimate_unknown", { total: n(totalTokens(confirm.est)), model: confirm.est.model })}</p>
             {confirm.est.over_limit && <p className="st-job-over text-amber-200">
               {t("run_over_limit", { total: n(totalTokens(confirm.est)), limit: n(confirm.est.limit_tokens) })}</p>}
             <div className="flex gap-2">
-              <button onClick={() => { void start() }} className="rounded bg-violet-600 px-2 py-0.5 text-white">
+              <button onClick={() => { void start() }} className="rounded bg-[#163248] px-2 py-0.5 text-white">
                 {confirm.est.over_limit ? t("job_start_over") : t("job_start")}</button>
-              <button onClick={() => setPending(null)} className="rounded px-2 py-0.5 text-zinc-300 hover:bg-white/10">{t("job_cancel_confirm")}</button>
+              <button onClick={() => setPending(null)} className="rounded px-2 py-0.5 text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{t("job_cancel_confirm")}</button>
             </div>
           </div>
         )}
@@ -131,8 +131,8 @@ function JobList({ jobs, canWrite, onStop }: { jobs: TeamJob[]; canWrite: boolea
       {jobs.map((j) => {
         const cost = costLabel(j.cost_micros, false)
         return (
-          <li key={j.id} className={`st-job st-job-${j.status} flex items-center gap-1.5 text-zinc-400`}>
-            {isActive(j) && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-violet-300" />}
+          <li key={j.id} className={`st-job st-job-${j.status} flex items-center gap-1.5 text-[#c8d2df]`}>
+            {isActive(j) && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-[#69d7ff]" />}
             <span className="min-w-0 flex-1 truncate" title={j.summary || j.error || j.place_title}>
               {t(`job_${j.job}`, { defaultValue: j.job })} · {j.place_title}
             </span>
@@ -143,7 +143,7 @@ function JobList({ jobs, canWrite, onStop }: { jobs: TeamJob[]; canWrite: boolea
             {j.session_id && !isActive(j) && <a href={`/werkstatt/${j.session_id}`} target="_blank" rel="noopener noreferrer"
               className="text-sky-300 hover:underline">{t("job_open_session")}</a>}
             {canWrite && isActive(j) && <button onClick={() => onStop(j)} aria-label={t("job_stop")}
-              className="rounded p-0.5 text-zinc-400 hover:bg-white/10 hover:text-red-200"><Square className="h-3 w-3" /></button>}
+              className="rounded p-0.5 text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] hover:text-red-200"><Square className="h-3 w-3" /></button>}
           </li>
         )
       })}

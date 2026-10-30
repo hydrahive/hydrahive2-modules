@@ -58,7 +58,7 @@ export function VitrinePage() {
 
   const needsConfig = tab !== "overview" && tab !== "bluetooth"
   return (
-    <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]" hideHeader>
+    <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]" hideHeader>
       <CockpitTopbar active="/vitrine" context={t("title")} />
       <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-6xl space-y-4">

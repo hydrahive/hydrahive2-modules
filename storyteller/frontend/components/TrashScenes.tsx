@@ -56,23 +56,23 @@ export function TrashScenes({ state, onOpenScene }: Props) {
 
   return (
     <section className="st-trash-scenes px-1">
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-300">
+      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-[#9aa7bc] hover:text-[#c8d2df]">
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         <Trash2 className="h-3.5 w-3.5" />{t("trash_title")}{total !== null ? ` (${total})` : ""}
       </button>
       {open && <TrashChapters rows={chapters} kind={book.kind} canWrite={canWrite} onRestore={(c) => { void restoreChapter(c) }} />}
-      {open && rows && rows.length === 0 && chapters.length === 0 && <p className="pl-5 text-xs text-zinc-600">{t("trash_scenes_none")}</p>}
+      {open && rows && rows.length === 0 && chapters.length === 0 && <p className="pl-5 text-xs text-[#9aa7bc]">{t("trash_scenes_none")}</p>}
       {open && rows && rows.length > 0 && (
         <ul className="mt-1 space-y-1">
           {rows.map((s) => (
-            <li key={s.id} className="st-trash-scene rounded border border-white/5 px-2 py-1 text-xs text-zinc-400">
-              <p className="break-words text-zinc-300" title={s.summary}>{s.title || "…"}</p>
-              <p className="text-[11px] text-zinc-500">
+            <li key={s.id} className="st-trash-scene rounded border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-xs text-[#c8d2df]">
+              <p className="break-words text-[#c8d2df]" title={s.summary}>{s.title || "…"}</p>
+              <p className="text-[11px] text-[#9aa7bc]">
                 {t("trash_deleted_at", { when: fmt(s.deleted_at) })} · {t("words_n", { n: s.words })} ·{" "}
                 {whereBack(s) === "original" ? t("trash_back_original", { chapter: s.chapter_title }) : t("trash_back_end")}
               </p>
               {canWrite && <button onClick={() => { void restore(s) }} title={t("trash_restore")}
-                className="st-trash-restore mt-0.5 inline-flex items-center gap-1 text-violet-300 hover:underline">
+                className="st-trash-restore mt-0.5 inline-flex items-center gap-1 text-[#69d7ff] hover:underline">
                 <RotateCcw className="h-3 w-3" />{t("trash_restore")}</button>}
             </li>
           ))}

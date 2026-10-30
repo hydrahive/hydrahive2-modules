@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { CalendarSearch, MonitorPlay, Square } from "lucide-react"
 import { vitrineApi, type Simulation } from "./api"
 
-const field = "rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1.5 text-sm text-[#e8eef8]"
+const field = "rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1.5 text-sm text-[#e8eef8]"
 
 /** „Datum testen“: Was läuft zu diesem Zeitpunkt? Optional 30 s auf dem Display zeigen (Reiter Programm). */
 export function SimulateCard() {
@@ -31,9 +31,9 @@ export function SimulateCard() {
   }
 
   return (
-    <div className="space-y-3 rounded-[6px] border border-[#2a364b] bg-[#111827] p-4">
+    <div className="space-y-3 rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] p-4">
       <h2 className="flex items-center gap-2 text-sm font-bold text-[#e8eef8]"><CalendarSearch size={15} className="text-[#69d7ff]" />{t("simulate")}</h2>
-      <p className="text-xs text-[#718097]">{t("simulate_hint")}</p>
+      <p className="text-xs text-[#9aa7bc]">{t("simulate_hint")}</p>
       <div className="flex flex-wrap gap-2">
         <input type="datetime-local" className={field} value={at} onChange={(e) => setAt(e.target.value)} />
         <button type="button" onClick={() => void test()} className="rounded-[4px] border border-[#69d7ff]/40 bg-[#69d7ff]/10 px-3 py-1 text-xs font-bold text-[#69d7ff]">{t("simulate_go")}</button>
@@ -41,7 +41,7 @@ export function SimulateCard() {
           <MonitorPlay size={13} />{t("preview_show")}
         </button>
         {shown && (
-          <button type="button" onClick={() => void stopPreview()} className="flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-3 py-1 text-xs text-[#c8d2df]">
+          <button type="button" onClick={() => void stopPreview()} className="flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1 text-xs text-[#c8d2df]">
             <Square size={12} />{t("preview_stop")}
           </button>
         )}

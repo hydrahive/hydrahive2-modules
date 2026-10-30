@@ -15,16 +15,16 @@ export function VitrineHeader({ st, light, previewUrl, dirty, invalid, saving, s
   const lit = light?.available && light.device && light.state && light.state !== "disabled"
   return (
     <header className="flex flex-wrap items-center gap-3">
-      <img src={previewUrl} alt="" aria-hidden className="h-16 w-9 shrink-0 rounded-[3px] border border-[#2a364b] bg-black object-cover" />
+      <img src={previewUrl} alt="" aria-hidden className="h-16 w-9 shrink-0 rounded-[3px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-black object-cover" />
       <div className="min-w-0">
         <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#69d7ff]">{t("eyebrow")}</p>
         <h1 className="text-xl font-black tracking-tight text-[#e8eef8]">{t("title")}</h1>
         <p className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs ${ok ? "text-emerald-300" : "text-amber-300"}`}>
           <span className="flex items-center gap-1">{st?.night ? <MoonStar size={12} /> : <PlugZap size={12} />}{text}</span>
-          {st?.video && <span className="truncate text-[#8d9ab0]">{st.video}</span>}
+          {st?.video && <span className="truncate text-[#9aa7bc]">{st.video}</span>}
           {lit && (
-            <span className="flex items-center gap-1 text-[#8d9ab0]" title={t("light_title")}>
-              <span className="h-2.5 w-2.5 rounded-full border border-white/20" style={{ background: light.effect === "off" || !light.color ? "#000" : toPicker(light.color) }} />
+            <span className="flex items-center gap-1 text-[#9aa7bc]" title={t("light_title")}>
+              <span className="h-2.5 w-2.5 rounded-full border border-[rgb(var(--hh-s-rand-hover,70_97_127))]" style={{ background: light.effect === "off" || !light.color ? "#000" : toPicker(light.color) }} />
               {t(`light_state_${light.state}`, { defaultValue: light.state ?? "" })}
             </span>
           )}

@@ -6,7 +6,7 @@ export function EmptyCases() {
   return (
     <div className="flex flex-col items-center gap-2 py-8 text-center">
       <img src={leerBild} alt="" loading="lazy" draggable={false} className="h-24 w-24 select-none object-contain" />
-      <p className="text-sm text-[#8d9ab0]">Noch keine Fälle.</p>
+      <p className="text-sm text-[#9aa7bc]">Noch keine Fälle.</p>
     </div>
   )
 }

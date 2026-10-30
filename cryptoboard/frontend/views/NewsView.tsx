@@ -18,9 +18,9 @@ export function NewsView() {
     <div className="p-5 max-w-4xl mx-auto">
       <h2 className="text-lg font-bold text-white mb-3">{t("news_title")}</h2>
       {loading ? (
-        <p className="text-sm text-zinc-500">{t("loading")}</p>
+        <p className="text-sm text-[#9aa7bc]">{t("loading")}</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-zinc-500">{t("news_empty")}</p>
+        <p className="text-sm text-[#9aa7bc]">{t("news_empty")}</p>
       ) : (
         <NewsList items={items} />
       )}

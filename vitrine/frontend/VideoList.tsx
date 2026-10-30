@@ -35,23 +35,23 @@ export function VideoList({ videos, onChange }: { videos: VideoFile[]; onChange:
         </button>
         <input ref={input} type="file" accept="video/mp4,video/webm,video/x-matroska,video/quicktime" className="hidden" onChange={onPick} />
       </div>
-      <p className="text-xs text-[#718097]">{t("videos_hint")}</p>
+      <p className="text-xs text-[#9aa7bc]">{t("videos_hint")}</p>
       {err && <p className="text-xs text-rose-300">{err}</p>}
       {videos.length === 0
-        ? <div className="rounded-[4px] border border-dashed border-[#2a364b]"><div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-xs text-[#718097]">{t("no_videos")}</p></div></div>
+        ? <div className="rounded-[4px] border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))]"><div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-xs text-[#9aa7bc]">{t("no_videos")}</p></div></div>
         : (
-          <ul className="divide-y divide-[#1c2638] rounded-[4px] border border-[#2a364b] bg-[#111827]">
+          <ul className="divide-y divide-[rgb(var(--hh-s-rand,28_38_56))] rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))]">
             {videos.map((v) => (
               <li key={v.name} className="flex items-center gap-3 px-3 py-2 text-sm text-[#c8d2df]">
                 <Film size={14} className="shrink-0 text-[#69d7ff]" />
                 <span className="truncate">{v.name}</span>
-                <span className="ml-auto shrink-0 text-xs text-[#718097]">{sizeLabel(v.size)}</span>
+                <span className="ml-auto shrink-0 text-xs text-[#9aa7bc]">{sizeLabel(v.size)}</span>
                 {confirm === v.name
                   ? <span className="flex shrink-0 gap-1 text-xs">
                       <button type="button" onClick={() => void remove(v.name)} className="rounded-[4px] bg-rose-500/20 px-2 py-0.5 text-rose-200">{t("delete_yes")}</button>
-                      <button type="button" onClick={() => setConfirm(null)} className="px-2 py-0.5 text-[#8d9ab0]">{t("cancel")}</button>
+                      <button type="button" onClick={() => setConfirm(null)} className="px-2 py-0.5 text-[#9aa7bc]">{t("cancel")}</button>
                     </span>
-                  : <button type="button" onClick={() => setConfirm(v.name)} title={t("delete")} aria-label={t("delete")} className="shrink-0 rounded p-1 text-[#718097] hover:text-rose-300"><Trash2 size={14} /></button>}
+                  : <button type="button" onClick={() => setConfirm(v.name)} title={t("delete")} aria-label={t("delete")} className="shrink-0 rounded p-1 text-[#9aa7bc] hover:text-rose-300"><Trash2 size={14} /></button>}
               </li>
             ))}
           </ul>

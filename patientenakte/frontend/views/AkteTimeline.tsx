@@ -3,7 +3,6 @@ import { useEffect, useState, type CSSProperties } from "react"
 import { akteApi, type AkteEntityKey, type AkteTimelineEntry } from "../api"
 import { useAkteSchema } from "../useAkteSchema"
 import { VerifyBadge } from "../components/VerifyBadge"
-import { rgbFor } from "@/shared/colors"
 
 const ENTITY_ICONS: Record<string, string> = {
   conditions:    "🔴",
@@ -47,7 +46,7 @@ export function AkteTimeline() {
   }
 
   if (loading) {
-    return <div className="h-48 rounded-xl bg-zinc-900/50 animate-pulse" />
+    return <div className="h-48 rounded-xl bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] animate-pulse" />
   }
 
   const filtered = filter === "all"
@@ -62,7 +61,7 @@ export function AkteTimeline() {
           className={`px-3 py-1.5 rounded-lg text-xs transition-colors border ${
             filter === "all"
               ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
-              : "text-zinc-500 border-white/[6%] hover:bg-white/[4%]"
+              : "text-[#9aa7bc] border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"
           }`}
         >
           Alle
@@ -74,7 +73,7 @@ export function AkteTimeline() {
             className={`px-3 py-1.5 rounded-lg text-xs transition-colors border flex items-center gap-1.5 ${
               filter === key
                 ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
-                : "text-zinc-500 border-white/[6%] hover:bg-white/[4%]"
+                : "text-[#9aa7bc] border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"
             }`}
           >
             <span>{ENTITY_ICONS[key]}</span>
@@ -84,14 +83,14 @@ export function AkteTimeline() {
       </div>
 
       {(!filtered || filtered.length === 0) && (
-        <p className="text-sm text-zinc-500 py-8 text-center">
+        <p className="text-sm text-[#9aa7bc] py-8 text-center">
           {entries === null ? t("loading") : t("akte.empty_entries")}
         </p>
       )}
 
       {filtered && filtered.length > 0 && (
         <div className="relative pl-6">
-          <div className="absolute left-2 top-0 bottom-0 w-px bg-zinc-800" />
+          <div className="absolute left-2 top-0 bottom-0 w-px bg-[rgb(var(--hh-s-innen,17_24_39))]" />
           {filtered.map((entry) => (
             <div key={entry.record?.id as string ?? entry.sort_date + entry.entity} className="relative mb-4">
               <div
@@ -99,7 +98,7 @@ export function AkteTimeline() {
                   entry.verifiziert ? "bg-emerald-400" : "bg-orange-400"
                 }`}
               />
-              <div className="box overflow-hidden px-3 py-2" style={{ "--c": rgbFor("/akte") } as CSSProperties}>
+              <div className="box overflow-hidden px-3 py-2" style={{ "--c": "105 215 255" } as CSSProperties}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <VerifyBadge verifiziert={entry.verifiziert} onVerify={() => {
@@ -107,13 +106,13 @@ export function AkteTimeline() {
                         handleVerify(entry.entity, entry.record?.id as string)
                       }
                     }} />
-                    <span className="text-sm text-zinc-200 truncate">{entry.label}</span>
+                    <span className="text-sm text-[#e8eef8] truncate">{entry.label}</span>
                   </div>
-                  <span className="text-xs text-zinc-600 shrink-0">
+                  <span className="text-xs text-[#9aa7bc] shrink-0">
                     {entry.sort_date ? new Date(entry.sort_date).toLocaleDateString("de-DE") : ""}
                   </span>
                 </div>
-                <span className="text-xs text-zinc-500">{ENTITY_ICONS[entry.entity]} {schema?.entities[entry.entity]?.label ?? entry.entity}</span>
+                <span className="text-xs text-[#9aa7bc]">{ENTITY_ICONS[entry.entity]} {schema?.entities[entry.entity]?.label ?? entry.entity}</span>
               </div>
             </div>
           ))}

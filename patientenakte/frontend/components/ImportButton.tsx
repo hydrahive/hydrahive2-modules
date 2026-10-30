@@ -47,7 +47,7 @@ export function ImportButton({ label, accept, onImport, onDone }: Props) {
         <Upload size={14} />
         {loading ? t("import.importing") : label}
       </button>
-      {message && <span className="text-xs text-zinc-400">{message}</span>}
+      {message && <span className="text-xs text-[#c8d2df]">{message}</span>}
     </div>
   )
 }

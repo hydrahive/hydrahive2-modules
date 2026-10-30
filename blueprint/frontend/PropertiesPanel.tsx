@@ -8,28 +8,28 @@ interface Props {
   onDelete: () => void
 }
 
-const field = "w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-white/20"
-const lbl = "block text-[11px] font-medium uppercase tracking-wide text-zinc-500 mb-1"
+const field = "w-full rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] px-3 py-2 text-sm text-[#e8eef8] placeholder-[#9aa7bc] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--hh-s-rand-hover,70_97_127))]"
+const lbl = "block text-[11px] font-medium uppercase tracking-wide text-[#9aa7bc] mb-1"
 
 export function PropertiesPanel({ node, onChange, onDelete }: Props) {
   if (!node) {
     return (
-      <div className="w-64 shrink-0 border-l border-white/8 bg-zinc-950/40 p-4">
-        <p className="text-sm text-zinc-600">Baustein anklicken zum Bearbeiten.</p>
+      <div className="w-64 shrink-0 border-l border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32)/0.4)] p-4">
+        <p className="text-sm text-[#9aa7bc]">Baustein anklicken zum Bearbeiten.</p>
       </div>
     )
   }
 
   const d = node.data
   return (
-    <div className="w-64 shrink-0 space-y-3 overflow-y-auto border-l border-white/8 bg-zinc-950/40 p-4">
+    <div className="w-64 shrink-0 space-y-3 overflow-y-auto border-l border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32)/0.4)] p-4">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-[#9aa7bc]">
           {labelOf(d.subtype)}
         </span>
         <button
           onClick={onDelete}
-          className="text-zinc-500 hover:text-red-400 transition-colors"
+          className="text-[#9aa7bc] hover:text-red-400 transition-colors"
           title="Baustein löschen"
         >
           <Trash2 size={15} />

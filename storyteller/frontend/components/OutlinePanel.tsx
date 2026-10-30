@@ -9,7 +9,7 @@ import { runApi } from "../runApi"
 import type { BookState } from "../useBook"
 import { OutlineEditor } from "./OutlineEditor"
 
-const field = "w-full rounded border border-white/10 bg-zinc-950 px-2 py-1 text-xs text-zinc-100"
+const field = "w-full rounded border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1 text-xs text-[#e8eef8]"
 
 export function OutlinePanel({ state }: { state: BookState }) {
   const { t } = useTranslation("storyteller")
@@ -44,16 +44,16 @@ export function OutlinePanel({ state }: { state: BookState }) {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} disabled={!canWrite}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5 disabled:opacity-40">
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-2 text-sm text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] disabled:opacity-40">
         <ListTree className="h-4 w-4" />{t("outline_open")}
       </button>
     )
   }
   return (
-    <section className="st-outline space-y-2 rounded-xl border border-white/10 p-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">{t("outline_title")}</h3>
+    <section className="st-outline space-y-2 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] p-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#c8d2df]">{t("outline_title")}</h3>
       {!draft && (
-        <div className="space-y-2 text-xs text-zinc-400">
+        <div className="space-y-2 text-xs text-[#c8d2df]">
           <label className="block space-y-1"><span>{t("outline_idea")}</span>
             <textarea className={`${field} min-h-[60px]`} value={idea} maxLength={4000} onChange={(e) => setIdea(e.target.value)} /></label>
           <label className="block space-y-1"><span>{t("outline_hints")}</span>
@@ -66,10 +66,10 @@ export function OutlinePanel({ state }: { state: BookState }) {
           </div>
           <div className="flex gap-2">
             <button onClick={() => { void generate() }} disabled={busy || !idea.trim()}
-              className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40">
+              className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-[#163248] px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ListTree className="h-4 w-4" />}{t("outline_generate")}
             </button>
-            <button onClick={() => setOpen(false)} className="rounded-lg border border-white/10 px-2 text-zinc-300"><X className="h-4 w-4" /></button>
+            <button onClick={() => setOpen(false)} className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 text-[#c8d2df]"><X className="h-4 w-4" /></button>
           </div>
         </div>
       )}

@@ -12,7 +12,7 @@ export function MusicPlayerBuddyBox({ projectId }: {
   if (!projectId) {
     return (
       <MusicPlayerPanel title={t("mp_title")} trackCount={0}>
-        <p className="rounded-[4px] border border-dashed border-[#2a364b] bg-[#0d1420] px-3 py-4 text-center text-[11px] text-[#8d9ab0]">
+        <p className="rounded-[4px] border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-4 text-center text-[11px] text-[#9aa7bc]">
           {t("mp_select_project")}
         </p>
       </MusicPlayerPanel>

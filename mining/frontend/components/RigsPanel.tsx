@@ -34,7 +34,7 @@ export function RigsPanel({ canControl, powerActive }: { canControl: boolean; po
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-zinc-200">{t("rigs_title")} ({rigs.filter((r) => r.status !== "revoked").length})</h2>
+        <h2 className="text-sm font-semibold text-[#e8eef8]">{t("rigs_title")} ({rigs.filter((r) => r.status !== "revoked").length})</h2>
         {!pairing && (
           <button onClick={() => setPairing(true)}
             className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-500">
@@ -45,11 +45,11 @@ export function RigsPanel({ canControl, powerActive }: { canControl: boolean; po
       {pairing && <PairDialog onDone={() => { setPairing(false); reload() }} />}
       {error && <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</div>}
       {rigs.length === 0 ? (
-        <p className="rounded-lg border border-white/10 p-4 text-sm text-zinc-400">{t("rigs_empty")}</p>
+        <p className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] p-4 text-sm text-[#c8d2df]">{t("rigs_empty")}</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-white/10">
+        <div className="overflow-x-auto rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))]">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-900/80 text-left text-xs uppercase tracking-wide text-zinc-500">
+            <thead className="bg-[rgb(var(--hh-s-box,21_28_43)/0.8)] text-left text-xs uppercase tracking-wide text-[#9aa7bc]">
               <tr>
                 <th className="px-3 py-2">{t("col_rig")}</th><th className="px-3 py-2">{t("col_state")}</th>
                 <th className="px-3 py-2">{t("gpu")}</th><th className="px-3 py-2 text-right">{t("col_temp")}</th>
@@ -57,7 +57,7 @@ export function RigsPanel({ canControl, powerActive }: { canControl: boolean; po
                 <th className="px-3 py-2">{t("col_system")}</th><th className="px-3 py-2" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[rgb(var(--hh-s-rand,42_54_75))]">
               {rigs.map((r) => (
                 <RigRow key={r.id} rig={r} canControl={canControl} powerActive={powerActive}
                   onApprove={(id) => act(miningApi.approve(id))} onRevoke={confirmRevoke}

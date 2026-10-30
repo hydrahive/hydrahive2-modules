@@ -63,7 +63,7 @@ export function AlertForm({ onSaved, onCancel }: Props) {
     }
   }
 
-  const fieldCls = "w-full px-3 py-2 rounded-lg bg-zinc-900/70 border border-white/[8%] text-sm text-zinc-200 outline-none focus:border-white/20"
+  const fieldCls = "w-full px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-box,21_28_43)/0.7)] border border-[rgb(var(--hh-s-rand,42_54_75))] text-sm text-[#e8eef8] outline-none focus:border-[rgb(var(--hh-s-rand-hover,70_97_127))]"
   const allKinds = [...COIN_KINDS, ...PF_KINDS]
 
   return (
@@ -71,7 +71,7 @@ export function AlertForm({ onSaved, onCancel }: Props) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
         {allKinds.map((k) => (
           <button key={k} onClick={() => setKind(k)}
-            className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${kind === k ? "bg-white/10 text-white" : "bg-white/[3%] text-zinc-400 hover:text-zinc-200"}`}>
+            className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${kind === k ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df] hover:text-[#e8eef8]"}`}>
             {t(`al_kind_${k}`)}
           </button>
         ))}
@@ -79,25 +79,25 @@ export function AlertForm({ onSaved, onCancel }: Props) {
 
       {!portfolio && (
         coin ? (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[4%] border border-white/[8%]">
-            <span className="text-sm text-zinc-200 font-mono uppercase">{coin.symbol}</span>
-            <button onClick={() => setCoin(null)} className="ml-auto text-xs text-zinc-500 hover:text-zinc-300">{t("tx_cancel")}</button>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] border border-[rgb(var(--hh-s-rand,42_54_75))]">
+            <span className="text-sm text-[#e8eef8] font-mono uppercase">{coin.symbol}</span>
+            <button onClick={() => setCoin(null)} className="ml-auto text-xs text-[#9aa7bc] hover:text-[#c8d2df]">{t("tx_cancel")}</button>
           </div>
         ) : (
           <div ref={boxRef} className="relative">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900/70 border border-white/[8%]">
-              <Search size={15} className="text-zinc-500" />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-box,21_28_43)/0.7)] border border-[rgb(var(--hh-s-rand,42_54_75))]">
+              <Search size={15} className="text-[#9aa7bc]" />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("search_placeholder")}
-                className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 outline-none" />
+                className="flex-1 bg-transparent text-sm text-[#e8eef8] placeholder-[#9aa7bc] outline-none" />
             </div>
             {open && results.length > 0 && (
-              <div className="absolute z-30 mt-1 w-full rounded-lg bg-zinc-900 border border-white/10 shadow-xl overflow-hidden">
+              <div className="absolute z-30 mt-1 w-full rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] shadow-xl overflow-hidden">
                 {results.map((r) => (
                   <button key={r.id} onClick={() => { setCoin({ id: r.id, symbol: r.symbol }); setOpen(false); setQ("") }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-white/[5%]">
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
                     {r.thumb && <img src={r.thumb} alt="" className="w-5 h-5 rounded-full" />}
-                    <span className="text-sm text-zinc-200">{r.name}</span>
-                    <span className="text-xs text-zinc-500 font-mono uppercase">{r.symbol}</span>
+                    <span className="text-sm text-[#e8eef8]">{r.name}</span>
+                    <span className="text-xs text-[#9aa7bc] font-mono uppercase">{r.symbol}</span>
                   </button>
                 ))}
               </div>
@@ -107,7 +107,7 @@ export function AlertForm({ onSaved, onCancel }: Props) {
       )}
 
       <label className="space-y-1 block">
-        <span className="text-xs text-zinc-500">{portfolio || kind.startsWith("portfolio") ? t("al_threshold_eur") : kind.startsWith("pct") ? t("al_threshold_pct") : t("al_threshold_eur")}</span>
+        <span className="text-xs text-[#9aa7bc]">{portfolio || kind.startsWith("portfolio") ? t("al_threshold_eur") : kind.startsWith("pct") ? t("al_threshold_pct") : t("al_threshold_eur")}</span>
         <input type="number" step="any" value={threshold} onChange={(e) => setThreshold(e.target.value)} className={fieldCls} placeholder="0.00" />
       </label>
 
@@ -118,7 +118,7 @@ export function AlertForm({ onSaved, onCancel }: Props) {
           className="px-4 py-2 rounded-lg bg-emerald-500/20 text-emerald-300 text-sm font-medium hover:bg-emerald-500/30 disabled:opacity-50">
           {t("al_create")}
         </button>
-        <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-white/[4%] text-zinc-400 text-sm hover:text-zinc-200">
+        <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df] text-sm hover:text-[#e8eef8]">
           {t("tx_cancel")}
         </button>
       </div>

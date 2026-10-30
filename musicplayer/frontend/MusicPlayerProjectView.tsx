@@ -55,7 +55,7 @@ export function MusicPlayerProjectView({ projectId, large = false }: { projectId
 
   const content = (
     <div className="space-y-3">
-      <div role="group" aria-label={t("mp_kind")} className="flex rounded-[4px] border border-[#2a364b] p-1">
+      <div role="group" aria-label={t("mp_kind")} className="flex rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-1">
         {KINDS.map((item) => (
           <button
             type="button"
@@ -63,8 +63,8 @@ export function MusicPlayerProjectView({ projectId, large = false }: { projectId
             onClick={() => chooseKind(item)}
             aria-pressed={kind === item}
             className={`flex-1 rounded-[3px] px-2 py-1 text-xs font-bold ${kind === item
-              ? "bg-fuchsia-500/20 text-fuchsia-100"
-              : "text-[#8d9ab0] hover:text-[#e8eef8]"}`}
+              ? "bg-[#69d7ff]/20 text-[#c8f2ff]"
+              : "text-[#9aa7bc] hover:text-[#e8eef8]"}`}
           >
             {t(`mp_${item}`)}
           </button>
@@ -85,7 +85,7 @@ export function MusicPlayerProjectView({ projectId, large = false }: { projectId
         )}
       <audio ref={audioRef} preload="metadata" className="hidden" />
       {permissions.can_upload && (
-        <div className="space-y-2 border-t border-[#2a364b] pt-3">
+        <div className="space-y-2 border-t border-[rgb(var(--hh-s-rand,42_54_75))] pt-3">
           <UploadButton projectId={projectId} kind={kind} onDone={load} />
           <GeneratedImport key={kind} projectId={projectId} kind={kind} onImported={load} />
         </div>

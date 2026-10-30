@@ -38,33 +38,33 @@ export function DiagrammePage() {
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-4">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-zinc-100">{t("title")}</h1>
-        <p className="text-sm text-zinc-400">{t("subtitle")}</p>
+        <h1 className="text-xl font-semibold text-[#e8eef8]">{t("title")}</h1>
+        <p className="text-sm text-[#c8d2df]">{t("subtitle")}</p>
       </header>
       {isAdmin && !open && <AgentsAccess />}
       {open ? (
         <Viewer item={open} onBack={() => setOpen(null)} onChanged={load} />
       ) : (<>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex min-w-[240px] flex-1 items-center gap-2 rounded border border-white/10 bg-white/[3%] px-3 py-1.5">
-            <Search size={14} className="text-zinc-500" />
+          <label className="flex min-w-[240px] flex-1 items-center gap-2 rounded border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-1.5">
+            <Search size={14} className="text-[#9aa7bc]" />
             <input value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} aria-label={t("search_placeholder")}
-              placeholder={t("search_placeholder")} className="w-full bg-transparent text-sm text-zinc-100 outline-none" />
+              placeholder={t("search_placeholder")} className="w-full bg-transparent text-sm text-[#e8eef8] outline-none" />
           </label>
           <select value={filter.project} onChange={(e) => setFilter({ ...filter, project: e.target.value })} aria-label={t("all_projects")}
-            className="rounded border border-white/10 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-200">
+            className="rounded border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] px-2 py-1.5 text-sm text-[#e8eef8]">
             <option value="">{t("all_projects")}</option>
             <option value="none">{t("no_project")}</option>
             {projectList.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
-          <label className="flex items-center gap-1.5 text-sm text-zinc-300">
+          <label className="flex items-center gap-1.5 text-sm text-[#c8d2df]">
             <input type="checkbox" checked={filter.trash} onChange={(e) => setFilter({ ...filter, trash: e.target.checked })} />
             {t("trash")}
           </label>
         </div>
         {msg && <p className="text-sm text-rose-300">{msg}</p>}
-        {items === null ? <p className="text-sm text-zinc-500">{t("loading")}</p>
-          : items.length === 0 ? <p className="text-sm text-zinc-400" data-diagrams-empty>{t(empty)}</p>
+        {items === null ? <p className="text-sm text-[#9aa7bc]">{t("loading")}</p>
+          : items.length === 0 ? <p className="text-sm text-[#c8d2df]" data-diagrams-empty>{t(empty)}</p>
           : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {items.map((it) => <Tile key={it.id} item={it} onOpen={setOpen} />)}

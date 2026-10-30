@@ -16,10 +16,10 @@ export function PurgeDialog({ title, busy, onConfirm, onClose }: Props) {
     <div role="dialog" aria-modal="true" aria-label={t("purge")}
       className="fixed inset-0 z-[70] grid place-items-start justify-center bg-black/60 pt-[15vh]"
       onPointerDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="w-[min(520px,92vw)] space-y-4 rounded-lg border border-white/15 bg-zinc-950 p-5 shadow-2xl">
-        <p className="text-sm text-zinc-100">{t("purge_question", { title })}</p>
+      <div className="w-[min(520px,92vw)] space-y-4 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-5 shadow-2xl">
+        <p className="text-sm text-[#e8eef8]">{t("purge_question", { title })}</p>
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-100">
+          <button type="button" onClick={onClose} className="rounded px-3 py-1.5 text-sm text-[#c8d2df] hover:text-[#e8eef8]">
             {t("cancel")}
           </button>
           <button type="button" onClick={onConfirm} disabled={busy} data-purge-confirm

@@ -62,7 +62,7 @@ export function Library({ projectId, items, onChanged }: Props) {
     }
   }
 
-  const ctl = "rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1 text-xs text-[#e8eef8]"
+  const ctl = "rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1 text-xs text-[#e8eef8]"
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -78,11 +78,11 @@ export function Library({ projectId, items, onChanged }: Props) {
         </button>
       </div>
       {error && <p className="text-xs text-red-400">{error}</p>}
-      {items.length === 0 && <p className="text-xs text-[#8d9ab0]">{t("library_empty")}</p>}
+      {items.length === 0 && <p className="text-xs text-[#9aa7bc]">{t("library_empty")}</p>}
       {grouped.map(({ g, list }) => (
         <div key={g} className="flex flex-col gap-1.5">
-          <h4 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8d9ab0]">
-            {t(`group_${g}`)} <span className="font-normal text-[#68758a]">· {list.length}</span>
+          <h4 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#9aa7bc]">
+            {t(`group_${g}`)} <span className="font-normal text-[#9aa7bc]">· {list.length}</span>
           </h4>
           <ul className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]">
             {list.map((it) => (

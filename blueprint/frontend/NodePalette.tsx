@@ -9,10 +9,10 @@ export function NodePalette() {
   }
 
   return (
-    <div className="w-44 shrink-0 overflow-y-auto border-r border-white/8 bg-zinc-950/40 p-3">
+    <div className="w-44 shrink-0 overflow-y-auto border-r border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32)/0.4)] p-3">
       {PALETTE.map((group) => (
         <div key={group.kind} className="mb-4">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#9aa7bc]">
             {group.label}
           </p>
           <div className="space-y-1.5">
@@ -25,7 +25,7 @@ export function NodePalette() {
                   onDragStart={(e) => onDragStart(e, it.subtype)}
                   className={`flex cursor-grab items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors active:cursor-grabbing ${
                     group.kind === "layout"
-                      ? "border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700/60"
+                      ? "border-[rgb(var(--hh-s-rand,42_54_75)/0.6)] bg-[rgb(var(--hh-s-innen,17_24_39)/0.5)] text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54)/0.6)]"
                       : "border-sky-800/40 bg-sky-950/30 text-sky-200 hover:bg-sky-900/40"
                   }`}
                 >

@@ -35,25 +35,25 @@ interface Props {
   onDelete: () => void
 }
 
-const btn = "px-2 py-1 rounded border border-white/10 hover:bg-white/5 disabled:opacity-40"
+const btn = "px-2 py-1 rounded border border-[rgb(var(--hh-s-rand,42_54_75))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] disabled:opacity-40"
 
 export function EditorToolbar(p: Props) {
   const { player, edl, preview, inPoint, selected, clips } = p
   const onKf = edl.isOnKeyframe(player.playhead)
 
   return (
-    <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+    <div className="flex flex-wrap items-center gap-2 text-xs text-[#c8d2df]">
       {/* Snap-Toggle */}
       <button onClick={edl.toggleSnap}
         className={`${btn} ${edl.snapOn ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-200" : ""}`}
         title="Keyframe-Magnet: Schnitte rasten auf Keyframes ein → verlustfrei kopierbar">
         🧲 Snap {edl.snapOn ? "an" : "aus"}
       </button>
-      <span className={`text-[10px] ${onKf ? "text-emerald-400" : "text-zinc-600"}`}>
+      <span className={`text-[10px] ${onKf ? "text-emerald-400" : "text-[#9aa7bc]"}`}>
         {onKf ? "● auf Keyframe" : "○ zwischen Keyframes"}
       </span>
 
-      <span className="w-px h-4 bg-white/10" />
+      <span className="w-px h-4 bg-[rgb(var(--hh-s-hebung,27_37_54))]" />
 
       {/* Schnitt */}
       <button onClick={p.onMarkIn} className={btn}>In (I)</button>
@@ -62,13 +62,13 @@ export function EditorToolbar(p: Props) {
       <button onClick={p.onDelete} disabled={!p.selectedClipId} className={btn}>Löschen</button>
       {inPoint !== null && <span className="text-amber-300">In @ {inPoint.toFixed(2)}s</span>}
 
-      <span className="w-px h-4 bg-white/10" />
+      <span className="w-px h-4 bg-[rgb(var(--hh-s-hebung,27_37_54))]" />
 
       {/* Undo/Redo */}
       <button onClick={edl.undo} className={btn} title="Rückgängig (Strg+Z)">↩︎</button>
       <button onClick={edl.redo} className={btn} title="Wiederholen (Strg+Shift+Z)">↪︎</button>
 
-      <span className="w-px h-4 bg-white/10" />
+      <span className="w-px h-4 bg-[rgb(var(--hh-s-hebung,27_37_54))]" />
 
       {/* Player-Präzision */}
       <button onClick={() => player.jumpPrevKeyframe()} className={btn} title="Vorheriger Keyframe ([)">⇤kf</button>
@@ -76,7 +76,7 @@ export function EditorToolbar(p: Props) {
       <button onClick={() => player.stepFrame(1)} className={btn} title="1 Bild vor (→)">|▶</button>
       <button onClick={() => player.jumpNextKeyframe()} className={btn} title="Nächster Keyframe (])">kf⇥</button>
 
-      <span className="w-px h-4 bg-white/10" />
+      <span className="w-px h-4 bg-[rgb(var(--hh-s-hebung,27_37_54))]" />
 
       {/* Vorschau ohne Rendern */}
       {preview.isPreviewing ? (

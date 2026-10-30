@@ -13,7 +13,7 @@ export function MsAppButton() {
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} title={t("app.title")} aria-label={t("app.title")} data-mbx-ms-app-open="1"
-        className="rounded-[4px] border border-[#2a364b] px-2 py-1.5 text-[#8d9ab0] hover:text-[#e8eef8]"><KeyRound size={14} /></button>
+        className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1.5 text-[#9aa7bc] hover:text-[#e8eef8]"><KeyRound size={14} /></button>
       {open && <MsAppDialog onClose={() => setOpen(false)} />}
     </>
   )

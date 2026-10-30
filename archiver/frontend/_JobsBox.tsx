@@ -32,7 +32,7 @@ export function JobsBox({ jobs, onCancel, onDelete }: Props) {
       headerRight={
         <div className="flex items-center gap-2">
           {runningCount > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 font-semibold">
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#69d7ff]/20 text-[#69d7ff] font-semibold">
               {runningCount} aktiv
             </span>
           )}
@@ -40,7 +40,7 @@ export function JobsBox({ jobs, onCancel, onDelete }: Props) {
             <button
               onClick={clearFinished}
               title="Alle fertigen Einträge löschen"
-              className="flex items-center gap-1 text-[10px] text-zinc-600 hover:text-rose-400 transition-colors"
+              className="flex items-center gap-1 text-[10px] text-[#9aa7bc] hover:text-rose-400 transition-colors"
             >
               <Trash2 size={11} />
               Alle löschen

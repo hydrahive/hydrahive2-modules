@@ -5,7 +5,7 @@ import { MsAccountPart } from "./MsAccountPart"
 
 const EMPTY: AccountIn = { label: "", address: "", imap_host: "", imap_port: 993, imap_tls: "ssl", smtp_host: "",
   smtp_port: 465, smtp_tls: "ssl", username: "", password: "" }
-const field = "w-full rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-2 py-1.5 text-sm text-[#e8eef8]"
+const field = "w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_31))] px-2 py-1.5 text-sm text-[#e8eef8]"
 
 /** Konto hinzufügen: Adresse eingeben → Vorschlag (Server, Ports, Hinweis z. B. Gmail-App-Passwort) → Test beim Speichern. */
 export function AccountDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
@@ -40,15 +40,15 @@ export function AccountDialog({ onClose, onSaved }: { onClose: () => void; onSav
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-label="Konto hinzufügen">
-      <div className="w-full max-w-md space-y-3 rounded-[6px] border border-[#2a364b] bg-[#111827] p-4">
+      <div className="w-full max-w-md space-y-3 rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,17_24_39))] p-4">
         <header className="flex items-center justify-between">
           <h2 className="font-bold text-[#e8eef8]">Mailkonto hinzufügen</h2>
-          <button type="button" onClick={onClose} aria-label="Schließen" className="text-[#8d9ab0] hover:text-[#e8eef8]"><X size={16} /></button>
+          <button type="button" onClick={onClose} aria-label="Schließen" className="text-[#9aa7bc] hover:text-[#e8eef8]"><X size={16} /></button>
         </header>
-        <label className="block space-y-1 text-xs text-[#8d9ab0]">Mailadresse
+        <label className="block space-y-1 text-xs text-[#9aa7bc]">Mailadresse
           <input className={field} value={a.address} autoComplete="email" onChange={(e) => set({ address: e.target.value.trim() })} onBlur={() => void suggest()} />
         </label>
-        <div className="flex gap-3 text-xs text-[#8d9ab0]" role="radiogroup" aria-label="Anmeldung">
+        <div className="flex gap-3 text-xs text-[#9aa7bc]" role="radiogroup" aria-label="Anmeldung">
           <label className="inline-flex items-center gap-1"><input type="radio" checked={!ms} onChange={() => setMs(false)} />Passwort</label>
           <label className="inline-flex items-center gap-1"><input type="radio" checked={ms} onChange={() => setMs(true)} data-mbx-auth-ms="1" />
             Microsoft (Outlook, Hotmail, Microsoft 365)</label>
@@ -56,17 +56,17 @@ export function AccountDialog({ onClose, onSaved }: { onClose: () => void; onSav
         {ms ? <>
           <MsAccountPart address={a.address} label={a.label} ready={msReady} onSaved={onSaved} />
           <div className="flex justify-end">
-            <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-sm text-[#c8d2df] hover:bg-[#1c2638]">Abbrechen</button>
+            <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,28_38_56))]">Abbrechen</button>
           </div>
         </> : <>
-        <label className="block space-y-1 text-xs text-[#8d9ab0]">Passwort
+        <label className="block space-y-1 text-xs text-[#9aa7bc]">Passwort
           <input className={field} type="password" value={a.password} autoComplete="new-password" onChange={(e) => set({ password: e.target.value })} />
         </label>
         {hint && <p className="rounded-[4px] border border-amber-300/40 bg-amber-300/10 p-2 text-xs text-amber-100" data-mbx-hint="1">{hint}</p>}
         <button type="button" onClick={() => setMore(!more)} className="text-xs text-[#69d7ff] hover:underline">
           {more ? "Weniger" : "Server-Einstellungen"}</button>
         {more && (
-          <div className="grid grid-cols-3 gap-2 text-xs text-[#8d9ab0]">
+          <div className="grid grid-cols-3 gap-2 text-xs text-[#9aa7bc]">
             <label className="col-span-3 space-y-1">Name des Kontos<input className={field} value={a.label} onChange={(e) => set({ label: e.target.value })} /></label>
             <label className="col-span-3 space-y-1">Benutzername<input className={field} value={a.username} onChange={(e) => set({ username: e.target.value })} /></label>
             <label className="col-span-2 space-y-1">IMAP-Server<input className={field} value={a.imap_host} onChange={(e) => set({ imap_host: e.target.value.trim() })} /></label>
@@ -80,9 +80,9 @@ export function AccountDialog({ onClose, onSaved }: { onClose: () => void; onSav
           </div>
         )}
         {err && <p className="text-xs text-rose-300" data-mbx-error="1">{err}</p>}
-        <p className="text-[11px] text-[#718097]">Beim Speichern wird die Anmeldung geprüft. Danach holt Mailbox alle Ordner und alle Jahre ins Archiv – das kann bei großen Postfächern Stunden dauern.</p>
+        <p className="text-[11px] text-[#9aa7bc]">Beim Speichern wird die Anmeldung geprüft. Danach holt Mailbox alle Ordner und alle Jahre ins Archiv – das kann bei großen Postfächern Stunden dauern.</p>
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-sm text-[#c8d2df] hover:bg-[#1c2638]">Abbrechen</button>
+          <button type="button" onClick={onClose} className="rounded-[4px] px-3 py-1.5 text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,28_38_56))]">Abbrechen</button>
           <button type="button" onClick={() => void save()} data-mbx-save="1"
             disabled={busy || !a.address || !a.password || !a.imap_host}
             className="rounded-[4px] border border-[#69d7ff]/50 bg-[#69d7ff]/15 px-3 py-1.5 text-sm font-semibold text-[#69d7ff] disabled:opacity-40">

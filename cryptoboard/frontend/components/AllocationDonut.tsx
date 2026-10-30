@@ -48,8 +48,8 @@ export function AllocationDonut({ positions }: Props) {
         {segments.map((s, i) => (
           <li key={i} className="flex items-center gap-2 tabular-nums">
             <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: s.color }} />
-            <span className="text-zinc-300 font-medium">{s.label}</span>
-            <span className="text-zinc-500">{s.pct.toFixed(1)} %</span>
+            <span className="text-[#c8d2df] font-medium">{s.label}</span>
+            <span className="text-[#9aa7bc]">{s.pct.toFixed(1)} %</span>
           </li>
         ))}
       </ul>
