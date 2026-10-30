@@ -26,7 +26,7 @@ MODULE_DIR = Path(__file__).resolve().parents[1]
 if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
-TABLES = ("module_hydralabor_state",)
+TABLES = ("module_hydralabor_state", "module_hydralabor_github", "module_hydralabor_submissions")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -133,3 +133,13 @@ def user_headers(client):
 @pytest.fixture
 def admin_headers(client):
     return _login(client, "boss")
+
+
+@pytest.fixture
+def fake_github(monkeypatch):
+    from backend import github_api
+    from fake_github import FakeGitHub
+    gh = FakeGitHub()
+    monkeypatch.setattr(github_api, "request", gh.request)
+    monkeypatch.setattr(github_api, "_SLEEP", 0)
+    return gh
