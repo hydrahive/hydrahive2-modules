@@ -19,7 +19,7 @@ export function TrackList({ projectId, kind, tracks, activeId, permissions, onSe
   const { t } = useTranslation("musicplayer")
   if (!tracks.length) {
     return (
-      <div className="rounded-[4px] border border-dashed border-[#2a364b] bg-[#0d1420]"><div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-[11px] text-[#8d9ab0]">{t("mp_empty")}</p></div></div>
+      <div className="rounded-[4px] border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))]"><div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-[11px] text-[#9aa7bc]">{t("mp_empty")}</p></div></div>
     )
   }
   const Icon = kind === "video" ? Video : Music
@@ -33,14 +33,14 @@ export function TrackList({ projectId, kind, tracks, activeId, permissions, onSe
             key={track.id}
             className={`flex min-w-0 items-center rounded-[4px] border ${active
               ? "border-fuchsia-400/35 bg-fuchsia-500/10"
-              : "border-transparent bg-[#111827] hover:border-[#2a364b]"}`}
+              : "border-transparent bg-[rgb(var(--hh-s-innen,17_24_39))] hover:border-[rgb(var(--hh-s-rand-hover,42_54_75))]"}`}
           >
             <button type="button" onClick={() => onSelect(track)} className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left">
-              <Icon size={12} className="shrink-0 text-[#8d9ab0]" />
+              <Icon size={12} className="shrink-0 text-[#9aa7bc]" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs text-[#c4cedd]" title={track.title}>{track.title}</span>
                 {subtitle.text && (
-                  <span className="block truncate text-[10px] text-[#8d9ab0]" title={subtitle.promptTitle}>{subtitle.text}</span>
+                  <span className="block truncate text-[10px] text-[#9aa7bc]" title={subtitle.promptTitle}>{subtitle.text}</span>
                 )}
               </span>
             </button>
