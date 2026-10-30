@@ -9,7 +9,7 @@ from conftest import CHANNELS, PSK
 async def test_status_liest_alles(configured):
     s = await client.status()
     assert s == {"power": "on", "channel": {"number": 6, "name": "SAT.1"}, "program": "Sendung SAT.1",
-                 "volume": 14, "muted": False, "model": "KD-60XF8305"}
+                 "volume": 14, "muted": False, "output": "speaker", "model": "KD-60XF8305"}
 
 
 async def test_status_im_standby_ohne_sender(configured):
@@ -17,7 +17,7 @@ async def test_status_im_standby_ohne_sender(configured):
     configured.power = "standby"
     s = await client.status()
     assert s == {"power": "standby", "channel": None, "program": "", "volume": None, "muted": None,
-                 "model": "KD-60XF8305"}
+                 "output": None, "model": "KD-60XF8305"}
     assert not any(c[1] == "getPlayingContentInfo" for c in configured.calls)
 
 
@@ -98,7 +98,7 @@ async def test_lautstaerke_absolut_und_relativ(configured):
 
 
 @pytest.mark.parametrize(("start", "value"), [(40, "61"), (40, "100"), (40, "+50"), (40, "-21"), (40, "+21"),
-                                              (50, "61"), (55, "+6"), (58, "70")])
+                                              (50, "61"), (55, "+6"), (58, "70"), (62, "+1"), (62, "63")])
 async def test_lautstaerke_grenzen(configured, start, value):
     """(50, „61“) und (55, „+6“) reißen nur die Obergrenze 60, nicht die Schritt-Grenze 20."""
     configured.volume = start
@@ -216,3 +216,43 @@ async def test_umschalten_im_normalfall_nur_ein_befehl(configured):
 async def test_umschalten_auf_aktuellen_sender_ist_erfolg(configured):
     s = await client.set_channel("SAT.1")
     assert s["channel"] == {"number": 6, "name": "SAT.1"}
+
+
+
+# --- Über der Grenze: leiser geht immer (Befund 29.10.: Receiver meldet 62 bei Grenze 30) ----------------------
+
+@pytest.mark.parametrize(("start", "value", "end"), [(62, "-1", 61), (62, "-20", 42), (62, "50", 50), (62, "30", 30),
+                                                     (35, "-5", 30), (31, "-1", 30)])
+async def test_leiser_geht_auch_ueber_der_grenze(configured, start, value, end):
+    from backend import settings_store
+    settings_store.save(name="TV", address="192.168.178.186", psk=None, volume_limit=30, user="admin")
+    configured.volume = start
+    assert (await client.set_volume(value))["volume"] == end
+
+
+@pytest.mark.parametrize(("start", "value"), [(62, "-21"), (62, "41"), (62, "+1"), (62, "62")])
+async def test_ueber_der_grenze_nur_leiser_und_nur_in_schritten(configured, start, value):
+    """Leiser ja, aber höchstens 20 auf einmal; gleich laut oder lauter bleibt verboten."""
+    from backend import settings_store
+    settings_store.save(name="TV", address="192.168.178.186", psk=None, volume_limit=30, user="admin")
+    configured.volume = start
+    with pytest.raises(client.TVError) as e:
+        await client.set_volume(value)
+    assert e.value.code == "tv_volume_limit"
+    assert configured.volume == start
+
+
+async def test_ton_ueber_den_receiver_wird_gemeldet(configured):
+    configured.output = "audioSystem"
+    s = await client.status()
+    assert s["output"] == "receiver"
+
+
+async def test_ton_ueber_den_fernseher(configured):
+    assert (await client.status())["output"] == "speaker"
+
+
+async def test_unbekannte_ausgabe_bleibt_ehrlich(configured):
+    configured.output = "headphone"
+    s = await client.status()
+    assert s["output"] == "other"

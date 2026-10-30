@@ -123,6 +123,7 @@ class FakeTV:
         self.mode = "ok"          # ok | unreachable | needs_restart
         self.app_open = False     # wie am echten TV: erstes setPlayContent holt nur aus der App
         self.ignore_switch = False
+        self.output = "speaker"   # speaker | audioSystem (Ton über den Yamaha-Receiver, gemessen 29.10.)
 
     def handle(self, ip: str, service: str, method: str, params: list, version: str, headers: dict):
         self.calls.append((service, method, params, version, dict(headers)))
@@ -165,8 +166,11 @@ class FakeTV:
         if (service, method) == ("audio", "getVolumeInformation"):
             if self.power != "active":                 # gemessen 29.10.: im Standby 40005
                 return 200, {"error": [40005, "Display Is Turned off"]}
+            if self.output == "audioSystem":         # gemessen 29.10.: Receiver liefert eigene Skala
+                return 200, {"result": [[{"target": "speaker", "volume": self.volume, "mute": self.mute,
+                                          "maxVolume": 100, "minVolume": 0, "outputTerminal": "audioSystem"}]]}
             return 200, {"result": [[{"target": "speaker", "volume": self.volume, "mute": self.mute,
-                                      "maxVolume": 100, "minVolume": 0}]]}
+                                      "maxVolume": 100, "minVolume": 0, "outputTerminal": self.output}]]}
         if (service, method) == ("audio", "setAudioVolume"):
             v = str(p.get("volume"))
             self.volume = self.volume + int(v) if v[:1] in "+-" else int(v)
