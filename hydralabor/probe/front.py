@@ -1,6 +1,7 @@
 """Auslieferer der Probe – läuft IM LABOR als Nutzer `labor` (nicht auf dem Server), PLAN-L3.md.
 
-- `/assets/...` und `index.html` aus dem gebauten Frontend (`dist`), alle anderen Pfade → `index.html` (SPA).
+- Dateien aus dem gebauten Frontend (`dist`: assets/, Bilder aus public/, favicon …), alle anderen Pfade →
+  `index.html` (SPA). Nichts außerhalb von `dist` (auch nicht über Verknüpfungen).
 - `/api/...` gestreamt an das Probe-Backend (127.0.0.1:8002), Methode/Kopf/Body/Query unverändert –
   außer dem Cookie `hh_labor_probe` des echten Servers, der hier nichts verloren hat.
 Start: python front.py <dist> <backend-url> <port>
@@ -53,11 +54,12 @@ def make_app(dist: Path, backend: str, *, transport: httpx.AsyncBaseTransport | 
         index = dist / "index.html"
         if not index.is_file():
             return HTMLResponse(_NOT_BUILT, status_code=503)
-        path = request.url.path
-        if path.startswith("/assets/"):
-            f = (assets / path.removeprefix("/assets/")).resolve()
-            if f.is_file() and assets in f.parents:
-                return FileResponse(f, headers={"Cache-Control": "public, max-age=31536000, immutable"})
+        # Wie nginx auf dem Server (try_files $uri … /index.html): jede Datei aus dist, sonst index.html (SPA).
+        f = (dist / request.url.path.lstrip("/")).resolve()
+        if f.is_file() and dist in f.parents:
+            immutable = assets in f.parents                     # nur gehashte Bündel dürfen ewig im Cache bleiben
+            return FileResponse(f, headers={"Cache-Control": "public, max-age=31536000, immutable" if immutable
+                                            else "no-cache"})
         return FileResponse(index, headers={"Cache-Control": "no-cache"})
 
     @asynccontextmanager
