@@ -93,10 +93,10 @@ function LogPanel() {
   }, [lines, open])
 
   return (
-    <div className="rounded-xl border border-white/[8%] bg-white/[2%] overflow-hidden">
+    <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] overflow-hidden">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 w-full px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors"
+        className="flex items-center gap-2 w-full px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#9aa7bc] hover:text-[#c8d2df] transition-colors"
       >
         {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         <Terminal size={12} />
@@ -104,9 +104,9 @@ function LogPanel() {
         {loading && <RefreshCw size={10} className="animate-spin ml-auto" />}
       </button>
       {open && (
-        <div className="border-t border-white/[6%] bg-black/30 px-3 py-2 h-56 overflow-y-auto font-mono text-[10px] leading-relaxed text-zinc-400">
+        <div className="border-t border-[rgb(var(--hh-s-rand,42_54_75))] bg-black/30 px-3 py-2 h-56 overflow-y-auto font-mono text-[10px] leading-relaxed text-[#c8d2df]">
           {lines.length === 0
-            ? <span className="text-zinc-600">Keine archiver-Einträge in journald.</span>
+            ? <span className="text-[#9aa7bc]">Keine archiver-Einträge in journald.</span>
             : lines.map((l, i) => <div key={i}>{l}</div>)
           }
           <div ref={bottomRef} />
@@ -150,10 +150,10 @@ export function ArchiverPage() {
   return (
     <div className="space-y-4 max-w-2xl">
       <div className="flex items-center gap-3">
-        <HardDrive className="text-violet-400" size={20} />
+        <HardDrive className="text-[#69d7ff]" size={20} />
         <div>
-          <h1 className="text-xl font-semibold text-zinc-100">Archiver</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Datenträger-Manager</p>
+          <h1 className="text-xl font-semibold text-[#e8eef8]">Archiver</h1>
+          <p className="text-xs text-[#9aa7bc] mt-0.5">Datenträger-Manager</p>
         </div>
         <HelpButton topic="archiver" />
       </div>
