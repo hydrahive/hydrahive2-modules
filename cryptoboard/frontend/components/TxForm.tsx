@@ -73,34 +73,34 @@ export function TxForm({ initial, presetCoin, onSaved, onCancel }: Props) {
     }
   }
 
-  const fieldCls = "w-full px-3 py-2 rounded-lg bg-zinc-900/70 border border-white/[8%] text-sm text-zinc-200 outline-none focus:border-white/20"
+  const fieldCls = "w-full px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-box,21_28_43)/0.7)] border border-[rgb(var(--hh-s-rand,42_54_75))] text-sm text-[#e8eef8] outline-none focus:border-[rgb(var(--hh-s-rand-hover,70_97_127))]"
 
   return (
     <div className="space-y-3">
       {/* Coin */}
       {coin ? (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[4%] border border-white/[8%]">
-          <span className="text-sm text-zinc-200 font-medium">{coin.name}</span>
-          <span className="text-xs text-zinc-500 font-mono uppercase">{coin.symbol}</span>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] border border-[rgb(var(--hh-s-rand,42_54_75))]">
+          <span className="text-sm text-[#e8eef8] font-medium">{coin.name}</span>
+          <span className="text-xs text-[#9aa7bc] font-mono uppercase">{coin.symbol}</span>
           {!editing && (
-            <button onClick={() => setCoin(null)} className="ml-auto text-zinc-600 hover:text-zinc-300"><X size={14} /></button>
+            <button onClick={() => setCoin(null)} className="ml-auto text-[#9aa7bc] hover:text-[#c8d2df]"><X size={14} /></button>
           )}
         </div>
       ) : (
         <div ref={boxRef} className="relative">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900/70 border border-white/[8%]">
-            <Search size={15} className="text-zinc-500" />
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-box,21_28_43)/0.7)] border border-[rgb(var(--hh-s-rand,42_54_75))]">
+            <Search size={15} className="text-[#9aa7bc]" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("search_placeholder")}
-              className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 outline-none" />
+              className="flex-1 bg-transparent text-sm text-[#e8eef8] placeholder-[#9aa7bc] outline-none" />
           </div>
           {open && results.length > 0 && (
-            <div className="absolute z-30 mt-1 w-full rounded-lg bg-zinc-900 border border-white/10 shadow-xl overflow-hidden">
+            <div className="absolute z-30 mt-1 w-full rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] shadow-xl overflow-hidden">
               {results.map((r) => (
                 <button key={r.id} onClick={() => { setCoin({ id: r.id, symbol: r.symbol, name: r.name }); setOpen(false); setQ("") }}
-                  className="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-white/[5%]">
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
                   {r.thumb && <img src={r.thumb} alt="" className="w-5 h-5 rounded-full" />}
-                  <span className="text-sm text-zinc-200">{r.name}</span>
-                  <span className="text-xs text-zinc-500 font-mono uppercase">{r.symbol}</span>
+                  <span className="text-sm text-[#e8eef8]">{r.name}</span>
+                  <span className="text-xs text-[#9aa7bc] font-mono uppercase">{r.symbol}</span>
                 </button>
               ))}
             </div>
@@ -112,7 +112,7 @@ export function TxForm({ initial, presetCoin, onSaved, onCancel }: Props) {
       <div className="grid grid-cols-4 gap-1.5">
         {KINDS.map((k) => (
           <button key={k} onClick={() => setKind(k)}
-            className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${kind === k ? "bg-white/10 text-white" : "bg-white/[3%] text-zinc-400 hover:text-zinc-200"}`}>
+            className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${kind === k ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df] hover:text-[#e8eef8]"}`}>
             {t(`tx_kind_${k}`)}
           </button>
         ))}
@@ -121,11 +121,11 @@ export function TxForm({ initial, presetCoin, onSaved, onCancel }: Props) {
       {/* Menge / Preis */}
       <div className="grid grid-cols-2 gap-2">
         <label className="space-y-1">
-          <span className="text-xs text-zinc-500">{t("tx_quantity")}</span>
+          <span className="text-xs text-[#9aa7bc]">{t("tx_quantity")}</span>
           <input type="number" step="any" value={qty} onChange={(e) => setQty(e.target.value)} className={fieldCls} placeholder="0.0" />
         </label>
         <label className="space-y-1">
-          <span className="text-xs text-zinc-500">{t("tx_price")} {isTransfer && <span className="text-zinc-600">({t("tx_optional")})</span>}</span>
+          <span className="text-xs text-[#9aa7bc]">{t("tx_price")} {isTransfer && <span className="text-[#9aa7bc]">({t("tx_optional")})</span>}</span>
           <input type="number" step="any" value={price} onChange={(e) => setPrice(e.target.value)} className={fieldCls} placeholder="0.00" />
         </label>
       </div>
@@ -133,18 +133,18 @@ export function TxForm({ initial, presetCoin, onSaved, onCancel }: Props) {
       {/* Fee / Datum */}
       <div className="grid grid-cols-2 gap-2">
         <label className="space-y-1">
-          <span className="text-xs text-zinc-500">{t("tx_fee")}</span>
+          <span className="text-xs text-[#9aa7bc]">{t("tx_fee")}</span>
           <input type="number" step="any" value={fee} onChange={(e) => setFee(e.target.value)} className={fieldCls} placeholder="0.00" />
         </label>
         <label className="space-y-1">
-          <span className="text-xs text-zinc-500">{t("tx_date")}</span>
+          <span className="text-xs text-[#9aa7bc]">{t("tx_date")}</span>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={fieldCls} />
         </label>
       </div>
 
       {/* Notiz */}
       <label className="space-y-1 block">
-        <span className="text-xs text-zinc-500">{t("tx_note")}</span>
+        <span className="text-xs text-[#9aa7bc]">{t("tx_note")}</span>
         <input value={note} onChange={(e) => setNote(e.target.value)} className={fieldCls} maxLength={500} />
       </label>
 
@@ -155,7 +155,7 @@ export function TxForm({ initial, presetCoin, onSaved, onCancel }: Props) {
           className="px-4 py-2 rounded-lg bg-emerald-500/20 text-emerald-300 text-sm font-medium hover:bg-emerald-500/30 disabled:opacity-50">
           {editing ? t("tx_save") : t("tx_add")}
         </button>
-        <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-white/[4%] text-zinc-400 text-sm hover:text-zinc-200">
+        <button onClick={onCancel} className="px-4 py-2 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df] text-sm hover:text-[#e8eef8]">
           {t("tx_cancel")}
         </button>
       </div>

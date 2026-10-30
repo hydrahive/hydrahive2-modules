@@ -2,13 +2,12 @@ import { Plus, X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CollapsibleBox } from "@/shared/CollapsibleBox"
-import { rgbFor } from "@/shared/colors"
 import { cryptoApi } from "../api"
 import { CompareChart, type CompareSeries } from "../components/CompareChart"
 import { useVs } from "../vsContext"
 import type { SearchResult } from "../types"
 
-const C = rgbFor("/cryptoboard")
+const C = "105 215 255"
 const PALETTE = ["#34d399", "#60a5fa", "#f472b6", "#fbbf24", "#a78bfa", "#fb923c"]
 const TIMEFRAMES = ["7", "30", "90", "365"]
 const MAX = 6
@@ -82,18 +81,18 @@ export function CompareView() {
         ))}
         {picks.length < MAX && (
           <div ref={boxRef} className="relative">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[4%] border border-white/[8%]">
-              <Plus size={13} className="text-zinc-500" />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] border border-[rgb(var(--hh-s-rand,42_54_75))]">
+              <Plus size={13} className="text-[#9aa7bc]" />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("cmp_add_coin")}
-                className="w-28 bg-transparent text-xs text-zinc-200 placeholder-zinc-600 outline-none" />
+                className="w-28 bg-transparent text-xs text-[#e8eef8] placeholder-[#9aa7bc] outline-none" />
             </div>
             {open && results.length > 0 && (
-              <div className="absolute z-30 mt-1 w-56 rounded-lg bg-zinc-900 border border-white/10 shadow-xl overflow-hidden">
+              <div className="absolute z-30 mt-1 w-56 rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] shadow-xl overflow-hidden">
                 {results.map((r) => (
-                  <button key={r.id} onClick={() => add(r)} className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-white/[5%]">
+                  <button key={r.id} onClick={() => add(r)} className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
                     {r.thumb && <img src={r.thumb} alt="" className="w-4 h-4 rounded-full" />}
-                    <span className="text-sm text-zinc-200">{r.name}</span>
-                    <span className="text-xs text-zinc-500 font-mono uppercase">{r.symbol}</span>
+                    <span className="text-sm text-[#e8eef8]">{r.name}</span>
+                    <span className="text-xs text-[#9aa7bc] font-mono uppercase">{r.symbol}</span>
                   </button>
                 ))}
               </div>
@@ -103,10 +102,10 @@ export function CompareView() {
       </div>
 
       {/* Zeitraum */}
-      <div className="flex rounded-lg border border-white/10 overflow-hidden text-xs w-fit">
+      <div className="flex rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] overflow-hidden text-xs w-fit">
         {TIMEFRAMES.map((d) => (
           <button key={d} onClick={() => setDays(d)}
-            className={`px-3 py-1 font-medium transition-colors ${days === d ? "bg-white/10 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"}`}>
+            className={`px-3 py-1 font-medium transition-colors ${days === d ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-[#e8eef8]" : "text-[#9aa7bc] hover:text-[#c8d2df]"}`}>
             {t(`cmp_tf_${d}`)}
           </button>
         ))}
@@ -115,7 +114,7 @@ export function CompareView() {
       <CollapsibleBox boxId="cryptoboard-compare" color={C} title={t("cmp_title")}>
         <div className="box-b py-3">
           {loading ? (
-            <p className="py-12 text-center text-sm text-zinc-500">{t("loading")}</p>
+            <p className="py-12 text-center text-sm text-[#9aa7bc]">{t("loading")}</p>
           ) : (
             <CompareChart series={series} />
           )}

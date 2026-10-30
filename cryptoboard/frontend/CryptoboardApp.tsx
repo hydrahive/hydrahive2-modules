@@ -2,7 +2,6 @@ import { Bell, CandlestickChart, GitCompareArrows, LayoutGrid, Link2, Newspaper,
 import { useEffect, useState, type CSSProperties } from "react"
 import { NavLink, Route, Routes } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { rgbFor } from "@/shared/colors"
 import { HelpButton } from "@/i18n/HelpButton"
 import { cryptoApi } from "./api"
 import { CoinSearch } from "./components/CoinSearch"
@@ -17,17 +16,17 @@ import { TradeLogView } from "./views/TradeLogView"
 import { WalletsView } from "./views/WalletsView"
 import { useVs, VsProvider } from "./vsContext"
 
-const C = rgbFor("/cryptoboard")
+const C = "105 215 255"
 
 function CurrencyToggle() {
   const { vs, setVs } = useVs()
   return (
-    <div className="flex rounded-lg border border-white/10 overflow-hidden text-xs">
+    <div className="flex rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] overflow-hidden text-xs">
       {["eur", "usd"].map((c) => (
         <button
           key={c}
           onClick={() => setVs(c)}
-          className={`px-2.5 py-1 font-medium uppercase transition-colors ${vs === c ? "bg-white/10 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"}`}
+          className={`px-2.5 py-1 font-medium uppercase transition-colors ${vs === c ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-[#e8eef8]" : "text-[#9aa7bc] hover:text-[#c8d2df]"}`}
         >
           {c}
         </button>
@@ -49,12 +48,12 @@ function Header() {
     return () => { alive = false; clearInterval(h) }
   }, [])
   return (
-    <div className="border-b border-white/[6%] px-5 py-4">
+    <div className="border-b border-[rgb(var(--hh-s-rand,42_54_75))] px-5 py-4">
       <div className="flex items-center gap-3 flex-wrap">
         <CandlestickChart size={20} style={{ color: `rgb(${C})` }} />
         <div>
           <h1 className="text-lg font-bold text-white leading-tight">{t("title")}</h1>
-          <p className="text-xs text-zinc-500">{t("subtitle")}</p>
+          <p className="text-xs text-[#9aa7bc]">{t("subtitle")}</p>
         </div>
         <HelpButton topic="cryptoboard" />
         <div className="ml-auto flex items-center gap-3">
@@ -63,25 +62,25 @@ function Header() {
         </div>
       </div>
       <div className="mt-3 flex items-center gap-1">
-        <NavLink end to="/cryptoboard" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+        <NavLink end to="/cryptoboard" className={({ isActive }) => `${tab} ${isActive ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#c8d2df] hover:text-[#e8eef8]"}`}>
           <span className="flex items-center gap-1.5"><LayoutGrid size={14} />{t("nav_dashboard")}</span>
         </NavLink>
-        <NavLink to="/cryptoboard/portfolio" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+        <NavLink to="/cryptoboard/portfolio" className={({ isActive }) => `${tab} ${isActive ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#c8d2df] hover:text-[#e8eef8]"}`}>
           <span className="flex items-center gap-1.5"><Wallet size={14} />{t("nav_portfolio")}</span>
         </NavLink>
-        <NavLink to="/cryptoboard/analytics" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+        <NavLink to="/cryptoboard/analytics" className={({ isActive }) => `${tab} ${isActive ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#c8d2df] hover:text-[#e8eef8]"}`}>
           <span className="flex items-center gap-1.5"><TrendingUp size={14} />{t("nav_analytics")}</span>
         </NavLink>
-        <NavLink to="/cryptoboard/trades" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+        <NavLink to="/cryptoboard/trades" className={({ isActive }) => `${tab} ${isActive ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#c8d2df] hover:text-[#e8eef8]"}`}>
           <span className="flex items-center gap-1.5"><Receipt size={14} />{t("nav_tradelog")}</span>
         </NavLink>
-        <NavLink to="/cryptoboard/wallets" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+        <NavLink to="/cryptoboard/wallets" className={({ isActive }) => `${tab} ${isActive ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#c8d2df] hover:text-[#e8eef8]"}`}>
           <span className="flex items-center gap-1.5"><Link2 size={14} />{t("nav_wallets")}</span>
         </NavLink>
-        <NavLink to="/cryptoboard/compare" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+        <NavLink to="/cryptoboard/compare" className={({ isActive }) => `${tab} ${isActive ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#c8d2df] hover:text-[#e8eef8]"}`}>
           <span className="flex items-center gap-1.5"><GitCompareArrows size={14} />{t("nav_compare")}</span>
         </NavLink>
-        <NavLink to="/cryptoboard/alerts" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+        <NavLink to="/cryptoboard/alerts" className={({ isActive }) => `${tab} ${isActive ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#c8d2df] hover:text-[#e8eef8]"}`}>
           <span className="flex items-center gap-1.5 relative">
             <Bell size={14} />{t("nav_alerts")}
             {unseen > 0 && (
@@ -89,7 +88,7 @@ function Header() {
             )}
           </span>
         </NavLink>
-        <NavLink to="/cryptoboard/news" className={({ isActive }) => `${tab} ${isActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-zinc-200"}`}>
+        <NavLink to="/cryptoboard/news" className={({ isActive }) => `${tab} ${isActive ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-white" : "text-[#c8d2df] hover:text-[#e8eef8]"}`}>
           <span className="flex items-center gap-1.5"><Newspaper size={14} />{t("nav_news")}</span>
         </NavLink>
       </div>

@@ -2,7 +2,6 @@ import { TrendingUp } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CollapsibleBox } from "@/shared/CollapsibleBox"
-import { rgbFor } from "@/shared/colors"
 import { cryptoApi } from "../api"
 import { StatCard } from "../components/StatCard"
 import { ValueChart } from "../components/ValueChart"
@@ -10,7 +9,7 @@ import { fmtPrice, fmtPct, fmtSigned } from "../format"
 import type { PortfolioStats, ValueHistory } from "../types"
 import { EmptyHint } from "../components/EmptyHint"
 
-const C = rgbFor("/cryptoboard")
+const C = "105 215 255"
 const VS = "eur"
 
 export function AnalyticsView() {
@@ -34,7 +33,7 @@ export function AnalyticsView() {
   useEffect(() => { void load() }, [load])
 
   if (loading && !history) {
-    return <p className="p-8 text-center text-sm text-zinc-500">{t("an_loading")}</p>
+    return <p className="p-8 text-center text-sm text-[#9aa7bc]">{t("an_loading")}</p>
   }
 
   const empty = !history || history.points.length === 0
@@ -72,7 +71,7 @@ export function AnalyticsView() {
         </div>
       </CollapsibleBox>
 
-      <p className="text-[11px] text-zinc-600 px-1">{t("an_disclaimer")}</p>
+      <p className="text-[11px] text-[#9aa7bc] px-1">{t("an_disclaimer")}</p>
     </div>
   )
 }

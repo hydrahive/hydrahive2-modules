@@ -12,7 +12,7 @@ interface Props {
 export function PriceChart({ prices, vs, days }: Props) {
   const gid = useId().replace(/:/g, "")
   if (!prices || prices.length < 2) {
-    return <div className="h-72 grid place-items-center text-sm text-zinc-600">—</div>
+    return <div className="h-72 grid place-items-center text-sm text-[#9aa7bc]">—</div>
   }
   const data = prices.map(([ts, p]) => ({ ts, p }))
   const positive = data[data.length - 1].p >= data[0].p

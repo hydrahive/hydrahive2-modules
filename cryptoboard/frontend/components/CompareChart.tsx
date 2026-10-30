@@ -16,7 +16,7 @@ interface Props {
 export function CompareChart({ series }: Props) {
   const valid = series.filter((s) => s.prices.length >= 2)
   if (valid.length === 0) {
-    return <div className="h-72 grid place-items-center text-sm text-zinc-600">—</div>
+    return <div className="h-72 grid place-items-center text-sm text-[#9aa7bc]">—</div>
   }
 
   // Gemeinsame Zeitstempel-Map: index → { ts, <id>: pct }
