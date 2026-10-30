@@ -26,8 +26,8 @@ export function PosterCard({ group, onOpen }: Props) {
   const showCover = Boolean(group.cover_url) && !broken
 
   return <button type="button" onClick={() => onOpen(group)}
-    className="group flex flex-col overflow-hidden rounded-[6px] border border-[#28354a] bg-[#101724] text-left transition hover:border-cyan-400/50 focus:border-cyan-400/70 focus:outline-none">
-    <div className="relative aspect-[2/3] w-full overflow-hidden bg-[#0c121d]">
+    className="group flex flex-col overflow-hidden rounded-[6px] border border-[rgb(var(--hh-s-rand,40_53_74))] bg-[rgb(var(--hh-s-innen,16_23_36))] text-left transition hover:border-cyan-400/50 focus:border-cyan-400/70 focus:outline-none">
+    <div className="relative aspect-[2/3] w-full overflow-hidden bg-[rgb(var(--hh-s-tief,12_18_29))]">
       {showCover
         ? <img src={group.cover_url as string} alt="" loading="lazy" referrerPolicy="no-referrer"
             onError={() => setBroken(true)}
@@ -42,7 +42,7 @@ export function PosterCard({ group, onOpen }: Props) {
     </div>
     <div className="flex min-h-[3.6rem] flex-col gap-0.5 p-2.5">
       <h3 className="line-clamp-2 text-xs font-bold leading-snug text-[#e8eef8]">{group.title}</h3>
-      {group.year !== null && <span className="text-[11px] text-[#8d9ab0]">{group.year}</span>}
+      {group.year !== null && <span className="text-[11px] text-[#9aa7bc]">{group.year}</span>}
     </div>
   </button>
 }

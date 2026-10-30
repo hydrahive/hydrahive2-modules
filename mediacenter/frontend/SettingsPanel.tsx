@@ -38,17 +38,17 @@ export function SettingsPanel({ status, details, loading, statusLoading, error, 
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h2 className="text-sm font-bold text-[#e8eef8]">{t("settings.title")}</h2>
-        <p className="mt-1 text-xs text-[#8d9ab0]">{t("settings.subtitle")}</p>
+        <p className="mt-1 text-xs text-[#9aa7bc]">{t("settings.subtitle")}</p>
       </div>
       <button type="button" onClick={onTest} disabled={loading || status?.state !== "ready"}
-        className="flex items-center gap-2 rounded-[4px] border border-[#34445d] bg-[#151e2d] px-3 py-2 text-xs font-bold text-[#d4deeb] transition hover:border-cyan-400/60 disabled:cursor-not-allowed disabled:opacity-40">
+        className="flex items-center gap-2 rounded-[4px] border border-[#34445d] bg-[rgb(var(--hh-s-hebung,21_30_45))] px-3 py-2 text-xs font-bold text-[#d4deeb] transition hover:border-cyan-400/60 disabled:cursor-not-allowed disabled:opacity-40">
         <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
         {loading ? t("connection.testing") : t("connection.test")}
       </button>
     </div>
 
     {error && <p className="rounded-[4px] border border-rose-500/25 bg-rose-500/[8%] p-3 text-xs text-rose-200" role="alert">{error}</p>}
-    {statusLoading && !status && <p className="text-xs text-[#8d9ab0]">{t("connection.loading")}</p>}
+    {statusLoading && !status && <p className="text-xs text-[#9aa7bc]">{t("connection.loading")}</p>}
 
     <div className="space-y-2">
       <ServiceRow name={t("settings.services.indexer")} required
@@ -71,7 +71,7 @@ export function SettingsPanel({ status, details, loading, statusLoading, error, 
         origin={arr.find((e: ArrService) => e.service === "sonarr")?.origin ?? null} />
     </div>
 
-    <div className="rounded-[6px] border border-[#28354a] bg-[#0d141f] p-3">
+    <div className="rounded-[6px] border border-[rgb(var(--hh-s-rand,40_53_74))] bg-[rgb(var(--hh-s-tief,13_20_31))] p-3">
       <div className="flex items-start gap-2">
         <KeyRound size={14} className="mt-0.5 shrink-0 text-cyan-300" />
         <div className="min-w-0 text-xs leading-relaxed text-[#a9b6c9]">
@@ -91,13 +91,13 @@ function ServiceRow({ name, level, note, credential, origin, required = false }:
 }) {
   const Icon = level === "ok" ? CheckCircle2 : level === "warn" ? CircleAlert : XCircle
   const color = level === "ok" ? "text-emerald-300" : level === "warn" ? "text-amber-300" : "text-rose-300"
-  return <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[6px] border border-[#28354a] bg-[#101724] px-3 py-2.5">
+  return <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[6px] border border-[rgb(var(--hh-s-rand,40_53_74))] bg-[rgb(var(--hh-s-innen,16_23_36))] px-3 py-2.5">
     <Icon size={15} className={`shrink-0 ${color}`} />
     <span className="text-xs font-bold text-[#e8eef8]">{name}</span>
-    {!required && <span className="rounded-full bg-white/[6%] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#8d9ab0]">
+    {!required && <span className="rounded-full bg-white/[6%] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#9aa7bc]">
       optional
     </span>}
-    <span className="text-[11px] text-[#8d9ab0]">{note}</span>
+    <span className="text-[11px] text-[#9aa7bc]">{note}</span>
     <span className="ml-auto flex items-center gap-3">
       {origin && <code className="text-[10px] text-[#5f6d82]">{origin}</code>}
       <code className="rounded bg-white/[5%] px-1.5 py-0.5 text-[10px] text-[#78869d]">{credential}</code>

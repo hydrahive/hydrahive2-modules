@@ -40,7 +40,7 @@ export function ResultList({ response, searched, error, onQueued, hideSummary = 
   if (!response?.results.length) return <Empty text={t("results.empty")} />
 
   return <section className="space-y-3" aria-label={t("results.title")}>
-    {!hideSummary && <div className="flex items-center justify-between gap-3 text-xs text-[#8d9ab0]">
+    {!hideSummary && <div className="flex items-center justify-between gap-3 text-xs text-[#9aa7bc]">
       <span>{t("results.summary", { total: response.total, eligible: response.eligible })}</span>
       <span>{t("results.expiry")}</span>
     </div>}
@@ -50,14 +50,14 @@ export function ResultList({ response, searched, error, onQueued, hideSummary = 
       const isQueued = result.result_id ? queued.has(result.result_id) : false
       const preference = result.selection_status === "ready" ? null : t(`selection.${result.selection_status}`)
       return <article key={result.result_id ?? `${result.title}-${index}`}
-        className={`rounded-[6px] border p-4 ${allowed ? "border-[#2d4255] bg-[#101724]" : "border-rose-500/20 bg-rose-500/[5%]"}`}>
+        className={`rounded-[6px] border p-4 ${allowed ? "border-[#2d4255] bg-[rgb(var(--hh-s-innen,16_23_36))]" : "border-rose-500/20 bg-rose-500/[5%]"}`}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
               {allowed ? <Check size={16} className="mt-0.5 shrink-0 text-emerald-300" /> : <ShieldX size={16} className="mt-0.5 shrink-0 text-rose-300" />}
               <div className="min-w-0">
                 <h3 className="break-words text-sm font-bold text-[#e8eef8]">{result.title}</h3>
-                <p className="mt-1 text-xs text-[#8d9ab0]">
+                <p className="mt-1 text-xs text-[#9aa7bc]">
                   {[formatBytes(result.size_bytes), result.age_days === null ? null : t("results.days", { count: result.age_days }), result.language, result.resolution, result.format, result.bitrate_kbps ? `${result.bitrate_kbps} kbit/s` : null, `Score ${result.score}`].filter(Boolean).join(" · ")}
                 </p>
               </div>
@@ -79,5 +79,5 @@ export function ResultList({ response, searched, error, onQueued, hideSummary = 
 }
 
 function Empty({ text }: { text: string }) {
-  return <div className="rounded-[6px] border border-dashed border-[#2b394f] bg-[#0d141f] px-4 py-10 text-center text-sm text-[#78869d]">{text}</div>
+  return <div className="rounded-[6px] border border-dashed border-[rgb(var(--hh-s-rand,43_57_79))] bg-[rgb(var(--hh-s-tief,13_20_31))] px-4 py-10 text-center text-sm text-[#78869d]">{text}</div>
 }
