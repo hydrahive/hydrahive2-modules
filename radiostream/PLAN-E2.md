@@ -164,3 +164,7 @@ Abweichungen vom Plan, alle auf hydratest mit echter Musik vom NAS geprüft:
 - **Nach Neustart/Update** setzt das Modul den Sender einmal mit der aktuellen Fassung neu auf (Konfiguration +
   Hörer-Seite). Neu gestartet wird nur, wenn sich die Konfiguration geändert hat – sonst fliegen keine Hörer raus.
 - Reiter heißen jetzt **Bibliothek · Sender · Quelle** (die Überschrift „Musikquelle“ stand sonst doppelt).
+- **Liquidsoap 2.4** (Hauptserver, Ubuntu 26.04) lehnte das Skript ab (30.10.): `protocol.add` erwartet dort `string?`
+  statt einer Liste, `null()` ist veraltet, `on_metadata` ist eine Methode der Quelle. Das Skript enthält beide
+  Fassungen und wählt per `%ifversion >= 2.3.0` beim Laden (0.2.1). Mit 2.2 und 2.4 geprüft, auf dem Hauptserver mit
+  Test-Icecast und Test-Zuspielung echt abgespielt.
