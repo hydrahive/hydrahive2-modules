@@ -98,17 +98,17 @@ export function LidlConnectDialog({ onClose, onConnected }: {
       {error !== undefined && <ErrorState error={errorMessage(error)} />}
       {!flow ? <label className="flex cursor-pointer items-start gap-3 rounded border border-[#33425a] p-3 text-xs text-[#b5c1d2]">
         <input type="checkbox" className="mt-0.5" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} />
-        <span><strong>Ich akzeptiere das experimentelle Risiko ausdrücklich.</strong><br /><span className="text-[#8d9ab0]">Mir ist bewusst, dass dies keine offizielle Lidl-Integration ist und ohne Stabilitäts- oder Zulässigkeitszusage bereitgestellt wird.</span></span>
+        <span><strong>Ich akzeptiere das experimentelle Risiko ausdrücklich.</strong><br /><span className="text-[#9aa7bc]">Mir ist bewusst, dass dies keine offizielle Lidl-Integration ist und ohne Stabilitäts- oder Zulässigkeitszusage bereitgestellt wird.</span></span>
       </label> : <>
         <ol className="grid gap-3 text-sm text-[#d4deeb]">
-          <li><strong>1. Lidl-Anmeldung öffnen.</strong><p className="mt-1 text-xs text-[#8d9ab0]">Der Link stammt aus diesem gestarteten Backend-Flow und öffnet sich erst durch deinen Klick in einem neuen Tab.</p>{authorizationUrl && <a href={authorizationUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 rounded border border-cyan-400/40 bg-cyan-400/15 px-3 py-2 text-xs font-bold text-cyan-200"><ExternalLink size={13} />Direkt bei Lidl anmelden</a>}</li>
-          <li><strong>2. Vollständige Callback-URL kopieren.</strong><p className="mt-1 text-xs text-[#8d9ab0]">Nach dem Redirect kann der Browser die Seite eventuell nicht öffnen. Kopiere dann aus seiner Adresszeile die komplette Adresse ab <code>com.lidlplus.app://callback?...</code> — einschließlich aller Parameter.</p></li>
-          <li><strong>3. Verbindung abschließen.</strong><p className="mt-1 text-xs text-[#8d9ab0]">Der Flow läuft um {new Date(flow.expires_at).toLocaleTimeString("de-DE")} Uhr ab und ist nur einmal nutzbar.</p></li>
+          <li><strong>1. Lidl-Anmeldung öffnen.</strong><p className="mt-1 text-xs text-[#9aa7bc]">Der Link stammt aus diesem gestarteten Backend-Flow und öffnet sich erst durch deinen Klick in einem neuen Tab.</p>{authorizationUrl && <a href={authorizationUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 rounded border border-cyan-400/40 bg-cyan-400/15 px-3 py-2 text-xs font-bold text-cyan-200"><ExternalLink size={13} />Direkt bei Lidl anmelden</a>}</li>
+          <li><strong>2. Vollständige Callback-URL kopieren.</strong><p className="mt-1 text-xs text-[#9aa7bc]">Nach dem Redirect kann der Browser die Seite eventuell nicht öffnen. Kopiere dann aus seiner Adresszeile die komplette Adresse ab <code>com.lidlplus.app://callback?...</code> — einschließlich aller Parameter.</p></li>
+          <li><strong>3. Verbindung abschließen.</strong><p className="mt-1 text-xs text-[#9aa7bc]">Der Flow läuft um {new Date(flow.expires_at).toLocaleTimeString("de-DE")} Uhr ab und ist nur einmal nutzbar.</p></li>
         </ol>
         <Field label="Komplette Callback-URL" hint="Nur die Adresse aus der Browser-Adresszeile; keine Zugangsdaten."><Textarea required rows={4} spellCheck={false} autoComplete="off" value={callbackUrl} onChange={(event) => setCallbackUrl(event.target.value)} placeholder="com.lidlplus.app://callback/?code=…&state=…" /></Field>
         {callbackUrl.trim() && !callbackComplete && <p className="text-xs text-amber-200">Die Callback-Adresse ist noch nicht vollständig oder hat nicht das erwartete Lidl-Format. Sie muss mit <code>com.lidlplus.app://callback</code> beginnen und <code>code</code> sowie <code>state</code> enthalten.</p>}
         <Field label="Alias (optional)"><Input maxLength={120} value={alias} onChange={(event) => setAlias(event.target.value)} placeholder="z. B. Mein Lidl Plus" /></Field>
-        <p className="text-xs text-[#718097]">Die neue Verbindung ist nur für dich sichtbar. Synchronisiert werden ausschließlich digitale Belege und deren read-only Details.</p>
+        <p className="text-xs text-[#9aa7bc]">Die neue Verbindung ist nur für dich sichtbar. Synchronisiert werden ausschließlich digitale Belege und deren read-only Details.</p>
       </>}
     </form>
   </AdminDialog>
