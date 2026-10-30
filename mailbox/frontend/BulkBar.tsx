@@ -11,7 +11,7 @@ interface Props {
   onClear: () => void
 }
 
-const BTN = "inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-0.5 text-xs text-[#c8d2df] hover:bg-[#1c2638] disabled:opacity-40"
+const BTN = "inline-flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-0.5 text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,28_38_56))] disabled:opacity-40"
 
 /** Leiste über der Liste, sobald Mails angehakt sind (Spec §6: Mehrfachauswahl). Nur-Archiv-Mails zählen nicht. */
 export function BulkBar({ items, selected, busy, onAct, onClear }: Props) {
@@ -20,7 +20,7 @@ export function BulkBar({ items, selected, busy, onAct, onClear }: Props) {
   const f = selectionFlags(items, selected)
   const off = busy || f.onServer === 0
   return (
-    <div className="flex flex-wrap items-center gap-1.5 border-b border-[#2a364b] bg-[#111a2b] px-2 py-1.5" data-mbx-bulk="1">
+    <div className="flex flex-wrap items-center gap-1.5 border-b border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#111a2b] px-2 py-1.5" data-mbx-bulk="1">
       <span className="text-xs font-semibold text-[#e8eef8]">{t("bulk.selected", { n: selected.size })}</span>
       <button type="button" className={BTN} disabled={off} onClick={() => onAct(f.anyUnseen ? "seen" : "unseen")} data-mbx-bulk-act="seen">
         {f.anyUnseen ? <MailOpen size={12} /> : <Mail size={12} />}{t(f.anyUnseen ? "action.markRead" : "action.markUnread")}</button>
@@ -33,8 +33,8 @@ export function BulkBar({ items, selected, busy, onAct, onClear }: Props) {
       <button type="button" className={`${BTN} hover:text-rose-300`} disabled={off} onClick={() => onAct("delete")} data-mbx-bulk-act="delete">
         <Trash2 size={12} />{t("action.delete")}</button>
       {f.onServer < selected.size && (
-        <span className="text-[11px] text-[#718097]">{t("bulk.archiveOnly", { n: selected.size - f.onServer })}</span>)}
-      <button type="button" onClick={onClear} aria-label={t("bulk.clear")} className="ml-auto rounded p-0.5 text-[#8d9ab0] hover:bg-[#1c2638]">
+        <span className="text-[11px] text-[#9aa7bc]">{t("bulk.archiveOnly", { n: selected.size - f.onServer })}</span>)}
+      <button type="button" onClick={onClear} aria-label={t("bulk.clear")} className="ml-auto rounded p-0.5 text-[#9aa7bc] hover:bg-[rgb(var(--hh-s-hebung,28_38_56))]">
         <X size={12} /></button>
     </div>
   )

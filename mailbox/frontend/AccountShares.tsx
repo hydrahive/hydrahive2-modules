@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { Trash2 } from "lucide-react"
 import { mailApi, type ShareLevel, type SharesInfo } from "./api"
 
-const FIELD = "min-w-0 flex-1 rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-2 py-1 text-sm text-[#e8eef8]"
+const FIELD = "min-w-0 flex-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_31))] px-2 py-1 text-sm text-[#e8eef8]"
 
 /** Noch freigebbare Ziele: Buddy + Projekte des Nutzers, ohne die schon freigegebenen. */
 export function shareOptions(info: SharesInfo, buddyLabel: string): { target: string; label: string }[] {
@@ -34,18 +34,18 @@ export function AccountShares({ accountId, initial = null }: { accountId: string
   const label = (target: string, name: string) => (target === "buddy" ? t("shares.buddy") : name || t("shares.unknown"))
 
   return (
-    <section className="space-y-2 border-t border-[#2a364b] pt-3" data-mbx-shares="1">
+    <section className="space-y-2 border-t border-[rgb(var(--hh-s-rand,42_54_75))] pt-3" data-mbx-shares="1">
       <h3 className="text-xs font-bold text-[#e8eef8]">{t("shares.title")}</h3>
-      <p className="text-[11px] text-[#718097]">{t("shares.hint")}</p>
-      <p className="text-[11px] text-[#718097]">{t("shares.levelHint")}</p>
-      {info.shares.length === 0 ? <p className="text-xs text-[#8d9ab0]">{t("shares.none")}</p> : (
+      <p className="text-[11px] text-[#9aa7bc]">{t("shares.hint")}</p>
+      <p className="text-[11px] text-[#9aa7bc]">{t("shares.levelHint")}</p>
+      {info.shares.length === 0 ? <p className="text-xs text-[#9aa7bc]">{t("shares.none")}</p> : (
         <ul className="space-y-1">
           {info.shares.map((s) => (
             <li key={s.target} className="flex items-center gap-2 text-sm text-[#c8d2df]" data-mbx-share={s.target}>
               <span className="min-w-0 flex-1 truncate">{label(s.target, s.name)}</span>
               <select value={s.level} aria-label={t("shares.level")} data-mbx-share-level={s.target}
                 onChange={(e) => void run(() => mailApi.addShare(accountId, s.target, e.target.value as ShareLevel))}
-                className="rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-1 py-0.5 text-[11px] text-[#c8d2df]">
+                className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_31))] px-1 py-0.5 text-[11px] text-[#c8d2df]">
                 <option value="read">{t("shares.read")}</option><option value="draft">{t("shares.draft")}</option>
               </select>
               <button type="button" onClick={() => void run(() => mailApi.removeShare(accountId, s.target))}
@@ -60,7 +60,7 @@ export function AccountShares({ accountId, initial = null }: { accountId: string
             {options.map((o) => <option key={o.target} value={o.target}>{o.label}</option>)}
           </select>
           <select value={level} onChange={(e) => setLevel(e.target.value as ShareLevel)} aria-label={t("shares.level")}
-            data-mbx-share-new-level="1" className="rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-1 py-1 text-sm text-[#c8d2df]">
+            data-mbx-share-new-level="1" className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_31))] px-1 py-1 text-sm text-[#c8d2df]">
             <option value="read">{t("shares.read")}</option><option value="draft">{t("shares.draft")}</option>
           </select>
           <button type="button" disabled={!pick} onClick={() => void run(() => mailApi.addShare(accountId, pick, level))} data-mbx-share-add="1"
@@ -69,7 +69,7 @@ export function AccountShares({ accountId, initial = null }: { accountId: string
         </div>)}
       {err && <p role="alert" className="text-xs text-rose-300">{t("shares.failed")}</p>}
       {info.audit.length > 0 && (
-        <details className="text-[11px] text-[#8d9ab0]">
+        <details className="text-[11px] text-[#9aa7bc]">
           <summary className="cursor-pointer">{t("shares.audit", { n: info.audit.length })}</summary>
           <ul className="mt-1 space-y-0.5">
             {info.audit.map((a, i) => (

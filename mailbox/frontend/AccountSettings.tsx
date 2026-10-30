@@ -5,7 +5,7 @@ import { mailApi, type Account } from "./api"
 import { AccountShares } from "./AccountShares"
 import { MsReauth } from "./MsReauth"
 
-const FIELD = "w-full rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-2 py-1 text-sm text-[#e8eef8]"
+const FIELD = "w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_31))] px-2 py-1 text-sm text-[#e8eef8]"
 
 /** Absendername und Signatur je Konto (Spec §6). Die Signatur hängt der Server beim Senden an (nach „-- “). */
 export function AccountSettings({ account, onClose, onSaved }: { account: Account; onClose: () => void; onSaved: () => void }) {
@@ -45,31 +45,31 @@ export function AccountSettings({ account, onClose, onSaved }: { account: Accoun
   return (
     <div role="dialog" aria-modal="true" aria-label={t("settings.title")} data-mbx-settings="1"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-lg space-y-3 rounded-[6px] border border-[#2a364b] bg-[#0b1220] p-4">
+      <div className="w-full max-w-lg space-y-3 rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,11_18_32))] p-4">
         <header className="flex items-center gap-2">
           <h2 className="flex-1 text-sm font-bold text-[#e8eef8]">{t("settings.title")} · {account.address}</h2>
-          <button type="button" onClick={onClose} aria-label={t("compose.close")} className="rounded p-1 text-[#8d9ab0] hover:bg-[#1c2638]">
+          <button type="button" onClick={onClose} aria-label={t("compose.close")} className="rounded p-1 text-[#9aa7bc] hover:bg-[rgb(var(--hh-s-hebung,28_38_56))]">
             <X size={14} /></button>
         </header>
-        <label className="block space-y-1 text-xs text-[#8d9ab0]">{t("settings.senderName")}
+        <label className="block space-y-1 text-xs text-[#9aa7bc]">{t("settings.senderName")}
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={200} className={FIELD} data-mbx-sender-name="1" />
         </label>
-        <label className="block space-y-1 text-xs text-[#8d9ab0]">{t("settings.signature")}
+        <label className="block space-y-1 text-xs text-[#9aa7bc]">{t("settings.signature")}
           <textarea value={sig} onChange={(e) => setSig(e.target.value)} maxLength={5000} rows={5}
             className={`${FIELD} resize-y font-sans`} data-mbx-signature="1" />
         </label>
-        <p className="text-[11px] text-[#718097]">{t("settings.signatureHint")}</p>
+        <p className="text-[11px] text-[#9aa7bc]">{t("settings.signatureHint")}</p>
         {err && <p role="alert" className="text-xs text-rose-300">{t("settings.failed")}</p>}
         {account.auth === "oauth_microsoft" && <MsReauth account={account} onDone={onSaved} />}
         <AccountShares accountId={account.id} />
-        <section className="space-y-1 border-t border-[#2a364b] pt-3">
+        <section className="space-y-1 border-t border-[rgb(var(--hh-s-rand,42_54_75))] pt-3">
           <button type="button" onClick={() => void remove()} disabled={removing} data-mbx-remove="1"
             className="rounded-[4px] border border-rose-400/40 px-3 py-1 text-sm text-rose-300 hover:bg-rose-400/10 disabled:opacity-50">
             {t("settings.remove")}</button>
-          <p className="text-[11px] text-[#718097]">{t("settings.removeHint")}</p>
+          <p className="text-[11px] text-[#9aa7bc]">{t("settings.removeHint")}</p>
         </section>
         <footer className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-[4px] border border-[#2a364b] px-3 py-1 text-sm text-[#c8d2df]">
+          <button type="button" onClick={onClose} className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1 text-sm text-[#c8d2df]">
             {t("settings.cancel")}</button>
           <button type="button" onClick={() => void save()} disabled={busy} data-mbx-settings-save="1"
             className="rounded-[4px] border border-[#69d7ff]/50 bg-[#69d7ff]/15 px-3 py-1 text-sm font-semibold text-[#69d7ff] disabled:opacity-50">
