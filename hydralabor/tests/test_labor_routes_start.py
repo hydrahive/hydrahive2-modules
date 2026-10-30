@@ -50,10 +50,9 @@ def test_start_scheitert_gibt_sperre_frei(clean, monkeypatch):
 
 def test_labor_chat_sitzung_einmal_angelegt(client, admin_headers, clean, monkeypatch):
     """„Zum Labor-Chat“: Sitzung mit dem Labor-Agenten im Labor-Projekt, beim zweiten Mal dieselbe."""
+    from backend import lab_project
     from hydrahive.db import sessions as sessions_db
     from hydrahive.projects import execution
-
-    from backend import lab_project
     monkeypatch.setattr(execution, "_container_exists", lambda name: True)
     made = lab_project.create(admin="boss", model=MODEL)
     try:
@@ -71,8 +70,35 @@ def test_labor_chat_sitzung_einmal_angelegt(client, admin_headers, clean, monkey
 
 
 def test_labor_chat_nur_wenn_fertig(client, admin_headers, clean):
+    state.mark_made("project", project_id="p1", agent_id="a1")      # Teile da, aber nicht fertig
     r = client.post(B + "/chat", headers=admin_headers, json={})
     assert r.status_code == 409 and r.json()["detail"]["code"] == "labor_not_ready"
+
+
+def test_labor_chat_fertig_ohne_projekt(client, admin_headers, clean):
+    state.set_step("ready")
+    r = client.post(B + "/chat", headers=admin_headers, json={})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "labor_not_ready"
+
+
+def test_labor_chat_nimmt_keine_fremde_sitzung(client, admin_headers, clean, monkeypatch):
+    """Andere Sitzung mit demselben Agenten in einem anderen Projekt / anderem Agenten im Labor-Projekt zählt nicht."""
+    from backend import lab_project
+    from hydrahive.db import sessions as sessions_db
+    from hydrahive.projects import execution
+    monkeypatch.setattr(execution, "_container_exists", lambda name: True)
+    made = lab_project.create(admin="boss", model=MODEL)
+    other = lab_project.create(admin="boss", model=MODEL)
+    try:
+        state.mark_made("project", **made)
+        state.set_step("ready")
+        a = sessions_db.create(agent_id=made["agent_id"], user_id="boss", project_id=other["project_id"], title="x")
+        b = sessions_db.create(agent_id=other["agent_id"], user_id="boss", project_id=made["project_id"], title="y")
+        sid = client.post(B + "/chat", headers=admin_headers, json={}).json()["session_id"]
+        assert sid not in (a.id, b.id)
+    finally:
+        lab_project.remove(made)
+        lab_project.remove(other)
 
 
 def test_labor_chat_nur_admins(client, user_headers, clean):

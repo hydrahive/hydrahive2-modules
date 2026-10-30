@@ -4,11 +4,11 @@ import { BOX, BTN, BTN_DANGER, BTN_MAIN } from "./ui"
 
 interface Props {
   s: LabState; busy: boolean; msg: string | null; onJob: (j: "test" | "probe") => void
-  onPower: (a: "start" | "stop") => void; onAskReset: () => void; onAskRemove: () => void
+  onPower: (a: "start" | "stop") => void; onAskReset: () => void; onAskRemove: () => void; onChat: () => void
 }
 
 /** Labor-Seite nach dem Einrichten (PLAN-L1.md): Stand, Chat, Testlauf, Sperre prüfen, Zurücksetzen, Entfernen. */
-export function LabPanel({ s, busy, msg, onJob, onPower, onAskReset, onAskRemove }: Props) {
+export function LabPanel({ s, busy, msg, onJob, onPower, onAskReset, onAskRemove, onChat }: Props) {
   const { t } = useTranslation("hydralabor")
   const lock = busy || !!s.running
   const tl = testLine(s.last_test)
@@ -22,7 +22,7 @@ export function LabPanel({ s, busy, msg, onJob, onPower, onAskReset, onAskRemove
       <section className={BOX}>
         <p className="text-base font-semibold text-[#e8eef8]">{t("lab.ready")}</p>
         <p className="text-sm text-[#c8d2df]">{t("lab.howto")}</p>
-        <a href={`/projects/${s.project_id}`} className={`${BTN_MAIN} inline-block`}>{t("lab.chat")}</a>
+        <button type="button" className={BTN_MAIN} disabled={busy} onClick={onChat}>{t("lab.chat")}</button>
       </section>
 
       <section className={BOX}>

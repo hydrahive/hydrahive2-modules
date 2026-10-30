@@ -124,6 +124,24 @@ async def remove(p: Admin, body: RemoveIn) -> dict:
     return _start("remove")
 
 
+@router.post("/chat")
+def chat(p: Admin, body: Empty) -> dict:
+    """„Zum Labor-Chat“: jüngste eigene Sitzung mit dem Labor-Agenten weiternutzen, sonst neu (Muster Modul Recht)."""
+    _ready()
+    from hydrahive.db import sessions as sessions_db
+    made = state.get()["made"]
+    pid, aid = made.get("project_id", ""), made.get("agent_id", "")
+    if not pid or not aid:
+        raise coded(status.HTTP_409_CONFLICT, "labor_not_ready")
+    s = next((x for x in sessions_db.list_for_user(p.username, limit=500)
+              if x.agent_id == aid and x.project_id == pid), None)
+    if s is None:
+        s = sessions_db.create(agent_id=aid, user_id=p.username, project_id=pid, title="Hydra-Labor")
+    else:
+        sessions_db.touch(s.id)
+    return {"session_id": s.id, "url": f"/werkstatt/{s.id}"}
+
+
 @router.post("/{action}")
 async def power(p: Admin, action: Literal["start", "stop"], body: Empty) -> dict:
     _ready()

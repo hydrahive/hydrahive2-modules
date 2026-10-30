@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router-dom"
 import * as api from "./api"
 import { LabPanel } from "./LabPanel"
 import { errorKey, viewFor, type Checks, type LabState, type Limits, type Model } from "./logic"
@@ -12,6 +13,7 @@ const POLL_MS = 3000
 /** Modulseite Hydra-Labor (nur Admins): Assistent, bis das Labor fertig ist, danach die Labor-Seite. */
 export function HydraLaborPage() {
   const { t } = useTranslation("hydralabor")
+  const navigate = useNavigate()
   const [s, setS] = useState<LabState | null>(null)
   const [checks, setChecks] = useState<Checks | null>(null)
   const [models, setModels] = useState<Model[]>([])
@@ -46,7 +48,8 @@ export function HydraLaborPage() {
       {view === "busy" && <p className="text-sm text-amber-200" aria-live="polite">{t("job.remove")}</p>}
       {view === "lab" && (
         <LabPanel s={s} busy={busy} msg={msg} onJob={(j) => act(() => api.startJob(j))}
-          onPower={(a) => act(() => api.power(a))} onAskReset={() => setAsk("reset")} onAskRemove={() => setAsk("remove")} />
+          onPower={(a) => act(() => api.power(a))} onAskReset={() => setAsk("reset")} onAskRemove={() => setAsk("remove")}
+          onChat={() => act(async () => navigate((await api.openChat()).url))} />
       )}
       {view === "wizard" && (
         <WizardView s={s} checks={checks} models={models} model={model} limits={limits} busy={busy} msg={msg}
