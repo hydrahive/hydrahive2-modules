@@ -31,6 +31,20 @@ describe("GitHub-Verbindung", () => {
     expect(html).not.toMatch(/>github.connect</)
   })
 
+  it("wartet, aber Code fehlt (Seite neu geladen): wieder Verbinden-Knopf statt leerer Anzeige", () => {
+    const html = renderToStaticMarkup(<GitHubBoxView gh={{ connected: false, login: "", pending: true, configured: true }}
+      code={null} busy={false} onConnect={noop} onDisconnect={noop} />)
+    expect(html).toMatch(/>github.connect</)
+  })
+
+  it("Code abgelaufen (wartet nicht mehr): alter Code weg, wieder Verbinden-Knopf", () => {
+    const html = renderToStaticMarkup(<GitHubBoxView gh={{ connected: false, login: "", pending: false, configured: true }}
+      code={{ user_code: "ABCD-1234", verification_uri: "https://github.com/login/device", expires_in: 900 }}
+      busy={false} onConnect={noop} onDisconnect={noop} />)
+    expect(html).not.toContain("ABCD-1234")
+    expect(html).toMatch(/>github.connect</)
+  })
+
   it("verbunden: Name, Trennen, Hinweis wo man den Zugang bei GitHub entfernt", () => {
     const html = renderToStaticMarkup(<GitHubBoxView gh={{ connected: true, login: "nutzer", pending: false, configured: true }}
       code={null} busy={false} onConnect={noop} onDisconnect={noop} />)
@@ -96,6 +110,7 @@ describe("Fehler melden", () => {
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>report.send</)
     expect(v("T", "")).toMatch(/<button[^>]*disabled=""[^>]*>report.send</)
     expect(v("T", "W")).not.toMatch(/<button[^>]*disabled=""[^>]*>report.send</)
+    expect(v("", "W")).toMatch(/<button[^>]*disabled=""[^>]*>report.send</)
   })
 })
 
@@ -127,5 +142,8 @@ describe("Logik", () => {
     expect(submitResult({ number: 7, url: "u" })).toEqual({ number: 7, url: "u" })
     expect(submitResult({ detail: ["x"] })).toBeNull()
     expect(submitResult({})).toBeNull()
+    expect(submitResult({ number: 7 })).toBeNull()
+    expect(submitResult({ url: "u" })).toBeNull()
+    expect(submitResult({ number: "7", url: "u" })).toBeNull()
   })
 })

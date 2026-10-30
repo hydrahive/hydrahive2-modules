@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import * as api from "./api"
+import { GitHubSection } from "./GitHubSection"
 import { LabPanel } from "./LabPanel"
 import { errorKey, viewFor, type Checks, type LabState, type Limits, type Model } from "./logic"
 import { RemoveDialog } from "./RemoveDialog"
@@ -56,6 +57,7 @@ export function HydraLaborPage() {
           onCheck={() => act(async () => setChecks(await api.runChecks(limits)))} onModel={setModel}
           onLimits={(l) => { setLimits(l); setChecks(null) }} onCreate={() => act(() => api.createLab(model, limits))} />
       )}
+      {view !== "busy" && <GitHubSection s={s} onJobStarted={load} />}
       {ask === "reset" && <ResetDialog busy={busy} onCancel={() => setAsk("")}
         onConfirm={() => { setAsk(""); act(() => api.startJob("reset")) }} />}
       {ask === "remove" && <RemoveDialog busy={busy} onCancel={() => setAsk("")}

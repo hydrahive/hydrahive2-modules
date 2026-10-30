@@ -5,7 +5,7 @@ export interface LastTest { ok?: boolean; passed?: number; failed?: number; summ
 export interface LabState {
   step: "start" | "ready"; running: string; progress: string; error_code: string; error_step: string; model: string
   cpu: number; ram_mb: number; disk_gb: number; last_net_ok: string; last_test: LastTest; project_id: string
-  agent_id: string; container_running: boolean
+  agent_id: string; container_running: boolean; submit_out?: Record<string, unknown>
 }
 export interface Check { id: string; ok: boolean; code: string; have: number | string | null; need: number | string | null }
 export interface Checks { ok: boolean; checks: Check[] }
@@ -21,7 +21,13 @@ const ERR = new Set(["labor_busy", "labor_not_ready", "labor_already_ready", "la
   "labor_incus_failed", "labor_subnet_unavailable", "labor_launch_failed", "labor_limits_invalid", "labor_no_address",
   "labor_no_storage_pool", "labor_setup_failed", "labor_snapshot_failed", "labor_no_snapshot", "labor_reset_failed",
   "labor_project_failed", "labor_model_unavailable", "labor_incus_missing", "labor_incus_too_old", "labor_storage_low",
-  "labor_memory_low", "labor_core_too_old", "admin_only"])
+  "labor_memory_low", "labor_core_too_old", "admin_only",
+  "labor_github_denied", "labor_github_expired", "labor_github_failed", "labor_github_fork_failed",
+  "labor_github_name_taken", "labor_github_not_configured", "labor_github_not_connected", "labor_github_not_started",
+  "labor_github_rate_limited", "labor_github_scope", "labor_github_unreachable", "labor_github_url",
+  "labor_report_failed", "labor_submit_bundle_invalid", "labor_submit_git_failed", "labor_submit_nothing",
+  "labor_submit_pr_failed", "labor_submit_protected", "labor_submit_push_failed", "labor_submit_secret",
+  "labor_submit_target_invalid", "labor_submit_tests_red", "labor_submit_text_invalid", "labor_submit_too_big"])
 
 /** Text-Schlüssel zu einem Fehler aus einer Antwort ({code}) oder direkt einem Code aus dem Zustand. */
 export function errorKey(e: unknown): string {
