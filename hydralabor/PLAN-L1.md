@@ -31,16 +31,20 @@
    - ingress: nichts erlauben.
    - **Probe nach dem Anlegen** (Pflicht, sonst Abbruch): aus dem Container `10.x.0.1:443`, Server-IP:443 und
      Standard-Gateway des Servers:80 müssen „zu“ sein, `github.com` muss auflösbar sein.
-3. **Container `hh-labor`** über die vorhandene Container-Verwaltung des Kerns (`containers/`), nicht direkt incus:
-   - Bild: Ubuntu wie der Server (`images:ubuntu/<version>`), unprivilegiert, `security.nesting=true`
-     (wie Kern-Standard), Grenzen 2 CPU / 4 GB RAM / 20 GB (einstellbar im Assistenten).
+3. **Container `hh-labor`** – **geändert 30.10.:** nicht über `containers.lifecycle` des Kerns. Der kennt nur br0/hhnat0
+   und nimmt das default-Profil, das auf LXC-Hosts `security.privileged=true` trägt (Befund hydratest). Das Modul ruft
+   `incus launch --no-profiles` mit festen Argumenten über `incus_client._run`:
+   - Bild: Ubuntu wie der Server (`images:ubuntu/<version>`, sonst 24.04), `security.privileged=false`,
+     `security.nesting=true`, Platte im Pool des default-Profils, Grenzen 2 CPU / 4 GB RAM / 20 GB (einstellbar).
    - NIC an `hhlabor0`, kein `br0`.
    - Nutzer `labor` (UID 1000), `/work` gehört ihm, `/home/labor`.
    - Einrichtung im Container (als root, einmalig): `git`, `python3-venv`, `python3-pip`, `nodejs`/`npm`, `build-essential`,
      `ripgrep`. Klon von `hydrahive/hydrahive2.0` und `hydrahive/hydrahive2-modules` **ohne Zugangsdaten** nach
      `/work/hydrahive2` bzw. `/work/hydrahive2-modules` (öffentlich, https). Python-venv für die Kern-Tests,
      `npm ci` im Frontend. Fortschritt in Schritten.
-   - Danach **Schnappschuss `frisch`**.
+   - Danach **Schnappschuss `frisch`** (im gestoppten Zustand).
+   - Gemessen hydratest 30.10.: Anlegen + Probe 14 s, Einrichtung ~1 min, Zurücksetzen 15 s, Kern-Tests im Labor
+     5241 grün in 4:34 (2 CPU). Nötig zusätzlich: `qemu-utils`, `lsof`; python als Startskript ins venv.
 4. **Projekt „Hydra-Labor“** über die Kern-API, dann `execution.set_container(pid, "hh-labor")`.
 5. **Labor-Agent** als Projekt-Agent: Werkzeuge = K1-Allowlist ohne `fetch_url` (Labor braucht es nicht), Prompt
    aus `hydralabor/agent/PROMPT.md`, Skills `test`, `debugging`, `code-review` und `labor-review` (Kurzfassung hh-review),

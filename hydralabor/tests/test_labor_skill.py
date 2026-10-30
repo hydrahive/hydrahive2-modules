@@ -30,3 +30,17 @@ def test_install_fehler_bricht_nichts(setup_test_env, monkeypatch):
         raise OSError("voll")
     monkeypatch.setattr(_defaults_sync, "sync_defaults", boom)
     skill_sync.install()
+
+
+def test_history_datei_da_damit_spaetere_fassungen_ankommen():
+    import json
+    hist = json.loads((skill_sync.SKILLS_SRC / "_history.json").read_text(encoding="utf-8"))
+    assert set(hist) == {p.name for p in skill_sync.SKILLS_SRC.glob("*.md")}
+    assert all(isinstance(v, list) for v in hist.values())
+
+
+def test_install_ohne_warnung(setup_test_env, caplog):
+    import logging
+    with caplog.at_level(logging.WARNING):
+        skill_sync.install()
+    assert "_history.json" not in caplog.text
