@@ -46,3 +46,34 @@ def test_start_scheitert_gibt_sperre_frei(clean, monkeypatch):
     with pytest.raises(RuntimeError):
         jobs.start("probe")                                            # außerhalb einer Ereignisschleife
     assert state.get()["running"] == ""
+
+
+def test_labor_chat_sitzung_einmal_angelegt(client, admin_headers, clean, monkeypatch):
+    """„Zum Labor-Chat“: Sitzung mit dem Labor-Agenten im Labor-Projekt, beim zweiten Mal dieselbe."""
+    from hydrahive.db import sessions as sessions_db
+    from hydrahive.projects import execution
+
+    from backend import lab_project
+    monkeypatch.setattr(execution, "_container_exists", lambda name: True)
+    made = lab_project.create(admin="boss", model=MODEL)
+    try:
+        state.mark_made("project", **made)
+        state.set_step("ready")
+        r1 = client.post(B + "/chat", headers=admin_headers, json={})
+        assert r1.status_code == 200
+        d = r1.json()
+        assert d["url"] == f"/werkstatt/{d['session_id']}"
+        s = sessions_db.get(d["session_id"])
+        assert s.agent_id == made["agent_id"] and s.project_id == made["project_id"] and s.user_id == "boss"
+        assert client.post(B + "/chat", headers=admin_headers, json={}).json()["session_id"] == d["session_id"]
+    finally:
+        lab_project.remove(made)
+
+
+def test_labor_chat_nur_wenn_fertig(client, admin_headers, clean):
+    r = client.post(B + "/chat", headers=admin_headers, json={})
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "labor_not_ready"
+
+
+def test_labor_chat_nur_admins(client, user_headers, clean):
+    assert client.post(B + "/chat", headers=user_headers, json={}).status_code == 403

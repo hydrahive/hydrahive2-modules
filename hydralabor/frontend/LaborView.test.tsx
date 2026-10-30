@@ -61,14 +61,15 @@ describe("Assistent", () => {
 const READY: LabState = { ...S, step: "ready", container_running: true, last_net_ok: "2026-10-30T15:00:00Z",
   project_id: "p1", agent_id: "a1" }
 const panel = (s: Partial<LabState>) => renderToStaticMarkup(<LabPanel s={{ ...READY, ...s }} busy={false} msg={null}
-  onJob={noop} onPower={noop} onAskReset={noop} onAskRemove={noop} />)
+  onJob={noop} onPower={noop} onAskReset={noop} onAskRemove={noop} onChat={noop} />)
 
 describe("Labor-Seite", () => {
   it("fertig: Chat, Testlauf, Netz prüfen, Zurücksetzen, Entfernen, Stoppen", () => {
     const html = panel({})
     for (const k of ["lab.chat", "lab.test", "lab.probe", "lab.reset", "lab.remove", "lab.stop", "lab.running", "lab.net_ok"])
       expect(html).toContain(k)
-    expect(html).toContain('href="/projects/p1"')
+    expect(html).toMatch(/<button[^>]*>lab.chat</)
+    expect(html).not.toContain('href="/projects/p1"')
     expect(html).not.toContain("lab.start<")
   })
 
