@@ -20,7 +20,10 @@ def dist(tmp_path):
     (tmp_path / "assets").mkdir()
     (tmp_path / "index.html").write_text("<html>Probe-App</html>")
     (tmp_path / "assets" / "app-123.js").write_text("console.log(1)")
-    (tmp_path / "geheim.txt").write_text("nicht da")
+    (tmp_path / "brand").mkdir()
+    (tmp_path / "brand" / "logo.webp").write_bytes(b"RIFFwebp")
+    (tmp_path / "favicon-32.png").write_bytes(b"\x89PNG")
+    (tmp_path.parent / "geheim.txt").write_text("nicht da")            # neben dist, nicht darin
     return tmp_path
 
 
@@ -59,10 +62,24 @@ def test_unbekannter_pfad_liefert_index(client):
     assert r.headers["cache-control"] == "no-cache"
 
 
-def test_dateien_ausserhalb_assets_nicht_ausgeliefert(client):
-    assert client.get("/geheim.txt").text == "<html>Probe-App</html>"
-    assert client.get("/assets/../geheim.txt").text != "nicht da"
-    assert client.get("/assets/%2e%2e/geheim.txt").text != "nicht da"
+def test_bilder_aus_dist(client):
+    """Bilder aus public/ liegen im Hauptordner von dist (brand/, hydra/, favicon …) – wie nginx auf dem Server
+    ausliefern (Befund Till 31.10.: in der Probe fehlten alle Grafiken)."""
+    r = client.get("/brand/logo.webp")
+    assert r.status_code == 200 and r.content == b"RIFFwebp" and r.headers["content-type"] == "image/webp"
+    assert client.get("/favicon-32.png").content == b"\x89PNG"
+    assert "immutable" not in client.get("/brand/logo.webp").headers.get("cache-control", "")
+
+
+def test_ordner_liefert_index(client):
+    assert client.get("/brand").text == "<html>Probe-App</html>"
+    assert client.get("/brand/").text == "<html>Probe-App</html>"
+
+
+@pytest.mark.parametrize("path", ["/../geheim.txt", "/assets/../../geheim.txt", "/%2e%2e/geheim.txt",
+                                  "/brand/%2e%2e/%2e%2e/geheim.txt", "/..%2fgeheim.txt"])
+def test_nichts_ausserhalb_dist(client, path):
+    assert client.get(path).text != "nicht da"
 
 
 def test_api_weiterleitung_mit_methode_body_query(client, seen):
@@ -103,10 +120,9 @@ def test_ohne_dist_klare_seite(tmp_path):
     assert r.status_code == 503 and "noch nicht gebaut" in r.text
 
 
-def test_asset_name_nur_aus_assets(client, dist):
-    """Ein Asset-Pfad zeigt nur in dist/assets – nicht in dist selbst (dort liegt z. B. index.html und mehr)."""
-    (dist / "nur-oben.js").write_text("oben")
-    assert client.get("/assets/nur-oben.js").text == "<html>Probe-App</html>"
+def test_symlink_aus_dist_heraus(client, dist):
+    (dist / "weg.txt").symlink_to(dist.parent / "geheim.txt")
+    assert client.get("/weg.txt").text == "<html>Probe-App</html>"
 
 
 def test_host_kopf_nicht_weitergereicht(client, seen):
