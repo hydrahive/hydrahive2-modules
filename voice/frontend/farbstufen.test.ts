@@ -14,7 +14,7 @@ function dateien(dir: string): string[] {
 
 /** Neutrales Dunkelblau/-grau der alten Cockpit-Flächen (Auswahl-Töne #1c2940/#30243a ausgenommen). */
 function istNeutralDunkel(h: string): boolean {
-  if (["1c2940", "30243a"].includes(h.toLowerCase())) return false
+  if (["1c2940", "30243a", "1f1113", "5a2a2a", "25445a", "102536"].includes(h.toLowerCase())) return false
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16))
   const max = Math.max(r, g, b), min = Math.min(r, g, b)
   const hell = (max + min) / 2 / 255
