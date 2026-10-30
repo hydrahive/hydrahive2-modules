@@ -1,8 +1,8 @@
 """Erzeugt die Konfiguration für Icecast und Liquidsoap aus den Sender-Einstellungen (PLAN-E2.md).
 
 Reine Textbausteine ohne Seiteneffekte – geschrieben werden sie von control.write_config(). Icecast lauscht nur auf
-127.0.0.1; Passwörter kommen aus secrets.env und stehen nie in Logs. Liquidsoap nutzt nur Funktionen, die es in 2.2
-(Ubuntu 24.04) und 2.4 (26.04) gibt.
+127.0.0.1; Passwörter kommen aus secrets.env und stehen nie in Logs. Liquidsoap 2.2 (Ubuntu 24.04) und 2.4 (26.04)
+unterscheiden sich bei protocol.add, null und on_metadata – das Skript wählt per %ifversion beim Laden.
 """
 from __future__ import annotations
 
@@ -90,8 +90,7 @@ feed_key = {_liq(feed_key)}
 feed_base = {_liq(feed_base)}
 
 # radiostream:<track_id>.<mp3|flac> → Datei mit Feed-Schlüssel in eine Temp-Datei laden (wird danach gelöscht).
-def fetch_track(~rlog, ~maxtime, arg) =
-  ignore(maxtime)
+def fetch_file(rlog, arg) =
   parts = string.split(separator="[.]", arg)
   ext = list.nth(default="mp3", parts, 1)
   tmp = file.temp("radiostream", ".#{{ext}}")
@@ -104,21 +103,39 @@ def fetch_track(~rlog, ~maxtime, arg) =
     rlog("Radiostream: Titel nicht ladbar: #{{err.kind}}")
     ok := false
   end
-  if ok() then [tmp] else
-    file.remove(tmp)
-    []
-  end
+  if not ok() then file.remove(tmp) end
+  (ok(), tmp)
 end
+# 2.3+ erwartet string? (null = kein Titel), 2.2 eine Liste.
+%ifversion >= 2.3.0
+def fetch_track(~rlog, ~maxtime, arg) =
+  ignore(maxtime)
+  let (ok, tmp) = fetch_file(rlog, arg)
+  if ok then tmp else null end
+end
+%else
+def fetch_track(~rlog, ~maxtime, arg) =
+  ignore(maxtime)
+  let (ok, tmp) = fetch_file(rlog, arg)
+  if ok then [tmp] else [] end
+end
+%endif
 protocol.add("radiostream", fetch_track, temporary=true, doc="Radiostream-Titel", syntax="radiostream:<id>.<ext>")
+
+%ifversion >= 2.3.0
+def no_request() = null end
+%else
+def no_request() = null() end
+%endif
 
 def next_track() =
   r = http.get(headers=[("X-Radiostream-Feed", feed_key)], timeout=10.0, "#{{feed_base}}/feed/next")
   if r.status_code == 200 then
     uri = string.trim(r)
-    if uri == "" then null() else request.create(uri) end
+    if uri == "" then no_request() else request.create(uri) end
   else
     log.important("Radiostream: kein nächster Titel (HTTP #{{r.status_code}})")
-    null()
+    no_request()
   end
 end
 
@@ -141,7 +158,11 @@ def write_now(m) =
     zuletzt := list.prefix(10, list.add(jetzt, zuletzt()))
   end
 end
+%ifversion >= 2.3.0
+radio.on_metadata(synchronous=false, write_now)
+%else
 radio = source.on_metadata(radio, write_now)
+%endif
 
 output.icecast(%mp3(bitrate=192), id="sender",
   host="127.0.0.1", port={ICECAST_PORT}, password={_liq(source_password)}, mount={_liq(MOUNT)},
