@@ -18,6 +18,8 @@ class FakeIncus:
         self.open_targets: set[str] = set()     # „host:port“, die bei der Netzprobe erreichbar sind
         self.dns_ok = True
         self.pool = "default"
+        self.version = "Client version: 6.0.5\nServer version: 6.0.5\n"
+        self.storage_info = '  space used: "100"\n  total space: "200"\n'
 
     async def run(self, *args: str, timeout: float = 60.0, input_bytes: bytes | None = None) -> tuple[int, str, str]:
         a = list(args)
@@ -66,6 +68,10 @@ class FakeIncus:
             if a[-1] == "n":
                 return 0, "\n".join(self.containers), ""
             return 0, "\n".join(f"{n},{'RUNNING' if c['running'] else 'STOPPED'}" for n, c in self.containers.items()), ""
+        if a[0] == "version":
+            return 0, self.version, ""
+        if a[:2] == ["storage", "info"]:
+            return 0, self.storage_info, ""
         if a[:4] == ["profile", "device", "get", "default"]:
             return (0, self.pool + "\n", "") if self.pool else (1, "", "not found")
         if a[:2] == ["network", "get"]:
