@@ -110,8 +110,21 @@ async def test(report: Report) -> None:
     state.set_test(parse_test(rc, out))
 
 
+async def submit_job(report: Report) -> None:
+    """Einreichen mit den Eingaben aus dem Zustand; Ergebnis (PR) bzw. Gründe (Fehler) zurück in den Zustand."""
+    from . import submit
+    data = state.get()["submit_in"]
+    try:
+        out = await submit.submit(data.get("target", ""), data.get("title", ""), data.get("body", ""), report=report)
+    except submit.SubmitError as e:
+        if e.detail is not None:
+            state.set_submit_out({"detail": e.detail})
+        raise
+    state.set_submit_out(out)
+
+
 JOBS: dict[str, Callable[[Report], Awaitable[None]]] = {
-    "create": create, "remove": remove, "reset": reset, "probe": probe, "test": test}
+    "create": create, "remove": remove, "reset": reset, "probe": probe, "test": test, "submit": submit_job}
 
 
 async def _run(name: str) -> None:
@@ -122,9 +135,11 @@ async def _run(name: str) -> None:
         code, step = e.code, e.step
     except (container.LaborError, network.LaborNetworkError) as e:
         code = e.code
-    except Exception:
-        logger.exception("Hydra-Labor: Auftrag %s gescheitert", name)
-        code = "labor_failed"
+    except Exception as e:
+        code = getattr(e, "code", "")
+        if not isinstance(code, str) or not code.startswith("labor_"):
+            logger.exception("Hydra-Labor: Auftrag %s gescheitert", name)
+            code = "labor_failed"
     state.finish(error_code=code, error_step=step)
 
 

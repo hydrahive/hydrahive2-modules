@@ -20,7 +20,7 @@ router = APIRouter()
 # einem Thread ohne – Befund hydratest 30.10.: 500 und Zustand hing auf „läuft“).
 Admin = Annotated[AuthPrincipal, Depends(require_admin_principal)]
 _PUBLIC = ("step", "running", "progress", "error_code", "error_step", "model", "cpu", "ram_mb", "disk_gb",
-           "last_net_ok", "last_test")
+           "last_net_ok", "last_test", "submit_out")
 
 
 class LimitsIn(BaseModel):

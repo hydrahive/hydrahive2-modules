@@ -18,6 +18,7 @@ class FakeIncus:
         self.open_targets: set[str] = set()     # „host:port“, die bei der Netzprobe erreichbar sind
         self.dns_ok = True
         self.pool = "default"
+        self.pull_files: dict[str, bytes] = {}   # „container/pfad“ → Inhalt für `file pull`
         self.version = "Client version: 6.0.5\nServer version: 6.0.5\n"
         self.storage_info = '  space used: "100"\n  total space: "200"\n'
 
@@ -120,6 +121,13 @@ class FakeIncus:
                     lines.append(f"{t} {'offen' if t in self.open_targets else 'zu'}")
                 lines.append("dns " + ("ok" if self.dns_ok else "fehler"))
                 return 0, "\n".join(lines) + "\n", ""
+            return 0, "", ""
+        if a[:2] == ["file", "pull"]:
+            src, dst = a[2], a[3]
+            if src not in self.pull_files:
+                return 1, "", "not found"
+            from pathlib import Path
+            Path(dst).write_bytes(self.pull_files[src])
             return 0, "", ""
         if a[0] == "config":
             return 0, "", ""

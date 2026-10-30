@@ -9,12 +9,14 @@ import logging
 
 from . import skill_sync, state
 from .routes import router
+from .routes_github import router as github_router
 
 logger = logging.getLogger(__name__)
 
 
 def register(ctx) -> None:
     ctx.register_migrations("migrations")
+    ctx.register_router(github_router)          # zuerst: router hat /{action}, das würde /submit usw. fangen
     ctx.register_router(router)
     skill_sync.install()
     try:
