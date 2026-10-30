@@ -92,3 +92,13 @@ def test_version_und_platz_aus_incus(fake_incus):
     fake_incus.storage_info = '  space used: "221422673920"\n  total space: "2000397864960"\n'
     assert run(checks._incus_version()) == "6.0.0"
     assert run(checks._pool_free_gb()) == 1656
+
+
+def test_version_fehler_von_incus(fake_incus, monkeypatch):
+    from backend import incus
+
+    async def failing(*a, **k):
+        return 1, "Server version: 6.0.5\n", "boom"
+    monkeypatch.setattr(incus, "run", failing)
+    assert run(checks._incus_version()) == ""
+    assert run(checks._pool_free_gb()) is None
