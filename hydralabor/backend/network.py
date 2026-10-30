@@ -108,3 +108,11 @@ async def probe(container: str, gateway: str) -> dict:
     if "dns ok" not in lines:
         raise LaborNetworkError("labor_dns_failed")
     return {"ok": True, "checked": len(targets)}
+
+
+async def gateway() -> str:
+    raise NotImplementedError
+
+
+async def remove() -> None:
+    raise NotImplementedError

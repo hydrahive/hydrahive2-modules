@@ -17,6 +17,7 @@ class FakeIncus:
         self.exec_answers: dict[str, tuple[int, str]] = {}
         self.open_targets: set[str] = set()     # „host:port“, die bei der Netzprobe erreichbar sind
         self.dns_ok = True
+        self.pool = "default"
 
     async def run(self, *args: str, timeout: float = 60.0, input_bytes: bytes | None = None) -> tuple[int, str, str]:
         a = list(args)
@@ -56,12 +57,22 @@ class FakeIncus:
             return 0, "", ""
         if a[:3] == ["network", "acl", "list"]:
             return 0, "\n".join(self.acls), ""
-        if cmd == ["launch"] or a[0] == "launch":
+        if a[0] == "launch":
             name = a[-1]
+            if name in self.containers:
+                return 1, "", "already exists"
             self.containers[name] = {"args": a, "running": True}
             return 0, "", ""
         if a[0] == "list":
+            if a[-1] == "n":
+                return 0, "\n".join(self.containers), ""
             return 0, "\n".join(f"{n},{'RUNNING' if c['running'] else 'STOPPED'}" for n, c in self.containers.items()), ""
+        if a[:4] == ["profile", "device", "get", "default"]:
+            return (0, self.pool + "\n", "") if self.pool else (1, "", "not found")
+        if a[:2] == ["network", "get"]:
+            return 0, self.networks.get(a[2], {}).get(a[3], "") + "\n", ""
+        if a[:2] == ["snapshot", "list"]:
+            return 0, "\n".join(sorted(self.snapshots.get(a[2], set()))), ""
         if a[0] in ("start", "stop"):
             if a[1] in self.containers:
                 self.containers[a[1]]["running"] = a[0] == "start"
