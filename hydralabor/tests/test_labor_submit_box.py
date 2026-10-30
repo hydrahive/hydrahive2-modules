@@ -100,7 +100,7 @@ def test_buendel_abholen_und_loeschen(fake_incus, tmp_path):
     dest = run(submit_box.bundle("core", tmp_path))
     assert dest == tmp_path / "labor.bundle" and dest.read_bytes().startswith(b"# v2 git bundle")
     cmds = [" ".join(c) for c in fake_incus.calls]
-    assert any("git bundle create /tmp/hh-labor.bundle origin/main..HEAD" in c for c in cmds)
+    assert any("git bundle create -q /tmp/hh-labor.bundle origin/main..HEAD" in c for c in cmds)
     assert any(c.startswith("file pull hh-labor/tmp/hh-labor.bundle") for c in cmds)
     assert any("rm -f /tmp/hh-labor.bundle" in c for c in cmds)
 
@@ -120,3 +120,42 @@ def test_buendel_kein_buendel(fake_incus, tmp_path):
         run(submit_box.bundle("core", tmp_path))
     assert e.value.code == "labor_submit_bundle_invalid"
     assert not Path(tmp_path / "labor.bundle").exists()
+
+
+def test_neue_dateien_werden_mitgezaehlt(fake_incus):
+    """Ohne `git add -N` sieht `git diff` neue, ungesicherte Dateien nicht – die gehören aber dazu."""
+    run(submit_box.changes("core"))
+    assert "git add -A -N ." in execs(fake_incus)[-1][-1]
+
+
+def test_leerzeilen_in_namensliste(fake_incus):
+    fake_incus.exec_answers["hh-labor-changes"] = (0, "a.py\n\n  \n--STAT--\n1\t0\ta.py\n")
+    assert run(submit_box.changes("core"))["files"] == ["a.py"]
+
+
+@pytest.mark.parametrize("step", ["commit", "diff"])
+def test_git_fehler(fake_incus, step):
+    fake_incus.exec_answers["git diff origin/main..HEAD" if step == "diff" else "git add -A &&"] = (1, "")
+    with pytest.raises(submit_box.SubmitError) as e:
+        run(submit_box.commit("core", "T", "nutzer", 1) if step == "commit" else submit_box.diff("core"))
+    assert e.value.code == "labor_submit_git_failed"
+
+
+def test_dateien_ohne_ordner_kein_modul(fake_incus):
+    run(submit_box.run_tests("modules", ["README.md", "radiostream/a.py"]))
+    body = execs(fake_incus)[-1][-1]
+    assert 'echo "== README.md"' not in body and 'echo "== radiostream"' in body
+
+
+def test_buendel_auch_bei_fehler_im_container_geloescht(fake_incus, tmp_path):
+    with pytest.raises(submit_box.SubmitError):
+        run(submit_box.bundle("core", tmp_path))                  # nichts zum Abholen → Fehler
+    assert ["exec", "hh-labor", "--", "rm", "-f", "/tmp/hh-labor.bundle"] in fake_incus.calls
+
+
+def test_buendel_anlegen_scheitert(fake_incus, tmp_path):
+    fake_incus.exec_answers["git bundle create"] = (128, "")
+    fake_incus.pull_files["hh-labor/tmp/hh-labor.bundle"] = b"# v2 git bundle\nalt"
+    with pytest.raises(submit_box.SubmitError) as e:
+        run(submit_box.bundle("core", tmp_path))
+    assert e.value.code == "labor_submit_git_failed" and not (tmp_path / "labor.bundle").exists()
