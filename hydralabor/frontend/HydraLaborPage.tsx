@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import * as api from "./api"
 import { LabPanel } from "./LabPanel"
-import { errorKey, type Checks, type LabState, type Limits, type Model } from "./logic"
+import { errorKey, viewFor, type Checks, type LabState, type Limits, type Model } from "./logic"
 import { RemoveDialog } from "./RemoveDialog"
 import { ResetDialog } from "./ResetDialog"
 import { WizardView } from "./Wizard"
@@ -36,16 +36,19 @@ export function HydraLaborPage() {
   }
 
   if (!s) return <div className="p-4 text-sm text-[#c8d2df]">{msg ? t(msg) : "…"}</div>
+  const view = viewFor(s)
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold text-[#e8eef8]">{t("title")}</h1>
         <p className="text-sm text-[#c8d2df]">{t("subtitle")}</p>
       </header>
-      {s.step === "ready" && s.running !== "remove" ? (
+      {view === "busy" && <p className="text-sm text-amber-200" aria-live="polite">{t("job.remove")}</p>}
+      {view === "lab" && (
         <LabPanel s={s} busy={busy} msg={msg} onJob={(j) => act(() => api.startJob(j))}
           onPower={(a) => act(() => api.power(a))} onAskReset={() => setAsk("reset")} onAskRemove={() => setAsk("remove")} />
-      ) : (
+      )}
+      {view === "wizard" && (
         <WizardView s={s} checks={checks} models={models} model={model} limits={limits} busy={busy} msg={msg}
           onCheck={() => act(async () => setChecks(await api.runChecks(limits)))} onModel={setModel}
           onLimits={(l) => { setLimits(l); setChecks(null) }} onCreate={() => act(() => api.createLab(model, limits))} />

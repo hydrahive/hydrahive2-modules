@@ -6,7 +6,7 @@ vi.mock("@/shared/api-client", () => ({ api: { get: vi.fn(() => new Promise(() =
 import { LabPanel } from "./LabPanel"
 import { RemoveDialogView } from "./RemoveDialog"
 import { WizardView } from "./Wizard"
-import { canRemove, type Checks, type LabState } from "./logic"
+import { canRemove, viewFor, type Checks, type LabState } from "./logic"
 
 const S: LabState = {
   step: "start", running: "", progress: "", error_code: "", error_step: "", model: "", cpu: 2, ram_mb: 4096, disk_gb: 20,
@@ -94,6 +94,17 @@ describe("Labor-Seite", () => {
     const html = panel({ last_test: { ok: false, passed: 5239, failed: 2, summary: "2 failed", failures: ["core/tests/a.py::t"], at: "2026-10-30T15:00:00Z" } })
     expect(html).toContain("test.red")
     expect(html).toContain("core/tests/a.py::t")
+  })
+})
+
+describe("Seite wählt die Ansicht", () => {
+  it("während des Entfernens nur der Hinweis, kein Assistent und keine Labor-Knöpfe", () => {
+    expect(viewFor({ ...READY, running: "remove" })).toBe("busy")
+    expect(viewFor({ ...S, running: "remove" })).toBe("busy")
+    expect(viewFor(READY)).toBe("lab")
+    expect(viewFor({ ...READY, running: "test" })).toBe("lab")
+    expect(viewFor(S)).toBe("wizard")
+    expect(viewFor({ ...S, running: "create" })).toBe("wizard")
   })
 })
 

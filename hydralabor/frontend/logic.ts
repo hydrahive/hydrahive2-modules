@@ -58,3 +58,9 @@ export function when(iso: string): string {
 
 /** „Labor entfernen“ nur mit genau diesem Wort (wie backend/routes.py). */
 export const canRemove = (w: string) => w === "LABOR"
+
+/** Welche Ansicht die Seite zeigt: während des Entfernens nur einen Hinweis (sonst sähe es nach „neu anlegen“ aus). */
+export function viewFor(s: LabState): "busy" | "lab" | "wizard" {
+  if (s.running === "remove") return "busy"
+  return s.step === "ready" ? "lab" : "wizard"
+}
