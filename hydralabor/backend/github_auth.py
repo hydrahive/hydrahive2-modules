@@ -18,7 +18,9 @@ from . import github_api
 from .github_api import GitHubError
 
 logger = logging.getLogger(__name__)
-CLIENT_ID = ""                      # Client-ID der OAuth-App „HydraHive Labor“ (öffentlich), von Till
+# Client-ID der OAuth-App „HydraHive Labor“ im Konto hydrahive (Till, 30.10.). Öffentlich – beim Device-Flow gibt es
+# kein Client-Secret. HH_LABOR_GITHUB_CLIENT_ID überschreibt (z. B. für eine Test-App).
+CLIENT_ID = "Ov23lis4cKnscWQwA60e"
 SCOPE = "public_repo"
 _T = "module_hydralabor_github"
 _GRANT = "urn:ietf:params:oauth:grant-type:device_code"

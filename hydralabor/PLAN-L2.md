@@ -118,7 +118,8 @@
 
 ## Entscheidungen (Till, 30.10.)
 
-- Bauplan freigegeben („so ist gut“). Till legt die OAuth-App an und gibt die Client-ID.
+- Bauplan freigegeben („so ist gut“). OAuth-App „HydraHive Labor“ angelegt, Client-ID `Ov23lis4cKnscWQwA60e`
+  (Device-Flow an, gemessen 30.10.).
 - Label `labor` in Kern- und Modul-Repo: lege ich an.
 - **Annahmen** (Fragen nicht ausdrücklich beantwortet, Standard aus dem Plan):
   1. Plugins als drittes Ziel erst in L3.

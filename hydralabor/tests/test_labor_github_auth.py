@@ -25,6 +25,16 @@ def test_client_id_aus_einstellung(monkeypatch):
     assert github_auth.client_id() == "Iv1.test123"
 
 
+def test_client_id_der_hydrahive_app(monkeypatch):
+    monkeypatch.delenv("HH_LABOR_GITHUB_CLIENT_ID", raising=False)
+    assert github_auth.client_id() == "Ov23lis4cKnscWQwA60e"
+
+
+def test_leere_einstellung_nimmt_app(monkeypatch):
+    monkeypatch.setenv("HH_LABOR_GITHUB_CLIENT_ID", "  ")
+    assert github_auth.client_id() == "Ov23lis4cKnscWQwA60e"
+
+
 def test_ohne_client_id_klare_meldung(gh, monkeypatch):
     monkeypatch.setattr(github_auth, "CLIENT_ID", "")
     monkeypatch.delenv("HH_LABOR_GITHUB_CLIENT_ID", raising=False)
