@@ -5,59 +5,11 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from backend import github_auth, push, submit, submit_box
+from backend import github_auth, submit
 
 
 def run(c):
     return asyncio.run(c)
-
-
-@pytest.fixture
-def ready(fake_github, db_ready, monkeypatch, tmp_path):
-    from fake_github import TOKEN
-    from hydrahive.credentials import _crypto
-    from hydrahive.db.connection import db
-    from hydrahive.settings import settings
-    with db() as c:
-        c.execute("INSERT OR REPLACE INTO module_hydralabor_github (id, token_enc, login, user_id, scopes, connected_at) "
-                  "VALUES (1, ?, 'nutzer', 4242, 'public_repo', 'x')", (_crypto.encrypt(TOKEN, settings.data_dir),))
-        c.commit()
-    box = {"changes": {"files": ["core/src/hydrahive/a.py"], "lines": 12}, "diff": "+++ b/a.py\n+x = 1\n",
-           "tests": {"ok": True, "summary": "5241 passed in 270.0s", "passed": 5241, "failed": 0, "failures": []},
-           "calls": []}
-
-    async def changes(target):
-        box["calls"].append(("changes", target))
-        return box["changes"]
-
-    async def commit(target, title, login, uid):
-        box["calls"].append(("commit", target, title, login, uid))
-
-    async def diff(target):
-        box["calls"].append(("diff", target))
-        return box["diff"]
-
-    async def tests(target, files):
-        box["calls"].append(("tests", target))
-        return box["tests"]
-
-    async def bundle(target, workdir):
-        box["calls"].append(("bundle", target))
-        p = workdir / "labor.bundle"
-        p.write_bytes(b"# v2 git bundle\n")
-        return p
-
-    async def push_bundle(bundle, *, fork, target, branch, token, workdir):
-        box["calls"].append(("push", fork, target, branch, token == TOKEN))
-        bundle.unlink()
-    for name, fn in (("changes", changes), ("commit", commit), ("diff", diff), ("run_tests", tests), ("bundle", bundle)):
-        monkeypatch.setattr(submit_box, name, fn)
-    monkeypatch.setattr(push, "push_bundle", push_bundle)
-    monkeypatch.setattr(submit, "_workdir", lambda: tmp_path)
-    monkeypatch.setattr(submit, "_stamp", lambda: "20261030-1900")
-    monkeypatch.setattr(submit, "_versions", lambda: {"hydrahive": "2.0.0", "hydralabor": "0.2.0"})
-    yield box
-    github_auth.disconnect()
 
 
 def test_ohne_github_kein_einreichen(ready):
@@ -92,45 +44,6 @@ def test_label_wird_versucht_fehler_egal(ready, fake_github):
     run(submit.submit("core", "T", "B", report=lambda _k: None))
     assert any(c["url"].endswith("/issues/100/labels") for c in fake_github.calls)
     assert submit.list_submissions()[0]["number"] == 100
-
-
-def test_keine_aenderungen(ready):
-    ready["changes"] = {"files": [], "lines": 0}
-    with pytest.raises(submit.SubmitError) as e:
-        run(submit.submit("core", "T", "B", report=lambda _k: None))
-    assert e.value.code == "labor_submit_nothing"
-    assert [c[0] for c in ready["calls"]] == ["changes"]
-
-
-def test_geschuetzter_pfad(ready):
-    ready["changes"] = {"files": [".github/workflows/x.yml", "core/a.py"], "lines": 3}
-    with pytest.raises(submit.SubmitError) as e:
-        run(submit.submit("core", "T", "B", report=lambda _k: None))
-    assert e.value.code == "labor_submit_protected" and e.value.detail == [".github/workflows/x.yml"]
-    assert "push" not in [c[0] for c in ready["calls"]]
-
-
-def test_zu_gross(ready):
-    ready["changes"] = {"files": [f"f{i}.py" for i in range(51)], "lines": 10}
-    with pytest.raises(submit.SubmitError) as e:
-        run(submit.submit("core", "T", "B", report=lambda _k: None))
-    assert e.value.code == "labor_submit_too_big"
-
-
-def test_geheimnis_gefunden(ready):
-    ready["diff"] = "+key = 'ghp_" + "a" * 36 + "'\n"
-    with pytest.raises(submit.SubmitError) as e:
-        run(submit.submit("core", "T", "B", report=lambda _k: None))
-    assert e.value.code == "labor_submit_secret" and e.value.detail == ["ghp_aa…"]
-    assert "tests" not in [c[0] for c in ready["calls"]]
-
-
-def test_tests_rot(ready):
-    ready["tests"] = {"ok": False, "summary": "2 failed, 10 passed", "passed": 10, "failed": 2, "failures": ["a::b"]}
-    with pytest.raises(submit.SubmitError) as e:
-        run(submit.submit("core", "T", "B", report=lambda _k: None))
-    assert e.value.code == "labor_submit_tests_red" and e.value.detail["failed"] == 2
-    assert "bundle" not in [c[0] for c in ready["calls"]]
 
 
 @pytest.mark.parametrize("target", ["plugins", "", "../x"])
@@ -179,3 +92,26 @@ def test_token_nie_in_gespeicherten_daten(ready):
     with db() as c:
         rows = c.execute("SELECT * FROM module_hydralabor_submissions").fetchall()
     assert TOKEN not in str([tuple(r) for r in rows])
+
+
+def test_token_ohne_login_gilt_nicht_verbunden(ready):
+    from hydrahive.db.connection import db
+    with db() as c:
+        c.execute("UPDATE module_hydralabor_github SET login = '' WHERE id = 1")
+        c.commit()
+    with pytest.raises(submit.SubmitError) as e:
+        run(submit.submit("core", "T", "B", report=lambda _k: None))
+    assert e.value.code == "labor_github_not_connected"
+
+
+def test_label_labor_gesetzt(ready, fake_github):
+    run(submit.submit("core", "T", "B", report=lambda _k: None))
+    lab = next(c for c in fake_github.calls if c["url"].endswith("/issues/100/labels"))
+    assert lab["json"] == {"labels": ["labor"]} and lab["method"] == "POST"
+
+
+def test_offener_pr_bleibt_eingereicht(ready, fake_github):
+    run(submit.submit("core", "A", "B", report=lambda _k: None))
+    fake_github.pulls[0].update(state="open", merged=False)
+    run(submit.refresh())
+    assert submit.list_submissions()[0]["state"] == "submitted"

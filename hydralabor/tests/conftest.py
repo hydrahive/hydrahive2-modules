@@ -149,3 +149,52 @@ def fake_github(monkeypatch):
     from backend import github_repos
     monkeypatch.setattr(github_repos, "_STEP", 0)
     return gh
+
+
+@pytest.fixture
+def ready(fake_github, db_ready, monkeypatch, tmp_path):
+    from backend import github_auth, push, submit, submit_box
+    from fake_github import TOKEN
+    from hydrahive.credentials import _crypto
+    from hydrahive.db.connection import db
+    from hydrahive.settings import settings
+    with db() as c:
+        c.execute("INSERT OR REPLACE INTO module_hydralabor_github (id, token_enc, login, user_id, scopes, connected_at) "
+                  "VALUES (1, ?, 'nutzer', 4242, 'public_repo', 'x')", (_crypto.encrypt(TOKEN, settings.data_dir),))
+        c.commit()
+    box = {"changes": {"files": ["core/src/hydrahive/a.py"], "lines": 12}, "diff": "+++ b/a.py\n+x = 1\n",
+           "tests": {"ok": True, "summary": "5241 passed in 270.0s", "passed": 5241, "failed": 0, "failures": []},
+           "calls": []}
+
+    async def changes(target):
+        box["calls"].append(("changes", target))
+        return box["changes"]
+
+    async def commit(target, title, login, uid):
+        box["calls"].append(("commit", target, title, login, uid))
+
+    async def diff(target):
+        box["calls"].append(("diff", target))
+        return box["diff"]
+
+    async def tests(target, files):
+        box["calls"].append(("tests", target))
+        return box["tests"]
+
+    async def bundle(target, workdir):
+        box["calls"].append(("bundle", target))
+        p = workdir / "labor.bundle"
+        p.write_bytes(b"# v2 git bundle\n")
+        return p
+
+    async def push_bundle(bundle, *, fork, target, branch, token, workdir):
+        box["calls"].append(("push", fork, target, branch, token == TOKEN))
+        bundle.unlink()
+    for name, fn in (("changes", changes), ("commit", commit), ("diff", diff), ("run_tests", tests), ("bundle", bundle)):
+        monkeypatch.setattr(submit_box, name, fn)
+    monkeypatch.setattr(push, "push_bundle", push_bundle)
+    monkeypatch.setattr(submit, "_workdir", lambda: tmp_path)
+    monkeypatch.setattr(submit, "_stamp", lambda: "20261030-1900")
+    monkeypatch.setattr(submit, "_versions", lambda: {"hydrahive": "2.0.0", "hydralabor": "0.2.0"})
+    yield box
+    github_auth.disconnect()

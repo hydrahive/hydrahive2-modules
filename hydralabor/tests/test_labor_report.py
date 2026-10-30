@@ -63,3 +63,11 @@ def test_issue_scheitert(connected):
     with pytest.raises(submit.SubmitError) as e:
         run(report.report("core", "T", "x", "", ""))
     assert e.value.code == "labor_report_failed"
+
+
+@pytest.mark.parametrize("target", ["plugins", "", "../x"])
+def test_ziel_ungueltig(connected, target):
+    with pytest.raises(submit.SubmitError) as e:
+        run(report.report(target, "T", "x", "", ""))
+    assert e.value.code == "labor_submit_target_invalid"
+    assert connected.issues == []
