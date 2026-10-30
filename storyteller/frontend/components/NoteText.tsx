@@ -14,7 +14,7 @@ const components: Components = {
 
 export function NoteText({ text }: { text: string }) {
   return (
-    <div className="st-team-note-text prose prose-invert prose-sm max-w-none text-zinc-300 prose-headings:text-zinc-100 prose-headings:text-sm prose-a:text-sky-300 prose-strong:text-zinc-100">
+    <div className="st-team-note-text prose prose-invert prose-sm max-w-none text-[#c8d2df] prose-headings:text-[#e8eef8] prose-headings:text-sm prose-a:text-sky-300 prose-strong:text-[#e8eef8]">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>{text}</ReactMarkdown>
     </div>
   )

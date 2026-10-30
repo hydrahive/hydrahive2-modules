@@ -40,8 +40,8 @@ export function AiPanel({ state, scene, editorRef, onGoScene, onOpenScene, onOpe
           <button key={m.id} role="radio" aria-checked={mode === m.id} disabled={!m.ready}
             title={m.ready ? t(`ai_mode_${m.id}_hint`) : t("soon")} onClick={() => setMode(m.id)}
             className={`rounded-full border px-2.5 py-1 text-xs ${mode === m.id
-              ? "border-violet-400 bg-violet-500/20 text-violet-100"
-              : m.ready ? "border-white/10 text-zinc-300 hover:bg-white/5" : "cursor-not-allowed border-white/5 text-zinc-600"}`}>
+              ? "border-[#69d7ff] bg-[#69d7ff]/20 text-[#c8f2ff]"
+              : m.ready ? "border-[rgb(var(--hh-s-rand,42_54_75))] text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]" : "cursor-not-allowed border-[rgb(var(--hh-s-rand,42_54_75))] text-[#9aa7bc]"}`}>
             {t(`ai_mode_${m.id}`)}{!m.ready && <span className="ml-1 text-[10px]">· {t("soon")}</span>}
           </button>
         ))}

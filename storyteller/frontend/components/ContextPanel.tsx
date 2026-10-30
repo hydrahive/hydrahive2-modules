@@ -31,10 +31,10 @@ export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId,
   const open = (id: string) => { setEntityId(id); setTab("entity") }
   return (
     <div className="flex h-full flex-col">
-      <div role="tablist" className="flex shrink-0 border-b border-white/10 text-sm">
+      <div role="tablist" className="flex shrink-0 border-b border-[rgb(var(--hh-s-rand,42_54_75))] text-sm">
         {TABS.map((k) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-            className={`flex-1 px-2 py-2 ${tab === k ? "border-b-2 border-violet-400 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"}`}>
+            className={`flex-1 px-2 py-2 ${tab === k ? "border-b-2 border-[#69d7ff] text-[#e8eef8]" : "text-[#9aa7bc] hover:text-[#c8d2df]"}`}>
             {t(`tab_${k}`)}
           </button>
         ))}
@@ -47,7 +47,7 @@ export function ContextPanel({ tab, setTab, state, scene, entityId, setEntityId,
         {tab === "notes" && (
           <textarea value={state.book.notes} placeholder={t("notes_ph")}
             onChange={(e) => state.change((b) => ({ ...b, notes: e.target.value }))}
-            className="h-full min-h-[300px] w-full resize-none rounded-lg border border-white/10 bg-zinc-950 p-3 text-sm text-zinc-200 placeholder:text-zinc-600" />
+            className="h-full min-h-[300px] w-full resize-none rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-3 text-sm text-[#e8eef8] placeholder:text-[#9aa7bc]" />
         )}
       </div>
     </div>

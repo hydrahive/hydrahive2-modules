@@ -10,8 +10,8 @@ import { ProposalHistory } from "./ProposalHistory"
 import { useDeleteNode } from "../useDeleteNode"
 
 const STATUSES: SceneStatus[] = ["idea", "draft", "revised", "done"]
-const field = "w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
-const label = "block space-y-1 text-xs text-zinc-400"
+const field = "w-full rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2.5 py-1.5 text-sm text-[#e8eef8] placeholder:text-[#9aa7bc]"
+const label = "block space-y-1 text-xs text-[#c8d2df]"
 
 interface Props { state: BookState; scene: Scene; onOpenEntity: (id: string) => void; onRemoved: (nextSceneId: string) => void }
 
@@ -62,12 +62,12 @@ export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
       {chapter && <ChapterSummaryBox key={chapter.id} state={state} chapterId={chapter.id} chapterTitle={chapter.title} />}
 
       <section>
-        <h3 className="mb-1 text-xs font-semibold text-zinc-400">{t("in_scene")}</h3>
-        {found.length === 0 ? <p className="text-xs text-zinc-600">{t("in_scene_none")}</p> : (
+        <h3 className="mb-1 text-xs font-semibold text-[#c8d2df]">{t("in_scene")}</h3>
+        {found.length === 0 ? <p className="text-xs text-[#9aa7bc]">{t("in_scene_none")}</p> : (
           <div className="flex flex-wrap gap-1.5">
             {found.map((e) => (
               <button key={e.id} onClick={() => onOpenEntity(e.id)} title={e.description}
-                className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-zinc-200 hover:border-violet-400/50">{e.name}</button>
+                className="rounded-full border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2.5 py-0.5 text-xs text-[#e8eef8] hover:border-[#69d7ff]/50">{e.name}</button>
             ))}
           </div>
         )}
@@ -75,16 +75,16 @@ export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
 
       <section>
         <div className="mb-1 flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-zinc-400">{t("snapshots")}</h3>
-          <button onClick={() => { void state.snapshot(scene.id) }} className="rounded px-2 py-0.5 text-xs text-violet-300 hover:bg-violet-500/10">{t("snapshot_now")}</button>
+          <h3 className="text-xs font-semibold text-[#c8d2df]">{t("snapshots")}</h3>
+          <button onClick={() => { void state.snapshot(scene.id) }} className="rounded px-2 py-0.5 text-xs text-[#69d7ff] hover:bg-[#69d7ff]/10">{t("snapshot_now")}</button>
         </div>
-        {snaps.length === 0 ? <p className="text-xs text-zinc-600">{t("snapshots_none")}</p> : (
+        {snaps.length === 0 ? <p className="text-xs text-[#9aa7bc]">{t("snapshots_none")}</p> : (
           <ul className="space-y-1">
             {snaps.map((s) => (
-              <li key={s.id} className="flex items-center justify-between rounded px-2 py-1 text-xs text-zinc-400 hover:bg-white/5">
+              <li key={s.id} className="flex items-center justify-between rounded px-2 py-1 text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
                 <span>{fmt(s.at)} · {t("words_n", { n: s.words })}</span>
                 <button onClick={() => { if (confirm(t("snapshot_restore_confirm", { when: fmt(s.at) }))) void state.restore(scene.id, s.id) }}
-                  className="text-violet-300 hover:underline">{t("snapshot_restore")}</button>
+                  className="text-[#69d7ff] hover:underline">{t("snapshot_restore")}</button>
               </li>
             ))}
           </ul>
@@ -97,7 +97,7 @@ export function ScenePanel({ state, scene, onOpenEntity, onRemoved }: Props) {
       {del.error && <p className="text-xs text-red-300" role="alert">{del.error}</p>}
       {state.canWrite && chapter && <button onClick={() => { void remove() }} disabled={del.busy || del.sceneBlocked(chapter)}
         title={del.sceneBlocked(chapter) ? t(`delete_last_${del.unit}`) : undefined}
-        className="text-xs text-zinc-600 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-zinc-600">{t(`delete_${del.unit}`)}</button>}
+        className="text-xs text-[#9aa7bc] hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-[#9aa7bc]">{t(`delete_${del.unit}`)}</button>}
     </div>
   )
 }

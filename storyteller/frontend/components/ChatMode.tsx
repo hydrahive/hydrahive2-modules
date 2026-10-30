@@ -25,9 +25,9 @@ export function ChatMode({ state, scene, onGoOutline, onOpenChat }: Props) {
 
   return (
     <div className="st-chat-mode space-y-3 text-sm">
-      <p className="text-zinc-300">{t("chat_intro")}</p>
+      <p className="text-[#c8d2df]">{t("chat_intro")}</p>
       {info && !info.agent && <p className="st-chat-no-agent rounded border border-amber-400/30 bg-amber-400/5 px-2 py-1.5 text-xs text-amber-200">{t("chat_no_agent")}</p>}
-      {info?.agent && <p className="text-xs text-zinc-400">{t("chat_agent", { name: info.agent.name })}</p>}
+      {info?.agent && <p className="text-xs text-[#c8d2df]">{t("chat_agent", { name: info.agent.name })}</p>}
       {info?.agent && info.tools_missing.length > 0 && (
         <div className="st-chat-tools-missing space-y-2 rounded border border-amber-400/30 bg-amber-400/5 px-2 py-1.5 text-xs text-amber-200">
           <p>{t("chat_tools_missing", { tools: info.tools_missing.join(", ") })}</p>
@@ -41,43 +41,43 @@ export function ChatMode({ state, scene, onGoOutline, onOpenChat }: Props) {
       {info?.agent && (
         <div className="flex flex-wrap gap-2">
           {onOpenChat && (
-            <button onClick={onOpenChat} disabled={!info.can_start} className={`st-chat-here ${btn} bg-violet-600 font-semibold text-white`}>
+            <button onClick={onOpenChat} disabled={!info.can_start} className={`st-chat-here ${btn} bg-[#163248] font-semibold text-white`}>
               <MessagesSquare className="h-4 w-4" />{t("chat_here")}
             </button>
           )}
           <button onClick={() => { void chat.start() }} disabled={busy || !info.can_start}
-            className={`st-chat-start ${btn} ${onOpenChat ? "border border-white/10 text-zinc-200 hover:bg-white/5" : "bg-violet-600 font-semibold text-white"}`}>
+            className={`st-chat-start ${btn} ${onOpenChat ? "border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]" : "bg-[#163248] font-semibold text-white"}`}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{t("chat_start")}
           </button>
         </div>
       )}
       {started && (
-        <div className="st-chat-started space-y-2 rounded border border-violet-400/30 bg-violet-500/5 p-2">
-          <p className="text-xs text-zinc-300">{t("chat_started")}</p>
-          <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded bg-black/30 p-2 text-xs text-zinc-200">{started.intro}</pre>
+        <div className="st-chat-started space-y-2 rounded border border-[#69d7ff]/30 bg-[#69d7ff]/5 p-2">
+          <p className="text-xs text-[#c8d2df]">{t("chat_started")}</p>
+          <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded bg-black/30 p-2 text-xs text-[#e8eef8]">{started.intro}</pre>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => { void copy() }} className={`st-chat-copy ${btn} border border-white/10 text-zinc-200 hover:bg-white/5`}>
+            <button onClick={() => { void copy() }} className={`st-chat-copy ${btn} border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]`}>
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{t(copied ? "chat_copied" : "chat_copy")}
             </button>
-            <a href={started.url} target="_blank" rel="noreferrer" className={`${btn} border border-white/10 text-zinc-200 hover:bg-white/5`}>
+            <a href={started.url} target="_blank" rel="noreferrer" className={`${btn} border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]`}>
               <ExternalLink className="h-3.5 w-3.5" />{t("chat_open_again")}
             </a>
           </div>
         </div>
       )}
       {state.outlineProposal && (
-        <p className="st-chat-outline-hint flex flex-wrap items-center gap-2 rounded border border-violet-400/30 bg-violet-500/10 px-2 py-1.5 text-xs text-violet-100">
+        <p className="st-chat-outline-hint flex flex-wrap items-center gap-2 rounded border border-[#69d7ff]/30 bg-[#69d7ff]/10 px-2 py-1.5 text-xs text-[#c8f2ff]">
           <span className="flex-1">{t("outline_proposal_hint")}</span>
-          <button onClick={onGoOutline} className="rounded px-2 py-0.5 font-semibold hover:bg-white/10">{t("outline_proposal_go")}</button>
+          <button onClick={onGoOutline} className="rounded px-2 py-0.5 font-semibold hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{t("outline_proposal_go")}</button>
         </p>
       )}
       {state.restructureProposal && (
-        <p className="st-chat-restructure-hint flex flex-wrap items-center gap-2 rounded border border-violet-400/30 bg-violet-500/10 px-2 py-1.5 text-xs text-violet-100">
+        <p className="st-chat-restructure-hint flex flex-wrap items-center gap-2 rounded border border-[#69d7ff]/30 bg-[#69d7ff]/10 px-2 py-1.5 text-xs text-[#c8f2ff]">
           <span className="flex-1">{t("struct_proposal_hint")}</span>
-          <button onClick={onGoOutline} className="rounded px-2 py-0.5 font-semibold hover:bg-white/10">{t("outline_proposal_go")}</button>
+          <button onClick={onGoOutline} className="rounded px-2 py-0.5 font-semibold hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">{t("outline_proposal_go")}</button>
         </p>
       )}
-      <p className="text-xs text-zinc-500">{t("chat_proposals_hint")}</p>
+      <p className="text-xs text-[#9aa7bc]">{t("chat_proposals_hint")}</p>
       {error && <p className="text-xs text-red-200" role="alert">{t(`ai_err_${error.code}`, { defaultValue: error.message || error.code })}</p>}
     </div>
   )

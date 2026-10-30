@@ -42,13 +42,13 @@ export function ChatDock({ state, sceneId, width, onWidth, onClose }: Props) {
   }
 
   return (
-    <aside className="st-chat-dock relative flex shrink-0 flex-col border-l border-white/10 bg-[rgb(var(--hh-s-box,21_28_43))]" style={{ width }}>
+    <aside className="st-chat-dock relative flex shrink-0 flex-col border-l border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))]" style={{ width }}>
       <div onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label={t("chat_dock_resize")}
-        className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize hover:bg-violet-400/30" />
-      <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-1.5 text-sm text-zinc-200">
-        <MessagesSquare className="h-4 w-4 text-violet-300" />
+        className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize hover:bg-[#69d7ff]/30" />
+      <div className="flex shrink-0 items-center gap-2 border-b border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#e8eef8]">
+        <MessagesSquare className="h-4 w-4 text-[#69d7ff]" />
         <span className="flex-1 truncate">{info?.agent ? t("chat_dock_title", { name: info.agent.name }) : t("chat_dock_title_plain")}</span>
-        <button onClick={onClose} title={t("chat_dock_close")} className="rounded p-1 text-zinc-400 hover:bg-white/10 hover:text-zinc-100"><X className="h-4 w-4" /></button>
+        <button onClick={onClose} title={t("chat_dock_close")} className="rounded p-1 text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] hover:text-[#e8eef8]"><X className="h-4 w-4" /></button>
       </div>
       {info && !info.agent && <p className="m-3 rounded border border-amber-400/30 bg-amber-400/5 px-2 py-1.5 text-xs text-amber-200">{t("chat_no_agent")}</p>}
       {info?.agent && info.tools_missing.length > 0 && (
@@ -61,7 +61,7 @@ export function ChatDock({ state, sceneId, width, onWidth, onClose }: Props) {
             : <p>{t("chat_tools_ask_admin")}</p>}
         </div>
       )}
-      {info?.agent && !info.can_start && <p className="m-3 text-xs text-zinc-400">{t("chat_dock_read_only")}</p>}
+      {info?.agent && !info.can_start && <p className="m-3 text-xs text-[#c8d2df]">{t("chat_dock_read_only")}</p>}
       {error && <p className="m-3 text-xs text-red-200" role="alert">{t(`ai_err_${error.code}`, { defaultValue: error.message || error.code })}</p>}
       {/* Kopf der Kern-Chatansicht ist für das breite Cockpit gebaut (Knopfleiste ~730 px, schrumpft nicht). Im schmalen
           Fenster darf die Kopfzeile umbrechen: Titel/Modell oben, Knöpfe darunter – statt den Titel zusammenzuquetschen. */}
@@ -72,7 +72,7 @@ export function ChatDock({ state, sceneId, width, onWidth, onClose }: Props) {
           <ChatPane key={sessionId} deepLinkSid={sessionId} projectId={state.projectId} showSidePanels={false}
             preferredAgentId={info.agent.id} agentSelectionExplicit />
         ) : (info?.can_start !== false && !error) && (
-          <div className="flex h-full items-center justify-center text-sm text-zinc-500"><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("chat_dock_loading")}</div>
+          <div className="flex h-full items-center justify-center text-sm text-[#9aa7bc]"><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("chat_dock_loading")}</div>
         )}
       </div>
     </aside>

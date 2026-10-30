@@ -76,17 +76,17 @@ export function EditMode({ state, scene, editorRef }: Props) {
   return (
     <div className="space-y-4">
       {state.canWrite && <ModelChooser value={book.model} onChange={(model) => state.change((b) => ({ ...b, model }))} />}
-      <p className="text-xs text-zinc-400">{t("ai_intro")}</p>
+      <p className="text-xs text-[#c8d2df]">{t("ai_intro")}</p>
       <div className="grid grid-cols-2 gap-2">
         {ACTIONS.map((a) => (
           <button key={a} onClick={() => { void request(a) }} disabled={!!busy || !state.canWrite}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/10 px-2 py-2 text-sm text-zinc-200 hover:border-violet-400/50 hover:bg-violet-500/10 disabled:opacity-50">
-            {busy === a ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300" /> : <Sparkles className="h-3.5 w-3.5 text-violet-300" />}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-2 text-sm text-[#e8eef8] hover:border-[#69d7ff]/50 hover:bg-[#69d7ff]/10 disabled:opacity-50">
+            {busy === a ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[#69d7ff]" /> : <Sparkles className="h-3.5 w-3.5 text-[#69d7ff]" />}
             {t(`ai_${a}`)}
           </button>
         ))}
       </div>
-      {busy && <p className="text-xs text-zinc-400" aria-live="polite">{t("ai_working")}</p>}
+      {busy && <p className="text-xs text-[#c8d2df]" aria-live="polite">{t("ai_working")}</p>}
       {error && <p className="st-ai-error rounded border border-red-400/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-200" role="alert">{error}</p>}
 
       {open && (
@@ -96,12 +96,12 @@ export function EditMode({ state, scene, editorRef }: Props) {
       )}
 
       <section>
-        <h3 className="mb-1 text-xs font-semibold text-zinc-400">{t("ai_history")}</h3>
-        {mine.filter((s) => s.state !== "open").length === 0 ? <p className="text-xs text-zinc-600">{t("ai_history_none")}</p> : (
-          <ul className="space-y-1 text-xs text-zinc-500">
+        <h3 className="mb-1 text-xs font-semibold text-[#c8d2df]">{t("ai_history")}</h3>
+        {mine.filter((s) => s.state !== "open").length === 0 ? <p className="text-xs text-[#9aa7bc]">{t("ai_history_none")}</p> : (
+          <ul className="space-y-1 text-xs text-[#9aa7bc]">
             {mine.filter((s) => s.state !== "open").slice(0, 10).map((s) => (
               <li key={s.id} className="truncate">
-                <span className={s.state === "accepted" ? "text-emerald-400" : "text-zinc-500"}>{t(`ai_state_${s.state}`)}</span>
+                <span className={s.state === "accepted" ? "text-emerald-400" : "text-[#9aa7bc]"}>{t(`ai_state_${s.state}`)}</span>
                 {" · "}{t(`ai_${s.action}`)}: {s.proposal}
               </li>
             ))}

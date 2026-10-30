@@ -51,7 +51,7 @@ export function DictateButton({ onText, disabled }: Props) {
     <span className="inline-flex items-center gap-1">
       <button type="button" disabled={disabled || state === "working"} onClick={() => { if (state === "recording") stop(); else void start() }}
         title={state === "recording" ? t("dictate_stop") : t("dictate_start")} aria-pressed={state === "recording"}
-        className={`st-dictate rounded p-1 ${state === "recording" ? "bg-red-500/20 text-red-300" : "text-zinc-400 hover:bg-white/10 hover:text-zinc-100"} disabled:opacity-40`}>
+        className={`st-dictate rounded p-1 ${state === "recording" ? "bg-red-500/20 text-red-300" : "text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] hover:text-[#e8eef8]"} disabled:opacity-40`}>
         {state === "working" ? <Loader2 className="h-4 w-4 animate-spin" /> : state === "recording" ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
       </button>
       {error && <span className="text-[11px] text-red-300" role="alert">{error}</span>}

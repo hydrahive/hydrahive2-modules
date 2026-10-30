@@ -19,17 +19,17 @@ export function ConflictDialog({ conflict, onResolve }: Props) {
   }
   return (
     <div className="st-conflict fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="alertdialog" aria-modal="true" aria-labelledby="st-conflict-title">
-      <div className="w-full max-w-md space-y-4 rounded-2xl border border-amber-400/30 bg-zinc-900 p-6 shadow-2xl">
+      <div className="w-full max-w-md space-y-4 rounded-2xl border border-amber-400/30 bg-[rgb(var(--hh-s-box,21_28_43))] p-6 shadow-2xl">
         <h2 id="st-conflict-title" className="flex items-center gap-2 text-lg font-bold text-amber-200">
           <AlertTriangle className="h-5 w-5" />{t("conflict_title")}
         </h2>
-        <p className="text-sm text-zinc-300">{what} {t("conflict_by")}</p>
-        <p className="text-xs text-zinc-500">{conflict.kind === "scene" ? t("conflict_safe_scene") : t("conflict_safe_other")}</p>
+        <p className="text-sm text-[#c8d2df]">{what} {t("conflict_by")}</p>
+        <p className="text-xs text-[#9aa7bc]">{conflict.kind === "scene" ? t("conflict_safe_scene") : t("conflict_safe_other")}</p>
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button disabled={busy} onClick={() => { void pick("reload") }}
-            className="rounded-lg border border-white/10 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5 disabled:opacity-50">{t("conflict_reload")}</button>
+            className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-2 text-sm text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] disabled:opacity-50">{t("conflict_reload")}</button>
           <button disabled={busy} onClick={() => { void pick("keep") }}
-            className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50">{t("conflict_keep")}</button>
+            className="rounded-lg bg-[#163248] px-3 py-2 text-sm font-semibold text-white hover:bg-[#1b3d56] disabled:opacity-50">{t("conflict_keep")}</button>
         </div>
       </div>
     </div>

@@ -7,8 +7,8 @@ import type { Entity } from "../model"
 import type { BookState } from "../useBook"
 import { EntityProposalBox } from "./EntityProposalBox"
 
-const field = "w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600"
-const label = "block space-y-1 text-xs text-zinc-400"
+const field = "w-full rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2.5 py-1.5 text-sm text-[#e8eef8] placeholder:text-[#9aa7bc]"
+const label = "block space-y-1 text-xs text-[#c8d2df]"
 
 interface Props { state: BookState; entityId: string | null; onDeleted: () => void; onOpen: (id: string) => void }
 
@@ -18,7 +18,7 @@ export function EntityPanel({ state, entityId, onDeleted, onOpen }: Props) {
   const pending = proposalIdOf(entityId)
   const newProp = pending ? state.entityProposals.find((p) => p.id === pending) : undefined
   if (newProp) return <EntityProposalBox key={newProp.id} state={state} proposal={newProp} onDone={(id) => (id ? onOpen(id) : onDeleted())} />
-  if (!e) return <p className="text-sm text-zinc-500">{t("entity_none")}</p>
+  if (!e) return <p className="text-sm text-[#9aa7bc]">{t("entity_none")}</p>
   const change = changeFor(state.entityProposals, e.id)
 
   const set = (patch: Partial<Entity>) =>
@@ -40,18 +40,18 @@ export function EntityPanel({ state, entityId, onDeleted, onOpen }: Props) {
         <textarea className={`${field} min-h-[90px]`} value={e.description} onChange={(ev) => set({ description: ev.target.value })} />
       </label>
       <section className="space-y-1.5">
-        <h3 className="text-xs font-semibold text-zinc-400">{t("entity_fields")}</h3>
+        <h3 className="text-xs font-semibold text-[#c8d2df]">{t("entity_fields")}</h3>
         {e.fields.map((f, i) => (
           <div key={i} className="flex gap-1.5">
             <input className={`${field} w-2/5`} value={f.key} placeholder={t("entity_field_key")} onChange={(ev) => setField(i, "key", ev.target.value)} />
             <input className={field} value={f.value} placeholder={t("entity_field_value")} onChange={(ev) => setField(i, "value", ev.target.value)} />
-            <button onClick={() => set({ fields: e.fields.filter((_, j) => j !== i) })} className="px-1 text-zinc-600 hover:text-red-300" aria-label="×">
+            <button onClick={() => set({ fields: e.fields.filter((_, j) => j !== i) })} className="px-1 text-[#9aa7bc] hover:text-red-300" aria-label="×">
               <X className="h-4 w-4" />
             </button>
           </div>
         ))}
         <button onClick={() => set({ fields: [...e.fields, { key: "", value: "" }] })}
-          className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs text-violet-300 hover:bg-violet-500/10">
+          className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs text-[#69d7ff] hover:bg-[#69d7ff]/10">
           <Plus className="h-3.5 w-3.5" />{t("entity_field_add")}
         </button>
       </section>
@@ -59,7 +59,7 @@ export function EntityPanel({ state, entityId, onDeleted, onOpen }: Props) {
         if (!confirm(t("entity_delete_confirm", { name: e.name }))) return
         state.change((b) => ({ ...b, entities: b.entities.filter((x) => x.id !== e.id) }))
         onDeleted()
-      }} className="text-xs text-zinc-600 hover:text-red-300">{t("entity_delete")}</button>
+      }} className="text-xs text-[#9aa7bc] hover:text-red-300">{t("entity_delete")}</button>
     </div>
   )
 }
