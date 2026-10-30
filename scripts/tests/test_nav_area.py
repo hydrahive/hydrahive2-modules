@@ -21,7 +21,7 @@ EXPECTED = {
     "storyteller": "schreiben", "notizbuch": "schreiben", "scratchpad": "schreiben", "diagramme": "schreiben",
     "blueprint": "schreiben",
     "deepresearch": "wissen", "archiver": "wissen", "legal": "wissen", "opentor": "wissen",
-    "tickets": "agenten",
+    "tickets": "agenten", "hydralabor": "agenten",
     "mailbox": "kommunikation", "telephony": "kommunikation", "voice": "kommunikation",
     "haushaltsbuch": "zuhause", "patientenakte": "zuhause", "homeassistant": "zuhause", "cryptoboard": "zuhause",
     "mining": "zuhause", "vitrine": "zuhause",

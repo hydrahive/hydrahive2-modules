@@ -1,0 +1,19 @@
+{
+  "id": "hydralabor",
+  "name": "Hydra-Labor",
+  "version": "0.1.0",
+  "description": "Sicher an HydraHive mitbauen: eigener abgeschotteter Container mit Labor-Agent, Testlauf und Zurücksetzen. Der Server bleibt unberührt.",
+  "icon": "FlaskConical",
+  "nav_group": "working",
+  "permissions": [],
+  "capabilities": [
+    {
+      "id": "module.hydralabor",
+      "label": "Hydra-Labor (nur Admins)",
+      "default": "admin_only"
+    }
+  ],
+  "has_service": false,
+  "default_agent_tools": false,
+  "min_core_version": "2.0.0"
+}
