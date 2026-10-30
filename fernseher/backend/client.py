@@ -98,14 +98,26 @@ async def _playing() -> tuple[dict | None, str]:
 _OUTPUT = {"speaker": "speaker", "audioSystem": "receiver"}
 
 
-async def _volume() -> tuple[int, bool, str]:
-    """Lautstärke, stumm, Ausgabe. Läuft der Ton über den Receiver (outputTerminal audioSystem, gemessen 29.10.),
-    meldet der TV dessen Wert – andere Skala, oft über der eigenen Grenze."""
+async def _volume() -> tuple[int, bool]:
     res = await _call("audio", "getVolumeInformation")
     rows = res[0] if res else []
     spk = next((v for v in rows if v.get("target") == "speaker"), rows[0] if rows else {})
-    output = _OUTPUT.get(str(spk.get("outputTerminal") or "speaker"), "other")
-    return int(spk.get("volume", 0)), bool(spk.get("mute", False)), output
+    return int(spk.get("volume", 0)), bool(spk.get("mute", False))
+
+
+async def _output() -> str:
+    """Tonausgabe. Gemessen 30.10. am KD-60XF8305: getVolumeInformation nennt sie nicht, nur
+    getSoundSettings 1.1 (outputTerminal = speaker | audioSystem). Läuft der Ton über den Receiver, ist die gemeldete
+    Lautstärke dessen Wert (andere Skala, oft über der eigenen Grenze). Kennt der TV die Methode nicht: „other“."""
+    try:
+        res = await _call("audio", "getSoundSettings", {"target": "outputTerminal"}, "1.1")
+    except TVError as e:
+        if e.code == "tv_upstream_error":
+            return "other"
+        raise
+    rows = res[0] if res else []
+    val = next((r.get("currentValue") for r in rows if r.get("target") == "outputTerminal"), None)
+    return _OUTPUT.get(str(val), "other")
 
 
 async def status() -> dict:
@@ -115,7 +127,8 @@ async def status() -> dict:
         return {"power": power, "channel": None, "program": "", "volume": None, "muted": None,
                 "output": None, "model": await _model()}
     channel, program = await _playing()
-    volume, muted, output = await _volume()
+    volume, muted = await _volume()
+    output = await _output()
     return {"power": power, "channel": channel, "program": program, "volume": volume, "muted": muted,
             "output": output, "model": await _model()}
 
@@ -173,7 +186,7 @@ async def set_volume(value: str) -> dict:
     Richtungen gemessen am angefragten Schritt, damit „-50“ nicht zufällig durchrutscht, wenn der TV leise ist.
     Steht die Lautstärke schon über der Grenze (z. B. Receiver), ist LEISER erlaubt, lauter oder gleich nicht."""
     await _require_on()
-    current, _, _ = await _volume()
+    current, _ = await _volume()
     target = _target_volume(value, current)
     v = value.strip()
     step = int(v[1:]) if v[:1] in "+-" else abs(target - current)

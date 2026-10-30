@@ -271,3 +271,19 @@ async def test_ohne_toneinstellungen_unbekannt_statt_fehler(configured):
     configured.output = None
     s = await client.status()
     assert s["power"] == "on" and s["volume"] == 14 and s["output"] == "other"
+
+
+async def test_toneinstellungen_andere_fehler_werden_nicht_verschluckt(configured, monkeypatch):
+    """Nur „Methode gibt es nicht“ heißt „unbekannt“ – ist der TV weg, soll das auch so gemeldet werden."""
+    from backend import client as c
+    real = c._call
+
+    async def flaky(service, method, params=None, version="1.0"):
+        if method == "getSoundSettings":
+            raise c.TVError("tv_unreachable", "weg")
+        return await real(service, method, params, version)
+
+    monkeypatch.setattr(c, "_call", flaky)
+    with pytest.raises(c.TVError) as e:
+        await c.status()
+    assert e.value.code == "tv_unreachable"
