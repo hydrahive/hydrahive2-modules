@@ -76,7 +76,11 @@ def test_bauen_legt_auslieferer_als_root_hinein(lab):
     assert p[2].endswith("/probe/front.py") and p[3] == "hh-labor/opt/hh-labor-probe/front.py"
     for flag in ("--uid", "--gid"):
         assert p[p.index(flag) + 1] == "0"
-    assert p[p.index("--mode") + 1] == "0644" and "--create-dirs" in p
+    assert p[p.index("--mode") + 1] == "0644" and "--create-dirs" not in p
+    # --create-dirs legt den Ordner mit 0750 an → labor kann front.py nicht lesen (Befund hydratest 30.10.)
+    mk = [c for c in _exec_calls(lab) if "install -d -m 755 -o root -g root /opt/hh-labor-probe" in " ".join(c)]
+    assert len(mk) == 1 and "--user" not in mk[0][:mk[0].index("--")]
+    assert lab.calls.index(mk[0]) < lab.calls.index(p)
 
 
 def test_bauen_fehler(lab):

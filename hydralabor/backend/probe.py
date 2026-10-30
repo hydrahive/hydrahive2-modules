@@ -66,8 +66,10 @@ async def build(report: Report) -> None:
     rc, _ = await _exec(_PREPARE, as_user=True)
     if rc == 0:
         rc, _ = await _exec(_BUILD, as_user=True, timeout=900)
+    if rc == 0:                     # Ordner selbst anlegen: --create-dirs nimmt 0750 → labor kann nicht lesen
+        rc, _ = await _exec(f"install -d -m 755 -o root -g root {Path(FRONT).parent}", as_user=False)
     if rc == 0:
-        rc, _, _ = await incus.run("file", "push", str(_LOCAL_FRONT), f"{container.NAME}{FRONT}", "--create-dirs",
+        rc, _, _ = await incus.run("file", "push", str(_LOCAL_FRONT), f"{container.NAME}{FRONT}",
                                    "--uid", "0", "--gid", "0", "--mode", "0644")
     if rc != 0:
         raise LaborError("labor_probe_build_failed")
