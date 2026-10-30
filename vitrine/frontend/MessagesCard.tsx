@@ -37,13 +37,13 @@ export function MessagesCard() {
   return (
     <section className="space-y-2">
       <h2 className="flex items-center gap-2 text-sm font-bold text-[#e8eef8]"><MessageSquare size={14} className="text-[#69d7ff]" />{t("messages")}</h2>
-      <p className="text-xs text-[#718097]">{t("messages_hint")}</p>
+      <p className="text-xs text-[#9aa7bc]">{t("messages_hint")}</p>
       <div className="flex flex-wrap items-center gap-2">
         <input value={text} maxLength={280} onChange={(e) => setText(e.target.value)} placeholder={t("message_default")}
           aria-label={t("message_text")} onKeyDown={(e) => { if (e.key === "Enter") void send() }}
-          className="min-w-[14rem] flex-1 rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-2 py-1.5 text-sm text-[#e8eef8]" />
+          className="min-w-[14rem] flex-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_31))] px-2 py-1.5 text-sm text-[#e8eef8]" />
         <select value={kind} onChange={(e) => setKind(e.target.value as MessageKind)} aria-label={t("kind_label")}
-          className="rounded-[4px] border border-[#2a364b] bg-[#0d131f] px-2 py-1.5 text-sm text-[#e8eef8]">
+          className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_31))] px-2 py-1.5 text-sm text-[#e8eef8]">
           {KINDS.map((k) => <option key={k} value={k}>{t(`msg_kind.${k}`)}</option>)}
         </select>
         <button type="button" disabled={busy} onClick={() => void send()}
@@ -53,9 +53,9 @@ export function MessagesCard() {
       </div>
       {err && <p className="text-xs text-rose-300">{err}</p>}
       {list.length === 0
-        ? <p className="rounded-[4px] border border-dashed border-[#2a364b] p-3 text-center text-xs text-[#718097]">{t("no_messages")}</p>
+        ? <p className="rounded-[4px] border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] p-3 text-center text-xs text-[#9aa7bc]">{t("no_messages")}</p>
         : (
-          <ul className="divide-y divide-[#1c2638] rounded-[4px] border border-[#2a364b] bg-[#111827]">
+          <ul className="divide-y divide-[rgb(var(--hh-s-rand,28_38_56))] rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))]">
             {list.map((m) => (
               <li key={m.id} className="flex items-center gap-3 px-3 py-2 text-sm text-[#c8d2df]">
                 <span className={`h-8 w-1 shrink-0 rounded ${BAR[m.kind]}`} />
@@ -63,9 +63,9 @@ export function MessagesCard() {
                   <span className="block truncate text-xs font-bold">{m.title || t(`msg_kind.${m.kind}`)}{m.count > 1 ? `  ×${m.count}` : ""}</span>
                   <span className="block truncate">{m.text}</span>
                 </span>
-                <span className="shrink-0 text-xs text-[#718097]">{t("seconds_left", { s: Math.max(0, Math.round(m.expires - now)) })}</span>
+                <span className="shrink-0 text-xs text-[#9aa7bc]">{t("seconds_left", { s: Math.max(0, Math.round(m.expires - now)) })}</span>
                 <button type="button" onClick={() => void dismiss(m.id)} title={t("dismiss")} aria-label={t("dismiss")}
-                  className="shrink-0 rounded-[4px] p-1 text-[#718097] hover:bg-rose-500/20 hover:text-rose-200"><X size={14} /></button>
+                  className="shrink-0 rounded-[4px] p-1 text-[#9aa7bc] hover:bg-rose-500/20 hover:text-rose-200"><X size={14} /></button>
               </li>
             ))}
           </ul>

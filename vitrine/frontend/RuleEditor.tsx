@@ -4,8 +4,8 @@ import type { VideoFile } from "./api"
 import { RuleFieldsExtra } from "./RuleFieldsExtra"
 import { RuleLight } from "./RuleLight"
 
-const field = "w-full rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1.5 text-sm text-[#e8eef8]"
-const label = "block text-xs text-[#8d9ab0]"
+const field = "w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1.5 text-sm text-[#e8eef8]"
+const label = "block text-xs text-[#9aa7bc]"
 const KINDS: Kind[] = ["range", "easter", "advent", "advent_sunday", "nth_weekday", "dates", "season", "time"]
 
 /** Eine Regel bearbeiten (eingeklappt in der Liste, ausgeklappt = dieses Formular). */
@@ -18,7 +18,7 @@ export function RuleEditor({ rule, videos, onChange }: { rule: Rule; videos: Vid
     set({ videos: rule.videos.includes(name) ? rule.videos.filter((v) => v !== name) : [...rule.videos, name] })
 
   return (
-    <div className="grid gap-3 border-t border-[#1c2638] p-3 md:grid-cols-2">
+    <div className="grid gap-3 border-t border-[rgb(var(--hh-s-rand,28_38_56))] p-3 md:grid-cols-2">
       <label className={label}>{t("name")}<input className={field + bad("name")} value={rule.name} onChange={(e) => set({ name: e.target.value })} /></label>
       <label className={label}>{t("kind_label")}
         <select className={field} value={rule.kind} onChange={(e) => set({ ...newRule(e.target.value as Kind), id: rule.id, name: rule.name, enabled: rule.enabled, priority: rule.priority, videos: rule.videos, light_color: rule.light_color, light_effect: rule.light_effect })}>
@@ -54,10 +54,10 @@ export function RuleEditor({ rule, videos, onChange }: { rule: Rule; videos: Vid
       <fieldset className="md:col-span-2">
         <legend className={label}>{t("rule_videos")}</legend>
         {videos.length === 0
-          ? <p className="text-xs text-[#718097]">{t("no_videos")}</p>
+          ? <p className="text-xs text-[#9aa7bc]">{t("no_videos")}</p>
           : <div className="mt-1 flex flex-wrap gap-2">
               {videos.map((v) => (
-                <label key={v.name} className="flex items-center gap-1.5 rounded-[4px] border border-[#2a364b] px-2 py-1 text-xs text-[#c8d2df]">
+                <label key={v.name} className="flex items-center gap-1.5 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-xs text-[#c8d2df]">
                   <input type="checkbox" checked={rule.videos.includes(v.name)} onChange={() => toggleVideo(v.name)} />{v.name}
                 </label>
               ))}

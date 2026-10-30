@@ -2,8 +2,8 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { formatDates, parseDates, type Rule } from "./rules"
 
-const field = "w-full rounded-[4px] border border-[#2a364b] bg-[#0d1420] px-2 py-1.5 text-sm text-[#e8eef8]"
-const label = "block text-xs text-[#8d9ab0]"
+const field = "w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1.5 text-sm text-[#e8eef8]"
+const label = "block text-xs text-[#9aa7bc]"
 
 /** Felder der Feiertagsarten Adventssonntag, n-ter Wochentag und Termine je Jahr (Teil von RuleEditor). */
 export function RuleFieldsExtra({ rule, errs, set }: { rule: Rule; errs: string[]; set: (p: Partial<Rule>) => void }) {
@@ -42,7 +42,7 @@ export function RuleFieldsExtra({ rule, errs, set }: { rule: Rule; errs: string[
     <label className={label + " md:col-span-2"}>{t("dates_label")}
       <textarea rows={5} className={field + " font-mono" + bad("dates")} placeholder="2026-12-04 2026-12-12" value={text}
         onChange={(e) => { setText(e.target.value); set({ dates: parseDates(e.target.value) }) }} />
-      <span className="mt-1 block text-[11px] text-[#718097]">{t("dates_hint")}</span>
+      <span className="mt-1 block text-[11px] text-[#9aa7bc]">{t("dates_hint")}</span>
     </label>
   )
   return null
