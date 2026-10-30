@@ -12,7 +12,7 @@ from hydrahive.api.middleware.auth import AuthPrincipal, require_admin_principal
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import checks, container, jobs, lab_project, state
+from . import checks, container, jobs, lab_chat, lab_project, state
 from .container import LaborError, Limits
 
 router = APIRouter()
@@ -126,20 +126,13 @@ async def remove(p: Admin, body: RemoveIn) -> dict:
 
 @router.post("/chat")
 def chat(p: Admin, body: Empty) -> dict:
-    """„Zum Labor-Chat“: jüngste eigene Sitzung mit dem Labor-Agenten weiternutzen, sonst neu (Muster Modul Recht)."""
+    """„Zum Labor-Chat“: Sitzung mit dem Labor-Agenten, geöffnet im Projekt-Cockpit (lab_chat.py)."""
     _ready()
-    from hydrahive.db import sessions as sessions_db
     made = state.get()["made"]
     pid, aid = made.get("project_id", ""), made.get("agent_id", "")
     if not pid or not aid:
         raise coded(status.HTTP_409_CONFLICT, "labor_not_ready")
-    s = next((x for x in sessions_db.list_for_user(p.username, limit=500)
-              if x.agent_id == aid and x.project_id == pid), None)
-    if s is None:
-        s = sessions_db.create(agent_id=aid, user_id=p.username, project_id=pid, title="Hydra-Labor")
-    else:
-        sessions_db.touch(s.id)
-    return {"session_id": s.id, "url": f"/werkstatt/{s.id}"}
+    return lab_chat.open_for(p.username, pid, aid)
 
 
 @router.post("/{action}")
