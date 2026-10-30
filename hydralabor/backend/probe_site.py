@@ -6,7 +6,12 @@
 - `/__labor_login` (Ticket einlösen) ist der einzige Weg ohne Prüfung.
 - An die Probe gehen keine Cookies (der Kern nutzt keine; Cookies trennen nicht nach Port – sonst sähe Labor-Code
   hh_labor_probe und hh_agentlink). Den Bearer-Kopf braucht die Probe selbst (eigene Anmeldung, eigener Ursprung).
+- Antworten der Probe ohne `Set-Cookie` (ein Cookie von :8443 bekäme auch das echte HydraHive). Rest: Labor-JS kann
+  per document.cookie Cookies setzen – das echte HydraHive meldet per Bearer an (kein Cookie), schlimmstenfalls
+  ist ein Dashboard-/Probe-Cookie überdeckt (neu öffnen hilft).
 - CSP `connect-src 'self'`/`form-action 'self'`: Code aus dem Labor schickt von :8443 nichts an das echte HydraHive.
+  Eigene CSP der Probe kann das nicht lockern (mehrere CSP gelten alle). Token des echten HydraHive liegt im
+  sessionStorage seines Ursprungs (:443) – :8443 ist ein anderer Ursprung.
 Der root-Befehl enthält nur feste Pfade; der Block kommt aus einer Datei. `nginx -t` lehnt ab → alte Fassung zurück.
 """
 from __future__ import annotations
@@ -105,6 +110,7 @@ server {{
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $hh_labor_conn;
         proxy_set_header Cookie "";
+        proxy_hide_header Set-Cookie;
         proxy_buffering off;
         proxy_read_timeout 1h;
         client_max_body_size 200m;

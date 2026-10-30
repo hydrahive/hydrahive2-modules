@@ -11,6 +11,7 @@ import re
 from collections.abc import Awaitable, Callable
 
 from . import container, lab_project, network, provision, state
+from . import probe as probe_app  # „probe“ ist hier schon der Auftrag „Netz prüfen“
 from .container import Limits
 
 logger = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ async def _undo_partial() -> None:
 
 
 async def remove(report: Report) -> None:
+    await probe_app.cleanup()
     made = state.get()["made"]
     if "project" in made:
         report("project")
@@ -77,6 +79,7 @@ async def remove(report: Report) -> None:
 
 async def reset(report: Report) -> None:
     report("reset")
+    await probe_app.cleanup()                                      # Probe läuft nach „frisch“ nicht mehr
     await provision.reset()
     state.net_ok()
 
@@ -124,7 +127,8 @@ async def submit_job(report: Report) -> None:
 
 
 JOBS: dict[str, Callable[[Report], Awaitable[None]]] = {
-    "create": create, "remove": remove, "reset": reset, "probe": probe, "test": test, "submit": submit_job}
+    "create": create, "remove": remove, "reset": reset, "probe": probe, "test": test, "submit": submit_job,
+    "probe_build": probe_app.build, "probe_start": probe_app.start, "probe_stop": probe_app.stop}
 
 
 async def _run(name: str) -> None:

@@ -175,6 +175,12 @@ def test_stoppen_raeumt_alles(lab):
     assert not ({"probe_net", "probe_site"} & set(state.get()["made"]))
 
 
+def test_stoppen_haelt_dienste_an_auch_ohne_nginx(lab):
+    """Dienste laufen evtl. noch (z. B. nginx-Fehler beim Start) – Stoppen hält sie trotzdem an."""
+    run(probe.stop(report=lambda _k: None))
+    assert "systemctl stop hh-probe-front hh-probe-back" in " ".join(_execs(lab))
+
+
 def test_stoppen_ohne_probe_fasst_nginx_nicht_an(lab):
     run(probe.stop(report=lambda _k: None))
     assert not lab.roots

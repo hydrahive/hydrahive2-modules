@@ -64,6 +64,11 @@ def test_keine_cookies_an_die_probe(conf):
     assert "X-Forwarded-For" not in root and "X-Real-IP" not in root
 
 
+def test_probe_setzt_keine_cookies(conf):
+    """Cookies trennen nicht nach Port: ein Cookie von :8443 bekäme auch das echte HydraHive (:443)."""
+    assert "proxy_hide_header Set-Cookie;" in _loc(conf, "location / {")
+
+
 def test_bremse_je_browser_adresse(conf):
     for head in ("location = /__labor_auth {", "location = /__labor_login {"):
         assert "proxy_set_header X-Forwarded-For $remote_addr;" in _loc(conf, head)

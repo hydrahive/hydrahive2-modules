@@ -145,8 +145,9 @@ def test_komischer_host_abgelehnt(client, admin_headers, ready, host):
 def test_nicht_unter_login_pfad(client, ready):
     """Unter /api/modules/… gäbe es die Prüfung nur mit HydraHive-Login – dort darf sie nicht hängen."""
     client.cookies.clear()
-    assert client.get("/api/modules/hydralabor/probe/auth").status_code in (401, 404)
-    assert client.get("/api/modules/hydralabor/probe/login", params={"t": "x"}).status_code in (401, 404)
+    for path, kw in (("/probe/auth", {}), ("/probe/login", {"params": {"t": "x"}})):
+        r = client.get("/api/modules/hydralabor" + path, **kw)
+        assert r.status_code in (401, 404, 405) and "set-cookie" not in r.headers
 
 
 def test_tickets_begrenzt(client, admin_headers, ready):
