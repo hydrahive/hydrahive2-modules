@@ -46,12 +46,12 @@ function CustomTooltip({ active, payload, label }: {
   const val = payload[0].value
   const flag = payload[0]?.payload?.flag ?? "normal"
   return (
-    <div className="bg-zinc-900 border border-white/[8%] rounded-lg px-3 py-2 text-xs">
-      <p className="text-zinc-400">{label}</p>
+    <div className="bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] rounded-lg px-3 py-2 text-xs">
+      <p className="text-[#c8d2df]">{label}</p>
       <p className={`font-medium ${flag === "high" ? "text-red-400" : flag === "low" ? "text-orange-400" : "text-emerald-400"}`}>
         {val} {""}
       </p>
-      <p className="text-zinc-600 capitalize">{flag}</p>
+      <p className="text-[#9aa7bc] capitalize">{flag}</p>
     </div>
   )
 }
@@ -128,7 +128,7 @@ export function AkteLabCharts({ parameterFilter }: Props) {
 
   const header = (
     <div className="flex items-center gap-3">
-      <h2 className="text-base font-semibold text-zinc-100">Laborwerte</h2>
+      <h2 className="text-base font-semibold text-[#e8eef8]">Laborwerte</h2>
       <button
         onClick={() => setModalOpen(true)}
         className="ml-auto rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-300 px-3 py-1.5 text-sm font-medium hover:bg-rose-500/30 transition-colors whitespace-nowrap"
@@ -142,7 +142,7 @@ export function AkteLabCharts({ parameterFilter }: Props) {
     return (
       <div className="space-y-4">
         {header}
-        <div className="h-48 rounded-xl bg-zinc-900/50 animate-pulse" />
+        <div className="h-48 rounded-xl bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] animate-pulse" />
         {modal}
       </div>
     )
@@ -152,7 +152,7 @@ export function AkteLabCharts({ parameterFilter }: Props) {
     return (
       <div className="space-y-4">
         {header}
-        <p className="text-sm text-zinc-500 text-center py-8">
+        <p className="text-sm text-[#9aa7bc] text-center py-8">
           Keine Laborwerte mit Trends vorhanden (mindestens 2 Messungen nötig).
         </p>
         {modal}
@@ -166,14 +166,14 @@ export function AkteLabCharts({ parameterFilter }: Props) {
       {series.map((s) => (
         <div key={s.parameter} className="space-y-2">
           <div className="flex items-center gap-3 text-sm">
-            <span className="font-medium text-zinc-200">{s.parameter}</span>
+            <span className="font-medium text-[#e8eef8]">{s.parameter}</span>
             {s.refLow !== undefined && (
-              <span className="text-xs text-zinc-600">
+              <span className="text-xs text-[#9aa7bc]">
                 Referenz: {s.refLow}–{s.refHigh === 999 ? "∞" : s.refHigh} {s.unit}
               </span>
             )}
           </div>
-          <div className="rounded-xl border border-white/[6%] bg-zinc-900/40 p-4">
+          <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43)/0.4)] p-4">
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={s.data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
