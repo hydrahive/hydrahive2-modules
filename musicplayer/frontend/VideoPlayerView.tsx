@@ -44,7 +44,7 @@ export function VideoPlayerView({ projectId, tracks, permissions, onRemove, musi
   return (
     <div className="space-y-3">
       <NowPlayingBar track={activeTrack} playing={playing} onToggle={toggleMusic} onOpen={onShowAudio} />
-      <div className={`overflow-hidden rounded-[4px] border border-[#2a364b] bg-black ${large ? "max-w-6xl" : ""}`}>
+      <div className={`overflow-hidden rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-black ${large ? "max-w-6xl" : ""}`}>
         <video
           ref={video}
           controls
@@ -62,8 +62,8 @@ export function VideoPlayerView({ projectId, tracks, permissions, onRemove, musi
         >
           {t("mp_video_unsupported")}
         </video>
-        <div className="flex items-center gap-2 border-t border-[#2a364b] bg-[#0d1420] p-2">
-          <span className="min-w-0 flex-1 truncate text-xs text-[#8d9ab0]">{current?.title ?? t("mp_nothing")}</span>
+        <div className="flex items-center gap-2 border-t border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-2">
+          <span className="min-w-0 flex-1 truncate text-xs text-[#9aa7bc]">{current?.title ?? t("mp_nothing")}</span>
           <button
             type="button"
             disabled={!current}
