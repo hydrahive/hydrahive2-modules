@@ -8,7 +8,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from backend import container, network
 
 
@@ -95,7 +94,8 @@ def test_launch_fehler(net):
 @pytest.mark.parametrize(("text", "ver"), [('VERSION_ID="26.04"\nID=ubuntu\n', "26.04"),
                                          ('VERSION_ID="24.04"\nID=ubuntu\n', "24.04"),
                                          ('VERSION_ID="12"\nID=debian\n', "24.04"), ("", "24.04"),
-                                         ('VERSION_ID="26.04;rm"\nID=ubuntu\n', "24.04")])
+                                         ('VERSION_ID="26.04;rm"\nID=ubuntu\n', "24.04"),
+                                         ('VERSION_ID="22.04"\nID=pop\n', "24.04")])
 def test_ubuntu_version_wie_server(text, ver, tmp_path):
     f = tmp_path / "os-release"
     f.write_text(text)
@@ -120,3 +120,50 @@ def test_netz_offen_container_wird_entfernt(net):
 def test_netz_zu_container_bleibt(net):
     assert run(container.launch_and_probe(container.Limits())) == {"ok": True, "checked": 4}
     assert "hh-labor" in net.containers
+
+
+def test_ubuntu_version_datei_fehlt(tmp_path):
+    assert container._ubuntu_version(tmp_path / "gibt-es-nicht") == "24.04"
+
+
+@pytest.mark.parametrize("pool", ["bad pool", "-x", "a;b", "a/b"])
+def test_komischer_speicherpool_abgelehnt(net, pool):
+    net.pool = pool
+    with pytest.raises(container.LaborError) as e:
+        run(container.launch(container.Limits()))
+    assert e.value.code == "labor_no_storage_pool"
+
+
+def test_gateway_fehlt(net):
+    net.fail["network get"] = "not found"
+    with pytest.raises(network.LaborNetworkError) as e:
+        run(network.gateway())
+    assert e.value.code == "labor_network_missing"
+
+
+# --- Warten aufs Netz (Befund hydratest 30.10.: in der 1. Sekunde nach dem Start noch keine Adresse) -------------
+
+def test_wartet_auf_adresse_vor_probe(net, monkeypatch):
+    monkeypatch.setattr(container, "_WAIT_STEP", 0)
+    net.exec_answers["ip -4 -o addr show eth0"] = (1, "")
+    tries = {"n": 0}
+    orig = net.run
+
+    async def flaky(*a, **k):
+        if a[:1] == ("exec",) and "ip -4 -o addr show eth0" in a[-1]:
+            tries["n"] += 1
+            return (0, "2: eth0 inet 10.77.0.5/24\n", "") if tries["n"] >= 3 else (1, "", "")
+        return await orig(*a, **k)
+    monkeypatch.setattr(container.incus, "run", flaky)
+    assert run(container.launch_and_probe(container.Limits()))["ok"] is True
+    assert tries["n"] == 3
+
+
+def test_keine_adresse_klare_meldung_und_container_weg(net, monkeypatch):
+    monkeypatch.setattr(container, "_WAIT_STEP", 0)
+    net.exec_answers["ip -4 -o addr show eth0"] = (1, "")
+    with pytest.raises(container.LaborError) as e:
+        run(container.launch_and_probe(container.Limits()))
+    assert e.value.code == "labor_no_address"
+    assert "hh-labor" not in net.containers
+    assert sum(1 for c in net.calls if c[0] == "exec" and "ip -4 -o addr" in c[-1]) == container._WAIT_TRIES

@@ -7,7 +7,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from backend import network
 
 
@@ -53,7 +52,7 @@ def test_netz_idempotent(fake_incus, monkeypatch):
     run(network.ensure_network())
     before = len(fake_incus.calls)
     run(network.ensure_network())
-    assert all(c[-4:] == ["--format", "csv", "-c", "n"] for c in fake_incus.calls[before:])
+    assert all(c[-3:] == ["list", "--format", "csv"] for c in fake_incus.calls[before:])
     assert list(fake_incus.networks).count("hhlabor0") == 1
 
 

@@ -63,8 +63,8 @@ async def _call(*args: str) -> None:
 
 
 async def _names(*kind: str) -> set[str]:
-    rc, out, _ = await incus.run(*kind, "list", "--format", "csv", "-c", "n")
-    return set(out.split()) if rc == 0 else set()
+    rc, out, _ = await incus.run(*kind, "list", "--format", "csv")
+    return incus.first_column(out) if rc == 0 else set()
 
 
 async def ensure_network() -> NetworkState:
@@ -111,8 +111,15 @@ async def probe(container: str, gateway: str) -> dict:
 
 
 async def gateway() -> str:
-    raise NotImplementedError
+    """Gateway-IP des Labor-Netzes (ohne /24)."""
+    rc, out, _ = await incus.run("network", "get", NET, "ipv4.address")
+    gw = out.strip().split("/")[0]
+    if rc != 0 or not gw:
+        raise LaborNetworkError("labor_network_missing")
+    return gw
 
 
 async def remove() -> None:
-    raise NotImplementedError
+    """Nur das eigene Netz und die eigene Sperrliste (Namen fest im Modul)."""
+    await incus.run("network", "delete", NET)
+    await incus.run("network", "acl", "delete", ACL)

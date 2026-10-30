@@ -61,9 +61,8 @@ def db_ready(setup_test_env):
 
 @pytest.fixture
 def fake_incus(monkeypatch):
-    from fake_incus import FakeIncus
-
     from backend import incus
+    from fake_incus import FakeIncus
     fake = FakeIncus()
     monkeypatch.setattr(incus, "run", fake.run)
     monkeypatch.setattr(incus, "available", lambda: True)

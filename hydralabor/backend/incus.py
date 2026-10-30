@@ -10,3 +10,8 @@ def available() -> bool:
 
 async def run(*args: str, timeout: float = 60.0, input_bytes: bytes | None = None) -> tuple[int, str, str]:
     return await incus_client._run(*args, timeout=timeout, input_bytes=input_bytes)
+
+
+def first_column(csv_out: str) -> set[str]:
+    """Namen aus `incus … list --format csv` (erste Spalte). incus 6.0.0 kennt bei network/acl/snapshot kein -c."""
+    return {line.split(",", 1)[0].strip() for line in csv_out.splitlines() if line.strip()}

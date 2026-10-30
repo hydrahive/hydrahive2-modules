@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from backend import container, network, provision
 
 
@@ -44,6 +43,16 @@ def test_nutzerschritte_als_labor_rootschritte_als_root(lab):
             assert "HOME=/home/labor" in call
 
 
+def test_genau_diese_schritte_als_labor():
+    assert [s.key for s in provision.STEPS if s.as_user] == ["code", "python", "frontend"]
+
+
+def test_pakete_fuer_kern_tests():
+    script = next(s.script for s in provision.STEPS if s.key == "packages")
+    for pkg in ("git", "python3-venv", "build-essential", "ripgrep", "qemu-utils", "lsof"):
+        assert f" {pkg}" in script
+
+
 def test_klon_ohne_zugangsdaten(lab):
     script = next(s.script for s in provision.STEPS if s.key == "code")
     assert "https://github.com/hydrahive/hydrahive2.0.git" in script
@@ -58,8 +67,12 @@ def test_labor_nutzer_ohne_sudo(lab):
 
 def test_venv_als_standard_python(lab):
     script = next(s.script for s in provision.STEPS if s.key == "links")
-    for tool in ("python", "python3", "pip", "pytest", "ruff"):
-        assert f"/work/.venv/bin/{tool} /usr/local/bin/{tool}" in script
+    for tool in ("pip", "pytest", "ruff"):
+        assert f"ln -sf /work/.venv/bin/{tool} /usr/local/bin/{tool}" in script
+    for tool in ("python", "python3"):          # Startskript, keine Verknüpfung (venv sonst nicht erkannt)
+        assert f"exec /work/.venv/bin/{tool} " in script
+        assert f"> /usr/local/bin/{tool}; chmod 755 /usr/local/bin/{tool}" in script
+        assert f"ln -sf /work/.venv/bin/{tool} " not in script
 
 
 def test_schritt_scheitert_meldet_schritt(lab):
@@ -121,3 +134,12 @@ def test_netz_entfernen_nur_eigenes(lab):
     run(network.remove())
     dels = [c for c in lab.calls if c[1:2] in (["delete"],) or c[:3] == ["network", "acl", "delete"]]
     assert dels == [["network", "delete", "hhlabor0"], ["network", "acl", "delete", "hhlabor-acl"]]
+
+
+def test_zuruecksetzen_wartet_auf_adresse_vor_probe(lab):
+    run(provision.snapshot())
+    run(provision.reset())
+    after = lab.calls[next(i for i, c in enumerate(lab.calls) if c[:2] == ["snapshot", "restore"]):]
+    wait = next(i for i, c in enumerate(after) if c[0] == "exec" and "ip -4 -o addr" in c[-1])
+    probe = next(i for i, c in enumerate(after) if c[0] == "exec" and "hh-labor-netprobe" in c[-1])
+    assert wait < probe

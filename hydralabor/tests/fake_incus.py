@@ -39,10 +39,11 @@ class FakeIncus:
         if cmd == ["network", "delete"]:
             self.networks.pop(a[2], None)
             return 0, "", ""
-        if a[:3] == ["network", "acl", "list"]:
-            return 0, "\n".join(self.acls), ""
-        if cmd == ["network", "list"]:
-            return 0, "\n".join(self.networks), ""
+        if a[:3] == ["network", "acl", "list"] or cmd == ["network", "list"]:
+            if "-c" in a:                       # incus 6.0: network (acl) list kennt keine Spaltenauswahl
+                return 1, "", "Error: unknown shorthand flag: 'c' in -c"
+            rows = self.acls if a[1] == "acl" else self.networks
+            return 0, "".join(f"{n},bridge,YES,,,,0,CREATED\n" for n in rows), ""
         if a[:3] == ["network", "acl", "create"]:
             if a[3] in self.acls:
                 return 1, "", "already exists"
@@ -55,8 +56,6 @@ class FakeIncus:
         if a[:3] == ["network", "acl", "delete"]:
             self.acls.pop(a[3], None)
             return 0, "", ""
-        if a[:3] == ["network", "acl", "list"]:
-            return 0, "\n".join(self.acls), ""
         if a[0] == "launch":
             name = a[-1]
             if name in self.containers:
@@ -72,7 +71,9 @@ class FakeIncus:
         if a[:2] == ["network", "get"]:
             return 0, self.networks.get(a[2], {}).get(a[3], "") + "\n", ""
         if a[:2] == ["snapshot", "list"]:
-            return 0, "\n".join(sorted(self.snapshots.get(a[2], set()))), ""
+            if "-c" in a:                       # incus 6.0.0 (hydratest): keine Spaltenauswahl
+                return 1, "", "Error: unknown shorthand flag: 'c' in -c"
+            return 0, "".join(f'{n},2026/10/30 14:35 UTC," ",NO\n' for n in sorted(self.snapshots.get(a[2], set()))), ""
         if a[0] in ("start", "stop"):
             if a[1] in self.containers:
                 self.containers[a[1]]["running"] = a[0] == "start"
