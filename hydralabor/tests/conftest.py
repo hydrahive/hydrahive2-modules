@@ -50,7 +50,36 @@ def setup_test_env():
         from hydrahive.modules.migrations import apply_module_migrations
         init_db()                               # Projekte löschen braucht die Kern-Tabellen (smb_mounts …)
         apply_module_migrations("hydralabor", MODULE_DIR / "migrations")
+        _declare_capabilities()
+        _mount_like_core()
         yield tmp_path
+
+
+def _mount_like_core() -> None:
+    """Router über den echten Kern-Weg einhängen (Muster radiostream/tests/conftest.py)."""
+    import backend
+    from hydrahive.api import main
+    from hydrahive.modules.context import ModuleContext
+    from hydrahive.modules.manifest import ModuleManifest
+    from hydrahive.modules.registry import REGISTRY, LoadedModule
+
+    ctx = ModuleContext("hydralabor")
+    backend.register(ctx)
+    saved = dict(REGISTRY)
+    REGISTRY.clear()
+    REGISTRY["hydralabor"] = LoadedModule(name="hydralabor", manifest=ModuleManifest.load(MODULE_DIR / "manifest.json"),
+                                          path=MODULE_DIR, ctx=ctx, loaded=True)
+    try:
+        main.mount_module_routers(main.app)
+    finally:
+        REGISTRY.clear()
+        REGISTRY.update(saved)
+
+
+def _declare_capabilities() -> None:
+    from hydrahive.access.capabilities import catalog
+    from hydrahive.modules.manifest import ModuleManifest
+    catalog().register_module(ModuleManifest.load(MODULE_DIR / "manifest.json"))
 
 
 @pytest.fixture
@@ -67,3 +96,40 @@ def fake_incus(monkeypatch):
     monkeypatch.setattr(incus, "run", fake.run)
     monkeypatch.setattr(incus, "available", lambda: True)
     return fake
+
+
+@pytest.fixture
+def client(setup_test_env, db_ready):
+    from contextlib import asynccontextmanager
+
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from hydrahive.api import main
+
+    @asynccontextmanager
+    async def minimal_lifespan(app: FastAPI):
+        from hydrahive.settings import settings
+        settings.ensure_dirs()
+        yield
+
+    original = main.app.router.lifespan_context
+    main.app.router.lifespan_context = minimal_lifespan
+    with TestClient(main.app) as c:
+        yield c
+    main.app.router.lifespan_context = original
+
+
+def _login(client, name: str) -> dict:
+    r = client.post("/api/auth/login", json={"username": name, "password": "testpass123"})
+    assert r.status_code == 200
+    return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+
+@pytest.fixture
+def user_headers(client):
+    return _login(client, "testuser")
+
+
+@pytest.fixture
+def admin_headers(client):
+    return _login(client, "boss")
