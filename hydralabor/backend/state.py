@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from hydrahive.db.connection import db
 
 STEPS = ("start", "ready")
-PARTS = ("network", "container", "setup", "snapshot", "project")
+PARTS = ("network", "container", "setup", "snapshot", "project", "probe_net", "probe_site")
 _T = "module_hydralabor_state"
 _COLS = ("step", "running", "progress", "error_code", "error_step", "model", "admin", "cpu", "ram_mb", "disk_gb", "made",
          "last_net_ok", "last_test", "submit_in", "submit_out", "updated_at")

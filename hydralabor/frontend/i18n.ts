@@ -1,5 +1,6 @@
 // Texte des Moduls Hydra-Labor (de/en). Einfach, ohne Fachwörter. L2 (GitHub) steht in i18n_github.ts.
 import { githubDe, githubEn } from "./i18n_github"
+import { probeDe, probeEn } from "./i18n_probe"
 
 const de = {
   hydralabor: {
@@ -175,8 +176,12 @@ const en: typeof de = {
   },
 }
 
-const merge = (base: typeof de, extra: typeof githubDe) => ({
-  hydralabor: { ...base.hydralabor, ...extra, err: { ...base.hydralabor.err, ...extra.err } },
+const merge = (base: typeof de, extra: typeof githubDe, probe: typeof probeDe) => ({
+  hydralabor: {
+    ...base.hydralabor, ...extra, probe: probe.probe,
+    job: { ...base.hydralabor.job, ...probe.job },
+    err: { ...base.hydralabor.err, ...extra.err, ...probe.err },
+  },
 })
 
-export const hydralaborI18n = { de: merge(de, githubDe), en: merge(en, githubEn) }
+export const hydralaborI18n = { de: merge(de, githubDe, probeDe), en: merge(en, githubEn, probeEn) }

@@ -20,6 +20,8 @@ class FakeIncus:
         self.pool = "default"
         self.pull_files: dict[str, bytes] = {}   # „container/pfad“ → Inhalt für `file pull`
         self.version = "Client version: 6.0.5\nServer version: 6.0.5\n"
+        self.ipv4 = "10.77.0.5 (eth0)"           # Spalte 4 von `incus list` für hh-labor
+        self.pushed: list[list[str]] = []        # `file push`-Aufrufe
         self.storage_info = '  space used: "100"\n  total space: "200"\n'
 
     async def run(self, *args: str, timeout: float = 60.0, input_bytes: bytes | None = None) -> tuple[int, str, str]:
@@ -80,6 +82,8 @@ class FakeIncus:
             if a[-1] == "ns":
                 return 0, "".join(f"{n},{'RUNNING' if c['running'] else 'STOPPED'}\n"
                                   for n, c in self.containers.items()), ""
+            if a[-1] == "n4":
+                return 0, "".join(f"{n},\"{self.ipv4 if n == 'hh-labor' else ''}\"\n" for n in self.containers), ""
             if a[-1] == "n":
                 return 0, "\n".join(self.containers), ""
             return 0, "\n".join(f"{n},{'RUNNING' if c['running'] else 'STOPPED'}" for n, c in self.containers.items()), ""
@@ -128,6 +132,9 @@ class FakeIncus:
                 return 1, "", "not found"
             from pathlib import Path
             Path(dst).write_bytes(self.pull_files[src])
+            return 0, "", ""
+        if a[:2] == ["file", "push"]:
+            self.pushed.append(a)
             return 0, "", ""
         if a[0] == "config":
             return 0, "", ""
