@@ -77,12 +77,12 @@ export function DeepResearchPage() {
     }
   }
 
-  const ctl = "px-2 py-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs"
+  const ctl = "px-2 py-2 rounded-xl bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#c8d2df] text-xs"
   return (
     <div className="max-w-6xl mx-auto h-full flex gap-5">
       <aside className="w-72 shrink-0 flex flex-col">
         <div className="flex items-center gap-2 mb-2">
-          <h1 className="text-sm font-semibold text-zinc-200">Deep Research</h1>
+          <h1 className="text-sm font-semibold text-[#e8eef8]">Deep Research</h1>
           <HelpButton topic="deepresearch" />
         </div>
         <textarea
@@ -90,7 +90,7 @@ export function DeepResearchPage() {
           placeholder="Worüber soll recherchiert werden?"
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) start() }}
-          className="w-full h-24 px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-100 text-sm resize-none"
+          className="w-full h-24 px-3 py-2 rounded-xl bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#e8eef8] text-sm resize-none"
         />
         <select value={model} onChange={(e) => setModel(e.target.value)} className={`${ctl} mt-2 w-full`} title="Modell">
           <option value="">Standard-Modell</option>
@@ -134,7 +134,7 @@ export function DeepResearchPage() {
           <div className="h-full flex items-center justify-center text-center">
             <div className="max-w-sm">
               <div className="text-4xl mb-3">🔭</div>
-              <p className="text-zinc-400 text-sm">
+              <p className="text-[#c8d2df] text-sm">
                 Stelle links eine Frage. Deep Research durchsucht das Web in mehreren Runden und
                 erstellt einen bebilderten, quellenbasierten Bericht.
               </p>

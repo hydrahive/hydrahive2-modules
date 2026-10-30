@@ -32,34 +32,34 @@ export function Viewer({ item, onBack, onChanged }: Props) {
   return (
     <div className="space-y-3" data-diagram-viewer>
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-100">
+        <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-[#c8d2df] hover:text-[#e8eef8]">
           <ArrowLeft size={14} />{t("back_to_list")}
         </button>
         <span className="flex-1" />
         <button type="button" onClick={() => download(shown, item.title).catch((e) => setMsg(t(errorKey(e))))}
-          className="flex items-center gap-1 rounded px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/5"><Download size={14} />{t("download")}</button>
+          className="flex items-center gap-1 rounded px-3 py-1.5 text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"><Download size={14} />{t("download")}</button>
         {mayChange && !inTrash && (
           <button type="button" disabled={busy} onClick={() => act(() => toTrash(item.id))}
-            className="flex items-center gap-1 rounded px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/5"><Trash2 size={14} />{t("to_trash")}</button>
+            className="flex items-center gap-1 rounded px-3 py-1.5 text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"><Trash2 size={14} />{t("to_trash")}</button>
         )}
         {mayChange && inTrash && (<>
           <button type="button" disabled={busy} onClick={() => act(() => restore(item.id))}
-            className="flex items-center gap-1 rounded px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/5"><RotateCcw size={14} />{t("restore")}</button>
+            className="flex items-center gap-1 rounded px-3 py-1.5 text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"><RotateCcw size={14} />{t("restore")}</button>
           <button type="button" disabled={busy} onClick={() => setAsk(true)}
             className="flex items-center gap-1 rounded px-3 py-1.5 text-sm text-rose-300 hover:bg-rose-500/10"><Trash2 size={14} />{t("purge")}</button>
         </>)}
       </div>
       {msg && <p className="text-sm text-rose-300">{msg}</p>}
-      <div className="text-xs text-zinc-400">{t(kindLabelKey(item.kind))}{item.project_name ? ` · ${item.project_name}` : ""} · {shortDate(item.created_at)}</div>
+      <div className="text-xs text-[#c8d2df]">{t(kindLabelKey(item.kind))}{item.project_name ? ` · ${item.project_name}` : ""} · {shortDate(item.created_at)}</div>
       <ModuleViewFrame key={shown} module="diagramme" viewId={shown} title={item.title} />
       {versions.length > 1 && (
         <section className="space-y-1">
-          <h3 className="text-xs font-semibold text-zinc-300">{t("versions")}</h3>
+          <h3 className="text-xs font-semibold text-[#c8d2df]">{t("versions")}</h3>
           <ul className="flex flex-wrap gap-2">
             {[...versions].reverse().map((v, i) => (
               <li key={v.id}>
                 <button type="button" onClick={() => setShown(v.id)} aria-pressed={shown === v.id}
-                  className={`rounded border px-2 py-1 text-xs ${shown === v.id ? "border-sky-400 text-sky-200" : "border-white/10 text-zinc-400 hover:text-zinc-100"}`}>
+                  className={`rounded border px-2 py-1 text-xs ${shown === v.id ? "border-sky-400 text-sky-200" : "border-[rgb(var(--hh-s-rand,42_54_75))] text-[#c8d2df] hover:text-[#e8eef8]"}`}>
                   {shortDate(v.created_at)}{i === 0 ? ` (${t("version_current")})` : ""}
                 </button>
               </li>

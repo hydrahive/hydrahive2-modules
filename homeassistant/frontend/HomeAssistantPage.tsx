@@ -57,13 +57,13 @@ export function HomeAssistantPage() {
   return (
     <div className="mx-auto max-w-3xl p-4 sm:p-6">
       {/* Sticky-Header: Titel, Refresh, Suche, Chips */}
-      <div className="sticky top-0 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-3 pt-1 bg-zinc-950/80 backdrop-blur space-y-3">
+      <div className="sticky top-0 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-3 pt-1 bg-[rgb(var(--hh-s-tief,13_20_32)/0.8)] backdrop-blur space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-1">
             <div>
-              <h1 className="text-lg font-semibold text-zinc-100">{t("title")}</h1>
+              <h1 className="text-lg font-semibold text-[#e8eef8]">{t("title")}</h1>
               {test?.ok && test.config?.location_name && (
-                <p className="text-xs text-zinc-500">{test.config.location_name}</p>
+                <p className="text-xs text-[#9aa7bc]">{test.config.location_name}</p>
               )}
             </div>
             <HelpButton topic="homeassistant" />
@@ -71,7 +71,7 @@ export function HomeAssistantPage() {
           <button
             onClick={load}
             disabled={loading}
-            className="flex items-center gap-1.5 rounded-lg bg-zinc-800 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-700 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg bg-[rgb(var(--hh-s-innen,17_24_39))] px-3 py-2 text-sm text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] disabled:opacity-40"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             <span className="hidden sm:inline">{t("refresh")}</span>
@@ -81,17 +81,17 @@ export function HomeAssistantPage() {
         {test?.ok && (
           <>
             <div className="relative">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9aa7bc]" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("search_placeholder")}
-                className="w-full rounded-lg border border-white/10 bg-zinc-900 pl-9 pr-9 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] pl-9 pr-9 py-2 text-sm text-[#e8eef8] placeholder-[#9aa7bc] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--hh-s-rand-hover,70_97_127))]"
               />
               {query && (
                 <button
                   onClick={() => setQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9aa7bc] hover:text-[#c8d2df]"
                 >
                   <X size={15} />
                 </button>
@@ -107,9 +107,9 @@ export function HomeAssistantPage() {
 
         {test?.ok && (
           loading ? (
-            <div className="h-32 rounded-xl bg-zinc-900/50 animate-pulse" />
+            <div className="h-32 rounded-xl bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] animate-pulse" />
           ) : visible.length === 0 ? (
-            <p className="py-8 text-center text-sm text-zinc-500">{t("empty")}</p>
+            <p className="py-8 text-center text-sm text-[#9aa7bc]">{t("empty")}</p>
           ) : (
             <>
               {/* Favoriten-Schnellzugriff oben — nur ohne aktiven Filter/Suche */}

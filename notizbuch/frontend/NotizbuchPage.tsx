@@ -89,19 +89,19 @@ export function NotizbuchPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={createNote}
-            className="flex-1 px-3 py-2 rounded-lg bg-violet-500/15 text-violet-300 text-sm hover:bg-violet-500/25"
+            className="flex-1 px-3 py-2 rounded-lg bg-[#69d7ff]/15 text-[#69d7ff] text-sm hover:bg-[#69d7ff]/25"
           >
             + {t("new")}
           </button>
           <HelpButton topic="notizbuch" />
         </div>
-        {list.length === 0 && <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-zinc-600 text-sm">{t("empty")}</p></div>}
+        {list.length === 0 && <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-[#9aa7bc] text-sm">{t("empty")}</p></div>}
         {list.map((n) => (
           <button
             key={n.id}
             onClick={() => open(n.id)}
             className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate ${
-              active?.id === n.id ? "bg-white/10 text-zinc-100" : "text-zinc-400 hover:bg-white/5"
+              active?.id === n.id ? "bg-[rgb(var(--hh-s-hebung,27_37_54))] text-[#e8eef8]" : "text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"
             }`}
           >
             {n.title || t("untitled")}
@@ -122,17 +122,17 @@ export function NotizbuchPage() {
                 value={active.title}
                 placeholder={t("titlePlaceholder")}
                 onChange={(e) => setActive({ ...active, title: e.target.value })}
-                className="flex-1 px-3 py-2 rounded-lg bg-zinc-900 border border-white/10 text-zinc-100"
+                className="flex-1 px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#e8eef8]"
               />
               <button
                 onClick={() => setPreview((p) => !p)}
-                className="px-3 py-2 rounded-lg text-sm text-zinc-300 hover:bg-white/5"
+                className="px-3 py-2 rounded-lg text-sm text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"
               >
                 {preview ? t("edit") : t("preview")}
               </button>
               <button
                 onClick={save}
-                className="px-3 py-2 rounded-lg text-sm bg-violet-500/20 text-violet-200 hover:bg-violet-500/30"
+                className="px-3 py-2 rounded-lg text-sm bg-[#69d7ff]/20 text-[#69d7ff] hover:bg-[#69d7ff]/30"
               >
                 {t("save")}
               </button>
@@ -146,7 +146,7 @@ export function NotizbuchPage() {
             {preview ? (
               // react-markdown OHNE rehype-raw: roher HTML im Body wird escaped, kein XSS.
               // Kein rehype-raw ergänzen (würde Stored-XSS über Notiz-Inhalt öffnen).
-              <div className="prose prose-invert max-w-none p-3 rounded-lg bg-zinc-900/50 border border-white/5">
+              <div className="prose prose-invert max-w-none p-3 rounded-lg bg-[rgb(var(--hh-s-box,21_28_43)/0.5)] border border-[rgb(var(--hh-s-rand,42_54_75))]">
                 <ReactMarkdown>{active.body}</ReactMarkdown>
               </div>
             ) : (
@@ -154,12 +154,12 @@ export function NotizbuchPage() {
                 value={active.body}
                 placeholder={t("bodyPlaceholder")}
                 onChange={(e) => setActive({ ...active, body: e.target.value })}
-                className="w-full h-[60vh] px-3 py-2 rounded-lg bg-zinc-900 border border-white/10 text-zinc-100 font-mono text-sm"
+                className="w-full h-[60vh] px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-box,21_28_43))] border border-[rgb(var(--hh-s-rand,42_54_75))] text-[#e8eef8] font-mono text-sm"
               />
             )}
           </div>
         ) : (
-          <p className="text-zinc-600 text-sm">{t("empty")}</p>
+          <p className="text-[#9aa7bc] text-sm">{t("empty")}</p>
         )}
       </section>
     </div>

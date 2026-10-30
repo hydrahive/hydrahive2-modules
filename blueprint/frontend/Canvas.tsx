@@ -42,8 +42,8 @@ export function Canvas(p: Props) {
         {p.nodes.length === 0 && (
           <Panel position="top-center" style={{ marginTop: 48 }}>
             <div className="pointer-events-none text-center">
-              <p className="text-base text-white/25">Bausteine von links aufs Board ziehen</p>
-              <p className="mt-1 text-sm text-white/15">Andockpunkte verbinden · Baustein anklicken zum Beschriften</p>
+              <p className="text-base text-[#9aa7bc]">Bausteine von links aufs Board ziehen</p>
+              <p className="mt-1 text-sm text-[#9aa7bc]">Andockpunkte verbinden · Baustein anklicken zum Beschriften</p>
             </div>
           </Panel>
         )}
