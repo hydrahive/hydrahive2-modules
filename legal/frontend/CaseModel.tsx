@@ -28,7 +28,7 @@ export function CaseModel({ catalog, value, onChange, error }: {
       </div>
       {st.warning && <p className="text-amber-200/90" role="status">{st.warning}</p>}
       {show && catalog && (
-        <div className="space-y-2 rounded-[4px] border border-[#2a364b] p-2">
+        <div className="space-y-2 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-2">
           {value && !st.mustChoose && catalog.selected && (
             <button type="button" onClick={() => onChange("")} className="text-[#69d7ff]">zurück zum Standard ({catalog.selected})</button>
           )}

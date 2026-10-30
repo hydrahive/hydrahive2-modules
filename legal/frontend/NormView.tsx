@@ -19,16 +19,16 @@ export function NormView({ norm }: { norm: NormDetail }) {
         <div>
           <h2 className="text-lg font-bold text-[#e8eef8]">{norm.citation}</h2>
           {norm.title && <p className="text-sm text-[#d7deea]">{norm.title}</p>}
-          {!norm.title && norm.gliederung && <p className="text-xs text-[#8d9ab0]">{norm.gliederung}</p>}
-          <p className="mt-1 text-xs text-[#8d9ab0]">{norm.law_title}</p>
+          {!norm.title && norm.gliederung && <p className="text-xs text-[#9aa7bc]">{norm.gliederung}</p>}
+          <p className="mt-1 text-xs text-[#9aa7bc]">{norm.law_title}</p>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => void copy()}
-            className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 text-xs text-[#d7deea] hover:bg-[#172133]">
+            className="inline-flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-xs text-[#d7deea] hover:bg-[rgb(var(--hh-s-hebung,23_33_51))]">
             {copied ? <Check size={13} /> : <Copy size={13} />}{copied ? "Kopiert" : "Zitat kopieren"}
           </button>
           <a href={norm.url} target="_blank" rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-2 py-1 text-xs text-[#69d7ff] hover:bg-[#172133]">
+            className="inline-flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-xs text-[#69d7ff] hover:bg-[rgb(var(--hh-s-hebung,23_33_51))]">
             <ExternalLink size={13} />Amtliche Fassung
           </a>
         </div>
@@ -38,7 +38,7 @@ export function NormView({ norm }: { norm: NormDetail }) {
           <p key={i} className={l.kind === "item" ? "pl-6" : ""}>{l.text}</p>
         ))}
       </div>
-      <footer className="border-t border-[#2a364b] pt-2 text-[11px] leading-4 text-[#68758a]">
+      <footer className="border-t border-[rgb(var(--hh-s-rand,42_54_75))] pt-2 text-[11px] leading-4 text-[#9aa7bc]">
         {norm.stand && <p>Stand: {norm.stand}</p>}
         <p>Abgerufen am {shortDate(norm.fetched_at)} von gesetze-im-internet.de{norm.valid_to ? ` · ersetzt am ${shortDate(norm.valid_to)}` : ""}</p>
       </footer>

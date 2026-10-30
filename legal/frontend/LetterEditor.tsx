@@ -6,7 +6,7 @@ import { CheckList } from "./CheckList"
 import { DELIVERY_LABEL, type CheckResult } from "./letterFormat"
 import { LetterPrint } from "./LetterPrint"
 
-const input = "w-full rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1 text-sm text-[#e8eef8]"
+const input = "w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1 text-sm text-[#e8eef8]"
 const EMPTY: Letter = { letter_type: "", sender: "", recipient: "", date: "", their_ref: "", our_ref: "", subject: "", body: "",
                         delivery: "einwurf_einschreiben", attachments: [] }
 
@@ -48,7 +48,7 @@ export function LetterEditor({ pid, parties, entry, canWrite, onSaved, onClose }
     <div className="grid gap-3 lg:grid-cols-[1fr_300px]">
       <div className="space-y-2">
         {!entry && canWrite && (
-          <div className="flex flex-wrap items-end gap-2 rounded-[4px] border border-[#2a364b] p-2 text-xs text-[#d7deea]">
+          <div className="flex flex-wrap items-end gap-2 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-2 text-xs text-[#d7deea]">
             <label className="flex flex-col">Vorlage
               <select value={tpl} onChange={(e) => setTpl(e.target.value)} className={input}>
                 {templates.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
@@ -60,8 +60,8 @@ export function LetterEditor({ pid, parties, entry, canWrite, onSaved, onClose }
                 {parties.filter((p) => p.role !== "me").map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </label>
-            <button type="button" onClick={() => void fromTemplate()} className="rounded-[4px] border border-[#2a364b] px-3 py-1 text-sm">Gerüst einsetzen</button>
-            <span className="w-full text-[#68758a]">{templates.find((t) => t.key === tpl)?.hint}</span>
+            <button type="button" onClick={() => void fromTemplate()} className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1 text-sm">Gerüst einsetzen</button>
+            <span className="w-full text-[#9aa7bc]">{templates.find((t) => t.key === tpl)?.hint}</span>
           </div>
         )}
         <div className="grid gap-2 sm:grid-cols-2">
@@ -86,11 +86,11 @@ export function LetterEditor({ pid, parties, entry, canWrite, onSaved, onClose }
         {error && <p className="text-xs text-rose-300">{error}</p>}
         <div className="flex flex-wrap gap-2">
           {!locked && <button type="button" onClick={() => void save()} className="inline-flex items-center gap-1 rounded-[4px] bg-[#1d4ed8] px-3 py-1 text-sm text-white"><Save size={13} />Als Entwurf speichern</button>}
-          <button type="button" onClick={() => setPrint(true)} className="inline-flex items-center gap-1 rounded-[4px] border border-[#2a364b] px-3 py-1 text-sm text-[#d7deea]"><Printer size={13} />Druckansicht</button>
-          <button type="button" onClick={onClose} className="rounded-[4px] border border-[#2a364b] px-3 py-1 text-sm text-[#8d9ab0]">Schließen</button>
+          <button type="button" onClick={() => setPrint(true)} className="inline-flex items-center gap-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1 text-sm text-[#d7deea]"><Printer size={13} />Druckansicht</button>
+          <button type="button" onClick={onClose} className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1 text-sm text-[#9aa7bc]">Schließen</button>
         </div>
       </div>
-      <aside className="rounded-[4px] border border-[#2a364b] p-2"><h3 className="mb-1 text-sm font-semibold text-[#e8eef8]">Prüfliste</h3><CheckList check={check} /></aside>
+      <aside className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-2"><h3 className="mb-1 text-sm font-semibold text-[#e8eef8]">Prüfliste</h3><CheckList check={check} /></aside>
       {print && <LetterPrint letter={l} onClose={() => setPrint(false)} />}
     </div>
   )

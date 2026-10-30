@@ -4,7 +4,7 @@ import { caseApi, type CaseNote } from "./api"
 import { errorText } from "./caseFormat"
 import { shortDate } from "./legalFormat"
 
-const input = "w-full rounded-[4px] border border-[#2a364b] bg-[#111827] px-2 py-1 text-sm text-[#e8eef8]"
+const input = "w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1 text-sm text-[#e8eef8]"
 
 /** Reiter „Notizen“: Recherche des Agenten (mit geprüften Normen) und eigene Notizen. */
 export function NotesPanel({ pid, notes, canWrite, onChange }: { pid: string; notes: CaseNote[]; canWrite: boolean; onChange: () => void }) {
@@ -26,15 +26,15 @@ export function NotesPanel({ pid, notes, canWrite, onChange }: { pid: string; no
 
   return (
     <div className="space-y-3">
-      {notes.length === 0 && <p className="text-sm text-[#8d9ab0]">Noch keine Notizen.</p>}
+      {notes.length === 0 && <p className="text-sm text-[#9aa7bc]">Noch keine Notizen.</p>}
       {notes.map((n) => (
-        <article key={n.id} className="space-y-1 rounded-[4px] border border-[#1d2636] p-2">
+        <article key={n.id} className="space-y-1 rounded-[4px] border border-[rgb(var(--hh-s-rand,29_38_54))] p-2">
           <header className="flex items-start gap-2">
             <div className="flex-1">
               <p className="text-sm font-semibold text-[#e8eef8]">{n.title}</p>
-              <p className="text-[11px] text-[#68758a]">{n.author === "agent" ? "Agent" : "Notiz"} · {n.author_name} · {shortDate(n.created_at)}</p>
+              <p className="text-[11px] text-[#9aa7bc]">{n.author === "agent" ? "Agent" : "Notiz"} · {n.author_name} · {shortDate(n.created_at)}</p>
             </div>
-            {canWrite && <button type="button" title="Löschen" onClick={() => void remove(n)} className="rounded-[4px] border border-[#2a364b] p-1 text-rose-300 hover:bg-[#172133]"><Trash2 size={12} /></button>}
+            {canWrite && <button type="button" title="Löschen" onClick={() => void remove(n)} className="rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-1 text-rose-300 hover:bg-[rgb(var(--hh-s-hebung,23_33_51))]"><Trash2 size={12} /></button>}
           </header>
           <p className="whitespace-pre-wrap text-sm leading-6 text-[#d7deea]">{n.body}</p>
           {n.citations.length > 0 && (
@@ -50,7 +50,7 @@ export function NotesPanel({ pid, notes, canWrite, onChange }: { pid: string; no
         </article>
       ))}
       {canWrite && (
-        <form onSubmit={(e) => void add(e)} className="space-y-2 rounded-[4px] border border-[#2a364b] p-3 text-xs text-[#d7deea]">
+        <form onSubmit={(e) => void add(e)} className="space-y-2 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] p-3 text-xs text-[#d7deea]">
           <input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} maxLength={200} placeholder="Titel" className={input} />
           <textarea value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} maxLength={20000} rows={3} placeholder="Text" className={input} />
           <input value={f.citations} onChange={(e) => setF({ ...f, citations: e.target.value })} placeholder="Normen, mit ; getrennt (z. B. § 536c BGB; § 536 BGB)" className={input} />
