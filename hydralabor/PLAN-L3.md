@@ -88,3 +88,15 @@
   4. Das Cookie gilt nur für `<host>:8443` – Cookies trennen nicht nach Port, aber das Cookie heißt anders als alles
      im echten HydraHive und öffnet dort nichts. `Cookie`-Kopf wird beim Weiterreichen an die Probe auf das
      Probe-eigene beschränkt (das Labor-Cookie wird entfernt).
+
+## Gemessen (hydratest, 30.10. abends, Labor 2 CPU / 4 GB)
+
+- `npm run build` im Labor: **15 s**, `dist` **90 MB**. Kern-Backend im Labor mit eigenen Daten: startet in ~10 s,
+  `/api/health` ok. Nichts nachinstalliert – venv und Node aus L1 reichen.
+- Oberfläche: im echten Server liefert **nginx** `frontend/dist` aus, nicht das Backend → die Probe braucht im Labor
+  einen kleinen Auslieferer für `dist` + `/api`-Weiterleitung (Kern-Backend allein liefert keine Oberfläche).
+  Plan: ein **winziges Python-Skript** im Modul (statisch `dist`, `/api` und WebSocket an `127.0.0.1:8002`), läuft
+  als `labor`, lauscht auf `0.0.0.0:8001`. Kein nginx im Labor nötig.
+- **Eingehende Regel** `ingress allow source=<Gateway>/32 protocol=tcp destination_port=8001`: Server → Labor:8001
+  **200**, andere Ports zu. Aus dem Labor bleiben Gateway (443/8001), Server, Router, `.2` **zu**, Internet offen.
+  Messung danach wieder entfernt.
