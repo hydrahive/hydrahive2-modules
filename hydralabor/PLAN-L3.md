@@ -62,3 +62,10 @@
 1. Durchreiche **A (eigener Port)** oder **B (Unterpfad)**? Empfehlung A.
 2. Welcher Port? Vorschlag **8443** (frei auf .2 und hydratest prüfen).
 3. Plugins als drittes Ziel beim Einreichen (aus L2 verschoben) – in L3 mitnehmen?
+
+## Entscheidungen (Till, 30.10.)
+
+1. Durchreiche **A – eigener Port** am Server (nginx mit Anmeldeprüfung), kein Kern-Eingriff für die Probe selbst.
+2. Port **8443** (gemessen frei auf .2 und hydratest am 30.10.). Nur Heimnetz/Tailscale, nicht ins Internet.
+3. **Annahme** (nicht ausdrücklich beantwortet): Plugins als drittes Ziel beim Einreichen bleiben außerhalb von L3
+   und kommen als eigene kleine Etappe danach.
