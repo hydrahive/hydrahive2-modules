@@ -233,7 +233,7 @@ export function VoicePage() {
   return (
     <CockpitShell
       title="Voice"
-      className="flex h-full min-h-0 flex-col overflow-hidden bg-[#080b11]"
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]"
       hideHeader
     >
       <CockpitTopbar active="/voice" context={t("subtitle")} />
@@ -245,7 +245,7 @@ export function VoicePage() {
         <aside className="hidden min-h-0 overflow-y-auto xl:block">
           <Panel icon={<Settings2 size={14} />} title={t("settings_title")}>
             {loading ? (
-              <p className="text-xs text-[#8d9ab0]">{t("loading")}</p>
+              <p className="text-xs text-[#9aa7bc]">{t("loading")}</p>
             ) : bridgeDown || !settings ? (
               <p className="text-xs leading-4 text-[#e0a04a]">{t("bridge_down")}</p>
             ) : (
@@ -268,7 +268,7 @@ export function VoicePage() {
                 onChange={setLlmModel}
                 t={t}
               />
-              <div className="mt-3 border-t border-[#1c2636] pt-3">
+              <div className="mt-3 border-t border-[rgb(var(--hh-s-rand,28_38_54))] pt-3">
                 <SttInfoBlock stt={stt} t={t} />
               </div>
             </Panel>
@@ -288,14 +288,14 @@ export function VoicePage() {
         </aside>
 
         {/* Mitte: Voice-Agent-Chat (E4) */}
-        <main className="flex min-h-0 flex-col overflow-hidden rounded-[6px] border border-[#1c2636] bg-[#0a0f18]">
-          <header className="flex items-center gap-2 border-b border-[#1c2636] px-4 py-3">
+        <main className="flex min-h-0 flex-col overflow-hidden rounded-[6px] border border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-grund,10_15_24))]">
+          <header className="flex items-center gap-2 border-b border-[rgb(var(--hh-s-rand,28_38_54))] px-4 py-3">
             <span className="grid h-8 w-8 place-items-center rounded-[4px] bg-[radial-gradient(circle_at_50%_20%,rgba(105,215,255,.3),rgba(8,11,17,.9))]">
               <Mic size={16} className="text-[#69d7ff]" />
             </span>
             <div>
               <div className="text-sm font-bold text-[#e8eef8]">{t("title")}</div>
-              <div className="text-xs text-[#8d9ab0]">{t("subtitle")}</div>
+              <div className="text-xs text-[#9aa7bc]">{t("subtitle")}</div>
             </div>
           </header>
           <TranscriptView turns={turns} t={t} />
@@ -337,7 +337,7 @@ function TranscriptView({
       <div className="grid flex-1 place-items-center p-6 text-center">
         <div className="max-w-sm">
           <Mic size={40} className="mx-auto text-[#2a364b]" />
-          <p className="mt-3 text-sm text-[#8d9ab0]">{t("empty_hint")}</p>
+          <p className="mt-3 text-sm text-[#9aa7bc]">{t("empty_hint")}</p>
         </div>
       </div>
     )
@@ -373,7 +373,7 @@ function Composer({
     setText("")
   }
   return (
-    <div className="border-t border-[#1c2636] p-3">
+    <div className="border-t border-[rgb(var(--hh-s-rand,28_38_54))] p-3">
       {error && <p className="mb-1.5 text-xs text-[#e0a0a0]">{error}</p>}
       <div className="flex items-end gap-2">
         <textarea
@@ -388,7 +388,7 @@ function Composer({
               submit()
             }
           }}
-          className="max-h-32 min-h-[38px] flex-1 resize-none rounded-[6px] border border-[#1c2636] bg-[#0b1119] px-3 py-2 text-sm text-[#e8eef8] outline-none placeholder:text-[#5a6880] focus:border-[#3a6ea5] disabled:opacity-50"
+          className="max-h-32 min-h-[38px] flex-1 resize-none rounded-[6px] border border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-tief,11_17_25))] px-3 py-2 text-sm text-[#e8eef8] outline-none placeholder:text-[#5a6880] focus:border-[#3a6ea5] disabled:opacity-50"
         />
         <button
           type="button"
@@ -419,7 +419,7 @@ function Bubble({ turn, t }: { turn: TranscriptTurn; t: (k: string) => string })
             ? "bg-[#173247] text-[#e8eef8]"
             : isError
               ? "border border-[#5a2a2a] bg-[#1f1113] text-[#e0a0a0]"
-              : "border border-[#1c2636] bg-[#0e1420] text-[#d6e0ee]"
+              : "border border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-tief,14_20_32))] text-[#d6e0ee]"
         }`}
       >
         <div className="mb-0.5 flex items-center gap-2 text-[10px] uppercase tracking-wide text-[#6b7a92]">
@@ -467,8 +467,8 @@ function StatusRow({
   offText: string
 }) {
   return (
-    <div className="flex items-center justify-between rounded-[4px] border border-[#1c2636] bg-[#0b1119] px-2.5 py-2">
-      <span className="text-[#8d9ab0]">{label}</span>
+    <div className="flex items-center justify-between rounded-[4px] border border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-tief,11_17_25))] px-2.5 py-2">
+      <span className="text-[#9aa7bc]">{label}</span>
       <span className="flex items-center gap-1.5 font-semibold">
         <span
           className={`h-2 w-2 rounded-full ${ok ? "bg-[#4ade80]" : "bg-[#e05a5a]"}`}
@@ -494,7 +494,7 @@ function TtsPicker({
   onChange: (patch: Partial<TtsConfig>) => void
   t: (k: string) => string
 }) {
-  if (!tts) return <p className="text-xs text-[#8d9ab0]">{t("loading")}</p>
+  if (!tts) return <p className="text-xs text-[#9aa7bc]">{t("loading")}</p>
   if (tts.bridge === "down" || !tts.config) {
     return <p className="text-xs text-[#e0a04a]">{t("bridge_down")}</p>
   }
@@ -516,7 +516,7 @@ function TtsPicker({
             className={`flex-1 rounded-[4px] border px-2 py-1.5 text-xs font-semibold transition-colors ${
               cfg.backend === b
                 ? "border-[#3a8ec5] bg-[#173247] text-[#e8eef8]"
-                : "border-[#1c2636] bg-[#0b1119] text-[#8d9ab0] hover:text-[#cfe0f0]"
+                : "border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-tief,11_17_25))] text-[#9aa7bc] hover:text-[#cfe0f0]"
             } ${saving ? "opacity-50" : ""}`}
           >
             {t(b === "local" ? "tts_local" : "tts_cloud")}
@@ -528,12 +528,12 @@ function TtsPicker({
         <>
           {/* Modell */}
           <div>
-            <label className="mb-1 block text-[11px] text-[#8d9ab0]">{t("tts_model")}</label>
+            <label className="mb-1 block text-[11px] text-[#9aa7bc]">{t("tts_model")}</label>
             <select
               value={cfg.model}
               disabled={saving}
               onChange={(e) => onChange({ model: e.target.value, voice: "" })}
-              className="w-full rounded-[4px] border border-[#1c2636] bg-[#0b1119] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5] disabled:opacity-50"
+              className="w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-tief,11_17_25))] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5] disabled:opacity-50"
             >
               <option value="">{t("tts_model_default")}</option>
               {models.map((m) => (
@@ -544,12 +544,12 @@ function TtsPicker({
           {/* Stimme (nur wenn Modell Stimmen hat) */}
           {voices.length > 0 && (
             <div>
-              <label className="mb-1 block text-[11px] text-[#8d9ab0]">{t("tts_voice")}</label>
+              <label className="mb-1 block text-[11px] text-[#9aa7bc]">{t("tts_voice")}</label>
               <select
                 value={cfg.voice}
                 disabled={saving}
                 onChange={(e) => onChange({ voice: e.target.value })}
-                className="w-full rounded-[4px] border border-[#1c2636] bg-[#0b1119] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5] disabled:opacity-50"
+                className="w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-tief,11_17_25))] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5] disabled:opacity-50"
               >
                 <option value="">{t("tts_voice_default")}</option>
                 {voices.map((v) => (
@@ -560,7 +560,7 @@ function TtsPicker({
           )}
         </>
       ) : (
-        <p className="text-[11px] leading-4 text-[#8d9ab0]">{t("tts_local_hint")}</p>
+        <p className="text-[11px] leading-4 text-[#9aa7bc]">{t("tts_local_hint")}</p>
       )}
     </div>
   )
@@ -575,15 +575,15 @@ function SttInfoBlock({
 }) {
   return (
     <div className="space-y-1">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#8d9ab0]">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#9aa7bc]">
         {t("stt_title")}
       </div>
       {stt === null ? (
-        <p className="text-xs text-[#8d9ab0]">{t("loading")}</p>
+        <p className="text-xs text-[#9aa7bc]">{t("loading")}</p>
       ) : stt.available ? (
         <>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-[#8d9ab0]">{stt.program}</span>
+            <span className="text-[#9aa7bc]">{stt.program}</span>
             <span className="font-semibold text-[#cfe0f0]">{stt.model}</span>
           </div>
           <p className="text-[11px] leading-4 text-[#6b7a92]">{t("stt_change_hint")}</p>
@@ -609,7 +609,7 @@ function LlmPicker({
   t: (k: string) => string
 }) {
   if (!llm) {
-    return <p className="text-xs text-[#8d9ab0]">{t("loading")}</p>
+    return <p className="text-xs text-[#9aa7bc]">{t("loading")}</p>
   }
   const defaultLabel =
     models.find((m) => m.id === llm.agent_default)?.label || llm.agent_default || "—"
@@ -619,7 +619,7 @@ function LlmPicker({
         value={llm.override || ""}
         disabled={saving || !llm.has_session}
         onChange={(e) => onChange(e.target.value || null)}
-        className="w-full rounded-[4px] border border-[#1c2636] bg-[#0b1119] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5] disabled:opacity-50"
+        className="w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-tief,11_17_25))] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5] disabled:opacity-50"
       >
         <option value="">{t("llm_agent_default")} ({defaultLabel})</option>
         {models.map((m) => (
@@ -629,11 +629,11 @@ function LlmPicker({
         ))}
       </select>
       {!llm.has_session ? (
-        <p className="text-[11px] leading-4 text-[#8d9ab0]">{t("llm_no_session")}</p>
+        <p className="text-[11px] leading-4 text-[#9aa7bc]">{t("llm_no_session")}</p>
       ) : llm.override ? (
         <p className="text-[11px] leading-4 text-[#69d7ff]">{t("llm_override_active")}</p>
       ) : (
-        <p className="text-[11px] leading-4 text-[#8d9ab0]">{t("llm_using_default")}</p>
+        <p className="text-[11px] leading-4 text-[#9aa7bc]">{t("llm_using_default")}</p>
       )}
     </div>
   )
@@ -656,7 +656,7 @@ function SettingsForm({
     <div className="space-y-3.5">
       {/* Lautstärke */}
       <div>
-        <div className="mb-1 flex items-center justify-between text-xs text-[#8d9ab0]">
+        <div className="mb-1 flex items-center justify-between text-xs text-[#9aa7bc]">
           <span className="flex items-center gap-1.5">
             <Volume2 size={12} /> {t("volume")}
           </span>
@@ -691,14 +691,14 @@ function SettingsForm({
 
       {/* Wake-Word-Empfindlichkeit */}
       <div>
-        <label className="mb-1 block text-xs text-[#8d9ab0]">{t("sensitivity")}</label>
+        <label className="mb-1 block text-xs text-[#9aa7bc]">{t("sensitivity")}</label>
         <select
           value={s.wake_word_sensitivity || ""}
           disabled={saving}
           onChange={(e) =>
             onPatch({ wake_word_sensitivity: e.target.value as WakeSensitivity })
           }
-          className="w-full rounded-[4px] border border-[#1c2636] bg-[#0b1119] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5]"
+          className="w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-tief,11_17_25))] px-2 py-1.5 text-xs text-[#e8eef8] outline-none focus:border-[#3a6ea5]"
         >
           {WAKE_SENSITIVITIES.map((opt) => (
             <option key={opt} value={opt}>
@@ -717,7 +717,7 @@ function SettingsForm({
       />
       {s.led_on && (
         <div>
-          <div className="mb-1 flex items-center justify-between text-xs text-[#8d9ab0]">
+          <div className="mb-1 flex items-center justify-between text-xs text-[#9aa7bc]">
             <span>{t("led_brightness")}</span>
             <span className="tabular-nums text-[#cfe0f0]">
               {Math.round(s.led_brightness * 100)}%
@@ -761,7 +761,7 @@ function Toggle({
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={`relative h-5 w-9 rounded-full transition-colors ${
-          checked ? "bg-[#3a8ec5]" : "bg-[#26303f]"
+          checked ? "bg-[#3a8ec5]" : "bg-[rgb(var(--hh-s-hebung,38_48_63))]"
         } ${disabled ? "opacity-50" : ""}`}
       >
         <span
@@ -784,7 +784,7 @@ function Panel({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-[6px] border border-[#1c2636] bg-[#0a0f18] p-3">
+    <section className="rounded-[6px] border border-[rgb(var(--hh-s-rand,28_38_54))] bg-[rgb(var(--hh-s-grund,10_15_24))] p-3">
       <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#69d7ff]">
         {icon}
         {title}
