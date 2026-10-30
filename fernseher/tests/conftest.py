@@ -10,8 +10,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import pytest  # noqa: E402
-from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+import pytest
+from _hh_isolation import (
     isolated_root,
     only_own_files,
     only_own_rows,
@@ -22,7 +22,7 @@ from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest r
     pytest_unconfigure,
     remove_test_tree,
 )
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 if str(MODULE_DIR) not in sys.path:
