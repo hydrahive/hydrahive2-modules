@@ -243,7 +243,7 @@ export function DirectorPanel({ projectId, characters, presets }: Props) {
           <button
             onClick={sendToDirector}
             disabled={decomposing}
-            className="text-xs px-3 py-1.5 rounded bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-40"
+            className="text-xs px-3 py-1.5 rounded bg-[#163248] text-white hover:bg-[#1b3d56] disabled:opacity-40"
             title={t("decompose_hint")}
           >
             {decomposing ? t("decompose_running") : `🎬 ${t("decompose_send")}`}

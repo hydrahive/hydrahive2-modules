@@ -50,14 +50,14 @@ export function ShotStoryboard({ projectId, sceneId, characters, reloadKey }: Pr
 
   return (
     <div className="flex flex-col gap-1.5 mt-1">
-      <span className="text-[10px] font-semibold text-violet-300 px-1">
+      <span className="text-[10px] font-semibold text-[#69d7ff] px-1">
         🎞️ {t("shots_word")} ({shots.length})
       </span>
       {shots.map((sh, i) => (
-        <div key={sh.id} className="rounded border border-violet-500/20 bg-violet-500/5 p-2 flex flex-col gap-1">
+        <div key={sh.id} className="rounded border border-[#69d7ff]/20 bg-[#69d7ff]/5 p-2 flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-violet-300 font-mono">#{i + 1}</span>
-            {sh.shot && <span className="text-[9px] px-1 rounded bg-violet-500/20 text-violet-200">{sh.shot}</span>}
+            <span className="text-[10px] text-[#69d7ff] font-mono">#{i + 1}</span>
+            {sh.shot && <span className="text-[9px] px-1 rounded bg-[#69d7ff]/20 text-[#69d7ff]">{sh.shot}</span>}
             <span className="text-[9px] text-slate-500">{sh.duration}s</span>
             {sh.status && sh.status !== "planned" && (
               <span className={`text-[9px] px-1 rounded ${statusClass(sh.status)}`}>

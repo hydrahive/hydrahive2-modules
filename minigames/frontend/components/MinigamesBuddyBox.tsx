@@ -24,7 +24,7 @@ export function MinigamesBuddyBox(_: Props) {
       color="52 211 153"
       defaultCollapsed={false}
       className="w-60"
-      headerRight={<span className="text-[10px] text-zinc-600">{GAMES.length}</span>}
+      headerRight={<span className="text-[10px] text-[#9aa7bc]">{GAMES.length}</span>}
     >
       <div className="p-2 space-y-1">
         {GAMES.map((g) => {
@@ -33,11 +33,11 @@ export function MinigamesBuddyBox(_: Props) {
             <button
               key={g.meta.id}
               onClick={() => setActive(g)}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/[6%] hover:border-emerald-400/20 hover:bg-emerald-400/[4%] text-zinc-300 hover:text-emerald-200 transition-all"
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] hover:border-emerald-400/20 hover:bg-emerald-400/[4%] text-[#c8d2df] hover:text-emerald-200 transition-all"
             >
               <span style={{ color: `rgb(${g.meta.accent})` }}><Icon size={15} /></span>
               <span className="text-xs">{t(g.meta.titleKey)}</span>
-              <span className="ml-auto text-[10px] text-zinc-600 group-hover:text-emerald-300">▶</span>
+              <span className="ml-auto text-[10px] text-[#9aa7bc] group-hover:text-emerald-300">▶</span>
             </button>
           )
         })}

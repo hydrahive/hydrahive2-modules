@@ -24,7 +24,7 @@ export function VitrineHeader({ st, light, previewUrl, dirty, invalid, saving, s
           {st?.video && <span className="truncate text-[#9aa7bc]">{st.video}</span>}
           {lit && (
             <span className="flex items-center gap-1 text-[#9aa7bc]" title={t("light_title")}>
-              <span className="h-2.5 w-2.5 rounded-full border border-white/20" style={{ background: light.effect === "off" || !light.color ? "#000" : toPicker(light.color) }} />
+              <span className="h-2.5 w-2.5 rounded-full border border-[rgb(var(--hh-s-rand-hover,70_97_127))]" style={{ background: light.effect === "off" || !light.color ? "#000" : toPicker(light.color) }} />
               {t(`light_state_${light.state}`, { defaultValue: light.state ?? "" })}
             </span>
           )}

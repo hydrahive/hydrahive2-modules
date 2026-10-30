@@ -41,7 +41,7 @@ export function MusicPlayerPanel({ title, trackCount, children }: Props) {
         aria-expanded={!collapsed}
         className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-[rgb(var(--hh-s-hebung,23_33_51))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[#69d7ff]"
       >
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] text-fuchsia-300">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] text-[#69d7ff]">
           <Music size={15} />
         </span>
         <span className="min-w-0 flex-1">

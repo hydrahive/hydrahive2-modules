@@ -11,7 +11,7 @@ export function OperationsSummary({ summary }: Props) {
     { label: t("dashboard.open"), value: summary.open + summary.triaged + summary.in_progress + summary.waiting, icon: Inbox, tone: "text-sky-300" },
     { label: t("dashboard.overdue"), value: summary.overdue, icon: AlertTriangle, tone: "text-orange-300" },
     { label: t("dashboard.dueSoon"), value: summary.due_soon, icon: Clock3, tone: "text-amber-300" },
-    { label: t("dashboard.mine"), value: summary.mine, icon: UserRound, tone: "text-violet-300" },
+    { label: t("dashboard.mine"), value: summary.mine, icon: UserRound, tone: "text-[#69d7ff]" },
     { label: t("dashboard.unassigned"), value: summary.unassigned, icon: CheckCircle2, tone: "text-emerald-300" },
   ]
   return <div className="grid grid-cols-2 gap-2 border-b border-[rgb(var(--hh-s-rand,31_42_59))] bg-[#0b131f] p-3 sm:grid-cols-5">

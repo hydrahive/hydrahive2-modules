@@ -24,17 +24,17 @@ export function BoardGamesBuddyBox(_: Props) {
       color="234 179 8"
       defaultCollapsed={false}
       className="w-60"
-      headerRight={<span className="text-[10px] text-zinc-600">{BOARD_GAMES.length}</span>}
+      headerRight={<span className="text-[10px] text-[#9aa7bc]">{BOARD_GAMES.length}</span>}
     >
       <div className="p-2 space-y-1">
         {BOARD_GAMES.map((g) => {
           const Icon = moduleIcon(g.meta.icon)
           return (
             <button key={g.meta.id} onClick={() => setActive(g)}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/[6%] hover:border-amber-400/20 hover:bg-amber-400/[4%] text-zinc-300 hover:text-amber-200 transition-all">
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] hover:border-amber-400/20 hover:bg-amber-400/[4%] text-[#c8d2df] hover:text-amber-200 transition-all">
               <span style={{ color: `rgb(${g.meta.accent})` }}><Icon size={15} /></span>
               <span className="text-xs">{t(g.meta.titleKey)}</span>
-              <span className="ml-auto text-[10px] text-zinc-600">▶</span>
+              <span className="ml-auto text-[10px] text-[#9aa7bc]">▶</span>
             </button>
           )
         })}

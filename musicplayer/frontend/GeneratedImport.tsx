@@ -87,7 +87,7 @@ export function GeneratedImport({ projectId, kind, onImported }: {
                           disabled={busy === item.path}
                           title={t("mp_import")}
                           aria-label={t("mp_import")}
-                          className="shrink-0 text-[#9aa7bc] hover:text-fuchsia-200 disabled:opacity-40"
+                          className="shrink-0 text-[#9aa7bc] hover:text-[#69d7ff] disabled:opacity-40"
                         >
                           <Download size={13} />
                         </button>

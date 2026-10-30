@@ -68,7 +68,7 @@ export function GroupDetail({ group, onBack, onQueued, status }: Props) {
           </p>
           {group.genres.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5">
             {group.genres.map((genre) => <span key={genre}
-              className="rounded-full bg-white/[6%] px-2 py-0.5 text-[10px] font-semibold text-[#a9b6c9]">{genre}</span>)}
+              className="rounded-full bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-0.5 text-[10px] font-semibold text-[#a9b6c9]">{genre}</span>)}
           </div>}
           {group.plot && <p className="mt-3 text-xs leading-relaxed text-[#a9b6c9]">{group.plot}</p>}
         </div>

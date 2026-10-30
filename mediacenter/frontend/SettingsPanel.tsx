@@ -94,13 +94,13 @@ function ServiceRow({ name, level, note, credential, origin, required = false }:
   return <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[6px] border border-[rgb(var(--hh-s-rand,40_53_74))] bg-[rgb(var(--hh-s-innen,16_23_36))] px-3 py-2.5">
     <Icon size={15} className={`shrink-0 ${color}`} />
     <span className="text-xs font-bold text-[#e8eef8]">{name}</span>
-    {!required && <span className="rounded-full bg-white/[6%] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#9aa7bc]">
+    {!required && <span className="rounded-full bg-[rgb(var(--hh-s-innen,17_24_39))] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#9aa7bc]">
       optional
     </span>}
     <span className="text-[11px] text-[#9aa7bc]">{note}</span>
     <span className="ml-auto flex items-center gap-3">
       {origin && <code className="text-[10px] text-[#5f6d82]">{origin}</code>}
-      <code className="rounded bg-white/[5%] px-1.5 py-0.5 text-[10px] text-[#78869d]">{credential}</code>
+      <code className="rounded bg-[rgb(var(--hh-s-innen,17_24_39))] px-1.5 py-0.5 text-[10px] text-[#78869d]">{credential}</code>
     </span>
   </div>
 }

@@ -32,7 +32,7 @@ function ControlButton({ label, active, onClick, children }: {
       aria-label={label}
       aria-pressed={active}
       onClick={onClick}
-      className={`${CONTROL_CLASS} ${active ? "border-fuchsia-400/35 bg-fuchsia-500/10 text-fuchsia-200" : ""}`}
+      className={`${CONTROL_CLASS} ${active ? "border-[#69d7ff]/35 bg-[#69d7ff]/10 text-[#69d7ff]" : ""}`}
     >
       {children}
     </button>
@@ -71,7 +71,7 @@ export function AudioPlayerView({ projectId, tracks, permissions, onRemove, play
             step={0.1}
             value={elapsed}
             onChange={(e) => seek(Number(e.target.value))}
-            className="flex-1 accent-fuchsia-500"
+            className="flex-1 accent-[#69d7ff]"
           />
           <span>{fmt(duration)}</span>
         </div>
@@ -87,7 +87,7 @@ export function AudioPlayerView({ projectId, tracks, permissions, onRemove, play
             title={playLabel}
             aria-label={playLabel}
             onClick={toggle}
-            className="grid h-9 w-9 place-items-center rounded-[4px] bg-fuchsia-500 text-white hover:bg-fuchsia-400"
+            className="grid h-9 w-9 place-items-center rounded-[4px] bg-[#163248] text-white hover:bg-[#1b3d56]"
           >
             {playing ? <Pause size={16} /> : <Play size={16} />}
           </button>
@@ -112,7 +112,7 @@ export function AudioPlayerView({ projectId, tracks, permissions, onRemove, play
             step={0.01}
             value={volume}
             onChange={(e) => setVolume(Number(e.target.value))}
-            className="flex-1 accent-fuchsia-500"
+            className="flex-1 accent-[#69d7ff]"
           />
         </div>
       </div>

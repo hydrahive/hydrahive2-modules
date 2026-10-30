@@ -119,7 +119,7 @@ export function AISecurityPage() {
       <main className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className="mx-auto max-w-5xl space-y-6">
       <header className="flex items-start gap-4">
-        <div className="rounded-xl bg-indigo-500/10 p-3 text-indigo-500"><ShieldCheck size={28} /></div>
+        <div className="rounded-xl bg-[#69d7ff]/10 p-3 text-[#69d7ff]"><ShieldCheck size={28} /></div>
         <div>
           <h1 className="text-2xl font-semibold">{labels.title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{labels.intro}</p>

@@ -14,22 +14,22 @@ export function BoardGamesView() {
   return (
     <div className="p-5 max-w-4xl mx-auto">
       <div className="flex items-center gap-2 mb-1">
-        <h2 className="text-base font-semibold text-zinc-200">{t("bg_title")}</h2>
+        <h2 className="text-base font-semibold text-[#e8eef8]">{t("bg_title")}</h2>
         <HelpButton topic="boardgames" />
       </div>
-      <p className="text-xs text-zinc-500 mb-5">{t("bg_subtitle")}</p>
+      <p className="text-xs text-[#9aa7bc] mb-5">{t("bg_subtitle")}</p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {BOARD_GAMES.map((g) => {
           const Icon = moduleIcon(g.meta.icon)
           return (
             <button key={g.meta.id} onClick={() => setActive(g)}
-              className="group flex flex-col items-center gap-2 rounded-xl border border-white/[8%] bg-white/[3%] p-5 hover:bg-white/[6%] hover:border-white/20 transition-all">
+              className="group flex flex-col items-center gap-2 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] p-5 hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] hover:border-[rgb(var(--hh-s-rand-hover,70_97_127))] transition-all">
               <span className="flex h-14 w-14 items-center justify-center rounded-lg transition-transform group-hover:scale-110"
                 style={{ background: `rgb(${g.meta.accent} / 0.12)`, color: `rgb(${g.meta.accent})` }}>
                 <Icon size={28} />
               </span>
-              <span className="text-sm font-medium text-zinc-200">{t(g.meta.titleKey)}</span>
+              <span className="text-sm font-medium text-[#e8eef8]">{t(g.meta.titleKey)}</span>
             </button>
           )
         })}

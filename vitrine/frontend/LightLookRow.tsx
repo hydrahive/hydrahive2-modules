@@ -15,7 +15,7 @@ export function LightLookRow({ title, value, onChange, onPreview, withSpeed = fa
   const moving = value.effect === "breathing" || value.effect === "flashing"
   return (
     <div className={`flex flex-wrap items-center gap-2 rounded-[4px] border px-2 py-1.5 ${bad ? "border-rose-400/60" : "border-[rgb(var(--hh-s-rand,28_38_56))]"}`}>
-      <span className="h-4 w-4 shrink-0 rounded-full border border-white/20" style={{ background: value.effect === "off" ? "#000" : toPicker(value.color) }} />
+      <span className="h-4 w-4 shrink-0 rounded-full border border-[rgb(var(--hh-s-rand-hover,70_97_127))]" style={{ background: value.effect === "off" ? "#000" : toPicker(value.color) }} />
       <span className="w-32 shrink-0 text-xs font-semibold text-[#c8d2df]">{title}</span>
       <select aria-label={t("light_effect")} className={field} value={value.effect} onChange={(e) => onChange({ ...value, effect: e.target.value as LightEffect })}>
         {LIGHT_EFFECTS.map((x) => <option key={x} value={x}>{t(`light_effect_${x}`)}</option>)}

@@ -53,7 +53,7 @@ export function SearchPanel({ loading, disabled, onSearch, interpreted }: Props)
     <div className="mb-4 flex gap-1 overflow-x-auto" role="tablist" aria-label={t("search.mediaTypes")}>
       {MEDIA_TYPES.map((item) => <button key={item.id} type="button" role="tab"
         aria-selected={mediaType === item.id} disabled={locked} onClick={() => setMediaType(item.id)}
-        className={`shrink-0 rounded-[4px] px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${mediaType === item.id ? "bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-400/40" : "text-[#9aa7bc] hover:bg-white/[5%] hover:text-[#d4deeb]"}`}>
+        className={`shrink-0 rounded-[4px] px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${mediaType === item.id ? "bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-400/40" : "text-[#9aa7bc] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] hover:text-[#d4deeb]"}`}>
         {t(`media.${item.id}`)}
       </button>)}
     </div>

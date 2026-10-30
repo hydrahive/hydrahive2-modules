@@ -18,15 +18,15 @@ const priorities: TicketPriority[] = ["low", "normal", "high", "urgent"]
 const statusTone: Record<TicketStatus, string> = {
   open: "border-sky-400/35 bg-sky-400/10 text-sky-200",
   triaged: "border-cyan-400/35 bg-cyan-400/10 text-cyan-200",
-  in_progress: "border-violet-400/35 bg-violet-400/10 text-violet-200",
+  in_progress: "border-[#69d7ff]/35 bg-[#69d7ff]/10 text-[#69d7ff]",
   waiting: "border-amber-400/35 bg-amber-400/10 text-amber-200",
   resolved: "border-emerald-400/35 bg-emerald-400/10 text-emerald-200",
-  closed: "border-zinc-500/35 bg-zinc-500/10 text-zinc-300",
+  closed: "border-[rgb(var(--hh-s-rand-hover,70_97_127)/0.35)] bg-[rgb(var(--hh-s-rand-hover,70_97_127)/0.1)] text-[#c8d2df]",
   cancelled: "border-orange-400/35 bg-orange-400/10 text-orange-200",
 }
 
 const priorityTone: Record<TicketPriority, string> = {
-  low: "bg-zinc-500",
+  low: "bg-[rgb(var(--hh-s-rand-hover,70_97_127))]",
   normal: "bg-sky-400",
   high: "bg-amber-400",
   urgent: "bg-orange-400",
@@ -202,7 +202,7 @@ export function TicketDetail({ ticket, teams, onUpdated }: Props) {
             <section className="rounded-[8px] border border-[rgb(var(--hh-s-rand,31_42_59))] bg-[rgb(var(--hh-s-tief,13_20_32))]">
               <div className="flex items-center justify-between border-b border-[rgb(var(--hh-s-rand,31_42_59))] px-4 py-3.5"><div className="flex items-center gap-2 text-sm font-semibold text-[#e8eef8]"><MessageSquare size={16} className="text-[#69d7ff]" />{t("conversation")}</div><span className="text-[11px] text-[#9aa7bc]">{comments.length} {t("commentsCount")}</span></div>
               <div className="space-y-4 p-4">
-                {comments.length === 0 ? <p className="py-5 text-center text-xs text-[#9aa7bc]">{t("noComments")}</p> : comments.map((item) => <article key={item.id} className="flex gap-3"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#2b4058] bg-[#17283c] text-[10px] font-semibold text-[#a9dff1]">{initials(item.author_id)}</div><div className="min-w-0 flex-1"><div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1"><span className="text-xs font-semibold text-[#c8d2df]">{item.author_id}</span><span className="text-[10px] text-[#9aa7bc]">{formatDate(item.created_at, i18n.language)}</span>{item.author_kind === "agent" && <span className="rounded-[4px] border border-violet-400/25 bg-violet-400/10 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.08em] text-violet-200">{t("agent")}</span>}</div><div className="rounded-[7px] border border-[rgb(var(--hh-s-rand,31_42_59))] bg-[rgb(var(--hh-s-innen,17_27_41))] px-3 py-2.5 text-sm leading-6 text-[#b4c0cf]"><p className="whitespace-pre-wrap">{item.body}</p></div></div></article>)}
+                {comments.length === 0 ? <p className="py-5 text-center text-xs text-[#9aa7bc]">{t("noComments")}</p> : comments.map((item) => <article key={item.id} className="flex gap-3"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#2b4058] bg-[#17283c] text-[10px] font-semibold text-[#a9dff1]">{initials(item.author_id)}</div><div className="min-w-0 flex-1"><div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1"><span className="text-xs font-semibold text-[#c8d2df]">{item.author_id}</span><span className="text-[10px] text-[#9aa7bc]">{formatDate(item.created_at, i18n.language)}</span>{item.author_kind === "agent" && <span className="rounded-[4px] border border-[#69d7ff]/25 bg-[#69d7ff]/10 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.08em] text-[#69d7ff]">{t("agent")}</span>}</div><div className="rounded-[7px] border border-[rgb(var(--hh-s-rand,31_42_59))] bg-[rgb(var(--hh-s-innen,17_27_41))] px-3 py-2.5 text-sm leading-6 text-[#b4c0cf]"><p className="whitespace-pre-wrap">{item.body}</p></div></div></article>)}
                 <div className="border-t border-[rgb(var(--hh-s-rand,31_42_59))] pt-4"><div className="flex items-end gap-2"><Textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder={t("commentPlaceholder")} rows={3} className="min-h-[82px] border-[rgb(var(--hh-s-rand,37_50_71))] bg-[#0b131f] text-sm" /><button disabled={busy || !comment.trim()} onClick={() => void addComment()} className="grid h-10 w-10 shrink-0 place-items-center rounded-[6px] border border-[#3b83a8] bg-[#163248] text-[#c8f2ff] transition-colors hover:border-[#69d7ff] hover:bg-[#1b3d56] disabled:cursor-not-allowed disabled:opacity-40" title={t("comment")}><Send size={15} /></button></div></div>
               </div>
             </section>
