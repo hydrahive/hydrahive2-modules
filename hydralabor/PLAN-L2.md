@@ -115,3 +115,12 @@
 2. Echte Probe: Darf ich ein Test-Repo `hydrahive/labor-test` (öffentlich, danach löschen) anlegen und mit unserem
    Konto „von außen“ dorthin einreichen? Ein Fork des eigenen Repos geht bei GitHub nicht – für den Fork-Weg
    bräuchte ich ein **zweites Konto**. Ohne zweites Konto prüfe ich den Fork-Teil nur mit der Attrappe.
+
+## Entscheidungen (Till, 30.10.)
+
+- Bauplan freigegeben („so ist gut“). Till legt die OAuth-App an und gibt die Client-ID.
+- Label `labor` in Kern- und Modul-Repo: lege ich an.
+- **Annahmen** (Fragen nicht ausdrücklich beantwortet, Standard aus dem Plan):
+  1. Plugins als drittes Ziel erst in L3.
+  2. Echte Probe ohne zweites GitHub-Konto: Fork-Teil mit Attrappe, PR/Issue echt gegen ein Test-Repo
+     `hydrahive/labor-test`, das danach gelöscht wird.
