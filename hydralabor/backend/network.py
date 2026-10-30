@@ -28,7 +28,7 @@ class LaborNetworkError(RuntimeError):
 class NetworkState:
     name: str
     acl: str
-    subnet: str
+    subnet: str           # leer = gab es schon (nicht von diesem Aufruf angelegt)
 
 
 def _ip_json(*args: str) -> list:
@@ -67,6 +67,31 @@ async def _names(*kind: str) -> set[str]:
     return incus.first_column(out) if rc == 0 else set()
 
 
+def _dest() -> str:
+    return ",".join(_PRIVATE + tuple(sorted(_host_addresses())))
+
+
+async def sync_rules() -> bool:
+    """Sperrliste an die aktuellen Adressen des Servers anpassen. Erst die neue Regel, dann die alte weg – nie ein
+    Moment ohne Sperre. Die neue Regel steht dabei HINTER allow; incus wertet reject trotzdem vor allow
+    (gemessen hydratest 30.10.: allow zuerst, reject danach → Server/Router zu, Internet offen).
+    Gibt True zurück, wenn etwas geändert wurde."""
+    import yaml
+    rc, out, _ = await incus.run("network", "acl", "show", ACL)
+    if rc != 0:
+        raise LaborNetworkError("labor_network_missing")
+    rules = (yaml.safe_load(out) or {}).get("egress") or []
+    old = [r.get("destination", "") for r in rules if r.get("action") == "reject"]
+    want = _dest()
+    if old == [want]:
+        return False
+    await _call("network", "acl", "rule", "add", ACL, "egress", "action=reject", f"destination={want}",
+                "state=enabled")
+    for d in old:                                     # old != [want] → keine alte Regel ist gleich der neuen
+        await _call("network", "acl", "rule", "remove", ACL, "egress", "action=reject", f"destination={d}")
+    return True
+
+
 async def ensure_network() -> NetworkState:
     """Legt ACL und Netz an, wenn sie fehlen. Bestehende werden nicht doppelt angelegt."""
     have_acl = ACL in await _names("network", "acl")
@@ -76,8 +101,7 @@ async def ensure_network() -> NetworkState:
     subnet = choose_subnet()
     if not have_acl:
         await _call("network", "acl", "create", ACL)
-        dest = ",".join(_PRIVATE + tuple(sorted(_host_addresses())))
-        await _call("network", "acl", "rule", "add", ACL, "egress", "action=reject", f"destination={dest}",
+        await _call("network", "acl", "rule", "add", ACL, "egress", "action=reject", f"destination={_dest()}",
                     "state=enabled")
         await _call("network", "acl", "rule", "add", ACL, "egress", "action=allow", "state=enabled")
     if not have_net:

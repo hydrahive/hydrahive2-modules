@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS module_hydralabor_state (
     error_code    TEXT    NOT NULL DEFAULT '',
     error_step    TEXT    NOT NULL DEFAULT '',
     model         TEXT    NOT NULL DEFAULT '',
+    admin         TEXT    NOT NULL DEFAULT '',
     cpu           INTEGER NOT NULL DEFAULT 2,
     ram_mb        INTEGER NOT NULL DEFAULT 4096,
     disk_gb       INTEGER NOT NULL DEFAULT 20,

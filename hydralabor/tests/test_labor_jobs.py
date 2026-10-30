@@ -25,7 +25,7 @@ def lab(fake_incus, db_ready, monkeypatch):
     monkeypatch.setattr(container, "_ubuntu_version", lambda: "24.04")
     monkeypatch.setattr(execution, "_container_exists", lambda name: name in fake_incus.containers)
     state.clear()
-    state.save_choice(model=MODEL, cpu=2, ram_mb=4096, disk_gb=20)
+    state.save_choice(model=MODEL, cpu=2, ram_mb=4096, disk_gb=20, admin="boss")
     yield fake_incus
     made = state.get()["made"]
     lab_project.remove(made)
@@ -40,6 +40,8 @@ def test_anlegen_komplett(lab):
     assert set(s["made"]) >= {"network", "container", "setup", "snapshot", "project", "project_id", "agent_id"}
     assert seen[:2] == ["network", "container"] and seen[-2:] == ["snapshot", "project"]
     assert "user" in seen and "frontend" in seen
+    from hydrahive.projects import config as project_config
+    assert project_config.get(s["made"]["project_id"])["created_by"] == "boss"
 
 
 def test_anlegen_zweimal_nichts_doppelt(lab):
@@ -48,6 +50,24 @@ def test_anlegen_zweimal_nichts_doppelt(lab):
     run(jobs.create(report=lambda _k: None))
     assert state.get()["made"]["project_id"] == pid
     assert sum(1 for c in lab.calls if c[0] == "launch") == 1
+
+
+def test_anlegen_nach_abbruch_beim_projekt_richtet_nicht_neu_ein(lab, monkeypatch):
+    """Container + Einrichtung fertig, Projekt scheiterte → zweiter Lauf macht nur das Projekt (keine 2. Einrichtung)."""
+    from backend import container as ct
+    state.mark_made("network")
+    state.mark_made("container")
+    state.mark_made("setup")
+    run(network.ensure_network())
+    lab.containers["hh-labor"] = {"args": [], "running": True}
+    n = len(lab.calls)
+    run(jobs.create(report=lambda _k: None))
+    later = lab.calls[n:]
+    assert not any(c[0] == "launch" for c in later)
+    probes = [c for c in later if c[0] == "exec" and "hh-labor-netprobe" in c[-1]]
+    assert len(probes) == 0                                         # keine neue Anlege-Probe, kein neues Anlegen
+    assert not any(c[0] == "exec" and "useradd" in c[-1] for c in later)
+    assert ct.NAME in lab.containers and state.get()["step"] == "ready"
 
 
 def test_anlegen_scheitert_nur_eigenes_weg(lab):
@@ -109,9 +129,22 @@ def test_netz_pruefen_gleicht_serveradressen_ab(lab, monkeypatch):
     run(jobs.create(report=lambda _k: None))
     monkeypatch.setattr(network, "_host_addresses", lambda: {"192.168.178.2/32", "203.0.113.50/32"})
     run(jobs.probe(report=lambda _k: None))
-    dest = lab.acls["hhlabor-acl"]["egress"][0]["destination"]
-    assert "203.0.113.50/32" in dest
-    assert len(lab.acls["hhlabor-acl"]["egress"]) == 2
+    rules = lab.acls["hhlabor-acl"]["egress"]
+    reject = [r for r in rules if r["action"] == "reject"]
+    assert len(reject) == 1 and len(rules) == 2                   # alte Regel weg, keine doppelte
+    assert "203.0.113.50/32" in reject[0]["destination"] and "10.0.0.0/8" in reject[0]["destination"]
+    n = len(lab.calls)
+    run(jobs.probe(report=lambda _k: None))                          # nichts geändert → keine Regel angefasst
+    assert not any(c[:4] == ["network", "acl", "rule", "add"] for c in lab.calls[n:])
+
+
+def test_regel_abgleich_neue_zuerst_dann_alte_weg(lab, monkeypatch):
+    run(jobs.create(report=lambda _k: None))
+    monkeypatch.setattr(network, "_host_addresses", lambda: {"203.0.113.50/32"})
+    n = len(lab.calls)
+    assert run(network.sync_rules()) is True
+    acts = [c[3] for c in lab.calls[n:] if c[:3] == ["network", "acl", "rule"]]
+    assert acts == ["add", "remove"]
 
 
 SUMMARY = "5241 passed, 11 skipped, 1542 warnings in 274.19s (0:04:34)"
@@ -134,6 +167,22 @@ def test_testlauf_rot(lab):
     t = state.get()["last_test"]
     assert t["ok"] is False and t["failed"] == 2 and t["passed"] == 5239
     assert t["failures"] == ["core/tests/test_x.py::test_a"]
+
+
+def test_testlauf_rueckgabe_nicht_null_trotz_gruener_zeile(lab):
+    run(jobs.create(report=lambda _k: None))
+    lab.exec_answers["pytest -q"] = (137, SUMMARY + "\n")             # z. B. nach der Zeile abgeschossen
+    run(jobs.test(report=lambda _k: None))
+    assert state.get()["last_test"]["ok"] is False
+
+
+def test_testlauf_letzte_zusammenfassung_zaehlt():
+    out = "3 passed in 1.0s\n...\n1 failed, 2 passed in 2.0s\n"
+    assert jobs.parse_test(1, out)["summary"] == "1 failed, 2 passed in 2.0s"
+
+
+def test_testlauf_ok_braucht_zusammenfassung():
+    assert jobs.parse_test(0, "nichts\n")["ok"] is False
 
 
 @pytest.mark.parametrize("out", ["", "irgendwas\n", "x" * 100000])

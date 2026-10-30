@@ -101,5 +101,13 @@ async def launch_and_probe(limits: Limits) -> dict:
         raise
 
 
+async def stop() -> None:
+    await incus.run("stop", NAME, "--force", timeout=120)
+
+
+async def start() -> None:
+    await incus.run("start", NAME, timeout=120)
+
+
 async def remove() -> None:
     await incus.run("delete", NAME, "--force", timeout=120)

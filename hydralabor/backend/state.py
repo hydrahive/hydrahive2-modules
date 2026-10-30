@@ -14,7 +14,7 @@ from hydrahive.db.connection import db
 STEPS = ("start", "ready")
 PARTS = ("network", "container", "setup", "snapshot", "project")
 _T = "module_hydralabor_state"
-_COLS = ("step", "running", "progress", "error_code", "error_step", "model", "cpu", "ram_mb", "disk_gb", "made",
+_COLS = ("step", "running", "progress", "error_code", "error_step", "model", "admin", "cpu", "ram_mb", "disk_gb", "made",
          "last_net_ok", "last_test", "updated_at")
 
 
@@ -89,8 +89,8 @@ def finish(*, error_code: str = "", error_step: str = "") -> None:
     _set(running="", progress="", error_code=error_code, error_step=error_step)
 
 
-def save_choice(*, model: str, cpu: int, ram_mb: int, disk_gb: int) -> None:
-    _set(model=model, cpu=cpu, ram_mb=ram_mb, disk_gb=disk_gb)
+def save_choice(*, model: str, cpu: int, ram_mb: int, disk_gb: int, admin: str = "") -> None:
+    _set(model=model, cpu=cpu, ram_mb=ram_mb, disk_gb=disk_gb, admin=admin)
 
 
 def set_step(step: str) -> None:

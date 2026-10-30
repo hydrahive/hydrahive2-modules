@@ -55,6 +55,17 @@ class FakeIncus:
             direction = a[5]
             self.acls[a[4]][direction].append(dict(kv.split("=", 1) for kv in a[6:]))
             return 0, "", ""
+        if a[:4] == ["network", "acl", "rule", "remove"]:
+            want = dict(kv.split("=", 1) for kv in a[6:])
+            rules = self.acls[a[4]][a[5]]
+            hit = [r for r in rules if all(r.get(k) == v for k, v in want.items())]
+            if len(hit) != 1:
+                return 1, "", "No matching rule(s) found"
+            rules.remove(hit[0])
+            return 0, "", ""
+        if a[:3] == ["network", "acl", "show"]:
+            import yaml
+            return 0, yaml.safe_dump({"name": a[3], **self.acls[a[3]]}), ""
         if a[:3] == ["network", "acl", "delete"]:
             self.acls.pop(a[3], None)
             return 0, "", ""

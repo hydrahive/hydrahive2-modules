@@ -53,9 +53,9 @@ def test_neuer_lauf_loescht_alten_fehler(st):
 
 
 def test_einstellungen(st):
-    state.save_choice(model="m1", cpu=3, ram_mb=8192, disk_gb=40)
+    state.save_choice(model="m1", cpu=3, ram_mb=8192, disk_gb=40, admin="boss")
     s = state.get()
-    assert (s["model"], s["cpu"], s["ram_mb"], s["disk_gb"]) == ("m1", 3, 8192, 40)
+    assert (s["model"], s["cpu"], s["ram_mb"], s["disk_gb"], s["admin"]) == ("m1", 3, 8192, 40, "boss")
 
 
 def test_schritt_fertig_und_netzprobe(st):
@@ -78,3 +78,10 @@ def test_clear_nur_eigene_zeile(st):
     state.save_choice(model="m1", cpu=2, ram_mb=4096, disk_gb=20)
     state.clear()
     assert state.get()["model"] == ""
+
+
+def test_unmark_projekt_vergisst_ids(st):
+    state.mark_made("project", project_id="p1", agent_id="a1")
+    state.mark_made("network")
+    state.unmark("project")
+    assert state.get()["made"] == {"network": True}
