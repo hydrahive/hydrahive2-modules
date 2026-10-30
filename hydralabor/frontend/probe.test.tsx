@@ -9,6 +9,8 @@ import { errorKey } from "./logic"
 import { hydralaborI18n } from "./i18n"
 
 const noop = () => {}
+/** Knöpfe ohne disabled-Attribut (die Klasse „disabled:opacity-40“ zählt nicht). */
+const freeButtons = (html: string) => [...html.matchAll(/<button[^>]*>/g)].map((m) => m[0]).filter((b) => !/\sdisabled=""/.test(b))
 const P = (o: Partial<ProbeState> = {}): ProbeState =>
   ({ built: false, running: false, user: "admin", password: "", port: 8443, open: false, ...o })
 const view = (p: ProbeState, o: { job?: string; busy?: boolean; container?: boolean } = {}) =>
@@ -23,12 +25,27 @@ describe("probeView", () => {
     expect(probeView(P({ built: true, running: true }), "")).toBe("stopped")
   })
   it("Auftrag der Probe läuft → busy", () => {
+    expect(PROBE_JOBS).toEqual(["probe_build", "probe_start", "probe_stop"])
     for (const j of PROBE_JOBS) expect(probeView(P({ built: true }), j)).toBe("busy")
+  })
+  it("Durchreiche da, Probe aber aus → aus", () => {
+    expect(probeView(P({ built: true, running: false, open: true }), "")).toBe("stopped")
   })
   it("anderer Auftrag → kein busy", () => { expect(probeView(P(), "test")).toBe("unbuilt") })
 })
 
 describe("Kasten Probe", () => {
+  it("frei, wenn nichts läuft", () => {
+    expect(freeButtons(view(P({ built: true, running: true, open: true, password: "Abc_12345" }))).length).toBe(4)
+    expect(freeButtons(view(P())).length).toBe(1)
+  })
+
+  it("noch nie gebaut und Bau läuft: Bauen (nicht „neu bauen“)", () => {
+    const html = view(P(), { job: "probe_build" })
+    expect(html).toContain("probe.build")
+    expect(html).not.toContain("probe.rebuild")
+  })
+
   it("nicht gebaut: Bauen-Knopf, kein Öffnen, kein Passwort", () => {
     const html = view(P())
     expect(html).toContain("probe.build")
@@ -60,22 +77,22 @@ describe("Kasten Probe", () => {
   it("läuft gerade: Text zum Auftrag, alle Knöpfe gesperrt", () => {
     const html = view(P({ built: true }), { job: "probe_build" })
     expect(html).toContain("job.probe_build")
-    expect(html).not.toMatch(/<button(?![^>]*disabled)/)
+    expect(freeButtons(html)).toEqual([])
   })
 
   it("anderer Auftrag läuft: Knöpfe gesperrt", () => {
     const html = view(P({ built: true }), { job: "test" })
-    expect(html).not.toMatch(/<button(?![^>]*disabled)/)
+    expect(freeButtons(html)).toEqual([])
   })
 
   it("busy (Klick unterwegs): Knöpfe gesperrt", () => {
-    expect(view(P({ built: true, running: true, open: true }), { busy: true })).not.toMatch(/<button(?![^>]*disabled)/)
+    expect(freeButtons(view(P({ built: true, running: true, open: true, password: "Abc_12345" }), { busy: true }))).toEqual([])
   })
 
   it("Labor aus: Hinweis, keine Knöpfe frei", () => {
     const html = view(P(), { container: false })
     expect(html).toContain("probe.lab_off")
-    expect(html).not.toMatch(/<button(?![^>]*disabled)/)
+    expect(freeButtons(html)).toEqual([])
   })
 
   it("Erklärung immer da (eigene Anmeldung, Heimnetz)", () => {

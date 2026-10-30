@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import * as api from "./api"
 import { GitHubSection } from "./GitHubSection"
 import { LabPanel } from "./LabPanel"
+import { ProbeSection } from "./ProbeSection"
 import { errorKey, viewFor, type Checks, type LabState, type Limits, type Model } from "./logic"
 import { RemoveDialog } from "./RemoveDialog"
 import { ResetDialog } from "./ResetDialog"
@@ -57,6 +58,7 @@ export function HydraLaborPage() {
           onCheck={() => act(async () => setChecks(await api.runChecks(limits)))} onModel={setModel}
           onLimits={(l) => { setLimits(l); setChecks(null) }} onCreate={() => act(() => api.createLab(model, limits))} />
       )}
+      {view === "lab" && <ProbeSection s={s} onJobStarted={load} />}
       {view !== "busy" && <GitHubSection s={s} onJobStarted={load} />}
       {ask === "reset" && <ResetDialog busy={busy} onCancel={() => setAsk("")}
         onConfirm={() => { setAsk(""); act(() => api.startJob("reset")) }} />}

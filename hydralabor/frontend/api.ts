@@ -1,5 +1,6 @@
 import { api } from "@/shared/api-client"
 import { BASE, type Checks, type LabState, type Limits, type Model } from "./logic"
+import type { ProbeState } from "./probeLogic"
 import type { DeviceCode, GitHubState, Submission, Target } from "./githubLogic"
 
 export const getState = () => api.get<LabState>(`${BASE}/state`)
@@ -20,3 +21,6 @@ export const reportBug = (v: { target: Target; title: string; what: string; expe
   api.post<{ number: number; url: string }>(`${BASE}/report`, v)
 export const getSubmissions = () => api.get<{ items: Submission[] }>(`${BASE}/submissions`)
 export const refreshSubmissions = () => api.post<{ items: Submission[] }>(`${BASE}/submissions/refresh`, {})
+export const getProbe = () => api.get<ProbeState>(`${BASE}/probe`)
+export const probeJob = (a: "build" | "start" | "stop") => api.post<{ started: string }>(`${BASE}/probe/${a}`, {})
+export const openProbe = () => api.post<{ url: string }>(`${BASE}/probe/open`, {})

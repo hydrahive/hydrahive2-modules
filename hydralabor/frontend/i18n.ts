@@ -1,5 +1,6 @@
 // Texte des Moduls Hydra-Labor (de/en). Einfach, ohne Fachwörter. L2 (GitHub) steht in i18n_github.ts.
 import { githubDe, githubEn } from "./i18n_github"
+import { probeDe, probeEn } from "./i18n_probe"
 
 const de = {
   hydralabor: {
@@ -59,8 +60,6 @@ const de = {
       admin_only: "Das dürfen nur Admins.",
       labor_busy: "Gerade läuft schon ein Vorgang. Bitte kurz warten.",
       labor_not_ready: "Das Labor ist noch nicht eingerichtet.",
-      labor_probe_bad_host: "Die Adresse dieses Servers ist ungewöhnlich. Bitte HydraHive über seine normale Adresse öffnen.",
-      labor_probe_login_required: "Der Zugang zur Probe ist abgelaufen. Bitte im Labor erneut „Probe öffnen“ wählen.",
       labor_already_ready: "Das Labor ist schon eingerichtet.",
       labor_confirm_missing: "Bitte genau LABOR eintippen.",
       labor_interrupted: "Der letzte Vorgang wurde unterbrochen (z. B. durch einen Neustart). Bitte noch einmal starten.",
@@ -148,8 +147,6 @@ const en: typeof de = {
       admin_only: "Only admins can do this.",
       labor_busy: "Something is already running. Please wait a moment.",
       labor_not_ready: "The lab is not set up yet.",
-      labor_probe_bad_host: "This server's address looks unusual. Please open HydraHive via its normal address.",
-      labor_probe_login_required: "Access to the preview has expired. Please choose “Open preview” in the lab again.",
       labor_already_ready: "The lab is already set up.",
       labor_confirm_missing: "Please type exactly LABOR.",
       labor_interrupted: "The last action was interrupted (e.g. by a restart). Please start it again.",
@@ -179,8 +176,12 @@ const en: typeof de = {
   },
 }
 
-const merge = (base: typeof de, extra: typeof githubDe) => ({
-  hydralabor: { ...base.hydralabor, ...extra, err: { ...base.hydralabor.err, ...extra.err } },
+const merge = (base: typeof de, extra: typeof githubDe, probe: typeof probeDe) => ({
+  hydralabor: {
+    ...base.hydralabor, ...extra, probe: probe.probe,
+    job: { ...base.hydralabor.job, ...probe.job },
+    err: { ...base.hydralabor.err, ...extra.err, ...probe.err },
+  },
 })
 
-export const hydralaborI18n = { de: merge(de, githubDe), en: merge(en, githubEn) }
+export const hydralaborI18n = { de: merge(de, githubDe, probeDe), en: merge(en, githubEn, probeEn) }
