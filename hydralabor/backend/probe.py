@@ -6,7 +6,9 @@
 - Starten: zwei Dienste per `systemd-run` im Container, beide als `labor`; eigene Daten, nichts vom Server (incus exec
   reicht keine Server-Umgebung weiter). Erst wenn die Probe antwortet: eingehende Regel (probe_net) und nginx :8443
   (probe_site) – beide im Zustand vermerkt, damit Stoppen/Entfernen nur Eigenes abräumt.
-- Stoppen: Dienste aus, nginx-Block und Regel weg.
+- Neustart-Wächter (`hh-probe-restart.path`): startet das Probe-Backend neu, wenn es nach einer Modul-Installation
+  `.restart_request` schreibt – auf dem Server macht das hydrahive2-restart.timer.
+- Stoppen: Dienste und Wächter aus, nginx-Block und Regel weg.
 Skripte sind fest im Modul, keine Eingaben des Nutzers darin.
 """
 from __future__ import annotations
@@ -24,6 +26,7 @@ UID = "1000"
 DIR = "/work/.probe"
 FRONT = "/opt/hh-labor-probe/front.py"
 DIST = "/work/hydrahive2/frontend/dist"
+_RESTART = f"{DIR}/data/.restart_request"
 _PW = re.compile(r"^[A-Za-z0-9_-]{8,100}$")
 _LOCAL_FRONT = Path(__file__).resolve().parent.parent / "probe" / "front.py"
 _ENV = ("HH_DATA_DIR=/work/.probe/data", "HH_CONFIG_DIR=/work/.probe/config", "HH_BASE_DIR=/work/hydrahive2",
@@ -39,12 +42,16 @@ _BUILD = "set -eu; cd /work/hydrahive2/frontend; npm run build >/dev/null 2>&1"
 _RUN = "systemd-run -q --collect --unit {unit} --uid 1000 --gid 1000 -p WorkingDirectory=/work -E HOME=/home/labor "
 _START = (
     f"set -u; [ -f {DIST}/index.html ] && [ -f {DIR}/env ] && [ -f {FRONT} ] || exit 3; "
-    "systemctl stop hh-probe-front hh-probe-back 2>/dev/null; "
+    f"rm -f {_RESTART}; systemctl stop hh-probe-restart.path hh-probe-front hh-probe-back 2>/dev/null; "
     + _RUN.format(unit="hh-probe-back") + f"-p EnvironmentFile={DIR}/env " + " ".join(f"-E {kv}" for kv in _ENV)
     + " /work/.venv/bin/uvicorn hydrahive.api.main:app --host 127.0.0.1 --port 8002 && "
-    + _RUN.format(unit="hh-probe-front") + f"/work/.venv/bin/python {FRONT} {DIST} http://127.0.0.1:8002 8001 || exit 4; "
+    + _RUN.format(unit="hh-probe-front") + f"/work/.venv/bin/python {FRONT} {DIST} http://127.0.0.1:8002 8001 && "
+    # Neustart-Wächter wie hydrahive2-restart.timer auf dem Server: Modul installieren/aktualisieren schreibt
+    # .restart_request, danach muss das Backend neu laden (Befund Till 31.10.: Module kamen in der Probe nie an).
+    f"systemd-run -q --collect --unit hh-probe-restart --path-property=PathExists={_RESTART} "
+    f"-- bash -c 'rm -f {_RESTART}; systemctl restart hh-probe-back' || exit 4; "
     "for i in $(seq 60); do curl -fsS -o /dev/null http://127.0.0.1:8001/api/health && exit 0; sleep 1; done; exit 4")
-_STOP = "systemctl stop hh-probe-front hh-probe-back 2>/dev/null; exit 0"
+_STOP = "systemctl stop hh-probe-restart.path hh-probe-front hh-probe-back 2>/dev/null; exit 0"
 _STATUS = (f": hh-probe-status; [ -f {DIST}/index.html ] && echo built=1 || echo built=0; "
            "echo back=$(systemctl is-active hh-probe-back); echo front=$(systemctl is-active hh-probe-front); "
            f"[ -f {DIR}/admin-password ] && echo pw=$(head -n1 {DIR}/admin-password); exit 0")

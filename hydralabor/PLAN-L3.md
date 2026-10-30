@@ -133,3 +133,12 @@
 - Zugriff von außerhalb des Heimnetzes (nur per `deny all` im Block abgesichert, nicht von außen gemessen).
 - Server ohne Tailscale/mit öffentlicher IP (VPS), anderer Port als 8443, nicht-Ubuntu-Server.
 - Module in der Probe installieren (Modulverwaltung der Probe zeigt auf den Labor-Ordner – nicht durchgeklickt).
+
+## Nachträge 0.3.1 / 0.3.2 (Befunde Till auf .2, 31.10.)
+
+- **0.3.1:** In der Probe fehlten alle Grafiken. Der Auslieferer gab nur `dist/assets/` heraus, Bilder aus `public/`
+  liegen im Hauptordner von `dist`. Jetzt wie nginx: jede Datei aus `dist`, sonst `index.html`.
+- **0.3.2:** Module ließen sich in der Probe nicht installieren oder aktualisieren. Kopieren und Bauen liefen durch,
+  der Neustart fehlte: Der Kern schreibt `.restart_request`, auf dem Server startet `hydrahive2-restart.timer` dann
+  neu. In der Probe gab es keinen Wächter. Jetzt `hh-probe-restart.path` (systemd-run, PathExists) → Backend neu.
+  Echt geprüft: „Diagramme“ in der Probe installiert → Neustart von selbst → Modul geladen, Schnittstelle 200.

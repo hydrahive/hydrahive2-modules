@@ -100,12 +100,25 @@ def test_bauen_meldet_fortschritt(lab):
 def test_starten_zwei_dienste_als_labor(lab):
     run(probe.start(report=lambda _k: None))
     s = next(x for x in _execs(lab) if "systemd-run" in x)
-    assert s.count("systemd-run") == 2
+    assert s.count("systemd-run") == 3                         # Backend, Auslieferer, Neustart-Wächter
     assert "--unit hh-probe-back --uid 1000 --gid 1000" in s and "--unit hh-probe-front --uid 1000 --gid 1000" in s
     assert "-p EnvironmentFile=/work/.probe/env" in s
     assert "--host 127.0.0.1 --port 8002" in s
     assert "/opt/hh-labor-probe/front.py /work/hydrahive2/frontend/dist http://127.0.0.1:8002 8001" in s
     assert "http://127.0.0.1:8001/api/health" in s
+
+
+def test_starten_neustart_waechter(lab):
+    """Modul installieren/aktualisieren in der Probe fordert einen Neustart an (.restart_request) – auf dem Server
+    erledigt das hydrahive2-restart.timer, in der Probe ein eigener Wächter (Befund Till 31.10.)."""
+    run(probe.start(report=lambda _k: None))
+    s = next(x for x in _execs(lab) if "systemd-run" in x)
+    assert ("systemd-run -q --collect --unit hh-probe-restart "
+            "--path-property=PathExists=/work/.probe/data/.restart_request") in s
+    assert "rm -f /work/.probe/data/.restart_request; systemctl restart hh-probe-back" in s
+    assert s.index("--unit hh-probe-restart") > s.index("--unit hh-probe-back")  # erst wenn das Backend läuft
+    assert "rm -f /work/.probe/data/.restart_request; systemctl stop hh-probe-restart.path" in s.split(
+        "--unit hh-probe-back")[0]                                              # alte Anforderung/alter Wächter weg
 
 
 def test_starten_eigene_daten_keine_dienste_nach_aussen(lab):
@@ -173,7 +186,7 @@ def test_starten_zweimal_eine_regel(lab):
 def test_stoppen_raeumt_alles(lab):
     run(probe.start(report=lambda _k: None))
     run(probe.stop(report=lambda _k: None))
-    assert "systemctl stop hh-probe-front hh-probe-back" in " ".join(_execs(lab))
+    assert "systemctl stop hh-probe-restart.path hh-probe-front hh-probe-back" in " ".join(_execs(lab))
     assert lab.roots[-1].startswith("remove ")
     assert not lab.acls["hhlabor-acl"]["ingress"]
     assert not ({"probe_net", "probe_site"} & set(state.get()["made"]))
@@ -182,7 +195,7 @@ def test_stoppen_raeumt_alles(lab):
 def test_stoppen_haelt_dienste_an_auch_ohne_nginx(lab):
     """Dienste laufen evtl. noch (z. B. nginx-Fehler beim Start) – Stoppen hält sie trotzdem an."""
     run(probe.stop(report=lambda _k: None))
-    assert "systemctl stop hh-probe-front hh-probe-back" in " ".join(_execs(lab))
+    assert "systemctl stop hh-probe-restart.path hh-probe-front hh-probe-back" in " ".join(_execs(lab))
 
 
 def test_stoppen_ohne_probe_fasst_nginx_nicht_an(lab):
