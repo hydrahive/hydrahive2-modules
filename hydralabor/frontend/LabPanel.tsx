@@ -20,16 +20,16 @@ export function LabPanel({ s, busy, msg, onJob, onPower, onAskReset, onAskRemove
       )}
 
       <section className={BOX}>
-        <p className="text-base font-semibold text-zinc-100">{t("lab.ready")}</p>
-        <p className="text-sm text-zinc-300">{t("lab.howto")}</p>
+        <p className="text-base font-semibold text-[#e8eef8]">{t("lab.ready")}</p>
+        <p className="text-sm text-[#c8d2df]">{t("lab.howto")}</p>
         <a href={`/projects/${s.project_id}`} className={`${BTN_MAIN} inline-block`}>{t("lab.chat")}</a>
       </section>
 
       <section className={BOX}>
-        <p className={`text-sm font-semibold ${s.container_running ? "text-emerald-300" : "text-zinc-400"}`}>
+        <p className={`text-sm font-semibold ${s.container_running ? "text-emerald-300" : "text-[#c8d2df]"}`}>
           {s.container_running ? t("lab.running") : t("lab.stopped")}</p>
-        <p className="text-sm text-zinc-400">{t("lab.limits", { cpu: s.cpu, ram: s.ram_mb, disk: s.disk_gb })}</p>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-[#c8d2df]">{t("lab.limits", { cpu: s.cpu, ram: s.ram_mb, disk: s.disk_gb })}</p>
+        <p className="text-sm text-[#c8d2df]">
           {s.last_net_ok ? t("lab.net_ok", { when: when(s.last_net_ok) }) : t("lab.net_never")}</p>
         {s.running && <p className="text-sm text-amber-200" aria-live="polite">{t(`job.${s.running}`)}</p>}
         <div className="flex flex-wrap gap-2">
@@ -49,13 +49,13 @@ export function LabPanel({ s, busy, msg, onJob, onPower, onAskReset, onAskRemove
           <>
             <p className={`text-sm font-semibold ${s.last_test.ok ? "text-emerald-300" : "text-red-300"}`}>
               {t(tl.key, { passed: tl.passed, failed: tl.failed })}</p>
-            <p className="text-sm text-zinc-400">{t("test.last", { when: when(s.last_test.at ?? "") })}</p>
+            <p className="text-sm text-[#c8d2df]">{t("test.last", { when: when(s.last_test.at ?? "") })}</p>
             {!!s.last_test.failures?.length && (
-              <ul className="space-y-0.5 text-xs text-zinc-300 break-all">
+              <ul className="space-y-0.5 text-xs text-[#c8d2df] break-all">
                 {s.last_test.failures.map((f) => <li key={f}>{f}</li>)}</ul>
             )}
           </>
-        ) : <p className="text-sm text-zinc-400">{t("test.never")}</p>}
+        ) : <p className="text-sm text-[#c8d2df]">{t("test.never")}</p>}
       </section>
     </div>
   )

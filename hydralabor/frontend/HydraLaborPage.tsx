@@ -35,12 +35,12 @@ export function HydraLaborPage() {
     try { await fn(); await load() } catch (e) { setMsg(errorKey(e)) } finally { setBusy(false) }
   }
 
-  if (!s) return <div className="p-4 text-sm text-zinc-400">{msg ? t(msg) : "…"}</div>
+  if (!s) return <div className="p-4 text-sm text-[#c8d2df]">{msg ? t(msg) : "…"}</div>
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold text-zinc-100">{t("title")}</h1>
-        <p className="text-sm text-zinc-400">{t("subtitle")}</p>
+        <h1 className="text-xl font-semibold text-[#e8eef8]">{t("title")}</h1>
+        <p className="text-sm text-[#c8d2df]">{t("subtitle")}</p>
       </header>
       {s.step === "ready" && s.running !== "remove" ? (
         <LabPanel s={s} busy={busy} msg={msg} onJob={(j) => act(() => api.startJob(j))}

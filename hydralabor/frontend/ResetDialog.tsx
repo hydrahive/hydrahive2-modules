@@ -10,9 +10,9 @@ export function ResetDialog({ busy, onConfirm, onCancel }: { busy: boolean; onCo
   return (
     <ModalPortal>
       <div {...dlg.props} className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-        <div className="w-full max-w-md space-y-3 rounded-lg border border-white/10 bg-zinc-900 p-5">
-          <h2 id={dlg.titelId} className="text-base font-semibold text-zinc-100">{t("reset.title")}</h2>
-          <p className="text-sm text-zinc-300">{t("reset.text")}</p>
+        <div className="w-full max-w-md space-y-3 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] p-5">
+          <h2 id={dlg.titelId} className="text-base font-semibold text-[#e8eef8]">{t("reset.title")}</h2>
+          <p className="text-sm text-[#c8d2df]">{t("reset.text")}</p>
           <div className="flex justify-end gap-2">
             <button type="button" className={BTN} onClick={onCancel}>{t("reset.cancel")}</button>
             <button type="button" className={BTN_DANGER} disabled={busy} onClick={onConfirm}>{t("reset.confirm")}</button>

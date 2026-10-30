@@ -15,10 +15,10 @@ export function RemoveDialogView({ word, busy, onWord, onConfirm, onCancel, titl
   return (
     <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md space-y-3 rounded-lg border border-white/10 bg-zinc-900 p-5">
-        <h2 id={titleId} className="text-base font-semibold text-zinc-100">{t("remove.title")}</h2>
-        <p className="text-sm text-zinc-300">{t("remove.text")}</p>
-        <label className="block space-y-1 text-sm text-zinc-300">
+      <div className="w-full max-w-md space-y-3 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] p-5">
+        <h2 id={titleId} className="text-base font-semibold text-[#e8eef8]">{t("remove.title")}</h2>
+        <p className="text-sm text-[#c8d2df]">{t("remove.text")}</p>
+        <label className="block space-y-1 text-sm text-[#c8d2df]">
           <span>{t("remove.type")}</span>
           <input className={INPUT} value={word} autoComplete="off" onChange={(e) => onWord(e.target.value)} />
         </label>

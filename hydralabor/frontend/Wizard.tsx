@@ -14,7 +14,7 @@ export function WizardView({ s, checks, models, model, limits, busy, msg, onChec
   const limErr = limitsError(limits)
   const canCreate = !!checks?.ok && !!model && !limErr && !busy && !s.running
   const num = (k: keyof Limits, label: string) => (
-    <label className="block space-y-1 text-sm text-zinc-300">
+    <label className="block space-y-1 text-sm text-[#c8d2df]">
       <span>{label}</span>
       <input type="number" inputMode="numeric" className={INPUT} value={limits[k]} disabled={creating}
         onChange={(e) => onLimits({ ...limits, [k]: Number(e.target.value) })} />
@@ -22,16 +22,16 @@ export function WizardView({ s, checks, models, model, limits, busy, msg, onChec
   )
   return (
     <div className="space-y-4">
-      <p className="text-sm text-zinc-300">{t("wizard.intro")}</p>
+      <p className="text-sm text-[#c8d2df]">{t("wizard.intro")}</p>
 
       <section className={BOX}>
-        <h2 className="text-sm font-semibold text-zinc-100">{t("wizard.s1")}</h2>
+        <h2 className="text-sm font-semibold text-[#e8eef8]">{t("wizard.s1")}</h2>
         {checks && (
           <ul className="space-y-1 text-sm">
             {checks.checks.map((c) => (
               <li key={c.id} className={c.ok ? "text-emerald-300" : "text-red-300"}>
                 <span aria-hidden="true">{c.ok ? "✓ " : "✗ "}</span>{t(`check.${c.id}`)}
-                {!c.ok && <span className="block pl-5 text-zinc-300">{t(errorKey(c.code))}
+                {!c.ok && <span className="block pl-5 text-[#c8d2df]">{t(errorKey(c.code))}
                   {c.have !== null && c.need !== null && <> ({t("check.have_need", { have: c.have, need: c.need })})</>}</span>}
               </li>
             ))}
@@ -42,8 +42,8 @@ export function WizardView({ s, checks, models, model, limits, busy, msg, onChec
       </section>
 
       <section className={BOX}>
-        <h2 className="text-sm font-semibold text-zinc-100">{t("wizard.s2")}</h2>
-        <label className="block space-y-1 text-sm text-zinc-300">
+        <h2 className="text-sm font-semibold text-[#e8eef8]">{t("wizard.s2")}</h2>
+        <label className="block space-y-1 text-sm text-[#c8d2df]">
           <span>{t("wizard.model")}</span>
           <select className={INPUT} value={model} disabled={creating} onChange={(e) => onModel(e.target.value)}>
             <option value="">{t("wizard.model_pick")}</option>
@@ -57,7 +57,7 @@ export function WizardView({ s, checks, models, model, limits, busy, msg, onChec
       </section>
 
       <section className={BOX}>
-        <h2 className="text-sm font-semibold text-zinc-100">{t("wizard.s3")}</h2>
+        <h2 className="text-sm font-semibold text-[#e8eef8]">{t("wizard.s3")}</h2>
         {creating ? <Progress s={s} /> : (
           <>
             {s.error_code && (
@@ -66,7 +66,7 @@ export function WizardView({ s, checks, models, model, limits, busy, msg, onChec
                 {s.error_step && <span className="block">{t("wizard.failed_at", { step: t(`progress.${s.error_step}`) })}</span>}
               </div>
             )}
-            <p className="text-sm text-zinc-400">{t("wizard.takes")}</p>
+            <p className="text-sm text-[#c8d2df]">{t("wizard.takes")}</p>
             <button type="button" className={BTN_MAIN} onClick={onCreate} disabled={!canCreate}>
               {s.error_code ? t("wizard.retry") : t("wizard.create")}</button>
           </>
@@ -83,17 +83,17 @@ function Progress({ s }: { s: LabState }) {
   return (
     <div className="space-y-2">
       <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={p.pct} aria-label={t("job.create")}
-        className="h-2 w-full overflow-hidden rounded bg-white/10">
+        className="h-2 w-full overflow-hidden rounded bg-[rgb(var(--hh-s-hebung,27_37_54))]">
         <div className="h-full bg-emerald-500 transition-all" style={{ width: `${Math.max(4, p.pct)}%` }} />
       </div>
       <ol className="space-y-0.5 text-sm">
         {CREATE_STEPS.map((k, i) => (
-          <li key={k} className={i < p.index ? "text-emerald-300" : i === p.index ? "text-zinc-100" : "text-zinc-500"}>
+          <li key={k} className={i < p.index ? "text-emerald-300" : i === p.index ? "text-[#e8eef8]" : "text-[#9aa7bc]"}>
             <span aria-hidden="true">{i < p.index ? "✓ " : i === p.index ? "… " : "· "}</span>{t(`progress.${k}`)}
           </li>
         ))}
       </ol>
-      <p className="text-sm text-zinc-400">{t("wizard.takes")}</p>
+      <p className="text-sm text-[#c8d2df]">{t("wizard.takes")}</p>
     </div>
   )
 }
