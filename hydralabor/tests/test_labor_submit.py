@@ -115,3 +115,21 @@ def test_offener_pr_bleibt_eingereicht(ready, fake_github):
     fake_github.pulls[0].update(state="open", merged=False)
     run(submit.refresh())
     assert submit.list_submissions()[0]["state"] == "submitted"
+
+
+def test_versionen_echt(monkeypatch):
+    """Kern heißt als Paket hydrahive-core (nicht hydrahive) – sonst stand „hydrahive ?“ im PR (Befund PR #670)."""
+    from importlib import metadata
+    real = metadata.version
+    monkeypatch.setattr(metadata, "version", lambda name: "2.0.0" if name == "hydrahive-core" else real(name))
+    v = submit._versions()
+    assert v["hydrahive"] == "2.0.0"
+
+
+def test_versionen_ohne_paket(monkeypatch):
+    from importlib import metadata
+
+    def missing(name):
+        raise metadata.PackageNotFoundError(name)
+    monkeypatch.setattr(metadata, "version", missing)
+    assert submit._versions()["hydrahive"] == "?"

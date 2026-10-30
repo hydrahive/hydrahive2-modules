@@ -61,7 +61,12 @@ def test_labor_chat_sitzung_einmal_angelegt(client, admin_headers, clean, monkey
         r1 = client.post(B + "/chat", headers=admin_headers, json={})
         assert r1.status_code == 200
         d = r1.json()
-        assert d["url"] == f"/werkstatt/{d['session_id']}"
+        # Projekt-Cockpit statt Werkstatt (Till 30.10.): dort gibt es Tasks, Notizen, Dateien wie im normalen Projekt.
+        assert d["url"] == "/projects"
+        from hydrahive.db import user_preferences
+        prefs = user_preferences.get("boss")
+        assert prefs["active_project_id"] == made["project_id"]
+        assert prefs["cockpit_layout"]["project_selected_agent"][made["project_id"]] == made["agent_id"]
         s = sessions_db.get(d["session_id"])
         assert s.agent_id == made["agent_id"] and s.project_id == made["project_id"] and s.user_id == "boss"
         assert client.post(B + "/chat", headers=admin_headers, json={}).json()["session_id"] == d["session_id"]
@@ -103,3 +108,24 @@ def test_labor_chat_nimmt_keine_fremde_sitzung(client, admin_headers, clean, mon
 
 def test_labor_chat_nur_admins(client, user_headers, clean):
     assert client.post(B + "/chat", headers=user_headers, json={}).status_code == 403
+
+
+def test_labor_chat_laesst_andere_einstellungen_stehen(client, admin_headers, clean, monkeypatch):
+    """Nur aktives Projekt + Agent dieses Projekts setzen – Layout und Agent-Wahl anderer Projekte bleiben."""
+    from backend import lab_project
+    from hydrahive.db import user_preferences
+    from hydrahive.projects import execution
+    monkeypatch.setattr(execution, "_container_exists", lambda name: True)
+    user_preferences.patch("boss", {"cockpit_layout": {"breite": 3, "project_selected_agent": {"anderes": "a9"}},
+                                    "landing": "dashboard"})
+    made = lab_project.create(admin="boss", model=MODEL)
+    try:
+        state.mark_made("project", **made)
+        state.set_step("ready")
+        client.post(B + "/chat", headers=admin_headers, json={})
+        prefs = user_preferences.get("boss")
+        assert prefs["landing"] == "dashboard" and prefs["cockpit_layout"]["breite"] == 3
+        assert prefs["cockpit_layout"]["project_selected_agent"]["anderes"] == "a9"
+    finally:
+        lab_project.remove(made)
+        user_preferences.patch("boss", {"cockpit_layout": {}, "landing": "start", "active_project_id": None})
