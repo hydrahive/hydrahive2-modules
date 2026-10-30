@@ -7,7 +7,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from backend import network
 
 
@@ -104,3 +103,24 @@ def test_acl_und_netz_in_richtiger_reihenfolge(fake_incus, monkeypatch):
     assert actions.index("network acl create hhlabor-acl") < actions.index(created)
     assert "ipv4.address=10.77.0.1/24" in created and "ipv6.address=none" in created
     assert actions.index(created) < actions.index("network set hhlabor0 security.acls=hhlabor-acl")
+
+
+def test_netz_da_sperre_fehlt_sperre_wird_nachgezogen(fake_incus, no_host):
+    fake_incus.networks["hhlabor0"] = {"ipv4.address": "10.77.0.1/24"}
+    run(network.ensure_network())
+    assert "hhlabor-acl" in fake_incus.acls
+    assert fake_incus.networks["hhlabor0"]["security.acls"] == "hhlabor-acl"
+    assert not any(c[:2] == ["network", "create"] for c in fake_incus.calls)
+
+
+def test_sperrregel_ist_eingeschaltet(fake_incus, no_host):
+    run(network.ensure_network())
+    assert all(r["state"] == "enabled" for r in fake_incus.acls["hhlabor-acl"]["egress"])
+
+
+@pytest.mark.parametrize("stelle", ["network acl create", "network acl rule add", "network create", "network set"])
+def test_incus_fehler_bricht_ab(fake_incus, no_host, stelle):
+    fake_incus.fail[stelle] = "boom"
+    with pytest.raises(network.LaborNetworkError) as e:
+        run(network.ensure_network())
+    assert e.value.code == "labor_incus_failed"
