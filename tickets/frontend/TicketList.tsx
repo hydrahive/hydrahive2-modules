@@ -61,21 +61,21 @@ function initials(value: string) {
 }
 
 function dueTone(value: string | null) {
-  if (!value) return "text-[#607188]"
-  return new Date(value).getTime() < Date.now() ? "text-orange-300" : "text-[#718096]"
+  if (!value) return "text-[#9aa7bc]"
+  return new Date(value).getTime() < Date.now() ? "text-orange-300" : "text-[#9aa7bc]"
 }
 
 export function TicketList({ tickets, filters, loading, activeId, onFiltersChange, onSelect, selectedIds, onToggleSelect, onNew }: Props) {
   const { t, i18n } = useTranslation("tickets")
   return (
-    <aside className="flex min-h-0 w-full flex-1 flex-col border-r border-[#1f2a3b] bg-[#0c131e] lg:w-[292px] lg:flex-none">
-      <div className="border-b border-[#1f2a3b] px-4 pb-3 pt-4">
+    <aside className="flex min-h-0 w-full flex-1 flex-col border-r border-[rgb(var(--hh-s-rand,31_42_59))] bg-[#0c131e] lg:w-[292px] lg:flex-none">
+      <div className="border-b border-[rgb(var(--hh-s-rand,31_42_59))] px-4 pb-3 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="grid h-7 w-7 place-items-center rounded-[7px] border border-[#2b4058] bg-[#132235] text-[#69d7ff]"><Inbox size={15} /></span>
             <div>
               <div className="text-sm font-semibold text-[#e8eef8]">{t("inbox")}</div>
-              <div className="text-[11px] text-[#718096]">{tickets.length} {t("ticketsCount")}</div>
+              <div className="text-[11px] text-[#9aa7bc]">{tickets.length} {t("ticketsCount")}</div>
             </div>
           </div>
           <button onClick={onNew} className="grid h-7 w-7 place-items-center rounded-[6px] border border-[#2b4058] text-[#8fa1b8] transition-colors hover:border-[#69d7ff]/60 hover:bg-[#163248] hover:text-[#c8f2ff]" title={t("newTicket")}>
@@ -84,21 +84,21 @@ export function TicketList({ tickets, filters, loading, activeId, onFiltersChang
         </div>
       </div>
 
-      <div className="space-y-2.5 border-b border-[#1f2a3b] px-3 py-3">
+      <div className="space-y-2.5 border-b border-[rgb(var(--hh-s-rand,31_42_59))] px-3 py-3">
         <Input
           value={filters.query ?? ""}
           onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })}
           placeholder={t("search")}
           icon={<Search size={15} />}
-          className="border-[#253247] bg-[#111b29] text-xs"
+          className="border-[rgb(var(--hh-s-rand,37_50_71))] bg-[rgb(var(--hh-s-innen,17_27_41))] text-xs"
         />
         <div className="flex items-center gap-2">
-          <SlidersHorizontal size={14} className="shrink-0 text-[#607188]" />
-          <Select value={filters.status ?? ""} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value || undefined })} className="border-[#253247] bg-[#111b29] text-xs">
+          <SlidersHorizontal size={14} className="shrink-0 text-[#9aa7bc]" />
+          <Select value={filters.status ?? ""} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value || undefined })} className="border-[rgb(var(--hh-s-rand,37_50_71))] bg-[rgb(var(--hh-s-innen,17_27_41))] text-xs">
             <option value="">{t("allStatuses")}</option>
             {statuses.map((status) => <option key={status} value={status}>{t(`status.${status}`)}</option>)}
           </Select>
-          <Select value={filters.priority ?? ""} onChange={(event) => onFiltersChange({ ...filters, priority: event.target.value || undefined })} className="border-[#253247] bg-[#111b29] text-xs">
+          <Select value={filters.priority ?? ""} onChange={(event) => onFiltersChange({ ...filters, priority: event.target.value || undefined })} className="border-[rgb(var(--hh-s-rand,37_50_71))] bg-[rgb(var(--hh-s-innen,17_27_41))] text-xs">
             <option value="">{t("allPriorities")}</option>
             {priorities.map((priority) => <option key={priority} value={priority}>{t(`priority.${priority}`)}</option>)}
           </Select>
@@ -106,28 +106,28 @@ export function TicketList({ tickets, filters, loading, activeId, onFiltersChang
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-        {loading ? <div className="space-y-2 p-1">{[1, 2, 3, 4].map((item) => <div key={item} className="h-[76px] animate-pulse rounded-[8px] bg-[#111b29]" />)}</div> : tickets.length === 0 ? (
+        {loading ? <div className="space-y-2 p-1">{[1, 2, 3, 4].map((item) => <div key={item} className="h-[76px] animate-pulse rounded-[8px] bg-[rgb(var(--hh-s-innen,17_27_41))]" />)}</div> : tickets.length === 0 ? (
           <div className="flex h-full min-h-[180px] flex-col items-center justify-center px-5 text-center">
             <img src={leerBild} alt="" loading="lazy" draggable={false} className="mb-3 h-24 w-24 select-none object-contain" />
             <p className="text-xs font-medium text-[#a9b5c6]">{t("empty")}</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-[#607188]">{t("emptyHint")}</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-[#9aa7bc]">{t("emptyHint")}</p>
           </div>
         ) : (
           <div className="space-y-1">
             {tickets.map((ticket) => (
-              <div key={ticket.id} className={`flex items-stretch gap-1 rounded-[8px] border ${activeId === ticket.id ? "border-[#32718e] bg-[#12283a]" : "border-transparent hover:border-[#253247] hover:bg-[#111b29]"}`}>
+              <div key={ticket.id} className={`flex items-stretch gap-1 rounded-[8px] border ${activeId === ticket.id ? "border-[#32718e] bg-[#12283a]" : "border-transparent hover:border-[rgb(var(--hh-s-rand-hover,37_50_71))] hover:bg-[rgb(var(--hh-s-hebung,17_27_41))]"}`}>
                 <input type="checkbox" checked={selectedIds.includes(ticket.id)} onChange={() => onToggleSelect(ticket.id)} className="ml-2 accent-cyan-400" aria-label={ticket.title} />
                 <button onClick={() => onSelect(ticket.id)} className="group min-w-0 flex-1 px-2 py-3 text-left transition-colors">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <span className="font-mono text-[11px] font-semibold text-[#69d7ff]">#{ticket.number}</span>
-                    <span className="text-[10px] text-[#718096]">{relativeTime(ticket.updated_at, i18n.language)}</span>
+                    <span className="text-[10px] text-[#9aa7bc]">{relativeTime(ticket.updated_at, i18n.language)}</span>
                   </div>
                   <div className="truncate text-[13px] font-semibold text-[#e8eef8]">{ticket.title}</div>
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-[#8290a4]"><span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[#1d2d42] text-[8px] font-semibold text-[#9aaac0]">{initials(ticket.created_by)}</span><span className="truncate">{ticket.created_by}</span></span>
+                    <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-[#8290a4]"><span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[rgb(var(--hh-s-hebung,29_45_66))] text-[8px] font-semibold text-[#9aaac0]">{initials(ticket.created_by)}</span><span className="truncate">{ticket.created_by}</span></span>
                     <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-[#9aa6b8]"><span className={`h-1.5 w-1.5 rounded-full ${priorityDot[ticket.priority]}`} />{t(`priority.${ticket.priority}`)}</span>
                   </div>
-                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[#607188]"><span className={`rounded-[4px] border px-1.5 py-0.5 ${statusBadge[ticket.status]}`}>{t(`status.${ticket.status}`)}</span>{ticket.category && <span className="truncate">· {ticket.category}</span>}{ticket.due_at && <span className={`ml-auto inline-flex items-center gap-1 ${dueTone(ticket.due_at)}`}><Clock3 size={10} />{new Date(ticket.due_at).toLocaleDateString(i18n.language)}</span>}</div>
+                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[#9aa7bc]"><span className={`rounded-[4px] border px-1.5 py-0.5 ${statusBadge[ticket.status]}`}>{t(`status.${ticket.status}`)}</span>{ticket.category && <span className="truncate">· {ticket.category}</span>}{ticket.due_at && <span className={`ml-auto inline-flex items-center gap-1 ${dueTone(ticket.due_at)}`}><Clock3 size={10} />{new Date(ticket.due_at).toLocaleDateString(i18n.language)}</span>}</div>
                 </button>
               </div>
             ))}
