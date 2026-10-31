@@ -32,7 +32,9 @@ if str(MODULE_DIR) not in sys.path:
 MOD_PREFIX = "/api/modules/radiostream"
 DEVICE_PREFIX = "/api/module-device/radiostream"
 TABLES = ("module_radiostream_sources", "module_radiostream_tracks", "module_radiostream_scan_errors",
-          "module_radiostream_plays", "module_radiostream_station", "access_capability_grants", "access_audit")
+          "module_radiostream_plays", "module_radiostream_station", "module_radiostream_playlists",
+          "module_radiostream_playlist_items", "module_radiostream_mixes", "module_radiostream_queue",
+          "module_radiostream_program", "access_capability_grants", "access_audit")
 SECRET = "geheim-Passwort-123"
 
 
