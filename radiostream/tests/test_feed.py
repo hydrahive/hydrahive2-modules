@@ -211,3 +211,11 @@ def test_nas_weg_beim_messen_titel_kommt_trotzdem(client, library, monkeypatch):
     assert body.startswith("annotate:") and "liq_amplify" not in body
     from backend import library as lib
     assert lib.by_id(tid)["loudness_tried"] == 0                    # NAS weg ≠ „nicht messbar“: später neu versuchen
+
+
+# --- Programm: vorgeladenen Titel zurücknehmen ------------------------------------------------------------------------
+
+def test_naechster_titel_traegt_spiel_kennung(client, library):
+    body = client.get(f"{D}/feed/next", headers=_h()).text
+    m = re.search(r'rs_play="(\d+)"', body)
+    assert m and int(m.group(1)) == rotation.recent(limit=1)[0]["play_id"]
