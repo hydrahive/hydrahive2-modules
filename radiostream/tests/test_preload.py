@@ -42,7 +42,7 @@ def _pick_and_record():
 
 def test_flush_nimmt_gespielt_eintrag_zurueck(db_ready, sock):
     _track("a")
-    t, pid = _pick_and_record()
+    _t, pid = _pick_and_record()
     sock[1]["text"] = f"{pid}\r\nEND"
     preload.flush()
     assert sock[0] == ["autodj.flush"]
