@@ -56,6 +56,59 @@ def test_aendern_mit_moderieren(client, user_headers, flushes, moderator, method
     assert r.status_code in (200, 201), r.text
 
 
+def _setup_everything(client, admin_headers):
+    _track("t1")
+    pl = client.post(f"{P}/playlists", headers=admin_headers, json={"name": "A"}).json()
+    client.post(f"{P}/playlists/{pl['id']}/items", headers=admin_headers, json={"track_ids": ["t1", "t1"]})
+    m = client.post(f"{P}/mixes", headers=admin_headers, json={"name": "M", "rules": {}, "allow_long": False}).json()
+    client.post(f"{P}/queue", headers=admin_headers, json={"track_id": "t1"})
+    q = client.get(f"{P}/queue", headers=admin_headers).json()["items"][0]["id"]
+    return pl["id"], m["id"], q
+
+
+def test_jede_aenderung_braucht_moderieren(client, user_headers, admin_headers, flushes, db_ready):
+    """Alle Änderungs-Wege – keiner darf ohne radiostream.moderate (nur mit Modul-Freigabe) durchgehen."""
+    pid, mid, qid = _setup_everything(client, admin_headers)
+    flushes.clear()
+    calls = [
+        ("put", "/program", {"mode": "playlist", "ref_id": pid}),
+        ("put", f"/playlists/{pid}", {"name": "B"}), ("delete", f"/playlists/{pid}", None),
+        ("post", f"/playlists/{pid}/items", {"track_ids": ["t1"]}), ("post", f"/playlists/{pid}/add-search", {}),
+        ("post", f"/playlists/{pid}/move", {"from": 0, "to": 1}), ("delete", f"/playlists/{pid}/items/0", None),
+        ("put", f"/mixes/{mid}", {"name": "X", "rules": {}, "allow_long": False}), ("delete", f"/mixes/{mid}", None),
+        ("post", "/queue", {"track_id": "t1"}), ("put", f"/queue/{qid}", {"pos": 0}), ("delete", f"/queue/{qid}", None),
+        ("put", "/exclude", {"rules": {}, "allow_long": False}),
+    ]
+    for method, path, body in calls:
+        kw = {"json": body} if body is not None else {}
+        r = getattr(client, method)(f"{P}{path}", headers=user_headers, **kw)
+        assert r.status_code == 403, (method, path, r.status_code)
+    assert flushes == [] and len(program.queue()) == 1 and len(program.items(pid)) == 2
+
+
+def test_programm_sagt_ob_man_moderieren_darf(client, user_headers, admin_headers, db_ready):
+    assert client.get(f"{P}/program", headers=user_headers).json()["can_moderate"] is False
+    assert client.get(f"{P}/program", headers=admin_headers).json()["can_moderate"] is True
+
+
+def test_programm_position_gemischt_zaehlt_gespielte(client, admin_headers, flushes, db_ready):
+    from backend import choose
+    for t in ("s1", "s2", "s3"):
+        _track(t)
+    pl = client.post(f"{P}/playlists", headers=admin_headers, json={"name": "A"}).json()
+    client.post(f"{P}/playlists/{pl['id']}/items", headers=admin_headers, json={"track_ids": ["s1", "s2", "s3"]})
+    client.put(f"{P}/playlists/{pl['id']}", headers=admin_headers, json={"order_mode": "shuffle"})
+    client.put(f"{P}/program", headers=admin_headers, json={"mode": "playlist", "ref_id": pl["id"]})
+    choose.next_track()
+    choose.next_track()
+    assert client.get(f"{P}/program", headers=admin_headers).json()["position"] == 2
+
+
+def test_unbekannte_playlist_lesen_404(client, user_headers, db_ready):
+    r = client.get(f"{P}/playlists/gibt-es-nicht", headers=user_headers)
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "radiostream_playlist_not_found"
+
+
 @pytest.mark.parametrize("path", ["/program", "/playlists", "/mixes", "/queue"])
 def test_lesen_alle_mit_modul(client, user_headers, db_ready, path):
     assert client.get(f"{P}{path}", headers=user_headers).status_code == 200
@@ -90,14 +143,14 @@ def test_programm_mix_zeigt_anzahl(client, admin_headers, flushes, db_ready):
 def test_jede_aenderung_nimmt_erst_den_vorgeladenen_zurueck(client, admin_headers, flushes, db_ready):
     _track("t1")
     pl = client.post(f"{P}/playlists", headers=admin_headers, json={"name": "A"}).json()
-    n = len(flushes)
+    assert flushes == []                                         # neue Playlist ändert nichts am Gesendeten
     client.put(f"{P}/program", headers=admin_headers, json={"mode": "playlist", "ref_id": pl["id"]})
     client.post(f"{P}/queue", headers=admin_headers, json={"track_id": "t1", "front": True})
     q = client.get(f"{P}/queue", headers=admin_headers).json()["items"]
     client.put(f"{P}/queue/{q[0]['id']}", headers=admin_headers, json={"pos": 0})
     client.delete(f"{P}/queue/{q[0]['id']}", headers=admin_headers)
     client.post(f"{P}/playlists/{pl['id']}/items", headers=admin_headers, json={"track_ids": ["t1"]})
-    assert len(flushes) - n == 6
+    assert len(flushes) == 5
 
 
 def test_playlist_bearbeiten_ablauf(client, admin_headers, flushes, db_ready):
