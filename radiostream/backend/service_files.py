@@ -75,7 +75,7 @@ def icecast_xml(*, source_password: str, admin_password: str, max_listeners: int
 
 def liquidsoap_script(*, feed_base: str, feed_key: str, source_password: str, name: str, subtitle: str,
                       fallback_file: str, control_socket: str, now_file: str) -> str:
-    """Programm: Modul fragt den Titel (request.dynamic), gleiche Lautheit, weiche Überblendung, MP3 192k an Icecast.
+    """Programm: Modul fragt den Titel (request.dynamic), fester Lautheitswert je Titel, weiche Überblendung, MP3 192k an Icecast.
 
     Fehlt der nächste Titel (NAS weg, Modul neu gestartet), läuft eine leise Notschleife statt Stille."""
     return f"""# Erzeugt von HydraHive Radiostream – nicht von Hand ändern.
@@ -140,7 +140,9 @@ def next_track() =
 end
 
 auto = request.dynamic(id="autodj", retry_delay=3.0, prefetch=3, next_track)
-auto = normalize(auto)
+# Lautheit je Titel als fester Wert (liq_amplify aus /feed/next, loudness.py) – keine laufende Nachregelung, die am
+# Titelende das Ausklingen hochzieht. Titel ohne Wert laufen unverändert.
+auto = amplify(1.0, override="liq_amplify", auto)
 auto = crossfade(duration=3.0, fade_out=3.0, fade_in=1.0, auto)
 notschleife = {_fallback(fallback_file)}
 radio = fallback(id="programm", track_sensitive=false, [auto, notschleife])

@@ -141,10 +141,12 @@ def test_titel_mit_anfuehrungszeichen_bricht_die_anweisung_nicht(client, library
 neu', artist = 'A\\"B'""")
         conn.commit()
     body = client.get(f"{D}/feed/next", headers=_h()).text
-    assert body.count('"') == 4                                  # genau artist="…" und title="…"
     assert body.count("\n") == 1 and body.endswith("\n")         # eine Zeile, kein eingeschleuster Umbruch
-    _meta, uri = body.rstrip("\n").rsplit('":', 1)
-    assert re.fullmatch(r"radiostream:t_[0-9a-f]{24}\.(mp3|flac)", uri)
+    # genau artist="…", title="…" und ggf. liq_amplify="… dB" – kein eingeschleustes Feld, keine fremde Adresse
+    m = re.fullmatch(r'annotate:artist="([^"]*)",title="([^"]*)"(,liq_amplify="-?\d+\.\d dB")?:'
+                     r'(radiostream:t_[0-9a-f]{24}\.(mp3|flac))\n', body)
+    assert m, body
+    assert "8.8.8.8" in m.group(2) and body.count('"') in (4, 6)
 
 
 def test_zuspielung_ohne_anmeldung_aber_nicht_unter_modules(client, library):
@@ -205,5 +207,7 @@ def test_nas_weg_beim_messen_titel_kommt_trotzdem(client, library, monkeypatch):
     monkeypatch.setattr(smb_source, "open_source", boom)
     import backend.feed as feed_mod
     monkeypatch.setattr(feed_mod, "open_source", boom)
-    body, _ = _next_id(client)
+    body, tid = _next_id(client)
     assert body.startswith("annotate:") and "liq_amplify" not in body
+    from backend import library as lib
+    assert lib.by_id(tid)["loudness_tried"] == 0                    # NAS weg ≠ „nicht messbar“: später neu versuchen

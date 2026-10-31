@@ -168,3 +168,9 @@ Abweichungen vom Plan, alle auf hydratest mit echter Musik vom NAS geprüft:
   statt einer Liste, `null()` ist veraltet, `on_metadata` ist eine Methode der Quelle. Das Skript enthält beide
   Fassungen und wählt per `%ifversion >= 2.3.0` beim Laden (0.2.1). Mit 2.2 und 2.4 geprüft, auf dem Hauptserver mit
   Test-Icecast und Test-Zuspielung echt abgespielt.
+- **0.2.3 – Überblendung** (Befund Till 31.10.: „der laufende Song wird lauter, dann kommt der neue“): `normalize()`
+  regelte laufend nach und zog das Ausklingen am Titelende hoch – gemessen mit echter Musik bis **+6 dB**, je leiser
+  das Ende, desto mehr. Jetzt fester Lautheitswert je Titel: beim ersten Abspielen mit ffmpeg (ebur128, Ziel −14 LUFS,
+  +10/−15 dB begrenzt) gemessen, in `loudness_lufs` gespeichert und als `liq_amplify` mitgegeben; Liquidsoap
+  `amplify(override=…)` vor `crossfade`. Gemessen danach: Abstand zum Original über das ganze Ende konstant.
+  Liquidsoaps eigener ReplayGain-Rechner lieferte auf 2.4 und 2.2 keinen Wert, daher ffmpeg.
