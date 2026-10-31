@@ -114,3 +114,18 @@ dazu.
 Dafür kommt das Recht `radiostream.moderate` („Moderieren: Programm, Warteschlange, später Studio“, Standard
 `admin_only`) schon in dieser Etappe. Die Einstellung „Ausgeschlossen von Alles“ gehört zu den Sender-Einstellungen und
 bleibt bei `radiostream.control`.
+
+## Befunde beim Bau (31.10., echte Bibliothek .2 nur gelesen, Liquidsoap 2.4 + 2.2)
+
+- **Hörbücher heißen sehr unterschiedlich:** „Kids; Audiobooks“, „Hoerbuch“, „Hörspiel“, „Speech“, „Audio Drama“,
+  „Spoken Word“, „Kids“ … Voreinstellung „Ausgeschlossen von Alles“ = Wortteile (audiobook, hörbuch/hoerbuch,
+  hörspiel/hoerspiel, spoken) + ganze Genres (Speech, Audio Drama, Kids). Damit: Alles 175.462 → 169.100.
+  „Non-Music“ und leeres Genre bleiben drin (darunter echte Filmmusik, z. B. Lorne Balfe).
+- Trotzdem bleiben ~2.100 Hörspiel-Titel ohne passendes Genre (z. B. Die drei ???, J. K. Rowling, Hui Buh). Dafür
+  schlägt die Oberfläche **Ordner** vor, deren Titel überwiegend Hörbuch-Genres haben (≥ 30 %, ≥ 20 Titel); der Admin
+  hakt sie an. Mit den Vorschlägen: Hörspiel-Reste 0, Alles 166.768.
+- Regel-Abfragen auf 175.000 Titeln: Anzahl 20–70 ms, 64 Zufallstitel 20–70 ms → je Titelwechsel unkritisch.
+- **„Als Nächstes“:** `prefetch=1` (statt 3) erzeugt keine zusätzliche Lücke (gemessen mit 2 s Ladezeit je Titel).
+  Zusätzlich verwirft ein eigenes Steuer-Kommando `autodj.flush` (`set_queue([])`) den vorgeladenen Titel, wenn sich
+  Warteschlange oder Programm ändern – dann wird sofort neu gefragt. Geht auf 2.4 und 2.2. Der verworfene Titel wird
+  in der Gespielt-Liste zurückgenommen (bzw. Warteschlange/Playlist-Stelle zurückgesetzt).

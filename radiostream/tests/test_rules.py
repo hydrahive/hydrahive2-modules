@@ -99,17 +99,30 @@ def test_ausschliessen(conn):
 
 
 def test_ausschluss_alles_hoerbuecher(conn):
-    exclude = {"genres": rules.DEFAULT_EXCLUDE["genres"]}
+    exclude = rules.DEFAULT_EXCLUDE
     got = ids(conn, {}, exclude=exclude, allow_long=True)
     assert "bibi" not in got and "hoerspiel" not in got and "lang" in got
 
 
 def test_voreinstellung_hoerbuecher_als_wortteil():
     """Hörbuch-Genres heißen sehr unterschiedlich – Voreinstellung trifft Wortteile."""
-    for g in ("Kids; Audiobooks; Audiobooks in German", "Hörbuch", "Hörspiel", "Spoken Word", "Audiobook"):
+    for g in ("Kids; Audiobooks; Audiobooks in German", "Hörbuch", "Hoerbuch", "Hörspiel", "Hoerspiel",
+              "Spoken Word", "Audiobook", "Modern Classical;Spoken Word"):
         assert rules.matches_default_exclude(g), g
-    for g in ("Rock", "Pop", "Kids", "Speak Softly"):
+    for g in ("Rock", "Pop", "Speak Softly", "Non-Music", ""):
         assert not rules.matches_default_exclude(g), g
+
+
+def test_voreinstellung_ganze_genres(conn):
+    conn.executemany("INSERT INTO module_radiostream_tracks VALUES (?,?,?,?,?,?,?,?)", [
+        ("speech", "Lesch/x.mp3", "Harald Lesch", "", "Speech", 2010, 300, "ok"),
+        ("drama", "Hui Buh/x.mp3", "Hui Buh", "", "Audio Drama", 1975, 120, "ok"),
+        ("kids", "Janosch/x.mp3", "Janosch", "", "Kids", 1990, 130, "ok"),
+        ("kidsrock", "Rock4Kids/x.mp3", "x", "", "Kids Rock", 2000, 200, "ok"),
+        ("nonmusic", "Lorne Balfe/x.mp3", "Lorne Balfe", "", "Non-Music", 2018, 200, "ok")])
+    got = ids(conn, {}, exclude=rules.DEFAULT_EXCLUDE)
+    assert not {"speech", "drama", "kids"} & got
+    assert {"kidsrock", "nonmusic"} <= got                          # ganze Genres, keine Wortteile; Filmmusik bleibt
 
 
 def test_nur_ok(conn):
