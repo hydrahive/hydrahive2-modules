@@ -64,11 +64,19 @@ def test_unbekannte_titel_werden_nicht_aufgenommen(db_ready):
     assert added == 1 and [i["track_id"] for i in program.items(pl["id"])] == ["t1"]
 
 
-def test_hoechstens_500_auf_einmal_und_2000_insgesamt(db_ready):
+def test_hoechstens_500_auf_einmal_und_2000_insgesamt(db_ready, monkeypatch):
     pl = program.create_playlist("A", user="boss")
     with pytest.raises(ProgramError, match="^radiostream_too_many$"):
         program.add_items(pl["id"], [f"t{i}" for i in range(501)])
-    assert program.MAX_ITEMS == 2000
+    assert program.MAX_ITEMS == 2000 and program.MAX_QUEUE == 100
+    from backend import playlists
+    monkeypatch.setattr(playlists, "MAX_ITEMS", 3)
+    for t in ("t1", "t2"):
+        _track(t)
+    program.add_items(pl["id"], ["t1", "t2"])
+    program.add_items(pl["id"], ["t1"])                             # genau an der Grenze
+    with pytest.raises(ProgramError, match="^radiostream_too_many$"):
+        program.add_items(pl["id"], ["t2"])
 
 
 def test_umsortieren_und_entfernen(db_ready):
@@ -80,6 +88,16 @@ def test_umsortieren_und_entfernen(db_ready):
     assert [i["track_id"] for i in program.items(pl["id"])] == ["t3", "t1", "t2"]
     program.remove_item(pl["id"], 1)
     assert [(i["pos"], i["track_id"]) for i in program.items(pl["id"])] == [(0, "t3"), (1, "t2")]
+
+
+@pytest.mark.parametrize("pos", [5, -1, 1])
+def test_entfernen_ungueltig(db_ready, pos):
+    _track("t1")
+    pl = program.create_playlist("A", user="boss")
+    program.add_items(pl["id"], ["t1"])
+    with pytest.raises(ProgramError, match="^radiostream_playlist_invalid$"):
+        program.remove_item(pl["id"], pos)
+    assert len(program.items(pl["id"])) == 1
 
 
 @pytest.mark.parametrize("args", [(5, 0), (0, 5), (-1, 0)])
@@ -126,6 +144,11 @@ def test_mix_aendern(db_ready):
     assert len(program.mixes()) == 1
 
 
+def test_mix_aendern_unbekannt(db_ready):
+    with pytest.raises(ProgramError, match="^radiostream_mix_not_found$"):
+        program.save_mix("gibt-es-nicht", name="x", rules_={}, allow_long=False, user="boss")
+
+
 def test_mix_ungueltige_regel(db_ready):
     with pytest.raises(ProgramError, match="^radiostream_rule_invalid$"):
         program.save_mix(None, name="x", rules_={"genres": "Rock"}, allow_long=False, user="boss")
@@ -144,7 +167,9 @@ def test_mix_vorschau(db_ready):
     _track("p1", genre="Pop")
     out = program.preview({"genres": ["Rock"]}, allow_long=False)
     assert out["count"] == 2 and {e["track_id"] for e in out["examples"]} == {"r1", "r2"}
-    assert len(program.preview({}, allow_long=False)["examples"]) <= 5
+    for i in range(8):
+        _track(f"x{i}", genre="Rock")
+    assert len(program.preview({}, allow_long=False)["examples"]) == 5
 
 
 # --- Programm wählen ---------------------------------------------------------------------------------------------------
@@ -165,10 +190,20 @@ def test_programm_waehlen_setzt_stelle_zurueck(db_ready):
     assert (p["mode"], p["ref_id"], p["cursor"], p["played"]) == ("playlist", pl["id"], 0, [])
 
 
-@pytest.mark.parametrize("mode,ref", [("playlist", "gibt-es-nicht"), ("mix", "gibt-es-nicht"), ("zufall", "")])
-def test_programm_ungueltig(db_ready, mode, ref):
-    with pytest.raises(ProgramError):
+@pytest.mark.parametrize("mode,ref,code", [("playlist", "gibt-es-nicht", "radiostream_playlist_not_found"),
+                                           ("mix", "gibt-es-nicht", "radiostream_mix_not_found"),
+                                           ("zufall", "", "radiostream_program_invalid")])
+def test_programm_ungueltig(db_ready, mode, ref, code):
+    with pytest.raises(ProgramError, match=f"^{code}$"):
         program.set_program(mode, ref, user="boss")
+
+
+def test_anderes_loeschen_laesst_programm_stehen(db_ready):
+    a = program.create_playlist("A", user="boss")
+    b = program.create_playlist("B", user="boss")
+    program.set_program("playlist", a["id"], user="boss")
+    program.delete_playlist(b["id"])
+    assert program.get_program()["ref_id"] == a["id"]
 
 
 # --- Warteschlange -----------------------------------------------------------------------------------------------------
@@ -194,9 +229,18 @@ def test_warteschlange_entfernen_umsortieren(db_ready):
     assert [x["track_id"] for x in program.queue()] == ["t3", "t2"]
 
 
-def test_warteschlange_unbekannter_titel(db_ready):
+@pytest.mark.parametrize("tid", ["gibt-es-nicht", "weg"])
+def test_warteschlange_unbekannter_oder_fehlender_titel(db_ready, tid):
+    _track("weg", state="missing")
     with pytest.raises(ProgramError, match="^radiostream_track_not_found$"):
-        program.enqueue("gibt-es-nicht", user="boss")
+        program.enqueue(tid, user="boss")
+
+
+def test_warteschlange_umsortieren_fremde_id(db_ready):
+    _track("t1")
+    program.enqueue("t1", user="boss")
+    with pytest.raises(ProgramError, match="^radiostream_queue_invalid$"):
+        program.move_queue(999999, 0)
 
 
 def test_warteschlange_hoechstens_100(db_ready):

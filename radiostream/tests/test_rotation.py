@@ -144,3 +144,21 @@ def test_grosse_bibliothek_waehlt_nie_fehlende(db_ready):
     for i in range(40):
         got = rotation.pick(now=T0, rng=random.Random(i))
         assert int(got["track_id"][1:]) % 10 == 0, got
+
+
+def test_wenige_treffer_in_der_stichprobe_kein_unnoetiges_lockern(db_ready, monkeypatch):
+    """Trifft die Stichprobe nur 1–3 passende (alle gesperrt), muss aus allen passenden gezogen werden, statt zu lockern –
+    es gibt ja freie Titel."""
+    from hydrahive.db.connection import db
+    with db() as conn:
+        conn.executemany(
+            "INSERT INTO module_radiostream_tracks (track_id, source_id, rel_path, size, mtime, artist, title, genre, "
+            "format, state, first_seen, last_seen) VALUES (?, 'main', ?, 1, 1, ?, 'T', ?, 'mp3', 'ok', 'x', 'x')",
+            [(f"g{i}", f"K{i}/g{i}.mp3", f"K{i}", "Jazz" if i in (0, 1, 2, 3) else "Pop") for i in range(3000)])
+        conn.commit()
+    for i in (0, 1):
+        rotation.record(f"g{i}", f"K{i}", at=T0 - timedelta(minutes=1))
+    # Stichprobe trifft immer genau die gesperrten g0 und g1 (rowid 1, 2)
+    monkeypatch.setattr(rotation.random.Random, "randint", lambda self, lo, hi: lo + (self.random() < 0.5))
+    got = rotation.pick(now=T0, rng=random.Random(1), where="t.state = 'ok' AND t.genre = ?", args=["Jazz"])
+    assert got["track_id"] in ("g2", "g3") and got["relaxed"] is False

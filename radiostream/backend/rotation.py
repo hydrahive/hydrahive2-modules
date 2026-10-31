@@ -29,29 +29,36 @@ def _iso(t: datetime) -> str:
     return t.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _candidates(conn, rng: random.Random) -> list[dict]:
-    """Zufällige Stichprobe über die interne Zeilennummer (rowid). Lücken durch gelöschte Zeilen oder andere Zustände
-    werden einfach übersprungen – bei 175.000 Titeln schneller als OFFSET (gemessen 29.10.)."""
+_COLS = "t.track_id, t.artist, t.album_artist, t.title, t.format"
+
+
+def _candidates(conn, rng: random.Random, where: str = "t.state = 'ok'", args: list | None = None) -> list[dict]:
+    """Zufällige Stichprobe innerhalb der Bedingung `where` (Programm: Mix-Regel bzw. „Alles“ mit Ausschluss).
+
+    Erst über die interne Zeilennummer (rowid) – bei 175.000 Titeln schneller als OFFSET (gemessen 29.10.). Trifft die
+    Stichprobe nichts (enge Regel, z. B. 2 % der Titel), wählt SQLite zufällig aus allen passenden (gemessen 31.10.:
+    20–70 ms auf 175.000 Titeln)."""
+    args = args or []
     lo, hi = conn.execute("SELECT MIN(rowid), MAX(rowid) FROM module_radiostream_tracks").fetchone()
     if lo is None:
         return []
-    if hi - lo < _SAMPLE * 4:
-        rows = conn.execute("SELECT track_id, artist, album_artist, title, format FROM module_radiostream_tracks "
-                            "WHERE state = 'ok'").fetchall()
-    else:
+    rows: list = []
+    if hi - lo >= _SAMPLE * 4:
         ids = [rng.randint(lo, hi) for _ in range(_SAMPLE * 2)]
         marks = ",".join("?" * len(ids))
-        rows = conn.execute("SELECT track_id, artist, album_artist, title, format FROM module_radiostream_tracks "
-                            f"WHERE state = 'ok' AND rowid IN ({marks})", ids).fetchall()
-        if not rows:
-            rows = conn.execute("SELECT track_id, artist, album_artist, title, format FROM module_radiostream_tracks "
-                                "WHERE state = 'ok' LIMIT ?", (_SAMPLE,)).fetchall()
+        rows = conn.execute(f"SELECT {_COLS} FROM module_radiostream_tracks t WHERE ({where}) AND t.rowid IN ({marks})",
+                            [*args, *ids]).fetchall()
+    if len(rows) < 4:
+        rows = conn.execute(f"SELECT {_COLS} FROM module_radiostream_tracks t WHERE {where} ORDER BY random() LIMIT ?",
+                            [*args, _SAMPLE]).fetchall()
     out = [dict(r) for r in rows]
     rng.shuffle(out)
     return out
 
 
-def pick(*, now: datetime | None = None, rng: random.Random | None = None) -> dict:
+def pick(*, now: datetime | None = None, rng: random.Random | None = None, where: str = "t.state = 'ok'",
+         args: list | None = None) -> dict:
+    """Nächster Titel aus der Bedingung `where` mit den Sperren für Künstler und Titel. Leer → NothingToPlay."""
     now = now or datetime.now(UTC)
     rng = rng or random.Random()
     cfg = station.get()
@@ -63,13 +70,13 @@ def pick(*, now: datetime | None = None, rng: random.Random | None = None) -> di
         blocked_titles = {r[0] for r in conn.execute(
             "SELECT DISTINCT track_id FROM module_radiostream_plays WHERE played_at > ?", (title_since,))}
         for _ in range(4):
-            cands = _candidates(conn, rng)
+            cands = _candidates(conn, rng, where, args)
             if not cands:
                 raise NothingToPlay()
             for c in cands:
                 if c["track_id"] not in blocked_titles and artist_key(c["artist"], c["album_artist"]) not in blocked_artists:
                     return {**c, "relaxed": False}
-        cands = _candidates(conn, rng)
+        cands = _candidates(conn, rng, where, args)
         for c in cands:                                   # Lockern 1: Künstler egal, Titel weiter gesperrt
             if c["track_id"] not in blocked_titles:
                 return {**c, "relaxed": True}

@@ -146,3 +146,8 @@ def test_keine_einschleusung(conn):
     evil = "Rock'); DROP TABLE module_radiostream_tracks; --"
     ids(conn, {"genres": [evil], "artists": [evil], "folders": ["x'y"]})
     assert conn.execute("SELECT count(*) FROM module_radiostream_tracks").fetchone()[0] == 10
+
+
+def test_ausschluss_ordner_aus_einstellung(conn):
+    got = ids(conn, {}, exclude={"genres": [], "genre_parts": [], "folders": ["AC_DC"]})
+    assert "rock80" not in got and "acdc2" not in got and "pop90" in got

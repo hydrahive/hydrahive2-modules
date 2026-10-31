@@ -11,7 +11,7 @@ from fastapi import APIRouter, status
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from hydrahive.api.middleware.errors import coded
 
-from . import audio, library, loudness, rotation, settings_store
+from . import audio, choose, library, loudness, rotation, settings_store
 from .smb_source import SourceError, open_source
 
 # Geräte-Router: Der Kern hängt ihn unter /api/module-device/radiostream ein, OHNE Benutzer-Anmeldung, aber zwingend
@@ -28,7 +28,7 @@ def _q(text: str) -> str:
 @router.get("/feed/next", response_class=PlainTextResponse)
 def feed_next() -> str:
     try:
-        t = rotation.pick()
+        t = choose.next_track()
     except rotation.NothingToPlay:
         raise coded(status.HTTP_503_SERVICE_UNAVAILABLE, "radiostream_library_empty")
     rotation.record(t["track_id"], t["artist"], album_artist=t.get("album_artist", ""))

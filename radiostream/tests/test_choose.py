@@ -142,6 +142,7 @@ def test_mix_mit_sperren(db_ready):
 def test_mix_ohne_ausschluss_von_alles(db_ready):
     """Ein Mix gilt genau so, wie er gebaut ist – „Ausgeschlossen von Alles“ betrifft nur „Alles“."""
     _track("h1", genre="Hörspiel", artist="Hui Buh")
+    _track("p1", genre="Pop")                                # damit „Alles“ nicht leer ist (sonst Rückfall)
     m = program.save_mix(None, name="Hörspiele", rules_={"genres": ["Hörspiel"]}, allow_long=False, user="boss")
     program.set_program("mix", m["id"], user="boss")
     assert nxt()["track_id"] == "h1"
@@ -197,3 +198,31 @@ def test_grosse_bibliothek_mix_trifft_nur_regel(db_ready):
     program.set_program("mix", m["id"], user="boss")
     for i in range(30):
         assert int(nxt(i)["track_id"][1:]) % 50 == 0
+
+
+def test_playlist_gemischt_am_ende_zurueck_zu_alles(db_ready):
+    _track("s1")
+    _track("s2")
+    _track("x")
+    pl = program.create_playlist("A", user="boss")
+    program.add_items(pl["id"], ["s1", "s2"])
+    program.update_playlist(pl["id"], order_mode="shuffle", at_end="back")
+    program.set_program("playlist", pl["id"], user="boss")
+    assert {nxt(1)["track_id"], nxt(2)["track_id"]} == {"s1", "s2"}
+    got = nxt(3)
+    assert got["source"] == "all" and program.get_program()["mode"] == "all"
+
+
+def test_grosse_bibliothek_mit_ein_paar_treffern_in_der_stichprobe(db_ready):
+    """Trifft die Stichprobe nur wenige passende Titel, wird aus allen passenden gezogen – sonst kämen immer dieselben."""
+    from hydrahive.db.connection import db
+    with db() as conn:
+        conn.executemany(
+            "INSERT INTO module_radiostream_tracks (track_id, source_id, rel_path, size, mtime, artist, title, genre, "
+            "format, duration_s, state, first_seen, last_seen) VALUES (?, 'main', ?, 1, 1, ?, 'T', ?, 'mp3', 200, 'ok', "
+            "'x', 'x')", [(f"g{i}", f"K{i}/g{i}.mp3", f"K{i}", "Jazz" if i % 100 == 0 else "Pop") for i in range(5000)])
+        conn.commit()
+    m = program.save_mix(None, name="Jazz", rules_={"genres": ["Jazz"]}, allow_long=False, user="boss")
+    program.set_program("mix", m["id"], user="boss")
+    got = {nxt(i)["track_id"] for i in range(60)}
+    assert len(got) >= 25
