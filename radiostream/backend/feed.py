@@ -11,7 +11,7 @@ from fastapi import APIRouter, status
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from hydrahive.api.middleware.errors import coded
 
-from . import audio, library, rotation, settings_store
+from . import audio, library, loudness, rotation, settings_store
 from .smb_source import SourceError, open_source
 
 # Geräte-Router: Der Kern hängt ihn unter /api/module-device/radiostream ein, OHNE Benutzer-Anmeldung, aber zwingend
@@ -33,8 +33,33 @@ def feed_next() -> str:
         raise coded(status.HTTP_503_SERVICE_UNAVAILABLE, "radiostream_library_empty")
     rotation.record(t["track_id"], t["artist"], album_artist=t.get("album_artist", ""))
     ext = "flac" if t["format"] == "flac" else "mp3"
-    return f'annotate:artist="{_q(t["artist"] or t.get("album_artist", ""))}",title="{_q(t["title"])}":' \
+    gain = _gain(t["track_id"])
+    amp = f',liq_amplify="{gain} dB"' if gain is not None else ""
+    return f'annotate:artist="{_q(t["artist"] or t.get("album_artist", ""))}",title="{_q(t["title"])}"{amp}:' \
            f'radiostream:{t["track_id"]}.{ext}\n'
+
+
+def _gain(track_id: str) -> float | None:
+    """Fester Lautheitswert je Titel (loudness.py). Beim ersten Mal gemessen, danach aus der DB. Scheitert das Messen
+    (NAS weg, Datei kaputt), läuft der Titel ohne Angleichung – nie ohne Titel."""
+    t = library.by_id(track_id) or {}
+    if not t.get("loudness_tried"):
+        lufs = None
+        src = settings_store.get()
+        if src is not None:
+            try:
+                conn = open_source(src["url"], src["owner"], src["credential_name"])
+                try:
+                    with conn.open(t["rel_path"]) as fh:
+                        lufs = loudness.measure(fh, t["format"])
+                finally:
+                    conn.close()
+            except (SourceError, OSError, KeyError):
+                return None                                   # NAS weg: beim nächsten Mal neu versuchen
+        library.set_loudness(track_id, lufs)
+        t["loudness_lufs"] = lufs
+    lufs = t.get("loudness_lufs")
+    return loudness.gain_for(lufs) if lufs is not None else None
 
 
 @router.get("/feed/file/{track_id}")

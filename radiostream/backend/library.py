@@ -104,3 +104,11 @@ def count() -> int:
 def all_tracks() -> list[dict]:
     with db() as conn:
         return [dict(r) for r in conn.execute("SELECT * FROM module_radiostream_tracks").fetchall()]
+
+
+def set_loudness(track_id_: str, lufs: float | None) -> None:
+    """Gemessene Lautheit speichern; auch „nicht messbar“ (None) merken, damit nicht dauernd neu gemessen wird."""
+    with db() as conn:
+        conn.execute("UPDATE module_radiostream_tracks SET loudness_lufs = ?, loudness_tried = 1 WHERE track_id = ?",
+                     (lufs, track_id_))
+        conn.commit()
