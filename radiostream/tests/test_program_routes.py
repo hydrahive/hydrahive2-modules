@@ -231,3 +231,16 @@ def test_aenderungen_bleiben_auch_wenn_sender_aus(client, admin_headers, db_read
     _track("t1")
     assert client.post(f"{P}/queue", headers=admin_headers, json={"track_id": "t1"}).status_code == 200
     assert len(program.queue()) == 1
+
+
+def test_ordnerliste_fuer_mixe(client, user_headers, db_ready):
+    for i in range(3):
+        _track(f"q{i}", rel=f"Queen/{i}.mp3")
+    _track("a1", rel="ABBA/x.mp3")
+    _track("lose", rel="einzeln.mp3")
+    from hydrahive.db.connection import db
+    with db() as conn:
+        conn.execute("UPDATE module_radiostream_tracks SET state = 'missing' WHERE track_id = 'a1'")
+        conn.commit()
+    r = client.get(f"{P}/folders", headers=user_headers)
+    assert r.status_code == 200 and r.json()["items"] == [{"folder": "Queen", "count": 3}]

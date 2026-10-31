@@ -82,6 +82,11 @@ def list_mixes(p: Principal):
     return {"items": mixes.mixes()}
 
 
+@router.get("/folders")
+def list_folders(p: Principal):
+    return {"items": mixes.folders()}
+
+
 @router.post("/mixes/preview")
 def preview(p: Principal, body: PreviewIn):
     return _do(lambda: mixes.preview(body.rules, allow_long=body.allow_long), change=False)

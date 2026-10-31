@@ -103,3 +103,12 @@ def folder_suggestions() -> list[dict]:
             "HAVING n >= ? AND 100.0 * hit / n >= ? ORDER BY n DESC, folder", [*parts, *whole, SUGGEST_MIN,
                                                                                SUGGEST_SHARE]).fetchall()
     return [{"folder": r["folder"], "count": r["n"], "share": round(100 * r["hit"] / r["n"])} for r in rows]
+
+
+def folders() -> list[dict]:
+    """Oberste Ordner der Bibliothek mit Anzahl (Auswahl im Mix-Editor). Nur Titel im Zustand ok."""
+    with db() as conn:
+        rows = conn.execute("SELECT substr(rel_path, 1, instr(rel_path, '/') - 1) AS folder, COUNT(*) AS n "
+                            "FROM module_radiostream_tracks WHERE state = 'ok' AND instr(rel_path, '/') > 0 "
+                            "GROUP BY folder ORDER BY lower(folder)").fetchall()
+    return [{"folder": r["folder"], "count": r["n"]} for r in rows]
