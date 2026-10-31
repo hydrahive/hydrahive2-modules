@@ -281,6 +281,8 @@ def test_ordner_vorschlaege(db_ready):
         _track(f"q{i}", artist="Queen", genre="Rock", rel=f"Queen/{i}.mp3")
     for i in range(5):
         _track(f"k{i}", artist="Klein", genre="Hörspiel", rel=f"Klein/{i}.mp3")
+    for i in range(25):                                                   # 36 % Hörbuch (wie Peter Maffay/Tabaluga)
+        _track(f"m{i}", artist="Maffay", genre="Kids / Audiobooks" if i < 9 else "Pop;Rock", rel=f"Maffay/{i}.mp3")
     sug = program.folder_suggestions()
     assert [s["folder"] for s in sug] == ["Bibi Blocksberg", "Die drei"]
     assert sug[0]["count"] == 25 and sug[1]["share"] == 40

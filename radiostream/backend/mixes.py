@@ -11,7 +11,8 @@ from .program_base import ProgramError, clean_name, new_id, now
 _T = "module_radiostream_mixes"
 EX_KEYS = ("genres", "genre_parts", "folders")
 SUGGEST_MIN = 20          # Titel je Ordner
-SUGGEST_SHARE = 30        # % Titel mit Hörbuch-Genre
+SUGGEST_SHARE = 40        # % Titel mit Hörbuch-Genre. Gemessen .2: 30 % schlug Peter Maffay (Tabaluga) und Max
+                          # Richter (Sprechtext) vor – überwiegend Musik. Ab 40 %: nur Hörbuch-/Hörspiel-Ordner.
 
 
 def _row(r) -> dict:
