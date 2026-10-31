@@ -46,3 +46,7 @@ CREATE TABLE IF NOT EXISTS module_radiostream_program (
 -- „Ausgeschlossen von Alles“ (JSON: genres, genre_parts, folders) und lange Titel in Alles/Mixen. NULL = Voreinstellung.
 ALTER TABLE module_radiostream_station ADD COLUMN exclude_rules TEXT;
 ALTER TABLE module_radiostream_station ADD COLUMN allow_long INTEGER NOT NULL DEFAULT 0;
+-- Herkunft je gespieltem Titel (Warteschlange, Playlist-Stelle, Mix), damit ein vorgeladener Titel bei einer
+-- Programmänderung sauber zurückgenommen werden kann (autodj.flush).
+ALTER TABLE module_radiostream_plays ADD COLUMN source TEXT NOT NULL DEFAULT '';
+ALTER TABLE module_radiostream_plays ADD COLUMN ref TEXT NOT NULL DEFAULT '';

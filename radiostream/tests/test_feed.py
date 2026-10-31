@@ -143,10 +143,10 @@ neu', artist = 'A\\"B'""")
     body = client.get(f"{D}/feed/next", headers=_h()).text
     assert body.count("\n") == 1 and body.endswith("\n")         # eine Zeile, kein eingeschleuster Umbruch
     # genau artist="…", title="…" und ggf. liq_amplify="… dB" – kein eingeschleustes Feld, keine fremde Adresse
-    m = re.fullmatch(r'annotate:artist="([^"]*)",title="([^"]*)"(,liq_amplify="-?\d+\.\d dB")?:'
+    m = re.fullmatch(r'annotate:artist="([^"]*)",title="([^"]*)"(,liq_amplify="-?\d+\.\d dB")?,rs_play="\d+":'
                      r'(radiostream:t_[0-9a-f]{24}\.(mp3|flac))\n', body)
     assert m, body
-    assert "8.8.8.8" in m.group(2) and body.count('"') in (4, 6)
+    assert "8.8.8.8" in m.group(2) and body.count('"') in (6, 8)
 
 
 def test_zuspielung_ohne_anmeldung_aber_nicht_unter_modules(client, library):

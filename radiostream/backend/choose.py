@@ -34,7 +34,7 @@ def _track(track_id: str) -> dict | None:
 def _from_queue() -> dict | None:
     while (tid := queue_store.pop_first()) is not None:
         if t := _track(tid):
-            return {**t, "relaxed": False, "source": "queue"}
+            return {**t, "relaxed": False, "source": "queue", "ref": ""}
     return None
 
 
@@ -54,6 +54,7 @@ def _from_playlist(pid: str, prog: dict, rng: random.Random) -> dict | None:
             played, left = [], avail
         e = rng.choice(left)
         program.save_position(played=[*played, e["pos"]])
+        mode = "shuffle"
     else:
         later = [x for x in avail if x["pos"] >= prog["cursor"]]
         if not later:
@@ -62,8 +63,9 @@ def _from_playlist(pid: str, prog: dict, rng: random.Random) -> dict | None:
             later = avail
         e = later[0]
         program.save_position(cursor=e["pos"] + 1)
+        mode = "ordered"
     t = _track(e["track_id"])
-    return {**t, "relaxed": False, "source": "playlist"} if t else None
+    return {**t, "relaxed": False, "source": "playlist", "ref": f"{pid}:{mode}:{e['pos']}"} if t else None
 
 
 def _from_mix(mid: str, now: datetime, rng: random.Random) -> dict | None:
@@ -72,7 +74,7 @@ def _from_mix(mid: str, now: datetime, rng: random.Random) -> dict | None:
         return None
     where, args = rules.where(m["rules"], exclude={}, allow_long=m["allow_long"])
     try:
-        return {**rotation.pick(now=now, rng=rng, where=where, args=args), "source": "mix"}
+        return {**rotation.pick(now=now, rng=rng, where=where, args=args), "source": "mix", "ref": mid}
     except rotation.NothingToPlay:
         return None
 
@@ -81,14 +83,14 @@ def _from_all(now: datetime, rng: random.Random) -> dict:
     ex = mixes.get_exclude()
     where, args = rules.where({}, exclude=ex["rules"], allow_long=ex["allow_long"])
     try:
-        return {**rotation.pick(now=now, rng=rng, where=where, args=args), "source": "all"}
+        return {**rotation.pick(now=now, rng=rng, where=where, args=args), "source": "all", "ref": ""}
     except rotation.NothingToPlay:
         t = rotation.pick(now=now, rng=rng)                  # lieber Ausgeschlossenes als Stille
-        return {**t, "relaxed": True, "source": "all"}
+        return {**t, "relaxed": True, "source": "all", "ref": ""}
 
 
 def next_track(*, now: datetime | None = None, rng: random.Random | None = None) -> dict:
-    """Nächster Titel als dict (track_id, artist, album_artist, title, format, relaxed, source)."""
+    """Nächster Titel als dict (track_id, artist, album_artist, title, format, relaxed, source, ref)."""
     now = now or datetime.now(UTC)
     rng = rng or random.Random()
     if t := _from_queue():

@@ -139,7 +139,19 @@ def next_track() =
   end
 end
 
-auto = request.dynamic(id="autodj", retry_delay=3.0, prefetch=3, next_track)
+auto = request.dynamic(id="autodj", retry_delay=3.0, prefetch=1, next_track)
+# Programm geändert („Als Nächstes“, andere Playlist): vorgeladenen Titel verwerfen und seine Spiel-Kennung (rs_play)
+# nennen – das Modul nimmt ihn zurück (preload.py). Danach fragt Liquidsoap sofort neu. Geht auf 2.2 und 2.4.
+def flush(_) =
+  q = auto.queue()
+  auto.set_queue([])
+  def play_id(r) =
+    m = request.metadata(r)
+    m["rs_play"]
+  end
+  string.concat(separator=",", list.map(play_id, q))
+end
+server.register(namespace="autodj", description="Vorgeladenen Titel verwerfen", "flush", flush)
 # Lautheit je Titel als fester Wert (liq_amplify aus /feed/next, loudness.py) – keine laufende Nachregelung, die am
 # Titelende das Ausklingen hochzieht. Titel ohne Wert laufen unverändert.
 auto = amplify(1.0, override="liq_amplify", auto)

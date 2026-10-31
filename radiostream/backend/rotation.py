@@ -83,10 +83,26 @@ def pick(*, now: datetime | None = None, rng: random.Random | None = None, where
         return {**cands[0], "relaxed": True}             # Lockern 2: lieber Wiederholung als Stille
 
 
-def record(track_id: str, artist: str, *, at: datetime | None = None, album_artist: str = "") -> None:
+def record(track_id: str, artist: str, *, at: datetime | None = None, album_artist: str = "", source: str = "",
+           ref: str = "") -> int:
+    """In die Gespielt-Liste (Sperren, „zuletzt gespielt“). source/ref = Herkunft, für das Zurücknehmen (preload.py)."""
     with db() as conn:
-        conn.execute("INSERT INTO module_radiostream_plays (track_id, artist_key, played_at) VALUES (?, ?, ?)",
-                     (track_id, artist_key(artist, album_artist), _iso(at or datetime.now(UTC))))
+        pid = conn.execute("INSERT INTO module_radiostream_plays (track_id, artist_key, played_at, source, ref) "
+                           "VALUES (?, ?, ?, ?, ?)", (track_id, artist_key(artist, album_artist),
+                                                      _iso(at or datetime.now(UTC)), source, ref)).lastrowid
+        conn.commit()
+    return int(pid)
+
+
+def play_origin(play_id: int) -> dict | None:
+    with db() as conn:
+        r = conn.execute("SELECT track_id, source, ref FROM module_radiostream_plays WHERE id = ?", (play_id,)).fetchone()
+    return dict(r) if r else None
+
+
+def unrecord(play_id: int) -> None:
+    with db() as conn:
+        conn.execute("DELETE FROM module_radiostream_plays WHERE id = ?", (play_id,))
         conn.commit()
 
 
@@ -101,7 +117,8 @@ def prune(*, now: datetime | None = None) -> int:
 def recent(limit: int = 10) -> list[dict]:
     with db() as conn:
         rows = conn.execute(
-            "SELECT p.track_id, p.played_at, COALESCE(t.artist, '') AS artist, COALESCE(t.title, '') AS title "
+            "SELECT p.id AS play_id, p.track_id, p.played_at, COALESCE(t.artist, '') AS artist, "
+            "COALESCE(t.title, '') AS title "
             "FROM module_radiostream_plays p LEFT JOIN module_radiostream_tracks t ON t.track_id = p.track_id "
             "ORDER BY p.played_at DESC, p.id DESC LIMIT ?", (limit,)).fetchall()
     return [dict(r) for r in rows]

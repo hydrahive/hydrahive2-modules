@@ -49,15 +49,46 @@ def test_flush_nimmt_gespielt_eintrag_zurueck(db_ready, sock):
     assert rotation.recent(limit=5) == []
 
 
-def test_flush_stellt_warteschlange_wieder_her(db_ready, sock):
+@pytest.mark.parametrize("front,want", [(True, ["b", "a"]), (False, ["a", "b"])])
+def test_aenderung_erst_nach_dem_zuruecknehmen(db_ready, sock, front, want):
+    """„Als Nächstes: b“, während a schon vorgeladen ist → b, dann a. „Ans Ende: b“ → a, dann b."""
     _track("a")
     _track("b")
     program.enqueue("a", user="boss")
     t, pid = _pick_and_record()
     assert t["track_id"] == "a" and program.queue() == []
     sock[1]["text"] = f"{pid}\r\nEND"
+    with preload.changing():
+        program.enqueue("b", user="boss", front=front)
+    assert [q["track_id"] for q in program.queue()] == want
+
+
+def test_zurueckgenommener_kommt_vor_die_uebrigen(db_ready, sock):
+    for t in ("a", "c"):
+        _track(t)
+    program.enqueue("a", user="boss")
+    program.enqueue("c", user="boss")
+    t, pid = _pick_and_record()
+    assert t["track_id"] == "a"
+    sock[1]["text"] = f"{pid}\r\nEND"
     preload.flush()
-    assert [q["track_id"] for q in program.queue()] == ["a"]
+    assert [q["track_id"] for q in program.queue()] == ["a", "c"]
+
+
+def test_sender_wartet_bis_die_aenderung_steht(db_ready, sock):
+    """Liquidsoap fragt direkt nach dem Verwerfen neu (/feed/next). Das muss warten, bis die Änderung gespeichert ist."""
+    import threading
+    _track("a")
+    _track("b")
+    got: list[str] = []
+    with preload.changing():
+        th = threading.Thread(target=lambda: got.append(preload.locked_next()["track_id"]))
+        th.start()
+        th.join(0.3)
+        assert th.is_alive()                                             # wartet noch
+        program.enqueue("b", user="boss")
+    th.join(2)
+    assert got == ["b"]
 
 
 def test_flush_stellt_playlist_stelle_wieder_her(db_ready, sock):
