@@ -85,7 +85,12 @@ def test_liquidsoap_schickt_feed_schluessel_bei_beiden_abrufen():
 
 def test_liquidsoap_programm_mit_ueberblendung_lautheit_und_notschleife():
     s = sf.liquidsoap_script(**_LIQ)
-    assert "request.dynamic(" in s and "normalize(auto)" in s and "crossfade(" in s
+    assert "request.dynamic(" in s and "crossfade(" in s
+    # Lautheit je Titel fest (Wert aus /feed/next), nicht laufend nachgeregelt – normalize() zog das Ausklingen am
+    # Titelende hoch (Befund Till 31.10., gemessen: −45 dB → −29 dB).
+    assert "normalize(" not in s
+    assert 'amplify(1.0, override="liq_amplify", auto)' in s
+    assert s.index("amplify(") < s.index("crossfade(")              # erst je Titel angleichen, dann überblenden
     assert 'single(id="notschleife", "/x/stille.mp3")' in s
     assert "fallback(" in s and "mksafe(radio)" in s
 

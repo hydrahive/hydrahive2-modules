@@ -158,3 +158,52 @@ def test_zuspielung_hat_ratenbremse(client, library, monkeypatch):
     monkeypatch.setattr(module_devices, "DEVICE_RATE_LIMIT", 2)
     codes = [client.get(f"{D}/feed/next", headers=_h("falsch")).status_code for _ in range(4)]
     assert codes[-1] == 429
+
+
+# --- Lautheit je Titel (0.2.3) ----------------------------------------------------------------------------------------
+
+def _next_id(client):
+    body = client.get(f"{D}/feed/next", headers=_h()).text.strip()
+    return body, body.rsplit('":', 1)[1].removeprefix("radiostream:").rsplit(".", 1)[0]
+
+
+def test_naechster_titel_bringt_gemessene_lautheit_mit(client, library, monkeypatch):
+    from backend import loudness
+    monkeypatch.setattr(loudness, "measure", lambda fh, fmt: -20.0)
+    body, tid = _next_id(client)
+    assert 'liq_amplify="6.0 dB"' in body
+    from backend import library as lib
+    assert lib.by_id(tid)["loudness_lufs"] == -20.0
+
+
+def test_gespeicherte_lautheit_wird_nicht_neu_gemessen(client, library, monkeypatch):
+    from backend import loudness
+    calls = []
+    monkeypatch.setattr(loudness, "measure", lambda fh, fmt: calls.append(1) or -14.0)
+    for _ in range(8):
+        client.get(f"{D}/feed/next", headers=_h())
+    assert len(calls) == 4                                         # 4 Titel in der Test-Bibliothek, je einmal
+
+
+def test_nicht_messbar_ohne_angleichung_und_kein_dauernder_neuversuch(client, library, monkeypatch):
+    from backend import loudness
+    calls = []
+    monkeypatch.setattr(loudness, "measure", lambda fh, fmt: calls.append(1) and None)
+    body, _ = _next_id(client)
+    assert "liq_amplify" not in body
+    for _ in range(8):
+        client.get(f"{D}/feed/next", headers=_h())
+    assert len(calls) == 4
+
+
+def test_nas_weg_beim_messen_titel_kommt_trotzdem(client, library, monkeypatch):
+    from backend import smb_source
+    from backend.smb_source import SourceError
+
+    def boom(*a, **kw):
+        raise SourceError("radiostream_source_unreachable")
+    monkeypatch.setattr(smb_source, "open_source", boom)
+    import backend.feed as feed_mod
+    monkeypatch.setattr(feed_mod, "open_source", boom)
+    body, _ = _next_id(client)
+    assert body.startswith("annotate:") and "liq_amplify" not in body
