@@ -107,3 +107,10 @@ dazu.
 **Wer darf Playlisten/Mixe anlegen und das Programm umschalten?**
 - A) nur Admins (Recht `radiostream.control`, wie die Sender-Einstellungen),
 - B) zusätzlich Moderatoren (das Recht `radiostream.moderate` aus PLAN-E3.md kommt dann schon hier).
+
+## Entscheidung (Till, 31.10.)
+
+**B:** Playlisten und Mixe anlegen, Programm umschalten und die Warteschlange bedienen dürfen auch **Moderatoren**.
+Dafür kommt das Recht `radiostream.moderate` („Moderieren: Programm, Warteschlange, später Studio“, Standard
+`admin_only`) schon in dieser Etappe. Die Einstellung „Ausgeschlossen von Alles“ gehört zu den Sender-Einstellungen und
+bleibt bei `radiostream.control`.
