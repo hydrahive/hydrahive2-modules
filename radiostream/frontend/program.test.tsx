@@ -48,7 +48,8 @@ describe("Kasten Programm im Sender", () => {
   it("zeigt was läuft und die Auswahl", () => {
     const html = view({ mode: "playlist", ref_id: "p1", name: "Party", count: 3, position: 1 })
     expect(html).toContain("program.line_playlist")
-    expect(html).toContain("Party") && expect(html).toContain("Rock")
+    expect(html).toContain("Party")
+    expect(html).toContain("Rock")
     expect(html).toMatch(/<option[^>]*value="playlist:p1"[^>]*selected/)
   })
   it("Hinweis bei leerem Programm", () => {
@@ -66,8 +67,11 @@ describe("Warteschlange", () => {
     { id: 2, pos: 1, track_id: "b", artist: "ABBA", title: "SOS", duration_s: 200, added_by: "till" }]
   it("Liste mit hoch/runter/entfernen", () => {
     const html = renderToStaticMarkup(<QueueBox items={items} canModerate busy={false} onMove={noop} onRemove={noop} />)
-    expect(html).toContain("One Vision") && expect(html).toContain("SOS")
-    expect(html).toContain("queue.up") && expect(html).toContain("queue.down") && expect(html).toContain("queue.remove")
+    expect(html).toContain("One Vision")
+    expect(html).toContain("SOS")
+    expect(html).toContain("queue.up")
+    expect(html).toContain("queue.down")
+    expect(html).toContain("queue.remove")
   })
   it("erster nicht hoch, letzter nicht runter", () => {
     const html = renderToStaticMarkup(<QueueBox items={items} canModerate busy={false} onMove={noop} onRemove={noop} />)
@@ -93,7 +97,8 @@ describe("Aktionen an der Titelzeile", () => {
   it("zugeklappt nur der Knopf", () => {
     const html = renderToStaticMarkup(<TrackActions trackId="t1" playlists={pls as never} open={false} onToggle={noop}
       onQueue={noop} onAdd={noop} />)
-    expect(html).toContain("track.actions") && expect(html).not.toContain("track.next")
+    expect(html).toContain("track.actions")
+    expect(html).not.toContain("track.next")
   })
 })
 
@@ -104,7 +109,8 @@ describe("Playlist bearbeiten", () => {
   it("Titel, Reihenfolge, fehlende grau, Abspielart", () => {
     const html = renderToStaticMarkup(<PlaylistView pl={pl as never} items={items} canModerate busy={false}
       onChange={noop} onMove={noop} onRemove={noop} onDelete={noop} onPlayNow={noop} />)
-    expect(html).toContain("One Vision") && expect(html).toContain("playlist.missing")
+    expect(html).toContain("One Vision")
+    expect(html).toContain("playlist.missing")
     for (const k of ["playlist.ordered", "playlist.shuffle", "playlist.repeat", "playlist.back", "playlist.delete",
       "playlist.play_now"]) expect(html).toContain(k)
     expect(html).toMatch(/data-dropzone="p1"/)
@@ -115,7 +121,8 @@ describe("Playlist bearbeiten", () => {
     expect((html.match(/draggable="true"/g) ?? []).length).toBe(2)
     const ro = renderToStaticMarkup(<PlaylistView pl={pl as never} items={items} canModerate={false} busy={false}
       onChange={noop} onMove={noop} onRemove={noop} onDelete={noop} onPlayNow={noop} />)
-    expect(ro).not.toContain('draggable="true"') && expect(free(ro)).toEqual([])
+    expect(ro).not.toContain('draggable="true"')
+    expect(free(ro)).toEqual([])
   })
   it("leer: Hinweis wie man befüllt", () => {
     expect(renderToStaticMarkup(<PlaylistView pl={pl as never} items={[]} canModerate busy={false}
@@ -129,6 +136,7 @@ describe("Mix-Editor", () => {
     canModerate busy={false} onChange={noop} onSave={noop} onDelete={noop} onPlayNow={noop} {...o} />)
   it("Felder, Anzahl, Beispiele, wenige-Titel-Hinweis", () => {
     const html = view()
+    expect(html).toMatch(/<summary[^>]*>mix.exclude<\/summary>/)
     for (const k of ["mix.genres", "mix.artists", "mix.decades", "mix.folders", "mix.exclude", "mix.allow_long",
       "mix.count:{&quot;count&quot;:12}", "One Vision", "mix.few"]) expect(html).toContain(k)
   })

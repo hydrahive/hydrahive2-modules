@@ -1,20 +1,26 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useAuthStore } from "@/features/auth/useAuthStore"
-import { getSource } from "./api"
+import { getGenres, getSource } from "./api"
+import { ProgramPanel } from "./ProgramPanel"
+import { useProgramData } from "./useProgramData"
 import { Library } from "./Library"
 import { SettingsPanel } from "./SettingsPanel"
 import { StationPanel } from "./StationPanel"
 
-type Tab = "library" | "station" | "settings"
+type Tab = "library" | "program" | "station" | "settings"
 
-/** Modulseite Radiostream: Reiter Bibliothek und Sender (alle); Admins zusätzlich Musikquelle. */
+/** Modulseite Radiostream: Reiter Bibliothek, Programm und Sender (alle); Admins zusätzlich Musikquelle. */
 export function RadiostreamPage() {
   const { t } = useTranslation("radiostream")
   const isAdmin = useAuthStore((s: { role?: string | null }) => s.role) === "admin"
   const [tab, setTab] = useState<Tab>("library")
   const [hasSource, setHasSource] = useState(false)
   const [rev, setRev] = useState(0)
+  const { program, playlists, reload } = useProgramData()
+  const [genres, setGenres] = useState<string[]>([])
+  useEffect(() => { getGenres().then((r) => setGenres(r.items.map((g) => g.genre))).catch(() => {}) }, [rev])
+  useEffect(() => { reload() }, [tab, reload])
 
   // Nur Admins dürfen die Quelle lesen; für alle anderen ist „eingerichtet“ egal (sie sehen keinen Knopf).
   useEffect(() => {
@@ -22,7 +28,7 @@ export function RadiostreamPage() {
   }, [isAdmin, rev])
   const configured = !isAdmin || hasSource
 
-  const tabs: Tab[] = isAdmin ? ["library", "station", "settings"] : ["library", "station"]
+  const tabs: Tab[] = isAdmin ? ["library", "program", "station", "settings"] : ["library", "program", "station"]
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-4">
       <header className="space-y-1">
@@ -37,7 +43,8 @@ export function RadiostreamPage() {
           </button>
         ))}
       </nav>
-      {tab === "library" && <Library key={rev} isAdmin={isAdmin} configured={configured} />}
+      {tab === "library" && <Library key={rev} isAdmin={isAdmin} configured={configured} canModerate={!!program?.can_moderate} playlists={playlists} />}
+      {tab === "program" && <ProgramPanel genres={genres} />}
       {tab === "station" && <StationPanel />}
       {tab === "settings" && <SettingsPanel onSaved={() => { setRev((r) => r + 1); setTab("library") }} />}
     </div>
