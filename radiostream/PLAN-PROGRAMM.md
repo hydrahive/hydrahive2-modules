@@ -129,3 +129,21 @@ bleibt bei `radiostream.control`.
   Zusätzlich verwirft ein eigenes Steuer-Kommando `autodj.flush` (`set_queue([])`) den vorgeladenen Titel, wenn sich
   Warteschlange oder Programm ändern – dann wird sofort neu gefragt. Geht auf 2.4 und 2.2. Der verworfene Titel wird
   in der Gespielt-Liste zurückgenommen (bzw. Warteschlange/Playlist-Stelle zurückgesetzt).
+
+## Echt geprüft (hydratest, echte NAS-Bibliothek 175.462 Titel, 31.10./01.11.)
+
+- Migration 004 läuft beim Update. Mix „Rock der 80er“: 3.495 Titel (gleiche Zahl wie direkt in SQL), 50 von 50
+  gewählten passen. „Alles“: 200 Zufallstitel, davon 0 Hörbuch-Genre und 0 über 15 Minuten.
+- **Echter Stream:** Playlist der Reihe nach – „Jetzt läuft“ zeigt Titel 1, dann 2. „Als Nächstes: Bohemian
+  Rhapsody“ gesetzt, Überspringen → genau dieser Titel, danach weiter mit der Playlist an der richtigen Stelle. Das
+  Verwerfen des vorgeladenen Titels (`autodj.flush`) lief ohne Lücke.
+- Ordner-Vorschläge für „Ausgeschlossen von Alles“: bei 30 % kamen auch Peter Maffay (Tabaluga) und Max Richter
+  (Sprechtext) – Grenze auf 40 % gehoben. Vorgeschlagen werden jetzt Bibi Blocksberg, Die drei ???, WAS IST WAS,
+  Stefan Wolf, Rebecca Gablé, Bibi & Tina, Harald Lesch, Bratfisch, Janosch.
+- E2E 1600/1280/393/375: Playlist anlegen, per Knopf befüllen, „Als Nächstes“, umsortieren (Pfeile; am Rechner auch
+  Ziehen), Mix mit Live-Anzahl, Programm im Sender umschalten, Warteschlange, Ausschluss-Kasten. Alte Sender-E2E grün.
+- Rechte im Browser: Nutzer mit Modul, ohne „Moderieren“ – sieht Programm und Playlisten, keine Knöpfe zum Ändern,
+  Schnittstellen 403. Mit „Moderieren“ – alles zum Programm, aber kein Ausschluss und kein Sender-Stopp (Admin).
+
+## Nicht getestet
+- Hörprobe durch Till auf .2. Sehr große Playlisten (2.000 Titel) in der Oberfläche. Ziehen auf Tablets.
