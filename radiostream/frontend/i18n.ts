@@ -1,3 +1,4 @@
+import { programDe, programEn } from "./i18n_program"
 // Texte des Moduls Radiostream (de/en). Einfach, ohne Fachwörter.
 const de = {
   radiostream: {
@@ -203,4 +204,14 @@ const en = {
   },
 }
 
-export const radiostreamI18n = { de, en }
+type Base = typeof de
+
+const merge = (base: Base, extra: typeof programDe) => ({
+  radiostream: {
+    ...base.radiostream, ...extra,
+    tab: { ...base.radiostream.tab, ...extra.tab },
+    err: { ...base.radiostream.err, ...extra.err },
+  },
+})
+
+export const radiostreamI18n = { de: merge(de, programDe), en: merge(en as Base, programEn) }

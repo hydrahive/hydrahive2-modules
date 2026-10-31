@@ -6,7 +6,7 @@ register(ctx) → Router /api/modules/radiostream (Bibliothek, Zuspielung, Sende
 """
 from __future__ import annotations
 
-from . import feed, nightly, station_routes
+from . import feed, nightly, program_routes, program_routes_lists, station_routes
 from .feed_auth import require_feed
 from .routes import router
 
@@ -16,4 +16,6 @@ def register(ctx) -> None:
     ctx.register_router(router)
     ctx.register_device_router(feed.router, auth=require_feed)
     ctx.register_router(station_routes.router)
+    ctx.register_router(program_routes.router)
+    ctx.register_router(program_routes_lists.router)
     ctx.register_job("radiostream-nightly-scan", nightly.tick, interval_seconds=3600, initial_delay_seconds=120)

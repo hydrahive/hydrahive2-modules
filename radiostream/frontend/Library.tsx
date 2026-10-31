@@ -7,11 +7,14 @@ import { audioUrl, errorKey, type Filter } from "./logic"
 import { ScanBox } from "./ScanBox"
 import { StatsBar } from "./StatsBar"
 import { TrackRow } from "./TrackRow"
+import { TrackActions } from "./TrackActions"
+import { enqueue, addToPlaylist, addSearchToPlaylist } from "./api"
+import { programErrorKey, type Playlist } from "./programLogic"
 
 const EMPTY: Filter = { q: "", genre: "", decade: "", format: "", missing: false }
 
 /** Reiter Bibliothek: Zahlen, Stand des Einlesens, Suche/Filter, Liste (seitenweise, 200 je Abruf), Vorhören. */
-export function Library({ isAdmin, configured }: { isAdmin: boolean; configured: boolean }) {
+export function Library({ isAdmin, configured, canModerate = false, playlists = [] }: { isAdmin: boolean; configured: boolean; canModerate?: boolean; playlists?: Playlist[] }) {
   const { t } = useTranslation("radiostream")
   const token = useAuthStore((s: { token?: string | null }) => s.token) ?? ""
   const [f, setF] = useState<Filter>(EMPTY)
@@ -22,6 +25,11 @@ export function Library({ isAdmin, configured }: { isAdmin: boolean; configured:
   const [playing, setPlaying] = useState<string | null>(null)
   const [msg, setMsg] = useState("")
   const audio = useRef<HTMLAudioElement | null>(null)
+  const [menu, setMenu] = useState<string | null>(null)
+  const [target, setTarget] = useState("")
+  const act = (fn: () => Promise<unknown>, ok: string) => { setMenu(null); fn().then(() => setMsg(t(ok))).catch((e) => setMsg(t(programErrorKey(e)))) }
+  const searchBody = () => ({ q: f.q.trim(), genre: f.genre, format: f.format,
+    ...(f.decade ? { year_from: Number(f.decade), year_to: Number(f.decade) + 9 } : {}) })
 
   const loadMeta = useCallback(() => {
     getStats().then(setStats).catch(() => {})
@@ -52,7 +60,17 @@ export function Library({ isAdmin, configured }: { isAdmin: boolean; configured:
       {stats && stats.tracks > 0 && <StatsBar stats={stats} />}
       <ScanBox isAdmin={isAdmin} configured={configured} onFinished={refresh} />
       <Filters f={f} genres={genres} onChange={setF} />
-      {msg && <p className="text-sm text-rose-300">{msg}</p>}
+      {msg && <p className="text-sm text-[#c8d2df]" role="status">{msg}</p>}
+      {canModerate && playlists.length > 0 && filtered && !f.missing && (items?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <select value={target} onChange={(e) => setTarget(e.target.value)} aria-label={t("playlist.add_all")}
+            className="rounded border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] px-2 py-1.5 text-sm text-[#e8eef8]">
+            <option value="">{t("track.add_to")} …</option>
+            {playlists.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <button type="button" disabled={!target} onClick={() => act(async () => { const r = await addSearchToPlaylist(target, searchBody()); setMsg(t("playlist.added", { count: r.added })) }, "track.added")}
+            className="rounded border border-[rgb(var(--hh-s-rand,42_54_75))] px-3 py-1.5 text-sm text-[#e8eef8] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] disabled:opacity-40">{t("playlist.add_all")}</button>
+        </div>)}
       <audio ref={audio} onEnded={() => setPlaying(null)} onPause={() => setPlaying(null)} className="hidden" preload="none" />
       {items === null ? <p className="text-sm text-[#9aa7bc]">{t("loading")}</p>
         : items.length === 0 ? (
@@ -71,9 +89,14 @@ export function Library({ isAdmin, configured }: { isAdmin: boolean; configured:
                   <th className="hidden w-16 py-2 pr-3 md:table-cell">{t("col.year")}</th>
                   <th className="w-20 py-2 pr-3 text-right">{t("col.length")}</th>
                   <th className="hidden w-16 py-2 pr-2 sm:table-cell">{t("col.format")}</th>
+                  {canModerate && <th className="w-10" />}
                 </tr>
               </thead>
-              <tbody>{items.map((it) => <TrackRow key={it.track_id} t={it} playing={playing === it.track_id} onPlay={play} />)}</tbody>
+              <tbody>{items.map((it) => <TrackRow key={it.track_id} t={it} playing={playing === it.track_id} onPlay={play}
+                actions={canModerate ? <TrackActions trackId={it.track_id} playlists={playlists} open={menu === it.track_id}
+                  onToggle={() => setMenu(menu === it.track_id ? null : it.track_id)}
+                  onQueue={(id, front) => act(() => enqueue(id, front), "track.queued")}
+                  onAdd={(pid, id) => act(() => addToPlaylist(pid, [id]), "track.added")} /> : undefined} />)}</tbody>
             </table>
             {cursor && (
               <div className="border-t border-[rgb(var(--hh-s-rand,42_54_75))] p-2 text-center">

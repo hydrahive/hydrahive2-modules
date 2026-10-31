@@ -1,8 +1,8 @@
 {
   "id": "radiostream",
   "name": "Radiostream",
-  "version": "0.2.3",
-  "description": "Eigenes Webradio aus der Musiksammlung auf dem NAS: Bibliothek einlesen und durchsuchen, AutoDJ mit Überblendung und eigene Hörer-Seite auf eigenem Port (ohne HydraHive-Anmeldung).",
+  "version": "0.3.0",
+  "description": "Eigenes Webradio aus der Musiksammlung auf dem NAS: Bibliothek einlesen und durchsuchen, AutoDJ mit Überblendung, Playlisten, Mixe nach Genre/Interpret/Jahrzehnt, Warteschlange und eigene Hörer-Seite auf eigenem Port (ohne HydraHive-Anmeldung).",
   "icon": "Radio",
   "nav_group": "working",
   "permissions": [],
@@ -15,6 +15,11 @@
     {
       "id": "radiostream.control",
       "label": "Sender steuern (starten, stoppen, Einstellungen)",
+      "default": "admin_only"
+    },
+    {
+      "id": "radiostream.moderate",
+      "label": "Moderieren (Programm, Playlisten, Mixe, Warteschlange)",
       "default": "admin_only"
     }
   ],

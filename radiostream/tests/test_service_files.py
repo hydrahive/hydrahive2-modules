@@ -149,3 +149,25 @@ def test_temp_datei_bei_fehler_geloescht_in_beiden_fassungen():
     s = sf.liquidsoap_script(**_LIQ)
     assert "if not ok() then file.remove(tmp) end" in s
     assert "(ok(), tmp)" in s
+
+
+# --- Programm: vorgeladenen Titel verwerfen (PLAN-PROGRAMM.md „Als Nächstes“) ------------------------------------------
+
+def test_nur_ein_titel_vorgeladen():
+    s = sf.liquidsoap_script(**_LIQ)
+    assert "prefetch=1," in s and "prefetch=3" not in s
+
+
+def test_steuerkommando_verwirft_vorgeladenen_titel_und_nennt_ihn():
+    s = sf.liquidsoap_script(**_LIQ)
+    assert 'server.register(namespace="autodj"' in s and '"flush", flush)' in s
+    flush = s[s.index("def flush("):s.index('server.register(namespace="autodj"')]
+    assert "auto.set_queue([])" in flush and "q = auto.queue()" in flush
+    assert flush.index("q = auto.queue()") < flush.index("auto.set_queue([])")
+    assert 'm["rs_play"]' in flush and 'string.concat(separator=",", ' in flush
+
+
+def test_flush_vor_lautheit_und_ueberblendung():
+    """auto muss noch die Liquidsoap-Warteschlange sein (request.dynamic), nicht schon amplify/crossfade."""
+    s = sf.liquidsoap_script(**_LIQ)
+    assert s.index("server.register(namespace=\"autodj\"") < s.index("auto = amplify(")
