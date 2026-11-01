@@ -1,9 +1,12 @@
+import { adminDe, adminEn } from "./i18n_admin"
 // Texte des Moduls Netzwerk (de/en). Einfach, ohne Fachwörter.
 const de = {
   network: {
     title: "Netzwerk",
     subtitle: "Dein Internet und Heimnetz im Blick – mit belegbaren Daten, wenn etwas nicht läuft.",
-    tab: { overview: "Übersicht", outages: "Störungen", settings: "Einrichtung" },
+    tab: { overview: "Übersicht", devices: "Geräte", clients: "Clients", net: "Netz", traffic: "Verkehr", outages: "Störungen", settings: "Einrichtung" },
+    ...adminDe,
+    counts: "{{devices}} Geräte ({{online}} online) · {{clients}} Clients ({{wireless}} WLAN, {{wired}} Kabel)",
     loading: "Lädt …",
     not_configured: "Noch nicht eingerichtet. Ein Admin trägt unter „Einrichtung“ die Dream Machine ein.",
     not_configured_admin: "Trage unter „Einrichtung“ die Dream Machine ein – danach sammelt das Modul rund um die Uhr.",
@@ -95,7 +98,9 @@ const en: typeof de = {
   network: {
     title: "Network",
     subtitle: "Your internet and home network at a glance – with solid data when something goes wrong.",
-    tab: { overview: "Overview", outages: "Outages", settings: "Setup" },
+    tab: { overview: "Overview", devices: "Devices", clients: "Clients", net: "Network", traffic: "Traffic", outages: "Outages", settings: "Setup" },
+    ...adminEn,
+    counts: "{{devices}} devices ({{online}} online) · {{clients}} clients ({{wireless}} Wi-Fi, {{wired}} wired)",
     loading: "Loading …",
     not_configured: "Not set up yet. An admin adds the Dream Machine under “Setup”.",
     not_configured_admin: "Add the Dream Machine under “Setup” – the module then collects around the clock.",

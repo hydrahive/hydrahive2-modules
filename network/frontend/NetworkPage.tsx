@@ -1,13 +1,18 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { getSettings } from "./api"
+import { ClientsPanel } from "./ClientsPanel"
+import { DevicesPanel } from "./DevicesPanel"
+import { NetPanel } from "./NetPanel"
 import { OutagesPanel } from "./OutagesPanel"
 import { OverviewPanel } from "./OverviewPanel"
 import { SettingsPanel } from "./SettingsPanel"
+import { TrafficPanel } from "./TrafficPanel"
 
-type Tab = "overview" | "outages" | "settings"
+type Tab = "overview" | "devices" | "clients" | "net" | "traffic" | "outages" | "settings"
+const VIEW_TABS: Tab[] = ["overview", "devices", "clients", "net", "traffic", "outages"]
 
-/** Modulseite Netzwerk: Übersicht und Störungen für alle mit Freigabe; Einrichtung nur mit network.configure. */
+/** Modulseite Netzwerk: Übersicht, Geräte, Clients, Netz, Verkehr, Störungen (ansehen); Einrichtung nur mit network.configure. */
 export function NetworkPage() {
   const { t } = useTranslation("network")
   const [tab, setTab] = useState<Tab>("overview")
@@ -15,7 +20,7 @@ export function NetworkPage() {
   const [rev, setRev] = useState(0)
   // Darf ich einrichten? Der Server sagt es (403 = nein) – kein eigenes Rollen-Raten im Browser.
   useEffect(() => { getSettings().then(() => setCanConfigure(true)).catch(() => setCanConfigure(false)) }, [])
-  const tabs: Tab[] = canConfigure ? ["overview", "outages", "settings"] : ["overview", "outages"]
+  const tabs: Tab[] = canConfigure ? [...VIEW_TABS, "settings"] : VIEW_TABS
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-4">
       <header className="space-y-1">
@@ -31,6 +36,10 @@ export function NetworkPage() {
         ))}
       </nav>
       {tab === "overview" && <OverviewPanel key={rev} canConfigure={canConfigure} />}
+      {tab === "devices" && <DevicesPanel key={rev} />}
+      {tab === "clients" && <ClientsPanel key={rev} />}
+      {tab === "net" && <NetPanel key={rev} />}
+      {tab === "traffic" && <TrafficPanel key={rev} />}
       {tab === "outages" && <OutagesPanel key={rev} />}
       {tab === "settings" && <SettingsPanel onSaved={() => setRev((r) => r + 1)} />}
     </div>
