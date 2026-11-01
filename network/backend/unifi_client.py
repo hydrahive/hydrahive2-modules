@@ -7,8 +7,8 @@ from typing import Any
 import httpx
 
 from . import pinned
-from .scrub import scrub
 from .errors import NetError
+from .scrub import scrub
 
 _TIMEOUT = 20.0
 
