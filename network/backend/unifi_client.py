@@ -7,6 +7,7 @@ from typing import Any
 import httpx
 
 from . import pinned
+from .scrub import scrub
 from .errors import NetError
 
 _TIMEOUT = 20.0
@@ -39,7 +40,7 @@ class Udm:
         if r.status_code >= 400:
             raise NetError("network_bad_response")
         try:
-            return r.json()
+            return scrub(r.json())
         except ValueError:
             raise NetError("network_bad_response") from None
 

@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, Query
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 
-from . import config_store, outages, store
+from . import config_store, outages, routes_admin, store
 
 router = APIRouter()
 Viewer = Annotated[AuthPrincipal, Depends(require_principal)]
@@ -31,7 +31,7 @@ def overview(p: Viewer):
             "udm_error": (cfg or {}).get("last_error"), "udm_confirmed": bool((cfg or {}).get("udm_pin")),
             "fritz": bool((cfg or {}).get("fritz_host")),
             "plan": {"down": (cfg or {}).get("plan_down_mbit"), "up": (cfg or {}).get("plan_up_mbit")},
-            "last_speedtest": st[-1] if st else None}
+            "last_speedtest": st[-1] if st else None, "counts": routes_admin.counts()}
 
 
 @router.get("/samples")
