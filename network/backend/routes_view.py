@@ -44,9 +44,9 @@ def samples(p: Viewer, hours: Annotated[int, Query(ge=1, le=24 * 31)] = 24, now:
 def get_outages(p: Viewer, days: Days = 7, now: Now = None):
     end = _now(now)
     start = end - days * 86400
+    # Ereignisse ab start: ihr Ende (= Zeitpunkt des Ereignisses) liegt damit immer im Zeitraum.
     items = outages.merge(outages.from_udm(store.events(start, end + 86400))
                           + outages.from_samples(store.samples(start, end)))
-    items = [o for o in items if o["end"] >= start]
     return {"items": sorted(items, key=lambda o: o["start"], reverse=True),
             "per_day": outages.per_day(items, "wan", DAY_TZ),
             "per_day_cable": outages.per_day(items, "cable", DAY_TZ),

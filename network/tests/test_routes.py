@@ -194,3 +194,19 @@ def test_sofort_abrufen(client, admin_headers, safe, db_ready, monkeypatch):
     monkeypatch.setattr(collect, "tick_hourly", t_h)
     r = client.post(f"{P}/sync", json={}, headers=admin_headers)
     assert r.status_code == 200 and r.json() == {"events": 3, "speedtests": 1} and calls == ["udm", "hourly"]
+
+
+def test_alte_stoerungen_ausserhalb_des_zeitraums(client, user_headers, db_ready):
+    from backend import store
+    now = 1_793_570_000
+    store.add_events([{"event_id": "alt", "source": "udm", "ts": now - 10 * 86400, "kind": "wan_restored",
+                       "wan": "Internet 1", "duration_s": 3600, "detail": None},
+                      {"event_id": "neu", "source": "udm", "ts": now - 3600, "kind": "wan_restored",
+                       "wan": "Internet 1", "duration_s": 600, "detail": None}])
+    items = client.get(f"{P}/outages?days=7&now={now}", headers=user_headers).json()["items"]
+    assert [i["end"] for i in items] == [now - 3600]
+    # Störung, die vor dem Zeitraum beginnt und hineinreicht, bleibt
+    store.add_events([{"event_id": "rein", "source": "udm", "ts": now - 7 * 86400 + 600, "kind": "wan_restored",
+                       "wan": "Internet 1", "duration_s": 3600, "detail": None}])
+    items = client.get(f"{P}/outages?days=7&now={now}", headers=user_headers).json()["items"]
+    assert len(items) == 2

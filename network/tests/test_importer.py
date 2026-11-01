@@ -32,3 +32,10 @@ def test_import_falsch(db_ready, raw):
     with pytest.raises(NetError) as e:
         importer.load(raw)
     assert e.value.code == "network_import_invalid"
+
+
+def test_fehlgeschlagene_abfrage_wird_nicht_uebernommen(db_ready, udm_data):
+    snap = {"system_log_90d": {"status": 500, "data": udm_data["system_log"]["data"]},
+            "speedtest_90d": {"status": 200, "data": udm_data["speedtests"]}}
+    n = importer.load(json.dumps(snap).encode())
+    assert n["events"] == 0 and n["speedtests"] == 5

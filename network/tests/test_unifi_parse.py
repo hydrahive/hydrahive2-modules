@@ -67,3 +67,10 @@ def test_verlauf(udm_data):
 def test_verlauf_unbekannte_skala():
     with pytest.raises(ValueError):
         up.series("woche", {"data": []})
+
+
+def test_gleicher_name_andere_kategorie_zaehlt_nicht():
+    raw = {"data": [{"id": "a", "category": "SECURITY", "event": "NETWORK_WAN_FAILED", "timestamp": 1000, "parameters": {}},
+                    {"id": "b", "category": "INTERNET_AND_WAN", "event": "NETWORK_WAN_FAILED", "timestamp": 2000,
+                     "parameters": {}}]}
+    assert [r["event_id"] for r in up.events(raw)] == ["b"]
