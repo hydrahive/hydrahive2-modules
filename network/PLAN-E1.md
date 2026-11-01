@@ -1,4 +1,4 @@
-# Modul „Netzwerk“ – Bauplan Etappe 1 (nur lesen)
+# Modul „Netzwerk“ – Bauplan Etappe 1 (nur lesen) + Ausblick
 
 Stand 01.11.2026 · Task d2b126e4 · Auslöser: Störung am Vodafone-Kabelanschluss seit dem 27.10. (Glasfaserdefekt
 in Frankfurt), Ticket gestellt. Ziel: lückenlose, belegte Daten für den Anbieter, ohne Terminal, alles im Cockpit.
@@ -20,7 +20,7 @@ Befund aus der Dream Machine (Schnappschuss `_work/netz-beweise/udm-20261101-214
 - Die Dream Machine löscht ihre 5-Minuten-Werte nach 24 Stunden, die Stundenwerte nach 7 Tagen und die Tageswerte
   nach 90 Tagen. Ohne eigenen Speicher gehen Beweise verloren.
 - **Ausweichweg:** Am 27.10. hing ein Mobilfunk-Stick als Fallback per USB an der FRITZ!Box, seit dem 30.10. ein
-  MiFi-Router von Vodafone. Die FRITZ!Box schaltet selbst um, deshalb sieht die Dream Machine bei totem Kabel oft
+  MiFi-Router von Vodafone, ebenfalls per USB (Mobilfunk-Fallback der FRITZ!Box). Die FRITZ!Box schaltet selbst um, deshalb sieht die Dream Machine bei totem Kabel oft
   „Internet da“. Die Stundenwerte zeigen drei Muster: **kein Internet** (Antwortzeit 0, kaum Verkehr), z. B. 27.10.
   15–21 Uhr, 28.10. 02–08 Uhr, 29.10. 01–02 Uhr; **vermutlich Mobilfunk** (kürzeste Antwortzeit ≥ 18 ms statt 7–9 ms),
   z. B. 28.10. 11, 15, 19 Uhr und 31.10. 02–03 Uhr; **kabeltypisch** (7–9 ms), z. B. 29.10. ab 04 Uhr. Das ist ein
@@ -44,10 +44,11 @@ Befund aus der Dream Machine (Schnappschuss `_work/netz-beweise/udm-20261101-214
 ### 3a – Grundgerüst, Zugänge, Sammler, Speicher (zuerst, damit sofort gesammelt wird)
 - Neues Modul `network` („Netzwerk“), Bereich `zuhause`, Rechte: `module.network` (ansehen) und
   `network.configure` (Zugänge und Tarif), beide `admin_only`.
-- **Einstellungen im Modul:** Adresse und API-Schlüssel der Dream Machine, Adresse, Nutzer und Passwort der FRITZ!Box,
-  Tarif (herunter/hoch, Monatspreis), Störungsmeldungen (Datum, Ticketnummer, Notiz).
-  Geheimnisse verschlüsselt wie in `telephony/backend/secrets.py` (AES-GCM, Schlüssel aus dem Kern, AAD je Feld).
-  Sie werden nie ausgegeben, nach außen geht nur „gesetzt“.
+- **Einstellungen im Modul:** je Gerät die Adresse und der **Name eines Safe-Eintrags**, nie das Geheimnis selbst
+  (Muster Radiostream `smb_source.credential_pair`). Dream Machine: Safe-Eintrag mit dem API-Schlüssel (Typ egal, das
+  Modul schickt ihn immer als `X-API-KEY`), heute `router_unifi`. FRITZ!Box: Safe-Eintrag „Benutzer/Passwort“.
+  Dazu der Tarif (herunter/hoch in Mbit, Monatspreis) und die Störungsmeldungen (Datum, Ticketnummer, Notiz).
+  Die Zugänge liegen im Safe des Admins, der sie einträgt. Die Sammler lesen sie mit dessen Namen.
 - **Zertifikat der Dream Machine:** Das Zertifikat ist selbst ausgestellt. Beim ersten Kontakt wird der Fingerabdruck
   angezeigt und bestätigt, danach gilt er fest (Pinning). Bei einer Abweichung erscheint ein klarer Fehler, die
   Verbindung wird nicht stillschweigend angenommen.
@@ -90,10 +91,25 @@ Befund aus der Dream Machine (Schnappschuss `_work/netz-beweise/udm-20261101-214
 - **Agenten-Werkzeuge (nur lesen):** `network_status` und `network_outages`. Damit kann z. B. Buddy beantworten:
   „Wie war mein Internet diese Woche?“
 
-## 4. Nicht in Etappe 1
-- Konfiguration ändern (Etappe 2, jeweils mit Bestätigung): Geräte neu starten, Speedtest auslösen, Clients sperren,
-  Portfreigaben, WLAN.
-- Benachrichtigung bei Ausfall bzw. Wiederkehr (Mail/Discord) als mögliche Etappe 1d.
+## 4. Ausblick (eigene Baupläne, je mit Tills Freigabe)
+
+**Etappe 2 – Verwaltung (Dream Machine kann viel):** jeder schaltende Schritt mit Bestätigungsdialog, eigenem Recht
+`network.admin` und Eintrag ins Protokoll (wer, wann, was, vorher/nachher). Kandidaten, vorher am echten Gerät zu
+prüfen, welche Schnittstelle (Integration-API v1 oder klassisch) das hergibt:
+- Speedtest auslösen, Gerät/Access Point/Switch-Port neu starten (PoE-Port neu starten).
+- Clients: umbenennen, sperren/freigeben, Gastzugang (Voucher).
+- WLAN: Netze ein/aus, Passwort wechseln (Anzeige als QR-Code).
+- Portfreigaben und Firewall-Regeln ansehen, später ändern. Vorher Konfigurations-Sicherung der Dream Machine.
+- Backup der Dream-Machine-Konfiguration auslösen und ablegen.
+
+**Etappe 3 – Netzwerkdaten in HydraHive nutzen:**
+- Werkzeuge für Agenten (lesen): „Wer ist im Netz?“, „Ist Gerät X online?“, „Wie war das Internet gestern?“.
+- Bekannte Geräte im Netz für andere Teile von HydraHive, z. B. die Geräte-Kopplung (Voice-Boxen, Mining-Rigs)
+  oder Anwesenheit. Module importieren nicht voneinander, deshalb über eine Kern-Schnittstelle oder ein Werkzeug.
+  Wie genau, kommt in den Bauplan.
+- Benachrichtigung bei Ausfall bzw. Wiederkehr (Mail/Discord/Buddy).
+
+**Nicht vorgesehen:**
 - Eigener Upload-/Download-Test, der Datenvolumen verbraucht. Zunächst gelten die Speedtests der Dream Machine.
 
 ## 5. Prüfung
@@ -105,8 +121,7 @@ Befund aus der Dream Machine (Schnappschuss `_work/netz-beweise/udm-20261101-214
 - Eintrag in `hub.json`, `NAV_AREA.de.md` und `scripts/tests/test_nav_area.py`. `_hh_isolation.py` unverändert kopieren.
 
 ## 6. Offene Fragen an Till
-1. Erledigt: Fallback per USB-Stick an der FRITZ!Box, seit dem 30.10. MiFi-Router von Vodafone.
-   Offen: Hängt der MiFi per USB oder per LAN/WLAN an der FRITZ!Box?
+1. Erledigt: Fallback per USB an der FRITZ!Box (erst Stick, seit dem 30.10. MiFi-Router von Vodafone).
 2. Monatspreis, Datum der Störungsmeldung und Ticketnummer. Das trägst du später selbst im Modul ein.
 3. FRITZ!Box-Nutzer anlegen: System → FRITZ!Box-Benutzer, nur „FRITZ!Box Einstellungen“ ansehen, ohne
    Internetzugriff. Hinterlegen wie den UniFi-Schlüssel. **Eilig**, weil das Ereignisprotokoll der FRITZ!Box die
