@@ -3,7 +3,7 @@ letzter Status der Dream Machine."""
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from hydrahive.db.connection import db
 
@@ -14,7 +14,7 @@ _COLS = ("owner", *EDIT, "udm_pin", "last_full_sync", "last_status", "last_statu
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def get() -> dict | None:

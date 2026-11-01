@@ -131,7 +131,7 @@ async def sync_now(p: Admin):
 
 
 @router.post("/import")
-async def import_snapshot(p: Admin, file: UploadFile = File(...)):
+async def import_snapshot(p: Admin, file: Annotated[UploadFile, File()]):
     raw = await file.read(MAX_IMPORT + 1)
     try:
         if len(raw) > MAX_IMPORT:

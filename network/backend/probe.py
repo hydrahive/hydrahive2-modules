@@ -41,7 +41,7 @@ async def ping(target: str, count: int = 5) -> dict:
         return dict(_EMPTY)
     try:
         out = await _run(["ping", "-n", "-q", "-c", str(count), "-i", "0.2", "-W", "1", target])
-    except (OSError, asyncio.TimeoutError):
+    except (OSError, TimeoutError):
         return dict(_EMPTY)
     return parse_ping(out)
 

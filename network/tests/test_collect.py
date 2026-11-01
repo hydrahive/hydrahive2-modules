@@ -103,12 +103,12 @@ async def test_udm_fehler_wird_gemerkt(db_ready, udm, udm_data):
 async def test_stuendlich_ereignisse_speedtests_verlauf(db_ready, udm):
     n = await collect.tick_hourly(now=1_793_560_000)
     assert n["events"] > 30 and n["speedtests"] == 5
-    first = [c for c in udm["udm"].calls if "system-log" in c[1]][0][2]
+    first = next(c for c in udm["udm"].calls if "system-log" in c[1])[2]
     assert first["timestampFrom"] == (1_793_560_000 - 90 * 86400) * 1000
     assert store.series("hour", 0, 2_000_000_000) and store.series("day", 0, 2_000_000_000)
     udm["udm"].calls.clear()
     await collect.tick_hourly(now=1_793_563_600)
-    nxt = [c for c in udm["udm"].calls if "system-log" in c[1]][0][2]
+    nxt = next(c for c in udm["udm"].calls if "system-log" in c[1])[2]
     assert nxt["timestampFrom"] == (store.last_event_ts("udm") - 7200) * 1000
 
 

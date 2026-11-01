@@ -50,7 +50,7 @@ def make_trace(pin: str):
 
 async def fetch_fingerprint(host: str, port: int) -> str:
     """Fingerabdruck holen, ohne etwas zu senden (zum Bestätigen in der Oberfläche)."""
-    reader, writer = await asyncio.wait_for(
+    _reader, writer = await asyncio.wait_for(
         asyncio.open_connection(host, port, ssl=no_ca_context(), server_hostname=None), timeout=8)
     try:
         der = writer.get_extra_info("ssl_object").getpeercert(binary_form=True)

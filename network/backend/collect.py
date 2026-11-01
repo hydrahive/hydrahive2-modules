@@ -9,7 +9,16 @@ import asyncio
 import logging
 import time
 
-from . import classify, config_store, creds, fritz_igd, netcheck, probe, store, unifi_parse
+from . import (
+    classify,
+    config_store,
+    creds,
+    fritz_igd,
+    netcheck,
+    probe,
+    store,
+    unifi_parse,
+)
 from .errors import NetError
 from .unifi_client import Udm
 
