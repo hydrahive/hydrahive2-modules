@@ -8,7 +8,8 @@ def tree(topo: dict) -> list[dict]:
     has_parent = set()
     for e in topo.get("edges", []):
         up, down = e.get("uplinkMac"), e.get("downlinkMac")
-        if up in verts and down in verts and down not in has_parent and up != down:
+        # Mehrere Eltern oder Kreise: node() zeigt jeden Knoten nur einmal (seen), der erste Fund gewinnt.
+        if up in verts and down in verts and up != down:
             kids.setdefault(up, []).append((down, (e.get("type") or "").lower(), e.get("uplinkPortNumber")))
             has_parent.add(down)
     seen: set[str] = set()

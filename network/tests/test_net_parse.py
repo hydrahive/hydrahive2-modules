@@ -46,3 +46,19 @@ def test_netze_wlans_freigaben():
     assert n["forwards"] == [{"name": "plex", "enabled": True, "proto": "tcp_udp", "port": "32400", "to_ip": "10.0.0.3",
                               "to_port": "32400"}]
     assert (n["firewall_rules"], n["routes"]) == (2, 0)
+
+
+def test_kind_mit_zwei_eltern_nur_einmal():
+    topo = {"vertices": [{"mac": m, "name": m.upper(), "type": "DEVICE"} for m in "abc"],
+            "edges": [{"uplinkMac": "a", "downlinkMac": "c", "type": "WIRED"}, {"uplinkMac": "b", "downlinkMac": "c", "type": "WIRED"},
+                      {"uplinkMac": "a", "downlinkMac": "b", "type": "WIRED"}]}
+    roots = npx.tree(topo)
+    assert len(roots) == 1 and sum(1 for n in _walk(roots[0]) if n["mac"] == "c") == 1
+    assert [c["mac"] for c in roots[0]["children"]] == ["b", "c"] and roots[0]["children"][0]["children"] == []
+
+
+def test_vlan_nur_wenn_eingeschaltet():
+    nets = {"data": [{"_id": "1", "name": "IoT", "purpose": "corporate", "vlan": 20, "vlan_enabled": True},
+                     {"_id": "2", "name": "Alt", "purpose": "corporate", "vlan": 30, "vlan_enabled": False}]}
+    n = npx.net(nets, {"data": []}, {"data": []}, {"data": []}, {"data": []})
+    assert [x["vlan"] for x in n["networks"]] == [20, None]

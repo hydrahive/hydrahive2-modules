@@ -77,6 +77,7 @@ def test_verkehr(client, user_headers, udm):
     totals = [c["down_bytes"] + c["up_bytes"] for c in top]
     assert totals == sorted(totals, reverse=True)
     assert d["devices"][0]["name"] == "Dream Machine Pro"
+    assert len(d["devices"]) == 3  # nicht übernommener Switch fehlt
     assert any(p["tx_bytes"] for dev in d["devices"] for p in dev["ports"])
 
 

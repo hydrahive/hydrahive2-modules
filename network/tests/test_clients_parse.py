@@ -47,3 +47,9 @@ def test_name_ersatz():
     rows = cp.clients({"data": [{"mac": "02:00:00:00:ab:cd"}]}, {"data": [{"mac": "02:00:00:00:ab:cd", "name": "Drucker"}]}, [])
     assert rows[0]["name"] == "Drucker"
     assert cp.clients({"data": [{"mac": "02:00:00:00:ab:ce"}]}, {"data": []}, [])[0]["name"] == "02:00:00:00:ab:ce"
+
+
+def test_eigener_name_vor_geraetename():
+    rows = cp.clients({"data": [{"mac": "02:00:00:00:ab:cd", "hostname": "esp-1234", "name": None}]},
+                      {"data": [{"mac": "02:00:00:00:ab:cd", "name": "Steckdose Flur"}]}, [])
+    assert rows[0]["name"] == "Steckdose Flur"

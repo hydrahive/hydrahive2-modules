@@ -116,3 +116,10 @@ async def test_trace_ohne_zertifikat_lehnt_ab():
             return None
     with pytest.raises(pinned.PinMismatch):
         await pinned.make_trace("ab" * 32)("connection.start_tls.complete", {"return_value": Stream()})
+
+
+async def test_geheimnisse_werden_beim_empfang_verworfen(send):
+    send["state"]["resp"] = Resp(200, {"data": [{"name": "Heimnetz", "x_passphrase": "LOCKVOGEL", "inner": {"x_k": "LOCKVOGEL"}}]})
+    got = await unifi_client.Udm("https://192.168.178.1", "K", PIN).get("/proxy/network/api/s/default/rest/wlanconf")
+    assert got == {"data": [{"name": "Heimnetz", "inner": {}}]}
+    assert "LOCKVOGEL" not in str(got)

@@ -28,8 +28,8 @@ def _row(x: dict, known: dict, online: bool, devs: dict[str, str]) -> dict:
             "essid": None if wired else x.get("essid"), "band": None if wired else BANDS.get(x.get("radio")),
             "signal": None if wired else x.get("signal"), "satisfaction": x.get("satisfaction"),
             "uplink_name": devs.get(up_mac) or x.get("last_uplink_name") or known.get("last_uplink_name"),
-            "uplink_port": x.get("sw_port") if wired else None, "uptime_s": x.get("uptime") if online else None,
-            "down_bytes": down if online else None, "up_bytes": up if online else None,
+            "uplink_port": x.get("sw_port"), "uptime_s": x.get("uptime") if online else None,
+            "down_bytes": down, "up_bytes": up,
             "first_seen": x.get("first_seen") or known.get("first_seen"),
             "last_seen": x.get("last_seen") or known.get("last_seen"),
             "fixed_ip": bool(x.get("use_fixedip") or known.get("use_fixedip"))}
