@@ -19,9 +19,13 @@ Befund aus der Dream Machine (Schnappschuss `_work/netz-beweise/udm-20261101-214
   **Der Upload ist auf 0 bis 3 Mbit eingebrochen.**
 - Die Dream Machine löscht ihre 5-Minuten-Werte nach 24 Stunden, die Stundenwerte nach 7 Tagen und die Tageswerte
   nach 90 Tagen. Ohne eigenen Speicher gehen Beweise verloren.
-- **Vorbehalt:** Till hatte vom 27. bis 30.10. ein Mobilfunk-Backup angeschlossen. „Internet 2“ zeigt 0 Byte. Ob das
-  Backup über „Internet 1“ lief, ist offen (Frage 1). Für die Zeit des toten Kabels ist deshalb die FRITZ!Box die
-  richtige Quelle, nicht die Dream Machine.
+- **Ausweichweg:** Am 27.10. hing ein Mobilfunk-Stick als Fallback per USB an der FRITZ!Box, seit dem 30.10. ein
+  MiFi-Router von Vodafone. Die FRITZ!Box schaltet selbst um, deshalb sieht die Dream Machine bei totem Kabel oft
+  „Internet da“. Die Stundenwerte zeigen drei Muster: **kein Internet** (Antwortzeit 0, kaum Verkehr), z. B. 27.10.
+  15–21 Uhr, 28.10. 02–08 Uhr, 29.10. 01–02 Uhr; **vermutlich Mobilfunk** (kürzeste Antwortzeit ≥ 18 ms statt 7–9 ms),
+  z. B. 28.10. 11, 15, 19 Uhr und 31.10. 02–03 Uhr; **kabeltypisch** (7–9 ms), z. B. 29.10. ab 04 Uhr. Das ist ein
+  Hinweis, kein Beweis. Für den Weg (Kabel/Mobilfunk) ist das Ereignisprotokoll der FRITZ!Box die entscheidende
+  Quelle. Es fasst nur eine begrenzte Zahl Einträge, darum muss es bald gesichert werden.
 
 ## 2. Rechtlicher Rahmen (Quelle: gesetze-im-internet.de, gelesen am 01.11.)
 
@@ -58,6 +62,11 @@ Befund aus der Dream Machine (Schnappschuss `_work/netz-beweise/udm-20261101-214
     `login_sid.lua?version=2` (PBKDF2). Dazu Synchronstatus über TR-064.
   - **stündlich:** Ereignisprotokoll der Dream Machine (doppelte Einträge über die `id` ausgeschlossen),
     Speedtest-Archiv, `hourly.*`. Ereignisprotokoll der FRITZ!Box (TR-064 `GetDeviceLog`), ebenfalls ohne Dubletten.
+- **Weg erkennen (Kabel oder Mobilfunk):** jede Minute aus (1) dem Status der FRITZ!Box (Kabel synchron?
+  Mobilfunk-Fallback aktiv?), (2) dem ersten Vodafone-Knoten hinter der FRITZ!Box (heute 81.210.132.146 = Kabelnetz)
+  und (3) der kürzesten Antwortzeit. Jede Messung bekommt den Weg „Kabel“, „Mobilfunk“, „keins“ oder „unklar“.
+  Störungen werden getrennt gezählt: **Kabel aus** (das zählt gegenüber dem Anbieter) und **Internet ganz aus**.
+  Für die Vorgeschichte ab dem 25.10. nur als „vermutlich“ markiert, solange die FRITZ!Box es nicht belegt.
 - **Speicher:** eigene SQLite-Datenbank (Migration `001_init.sql`). Minutenwerte 90 Tage, danach als Stundenmittel
   2 Jahre. Ereignisse, Speedtests und Störungen dauerhaft. Aufräumen nur der eigenen Zeilen (`only_own_rows`).
 - **Einmal-Import:** Den Schnappschuss vom 01.11. übernehme ich als Vorgeschichte ab dem 25.10. Jede Zeile bekommt
@@ -96,10 +105,11 @@ Befund aus der Dream Machine (Schnappschuss `_work/netz-beweise/udm-20261101-214
 - Eintrag in `hub.json`, `NAV_AREA.de.md` und `scripts/tests/test_nav_area.py`. `_hh_isolation.py` unverändert kopieren.
 
 ## 6. Offene Fragen an Till
-1. Wie war das Mobilfunk-Backup angeschlossen: an der Dream Machine statt der FRITZ!Box am Anschluss „Internet 1“, an
-   „Internet 2“ oder direkt am Gerät?
+1. Erledigt: Fallback per USB-Stick an der FRITZ!Box, seit dem 30.10. MiFi-Router von Vodafone.
+   Offen: Hängt der MiFi per USB oder per LAN/WLAN an der FRITZ!Box?
 2. Monatspreis, Datum der Störungsmeldung und Ticketnummer. Das trägst du später selbst im Modul ein.
 3. FRITZ!Box-Nutzer anlegen: System → FRITZ!Box-Benutzer, nur „FRITZ!Box Einstellungen“ ansehen, ohne
-   Internetzugriff. Hinterlegen wie den UniFi-Schlüssel.
+   Internetzugriff. Hinterlegen wie den UniFi-Schlüssel. **Eilig**, weil das Ereignisprotokoll der FRITZ!Box die
+   Tage ab dem 27.10. nur begrenzt aufbewahrt.
 4. Sollen die automatischen Speedtests der Dream Machine dichter laufen? Das stellst du in der Dream Machine ein; ein
    Test bei 1 Gbit verbraucht rund 1 GB.
