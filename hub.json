@@ -164,6 +164,11 @@
       "id": "hydralabor",
       "name": "Hydra-Labor",
       "path": "hydralabor"
+    },
+    {
+      "id": "network",
+      "name": "Netzwerk",
+      "path": "network"
     }
   ]
 }

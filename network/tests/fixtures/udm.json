@@ -1,0 +1,2617 @@
+{
+ "health": {
+  "meta": {
+   "rc": "ok"
+  },
+  "data": [
+   {
+    "subsystem": "wlan",
+    "num_user": 17,
+    "num_guest": 0,
+    "num_iot": 6,
+    "tx_bytes-r": 13120,
+    "rx_bytes-r": 1051,
+    "status": "ok",
+    "num_ap": 1,
+    "num_adopted": 1,
+    "num_disabled": 0,
+    "num_disconnected": 0,
+    "num_pending": 0
+   },
+   {
+    "subsystem": "wan",
+    "num_gw": 1,
+    "num_adopted": 1,
+    "num_disconnected": 0,
+    "num_pending": 0,
+    "status": "ok",
+    "wan_ip": "192.168.3.20",
+    "gateways": [
+     "192.168.3.1"
+    ],
+    "netmask": "255.255.255.0",
+    "nameservers": [],
+    "num_sta": 39,
+    "tx_bytes-r": 3886,
+    "rx_bytes-r": 12135,
+    "gw_name": "Dream Machine Pro",
+    "gw_system-stats": {
+     "cpu": "13.4",
+     "mem": "50.3",
+     "uptime": "35145"
+    },
+    "gw_version": "5.1.34.34103",
+    "isp_name": "Vodafone Germany",
+    "isp_organization": "Vodafone GmbH",
+    "asn": 3209,
+    "uptime_stats": {
+     "WAN": {
+      "alerting_monitors": [
+       {
+        "availability": 100.0,
+        "latency_average": 15,
+        "target": "ping.ui.com",
+        "type": "icmp"
+       },
+       {
+        "availability": 100.0,
+        "latency_average": 23,
+        "target": "1.1.1.1",
+        "type": "dns"
+       },
+       {
+        "availability": 100.0,
+        "latency_average": 24,
+        "target": "8.8.8.8",
+        "type": "dns"
+       }
+      ],
+      "availability": 100.0,
+      "latency_average": 111,
+      "monitors": [
+       {
+        "availability": 100.0,
+        "latency_average": 16,
+        "target": "www.microsoft.com",
+        "type": "icmp"
+       },
+       {
+        "availability": 100.0,
+        "latency_average": 14,
+        "target": "google.com",
+        "type": "icmp"
+       },
+       {
+        "availability": 100.0,
+        "latency_average": 16,
+        "target": "1.1.1.1",
+        "type": "icmp"
+       }
+      ],
+      "time_period": 4631,
+      "uptime": 4646
+     },
+     "WAN2": {
+      "alerting_monitors": [
+       {
+        "availability": 0.0,
+        "target": "ping.ui.com",
+        "type": "icmp"
+       },
+       {
+        "availability": 0.0,
+        "target": "1.1.1.1",
+        "type": "dns"
+       },
+       {
+        "availability": 0.0,
+        "target": "8.8.8.8",
+        "type": "dns"
+       }
+      ],
+      "downtime": 35099,
+      "monitors": [
+       {
+        "availability": 0.0,
+        "target": "www.microsoft.com",
+        "type": "icmp"
+       },
+       {
+        "availability": 0.0,
+        "target": "google.com",
+        "type": "icmp"
+       },
+       {
+        "availability": 0.0,
+        "target": "1.1.1.1",
+        "type": "icmp"
+       }
+      ]
+     }
+    }
+   },
+   {
+    "subsystem": "www",
+    "status": "ok",
+    "tx_bytes-r": 3886,
+    "rx_bytes-r": 12135,
+    "latency": 15,
+    "uptime": 4657,
+    "drops": 11,
+    "xput_up": 2.0,
+    "xput_down": 270.0,
+    "speedtest_status": "Success",
+    "speedtest_lastrun": 1793556215,
+    "speedtest_ping": 27
+   },
+   {
+    "subsystem": "lan",
+    "lan_ip": null,
+    "status": "ok",
+    "num_user": 22,
+    "num_guest": 0,
+    "num_iot": 0,
+    "tx_bytes-r": 2721,
+    "rx_bytes-r": 2612,
+    "num_sw": 2,
+    "num_adopted": 2,
+    "num_disconnected": 0,
+    "num_pending": 1
+   },
+   {
+    "subsystem": "vpn",
+    "status": "unknown"
+   }
+  ]
+ },
+ "system_log": {
+  "data": [
+   {
+    "id": "6ade7d4146df1deebb0004af",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_PACKET_LOSS",
+    "timestamp": 1792965953962,
+    "key": "ISP_PACKET_LOSS_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ade7e2046df1deebb0004c2",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1792966176743,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6adfcec950ad509d4e1dafe4",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_PACKET_LOSS",
+    "timestamp": 1793052360991,
+    "key": "ISP_PACKET_LOSS_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae0a46550ad509d4e1dd71e",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793107045131,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae11c0f50ad509d4e1dfa9d",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793137679599,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "30692",
+      "name": "8h 31m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae11df250ad509d4e1dfb0a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793138162584,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "24",
+      "name": "24s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae11df250ad509d4e1dfb0b",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793138162746,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "30716",
+      "name": "8h 31m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae11e5d50ad509d4e1dfb0f",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793138269329,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "41",
+      "name": "41s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae11e5d50ad509d4e1dfb10",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793138269544,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "30757",
+      "name": "8h 32m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae11faa50ad509d4e1dfb42",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793138602548,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1208550ad509d4e1dfb71",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_PACKET_LOSS",
+    "timestamp": 1793138821083,
+    "key": "ISP_PACKET_LOSS_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1228b50ad509d4e1dfbfd",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793139339093,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "818",
+      "name": "13m 38s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1228b50ad509d4e1dfbfe",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793139339239,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "31575",
+      "name": "8h 46m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae122f050ad509d4e1dfc02",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793139440923,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1244d50ad509d4e1dfc3f",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793139789686,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "415",
+      "name": "6m 55s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1244d50ad509d4e1dfc40",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793139789877,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "31990",
+      "name": "8h 53m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12b6a50ad509d4e1dfdc1",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793141610365,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "55",
+      "name": "55s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12b6a50ad509d4e1dfdc2",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793141610539,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "32045",
+      "name": "8h 54m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12d4050ad509d4e1dfe22",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793142080329,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "44",
+      "name": "44s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12d4050ad509d4e1dfe23",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793142080460,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "32089",
+      "name": "8h 54m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12d7150ad509d4e1dfe25",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793142129816,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "13",
+      "name": "13s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12d7150ad509d4e1dfe26",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793142129960,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "32102",
+      "name": "8h 55m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12dc250ad509d4e1dfe28",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793142210153,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "14",
+      "name": "14s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12dc250ad509d4e1dfe29",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793142210360,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "32116",
+      "name": "8h 55m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12ee650ad509d4e1dfe56",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793142502220,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12eee50ad509d4e1dfe57",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793142509948,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "74",
+      "name": "1m 14s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12eee50ad509d4e1dfe58",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793142510098,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "32190",
+      "name": "8h 56m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12f5450ad509d4e1dfe7e",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793142612714,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12f9850ad509d4e1dfe86",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793142680164,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "133",
+      "name": "2m 13s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae12f9850ad509d4e1dfe87",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793142680315,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "32323",
+      "name": "8h 58m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae136df52fce5591406b9e2",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793144543805,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae13a4d52fce5591406ba6a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793145421811,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "944",
+      "name": "15m 44s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae13a4d52fce5591406ba6b",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793145421970,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "33267",
+      "name": "9h 14m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae13a8952fce5591406ba6d",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793145481475,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "13",
+      "name": "13s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae13a8952fce5591406ba6e",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793145481654,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "33280",
+      "name": "9h 14m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1488e52fce5591406bd89",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793149070352,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1affc52fce5591406ce4c",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793175548337,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "26540",
+      "name": "7h 22m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1b5c452fce5591406cfeb",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793177028076,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1b65452fce5591406d015",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793177172313,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "202",
+      "name": "3m 22s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1b65452fce5591406d016",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793177172445,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "26742",
+      "name": "7h 25m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1b6d752fce5591406d01a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793177303721,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1b72252fce5591406d01c",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793177378826,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "136",
+      "name": "2m 16s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1b72252fce5591406d01d",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793177378971,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "26878",
+      "name": "7h 27m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1e81052fce5591406d941",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793189904856,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1f92f52fce5591406dc2d",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793194287006,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "4446",
+      "name": "1h 14m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae1f92f52fce5591406dc2e",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793194287132,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "31324",
+      "name": "8h 42m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae2502a52fce5591406ecf7",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793216554312,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae2639952fce5591406f283",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793221529672,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "5037",
+      "name": "1h 23m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae2639952fce5591406f284",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793221529798,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "36361",
+      "name": "10h 6m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae264e752fce5591406f31a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793221863023,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "23",
+      "name": "23s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae264e752fce5591406f31b",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793221863092,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "36384",
+      "name": "10h 6m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae265f252fce5591406f35a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793222130706,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "23",
+      "name": "23s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae265f252fce5591406f35b",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793222130870,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "36407",
+      "name": "10h 6m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae2668752fce5591406f364",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793222279248,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae2683952fce5591406f3d6",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793222713080,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "495",
+      "name": "8m 15s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae2683952fce5591406f3d7",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793222713252,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "36902",
+      "name": "10h 15m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae268a352fce5591406f3e3",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793222819343,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae26aca52fce5591406f450",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793223370828,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "612",
+      "name": "10m 12s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae26aca52fce5591406f451",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793223370966,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "37514",
+      "name": "10h 25m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae2724752fce5591406f5b6",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_PACKET_LOSS",
+    "timestamp": 1793225287603,
+    "key": "ISP_PACKET_LOSS_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae279fe52fce5591406f7ce",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793227262886,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "43",
+      "name": "43s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae279ff52fce5591406f7cf",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793227262986,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "37557",
+      "name": "10h 25m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae27a6b52fce5591406f7d8",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793227371611,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "42",
+      "name": "42s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae27a6c52fce5591406f7d9",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793227371719,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "37599",
+      "name": "10h 26m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae280f152fce5591406f9b6",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793229041607,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae2b13f52fce5591407069a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793241407554,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "12425",
+      "name": "3h 27m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae2fed552fce559140714ed",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_HIGH_LATENCY",
+    "timestamp": 1793261269955,
+    "key": "ISP_HIGH_LATENCY_2",
+    "parameters": {
+     "LATENCY": {
+      "name": "39"
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae3553052fce5591407258f",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793283376235,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae3598652fce559140726a0",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793284486048,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "1170",
+      "name": "19m 30s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae3598652fce559140726a1",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793284486179,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "13595",
+      "name": "3h 46m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae3c40952fce55914073ba8",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_PACKET_LOSS",
+    "timestamp": 1793311753701,
+    "key": "ISP_PACKET_LOSS_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae45e7652fce559140756bb",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_HIGH_LATENCY",
+    "timestamp": 1793351286296,
+    "key": "ISP_HIGH_LATENCY_2",
+    "parameters": {
+     "LATENCY": {
+      "name": "31"
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b4ec52fce559140767ee",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793373420158,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "46",
+      "name": "46s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b59a52fce559140767f7",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793373594911,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b64152fce5591407682f",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793373761449,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "223",
+      "name": "3m 43s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b64152fce55914076830",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793373761547,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "269",
+      "name": "4m 29s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b6ff52fce55914076870",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793373951462,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b70352fce55914076871",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793373954970,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "62",
+      "name": "1m 2s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b70352fce55914076872",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793373955440,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "331",
+      "name": "5m 31s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b7ae52fce559140768b1",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793374126689,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b84f52fce559140768ea",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793374287391,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "220",
+      "name": "3m 40s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b84f52fce559140768eb",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793374287450,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "551",
+      "name": "9m 11s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4b96552fce55914076925",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793374565038,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4bd2b52fce55914076a4c",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793375531670,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "1023",
+      "name": "17m 3s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4bd2b52fce55914076a4d",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793375531716,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "1574",
+      "name": "26m 14s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4be0952fce55914076a9d",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793375753603,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "44",
+      "name": "44s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae4be0952fce55914076a9e",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793375753655,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "1618",
+      "name": "26m 58s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae51b5552fce559140780ec",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793399637767,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "21",
+      "name": "21s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae51b5552fce559140780ed",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793399637888,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "1639",
+      "name": "27m 19s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae52e8852fce559140785ac",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_PACKET_LOSS",
+    "timestamp": 1793404552861,
+    "key": "ISP_PACKET_LOSS_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae5300b52fce559140785f7",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793404939570,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae530c152fce5591407863a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793405121563,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "240",
+      "name": "4m",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae5b42c52fce5591407a391",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_HIGH_LATENCY",
+    "timestamp": 1793438764024,
+    "key": "ISP_HIGH_LATENCY_2",
+    "parameters": {
+     "LATENCY": {
+      "name": "303"
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae6128f52fce5591407b50a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793462927324,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "21",
+      "name": "21s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae6128f52fce5591407b50b",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793462927402,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "261",
+      "name": "4m 21s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae69cdcef8c24dd3fd446c6",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_PACKET_LOSS",
+    "timestamp": 1793498332501,
+    "key": "ISP_PACKET_LOSS_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae72a24afae95f956ff7a99",
+    "category": "INTERNET_AND_WAN",
+    "event": "ISP_HIGH_LATENCY",
+    "timestamp": 1793534500180,
+    "key": "ISP_HIGH_LATENCY_2",
+    "parameters": {
+     "LATENCY": {
+      "name": "36"
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae7652fafae95f956ff885d",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793549615710,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "38",
+      "name": "38s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae76595afae95f956ff88e1",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793549717597,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae7660eafae95f956ff88ec",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793549838240,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "186",
+      "name": "3m 6s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae7660eafae95f956ff88ed",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793549838323,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "224",
+      "name": "3m 44s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae76d4bafae95f956ff8a6c",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793551691397,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae76d52afae95f956ff8a6d",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793551698109,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "73",
+      "name": "1m 13s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae76d52afae95f956ff8a6e",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793551698185,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "297",
+      "name": "4m 57s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae76de9afae95f956ff8ab7",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793551849780,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae76ee3afae95f956ff8ad0",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793552098971,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "315",
+      "name": "5m 15s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae76ee3afae95f956ff8ad1",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793552099023,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "612",
+      "name": "10m 12s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77067afae95f956ff8b60",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793552487897,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "16",
+      "name": "16s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77068afae95f956ff8b61",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793552487993,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "628",
+      "name": "10m 28s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77195afae95f956ff8ba4",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793552789449,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "16",
+      "name": "16s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77195afae95f956ff8ba5",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793552789532,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "644",
+      "name": "10m 44s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77befafae95f956ff8e0c",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793555439678,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "15",
+      "name": "15s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77befafae95f956ff8e0d",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793555439752,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "659",
+      "name": "10m 59s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77cc0afae95f956ff8e1a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793555648557,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "48",
+      "name": "48s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77cc0afae95f956ff8e1b",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793555648630,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "707",
+      "name": "11m 47s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77d70afae95f956ff8e58",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793555824397,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77ea2afae95f956ff8ea3",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793556130776,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "375",
+      "name": "6m 15s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae77ea2afae95f956ff8ea4",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793556130858,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "1082",
+      "name": "18m 2s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae7800cafae95f956ff8eea",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793556492161,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae78103afae95f956ff8f32",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793556739689,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "314",
+      "name": "5m 14s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae78103afae95f956ff8f33",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793556739746,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "1396",
+      "name": "23m 16s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae78db8afae95f956ff9213",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_TEMPORARY",
+    "timestamp": 1793559991730,
+    "key": "NETWORK_WAN_FAILED_TEMPORARY_2",
+    "parameters": {
+     "DURATION": {
+      "id": "16",
+      "name": "16s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae78db8afae95f956ff9214",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793559992111,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "1412",
+      "name": "23m 32s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae79309afae95f956ff937a",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED",
+    "timestamp": 1793561353525,
+    "key": "NETWORK_WAN_FAILED_2",
+    "parameters": {
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae79325afae95f956ff9385",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_RESTORED",
+    "timestamp": 1793561381797,
+    "key": "NETWORK_WAN_RESTORED_2",
+    "parameters": {
+     "DURATION": {
+      "id": "95",
+      "name": "1m 35s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "6ae79325afae95f956ff9386",
+    "category": "INTERNET_AND_WAN",
+    "event": "NETWORK_WAN_FAILED_MULTIPLE_TIMES",
+    "timestamp": 1793561381893,
+    "key": "NETWORK_WAN_FAILED_MULTIPLE_TIMES_2",
+    "parameters": {
+     "DURATION": {
+      "id": "1507",
+      "name": "25m 7s",
+      "not_actionable": true
+     },
+     "WAN_NAME": {
+      "id": "WAN",
+      "name": "Internet 1"
+     }
+    }
+   },
+   {
+    "id": "x-client-1",
+    "category": "CLIENT_DEVICES",
+    "event": "CLIENT_CONNECTED_WIRELESS",
+    "timestamp": 1793138162584,
+    "parameters": {}
+   }
+  ],
+  "page_number": 0,
+  "total_element_count": 127,
+  "total_page_count": 1
+ },
+ "speedtests": {
+  "meta": {
+   "rc": "ok"
+  },
+  "data": [
+   {
+    "xput_download": 947.0,
+    "server": {
+     "cc": "DE",
+     "country": "Germany",
+     "city": "Frankfurt am Main",
+     "provider": "filip-hruska",
+     "lon": 0.0,
+     "lat": 0.0
+    },
+    "xput_upload": 51.0,
+    "rundate": 1792969147,
+    "latency": 9,
+    "_id": "6ade89bb50ad509d4e1d748c",
+    "oid": "6ade7ba946df1deebb000437",
+    "o": "speedtest"
+   },
+   {
+    "xput_download": 364.0,
+    "server": {
+     "cc": "DE",
+     "country": "Germany",
+     "city": "Frankfurt am Main",
+     "provider": "Clouvider Limited",
+     "lon": 0.0,
+     "lat": 0.0
+    },
+    "xput_upload": 3.0,
+    "rundate": 1793549008,
+    "latency": 14,
+    "_id": "6ae762d0afae95f956ff878c",
+    "oid": "6ade7ba946df1deebb000437",
+    "o": "speedtest"
+   },
+   {
+    "xput_download": 563.0,
+    "server": {
+     "cc": "DE",
+     "country": "Germany",
+     "city": "Frankfurt am Main",
+     "provider": "Clouvider Limited",
+     "lon": 0.0,
+     "lat": 0.0
+    },
+    "xput_upload": 3.0,
+    "rundate": 1793549168,
+    "latency": 15,
+    "_id": "6ae76370afae95f956ff87d1",
+    "oid": "6ade7ba946df1deebb000437",
+    "o": "speedtest"
+   },
+   {
+    "xput_download": 122.0,
+    "server": {
+     "cc": "DE",
+     "country": "Germany",
+     "city": "Frankfurt am Main",
+     "provider": "Clouvider Limited",
+     "lon": 0.0,
+     "lat": 0.0
+    },
+    "xput_upload": 0.0,
+    "rundate": 1793552408,
+    "latency": 31,
+    "_id": "6ae77018afae95f956ff8b5b",
+    "oid": "6ade7ba946df1deebb000437",
+    "o": "speedtest"
+   },
+   {
+    "xput_download": 270.0,
+    "server": {
+     "cc": "DE",
+     "country": "Germany",
+     "city": "Frankfurt",
+     "provider": "terra-hosting.com SRV3",
+     "lon": 0.0,
+     "lat": 0.0
+    },
+    "xput_upload": 2.0,
+    "rundate": 1793556215,
+    "latency": 27,
+    "_id": "6ae77ef8afae95f956ff8ea6",
+    "oid": "6ade7ba946df1deebb000437",
+    "o": "speedtest"
+   }
+  ]
+ },
+ "site_5min": {
+  "meta": {
+   "rc": "ok"
+  },
+  "data": [
+   {
+    "time": 1793479800000,
+    "wan-tx_bytes": 5301668.0,
+    "wan-rx_bytes": 432163134.7083334,
+    "latency_avg": 18.69,
+    "latency_min": 12.0,
+    "latency_max": 26.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 40,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 22,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793480100000,
+    "wan-tx_bytes": 8423194.988095239,
+    "wan-rx_bytes": 187359398.41666666,
+    "latency_avg": 18.663333333333334,
+    "latency_min": 10.0,
+    "latency_max": 26.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 40,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 22,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793480400000,
+    "wan-tx_bytes": 37524335.0952381,
+    "wan-rx_bytes": 238699069.0,
+    "latency_avg": 57.87,
+    "latency_min": 12.0,
+    "latency_max": 269.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 40,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 22,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793480700000,
+    "wan-tx_bytes": 2737364.1904761903,
+    "wan-rx_bytes": 197494056.99999997,
+    "latency_avg": 16.406666666666666,
+    "latency_min": 12.0,
+    "latency_max": 24.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 41,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 23,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793481000000,
+    "wan-tx_bytes": 8345534.19047619,
+    "wan-rx_bytes": 7882980.19047619,
+    "latency_avg": 15.476666666666667,
+    "latency_min": 11.0,
+    "latency_max": 20.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 42,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 24,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793481300000,
+    "wan-tx_bytes": 11298512.185714286,
+    "wan-rx_bytes": 177535576.34285712,
+    "latency_avg": 19.04,
+    "latency_min": 13.0,
+    "latency_max": 28.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 41,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 23,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   }
+  ]
+ },
+ "site_hourly": {
+  "meta": {
+   "rc": "ok"
+  },
+  "data": [
+   {
+    "time": 1793433600000,
+    "wan-tx_bytes": 28366919.67532468,
+    "wan-rx_bytes": 304661020.9935065,
+    "latency_avg": 12.815277777777778,
+    "latency_min": 8.0,
+    "latency_max": 28.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 40,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 22,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793437200000,
+    "wan-tx_bytes": 190291610.36363634,
+    "wan-rx_bytes": 3581731651.2272725,
+    "latency_avg": 28.235833333333332,
+    "latency_min": 8.0,
+    "latency_max": 883.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 41,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 23,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793440800000,
+    "wan-tx_bytes": 16559159.484848484,
+    "wan-rx_bytes": 372382367.3030303,
+    "latency_avg": 13.794166666666667,
+    "latency_min": 8.0,
+    "latency_max": 35.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 38,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 20,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793444400000,
+    "wan-tx_bytes": 19224831.000000004,
+    "wan-rx_bytes": 643914551.0,
+    "latency_avg": 14.9625,
+    "latency_min": 9.0,
+    "latency_max": 33.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 40,
+    "lan-num_sta": 18,
+    "wlan-num_sta": 22,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793448000000,
+    "wan-tx_bytes": 19131311.15942029,
+    "wan-rx_bytes": 38341123.94202899,
+    "latency_avg": 14.173055555555555,
+    "latency_min": 8.0,
+    "latency_max": 28.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 34,
+    "lan-num_sta": 13,
+    "wlan-num_sta": 21,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793451600000,
+    "wan-tx_bytes": 15251125.173913043,
+    "wan-rx_bytes": 372657791.3913043,
+    "latency_avg": 13.25361111111111,
+    "latency_min": 8.0,
+    "latency_max": 37.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 29,
+    "lan-num_sta": 13,
+    "wlan-num_sta": 16,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793455200000,
+    "wan-tx_bytes": 10980671.0,
+    "wan-rx_bytes": 27288553.0,
+    "latency_avg": 14.116944444444444,
+    "latency_min": 8.0,
+    "latency_max": 28.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 34,
+    "lan-num_sta": 13,
+    "wlan-num_sta": 21,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   },
+   {
+    "time": 1793458800000,
+    "wan-tx_bytes": 14103421.44,
+    "wan-rx_bytes": 46333317.0,
+    "latency_avg": 15.465277777777779,
+    "latency_min": 9.0,
+    "latency_max": 31.0,
+    "wan2-tx_bytes": 0.0,
+    "wan2-rx_bytes": 0.0,
+    "num_sta": 36,
+    "lan-num_sta": 13,
+    "wlan-num_sta": 23,
+    "site": "6ade7ba946df1deebb000437",
+    "o": "site",
+    "oid": "6ade7ba946df1deebb000437"
+   }
+  ]
+ },
+ "info": {
+  "applicationVersion": "10.6.109"
+ },
+ "sites": {
+  "offset": 0,
+  "limit": 25,
+  "count": 1,
+  "totalCount": 1,
+  "data": [
+   {
+    "id": "88f7af54-98f8-306a-a1c7-c9349722b1f6",
+    "internalReference": "default",
+    "name": "Default"
+   }
+  ]
+ }
+}
