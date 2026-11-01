@@ -19,7 +19,8 @@ const S = (p: Partial<Sample>): Sample => ({ ts: 1793560000, lan_loss: 0, lan_rt
   fritz_access: "Cable", path: "cable", ...p })
 const O: Overview = { configured: true, latest: S({}), udm: { wan_status: "ok", isp: "Vodafone Germany", availability: 100, latency_ms: 15, drops: 11 },
   udm_at: 1793560000, udm_error: null, udm_confirmed: true, fritz: true, plan: { down: 1000, up: 50 },
-  last_speedtest: { source: "udm", ts: 1793556215, down_mbit: 270, up_mbit: 2, ping_ms: 27, server: "Frankfurt am Main" } }
+  last_speedtest: { source: "udm", ts: 1793556215, down_mbit: 270, up_mbit: 2, ping_ms: 27, server: "Frankfurt am Main" },
+  counts: { devices: 4, devices_online: 3, clients: 42, wireless: 20, wired: 22 } }
 
 describe("Übersicht", () => {
   it("Weg, drei Ampeln, Anbieter und Speedtest gegen Tarif", () => {
@@ -27,6 +28,7 @@ describe("Übersicht", () => {
     for (const s of ["now:{&quot;path&quot;:&quot;path.cable&quot;}", "section.home", "section.fritz", "section.internet",
       "Vodafone Germany", "speed.of_plan:{&quot;pct&quot;:27}", "speed.of_plan:{&quot;pct&quot;:4}", "data-chart"]) expect(html).toContain(s)
     expect(html).toContain("text-rose-300")
+    expect(html).toContain("counts:{&quot;devices&quot;:4,&quot;online&quot;:3,&quot;clients&quot;:42,&quot;wireless&quot;:20,&quot;wired&quot;:22}")
     expect(html).not.toContain("not_configured")
   })
   it("Mobilfunk und kein Internet werden benannt", () => {
@@ -39,7 +41,7 @@ describe("Übersicht", () => {
     expect(renderToStaticMarkup(<OverviewView o={O} samples={[S({})]} canConfigure={false} />)).not.toContain("data-chart")
   })
   it("nicht eingerichtet: Hinweis je nach Recht, ohne Messung", () => {
-    const o = { ...O, configured: false, latest: null, last_speedtest: null, udm: null, udm_at: null }
+    const o = { ...O, configured: false, latest: null, last_speedtest: null, udm: null, udm_at: null, counts: null }
     expect(renderToStaticMarkup(<OverviewView o={o} samples={[]} canConfigure />)).toContain("not_configured_admin")
     const u = renderToStaticMarkup(<OverviewView o={o} samples={[]} canConfigure={false} />)
     expect(u).toContain("not_configured")

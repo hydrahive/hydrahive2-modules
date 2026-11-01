@@ -58,6 +58,7 @@ export function OverviewView({ o, samples, canConfigure }: { o: Overview; sample
         <section className={BOX}>
           <h2 className={H2}>{t("udm.title")}</h2>
           {o.udm?.isp && <p className="text-sm text-[#e8eef8]">{t("udm.isp", { isp: o.udm.isp })}</p>}
+          {o.counts && <p className="text-sm text-[#e8eef8]">{t("counts", { devices: o.counts.devices, online: o.counts.devices_online, clients: o.counts.clients, wireless: o.counts.wireless, wired: o.counts.wired })}</p>}
           {o.udm_at && <p className="text-xs text-[#c8d2df]">{t("measured", { when: when(o.udm_at, i18n.language) })}</p>}
           {o.udm_error && <p className="text-sm text-rose-300">{t("udm.error", { text: t(errorKey({ code: o.udm_error })) })}</p>}
           {!o.udm_at && !o.udm_error && <p className={MUTED}>{t("udm.never")}</p>}

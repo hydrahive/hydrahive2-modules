@@ -5,6 +5,7 @@ export interface UdmStatus { wan_status: string | null; isp: string | null; avai
 export interface Overview {
   configured: boolean; latest: Sample | null; udm: UdmStatus | null; udm_at: number | null; udm_error: string | null
   udm_confirmed: boolean; fritz: boolean; plan: { down: number | null; up: number | null }; last_speedtest: Speedtest | null
+  counts: { devices: number; devices_online: number; clients: number; wireless: number; wired: number } | null
 }
 export interface Settings {
   udm_url: string | null; udm_credential: string | null; udm_pin: string | null; fritz_host: string | null

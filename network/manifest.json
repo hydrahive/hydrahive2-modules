@@ -1,7 +1,7 @@
 {
   "id": "network",
   "name": "Netzwerk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Heimnetz und Internet im Blick: misst rund um die Uhr, liest UniFi Dream Machine und FRITZ!Box aus, erkennt Störungen und ob das Kabel oder der Mobilfunk-Ersatz läuft – als belegbare Daten für den Anbieter.",
   "icon": "Network",
   "nav_group": "working",
