@@ -104,21 +104,29 @@ def test_zertifikat_ohne_einrichtung_oder_nicht_erreichbar(client, admin_headers
     assert r.status_code == 502 and r.json()["detail"]["code"] == "network_unreachable"
 
 
+class _Resp:
+    def __init__(self, status, data):
+        self.status_code, self._data = status, data
+
+    def json(self):
+        return self._data
+
+
 def test_verbindung_testen(client, admin_headers, safe, db_ready, fake_cert, monkeypatch):
     from backend import unifi_client
-    seen = {}
+    seen = []
 
-    async def fake_get(self, path):
-        seen.update(key=self.key, pin=self.pin, path=path)
-        return {"applicationVersion": "10.6.109"}
-    monkeypatch.setattr(unifi_client.Udm, "get", fake_get)
+    async def fake_send(method, url, *, headers, json, pin):
+        seen.append({"key": headers.get("X-API-KEY"), "pin": pin, "url": url})
+        return _Resp(200, {"applicationVersion": "10.6.109"})
+    monkeypatch.setattr(unifi_client, "_send", fake_send)
     client.put(f"{P}/settings", json=body(), headers=admin_headers)
     r = client.post(f"{P}/udm/test", json={}, headers=admin_headers)
-    assert r.status_code == 409 and r.json()["detail"]["code"] == "network_cert_unconfirmed"
+    assert r.status_code == 409 and r.json()["detail"]["code"] == "network_cert_unconfirmed" and seen == []
     client.post(f"{P}/udm/confirm", json={"fingerprint": FP}, headers=admin_headers)
     r = client.post(f"{P}/udm/test", json={}, headers=admin_headers)
     assert r.status_code == 200 and r.json() == {"ok": True, "version": "10.6.109"}
-    assert seen == {"key": SECRET, "pin": FP, "path": "/proxy/network/integration/v1/info"}
+    assert seen == [{"key": SECRET, "pin": FP, "url": "https://192.168.178.1/proxy/network/integration/v1/info"}]
     assert SECRET not in r.text
 
 

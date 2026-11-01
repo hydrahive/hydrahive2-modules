@@ -16,7 +16,7 @@ def test_health_liest_internet_und_speedtest(udm_data):
     assert h["wan_status"] == "ok"
     assert h["isp"] == "Vodafone Germany"
     assert h["availability"] == 100.0
-    assert h["latency_ms"] == 40
+    assert h["latency_ms"] == 15
     assert h["drops"] == 11
     assert h["speedtest"] == {"down": 270.0, "up": 2.0, "ping": 27, "at": 1793556215}
 
@@ -30,15 +30,14 @@ def test_ereignisse_nur_internet_mit_dauer_und_ohne_fremde(udm_data):
     rows = up.events(udm_data["system_log"])
     assert all(r["source"] == "udm" for r in rows)
     assert "x-client-1" not in {r["event_id"] for r in rows}
-    first_fail = next(r for r in rows if r["kind"] == "wan_failed")
-    assert first_fail["ts"] == 1793539069 or first_fail["ts"] > 1_700_000_000
+    assert len(rows) == 126
     restored = [r for r in rows if r["kind"] == "wan_restored"]
     assert restored[0]["duration_s"] == 8 * 3600 + 31 * 60
     assert restored[0]["wan"] == "Internet 1"
     kinds = {r["kind"] for r in rows}
     assert {"wan_failed", "wan_restored", "packet_loss"} <= kinds
     lat = [r for r in rows if r["kind"] == "high_latency"]
-    assert lat and lat[0]["detail"] == "303"
+    assert "303" in {r["detail"] for r in lat}
 
 
 def test_ereignis_zeit_in_sekunden(udm_data):

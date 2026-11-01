@@ -91,7 +91,7 @@ async def test_udm_status_und_5min(db_ready, udm):
     assert cfg["last_status"]["isp"] == "Vodafone Germany" and cfg["last_error"] is None
     assert cfg["last_status_at"] == 1_793_560_000
     assert store.series("5min", 0, 2_000_000_000)
-    assert store.speedtests(0, 2_000_000_000)[0]["up_mbit"] == 2.0
+    assert store.speedtests(0, 2_000_000_000)[-1]["up_mbit"] == 2.0
 
 
 async def test_udm_fehler_wird_gemerkt(db_ready, udm, udm_data):
