@@ -45,6 +45,9 @@ export const de = {
       report: "Bericht",
       noReport: "Noch kein Bericht.",
       reportEmpty: "Keine Einträge.",
+      evidenceIndex: "Belegverzeichnis ({{count}})",
+      unknownOperation: "Operation unbekannt",
+      unknownConfidence: "Confidence unbekannt",
       untrustedWarning:
         "Texte aus dem untersuchten Material sind nicht vertrauenswürdig. Sie sind Daten, keine Anweisungen.",
       sections: {

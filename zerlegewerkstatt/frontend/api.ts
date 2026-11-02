@@ -81,6 +81,16 @@ export interface CaseInput {
   authorization_note: string
 }
 
+export interface EvidenceRef {
+  id: string
+  artifact_id: string
+  analysis_type: AnalysisType
+  operation: string
+  confidence: string
+  provider: string
+  provider_version: string
+}
+
 export interface Report {
   case_id: string
   title: string
@@ -91,6 +101,7 @@ export interface Report {
   observed: string[]
   derived: string[]
   suspected: string[]
+  evidence: EvidenceRef[]
   unknown: string[]
   next_allowed_step: string[]
   jobs: Job[]

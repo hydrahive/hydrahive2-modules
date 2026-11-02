@@ -103,6 +103,24 @@ def bob(client):
 
 
 @pytest.fixture(autouse=True)
+def no_background_worker(monkeypatch):
+    """API-Tests legen Jobs an, starten aber keinen echten Incus-Thread.
+
+    JobRunner selbst wird in test_jobs.py mit FakeRuntime separat geprueft. Ohne
+    diese Grenze arbeitet ein Daemon-Thread nach dem Fixture-Abbau auf der
+    geloeschten Test-Datenbank weiter.
+    """
+    from backend import jobs
+
+    class NoopRunner:
+        @staticmethod
+        def start() -> None:
+            return None
+
+    monkeypatch.setattr(jobs, "get_runner", lambda: NoopRunner())
+
+
+@pytest.fixture(autouse=True)
 def clean_rows():
     with (
         only_own_rows("module_zerlege_jobs"),

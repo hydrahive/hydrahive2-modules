@@ -99,7 +99,7 @@ Jeder Befund erhält intern:
 - importierte Netzwerkbibliothek allein → keine Protokollbehauptung, nur Untersuchungsansatz;
 - Android-Berechtigung plus Manifest-Service → belegte Fähigkeit, nicht belegte tatsächliche Nutzung.
 
-`reports.py` darf `derived` und `suspected` nicht dauerhaft hart leer lassen. Ebenso darf es keine lokale Schnittstelle ohne Beleg behaupten.
+Seit 0.2.0 füllt eine deterministische Regelschicht `derived` und `suspected` für lokale PCAP-Indikatoren bzw. Windows-Netzwerkimporte und liefert ein Belegverzeichnis. Weitere Regeln folgen nur mit strukturierten Positiv- und Negativtests. Eine lokale Schnittstelle darf weiterhin nie ohne Beleg behauptet werden.
 
 ## 5. Oberfläche
 

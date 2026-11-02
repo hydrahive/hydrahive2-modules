@@ -67,6 +67,27 @@ export function ReportPanel({ report, jobs, loading }: Props) {
         )
       })}
 
+      {report.evidence.length > 0 && (
+        <details className="rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] p-3">
+          <summary className={`cursor-pointer text-sm ${TEXT}`}>
+            {t("evidenceIndex", { count: report.evidence.length })}
+          </summary>
+          <ul className="mt-2 space-y-2">
+            {report.evidence.map((item) => (
+              <li key={item.id} className="rounded-md bg-[rgb(var(--hh-s-innen,17_23_35))] p-2 text-xs">
+                <code className={`break-all ${TEXT}`}>{item.id}</code>
+                <p className={`mt-1 ${MUTED}`}>
+                  {t(`analysis.${item.analysis_type}`)} · {item.operation || t("unknownOperation")} · {item.confidence || t("unknownConfidence")}
+                </p>
+                {(item.provider || item.provider_version) && (
+                  <p className={MUTED}>{[item.provider, item.provider_version].filter(Boolean).join(" · ")}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {report.untrusted_target_content && (
         <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-300">
           {t("untrustedWarning")}
