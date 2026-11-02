@@ -1,9 +1,10 @@
 # Zerlege-Werkstatt – Spezifikation E1
 
 **Stand:** 02.11.2026  
-**Status:** freigegeben durch Till („lass uns loslegen“)  
+**Status:** umgesetzt, PR #339 in `hydrahive2-modules` (Branch `feat/zerlegewerkstatt-e1`)  
 **Task:** `ba8d88b3`  
-**Modul-ID:** `zerlegewerkstatt`
+**Modul-ID:** `zerlegewerkstatt`  
+**Nachweis:** 116 Backendtests, 7 Frontendtests, `tsc`, Ruff und Isolationstest grün; E2E am echten Container mit Windows-OpenSSH-PE und WLED-APK
 
 ## 1. Problem
 
@@ -201,13 +202,13 @@ Die Oberfläche nutzt die HydraHive-Farbstufen und enthält `altlook.test.ts` un
 
 ## 14. Akzeptanzkriterien E1
 
-- Eine PE-Datei und eine APK können hochgeladen, erkannt und statisch untersucht werden, ohne ausgeführt zu werden.
-- Fall-, Artefakt- und Jobzugriff ist projekt- und berechtigungsgebunden.
-- Traversal, Symlink, unbekannter Typ, leere Datei, >512 MiB und >2 GiB/Fall werden getestet abgelehnt.
-- Analyse läuft nur im dedizierten Container und ohne Host-Secrets.
-- Abbruch/Zeitlimit hinterlässt keinen laufenden Analyseprozess.
-- Bericht enthält Hash, Werkzeugversion, Belegstatus und offene Fragen.
-- Samba-Eingang nimmt nur stabile reguläre Dateien auf.
-- Agent sieht höchstens drei kleine Werkzeuge, nicht 229 REA-Werkzeuge.
-- Backendtests, Frontendtests, `check_test_safety.py`, Versionsprüfung und Kern-Frontend-Build sind grün.
-- E2E-Gegenprobe mit öffentlicher WLED-App und offizieller Windows-OpenSSH-Datei ist dokumentiert.
+- Eine PE-Datei und eine APK können hochgeladen, erkannt und statisch untersucht werden, ohne ausgeführt zu werden. **Erfüllt** — nachgewiesen am echten Container: OpenSSH-PE 2,3 s, WLED-APK 6,7 s, beide mit Confidence `observed`.
+- Fall-, Artefakt- und Jobzugriff ist projekt- und berechtigungsgebunden. **Erfüllt**
+- Traversal, Symlink, unbekannter Typ, leere Datei, >512 MiB und >2 GiB/Fall werden getestet abgelehnt. **Erfüllt**
+- Analyse läuft nur im dedizierten Container und ohne Host-Secrets. **Erfüllt**
+- Abbruch/Zeitlimit hinterlässt keinen laufenden Analyseprozess. **Erfüllt**
+- Bericht enthält Hash, Werkzeugversion, Belegstatus und offene Fragen. **Erfüllt** — der Bericht nennt SHA-256, Format, Architektur und die Einschränkungen der Analyse; offene Fragen stehen unter „Unbekannt".
+- Samba-Eingang nimmt nur stabile reguläre Dateien auf. **Erfüllt**
+- Agent sieht höchstens drei kleine Werkzeuge, nicht 229 REA-Werkzeuge. **Erfüllt**
+- Backendtests, Frontendtests, `check_test_safety.py`, Versionsprüfung und Kern-Frontend-Build sind grün. **Erfüllt**
+- E2E-Gegenprobe mit öffentlicher WLED-App und offizieller Windows-OpenSSH-Datei ist dokumentiert. **Erfüllt**
