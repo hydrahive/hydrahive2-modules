@@ -17,9 +17,9 @@ ANALYSIS_USER="${ANALYSIS_USER:-rea}"
 BRIDGE="${BRIDGE:-br0}"
 
 NODE_VERSION="24.22.2"
-NODE_TARBALL="node-v${NODE_VERSION}-linux-x64.tar.xz"
-NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/${NODE_TARBALL}"
-NODE_SHA256="48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75"
+NODE_TARBALL=""
+NODE_URL=""
+NODE_SHA256=""
 
 REA_VERSION="6.8.0"
 REA_URL="https://registry.npmjs.org/rea-agents/-/rea-agents-${REA_VERSION}.tgz"
@@ -47,6 +47,26 @@ require_incus() {
   if ! incus query /1.0 >/dev/null 2>&1; then
     die "Kein Zugriff auf incus. Der Benutzer muss in der Gruppe incus-admin sein."
   fi
+}
+
+resolve_node_architecture() {
+  local architecture
+  architecture="$(incus exec "$CONTAINER_NAME" -- uname -m)" \
+    || die "Containerarchitektur konnte nicht ermittelt werden."
+  case "$architecture" in
+    x86_64)
+      NODE_TARBALL="node-v${NODE_VERSION}-linux-x64.tar.xz"
+      NODE_SHA256="48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75"
+      ;;
+    aarch64|arm64)
+      NODE_TARBALL="node-v${NODE_VERSION}-linux-arm64.tar.xz"
+      NODE_SHA256="eb187837a2230d4047161ac0be008584e16b46f726e9c9490ee35dc6b17d9ba8"
+      ;;
+    *)
+      die "Nicht unterstuetzte Architektur: $architecture (erlaubt: x86_64, aarch64)"
+      ;;
+  esac
+  NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/${NODE_TARBALL}"
 }
 
 # Laedt eine Datei herunter und prueft die SHA-256. Bei Abweichung: Abbruch.
@@ -93,6 +113,54 @@ ptrace," \
   incus config device add "$CONTAINER_NAME" eth0 nic \
     "nictype=bridged" "parent=$BRIDGE" "name=eth0" \
     || die "Netzwerkbruecke $BRIDGE konnte nicht angehaengt werden."
+}
+
+ensure_install_network() {
+  if incus config device list "$CONTAINER_NAME" | grep -qx eth0; then
+    return 0
+  fi
+  log "haenge Installationsnetzwerk an"
+  incus config device add "$CONTAINER_NAME" eth0 nic \
+    "nictype=bridged" "parent=$BRIDGE" "name=eth0" \
+    || die "Netzwerkbruecke $BRIDGE konnte nicht angehaengt werden."
+}
+
+install_container_dependencies() {
+  # Ein unveraendertes images:ubuntu/24.04 enthaelt diese Werkzeuge nicht.
+  # Erst pruefen: Wiederholungen nach einer Teilinstallation bleiben schnell.
+  if incus exec "$CONTAINER_NAME" -- bash -c '
+    command -v xz >/dev/null &&
+    command -v unzip >/dev/null &&
+    command -v java >/dev/null &&
+    command -v file >/dev/null &&
+    command -v objdump >/dev/null &&
+    command -v readelf >/dev/null &&
+    command -v strings >/dev/null &&
+    command -v python3 >/dev/null
+  '; then
+    log "Container-Grundpakete bereits vorhanden"
+    return 0
+  fi
+
+  log "installiere Container-Grundpakete"
+  incus exec "$CONTAINER_NAME" -- env DEBIAN_FRONTEND=noninteractive \
+    apt-get -qq update \
+    || die "Paketlisten im Analysecontainer konnten nicht geladen werden."
+  incus exec "$CONTAINER_NAME" -- env DEBIAN_FRONTEND=noninteractive \
+    apt-get -qq install -y --no-install-recommends \
+    xz-utils unzip openjdk-21-jre-headless file binutils python3 ca-certificates \
+    || die "Container-Grundpakete konnten nicht installiert werden."
+
+  incus exec "$CONTAINER_NAME" -- bash -c '
+    command -v xz >/dev/null &&
+    command -v unzip >/dev/null &&
+    command -v java >/dev/null &&
+    command -v file >/dev/null &&
+    command -v objdump >/dev/null &&
+    command -v readelf >/dev/null &&
+    command -v strings >/dev/null &&
+    command -v python3 >/dev/null
+  ' || die "Container-Grundpakete sind nach der Installation unvollstaendig."
 }
 
 install_tools() {
@@ -175,6 +243,9 @@ main() {
   require_incus
   create_container
   start_container
+  ensure_install_network
+  install_container_dependencies
+  resolve_node_architecture
   install_tools
   create_user
   verify_install
