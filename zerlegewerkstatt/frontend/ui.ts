@@ -16,6 +16,8 @@ export const ANALYSIS_TYPES: { id: AnalysisType; kinds: string[] }[] = [
   { id: "inspect-artifact", kinds: ["pe", "apk", "elf", "pcap", "pcapng", "firmware"] },
   { id: "inspect-android-package", kinds: ["apk"] },
   { id: "inspect-managed-artifact", kinds: ["pe"] },
+  { id: "inspect-managed-members", kinds: ["pe"] },
+  { id: "inspect-pcap-capture", kinds: ["pcap", "pcapng"] },
   { id: "analyze-ghidra", kinds: ["pe", "elf", "firmware"] },
 ]
 

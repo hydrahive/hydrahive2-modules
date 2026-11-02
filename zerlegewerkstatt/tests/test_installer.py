@@ -20,7 +20,7 @@ def test_install_und_uninstall_existieren():
 
 def test_versionen_sind_gepinnt():
     text = read(INSTALL)
-    assert '"version": "0.1.2"' in read(MODULE_DIR / "manifest.json")
+    assert '"version": "0.1.3"' in read(MODULE_DIR / "manifest.json")
     assert 'NODE_VERSION="24.22.2"' in text
     assert 'REA_VERSION="6.8.0"' in text
     assert 'GHIDRA_VERSION="12.1.4"' in text
@@ -119,6 +119,28 @@ def test_dateien_werden_einzeln_in_den_container_gepusht():
                if "incus file push" in line and not line.strip().startswith("#")]
     assert aufrufe, "es wird nichts in den Container kopiert"
     assert not any(" -r" in line for line in aufrufe)
+
+
+def test_pcap_hat_rea_abhaengigkeiten_bei_frischer_installation():
+    text = read(INSTALL)
+    assert "tshark" in text
+    assert "wireshark-common" in text
+    assert "command -v tshark" in text
+    assert "command -v capinfos" in text
+    assert "rea-tshark" in text
+    assert "/usr/bin/tshark" in text
+    assert "chmod 000 /usr/bin/dumpcap" in text
+    assert "Live-Capture ist nicht gesperrt" in text
+
+
+def test_tshark_adapter_gibt_node_die_versionsausgabe_weiter():
+    text = read(INSTALL)
+    assert 'out="$(mktemp)"' in text
+    assert '/usr/bin/tshark "$@"' in text
+    assert 'cat "$out"' in text
+    assert "ulimit -f 131072" in text
+    assert 'kill "$child"' in text
+    assert 'trap' in text
 
 
 def test_frischer_container_bekommt_alle_laufzeitpakete_vor_den_werkzeugen():

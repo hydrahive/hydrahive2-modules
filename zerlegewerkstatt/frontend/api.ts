@@ -16,6 +16,8 @@ export type AnalysisType =
   | "inspect-artifact"
   | "inspect-android-package"
   | "inspect-managed-artifact"
+  | "inspect-managed-members"
+  | "inspect-pcap-capture"
   | "analyze-ghidra"
 
 export interface Artifact {

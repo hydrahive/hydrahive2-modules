@@ -102,7 +102,7 @@ Vier Fehler fielen erst in der Abnahme auf und sind behoben:
 ### Offen für E2
 
 - Binwalk-3.1-/Unblob-Firmwareextraktion
-- Wechsel auf den REA-MCP-Server (braucht gemessene Schemagröße unter 20.000 Tokens und eine echte Tool-Positivliste)
+- Native statische Analysearten über feste HydraHive-Adapter ausbauen; ein REA-MCP-Server ist ausdrücklich verworfen
 - Ghidra-Tiefenanalyse über `analyze-ghidra` ist in der Positivliste, aber gegen die beiden E2E-Dateien nicht durchlaufen
 - Die gemeinsame Projekt-Samba-Anmeldung bleibt eine bekannte Grenze
 

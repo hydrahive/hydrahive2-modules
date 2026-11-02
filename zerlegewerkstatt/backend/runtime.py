@@ -32,6 +32,8 @@ logger = logging.getLogger(__name__)
 JADX_JAR = "/opt/jadx-headless-mcp.jar"
 #: REA und Node liegen nicht im Standard-PATH des Containers.
 CONTAINER_PATH = "/opt/node/bin:/usr/local/bin:/usr/bin:/bin"
+TSHARK_COMMAND = "/usr/local/bin/rea-tshark"
+CAPINFOS_COMMAND = "/usr/bin/capinfos"
 MAX_OUTPUT_BYTES = exec.MAX_OUTPUT_BYTES
 #: Incus begrenzt `exec` auf 600 Sekunden. Das ist die harte Obergrenze.
 DEFAULT_TIMEOUT = 600
@@ -124,10 +126,14 @@ class IncusRuntime:
         """Die Analyse im Container starten. Ohne Shell."""
         return self._run(
             ["incus", "exec", self.container, "--cwd", remote_dir,
-             "--env", "HOME=/tmp",
+             "--env", f"HOME={remote_dir}",
              "--env", f"PATH={CONTAINER_PATH}",
              "--env", f"REA_JADX_MCP_JAR={JADX_JAR}",
-             "--", *command],
+             "--env", f"REA_TSHARK_COMMAND={TSHARK_COMMAND}",
+             "--env", f"REA_CAPINFOS_COMMAND={CAPINFOS_COMMAND}",
+             "--", "setpriv", "--reuid=rea", "--regid=rea", "--init-groups",
+             "--no-new-privs", "--inh-caps=-all", "--ambient-caps=-all",
+             "--bounding-set=-all", "--", *command],
             timeout=budget,
         )
 

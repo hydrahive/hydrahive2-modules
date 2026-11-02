@@ -11,6 +11,8 @@ def test_nur_feste_analysetypen_sind_erlaubt():
         "inspect-artifact",
         "inspect-android-package",
         "inspect-managed-artifact",
+        "inspect-managed-members",
+        "inspect-pcap-capture",
         "analyze-ghidra",
     }
 
@@ -32,6 +34,27 @@ def test_typ_passt_zum_artefakttyp():
     assert analysis_types.is_allowed("apk", "analyze-ghidra") is False
     assert analysis_types.is_allowed("pe", "inspect-managed-artifact") is True
     assert analysis_types.is_allowed("pe", "inspect-android-package") is False
+
+
+def test_mitglieder_und_pcap_nur_fuer_passende_dateien():
+    assert analysis_types.is_allowed("pe", "inspect-managed-members")
+    assert not analysis_types.is_allowed("apk", "inspect-managed-members")
+    assert analysis_types.is_allowed("pcap", "inspect-pcap-capture")
+    assert analysis_types.is_allowed("pcapng", "inspect-pcap-capture")
+    assert not analysis_types.is_allowed("pe", "inspect-pcap-capture")
+
+
+def test_managed_members_schreibt_vollstaendiges_evidence_bundle():
+    args = analysis_types.build_command("inspect-managed-members", artifact_path="/work/artifact.pe", workdir="/work")
+    assert args[:2] == ["rea", "inspect-managed-members"]
+    assert args[args.index("--detail") + 1] == "summary"
+    assert args[args.index("--evidence-bundle") + 1] == "/work/evidence.json"
+    assert args[-1] == "/work/artifact.pe"
+
+
+def test_pcap_analyse_braucht_nur_die_lokale_datei():
+    args = analysis_types.build_command("inspect-pcap-capture", artifact_path="/work/netz.pcapng")
+    assert args == ["rea", "inspect-pcap-capture", "--format", "json", "/work/netz.pcapng"]
 
 
 def test_ghidra_ist_der_feste_provider():

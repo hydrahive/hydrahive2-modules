@@ -55,6 +55,31 @@ def test_job_wird_angelegt_und_doppelt_angelegte_werden_abgelehnt(client, alice)
     assert second.json()["detail"]["code"] == "reverse_job_already_running"
 
 
+def test_neue_native_analysetypen_gehen_durch_den_api_vertrag(client, alice):
+    from conftest import MOD_PREFIX
+    from test_cases import body
+    from test_uploads import PCAP_BYTES
+
+    pe_case, pe_artifact = create_case_with_artifact(client, alice)
+    managed = client.post(
+        f"{MOD_PREFIX}/cases/{pe_case}/analyze", headers=alice,
+        json={"artifact_id": pe_artifact, "analysis_type": "inspect-managed-members"},
+    )
+    assert managed.status_code == 202
+
+    created = client.post(f"{MOD_PREFIX}/cases", headers=alice, json=body(title="Netzwerkfall")).json()
+    upload = client.post(
+        f"{MOD_PREFIX}/cases/{created['id']}/artifacts", headers=alice,
+        files=[("files", ("netz.pcap", PCAP_BYTES, "application/vnd.tcpdump.pcap"))],
+    )
+    pcap_artifact = upload.json()["files"][0]["artifact_id"]
+    pcap = client.post(
+        f"{MOD_PREFIX}/cases/{created['id']}/analyze", headers=alice,
+        json={"artifact_id": pcap_artifact, "analysis_type": "inspect-pcap-capture"},
+    )
+    assert pcap.status_code == 202
+
+
 def test_unbekannter_analysetyp_wird_abgelehnt(client, alice):
     from conftest import MOD_PREFIX
 

@@ -15,6 +15,8 @@ AnalysisType = Literal[
     "inspect-artifact",
     "inspect-android-package",
     "inspect-managed-artifact",
+    "inspect-managed-members",
+    "inspect-pcap-capture",
     "analyze-ghidra",
 ]
 
@@ -23,6 +25,8 @@ COMMANDS: dict[str, str] = {
     "inspect-artifact": "inspect-artifact",
     "inspect-android-package": "inspect-android-package",
     "inspect-managed-artifact": "inspect-managed-artifact",
+    "inspect-managed-members": "inspect-managed-members",
+    "inspect-pcap-capture": "inspect-pcap-capture",
     "analyze-ghidra": "analyze",
 }
 
@@ -31,6 +35,8 @@ ALLOWED_KINDS: dict[str, frozenset[str]] = {
     "inspect-artifact": frozenset({"pe", "apk", "elf", "pcap", "pcapng", "firmware"}),
     "inspect-android-package": frozenset({"apk"}),
     "inspect-managed-artifact": frozenset({"pe"}),
+    "inspect-managed-members": frozenset({"pe"}),
+    "inspect-pcap-capture": frozenset({"pcap", "pcapng"}),
     "analyze-ghidra": frozenset({"pe", "elf", "firmware"}),
 }
 
@@ -40,6 +46,8 @@ EXTRA_ARGS: dict[str, tuple[str, ...]] = {
     "inspect-artifact": ("--detail", "summary"),
     "inspect-android-package": (),
     "inspect-managed-artifact": (),
+    "inspect-managed-members": ("--detail", "summary"),
+    "inspect-pcap-capture": (),
     "analyze-ghidra": (),
 }
 
@@ -72,6 +80,8 @@ def build_command(analysis_type: str, *, artifact_path: str, provider: str = "gh
     if analysis_type == "inspect-artifact":
         # --detail summary verlangt zwingend ein Ziel fuer das Evidence-Bundle.
         args += ["--evidence_output", f"{workdir}/{EVIDENCE_NAME}"]
+    if analysis_type == "inspect-managed-members":
+        args += ["--evidence-bundle", f"{workdir}/{EVIDENCE_NAME}"]
     args += list(COMMON_ARGS)
     args.append(artifact_path)
     return args

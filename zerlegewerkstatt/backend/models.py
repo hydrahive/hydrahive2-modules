@@ -5,13 +5,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from .analysis_types import AnalysisType
+
 Purpose = Literal["interoperability", "security_audit", "debugging", "preservation", "other_authorized"]
-AnalysisType = Literal[
-    "inspect-artifact",
-    "inspect-android-package",
-    "inspect-managed-artifact",
-    "analyze-ghidra",
-]
 
 
 class CaseIn(BaseModel):

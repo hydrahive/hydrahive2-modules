@@ -109,6 +109,16 @@ class IncusContainer:
                             timeout=60)
         if result.returncode != 0:
             raise ContainerError("runtime_workdir_failed")
+        ownership = self._exec(
+            ["incus", "exec", self.container, "--", "chown", "rea:rea", path],
+            timeout=60,
+        )
+        mode = self._exec(
+            ["incus", "exec", self.container, "--", "chmod", "0700", path],
+            timeout=60,
+        )
+        if ownership.returncode != 0 or mode.returncode != 0:
+            raise ContainerError("runtime_workdir_failed")
         return path
 
     def push(self, local: Path, remote_dir: str, name: str) -> None:
@@ -118,6 +128,13 @@ class IncusContainer:
             timeout=300,
         )
         if result.returncode != 0:
+            raise ContainerError("runtime_push_failed")
+        remote_path = f"{remote_dir}/{name}"
+        ownership = self._exec(
+            ["incus", "exec", self.container, "--", "chown", "rea:rea", remote_path],
+            timeout=60,
+        )
+        if ownership.returncode != 0:
             raise ContainerError("runtime_push_failed")
 
     def cleanup_workdir(self, remote_dir: str) -> None:

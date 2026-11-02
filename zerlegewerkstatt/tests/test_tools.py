@@ -60,6 +60,8 @@ def test_reverse_inspect_erlaubt_nur_analysetypen():
         "inspect-artifact",
         "inspect-android-package",
         "inspect-managed-artifact",
+        "inspect-managed-members",
+        "inspect-pcap-capture",
         "analyze-ghidra",
     ]
     assert set(schema["required"]) == {"case_id", "artifact_id", "analysis_type"}
