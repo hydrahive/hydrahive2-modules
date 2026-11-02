@@ -24,6 +24,11 @@ def check_project_id(project_id: str) -> str:
 
 
 def cases_root(case_id: str) -> Path:
-    """Wurzelverzeichnis eines Falls unterhalb des Modul-Datenordners."""
+    """Wurzelverzeichnis eines Falls.
+
+    Bewusst NICHT unterhalb von `data_dir/modules/`: dort liegen die
+    Moduldateien, die ein Update ueberschreibt. Die Falldaten stehen unter
+    `data_dir/zerlegewerkstatt/` und bleiben beim Update erhalten.
+    """
     check_case_id(case_id)
-    return settings.data_dir / "modules" / "zerlegewerkstatt" / "cases" / case_id
+    return settings.data_dir / "zerlegewerkstatt" / "cases" / case_id

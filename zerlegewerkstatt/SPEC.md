@@ -49,7 +49,10 @@ Ohne Bestätigung kann keine Analyse starten. Die Bestätigung ist keine Rechtsb
 
 Persistente Falldaten liegen auf dem Host unter:
 
-`<data_dir>/modules/zerlegewerkstatt/cases/<case-id>/`
+`<data_dir>/zerlegewerkstatt/cases/<case-id>/`
+
+Bewusst nicht unterhalb von `data_dir/modules/`: dort liegen die Moduldateien,
+die ein Update überschreibt. So bleiben die Falldaten beim Update erhalten.
 
 ```text
 case.json                 nur atomar geschriebene Metadaten

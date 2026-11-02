@@ -7,7 +7,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="${CONTAINER_NAME:-hh-zerlegewerkstatt}"
-DATA_DIR="${DATA_DIR:-/var/lib/hydrahive2/data/modules/zerlegewerkstatt}"
+DATA_DIR="${DATA_DIR:-/var/lib/hydrahive2/zerlegewerkstatt}"
 
 log() { printf '[zerlegewerkstatt] %s\n' "$*" >&2; }
 die() { printf '[zerlegewerkstatt] FEHLER: %s\n' "$*" >&2; exit 1; }

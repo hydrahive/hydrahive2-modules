@@ -52,17 +52,48 @@ def _collect(payload: dict) -> list[str]:
 
 
 def _from_normalized(payload: dict) -> list[str]:
-    """Aussagen aus dem normalisierten REA-Ergebnis uebernehmen."""
+    """Aussagen aus dem normalisierten REA-Ergebnis uebernehmen.
+
+    REA liefert verschachtelte Werte. Flache Angaben kommen direkt, Listen
+    werden gekuerzt zusammengefasst, verschachtelte Objekte rekursiv
+    durchlaufen.
+    """
     normalized = payload.get("normalized_result")
     if not isinstance(normalized, dict):
         return []
     lines: list[str] = []
     for key, value in normalized.items():
-        if isinstance(value, str) and value.strip():
-            lines.append(f"{key}: {value.strip()}"[:MAX_TEXT])
-        elif isinstance(value, list) and value and all(isinstance(i, str) for i in value):
-            lines.append(f"{key}: {', '.join(value[:8])}"[:MAX_TEXT])
+        lines.extend(_flatten(key, value))
     return lines
+
+
+def _flatten(key: str, value, depth: int = 0) -> list[str]:
+    """Einen Wert aus dem REA-Ergebnis in lesbare Zeilen ueberfuehren."""
+    if depth > 3:
+        return []
+    if value is None or isinstance(value, bool):
+        return []
+    if isinstance(value, str):
+        text = value.strip()
+        return [f"{key}: {text}"[:MAX_TEXT]] if text else []
+    if isinstance(value, (int, float)):
+        return [f"{key}: {value}"]
+    if isinstance(value, list):
+        strings = [item for item in value if isinstance(item, str)]
+        if strings:
+            return [f"{key}: {', '.join(strings[:8])}"[:MAX_TEXT]]
+        lines: list[str] = []
+        for item in value[:20]:
+            if isinstance(item, dict):
+                for sub_key, sub_value in list(item.items())[:6]:
+                    lines.extend(_flatten(sub_key, sub_value, depth + 1))
+        return lines[:MAX_OBSERVATIONS]
+    if isinstance(value, dict):
+        lines = []
+        for sub_key, sub_value in list(value.items())[:40]:
+            lines.extend(_flatten(sub_key, sub_value, depth + 1))
+        return lines[:MAX_OBSERVATIONS]
+    return []
 
 
 def _bundle_facts(payload: dict) -> list[str]:
@@ -77,10 +108,7 @@ def _bundle_facts(payload: dict) -> list[str]:
         normalized = record.get("normalized_result")
         if isinstance(normalized, dict):
             for key, value in normalized.items():
-                if isinstance(value, str) and value.strip():
-                    lines.append(f"{key}: {value.strip()}"[:MAX_TEXT])
-                elif isinstance(value, list) and value and all(isinstance(i, str) for i in value):
-                    lines.append(f"{key}: {', '.join(value[:8])}"[:MAX_TEXT])
+                lines.extend(_flatten(key, value))
     for artifact in bundle.get("artifacts", [])[:10]:
         if isinstance(artifact, dict):
             digest = artifact.get("digest", {})
@@ -92,6 +120,26 @@ def _bundle_facts(payload: dict) -> list[str]:
     return lines[:MAX_OBSERVATIONS]
 
 
+def _limitations(payload: dict) -> list[str]:
+    """Einschraenkungen der Analyse nennen. Sie gehoeren zum Bericht."""
+    lines: list[str] = []
+    for key in ("limitations", "relationship_coverage"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            lines.append(value.strip()[:MAX_TEXT])
+        elif isinstance(value, dict):
+            for sub_key, sub_value in value.items():
+                lines.extend(_flatten(sub_key, sub_value))
+        elif isinstance(value, list):
+            for item in value[:20]:
+                if isinstance(item, str) and item.strip():
+                    lines.append(item.strip()[:MAX_TEXT])
+                elif isinstance(item, dict):
+                    for sub_key, sub_value in item.items():
+                        lines.extend(_flatten(sub_key, sub_value))
+    return lines[:MAX_OBSERVATIONS]
+
+
 def build_report(case: dict) -> dict:
     """Bericht zu einem Fall aus den Ergebnissen seiner Jobs bauen."""
     observed: list[str] = []
@@ -100,6 +148,7 @@ def build_report(case: dict) -> dict:
         payload = _load_result(case["id"], job.get("result_path"))
         lines = _collect(payload)
         lines.extend(_bundle_facts(payload))
+        lines.extend(_limitations(payload))
         observed.extend(lines)
         jobs.append({
             "id": job["id"],

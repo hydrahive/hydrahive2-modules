@@ -92,3 +92,16 @@ def test_unbekannter_fall_hat_stabilen_fehler(client, alice):
     response = client.get(f"{MOD_PREFIX}/cases/00000000-0000-0000-0000-000000000000", headers=alice)
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "reverse_case_not_found"
+
+
+def test_falldaten_liegen_nicht_unter_den_moduldateien():
+    """Ein Update überschreibt data_dir/modules. Die Falldaten dürfen dort
+    nicht liegen, sonst wären sie nach dem Update weg."""
+    from hydrahive.settings import settings
+
+    from backend.files import cases_root
+
+    root = cases_root("fall-0001")
+    assert settings.modules_dir not in root.parents
+    assert root.parent.parent.name == "zerlegewerkstatt"
+    assert root.parent.parent.parent == settings.data_dir
