@@ -1,0 +1,25 @@
+{
+  "id": "zerlegewerkstatt",
+  "name": "Zerlege-Werkstatt",
+  "version": "0.1.0",
+  "description": "Untersucht autorisierte Windows-Programme, Android-Apps, Firmware und Netzwerk-Mitschnitte statisch und belegt die gefundenen Schnittstellen.",
+  "icon": "ScanSearch",
+  "nav_group": "working",
+  "permissions": [],
+  "capabilities": [
+    {
+      "id": "module.zerlegewerkstatt",
+      "label": "Zerlege-Werkstatt (Apps, Firmware und Mitschnitte)",
+      "default": "admin_only"
+    },
+    {
+      "id": "zerlegewerkstatt.agents",
+      "label": "Agentenwerkzeuge der Zerlege-Werkstatt",
+      "default": "admin_only",
+      "tools": ["reverse_cases", "reverse_inspect", "reverse_report"]
+    }
+  ],
+  "has_service": true,
+  "default_agent_tools": false,
+  "min_core_version": "2.0.0"
+}

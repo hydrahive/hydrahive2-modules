@@ -1,0 +1,89 @@
+name: Zerlege-Werkstatt Tests
+
+# Die Suite der Zerlege-Werkstatt braucht den Kern (FastAPI, hydrahive.db,
+# hydrahive.settings, hydrahive.projects). Deshalb wird das Kern-Repo geholt
+# und dessen Abhaengigkeiten installiert. Ohne Core laeuft die Suite nicht.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kern holen
+        uses: actions/checkout@v4
+        with:
+          repository: hydrahive/hydrahive2.0
+          path: kern
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Kern-Abhaengigkeiten
+        run: |
+          python -m pip install --quiet --upgrade pip
+          pip install --quiet -e kern/core/
+
+      - name: Test-Abhaengigkeiten
+        run: python -m pip install --quiet pytest pytest-asyncio bcrypt
+
+      - name: Suite
+        run: |
+          PYTHONPATH=kern/core/src:zerlegewerkstatt \
+            python -m pytest zerlegewerkstatt/tests -q --tb=short
+
+  ruff:
+    name: Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ruff
+        run: |
+          python -m pip install --quiet ruff
+          ruff check --select F --line-length 120 --target-version py312 zerlegewerkstatt/
+
+  frontend:
+    name: Frontend (vitest, tsc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Kern holen
+        uses: actions/checkout@v4
+        with:
+          repository: hydrahive/hydrahive2.0
+          path: kern
+
+      - name: Abhaengigkeiten
+        run: cd kern/frontend && npm ci --no-audit --no-fund
+
+      - name: Modul-Frontend einhaengen
+        run: |
+          mkdir -p kern/frontend/src/modules/zerlegewerkstatt
+          cp -r zerlegewerkstatt/frontend/. kern/frontend/src/modules/zerlegewerkstatt/
+
+      - name: Modul-Register erzeugen
+        run: cd kern/frontend && node scripts/gen-modules.mjs
+
+      - name: Vitest
+        run: cd kern/frontend && npx vitest run src/modules/zerlegewerkstatt/
+
+      - name: TypeScript
+        run: cd kern/frontend && npx tsc -b
