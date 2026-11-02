@@ -20,7 +20,7 @@ jobs:
       - name: Kern holen
         uses: actions/checkout@v4
         with:
-          repository: hydrahive/hydrahive2
+          repository: hydrahive/hydrahive2.0
           path: core
 
       - uses: actions/setup-python@v5
@@ -68,7 +68,7 @@ jobs:
       - name: Kern holen
         uses: actions/checkout@v4
         with:
-          repository: hydrahive/hydrahive2
+          repository: hydrahive/hydrahive2.0
           path: core
 
       - name: Abhaengigkeiten
