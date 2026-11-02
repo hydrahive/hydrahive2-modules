@@ -49,6 +49,21 @@ def get_case(case_id: str) -> dict[str, Any] | None:
     return value
 
 
+def add_artifact(case_id: str, artifact: dict[str, Any]) -> dict[str, Any]:
+    with db() as connection:
+        connection.execute(
+            "INSERT INTO module_zerlege_artifacts "
+            "(id, case_id, original_name, kind, size_bytes, sha256, relative_path) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (artifact["artifact_id"], case_id, artifact["original_name"], artifact["kind"],
+             artifact["size"], artifact["sha256"], artifact["relative_path"]),
+        )
+        row = connection.execute(
+            "SELECT * FROM module_zerlege_artifacts WHERE id = ?", (artifact["artifact_id"],)
+        ).fetchone()
+    return dict(row)
+
+
 def list_cases(project_id: str, *, limit: int = 100) -> list[dict[str, Any]]:
     with db() as connection:
         rows = connection.execute(
