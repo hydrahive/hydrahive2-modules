@@ -164,4 +164,18 @@ def test_runtime_status_wird_gemeldet(client, alice):
 
     response = client.get(f"{MOD_PREFIX}/runtime/status", headers=alice)
     assert response.status_code == 200
-    assert "available" in response.json()
+    body = response.json()
+    assert "available" in body
+    assert "running" in body
+    assert "code" in body
+
+
+def test_runtime_status_meldet_fehlende_umgebung_statt_eines_fehlers(client, alice):
+    """Der Endpunkt ist eine Statusabfrage. Fehlt Incus, meldet er das."""
+    from conftest import MOD_PREFIX
+
+    response = client.get(f"{MOD_PREFIX}/runtime/status", headers=alice)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["available"] is False
+    assert body["code"] in ("runtime_missing", "runtime_container_missing", "")

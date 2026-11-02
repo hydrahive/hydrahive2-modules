@@ -120,8 +120,20 @@ def get_report(case_id: str, auth: Auth) -> dict:
 
 @router.get("/runtime/status")
 def runtime_status(auth: Auth) -> dict:
-    """Zustand der Analyseumgebung."""
-    status = runtime.IncusRuntime().status()
+    """Zustand der Analyseumgebung.
+
+    Fehlt die Umgebung (kein Incus, kein Container), meldet der Endpunkt
+    das im Feld `code` - er ist eine Statusabfrage, kein Fehlerfall.
+    """
+    try:
+        status = runtime.IncusRuntime().status()
+    except runtime.RuntimeError_ as error:
+        return {
+            "available": False,
+            "running": False,
+            "network_disabled": False,
+            "code": error.code,
+        }
     return {
         "available": status.available,
         "running": status.running,
