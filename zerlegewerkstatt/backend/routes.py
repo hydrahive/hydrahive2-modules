@@ -8,9 +8,9 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import artifacts, intake, store, uploads
+from . import analysis_types, artifacts, intake, jobs, reports, runtime, store, uploads
 from .access import require_project
-from .models import CaseIn
+from .models import AnalyzeIn, CaseIn
 
 router = APIRouter()
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
@@ -91,6 +91,42 @@ def intake_info(case_id: str, auth: Auth) -> dict:
         "exists": root.is_dir(),
         "files": sorted(entry.name for entry in root.iterdir()
                         if not entry.name.startswith(".")) if root.is_dir() else [],
+    }
+
+
+@router.post("/cases/{case_id}/analyze", status_code=status.HTTP_202_ACCEPTED)
+def start_analysis(case_id: str, auth: Auth, body: AnalyzeIn) -> dict:
+    """Analyse eines Artefakts in der isolierten Umgebung starten."""
+    _owned_case(case_id, auth, required="write")
+    artifact = store.get_artifact(body.artifact_id)
+    if not artifact or artifact["case_id"] != case_id:
+        raise coded(404, "reverse_artifact_not_found")
+    if not analysis_types.is_allowed(artifact["kind"], body.analysis_type):
+        raise coded(400, "reverse_analysis_type_not_allowed")
+    try:
+        job = store.create_job(case_id, body.artifact_id, body.analysis_type)
+    except ValueError:
+        raise coded(409, "reverse_job_already_running") from None
+    jobs.get_runner().start()
+    return job
+
+
+@router.get("/cases/{case_id}/report")
+def get_report(case_id: str, auth: Auth) -> dict:
+    """Bericht einer Fallakte lesen."""
+    case = _owned_case(case_id, auth)
+    return reports.build_report(case)
+
+
+@router.get("/runtime/status")
+def runtime_status(auth: Auth) -> dict:
+    """Zustand der Analyseumgebung."""
+    status = runtime.IncusRuntime().status()
+    return {
+        "available": status.available,
+        "running": status.running,
+        "network_disabled": status.network_disabled,
+        "code": status.code,
     }
 
 

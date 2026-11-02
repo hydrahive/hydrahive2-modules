@@ -6,6 +6,12 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 Purpose = Literal["interoperability", "security_audit", "debugging", "preservation", "other_authorized"]
+AnalysisType = Literal[
+    "inspect-artifact",
+    "inspect-android-package",
+    "inspect-managed-artifact",
+    "analyze-ghidra",
+]
 
 
 class CaseIn(BaseModel):
@@ -16,3 +22,10 @@ class CaseIn(BaseModel):
     purpose: Purpose
     authorized: bool
     authorization_note: str = Field(default="", max_length=1000)
+
+
+class AnalyzeIn(BaseModel):
+    """Analyseanfrage. Nur Artefakt und Analysetyp, keine Pfade und Befehle."""
+
+    artifact_id: str = Field(pattern=r"^[A-Za-z0-9-]{8,64}$")
+    analysis_type: AnalysisType

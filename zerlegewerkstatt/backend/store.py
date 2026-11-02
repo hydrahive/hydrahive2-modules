@@ -72,3 +72,104 @@ def list_cases(project_id: str, *, limit: int = 100) -> list[dict[str, Any]]:
             (project_id, limit),
         ).fetchall()
     return [_case(row) for row in rows]
+
+
+def get_artifact(artifact_id: str) -> dict[str, Any] | None:
+    with db() as connection:
+        row = connection.execute(
+            "SELECT * FROM module_zerlege_artifacts WHERE id = ?", (artifact_id,)
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_artifacts(case_id: str) -> list[dict[str, Any]]:
+    with db() as connection:
+        rows = connection.execute(
+            "SELECT * FROM module_zerlege_artifacts WHERE case_id = ? ORDER BY created_at, id",
+            (case_id,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_job(job_id: str) -> dict[str, Any] | None:
+    with db() as connection:
+        row = connection.execute(
+            "SELECT * FROM module_zerlege_jobs WHERE id = ?", (job_id,)
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_jobs(case_id: str) -> list[dict[str, Any]]:
+    with db() as connection:
+        rows = connection.execute(
+            "SELECT * FROM module_zerlege_jobs WHERE case_id = ? ORDER BY created_at, id",
+            (case_id,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def has_running_job(artifact_id: str, analysis_type: str) -> bool:
+    """Laeuft fuer dieses Artefakt und diesen Typ schon eine Analyse?"""
+    with db() as connection:
+        row = connection.execute(
+            "SELECT 1 FROM module_zerlege_jobs "
+            "WHERE artifact_id = ? AND analysis_type = ? AND status IN ('queued', 'running') "
+            "LIMIT 1",
+            (artifact_id, analysis_type),
+        ).fetchone()
+    return row is not None
+
+
+def create_job(case_id: str, artifact_id: str, analysis_type: str) -> dict[str, Any]:
+    """Job anlegen. Doppelte laufende Jobs werden abgelehnt."""
+    if has_running_job(artifact_id, analysis_type):
+        raise ValueError("job already running")
+    job_id = str(uuid.uuid4())
+    with db() as connection:
+        connection.execute(
+            "INSERT INTO module_zerlege_jobs (id, case_id, artifact_id, analysis_type, status) "
+            "VALUES (?, ?, ?, ?, 'queued')",
+            (job_id, case_id, artifact_id, analysis_type),
+        )
+        row = connection.execute(
+            "SELECT * FROM module_zerlege_jobs WHERE id = ?", (job_id,)
+        ).fetchone()
+    return dict(row)
+
+
+def update_job(job_id: str, **fields: Any) -> None:
+    """Jobfelder aktualisieren. Erlaubt sind nur bekannte Spalten."""
+    allowed = {"status", "progress", "result_path", "log_path", "error_code"}
+    updates = {key: value for key, value in fields.items() if key in allowed}
+    if not updates:
+        return
+    assignments = ", ".join(f"{key} = ?" for key in updates)
+    values = list(updates.values()) + [job_id]
+    with db() as connection:
+        connection.execute(
+            f"UPDATE module_zerlege_jobs SET {assignments}, "
+            "updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?",
+            values,
+        )
+
+
+def mark_interrupted_jobs() -> int:
+    """Nach einem Neustart laufende Jobs als unterbrochen markieren."""
+    with db() as connection:
+        cursor = connection.execute(
+            "UPDATE module_zerlege_jobs SET status = 'interrupted', "
+            "error_code = 'reverse_job_interrupted', "
+            "updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') "
+            "WHERE status = 'running'"
+        )
+        return cursor.rowcount or 0
+
+
+def next_queued_job() -> dict[str, Any] | None:
+    """Naechsten wartenden Job holen."""
+    with db() as connection:
+        row = connection.execute(
+            "SELECT * FROM module_zerlege_jobs WHERE status = 'queued' "
+            "ORDER BY created_at, id LIMIT 1"
+        ).fetchone()
+    return dict(row) if row else None
