@@ -27,6 +27,7 @@ from .exec import CommandResult
 
 logger = logging.getLogger(__name__)
 
+#: Pfade INNERHALB des Analysecontainers. Sie sind keine Hostpfade.
 #: REA braucht den Pfad zur JADX-Bridge fuer Android-Pakete.
 JADX_JAR = "/opt/jadx-headless-mcp.jar"
 #: REA und Node liegen nicht im Standard-PATH des Containers.
