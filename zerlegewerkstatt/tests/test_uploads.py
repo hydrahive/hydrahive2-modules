@@ -4,11 +4,11 @@ import hashlib
 import io
 import struct
 import zipfile
-from pathlib import Path
 
 import pytest
 
-from backend import uploads
+from backend import artifacts, uploads
+
 
 def pe_bytes() -> bytes:
     value = bytearray(256)
@@ -52,21 +52,21 @@ class FakeUpload:
 
 
 def test_erkennt_pe_zip_apk_elf_und_mitschnitt():
-    assert uploads.detect_kind(PE_BYTES) == "pe"
-    assert uploads.detect_kind(ZIP_BYTES) == "zip"
-    assert uploads.detect_kind(ELF_BYTES) == "elf"
-    assert uploads.detect_kind(PCAP_BYTES) == "pcap"
-    assert uploads.detect_kind(PCAPNG_BYTES) == "pcapng"
+    assert artifacts.detect_kind(PE_BYTES) == "pe"
+    assert artifacts.detect_kind(ZIP_BYTES) == "zip"
+    assert artifacts.detect_kind(ELF_BYTES) == "elf"
+    assert artifacts.detect_kind(PCAP_BYTES) == "pcap"
+    assert artifacts.detect_kind(PCAPNG_BYTES) == "pcapng"
 
 
 def test_unbekannter_typ_wird_abgelehnt():
-    assert uploads.detect_kind(b"nur text ohne signatur") is None
-    assert uploads.detect_kind(b"") is None
+    assert artifacts.detect_kind(b"nur text ohne signatur") is None
+    assert artifacts.detect_kind(b"") is None
 
 
 def test_groesse_wird_beim_schreiben_gezaehlt():
-    assert uploads.MAX_ARTIFACT_BYTES == 512 * 1024 * 1024
-    assert uploads.MAX_CASE_BYTES == 2 * 1024 * 1024 * 1024
+    assert artifacts.MAX_ARTIFACT_BYTES == 512 * 1024 * 1024
+    assert artifacts.MAX_CASE_BYTES == 2 * 1024 * 1024 * 1024
     assert uploads.MAX_FILES_PER_REQUEST == 5
 
 
@@ -116,7 +116,7 @@ async def test_echte_apk_struktur_wird_angenommen(tmp_path, monkeypatch):
 @pytest.mark.asyncio
 async def test_zip_bombe_wird_vor_analyse_abgelehnt(tmp_path, monkeypatch):
     monkeypatch.setattr(uploads, "cases_root", lambda case_id: tmp_path / case_id)
-    monkeypatch.setattr(uploads, "MAX_ARCHIVE_UNCOMPRESSED", 1024)
+    monkeypatch.setattr(artifacts, "MAX_ARCHIVE_UNCOMPRESSED", 1024)
     result = await uploads.store_upload("case-1", FakeUpload(apk_bytes(b"x" * 4096), "bomb.apk"))
     assert result["ok"] is False
     assert result["error"] == "reverse_artifact_archive_unsafe"
@@ -141,7 +141,7 @@ async def test_unbekannter_typ_wird_vor_dem_speichern_abgelehnt(tmp_path, monkey
 @pytest.mark.asyncio
 async def test_groessenueberschreitung_bricht_ab_und_entfernt_teil_datei(tmp_path, monkeypatch):
     monkeypatch.setattr(uploads, "cases_root", lambda case_id: tmp_path / case_id)
-    monkeypatch.setattr(uploads, "MAX_ARTIFACT_BYTES", 16)
+    monkeypatch.setattr(artifacts, "MAX_ARTIFACT_BYTES", 16)
     result = await uploads.store_upload("case-1", FakeUpload(PE_BYTES + b"x" * 64, "gross.exe"), kind="pe")
     assert result["ok"] is False
     assert result["error"] == "reverse_artifact_too_large"
@@ -171,18 +171,16 @@ async def test_dateiname_wird_bereinigt(tmp_path, monkeypatch):
 
 
 def test_fallgrenze_wird_geprueft(tmp_path, monkeypatch):
-    monkeypatch.setattr(uploads, "cases_root", lambda case_id: tmp_path / case_id)
-    monkeypatch.setattr(uploads, "MAX_CASE_BYTES", 100)
-    monkeypatch.setattr(uploads, "MAX_ARTIFACT_BYTES", 1024)
+    monkeypatch.setattr(artifacts, "MAX_CASE_BYTES", 100)
     case = tmp_path / "case-1" / "input"
     case.mkdir(parents=True)
     (case / "alt.pe").write_bytes(b"x" * 80)
-    assert uploads.case_size_exceeded(case, incoming=40) is True
-    assert uploads.case_size_exceeded(case, incoming=10) is False
+    assert artifacts.case_size_exceeded(case, incoming=40) is True
+    assert artifacts.case_size_exceeded(case, incoming=10) is False
 
 
 def test_web_upload_speichert_artefakt_in_fall(client, alice):
-    from conftest import MOD_PREFIX, PROJECT_ID
+    from conftest import MOD_PREFIX
     from test_cases import body
 
     created = client.post(f"{MOD_PREFIX}/cases", headers=alice, json=body()).json()
@@ -218,7 +216,7 @@ def test_web_upload_prueft_gemeldete_groesse_vor_dem_schreiben(client, alice, mo
     from conftest import MOD_PREFIX
     from test_cases import body
 
-    monkeypatch.setattr(uploads, "MAX_ARTIFACT_BYTES", 8)
+    monkeypatch.setattr(artifacts, "MAX_ARTIFACT_BYTES", 8)
     created = client.post(f"{MOD_PREFIX}/cases", headers=alice, json=body()).json()
     response = client.post(
         f"{MOD_PREFIX}/cases/{created['id']}/artifacts", headers=alice,
@@ -242,6 +240,6 @@ def test_web_upload_begrenzt_dateianzahl(client, alice):
 def test_stream_wird_nicht_voll_gelesen():
     """Der Upload darf die ganze Datei nicht in den Speicher holen."""
     stream = io.BytesIO(b"x" * 100)
-    chunks = list(uploads.iter_chunks(stream, size=8))
+    chunks = list(artifacts.iter_chunks(stream, size=8))
     assert len(chunks) == 13
     assert b"".join(chunks) == b"x" * 100

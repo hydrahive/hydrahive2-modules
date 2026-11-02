@@ -8,12 +8,21 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import store, uploads
+from . import artifacts, intake, store, uploads
 from .access import require_project
 from .models import CaseIn
 
 router = APIRouter()
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
+
+
+def _owned_case(case_id: str, auth: Auth, *, required: str = "read") -> dict:
+    """Fall laden und Projektzugriff prüfen; fremde Fälle bleiben unsichtbar."""
+    case = store.get_case(case_id)
+    if not case:
+        raise coded(404, "reverse_case_not_found")
+    require_project(*auth, case["project_id"], required=required)
+    return case
 
 
 @router.post("/cases", status_code=status.HTTP_201_CREATED)
@@ -39,17 +48,14 @@ async def upload_artifacts(
     auth: Auth,
     files: Annotated[list[UploadFile], File()],
 ) -> dict:
-    case = store.get_case(case_id)
-    if not case:
-        raise coded(404, "reverse_case_not_found")
-    require_project(*auth, case["project_id"], required="write")
+    _owned_case(case_id, auth, required="write")
     if not files:
         raise coded(400, "reverse_artifact_empty")
     if len(files) > uploads.MAX_FILES_PER_REQUEST:
         raise coded(400, "reverse_artifact_too_many")
     if any(upload.size is None for upload in files):
         raise coded(400, "reverse_artifact_size_unknown")
-    if any(upload.size > uploads.MAX_ARTIFACT_BYTES for upload in files):
+    if any(upload.size > artifacts.MAX_ARTIFACT_BYTES for upload in files):
         raise coded(413, "reverse_artifact_too_large")
     results = []
     for upload in files:
@@ -64,10 +70,30 @@ async def upload_artifacts(
     return {"files": results}
 
 
+@router.post("/cases/{case_id}/intake/scan")
+def scan_intake(case_id: str, auth: Auth) -> dict:
+    """Projekt-Samba-Eingang prüfen und neue Dateien in den Fall übernehmen."""
+    case = _owned_case(case_id, auth, required="write")
+    result = intake.scan_intake(case["project_id"], case_id)
+    for item in result["files"]:
+        if item["ok"]:
+            store.add_artifact(case_id, item)
+    return result
+
+
+@router.get("/cases/{case_id}/intake")
+def intake_info(case_id: str, auth: Auth) -> dict:
+    """Eingangsordner des Falls und seinen Projektpfad nennen."""
+    case = _owned_case(case_id, auth)
+    root = intake.intake_root(case["project_id"], case_id)
+    return {
+        "path": f"zerlegewerkstatt/eingang/{case_id}",
+        "exists": root.is_dir(),
+        "files": sorted(entry.name for entry in root.iterdir()
+                        if not entry.name.startswith(".")) if root.is_dir() else [],
+    }
+
+
 @router.get("/cases/{case_id}")
 def get_case(case_id: str, auth: Auth) -> dict:
-    case = store.get_case(case_id)
-    if not case:
-        raise coded(404, "reverse_case_not_found")
-    require_project(*auth, case["project_id"])
-    return case
+    return _owned_case(case_id, auth)
