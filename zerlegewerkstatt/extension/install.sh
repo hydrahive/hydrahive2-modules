@@ -38,13 +38,15 @@ JADX_SHA256="6e5eacf500b64292bfb73c49797c1958f6ee44646e43e868039ae7feb573ff75"
 log() { printf '[zerlegewerkstatt] %s\n' "$*" >&2; }
 die() { printf '[zerlegewerkstatt] FEHLER: %s\n' "$*" >&2; exit 1; }
 
-require_root() {
-  [ "$(id -u)" -eq 0 ] || die "Das Skript braucht root."
-}
-
+# Der Kern ruft dieses Skript als normaler Benutzer auf (modules/installer.py).
+# Also kein root: Incus wird ueber die incus-admin-Gruppe verwaltet, wie der
+# Kern es mit seinen eigenen Containern auch macht.
 require_incus() {
   command -v incus >/dev/null 2>&1 || die "incus ist nicht installiert."
   incus info >/dev/null 2>&1 || die "incus laeuft nicht oder ist nicht initialisiert."
+  if ! incus query /1.0 >/dev/null 2>&1; then
+    die "Kein Zugriff auf incus. Der Benutzer muss in der Gruppe incus-admin sein."
+  fi
 }
 
 # Laedt eine Datei herunter und prueft die SHA-256. Bei Abweichung: Abbruch.
@@ -104,8 +106,15 @@ install_tools() {
 
   incus exec "$CONTAINER_NAME" -- mkdir -p /tmp/zerlegewerkstatt-staging \
     || die "Staging konnte nicht angelegt werden."
-  incus file push "$staging/." "$CONTAINER_NAME/tmp/zerlegewerkstatt-staging/" \
-    || die "Werkzeuge konnten nicht in den Container kopiert werden."
+  # Datei fuer Datei kopieren. `incus file push -r` legt bei einem Verzeichnis
+  # einen zusaetzlichen Ordner mit dem Verzeichnisnamen an - dann landet
+  # alles eine Ebene zu tief.
+  local file
+  for file in "$staging"/*; do
+    [ -f "$file" ] || continue
+    incus file push -p "$file" "$CONTAINER_NAME/tmp/zerlegewerkstatt-staging/$(basename "$file")" \
+      || die "Werkzeuge konnten nicht in den Container kopiert werden: $(basename "$file")"
+  done
 
   log "installiere Node, REA, Ghidra und JADX"
   incus exec "$CONTAINER_NAME" -- bash -s -- "$NODE_TARBALL" "$REA_VERSION" \
@@ -163,7 +172,6 @@ start_container() {
 }
 
 main() {
-  require_root
   require_incus
   create_container
   start_container

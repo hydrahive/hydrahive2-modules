@@ -61,16 +61,16 @@ class IncusRuntime:
     def __init__(self, container: str = CONTAINER_NAME, runner=None):
         self.container = container
         self._run = runner or _run
-        self._container = IncusContainer(container, self._run)
+        # `None` bewusst an IncusContainer weiterreichen: Nur so erkennt er,
+        # dass die reale Umgebung verwendet wird, und kann ein fehlendes
+        # incus-Binary als stabilen Status `runtime_missing` melden.
+        self._container = IncusContainer(container, runner)
 
     # --- Zustand ---------------------------------------------------------
 
     def status(self):
         """Ist der Container vorhanden, laeuft er und ist sein Netz weg?"""
-        try:
-            return self._container.status()
-        except ContainerError:
-            raise
+        return self._container.status()
 
     # --- Analyse ---------------------------------------------------------
 

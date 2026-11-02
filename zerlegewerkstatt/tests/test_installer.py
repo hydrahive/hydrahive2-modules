@@ -90,12 +90,31 @@ def test_uninstall_behaelt_die_falldaten():
     assert "incus delete" in text
 
 
-def test_installation_verlangt_root_und_incus():
+def test_installation_verlangt_incus_aber_kein_root():
+    """Der Kern ruft das Script als normalen Benutzer auf
+    (core/src/hydrahive/modules/installer.py: subprocess.run(["bash", path])).
+    Eine root-Pflicht bricht die Installation im Hub ab."""
     text = read(INSTALL)
-    assert "require_root" in text
     assert "require_incus" in text
-    assert "id -u" in text
     assert "command -v incus" in text
+    assert "require_root" not in text
+    assert "id -u" not in text
+    assert "Das Skript braucht root" not in text
+    # Incus wird ueber die incus-admin-Gruppe verwaltet, nicht ueber root.
+    assert "incus-admin" in text or "incus query" in text
+
+
+def test_dateien_werden_einzeln_in_den_container_gepusht():
+    """`incus file push -r` legt bei einem Verzeichnis einen zusaetzlichen
+    Ordner mit dem Verzeichnisnamen an - dann landen die Werkzeuge eine
+    Ebene zu tief und die Installation scheitert."""
+    text = read(INSTALL)
+    assert "for file in" in text
+    # Nur die Verwendung als Argument zaehlt, nicht der Kommentar dazu.
+    aufrufe = [line for line in text.splitlines()
+               if "incus file push" in line and not line.strip().startswith("#")]
+    assert aufrufe, "es wird nichts in den Container kopiert"
+    assert not any(" -r" in line for line in aufrufe)
 
 
 def test_analyse_laeuft_offline():
