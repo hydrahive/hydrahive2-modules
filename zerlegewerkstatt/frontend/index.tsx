@@ -8,6 +8,7 @@ export const nav = [
     icon: "ScanSearch",
     labelKey: "zerlegewerkstatt",
     group: "working",
+    area: "wissen",
     roles: [] as ("admin" | "user")[],
   },
 ]
