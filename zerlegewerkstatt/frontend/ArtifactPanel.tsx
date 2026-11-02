@@ -11,7 +11,7 @@ import {
   type CaseFile,
   type IntakeInfo,
 } from "./api"
-import { MUTED, TEXT, analysisFor, artifactLabel, button, panel } from "./ui"
+import { MUTED, TEXT, analysisGroupsFor, artifactLabel, button, panel } from "./ui"
 
 interface Props {
   caseFile: CaseFile
@@ -130,16 +130,25 @@ export function ArtifactPanel({ caseFile, onChanged }: Props) {
             >
               <p className={`text-sm ${TEXT}`}>{artifactLabel(artifact)}</p>
               <p className={`mt-0.5 break-all text-xs ${MUTED}`}>{artifact.sha256}</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {analysisFor(artifact.kind).map((analysisType) => (
-                  <button
-                    key={analysisType}
-                    className={button}
-                    disabled={busy}
-                    onClick={() => analyze(artifact, analysisType)}
-                  >
-                    {t(`analysis.${analysisType}`)}
-                  </button>
+              <div className="mt-3 space-y-3">
+                {analysisGroupsFor(artifact.kind).map(({ group, analyses }) => (
+                  <div key={group}>
+                    <p className={`mb-1 text-[11px] font-medium uppercase tracking-wide ${MUTED}`}>
+                      {t(`analysisGroups.${group}`)}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {analyses.map((analysisType) => (
+                        <button
+                          key={analysisType}
+                          className={button}
+                          disabled={busy}
+                          onClick={() => analyze(artifact, analysisType)}
+                        >
+                          {t(`analysis.${analysisType}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </li>

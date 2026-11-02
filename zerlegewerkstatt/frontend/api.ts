@@ -18,6 +18,17 @@ export type AnalysisType =
   | "inspect-managed-artifact"
   | "inspect-managed-members"
   | "inspect-pcap-capture"
+  | "inspect-byte-entropy"
+  | "inspect-native-exports"
+  | "inspect-pe-imports"
+  | "inspect-pe-resources"
+  | "inspect-pe-load-config"
+  | "inspect-pe-certificates"
+  | "inspect-elf-notes"
+  | "inspect-go-binary"
+  | "inspect-rust-binary"
+  | "inspect-kernel-module"
+  | "inspect-apk-signature"
   | "analyze-ghidra"
 
 export interface Artifact {

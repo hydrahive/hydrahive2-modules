@@ -12,13 +12,26 @@ export const button = `rounded-lg bg-[rgb(var(--hh-s-hebung,27_37_54))] px-4 py-
 export const input = `rounded-lg border ${RAND} ${BOX} px-3 py-2 text-sm ${TEXT} placeholder-[#9aa7bc] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--hh-s-rand-hover,70_97_127))]`
 export const label = `block text-xs ${MUTED} mb-1`
 
-export const ANALYSIS_TYPES: { id: AnalysisType; kinds: string[] }[] = [
-  { id: "inspect-artifact", kinds: ["pe", "apk", "elf", "pcap", "pcapng", "firmware"] },
-  { id: "inspect-android-package", kinds: ["apk"] },
-  { id: "inspect-managed-artifact", kinds: ["pe"] },
-  { id: "inspect-managed-members", kinds: ["pe"] },
-  { id: "inspect-pcap-capture", kinds: ["pcap", "pcapng"] },
-  { id: "analyze-ghidra", kinds: ["pe", "elf", "firmware"] },
+export type AnalysisGroup = "overview" | "structure" | "code" | "network" | "signatures"
+
+export const ANALYSIS_TYPES: { id: AnalysisType; kinds: string[]; group: AnalysisGroup }[] = [
+  { id: "inspect-artifact", kinds: ["pe", "apk", "elf", "pcap", "pcapng", "firmware"], group: "overview" },
+  { id: "inspect-android-package", kinds: ["apk"], group: "overview" },
+  { id: "inspect-managed-artifact", kinds: ["pe"], group: "overview" },
+  { id: "inspect-managed-members", kinds: ["pe"], group: "code" },
+  { id: "inspect-pcap-capture", kinds: ["pcap", "pcapng"], group: "network" },
+  { id: "inspect-byte-entropy", kinds: ["pe", "apk", "elf", "pcap", "pcapng", "firmware"], group: "structure" },
+  { id: "inspect-native-exports", kinds: ["pe", "elf"], group: "code" },
+  { id: "inspect-pe-imports", kinds: ["pe"], group: "code" },
+  { id: "inspect-pe-resources", kinds: ["pe"], group: "structure" },
+  { id: "inspect-pe-load-config", kinds: ["pe"], group: "structure" },
+  { id: "inspect-pe-certificates", kinds: ["pe"], group: "signatures" },
+  { id: "inspect-elf-notes", kinds: ["elf"], group: "structure" },
+  { id: "inspect-go-binary", kinds: ["pe", "elf"], group: "code" },
+  { id: "inspect-rust-binary", kinds: ["pe", "elf"], group: "code" },
+  { id: "inspect-kernel-module", kinds: ["elf"], group: "structure" },
+  { id: "inspect-apk-signature", kinds: ["apk"], group: "signatures" },
+  { id: "analyze-ghidra", kinds: ["pe", "elf", "firmware"], group: "code" },
 ]
 
 export const PURPOSES: { id: Purpose; label: string }[] = [
@@ -31,6 +44,16 @@ export const PURPOSES: { id: Purpose; label: string }[] = [
 
 export function analysisFor(kind: string): AnalysisType[] {
   return ANALYSIS_TYPES.filter((entry) => entry.kinds.includes(kind)).map((entry) => entry.id)
+}
+
+export function analysisGroupsFor(kind: string): { group: AnalysisGroup; analyses: AnalysisType[] }[] {
+  const groups: AnalysisGroup[] = ["overview", "structure", "code", "network", "signatures"]
+  return groups.map((group) => ({
+    group,
+    analyses: ANALYSIS_TYPES
+      .filter((entry) => entry.group === group && entry.kinds.includes(kind))
+      .map((entry) => entry.id),
+  })).filter((entry) => entry.analyses.length > 0)
 }
 
 export function formatBytes(size: number): string {

@@ -66,6 +66,11 @@ def test_neue_native_analysetypen_gehen_durch_den_api_vertrag(client, alice):
         json={"artifact_id": pe_artifact, "analysis_type": "inspect-managed-members"},
     )
     assert managed.status_code == 202
+    imports = client.post(
+        f"{MOD_PREFIX}/cases/{pe_case}/analyze", headers=alice,
+        json={"artifact_id": pe_artifact, "analysis_type": "inspect-pe-imports"},
+    )
+    assert imports.status_code == 202
 
     created = client.post(f"{MOD_PREFIX}/cases", headers=alice, json=body(title="Netzwerkfall")).json()
     upload = client.post(

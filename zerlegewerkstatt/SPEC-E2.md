@@ -39,7 +39,7 @@ Erfolg wird nicht an der Zahl sichtbarer Knöpfe gemessen, sondern an echten Fra
 
 ### E2b – tiefe Inventur vorhandener Dateiarten
 
-Die folgenden Funktionen brauchen keine neuen Uploadformate und werden als nächste Etappe gebaut:
+Die folgenden Funktionen brauchen keine neuen Uploadformate. Elf davon sind in 0.2.0 umgesetzt und jeweils durch den vollständigen Offline-`IncusRuntime`-Pfad belegt:
 
 | Gruppe | Fachfunktion | REA-Engine |
 |---|---|---|

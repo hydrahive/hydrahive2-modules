@@ -1,7 +1,7 @@
 # Zerlege-Werkstatt – Spezifikation E1
 
 **Stand:** 02.11.2026  
-**Status:** E1 umgesetzt; E2-Ausbau in Arbeit (0.1.3)
+**Status:** E1 umgesetzt; E2-Ausbau in Arbeit (0.2.0)
 **Task:** `ba8d88b3`  
 **Modul-ID:** `zerlegewerkstatt`  
 **Nachweis:** 116 Backendtests, 7 Frontendtests, `tsc`, Ruff und Isolationstest grün; E2E am echten Container mit Windows-OpenSSH-PE und WLED-APK

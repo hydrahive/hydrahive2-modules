@@ -62,6 +62,17 @@ def test_reverse_inspect_erlaubt_nur_analysetypen():
         "inspect-managed-artifact",
         "inspect-managed-members",
         "inspect-pcap-capture",
+        "inspect-byte-entropy",
+        "inspect-native-exports",
+        "inspect-pe-imports",
+        "inspect-pe-resources",
+        "inspect-pe-load-config",
+        "inspect-pe-certificates",
+        "inspect-elf-notes",
+        "inspect-go-binary",
+        "inspect-rust-binary",
+        "inspect-kernel-module",
+        "inspect-apk-signature",
         "analyze-ghidra",
     ]
     assert set(schema["required"]) == {"case_id", "artifact_id", "analysis_type"}
