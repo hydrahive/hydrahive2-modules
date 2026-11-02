@@ -170,12 +170,14 @@ def test_runtime_status_wird_gemeldet(client, alice):
     assert "code" in body
 
 
-def test_runtime_status_meldet_fehlende_umgebung_statt_eines_fehlers(client, alice):
+def test_runtime_status_meldet_fehlende_umgebung_statt_eines_fehlers(client, alice, monkeypatch):
     """Der Endpunkt ist eine Statusabfrage. Fehlt Incus, meldet er das."""
+    from backend import container as container_module
     from conftest import MOD_PREFIX
 
+    monkeypatch.setattr(container_module.shutil, "which", lambda name: None)
     response = client.get(f"{MOD_PREFIX}/runtime/status", headers=alice)
     assert response.status_code == 200
     body = response.json()
     assert body["available"] is False
-    assert body["code"] in ("runtime_missing", "runtime_container_missing", "")
+    assert body["code"] == "runtime_missing"
