@@ -25,11 +25,20 @@ def test_manifest_ist_admin_only_und_service():
     assert manifest["id"] == "zerlegewerkstatt"
     assert manifest["has_service"] is True
     assert manifest["default_agent_tools"] is False
-    assert manifest["capabilities"] == [{
+    grund = manifest["capabilities"][0]
+    assert grund == {
         "id": "module.zerlegewerkstatt",
         "label": "Zerlege-Werkstatt (Apps, Firmware und Mitschnitte)",
         "default": "admin_only",
-    }]
+    }
+
+
+def test_werkzeug_capability_ist_admin_only_und_nennt_genau_drei_werkzeuge():
+    manifest = json.loads((Path(__file__).parents[1] / "manifest.json").read_text())
+    capability = next(c for c in manifest["capabilities"]
+                       if c["id"] == "zerlegewerkstatt.agents")
+    assert capability["default"] == "admin_only"
+    assert capability["tools"] == ["reverse_cases", "reverse_inspect", "reverse_report"]
 
 
 def test_anlage_braucht_login(client):

@@ -11,6 +11,12 @@
       "id": "module.zerlegewerkstatt",
       "label": "Zerlege-Werkstatt (Apps, Firmware und Mitschnitte)",
       "default": "admin_only"
+    },
+    {
+      "id": "zerlegewerkstatt.agents",
+      "label": "Agentenwerkzeuge der Zerlege-Werkstatt",
+      "default": "admin_only",
+      "tools": ["reverse_cases", "reverse_inspect", "reverse_report"]
     }
   ],
   "has_service": true,
