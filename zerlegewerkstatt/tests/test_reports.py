@@ -53,6 +53,29 @@ def test_leere_und_falsche_werte_werden_ausgelassen():
     assert reports._collect(payload) == []
 
 
+def test_containerpfade_kommen_nicht_in_den_bericht():
+    """Pfade im Container verraten nichts ueber das Ziel."""
+    payload = {"normalized_result": {
+        "artifact": {"path": "/work/abc123/artifact.pe"},
+        "local_path": "/work/abc123/artifact.pe",
+        "format": "pe",
+    }}
+    lines = reports._collect(payload)
+    assert "format: pe" in lines
+    assert not any("/work/" in line for line in lines)
+
+
+def test_einschraenkung_wird_nicht_doppelt_genannt():
+    """Derselbe Satz darf im Bericht nur einmal stehen."""
+    payload = {
+        "normalized_result": {"detail": "The PE has no CLI data directory."},
+        "limitations": "The PE has no CLI data directory.",
+    }
+    beobachtet = reports._collect(payload) + reports._limitations(payload)
+    assert beobachtet.count("The PE has no CLI data directory.") == 0
+    assert len([l for l in beobachtet if "CLI data directory" in l]) == 1
+
+
 def test_einschraenkungen_gehoeren_zum_bericht():
     payload = {"limitations": "The PE has no CLI data directory."}
     assert reports._limitations(payload) == ["The PE has no CLI data directory."]

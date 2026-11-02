@@ -14,6 +14,17 @@ from .files import cases_root
 MAX_OBSERVATIONS = 200
 MAX_TEXT = 400
 
+#: Containerpfade und Werkzeug-Interna gehoeren nicht in den Bericht.
+#: Sie verraten nichts ueber das Ziel und machen den Bericht unlesbar.
+SKIP_KEYS = frozenset({
+    "path",
+    "local_path",
+    "caller_input_path",
+    "input_path",
+    "parent_evidence_id",
+    "evidence_id",
+})
+
 
 def _load_result(case_id: str, relative_path: str | None) -> dict:
     """Ergebnisdatei eines Jobs laden. Fehlt sie, bleibt das Ergebnis leer."""
@@ -71,6 +82,8 @@ def _flatten(key: str, value, depth: int = 0) -> list[str]:
     """Einen Wert aus dem REA-Ergebnis in lesbare Zeilen ueberfuehren."""
     if depth > 3:
         return []
+    if key in SKIP_KEYS:
+        return []
     if value is None or isinstance(value, bool):
         return []
     if isinstance(value, str):
@@ -121,23 +134,49 @@ def _bundle_facts(payload: dict) -> list[str]:
 
 
 def _limitations(payload: dict) -> list[str]:
-    """Einschraenkungen der Analyse nennen. Sie gehoeren zum Bericht."""
+    """Einschraenkungen der Analyse nennen. Sie gehoeren zum Bericht.
+
+    Werte, die schon mit gleichem Wortlaut in den normalisierten Daten stehen,
+    werden nicht wiederholt.
+    """
+    seen = set()
+    for line in _from_normalized(payload):
+        if ": " in line:
+            seen.add(line.split(": ", 1)[1].strip())
+        else:
+            seen.add(line.strip())
     lines: list[str] = []
     for key in ("limitations", "relationship_coverage"):
         value = payload.get(key)
         if isinstance(value, str) and value.strip():
-            lines.append(value.strip()[:MAX_TEXT])
+            text = value.strip()[:MAX_TEXT]
+            if text not in seen:
+                lines.append(text)
         elif isinstance(value, dict):
             for sub_key, sub_value in value.items():
-                lines.extend(_flatten(sub_key, sub_value))
+                lines.extend(_unique(_flatten(sub_key, sub_value), seen))
         elif isinstance(value, list):
             for item in value[:20]:
                 if isinstance(item, str) and item.strip():
-                    lines.append(item.strip()[:MAX_TEXT])
+                    text = item.strip()[:MAX_TEXT]
+                    if text not in seen:
+                        lines.append(text)
                 elif isinstance(item, dict):
                     for sub_key, sub_value in item.items():
-                        lines.extend(_flatten(sub_key, sub_value))
+                        lines.extend(_unique(_flatten(sub_key, sub_value), seen))
     return lines[:MAX_OBSERVATIONS]
+
+
+def _unique(lines: list[str], seen: set[str]) -> list[str]:
+    """Zeilen ohne Wiederholung. `seen` waechst mit."""
+    fresh: list[str] = []
+    for line in lines:
+        body = line.split(": ", 1)[1].strip() if ": " in line else line.strip()
+        if body in seen:
+            continue
+        seen.add(body)
+        fresh.append(line)
+    return fresh
 
 
 def build_report(case: dict) -> dict:
