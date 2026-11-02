@@ -42,6 +42,9 @@ class IncusContainer:
     def __init__(self, container: str = CONTAINER_NAME, runner=None):
         self.container = container
         self._run = runner
+        #: Bei gesetztem Runner wird das echte incus-Binary nicht geprueft.
+        #: Sonst wuerde die Suite auf einem Rechner ohne Incus abbrechen.
+        self._extern = runner is None
 
     def _exec(self, command: list[str], *, timeout: float) -> CommandResult:
         if self._run is None:
@@ -54,7 +57,7 @@ class IncusContainer:
 
     def status(self) -> ContainerStatus:
         """Ist der Container vorhanden, laeuft er und ist sein Netz weg?"""
-        if shutil.which("incus") is None:
+        if self._extern and shutil.which("incus") is None:
             return ContainerStatus(code="runtime_missing")
         exists = self._exec(["incus", "info", self.container], timeout=20)
         if exists.returncode != 0:
