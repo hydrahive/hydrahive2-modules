@@ -14,14 +14,14 @@ class Program:
     video: Path | None = None
     rule: str | None = None
     holiday: str | None = None
-    night: str | None = None          # None | "dim" | "off"
+    night: str | None = None          # None | "dim" | "off" | "video"
     fps: int = 24
     preview: str | None = None        # Hinweistext während einer Vorschau („Vorschau 24.12. 19:00“)
 
     def key(self) -> tuple:
         """Ändert sich der Schlüssel, schaltet der Dienst um und meldet den neuen Stand (Uhr/Status ändern ihn nicht)."""
         return (str(self.video) if self.video else None, self.rule, self.holiday, self.night,
-                None if self.night else self.fps,       # nachts läuft 1 Bild/s – Bildrate egal
+                None if self.night in ("dim", "off") else self.fps,
                 self.preview)
 
 
@@ -35,9 +35,19 @@ def available(data_dir: Path) -> set[str]:
 
 def current(data_dir: Path, config: dict, now: dt.datetime) -> Program:
     n = config.get("night") or {}
+    files = available(data_dir)
     if night.active(n, now):
-        return Program(night=n.get("mode") if n.get("mode") in ("dim", "off") else "dim")
-    choice = calendar.choose(config, now, available(data_dir))
+        mode = n.get("mode")
+        if mode == "video":
+            pools = n.get("videos") or {}
+            names = pools.get(calendar.season(now)) if isinstance(pools, dict) else []
+            choices = [name for name in names or [] if name in files]
+            name = calendar.rotate(choices, now, int(config.get("rotate_minutes") or 0))
+            if name:
+                return Program(video=data_dir / "videos" / name, night="video", fps=int(config.get("fps") or 24))
+            return Program(night="dim")
+        return Program(night=mode if mode in ("dim", "off") else "dim")
+    choice = calendar.choose(config, now, files)
     name = calendar.rotate(choice.videos, now, int(config.get("rotate_minutes") or 0))
     return Program(video=(data_dir / "videos" / name) if name else None, rule=choice.rule, holiday=choice.holiday,
                    fps=int(config.get("fps") or 24))
