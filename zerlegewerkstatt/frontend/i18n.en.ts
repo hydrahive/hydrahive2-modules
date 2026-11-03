@@ -1,7 +1,10 @@
+import { guideEn } from "./i18n.guide.en"
+
 export const en = {
     zerlegewerkstatt: {
       title: "Dismantling Workshop",
       intro: "Static analysis of your own programs, apps and firmware. Nothing is executed.",
+      guide: guideEn,
       project: "Project",
       projectsLoading: "Loading projects …",
       projectsEmpty: "No project yet. Create one under Projects first.",

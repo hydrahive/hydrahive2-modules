@@ -12,6 +12,7 @@ import {
 } from "./api"
 import { ArtifactPanel } from "./ArtifactPanel"
 import { CaseList } from "./CaseList"
+import { GuidePanel } from "./GuidePanel"
 import { NewCaseForm } from "./NewCaseForm"
 import { ProjectPicker, type SelectableProject } from "./ProjectPicker"
 import { ReportPanel } from "./ReportPanel"
@@ -134,6 +135,8 @@ export function ZerlegewerkstattPage() {
         <h1 className={`text-lg font-semibold ${TEXT}`}>{t("title")}</h1>
         <p className={`text-sm ${MUTED}`}>{t("intro")}</p>
       </header>
+
+      <GuidePanel />
 
       <ProjectPicker projects={projects} projectId={projectId} status={projectsStatus} onChange={chooseProject} />
 
