@@ -1,7 +1,7 @@
 # Zerlege-Werkstatt – Spezifikation E1
 
 **Stand:** 02.11.2026  
-**Status:** umgesetzt, PR #339 in `hydrahive2-modules` (Branch `feat/zerlegewerkstatt-e1`)  
+**Status:** E1 umgesetzt; E2-Ausbau in Arbeit (0.2.0)
 **Task:** `ba8d88b3`  
 **Modul-ID:** `zerlegewerkstatt`  
 **Nachweis:** 116 Backendtests, 7 Frontendtests, `tsc`, Ruff und Isolationstest grün; E2E am echten Container mit Windows-OpenSSH-PE und WLED-APK
@@ -122,7 +122,7 @@ Containername: `hh-zerlegewerkstatt`.
 - Keine Installation über `latest`.
 - Der Installer bricht bei abweichender Prüfsumme ab.
 - REA npm 6.8.0 unterstützt den dokumentierten Werkzeugfamilien-Filter noch nicht zuverlässig. Deshalb nutzt E1 die CLI hinter einem kleinen HydraHive-Adapter, nicht den vollständigen MCP-Server.
-- Ein späterer Wechsel auf MCP braucht eine gemessene Schemagröße unter 20.000 Tokens und eine echte Tool-Positivliste.
+- Die Zerlege-Werkstatt bleibt bei nativen HydraHive-Werkzeugen und festen CLI-Adaptern. Ein zusätzlicher REA-MCP-Server ist ausdrücklich kein Ziel.
 
 ## 9. Backend
 

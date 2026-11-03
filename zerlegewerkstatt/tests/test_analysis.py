@@ -11,6 +11,19 @@ def test_nur_feste_analysetypen_sind_erlaubt():
         "inspect-artifact",
         "inspect-android-package",
         "inspect-managed-artifact",
+        "inspect-managed-members",
+        "inspect-pcap-capture",
+        "inspect-byte-entropy",
+        "inspect-native-exports",
+        "inspect-pe-imports",
+        "inspect-pe-resources",
+        "inspect-pe-load-config",
+        "inspect-pe-certificates",
+        "inspect-elf-notes",
+        "inspect-go-binary",
+        "inspect-rust-binary",
+        "inspect-kernel-module",
+        "inspect-apk-signature",
         "analyze-ghidra",
     }
 
@@ -32,6 +45,53 @@ def test_typ_passt_zum_artefakttyp():
     assert analysis_types.is_allowed("apk", "analyze-ghidra") is False
     assert analysis_types.is_allowed("pe", "inspect-managed-artifact") is True
     assert analysis_types.is_allowed("pe", "inspect-android-package") is False
+
+
+def test_mitglieder_und_pcap_nur_fuer_passende_dateien():
+    assert analysis_types.is_allowed("pe", "inspect-managed-members")
+    assert not analysis_types.is_allowed("apk", "inspect-managed-members")
+    assert analysis_types.is_allowed("pcap", "inspect-pcap-capture")
+    assert analysis_types.is_allowed("pcapng", "inspect-pcap-capture")
+    assert not analysis_types.is_allowed("pe", "inspect-pcap-capture")
+
+
+def test_managed_members_schreibt_vollstaendiges_evidence_bundle():
+    args = analysis_types.build_command("inspect-managed-members", artifact_path="/work/artifact.pe", workdir="/work")
+    assert args[:2] == ["rea", "inspect-managed-members"]
+    assert args[args.index("--detail") + 1] == "summary"
+    assert args[args.index("--evidence-bundle") + 1] == "/work/evidence.json"
+    assert args[-1] == "/work/artifact.pe"
+
+
+def test_pcap_analyse_braucht_nur_die_lokale_datei():
+    args = analysis_types.build_command("inspect-pcap-capture", artifact_path="/work/netz.pcapng")
+    assert args == ["rea", "inspect-pcap-capture", "--format", "json", "/work/netz.pcapng"]
+
+
+def test_e2b_typen_sind_auf_dateiformate_begrenzt():
+    universal = {"pe", "apk", "elf", "pcap", "pcapng", "firmware"}
+    assert analysis_types.ALLOWED_KINDS["inspect-byte-entropy"] == universal
+    for analysis_type in ("inspect-pe-imports", "inspect-pe-resources",
+                          "inspect-pe-load-config", "inspect-pe-certificates"):
+        assert analysis_types.ALLOWED_KINDS[analysis_type] == {"pe"}
+    assert analysis_types.ALLOWED_KINDS["inspect-elf-notes"] == {"elf"}
+    assert analysis_types.ALLOWED_KINDS["inspect-kernel-module"] == {"elf"}
+    assert analysis_types.ALLOWED_KINDS["inspect-apk-signature"] == {"apk"}
+    assert analysis_types.ALLOWED_KINDS["inspect-native-exports"] == {"pe", "elf"}
+    assert analysis_types.ALLOWED_KINDS["inspect-go-binary"] == {"pe", "elf"}
+    assert analysis_types.ALLOWED_KINDS["inspect-rust-binary"] == {"pe", "elf"}
+
+
+def test_grosse_e2b_ausgaben_werden_kompakt_mit_evidence_gespeichert():
+    for analysis_type in ("inspect-native-exports", "inspect-go-binary",
+                          "inspect-rust-binary", "inspect-apk-signature"):
+        args = analysis_types.build_command(
+            analysis_type, artifact_path="/work/a.bin", workdir="/work")
+        assert args[args.index("--detail") + 1] == "summary"
+        assert args[args.index("--evidence_output") + 1] == "/work/evidence.json"
+    entropy = analysis_types.build_command(
+        "inspect-byte-entropy", artifact_path="/work/a.bin")
+    assert entropy[entropy.index("--block-size") + 1] == "65536"
 
 
 def test_ghidra_ist_der_feste_provider():

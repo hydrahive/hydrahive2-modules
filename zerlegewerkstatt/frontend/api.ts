@@ -16,6 +16,19 @@ export type AnalysisType =
   | "inspect-artifact"
   | "inspect-android-package"
   | "inspect-managed-artifact"
+  | "inspect-managed-members"
+  | "inspect-pcap-capture"
+  | "inspect-byte-entropy"
+  | "inspect-native-exports"
+  | "inspect-pe-imports"
+  | "inspect-pe-resources"
+  | "inspect-pe-load-config"
+  | "inspect-pe-certificates"
+  | "inspect-elf-notes"
+  | "inspect-go-binary"
+  | "inspect-rust-binary"
+  | "inspect-kernel-module"
+  | "inspect-apk-signature"
   | "analyze-ghidra"
 
 export interface Artifact {
@@ -68,6 +81,16 @@ export interface CaseInput {
   authorization_note: string
 }
 
+export interface EvidenceRef {
+  id: string
+  artifact_id: string
+  analysis_type: AnalysisType
+  operation: string
+  confidence: string
+  provider: string
+  provider_version: string
+}
+
 export interface Report {
   case_id: string
   title: string
@@ -78,6 +101,7 @@ export interface Report {
   observed: string[]
   derived: string[]
   suspected: string[]
+  evidence: EvidenceRef[]
   unknown: string[]
   next_allowed_step: string[]
   jobs: Job[]

@@ -69,6 +69,42 @@ def test_analyse_benutzt_nur_die_positivliste(tmp_path):
     assert analyse_calls, "die REA-Analyse wurde nicht gestartet"
 
 
+def test_analyse_laeuft_als_unprivilegierter_rea_benutzer(tmp_path):
+    runner = FakeRunner()
+    adapter = IncusRuntime(runner=runner)
+    artifact = tmp_path / "a.pe"
+    artifact.write_bytes(b"MZ")
+
+    adapter.analyze(analysis_type="inspect-managed-artifact", artifact=artifact,
+                    artifact_kind="pe", token="t1")
+
+    call = runner.analysis_call()
+    assert call is not None
+    boundary = call.index("--")
+    sandbox = call[boundary + 1:call.index("rea", boundary)]
+    assert sandbox[:4] == ["setpriv", "--reuid=rea", "--regid=rea", "--init-groups"]
+    assert "--no-new-privs" in sandbox
+    assert "--inh-caps=-all" in sandbox
+    assert "--ambient-caps=-all" in sandbox
+    assert "--bounding-set=-all" in sandbox
+    assert sandbox[-1] == "--"
+
+
+def test_pcap_bekommt_feste_wireshark_werkzeuge(tmp_path):
+    runner = FakeRunner()
+    adapter = IncusRuntime(runner=runner)
+    artifact = tmp_path / "a.pcap"
+    artifact.write_bytes(b"pcap")
+
+    adapter.analyze(analysis_type="inspect-pcap-capture", artifact=artifact,
+                    artifact_kind="pcap", token="t1")
+
+    call = runner.analysis_call()
+    assert call is not None
+    assert "REA_TSHARK_COMMAND=/usr/local/bin/rea-tshark" in call
+    assert "REA_CAPINFOS_COMMAND=/usr/bin/capinfos" in call
+
+
 def test_analyse_ohne_shell_und_mit_festem_provider(tmp_path):
     runner = FakeRunner()
     adapter = IncusRuntime(runner=runner)
@@ -169,6 +205,21 @@ def test_netz_und_bruecke_werden_richtig_angehaengt(tmp_path):
     assert "nictype=bridged" in add
     assert f"parent={NETWORK_BRIDGE}" in add
     assert "name=eth0" in add
+
+
+def test_arbeitsdatei_wird_dem_rea_benutzer_uebergeben(tmp_path):
+    runner = FakeRunner()
+    adapter = IncusRuntime(runner=runner)
+    artifact = tmp_path / "a.pe"
+    artifact.write_bytes(b"MZ")
+
+    adapter.analyze(analysis_type="inspect-managed-artifact", artifact=artifact,
+                    artifact_kind="pe", token="t1")
+
+    chown = [call for call in runner.calls if "chown" in call]
+    assert chown
+    assert "rea:rea" in chown[-1]
+    assert "/work/t1/artifact.pe" in chown[-1]
 
 
 def test_arbeitsordner_wird_wieder_entfernt(tmp_path):

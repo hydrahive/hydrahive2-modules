@@ -1,6 +1,8 @@
 """Bericht: Beobachtungen trennen, Belege nennen, nichts behaupten."""
 from __future__ import annotations
 
+import json
+
 from backend import reports
 
 
@@ -145,6 +147,46 @@ def test_bericht_ist_hart_begrenzt(monkeypatch, tmp_path):
                   "result_path": "results/j1.json"}],
     }
     assert len(reports.build_report(case)["observed"]) <= reports.MAX_OBSERVATIONS
+
+
+def test_bericht_verknuepft_ableitung_mit_job_artefakt_und_evidence(tmp_path, monkeypatch):
+    monkeypatch.setattr(reports, "cases_root", lambda case_id: tmp_path)
+    (tmp_path / "results").mkdir()
+    evidence_id = "ev_1234567890abcdef"
+    payload = {
+        "evidence_id": evidence_id,
+        "operation": "inspect_pcap_capture",
+        "confidence": "observed",
+        "provider": {"id": "pcap", "version": "4.2.2"},
+        "normalized_result": {
+            "dns_queries": [{"query": "lampe.local"}],
+            "endpoints": [],
+        },
+    }
+    (tmp_path / "results/j1.json").write_text(json.dumps(payload))
+    case = {
+        "id": "fall-1", "title": "Lampe", "target": "", "question": "Frage",
+        "purpose": "interoperability", "artifacts": [],
+        "jobs": [{
+            "id": "j1", "artifact_id": "a1", "analysis_type": "inspect-pcap-capture",
+            "status": "done", "progress": 100, "error_code": None,
+            "result_path": "results/j1.json",
+        }],
+    }
+    report = reports.build_report(case)
+    assert len(report["derived"]) == 1
+    assert "lampe.local" in report["derived"][0]
+    assert evidence_id in report["derived"][0]
+    assert report["suspected"] == []
+    assert report["evidence"] == [{
+        "id": evidence_id,
+        "artifact_id": "a1",
+        "analysis_type": "inspect-pcap-capture",
+        "operation": "inspect_pcap_capture",
+        "confidence": "observed",
+        "provider": "pcap",
+        "provider_version": "4.2.2",
+    }]
 
 
 def test_zieltext_ist_als_nicht_vertrauenswuerdig_markiert():

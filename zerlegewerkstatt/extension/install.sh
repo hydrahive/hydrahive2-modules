@@ -136,7 +136,10 @@ install_container_dependencies() {
     command -v objdump >/dev/null &&
     command -v readelf >/dev/null &&
     command -v strings >/dev/null &&
-    command -v python3 >/dev/null
+    command -v python3 >/dev/null &&
+    command -v tshark >/dev/null &&
+    command -v capinfos >/dev/null &&
+    command -v setpriv >/dev/null
   '; then
     log "Container-Grundpakete bereits vorhanden"
     return 0
@@ -149,6 +152,7 @@ install_container_dependencies() {
   incus exec "$CONTAINER_NAME" -- env DEBIAN_FRONTEND=noninteractive \
     apt-get -qq install -y --no-install-recommends \
     xz-utils unzip openjdk-21-jre-headless file binutils python3 ca-certificates \
+    tshark wireshark-common util-linux \
     || die "Container-Grundpakete konnten nicht installiert werden."
 
   incus exec "$CONTAINER_NAME" -- bash -c '
@@ -159,8 +163,42 @@ install_container_dependencies() {
     command -v objdump >/dev/null &&
     command -v readelf >/dev/null &&
     command -v strings >/dev/null &&
-    command -v python3 >/dev/null
+    command -v python3 >/dev/null &&
+    command -v tshark >/dev/null &&
+    command -v capinfos >/dev/null &&
+    command -v setpriv >/dev/null
   ' || die "Container-Grundpakete sind nach der Installation unvollstaendig."
+}
+
+install_tshark_adapter() {
+  # TShark schreibt unter einem von Node angelegten Pipe-Dateideskriptor keine
+  # Ausgabe. REA startet TShark aus Node und kann dann weder Version noch
+  # Ergebnisse sehen. Der feste Adapter puffert ausschließlich das fest
+  # installierte /usr/bin/tshark und reicht Exit-Code sowie beide Ausgaben durch.
+  incus exec "$CONTAINER_NAME" -- bash -s <<'INNER' || die "TShark-Adapter konnte nicht installiert werden."
+set -euo pipefail
+# Die Werkstatt liest vorhandene Mitschnitte. Live-Capture bleibt selbst im
+# Analysecontainer technisch gesperrt.
+if [ -e /usr/bin/dumpcap ]; then chmod 000 /usr/bin/dumpcap; fi
+cat > /usr/local/bin/rea-tshark <<'WRAPPER'
+#!/bin/sh
+out="$(mktemp)" || exit 1
+err="$(mktemp)" || { rm -f "$out"; exit 1; }
+cleanup() { rm -f "$out" "$err"; }
+trap cleanup EXIT
+# 64 MiB je Ausgabestrom: Ein manipuliertes Capture darf den Container nicht fuellen.
+ulimit -f 131072
+/usr/bin/tshark "$@" >"$out" 2>"$err" &
+child=$!
+trap 'kill "$child" 2>/dev/null || true; exit 143' HUP INT TERM
+wait "$child"
+status=$?
+cat "$out"
+cat "$err" >&2
+exit "$status"
+WRAPPER
+chmod 0755 /usr/local/bin/rea-tshark
+INNER
 }
 
 install_tools() {
@@ -232,6 +270,10 @@ rea --version
 node --version
 [ -d /opt/ghidra ] || { echo "Ghidra fehlt" >&2; exit 1; }
 [ -f /opt/jadx-headless-mcp.jar ] || { echo "JADX fehlt" >&2; exit 1; }
+[ -x /usr/local/bin/rea-tshark ] || { echo "TShark-Adapter fehlt" >&2; exit 1; }
+[ ! -x /usr/bin/dumpcap ] || { echo "Live-Capture ist nicht gesperrt" >&2; exit 1; }
+command -v capinfos >/dev/null
+command -v setpriv >/dev/null
 INNER
 }
 
@@ -245,6 +287,7 @@ main() {
   start_container
   ensure_install_network
   install_container_dependencies
+  install_tshark_adapter
   resolve_node_architecture
   install_tools
   create_user

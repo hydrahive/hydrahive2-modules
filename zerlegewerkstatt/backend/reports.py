@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 
-from . import evidence
+from . import evidence, inferences
 from .files import cases_root
 
 MAX_OBSERVATIONS = evidence.MAX_OBSERVATIONS
@@ -56,6 +56,10 @@ def _limitations(payload: dict) -> list[str]:
 def build_report(case: dict) -> dict:
     """Bericht zu einem Fall aus den Ergebnissen seiner Jobs bauen."""
     observed: list[str] = []
+    derived: list[str] = []
+    suspected: list[str] = []
+    references: list[dict] = []
+    seen_evidence: set[str] = set()
     jobs = []
     for job in case.get("jobs", []):
         payload = _load_result(case["id"], job.get("result_path"))
@@ -63,6 +67,18 @@ def build_report(case: dict) -> dict:
         lines.extend(_bundle_facts(payload))
         lines.extend(_limitations(payload))
         observed.extend(lines)
+        inferred, hypotheses, job_references = inferences.infer(
+            payload,
+            artifact_id=job["artifact_id"],
+            analysis_type=job["analysis_type"],
+        )
+        derived.extend(inferred)
+        suspected.extend(hypotheses)
+        for reference in job_references:
+            evidence_id = reference["id"]
+            if evidence_id not in seen_evidence and len(references) < inferences.MAX_EVIDENCE:
+                seen_evidence.add(evidence_id)
+                references.append(reference)
         jobs.append({
             "id": job["id"],
             "artifact_id": job["artifact_id"],
@@ -88,9 +104,10 @@ def build_report(case: dict) -> dict:
         "question": case["question"],
         "purpose": case["purpose"],
         "artifacts": artifacts,
-        "observed": observed[:MAX_OBSERVATIONS],
-        "derived": [],
-        "suspected": [],
+        "observed": list(dict.fromkeys(observed))[:MAX_OBSERVATIONS],
+        "derived": list(dict.fromkeys(derived))[:inferences.MAX_STATEMENTS],
+        "suspected": list(dict.fromkeys(suspected))[:inferences.MAX_STATEMENTS],
+        "evidence": references,
         "unknown": [
             "Verschluesselung, dynamisch erzeugte Werte und serverseitige Logik "
             "sind ohne Mitschnitt nicht belegbar.",
