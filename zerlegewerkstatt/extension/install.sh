@@ -256,7 +256,30 @@ chmod 0755 /usr/local/bin/rea-tshark
 INNER
 }
 
+tools_are_current() {
+  incus exec "$CONTAINER_NAME" -- env \
+    NODE_VERSION="$NODE_VERSION" REA_VERSION="$REA_VERSION" \
+    GHIDRA_VERSION="$GHIDRA_VERSION" JADX_FILE="$JADX_FILE" \
+    RUST_VERSION="$RUST_VERSION" BINWALK_VERSION="$BINWALK_VERSION" \
+    bash -c '
+      set -eu
+      export PATH="/opt/node/bin:/usr/local/bin:/usr/bin:/bin"
+      [ "$(node --version)" = "v$NODE_VERSION" ]
+      [ "$(rea --version)" = "$REA_VERSION" ]
+      grep -Fqx "application.version=$GHIDRA_VERSION" /opt/ghidra/Ghidra/application.properties
+      [ "$(readlink -f /opt/jadx-headless-mcp.jar)" = "/opt/rea-android/$JADX_FILE" ]
+      /opt/rust/bin/rustc --version | grep -Fq "rustc $RUST_VERSION "
+      [ "$(/opt/binwalk/bin/binwalk --version)" = "binwalk $BINWALK_VERSION" ]
+      [ "$(dpkg-query -W -f=\${Version} sasquatch 2>/dev/null)" = "1.0" ]
+      [ -x /usr/bin/sasquatch ]
+    ' >/dev/null 2>&1
+}
+
 install_tools() {
+  if tools_are_current; then
+    log "gepinnte Analysewerkzeuge bereits vollstaendig vorhanden"
+    return 0
+  fi
   local staging="/tmp/zerlegewerkstatt-install"
   mkdir -p "$staging"
   log "lade Werkzeuge"
