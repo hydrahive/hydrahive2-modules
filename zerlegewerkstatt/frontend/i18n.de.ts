@@ -1,7 +1,10 @@
+import { guideDe } from "./i18n.guide.de"
+
 export const de = {
     zerlegewerkstatt: {
       title: "Zerlege-Werkstatt",
       intro: "Statische Untersuchung eigener Programme, Apps und Firmware. Nichts wird ausgeführt.",
+      guide: guideDe,
       project: "Projekt",
       projectsLoading: "Projekte laden …",
       projectsEmpty: "Noch kein Projekt vorhanden. Lege zuerst unter „Projekte“ ein Projekt an.",
