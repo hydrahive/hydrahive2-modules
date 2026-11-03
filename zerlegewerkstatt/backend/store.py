@@ -67,8 +67,11 @@ def add_artifact(case_id: str, artifact: dict[str, Any]) -> dict[str, Any]:
 def list_cases(project_id: str, *, limit: int = 100) -> list[dict[str, Any]]:
     with db() as connection:
         rows = connection.execute(
-            "SELECT * FROM module_zerlege_cases WHERE project_id = ? "
-            "ORDER BY created_at DESC, id DESC LIMIT ?",
+            "SELECT c.*, "
+            "(SELECT COUNT(*) FROM module_zerlege_artifacts a WHERE a.case_id = c.id) AS artifact_count, "
+            "(SELECT COUNT(*) FROM module_zerlege_jobs j WHERE j.case_id = c.id) AS job_count "
+            "FROM module_zerlege_cases c WHERE c.project_id = ? "
+            "ORDER BY c.created_at DESC, c.id DESC LIMIT ?",
             (project_id, limit),
         ).fetchall()
     return [_case(row) for row in rows]

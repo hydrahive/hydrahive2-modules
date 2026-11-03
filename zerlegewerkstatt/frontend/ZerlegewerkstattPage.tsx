@@ -7,6 +7,7 @@ import {
   getReport,
   listCases,
   type CaseFile,
+  type CaseSummary,
   type Report,
 } from "./api"
 import { ArtifactPanel } from "./ArtifactPanel"
@@ -21,7 +22,7 @@ export function ZerlegewerkstattPage() {
   const [projectId, setProjectId] = useState("")
   const [projects, setProjects] = useState<SelectableProject[]>([])
   const [projectsStatus, setProjectsStatus] = useState<"loading" | "ready" | "error">("loading")
-  const [cases, setCases] = useState<CaseFile[]>([])
+  const [cases, setCases] = useState<CaseSummary[]>([])
   const [casesError, setCasesError] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
   const [current, setCurrent] = useState<CaseFile | null>(null)
