@@ -16,31 +16,9 @@ from typing import Callable, Iterable
 import usb.core
 from PIL import Image
 
-from . import (
-    aic,
-    bt_runner,
-    cached_play,
-    cards,
-    config,
-    hydra_state,
-    inbox,
-    light_runner,
-    mode,
-    night,
-    preview,
-    program,
-    scene,
-    sysinfo,
-    video,
-    warmer,
-)
+from . import aic, bt_runner, cached_play, cards, config, hydra_state, inbox, light_runner, mode, night, preview, program, scene, sysinfo, video, warmer
 from . import play_dashboard as dash_play
-from .frames import (  # noqa: F401 - auch von Tests genutzt
-    _connect_real,
-    encode,
-    fallback_frame,
-    write_preview,
-)
+from .frames import _connect_real, encode, fallback_frame, write_preview
 
 SEARCH_SECONDS = 0.2      # ohne Host meldet sich das Display nur 1–2 s am USB an (gemessen 16.10.) – oft genug nachsehen
 RETRY_SECONDS = SEARCH_SECONDS

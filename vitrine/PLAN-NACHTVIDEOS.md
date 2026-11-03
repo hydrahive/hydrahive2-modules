@@ -71,6 +71,14 @@ Die Vitrine kann im Nachtfenster saisonale Schlafvideos mit Uhr anzeigen. Acht w
 - [ ] Nachtvideo zeigt Uhr/Datum ohne Status/Meldungskarten.
 - [ ] Acht Prompt-Rezepte sind verfügbar.
 
+## Prüfergebnis
+
+- TDD: Datenvertrag, Programmauswahl, Wiedergabe und Cockpit-Test liefen vor der jeweiligen Implementierung rot und danach grün.
+- Python: 769 bestanden, 10 übersprungen; zwei hostabhängige OpenRGB-Installer-Tests ausgenommen. Beide Fehler wurden unter derselben Umgebung unverändert auf `origin/main` reproduziert und stammen nicht aus diesem Feature.
+- Frontend: 51 Vitest-Tests und TypeScript-Build im sauberen Core-Worktree grün.
+- Acht Prompt-Archiv-Rezepte unter „Vitrine Schlaf“ gespeichert und gelistet.
+- Versionsprüfung: Vitrine 0.16.2 → 0.17.0.
+
 ## Nicht in diesem Plan
 
 - Automatisches Rendern der Videos durch den Agenten.
