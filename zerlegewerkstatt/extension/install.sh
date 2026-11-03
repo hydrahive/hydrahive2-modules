@@ -125,6 +125,19 @@ ensure_install_network() {
     || die "Netzwerkbruecke $BRIDGE konnte nicht angehaengt werden."
 }
 
+# Das Netz dient ausschliesslich der Installation. Ein EXIT-Trap ruft diese
+# Funktion auch bei Download-, Paket- oder Prueffehlern auf.
+disable_network() {
+  if ! incus info "$CONTAINER_NAME" >/dev/null 2>&1; then
+    return 0
+  fi
+  if ! incus config device list "$CONTAINER_NAME" | grep -qx eth0; then
+    return 0
+  fi
+  log "entferne Installationsnetzwerk"
+  incus config device remove "$CONTAINER_NAME" eth0
+}
+
 install_container_dependencies() {
   # Ein unveraendertes images:ubuntu/24.04 enthaelt diese Werkzeuge nicht.
   # Erst pruefen: Wiederholungen nach einer Teilinstallation bleiben schnell.
@@ -285,6 +298,7 @@ main() {
   require_incus
   create_container
   start_container
+  trap disable_network EXIT
   ensure_install_network
   install_container_dependencies
   install_tshark_adapter
@@ -292,6 +306,8 @@ main() {
   install_tools
   create_user
   verify_install
+  disable_network || die "Installationsnetzwerk konnte nicht entfernt werden."
+  trap - EXIT
   log "Analyseumgebung bereit: $CONTAINER_NAME"
 }
 

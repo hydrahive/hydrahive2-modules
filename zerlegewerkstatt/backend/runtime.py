@@ -6,8 +6,8 @@ Nutzer- oder Agenteneingaben erreichen ihn nur ueber die Analysetypen aus
 
 Sicherheitsregeln:
 - Kein Shell. Befehle werden als Argumentliste uebergeben.
-- Netzwerk des Containers wird vor der Analyse abgeschaltet und danach
-  wiederhergestellt, auch wenn etwas schiefgeht.
+- Netzwerk des Containers wird vor der Analyse abgeschaltet und bleibt aus.
+  Nur der Installer darf es fuer gepruefte Downloads zeitweise anhaengen.
 - Dateien werden in einen frischen Arbeitsordner kopiert; der Arbeitsordner
   wird danach geloescht.
 - Jeder Aufruf hat ein Zeitlimit. Bei Ueberschreitung wird die ganze
@@ -107,7 +107,6 @@ class IncusRuntime:
         finally:
             if remote_dir:
                 self._container.cleanup_workdir(remote_dir)
-            self._container.enable_network()
 
         payload = self._read_result(run)
         if bundle:

@@ -99,6 +99,8 @@ Vier Fehler fielen erst in der Abnahme auf und sind behoben:
 3. `incus config device add` bekam die Gerätewerte als getrennte Argumente statt als `key=value`. Das Wiederanheimgeln scheiterte dadurch still.
 4. `status()` prüfte das echte `incus`-Binary auch mit injiziertem Test-Runner. Die Suite brach in der CI ab, wo Incus fehlt.
 
+**E2-Verschärfung ab 0.2.1:** Punkt 2 und 3 sind durch ein strengeres Modell abgelöst. Das Analysenetz bleibt nach Erfolg und Fehler dauerhaft entfernt. Ausschließlich `install.sh` hängt `eth0` für seine geprüften Downloads an und entfernt es per `EXIT`-Trap wieder.
+
 ### Offen für E2
 
 - Binwalk-3.1-/Unblob-Firmwareextraktion

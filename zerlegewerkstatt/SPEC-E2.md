@@ -19,7 +19,7 @@ Erfolg wird nicht an der Zahl sichtbarer Knöpfe gemessen, sondern an echten Fra
 - Keine Ausführung des Zielartefakts.
 - Kein Browser-, ADB-, Frida-, Debugger-, Prozess-, Geräte- oder Live-Capture-Zugriff.
 - Kein freier REA-Unterbefehl und keine freien Optionen aus API, UI oder Agentenwerkzeug.
-- Netzwerk während jeder Analyse aus; Arbeitsordner danach entfernt.
+- Netzwerk außerhalb der geprüften Installationsdownloads dauerhaft aus; Arbeitsordner nach jeder Analyse entfernt.
 - Prozess als Benutzer `rea`, `no-new-privs`, alle Linux-Capability-Sets leer.
 - Ergebnisgröße und Laufzeit begrenzt; vollständige Evidenz getrennt von der kompakten Ansicht.
 - Jeder Typ braucht mindestens einen echten Positivtest mit einem zulässigen Artefakt und einen Negativtest gegen einen unpassenden Typ.
