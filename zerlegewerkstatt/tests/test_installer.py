@@ -20,19 +20,22 @@ def test_install_und_uninstall_existieren():
 
 def test_versionen_sind_gepinnt():
     text = read(INSTALL)
-    assert '"version": "0.2.1"' in read(MODULE_DIR / "manifest.json")
+    assert '"version": "0.3.0"' in read(MODULE_DIR / "manifest.json")
     assert 'NODE_VERSION="24.22.2"' in text
     assert 'REA_VERSION="6.8.0"' in text
     assert 'GHIDRA_VERSION="12.1.4"' in text
     assert 'JADX_VERSION="0.7.1"' in text
+    assert 'BINWALK_VERSION="3.1.0"' in text
+    assert 'RUST_VERSION="1.81.0"' in text
+    assert 'SASQUATCH_RELEASE="sasquatch-v4.5.1-4"' in text
 
 
 def test_jede_quelle_hat_eine_pruefsumme():
     text = read(INSTALL)
-    downloads = re.findall(r'^(REA|GHIDRA|JADX)_URL="([^"]+)"', text, re.MULTILINE)
-    checksums = dict(re.findall(r'^(REA|GHIDRA|JADX)_SHA256="([0-9a-f]{64})"',
+    downloads = re.findall(r'^(REA|GHIDRA|JADX|BINWALK)_URL="([^"]+)"', text, re.MULTILINE)
+    checksums = dict(re.findall(r'^(REA|GHIDRA|JADX|BINWALK)_SHA256="([0-9a-f]{64})"',
                                 text, re.MULTILINE))
-    assert len(downloads) == 3
+    assert len(downloads) == 4
     for name, _url in downloads:
         assert name in checksums, f"{name} hat keine Pruefsumme"
     # Node ist architekturabhängig; beide offiziellen SHAs stehen im case-Block.
@@ -45,7 +48,7 @@ def test_keine_ungestuetzte_quelle_wird_geladen():
     text = read(INSTALL)
     assert "/latest" not in text
     assert "fetch_verified" in text
-    for name in ("NODE_URL", "REA_URL", "GHIDRA_URL", "JADX_URL"):
+    for name in ("NODE_URL", "RUST_URL", "REA_URL", "GHIDRA_URL", "JADX_URL", "BINWALK_URL", "SASQUATCH_URL"):
         assert re.search(rf'fetch_verified "\${name}"', text), f"{name} wird nicht geprueft"
 
 
@@ -121,6 +124,24 @@ def test_dateien_werden_einzeln_in_den_container_gepusht():
     assert not any(" -r" in line for line in aufrufe)
 
 
+def test_binwalk_31_wird_gepinnt_gebaut_und_geprueft():
+    text = read(INSTALL)
+    assert 'BINWALK_VERSION="3.1.0"' in text
+    assert "99d5dc70f5021c55624f098adae4d1de9c1c07d000475664704b675aad7e0811" in text
+    assert "RUSTC=/opt/rust/bin/rustc /opt/rust/bin/cargo install" in text
+    assert "--locked" in text
+    assert "--root /opt/binwalk" in text
+    assert "/opt/rust/bin/rustc --version" in text
+    assert "/opt/binwalk/bin/binwalk --version" in text
+    assert 'rm -rf /opt/rust' in text
+    assert 'rm -rf /opt/binwalk' in text
+    assert 'dpkg -i "$staging/$7"' in text
+    assert "command -v sasquatch" in text
+    from backend import runtime
+    assert runtime.BINWALK_COMMAND == "/opt/binwalk/bin/binwalk"
+    assert "REA_BINWALK_COMMAND" in read(MODULE_DIR / "backend" / "runtime.py")
+
+
 def test_pcap_hat_rea_abhaengigkeiten_bei_frischer_installation():
     text = read(INSTALL)
     assert "tshark" in text
@@ -150,7 +171,8 @@ def test_frischer_container_bekommt_alle_laufzeitpakete_vor_den_werkzeugen():
     assert text.index("install_container_dependencies") < text.index("install_tools")
     for package in (
         "xz-utils", "unzip", "openjdk-21-jre-headless", "file", "binutils",
-        "python3", "ca-certificates",
+        "python3", "ca-certificates", "gcc", "pkg-config", "libfontconfig1-dev",
+        "squashfs-tools", "p7zip-full", "cpio", "device-tree-compiler", "yara",
     ):
         assert package in text, f"Containerpaket fehlt: {package}"
     assert "--no-install-recommends" in text
@@ -158,16 +180,23 @@ def test_frischer_container_bekommt_alle_laufzeitpakete_vor_den_werkzeugen():
 
 def test_container_abhaengigkeiten_werden_nach_der_installation_geprueft():
     text = read(INSTALL)
-    for command in ("xz", "unzip", "java", "file", "objdump", "readelf", "strings", "python3"):
+    for command in ("xz", "unzip", "java", "file", "objdump", "readelf", "strings",
+                    "python3", "gcc", "pkg-config", "mksquashfs", "unsquashfs",
+                    "7z", "cpio", "dtc", "yara"):
         assert f"command -v {command}" in text, f"Preflight fehlt: {command}"
 
 
-def test_node_download_unterstuetzt_x64_und_arm64_mit_festen_pruefsummen():
+def test_node_und_rust_unterstuetzen_x64_und_arm64_mit_festen_pruefsummen():
     text = read(INSTALL)
     assert 'x86_64)' in text
     assert 'aarch64|arm64)' in text
     assert "48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75" in text
     assert "eb187837a2230d4047161ac0be008584e16b46f726e9c9490ee35dc6b17d9ba8" in text
+    assert "1a9ee8caaa18a3e433fef93cea8a55dc1ebd478ed761b2fef69d4565f9d00e7f" in text
+    assert "5cd65b0a2724e4193a5c4ba79f0687f8c11d52c2d58ee35bc7ce5958a3cc8dc2" in text
+    assert "bb211daf90069a43b7d5e76f136766a8542a5328015773e9b8be87541b307b60" in text
+    assert "fb281906a25667414e8b6aff96b49ceb227519122a7844bbc8166f2b6a59554a" in text
+    assert 'mv "/opt/${1%.tar.xz}" /opt/node' in text
     assert "Nicht unterstuetzte Architektur" in text
 
 

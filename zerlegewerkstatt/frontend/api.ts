@@ -29,6 +29,7 @@ export type AnalysisType =
   | "inspect-rust-binary"
   | "inspect-kernel-module"
   | "inspect-apk-signature"
+  | "inspect-firmware-regions"
   | "analyze-ghidra"
 
 export interface Artifact {

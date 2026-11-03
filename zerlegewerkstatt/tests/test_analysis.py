@@ -24,6 +24,7 @@ def test_nur_feste_analysetypen_sind_erlaubt():
         "inspect-rust-binary",
         "inspect-kernel-module",
         "inspect-apk-signature",
+        "inspect-firmware-regions",
         "analyze-ghidra",
     }
 
@@ -80,6 +81,16 @@ def test_e2b_typen_sind_auf_dateiformate_begrenzt():
     assert analysis_types.ALLOWED_KINDS["inspect-native-exports"] == {"pe", "elf"}
     assert analysis_types.ALLOWED_KINDS["inspect-go-binary"] == {"pe", "elf"}
     assert analysis_types.ALLOWED_KINDS["inspect-rust-binary"] == {"pe", "elf"}
+
+
+def test_firmware_regionen_sind_auf_firmware_begrenzt():
+    assert analysis_types.is_allowed("firmware", "inspect-firmware-regions")
+    for wrong_kind in ("pe", "elf", "apk", "pcap", "pcapng"):
+        assert not analysis_types.is_allowed(wrong_kind, "inspect-firmware-regions")
+    assert analysis_types.build_command(
+        "inspect-firmware-regions", artifact_path="/work/router.bin") == [
+            "rea", "inspect-firmware-regions", "--format", "json", "/work/router.bin",
+        ]
 
 
 def test_grosse_e2b_ausgaben_werden_kompakt_mit_evidence_gespeichert():

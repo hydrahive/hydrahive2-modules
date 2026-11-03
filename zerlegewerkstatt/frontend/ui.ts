@@ -31,6 +31,7 @@ export const ANALYSIS_TYPES: { id: AnalysisType; kinds: string[]; group: Analysi
   { id: "inspect-rust-binary", kinds: ["pe", "elf"], group: "code" },
   { id: "inspect-kernel-module", kinds: ["elf"], group: "structure" },
   { id: "inspect-apk-signature", kinds: ["apk"], group: "signatures" },
+  { id: "inspect-firmware-regions", kinds: ["firmware"], group: "structure" },
   { id: "analyze-ghidra", kinds: ["pe", "elf", "firmware"], group: "code" },
 ]
 

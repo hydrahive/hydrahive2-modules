@@ -88,6 +88,7 @@ export const en = {
         "inspect-rust-binary": "Inspect Rust dependencies",
         "inspect-kernel-module": "Inspect kernel module metadata",
         "inspect-apk-signature": "Inspect APK signatures",
+        "inspect-firmware-regions": "Inspect firmware regions",
         "analyze-ghidra": "Deep analysis (Ghidra)",
       },
       error: {

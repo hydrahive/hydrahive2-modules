@@ -104,6 +104,21 @@ def test_pcap_bekommt_feste_wireshark_werkzeuge(tmp_path):
     assert "REA_CAPINFOS_COMMAND=/usr/bin/capinfos" in call
 
 
+def test_firmware_bekommt_nur_den_festen_binwalk_pfad(tmp_path):
+    runner = FakeRunner()
+    adapter = IncusRuntime(runner=runner)
+    artifact = tmp_path / "router.bin"
+    artifact.write_bytes(b"firmware")
+
+    adapter.analyze(analysis_type="inspect-firmware-regions", artifact=artifact,
+                    artifact_kind="firmware", token="t1")
+
+    call = runner.analysis_call()
+    assert call is not None
+    assert "REA_BINWALK_COMMAND=/opt/binwalk/bin/binwalk" in call
+    assert not any(part.startswith("REA_UNBLOB_COMMAND=") for part in call)
+
+
 def test_analyse_ohne_shell_und_mit_festem_provider(tmp_path):
     runner = FakeRunner()
     adapter = IncusRuntime(runner=runner)

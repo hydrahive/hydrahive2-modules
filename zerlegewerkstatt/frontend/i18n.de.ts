@@ -88,6 +88,7 @@ export const de = {
         "inspect-rust-binary": "Rust-Abhängigkeiten prüfen",
         "inspect-kernel-module": "Kernelmodul-Metadaten prüfen",
         "inspect-apk-signature": "APK-Signaturen prüfen",
+        "inspect-firmware-regions": "Firmware-Regionen prüfen",
         "analyze-ghidra": "Tiefenanalyse (Ghidra)",
       },
       error: {
