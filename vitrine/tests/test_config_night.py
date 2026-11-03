@@ -4,7 +4,6 @@ from __future__ import annotations
 import datetime as dt
 import json
 
-
 from renderer import config as cfg
 from renderer import night
 

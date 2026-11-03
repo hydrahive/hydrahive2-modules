@@ -5,7 +5,6 @@ from pydantic import ValidationError
 
 from backend.schemas import Config
 
-
 EMPTY_POOLS = {"spring": [], "summer": [], "autumn": [], "winter": []}
 
 

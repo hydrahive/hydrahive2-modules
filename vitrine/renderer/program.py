@@ -35,18 +35,20 @@ def available(data_dir: Path) -> set[str]:
 
 def current(data_dir: Path, config: dict, now: dt.datetime) -> Program:
     n = config.get("night") or {}
-    files = available(data_dir)
     if night.active(n, now):
         mode = n.get("mode")
         if mode == "video":
+            files = available(data_dir)
             pools = n.get("videos") or {}
             names = pools.get(calendar.season(now)) if isinstance(pools, dict) else []
-            choices = [name for name in names or [] if name in files]
+            names = names if isinstance(names, list) else []
+            choices = [name for name in names if name in files]
             name = calendar.rotate(choices, now, int(config.get("rotate_minutes") or 0))
             if name:
                 return Program(video=data_dir / "videos" / name, night="video", fps=int(config.get("fps") or 24))
             return Program(night="dim")
         return Program(night=mode if mode in ("dim", "off") else "dim")
+    files = available(data_dir)
     choice = calendar.choose(config, now, files)
     name = calendar.rotate(choice.videos, now, int(config.get("rotate_minutes") or 0))
     return Program(video=(data_dir / "videos" / name) if name else None, rule=choice.rule, holiday=choice.holiday,

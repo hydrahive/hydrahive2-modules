@@ -4,9 +4,17 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    field_validator,
+    model_validator,
+)
 
-from renderer import calendar, calendar_extra, config, dash_layout, light_config
+from renderer import calendar, calendar_extra, dash_layout, light_config
 
 _VIDEO = re.compile(r"^[a-z0-9][a-z0-9._-]{0,120}\.(mp4|webm|mkv|mov)$")
 _HM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")

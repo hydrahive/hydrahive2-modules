@@ -5,10 +5,10 @@ import datetime as dt
 import json
 
 from PIL import Image
+from test_main import FakeDisplay
 
 from renderer import main
 from renderer.program import Program
-from test_main import FakeDisplay
 
 
 class Uhr:
