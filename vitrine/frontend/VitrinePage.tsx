@@ -84,7 +84,7 @@ export function VitrinePage() {
                 </div>
               </div>
             )}
-            {tab === "display" && config && <SettingsCard config={config} onChange={change} />}
+            {tab === "display" && config && <SettingsCard config={config} videos={videos} onChange={change} />}
             {tab === "dashboard" && config && <DashboardCard config={config} onChange={change} />}
             {tab === "light" && config && <LightCard light={config.light} status={light} onChange={(l) => change({ ...config, light: l })} />}
             {tab === "bluetooth" && <BluetoothCard />}
