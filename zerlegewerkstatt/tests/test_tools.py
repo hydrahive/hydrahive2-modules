@@ -73,6 +73,7 @@ def test_reverse_inspect_erlaubt_nur_analysetypen():
         "inspect-rust-binary",
         "inspect-kernel-module",
         "inspect-apk-signature",
+        "inspect-firmware-regions",
         "analyze-ghidra",
     ]
     assert set(schema["required"]) == {"case_id", "artifact_id", "analysis_type"}

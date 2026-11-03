@@ -104,6 +104,42 @@ def test_pcap_bekommt_feste_wireshark_werkzeuge(tmp_path):
     assert "REA_CAPINFOS_COMMAND=/usr/bin/capinfos" in call
 
 
+def test_firmware_bekommt_nur_den_festen_binwalk_pfad(tmp_path):
+    runner = FakeRunner()
+    adapter = IncusRuntime(runner=runner)
+    artifact = tmp_path / "router.bin"
+    artifact.write_bytes(b"firmware")
+
+    adapter.analyze(analysis_type="inspect-firmware-regions", artifact=artifact,
+                    artifact_kind="firmware", token="t1")
+
+    call = runner.analysis_call()
+    assert call is not None
+    assert "REA_BINWALK_COMMAND=/opt/binwalk/bin/binwalk" in call
+    assert not any(part.startswith("REA_UNBLOB_COMMAND=") for part in call)
+
+
+def test_firmware_stdout_bleibt_vollwertiger_rea_beleg(tmp_path):
+    evidence = {
+        "evidence_id": "ev_firmware",
+        "provider": {"id": "binwalk", "version": "3.1.0"},
+        "confidence": "observed",
+        "normalized_result": {"regions": [{"offset": 4096, "signature": "squashfs"}]},
+    }
+    runner = FakeRunner(results={"analysis": ok(json.dumps(evidence))})
+    adapter = IncusRuntime(runner=runner)
+    artifact = tmp_path / "router.bin"
+    artifact.write_bytes(b"firmware")
+
+    payload, _run = adapter.analyze(
+        analysis_type="inspect-firmware-regions", artifact=artifact,
+        artifact_kind="firmware", token="t1",
+    )
+
+    assert payload == evidence
+    assert "inspect-firmware-regions" not in runtime.analysis_types.EVIDENCE_OPTIONS
+
+
 def test_analyse_ohne_shell_und_mit_festem_provider(tmp_path):
     runner = FakeRunner()
     adapter = IncusRuntime(runner=runner)

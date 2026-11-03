@@ -20,6 +20,15 @@ describe("fachlich gruppierte Analyseauswahl", () => {
     expect(analyses).not.toContain("analyze-ghidra")
   })
 
+  it("zeigt Firmware-Regionen nur bei Firmware und unter Aufbau", () => {
+    const firmware = analysisGroupsFor("firmware")
+    const regions = firmware.find((entry) => entry.group === "structure")?.analyses
+    expect(regions).toContain("inspect-firmware-regions")
+    for (const kind of ["pe", "elf", "apk", "pcap", "pcapng", "unknown"]) {
+      expect(analysisGroupsFor(kind).flatMap((entry) => entry.analyses)).not.toContain("inspect-firmware-regions")
+    }
+  })
+
   it("zeigt APK-Signaturen nur bei Android-Paketen", () => {
     const apk = analysisGroupsFor("apk").flatMap((entry) => entry.analyses)
     const elf = analysisGroupsFor("elf").flatMap((entry) => entry.analyses)

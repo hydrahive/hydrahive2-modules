@@ -28,6 +28,7 @@ AnalysisType = Literal[
     "inspect-rust-binary",
     "inspect-kernel-module",
     "inspect-apk-signature",
+    "inspect-firmware-regions",
     "analyze-ghidra",
 ]
 
@@ -49,6 +50,7 @@ COMMANDS: dict[str, str] = {
     "inspect-rust-binary": "inspect-rust-binary",
     "inspect-kernel-module": "inspect-kernel-module",
     "inspect-apk-signature": "inspect-apk-signature",
+    "inspect-firmware-regions": "inspect-firmware-regions",
     "analyze-ghidra": "analyze",
 }
 
@@ -70,6 +72,7 @@ ALLOWED_KINDS: dict[str, frozenset[str]] = {
     "inspect-rust-binary": frozenset({"pe", "elf"}),
     "inspect-kernel-module": frozenset({"elf"}),
     "inspect-apk-signature": frozenset({"apk"}),
+    "inspect-firmware-regions": frozenset({"firmware"}),
     "analyze-ghidra": frozenset({"pe", "elf", "firmware"}),
 }
 
@@ -92,11 +95,14 @@ EXTRA_ARGS: dict[str, tuple[str, ...]] = {
     "inspect-rust-binary": ("--detail", "summary"),
     "inspect-kernel-module": (),
     "inspect-apk-signature": ("--detail", "summary"),
+    "inspect-firmware-regions": (),
     "analyze-ghidra": (),
 }
 
 #: REA verwendet leider zwei Namen fuer das Evidence-Ziel. Diese Zuordnung ist
-#: fest und kann nicht durch Nutzer oder Agenten beeinflusst werden.
+#: fest und kann nicht durch Nutzer oder Agenten beeinflusst werden. Befehle wie
+#: `inspect-firmware-regions` liefern bereits den vollstaendigen Beleg mit
+#: `evidence_id` auf stdout und brauchen deshalb keine zusaetzliche Bundle-Datei.
 EVIDENCE_OPTIONS: dict[str, str] = {
     "inspect-artifact": "--evidence_output",
     "inspect-managed-members": "--evidence-bundle",

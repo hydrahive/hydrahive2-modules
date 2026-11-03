@@ -34,6 +34,7 @@ JADX_JAR = "/opt/jadx-headless-mcp.jar"
 CONTAINER_PATH = "/opt/node/bin:/usr/local/bin:/usr/bin:/bin"
 TSHARK_COMMAND = "/usr/local/bin/rea-tshark"
 CAPINFOS_COMMAND = "/usr/bin/capinfos"
+BINWALK_COMMAND = "/opt/binwalk/bin/binwalk"
 MAX_OUTPUT_BYTES = exec.MAX_OUTPUT_BYTES
 #: Incus begrenzt `exec` auf 600 Sekunden. Das ist die harte Obergrenze.
 DEFAULT_TIMEOUT = 600
@@ -130,6 +131,7 @@ class IncusRuntime:
              "--env", f"REA_JADX_MCP_JAR={JADX_JAR}",
              "--env", f"REA_TSHARK_COMMAND={TSHARK_COMMAND}",
              "--env", f"REA_CAPINFOS_COMMAND={CAPINFOS_COMMAND}",
+             "--env", f"REA_BINWALK_COMMAND={BINWALK_COMMAND}",
              "--", "setpriv", "--reuid=rea", "--regid=rea", "--init-groups",
              "--no-new-privs", "--inh-caps=-all", "--ambient-caps=-all",
              "--bounding-set=-all", "--", *command],
