@@ -22,7 +22,7 @@ def test_install_und_uninstall_existieren():
 
 def test_versionen_sind_gepinnt():
     text = read(INSTALL)
-    assert '"version": "0.3.1"' in read(MODULE_DIR / "manifest.json")
+    assert '"version": "0.3.2"' in read(MODULE_DIR / "manifest.json")
     assert 'NODE_VERSION="24.22.2"' in text
     assert 'REA_VERSION="6.8.0"' in text
     assert 'GHIDRA_VERSION="12.1.4"' in text
@@ -43,6 +43,22 @@ def test_jede_quelle_hat_eine_pruefsumme():
     # Node ist architekturabhängig; beide offiziellen SHAs stehen im case-Block.
     assert "nodejs.org/dist" in text
     assert len(re.findall(r'NODE_SHA256="[0-9a-f]{64}"', text)) == 2
+
+
+def test_vollstaendige_gepinnte_werkzeuge_werden_ohne_download_wiederverwendet():
+    script = r'''
+source "$1"
+tools_are_current() { return 0; }
+fetch_verified() { printf 'DOWNLOAD:%s\n' "$1"; return 97; }
+install_tools
+'''
+    result = subprocess.run(
+        ["bash", "-c", script, "test-no-download", str(INSTALL)],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "DOWNLOAD:" not in result.stdout
+    assert "bereits vollstaendig" in result.stderr
 
 
 def test_keine_ungestuetzte_quelle_wird_geladen():
