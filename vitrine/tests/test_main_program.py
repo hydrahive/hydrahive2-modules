@@ -61,6 +61,42 @@ def test_nachtmodus_ein_bild_pro_sekunde(tmp_path):
     assert json.loads((tmp_path / "state.json").read_text())["night"] == "dim"
 
 
+def test_nachtvideo_nutzt_decoder_aber_keine_statusleiste_oder_meldungskarten(tmp_path, monkeypatch):
+    from renderer import inbox, scene
+
+    statuses: list[str] = []
+    inbox_calls = 0
+    original_render = scene.Overlay.render
+
+    def render_spy(self, t, status, holiday=None, alert=False):
+        statuses.append(status)
+        return original_render(self, t, status, holiday, alert)
+
+    def inbox_spy(_data):
+        nonlocal inbox_calls
+        inbox_calls += 1
+        return [{"text": "nachts nicht zeigen"}]
+
+    monkeypatch.setattr(scene.Overlay, "render", render_spy)
+    monkeypatch.setattr(inbox, "visible", inbox_spy)
+    video = tmp_path / "videos" / "hydra-schlaf-winter-01.mp4"
+    seen, sleeps = [], []
+    r = _runner(
+        tmp_path,
+        [Program(video=video, night="video")],
+        Uhr(dt.datetime(2026, 12, 1, 23, 30)),
+        sleeps,
+        seen,
+    )
+
+    r.run(max_frames=2)
+
+    assert seen == [video]
+    assert statuses and set(statuses) == {""}
+    assert inbox_calls == 0
+    assert json.loads((tmp_path / "state.json").read_text())["night"] == "video"
+
+
 def test_vorschau_wird_geschrieben(tmp_path):
     seen, sleeps = [], []
     r = _runner(tmp_path, [Program(video=None)], Uhr(dt.datetime(2026, 10, 15, 12)), sleeps, seen)
