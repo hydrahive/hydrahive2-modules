@@ -72,6 +72,11 @@ export interface CaseFile {
   jobs: Job[]
 }
 
+export type CaseSummary = Omit<CaseFile, "artifacts" | "jobs"> & {
+  artifact_count: number
+  job_count: number
+}
+
 export interface CaseInput {
   project_id: string
   title: string
@@ -133,7 +138,7 @@ export interface FileResult {
 }
 
 export function listCases(projectId: string) {
-  return api.get<CaseFile[]>(`${BASE}/cases?project_id=${encodeURIComponent(projectId)}`)
+  return api.get<CaseSummary[]>(`${BASE}/cases?project_id=${encodeURIComponent(projectId)}`)
 }
 
 export function getCase(caseId: string) {

@@ -1,10 +1,10 @@
 // Fallliste mit Status und Auswahl.
 import { useTranslation } from "react-i18next"
-import type { CaseFile } from "./api"
+import type { CaseSummary } from "./api"
 import { MUTED, TEXT, panel } from "./ui"
 
 interface Props {
-  cases: CaseFile[]
+  cases: CaseSummary[]
   selected: string | null
   onSelect: (caseId: string) => void
   loading: boolean
@@ -44,7 +44,7 @@ export function CaseList({ cases, selected, onSelect, loading }: Props) {
               <span className={`block text-sm ${TEXT}`}>{item.title}</span>
               <span className={`block text-xs ${MUTED}`}>
                 {item.target ? `${item.target} · ` : ""}
-                {t("caseCount", { artifacts: item.artifacts.length, jobs: item.jobs.length })}
+                {t("caseCount", { artifacts: item.artifact_count, jobs: item.job_count })}
               </span>
             </button>
           </li>

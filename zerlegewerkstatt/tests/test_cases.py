@@ -82,6 +82,18 @@ def test_fall_anlegen_listen_und_lesen(client, alice):
     listed = client.get(f"{MOD_PREFIX}/cases", headers=alice, params={"project_id": PROJECT_ID})
     assert listed.status_code == 200
     assert [item["id"] for item in listed.json()] == [case["id"]]
+    assert listed.json()[0]["artifact_count"] == 0
+    assert listed.json()[0]["job_count"] == 0
+
+    from backend import store
+    store.add_artifact(case["id"], {
+        "artifact_id": "artifact-1", "original_name": "router.bin", "kind": "firmware",
+        "size": 8, "sha256": "a" * 64, "relative_path": "artifact-1/router.bin",
+    })
+    store.create_job(case["id"], "artifact-1", "inspect-firmware-regions")
+    counted = client.get(f"{MOD_PREFIX}/cases", headers=alice, params={"project_id": PROJECT_ID})
+    assert counted.json()[0]["artifact_count"] == 1
+    assert counted.json()[0]["job_count"] == 1
 
     loaded = client.get(f"{MOD_PREFIX}/cases/{case['id']}", headers=alice)
     assert loaded.status_code == 200
