@@ -56,7 +56,7 @@ Firmware-Artefakte erhalten eine eigene statische Signatur- und Regionsinventur 
 - Direkter Binwalk-Test extrahierte über Sasquatch rekursiv `bin/startup` und `etc/release`; der öffentliche E2-Analysetyp bleibt absichtlich ein reiner Signatur-Scan.
 - Vollständiger `IncusRuntime`-Lauf: Exit-Code 0, kein Timeout, Provider `binwalk` 3.1.0, normalisierte SquashFS-Region bei Offset 4096.
 - Nachkontrolle: Container offline, temporärer Runtime-Arbeitsordner entfernt, kein Testklon oder Testartefakt verblieben.
-- Prüfmatrix: 140 Backendtests, 15 Frontendtests, TypeScript, Ruff, Shellsyntax und Vite-Produktionsbuild grün.
+- Prüfmatrix: 141 Backendtests, 15 Frontendtests, TypeScript, Ruff, Shellsyntax und Vite-Produktionsbuild grün.
 
 ## Nicht in diesem Plan
 

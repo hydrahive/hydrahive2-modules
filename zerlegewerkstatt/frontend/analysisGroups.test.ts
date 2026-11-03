@@ -24,7 +24,9 @@ describe("fachlich gruppierte Analyseauswahl", () => {
     const firmware = analysisGroupsFor("firmware")
     const regions = firmware.find((entry) => entry.group === "structure")?.analyses
     expect(regions).toContain("inspect-firmware-regions")
-    expect(analysisGroupsFor("pe").flatMap((entry) => entry.analyses)).not.toContain("inspect-firmware-regions")
+    for (const kind of ["pe", "elf", "apk", "pcap", "pcapng", "unknown"]) {
+      expect(analysisGroupsFor(kind).flatMap((entry) => entry.analyses)).not.toContain("inspect-firmware-regions")
+    }
   })
 
   it("zeigt APK-Signaturen nur bei Android-Paketen", () => {

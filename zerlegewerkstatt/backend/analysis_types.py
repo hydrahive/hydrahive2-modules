@@ -100,7 +100,9 @@ EXTRA_ARGS: dict[str, tuple[str, ...]] = {
 }
 
 #: REA verwendet leider zwei Namen fuer das Evidence-Ziel. Diese Zuordnung ist
-#: fest und kann nicht durch Nutzer oder Agenten beeinflusst werden.
+#: fest und kann nicht durch Nutzer oder Agenten beeinflusst werden. Befehle wie
+#: `inspect-firmware-regions` liefern bereits den vollstaendigen Beleg mit
+#: `evidence_id` auf stdout und brauchen deshalb keine zusaetzliche Bundle-Datei.
 EVIDENCE_OPTIONS: dict[str, str] = {
     "inspect-artifact": "--evidence_output",
     "inspect-managed-members": "--evidence-bundle",

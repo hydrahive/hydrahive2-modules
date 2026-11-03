@@ -105,11 +105,13 @@ def test_analysetyp_muss_zum_artefakt_passen(client, alice):
         files=[("files", ("app.apk", PE_BYTES, "application/octet-stream"))],
     )
     artifact_id = upload.json()["files"][0]["artifact_id"]
-    response = client.post(f"{MOD_PREFIX}/cases/{created['id']}/analyze", headers=alice,
-                           json={"artifact_id": artifact_id,
-                                 "analysis_type": "inspect-android-package"})
-    assert response.status_code == 400
-    assert response.json()["detail"]["code"] == "reverse_analysis_type_not_allowed"
+    for analysis_type in ("inspect-android-package", "inspect-firmware-regions"):
+        response = client.post(
+            f"{MOD_PREFIX}/cases/{created['id']}/analyze", headers=alice,
+            json={"artifact_id": artifact_id, "analysis_type": analysis_type},
+        )
+        assert response.status_code == 400
+        assert response.json()["detail"]["code"] == "reverse_analysis_type_not_allowed"
 
 
 def test_analyse_braucht_projektzugriff(client, alice, bob):

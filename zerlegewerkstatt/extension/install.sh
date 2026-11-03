@@ -375,9 +375,9 @@ start_container() {
 
 main() {
   require_incus
+  trap disable_network EXIT
   create_container
   start_container
-  trap disable_network EXIT
   ensure_install_network
   install_container_dependencies
   install_tshark_adapter
@@ -390,4 +390,6 @@ main() {
   log "Analyseumgebung bereit: $CONTAINER_NAME"
 }
 
-main "$@"
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  main "$@"
+fi
