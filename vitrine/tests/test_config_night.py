@@ -12,7 +12,13 @@ from renderer import night
 def test_ohne_datei_standardwerte(tmp_path):
     c = cfg.load(tmp_path)
     assert c["rules"] == [] and c["default_videos"] == []
-    assert c["night"] == {"enabled": False, "from": "23:00", "to": "07:00", "mode": "dim"}
+    assert c["night"] == {
+        "enabled": False,
+        "from": "23:00",
+        "to": "07:00",
+        "mode": "dim",
+        "videos": {"spring": [], "summer": [], "autumn": [], "winter": []},
+    }
     assert c["rotate_minutes"] == 10
 
 
@@ -25,6 +31,17 @@ def test_teilweise_datei_wird_ergaenzt(tmp_path):
     (tmp_path / "config.json").write_text(json.dumps({"night": {"enabled": True}, "rotate_minutes": 3}))
     c = cfg.load(tmp_path)
     assert c["night"]["enabled"] is True and c["night"]["from"] == "23:00" and c["rotate_minutes"] == 3
+    assert c["night"]["videos"] == {"spring": [], "summer": [], "autumn": [], "winter": []}
+
+
+def test_teilweise_nachtvideo_pools_werden_robust_ergaenzt(tmp_path):
+    (tmp_path / "config.json").write_text(json.dumps({
+        "night": {"mode": "video", "videos": {"winter": ["winter.mp4"], "spring": "kaputt"}},
+    }))
+
+    pools = cfg.load(tmp_path)["night"]["videos"]
+
+    assert pools == {"spring": [], "summer": [], "autumn": [], "winter": ["winter.mp4"]}
 
 
 def test_falsche_typen_werden_ersetzt(tmp_path):
