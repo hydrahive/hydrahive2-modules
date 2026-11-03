@@ -1,12 +1,17 @@
 import { useTranslation } from "react-i18next"
 import { MoonStar } from "lucide-react"
-import type { VitrineConfig } from "./api"
+import type { VideoFile, VitrineConfig } from "./api"
 import { clamp } from "./rules"
+import { NightVideoPools } from "./NightVideoPools"
 
 const field = "rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-2 py-1.5 text-sm text-[#e8eef8]"
 
 /** Reiter Anzeige: Nachtmodus, Wechselintervall, Bildrate, Einblendungsdauer, Rückkehr zum Video. */
-export function SettingsCard({ config, onChange }: { config: VitrineConfig; onChange: (c: VitrineConfig) => void }) {
+export function SettingsCard({ config, videos, onChange }: {
+  config: VitrineConfig
+  videos: VideoFile[]
+  onChange: (c: VitrineConfig) => void
+}) {
   const { t } = useTranslation("vitrine")
   const n = config.night
   const setNight = (patch: Partial<VitrineConfig["night"]>) => onChange({ ...config, night: { ...n, ...patch } })
@@ -20,10 +25,13 @@ export function SettingsCard({ config, onChange }: { config: VitrineConfig; onCh
           {t("to_hm")} <input type="time" className={field} value={n.to} onChange={(e) => setNight({ to: e.target.value })} disabled={!n.enabled} />
         </div>
         <div className="flex gap-4 text-sm text-[#c8d2df]">
-          {(["dim", "off"] as const).map((m) => (
+          {(["dim", "off", "video"] as const).map((m) => (
             <label key={m} className="flex items-center gap-1.5"><input type="radio" name="night-mode" checked={n.mode === m} onChange={() => setNight({ mode: m })} disabled={!n.enabled} />{t(`night_${m}`)}</label>
           ))}
         </div>
+        {n.mode === "video" && (
+          <NightVideoPools pools={n.videos} videos={videos} onChange={(pools) => setNight({ videos: pools })} />
+        )}
         <label className="block text-xs text-[#9aa7bc]">{t("rotate")}
           <input type="number" min={0} max={1440} className={`${field} ml-2 w-20`} value={config.rotate_minutes}
             onChange={(e) => onChange({ ...config, rotate_minutes: Math.max(0, Number(e.target.value)) })} />

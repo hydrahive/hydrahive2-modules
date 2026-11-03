@@ -14,7 +14,7 @@ export interface VitrineStatus {
   size: [number, number] | null
   rule: string | null
   holiday: string | null
-  night: "dim" | "off" | null
+  night: "dim" | "off" | "video" | null
   /** Hinweistext während einer Vorschau auf dem Display, sonst null. */
   preview: string | null
   /** Was das Display zeigt: Feiertagsvideo oder Dashboard (Statuszentrale). */
@@ -23,11 +23,15 @@ export interface VitrineStatus {
   dashboard: string | null
 }
 
+export type NightSeason = "spring" | "summer" | "autumn" | "winter"
+export type NightVideoPools = Record<NightSeason, string[]>
+
 export interface Night {
   enabled: boolean
   from: string
   to: string
-  mode: "dim" | "off"
+  mode: "dim" | "off" | "video"
+  videos: NightVideoPools
 }
 
 import type { DashboardCfg } from "./dashLayout"

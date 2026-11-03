@@ -5,7 +5,8 @@ import { DEFAULT_DASHBOARD } from "./dashLayout"
 import { DEFAULT_LIGHT } from "./light"
 
 const base: VitrineConfig = {
-  rules: [], default_videos: [], night: { enabled: false, from: "23:00", to: "07:00", mode: "dim" },
+  rules: [], default_videos: [], night: { enabled: false, from: "23:00", to: "07:00", mode: "dim",
+    videos: { spring: [], summer: [], autumn: [], winter: [] } },
   rotate_minutes: 10, fps: 24, message_seconds: 15, dashboard_return_seconds: 120,
   dashboard: { ...DEFAULT_DASHBOARD }, light: structuredClone(DEFAULT_LIGHT),
 }

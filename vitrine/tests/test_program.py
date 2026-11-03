@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import datetime as dt
 
+import pytest
+
 from renderer import program
 
 
@@ -40,6 +42,66 @@ def test_feiertag_mit_name(tmp_path):
 def test_nacht_vor_allem(tmp_path):
     data = _vids(tmp_path, "weihnachten.mp4")
     p = program.current(data, CFG, dt.datetime(2026, 12, 24, 23, 30))
+    assert p.night == "dim" and p.video is None
+
+
+def _night_video_cfg(**pools):
+    return {
+        **CFG,
+        "night": {
+            "enabled": True,
+            "from": "23:00",
+            "to": "07:00",
+            "mode": "video",
+            "videos": {
+                "spring": pools.get("spring", []),
+                "summer": pools.get("summer", []),
+                "autumn": pools.get("autumn", []),
+                "winter": pools.get("winter", []),
+            },
+        },
+    }
+
+
+@pytest.mark.parametrize(("when", "_season", "name"), [
+    (dt.datetime(2026, 3, 1, 23, 30), "spring", "fruehling.mp4"),
+    (dt.datetime(2026, 6, 1, 23, 30), "summer", "sommer.mp4"),
+    (dt.datetime(2026, 9, 1, 23, 30), "autumn", "herbst.mp4"),
+    (dt.datetime(2026, 12, 1, 23, 30), "winter", "winter.mp4"),
+    (dt.datetime(2026, 2, 28, 23, 30), "winter", "winter.mp4"),
+])
+def test_nachtvideo_waehlt_pool_der_meteorologischen_saison(tmp_path, when, _season, name):
+    names = ["fruehling.mp4", "sommer.mp4", "herbst.mp4", "winter.mp4"]
+    data = _vids(tmp_path, *names)
+    config = _night_video_cfg(
+        spring=[names[0]], summer=[names[1]], autumn=[names[2]], winter=[names[3]],
+    )
+
+    p = program.current(data, config, when)
+
+    assert p.night == "video"
+    assert p.video == data / "videos" / name
+    assert p.rule is None
+
+
+def test_nachtvideo_filtert_fehlende_dateien_und_rotiert(tmp_path):
+    data = _vids(tmp_path, "sommer-1.mp4", "sommer-2.mp4")
+    config = _night_video_cfg(summer=["fehlt.mp4", "sommer-1.mp4", "sommer-2.mp4"])
+    config["rotate_minutes"] = 10
+    first = dt.datetime(2026, 6, 1, 23, 0)
+
+    a = program.current(data, config, first)
+    b = program.current(data, config, first + dt.timedelta(minutes=10))
+
+    assert {a.video.name, b.video.name} == {"sommer-1.mp4", "sommer-2.mp4"}
+
+
+def test_nachtvideo_ohne_vorhandene_saison_datei_faellt_auf_dim(tmp_path):
+    data = _vids(tmp_path, "tag.mp4")
+    config = _night_video_cfg(winter=["fehlt.mp4"])
+
+    p = program.current(data, config, dt.datetime(2026, 12, 1, 23, 30))
+
     assert p.night == "dim" and p.video is None
 
 

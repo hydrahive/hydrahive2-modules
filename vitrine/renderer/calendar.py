@@ -15,11 +15,21 @@ import re
 from dataclasses import dataclass, field
 
 from . import calendar_extra as extra
-from .calendar_templates import TEMPLATES
+from .calendar_templates import TEMPLATES  # noqa: F401 - öffentliche Rückwärtskompatibilität
 
 KINDS = ("range", "easter", "advent", "season", "time", *extra.KINDS)
 HOLIDAY_KINDS = {"range", "easter", "advent", *extra.KINDS}
 SEASONS = {"spring": (3, 5), "summer": (6, 8), "autumn": (9, 11), "winter": (12, 2)}
+
+
+def season(now: dt.datetime) -> str:
+    """Meteorologische Jahreszeit für Kalender und saisonale Nachtvideos."""
+    for name, (start, end) in SEASONS.items():
+        inside = start <= now.month <= end if start <= end else (now.month >= start or now.month <= end)
+        if inside:
+            return name
+    raise RuntimeError(f"Monat außerhalb 1–12: {now.month}")
+
 
 _MD = re.compile(r"^(\d{2})-(\d{2})$")
 _HM = re.compile(r"^(\d{2}):(\d{2})$")

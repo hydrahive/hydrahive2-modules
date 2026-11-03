@@ -4,19 +4,32 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    field_validator,
+    model_validator,
+)
 
-from renderer import calendar, calendar_extra, config, dash_layout, light_config
+from renderer import calendar, calendar_extra, dash_layout, light_config
 
 _VIDEO = re.compile(r"^[a-z0-9][a-z0-9._-]{0,120}\.(mp4|webm|mkv|mov)$")
 _HM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+
+
+def _night_video_pools() -> dict[str, list[str]]:
+    return {season: [] for season in calendar.SEASONS}
 
 
 class Night(BaseModel):
     enabled: bool = False
     from_: str = Field("23:00", alias="from")
     to: str = "07:00"
-    mode: Literal["dim", "off"] = "dim"
+    mode: Literal["dim", "off", "video"] = "dim"
+    videos: dict[str, list[str]] = Field(default_factory=_night_video_pools)
 
     model_config = {"populate_by_name": True}
 
@@ -26,6 +39,19 @@ class Night(BaseModel):
         if not _HM.match(v):
             raise ValueError("Uhrzeit als HH:MM")
         return v
+
+    @field_validator("videos")
+    @classmethod
+    def _videos(cls, value: dict[str, list[str]]) -> dict[str, list[str]]:
+        unknown = set(value) - set(calendar.SEASONS)
+        if unknown:
+            raise ValueError("Nachtvideos: unbekannte Jahreszeit")
+        out = _night_video_pools()
+        for season, videos in value.items():
+            if len(videos) > 50 or any(not _VIDEO.match(name) for name in videos):
+                raise ValueError(f"Nachtvideos {season}: ungültiger Videoname")
+            out[season] = list(dict.fromkeys(videos))
+        return out
 
 
 class Dashboard(BaseModel):

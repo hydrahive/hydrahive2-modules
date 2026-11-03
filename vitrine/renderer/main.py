@@ -18,7 +18,7 @@ from PIL import Image
 
 from . import aic, bt_runner, cached_play, cards, config, hydra_state, inbox, light_runner, mode, night, preview, program, scene, sysinfo, video, warmer
 from . import play_dashboard as dash_play
-from .frames import _connect_real, encode, fallback_frame, write_preview  # noqa: F401 - auch von Tests genutzt
+from .frames import _connect_real, encode, fallback_frame, write_preview
 
 SEARCH_SECONDS = 0.2      # ohne Host meldet sich das Display nur 1–2 s am USB an (gemessen 16.10.) – oft genug nachsehen
 RETRY_SECONDS = SEARCH_SECONDS
@@ -134,10 +134,11 @@ class Runner:
         self.state.update(video=prog.video.name if prog.video else None, rule=prog.rule,
                           holiday=prog.holiday, night=prog.night, preview=prog.preview)
         self._write_state()
-        if prog.night:
+        if prog.night in ("dim", "off"):
             return self._play_night(disp, prog, key, max_frames)
+        night_video = prog.night == "video"
         overlay, card_layer = scene.Overlay(w, h), cards.Cards(w, h)
-        st, alert = self._status_line()
+        st, alert = ("", False) if night_video else self._status_line()
         fps = prog.fps if self._uses_config else self.fps
         st_t, chk_t, in_t, period = time.monotonic(), time.monotonic(), -1e9, 1.0 / fps
         msgs: list[dict] = []
@@ -146,10 +147,10 @@ class Runner:
         try:
             while True:
                 t0 = time.monotonic()
-                if t0 - st_t >= STATUS_EVERY:
+                if not night_video and t0 - st_t >= STATUS_EVERY:
                     (st, alert), st_t = self._status_line(), t0
                     self._write_state()
-                if t0 - in_t >= self.inbox_every:
+                if not night_video and t0 - in_t >= self.inbox_every:
                     msgs, in_t = inbox.visible(self.data), t0
                 layers = [overlay.render(time.localtime(), st, preview.headline(prog), alert)]
                 if msgs:

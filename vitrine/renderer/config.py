@@ -11,7 +11,13 @@ from . import dash_layout, light_config
 DEFAULTS: dict = {
     "rules": [],
     "default_videos": [],
-    "night": {"enabled": False, "from": "23:00", "to": "07:00", "mode": "dim"},
+    "night": {
+        "enabled": False,
+        "from": "23:00",
+        "to": "07:00",
+        "mode": "dim",
+        "videos": {"spring": [], "summer": [], "autumn": [], "winter": []},
+    },
     "rotate_minutes": 10,
     "fps": 24,                  # Bildrate (12–30); Atelier-Videos haben 24
     "message_seconds": 15,      # Standard-Dauer einer Einblendung (5–120); Fehler bleiben länger
@@ -46,7 +52,14 @@ def load(data_dir: Path) -> dict:
     if isinstance(raw.get("default_videos"), list):
         out["default_videos"] = [str(v) for v in raw["default_videos"]]
     if isinstance(raw.get("night"), dict):
-        out["night"].update({k: v for k, v in raw["night"].items() if k in out["night"]})
+        night = raw["night"]
+        out["night"].update({k: night[k] for k in ("enabled", "from", "to", "mode") if k in night})
+        pools = night.get("videos")
+        if isinstance(pools, dict):
+            for season in out["night"]["videos"]:
+                videos = pools.get(season)
+                if isinstance(videos, list):
+                    out["night"]["videos"][season] = [str(v) for v in videos]
     if isinstance(raw.get("rotate_minutes"), int) and raw["rotate_minutes"] >= 0:
         out["rotate_minutes"] = raw["rotate_minutes"]
     if _int_in(raw.get("fps"), *FPS_RANGE):
