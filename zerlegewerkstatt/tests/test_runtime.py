@@ -7,7 +7,6 @@ import time
 import pytest
 
 from backend import runtime
-from backend.container import NETWORK_BRIDGE
 from backend.runtime import IncusRuntime, RuntimeError_, _run
 
 
@@ -143,7 +142,7 @@ def test_fehlende_artefaktdatei_wird_abgelehnt(tmp_path):
     assert error.value.code == "artifact_missing"
 
 
-def test_netz_wird_vor_der_analyse_aus_und_nachher_an(tmp_path):
+def test_netz_wird_vor_der_analyse_entfernt_und_bleibt_aus(tmp_path):
     runner = FakeRunner()
     adapter = IncusRuntime(runner=runner)
     artifact = tmp_path / "a.pe"
@@ -155,12 +154,10 @@ def test_netz_wird_vor_der_analyse_aus_und_nachher_an(tmp_path):
     remove = [call for call in runner.calls if "remove" in call]
     add = [call for call in runner.calls if "device" in call and "add" in call]
     assert remove, "Netz wurde nicht abgeklemmt"
-    assert add, "Netz wurde nicht wieder angeklemmt"
-    assert runner.calls.index(remove[0]) < runner.calls.index(add[0])
+    assert add == [], "Netz wurde nach der Analyse wieder angeklemmt"
 
 
-def test_netz_ist_auch_nach_einem_fehler_wieder_da(tmp_path):
-    """Auch bei einem Fehler darf das Netz nicht aus bleiben."""
+def test_netz_bleibt_auch_nach_einem_analysefehler_aus(tmp_path):
     runner = FakeRunner(results={"analysis": runtime.CommandResult(
         returncode=1, stdout="", stderr="kaputt")})
     adapter = IncusRuntime(runner=runner)
@@ -172,11 +169,10 @@ def test_netz_ist_auch_nach_einem_fehler_wieder_da(tmp_path):
                         artifact_kind="pe", token="t1")
 
     add = [call for call in runner.calls if "device" in call and "add" in call]
-    assert add, "Netz blieb nach dem Fehler aus"
+    assert add == [], "Netz wurde nach dem Analysefehler wieder angeklemmt"
 
 
-def test_netz_ist_auch_nach_einem_fehler_beim_ordner_wieder_da(tmp_path):
-    """Schlaegt schon das Anlegen des Arbeitsordners fehl, kommt das Netz zurueck."""
+def test_netz_bleibt_auch_nach_einem_ordnerfehler_aus(tmp_path):
     runner = FakeRunner(results={"mkdir": runtime.CommandResult(
         returncode=1, stdout="", stderr="kein ordner")})
     adapter = IncusRuntime(runner=runner)
@@ -188,23 +184,7 @@ def test_netz_ist_auch_nach_einem_fehler_beim_ordner_wieder_da(tmp_path):
                         artifact_kind="pe", token="t1")
 
     add = [call for call in runner.calls if "device" in call and "add" in call]
-    assert add, "Netz blieb nach dem Fehler aus"
-
-
-def test_netz_und_bruecke_werden_richtig_angehaengt(tmp_path):
-    """Die Geraeteargumente muessen als key=value uebergeben werden."""
-    runner = FakeRunner()
-    adapter = IncusRuntime(runner=runner)
-    artifact = tmp_path / "a.pe"
-    artifact.write_bytes(b"MZ")
-
-    adapter.analyze(analysis_type="inspect-artifact", artifact=artifact,
-                    artifact_kind="pe", token="t1")
-
-    add = [call for call in runner.calls if "device" in call and "add" in call][0]
-    assert "nictype=bridged" in add
-    assert f"parent={NETWORK_BRIDGE}" in add
-    assert "name=eth0" in add
+    assert add == [], "Netz wurde nach dem Ordnerfehler wieder angeklemmt"
 
 
 def test_arbeitsdatei_wird_dem_rea_benutzer_uebergeben(tmp_path):

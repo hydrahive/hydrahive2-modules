@@ -20,7 +20,7 @@ def test_install_und_uninstall_existieren():
 
 def test_versionen_sind_gepinnt():
     text = read(INSTALL)
-    assert '"version": "0.2.0"' in read(MODULE_DIR / "manifest.json")
+    assert '"version": "0.2.1"' in read(MODULE_DIR / "manifest.json")
     assert 'NODE_VERSION="24.22.2"' in text
     assert 'REA_VERSION="6.8.0"' in text
     assert 'GHIDRA_VERSION="12.1.4"' in text
@@ -177,5 +177,16 @@ def test_analyse_laeuft_offline():
 
     text = read(MODULE_DIR / "backend" / "runtime.py")
     assert "disable_network" in text
-    assert "enable_network" in text
+    assert "enable_network" not in text
     assert runtime.CONTAINER_NAME == "hh-zerlegewerkstatt"
+
+
+def test_installer_entfernt_das_netz_auch_bei_einem_fehler():
+    """Das nur fuer Downloads benoetigte eth0 darf nach install.sh nie bleiben."""
+    text = read(INSTALL)
+    main = text[text.index("main() {"):]
+    assert "disable_network()" in text
+    assert "trap disable_network EXIT" in main
+    assert main.index("trap disable_network EXIT") < main.index("ensure_install_network")
+    assert main.index("verify_install") < main.rindex("disable_network")
+    assert main.rindex("disable_network") < main.index("trap - EXIT")

@@ -12,7 +12,6 @@ from pathlib import Path
 from .exec import CommandResult
 
 CONTAINER_NAME = "hh-zerlegewerkstatt"
-NETWORK_BRIDGE = "br0"
 WORKDIR = "/work"
 
 
@@ -80,12 +79,6 @@ class IncusContainer:
     def disable_network(self) -> None:
         """Netzwerk des Containers abklemmen. Analyse laeuft offline."""
         self._exec(["incus", "config", "device", "remove", self.container, "eth0"], timeout=30)
-
-    def enable_network(self) -> None:
-        """Netzwerk des Containers wieder anklemmen."""
-        self._exec(["incus", "config", "device", "add", self.container, "eth0", "nic",
-                    "nictype=bridged", f"parent={NETWORK_BRIDGE}", "name=eth0"],
-                   timeout=30)
 
     # --- Start -----------------------------------------------------------
 
