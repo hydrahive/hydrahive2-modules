@@ -89,12 +89,24 @@ def test_nachtvideo_nutzt_decoder_aber_keine_statusleiste_oder_meldungskarten(tm
         seen,
     )
 
+    monkeypatch.setattr(main, "STATUS_EVERY", 0)
+    writes = 0
+    original_write = r._write_state
+
+    def write_spy():
+        nonlocal writes
+        writes += 1
+        original_write()
+
+    r._write_state = write_spy
     r.run(max_frames=2)
 
     assert seen == [video]
     assert statuses and set(statuses) == {""}
     assert inbox_calls == 0
-    assert json.loads((tmp_path / "state.json").read_text())["night"] == "video"
+    state = json.loads((tmp_path / "state.json").read_text())
+    assert state["night"] == "video" and state["frames"] == 2
+    assert writes >= 3, "Nachtvideo schreibt den laufenden Bildzähler regelmäßig"
 
 
 def test_vorschau_wird_geschrieben(tmp_path):
