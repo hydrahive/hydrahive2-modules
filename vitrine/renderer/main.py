@@ -147,8 +147,10 @@ class Runner:
         try:
             while True:
                 t0 = time.monotonic()
-                if not night_video and t0 - st_t >= STATUS_EVERY:
-                    (st, alert), st_t = self._status_line(), t0
+                if t0 - st_t >= STATUS_EVERY:
+                    if not night_video:
+                        st, alert = self._status_line()
+                    st_t = t0
                     self._write_state()
                 if not night_video and t0 - in_t >= self.inbox_every:
                     msgs, in_t = inbox.visible(self.data), t0
