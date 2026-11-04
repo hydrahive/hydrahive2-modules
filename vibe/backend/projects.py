@@ -57,16 +57,24 @@ def _limits(limits: container.Limits | None) -> container.Limits:
 
 
 async def _cleanup(pid: str | None, made_container: bool) -> None:
+    """Räumt alles Eigene ab. Jeder Schritt für sich abgesichert: scheitert einer (echte Probe 5.11.: Tabelle fehlte),
+    laufen die übrigen trotzdem. Der Fehler, der das Aufräumen ausgelöst hat, bleibt der gemeldete."""
     from hydrahive.projects import config as project_config
     if pid:
-        try:
-            project_config.delete(pid)
-        except Exception:                                    # noqa: BLE001 – Aufräumen darf nie den ersten Fehler verdecken
-            logger.exception("Vibe: Projekt %s ließ sich nicht abräumen", pid)
-        state.delete_row(pid)
+        for label, step in (("Projekt", lambda: project_config.delete(pid)), ("Datenzeile", lambda: state.delete_row(pid))):
+            try:
+                step()
+            except Exception:                                # noqa: BLE001 – Aufräumen darf nie den ersten Fehler verdecken
+                logger.exception("Vibe: %s von %s ließ sich nicht abräumen", label, pid)
     if made_container and pid:
-        await container.remove(pid)
-    await network.remove_if_unused()
+        try:
+            await container.remove(pid)
+        except Exception:                                    # noqa: BLE001
+            logger.exception("Vibe: Container von %s ließ sich nicht entfernen", pid)
+    try:
+        await network.remove_if_unused()
+    except Exception:                                        # noqa: BLE001
+        logger.exception("Vibe: Netz ließ sich nicht abräumen")
 
 
 async def create(*, admin: str, name: str, model: str, limits: container.Limits | None = None) -> dict:
