@@ -29,9 +29,9 @@ def env(setup_test_env, db_ready, fake_incus, monkeypatch):
 
 @pytest.fixture
 def made(env):
-    out = projects.create(admin="boss", name="Meine App", model=MODEL)
+    out = run(projects.create(admin="boss", name="Meine App", model=MODEL))
     yield out
-    projects.remove(out["project_id"], owner="boss")
+    run(projects.remove(out["project_id"], owner="boss"))
 
 
 def _project(pid):
@@ -115,7 +115,7 @@ def test_ungueltiger_name_legt_nichts_an(env, name):
     from hydrahive.projects import config as project_config
     before = {p["id"] for p in project_config.list_all()}
     with pytest.raises(projects.VibeProjectError) as e:
-        projects.create(admin="boss", name=name, model=MODEL)
+        run(projects.create(admin="boss", name=name, model=MODEL))
     assert e.value.code == "vibe_name_invalid"
     assert {p["id"] for p in project_config.list_all()} == before
     assert not any(c[0] == "launch" for c in env.calls)
@@ -123,19 +123,19 @@ def test_ungueltiger_name_legt_nichts_an(env, name):
 
 @pytest.mark.parametrize("name", ["App", "Mein Spiel", "Übung 1", "a" * 60, "x"])
 def test_gueltige_namen(env, name):
-    out = projects.create(admin="boss", name=name, model=MODEL)
+    out = run(projects.create(admin="boss", name=name, model=MODEL))
     try:
         assert _project(out["project_id"])["name"] == name.strip()
     finally:
-        projects.remove(out["project_id"], owner="boss")
+        run(projects.remove(out["project_id"], owner="boss"))
 
 
 def test_name_wird_getrimmt(env):
-    out = projects.create(admin="boss", name="  Spiel  ", model=MODEL)
+    out = run(projects.create(admin="boss", name="  Spiel  ", model=MODEL))
     try:
         assert state.projects_of("boss")[0]["name"] == "Spiel"
     finally:
-        projects.remove(out["project_id"], owner="boss")
+        run(projects.remove(out["project_id"], owner="boss"))
 
 
 # --- Modell und Fehlerpfade -------------------------------------------------------------------------------------
@@ -146,14 +146,14 @@ def test_unbekanntes_modell_legt_nichts_an(env, monkeypatch):
     monkeypatch.setattr(_validation, "_available_models", lambda: {MODEL})
     before = {p["id"] for p in project_config.list_all()}
     with pytest.raises(projects.VibeProjectError) as e:
-        projects.create(admin="boss", name="X", model="gibt-es-nicht-xyz")
+        run(projects.create(admin="boss", name="X", model="gibt-es-nicht-xyz"))
     assert e.value.code == "vibe_model_unavailable"
     assert {p["id"] for p in project_config.list_all()} == before
 
 
 def test_leeres_modell_abgelehnt(env):
     with pytest.raises(projects.VibeProjectError) as e:
-        projects.create(admin="boss", name="X", model="")
+        run(projects.create(admin="boss", name="X", model=""))
     assert e.value.code == "vibe_model_unavailable"
 
 
@@ -163,7 +163,7 @@ def test_container_fehlt_kein_halbes_projekt(env, monkeypatch):
     monkeypatch.setattr(execution, "_container_exists", lambda name: False)
     before = {p["id"] for p in project_config.list_all()}
     with pytest.raises(projects.VibeProjectError) as e:
-        projects.create(admin="boss", name="X", model=MODEL)
+        run(projects.create(admin="boss", name="X", model=MODEL))
     assert e.value.code == "vibe_project_failed"
     assert {p["id"] for p in project_config.list_all()} == before
     assert state.projects_of("boss") == []
@@ -177,11 +177,11 @@ def test_mcp_server_werden_geleert_auch_wenn_kern_welche_mitgibt(env, monkeypatc
         k["mcp_servers"] = ["srv-filesystem"]
         return orig(*a, **k)
     monkeypatch.setattr(agent_config, "create", with_mcp)
-    out = projects.create(admin="boss", name="X", model=MODEL)
+    out = run(projects.create(admin="boss", name="X", model=MODEL))
     try:
         assert _agent(out["agent_id"])["mcp_servers"] == []
     finally:
-        projects.remove(out["project_id"], owner="boss")
+        run(projects.remove(out["project_id"], owner="boss"))
 
 
 def test_fehler_beim_agenten_raeumt_projekt_zeile_und_container_ab(env, monkeypatch):
@@ -193,7 +193,7 @@ def test_fehler_beim_agenten_raeumt_projekt_zeile_und_container_ab(env, monkeypa
         raise RuntimeError("kaputt")
     monkeypatch.setattr(_managed, "set_managed", boom)
     with pytest.raises(projects.VibeProjectError) as e:
-        projects.create(admin="boss", name="X", model=MODEL)
+        run(projects.create(admin="boss", name="X", model=MODEL))
     assert e.value.code == "vibe_project_failed"
     assert {p["id"] for p in project_config.list_all()} == before
     assert state.projects_of("boss") == []

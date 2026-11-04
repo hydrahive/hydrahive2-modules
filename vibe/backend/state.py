@@ -4,6 +4,7 @@ from __future__ import annotations
 from hydrahive.db.connection import db
 
 _PUBLIC = ("project_id", "name", "state", "heal_enabled", "last_used_at", "created_at")
+_ALL = ("project_id", "agent_id", "container", "name", "owner", "state", "heal_enabled", "last_used_at", "created_at")
 
 
 def projects_of(owner: str) -> list[dict]:
@@ -15,3 +16,34 @@ def projects_of(owner: str) -> list[dict]:
     for p in out:
         p["heal_enabled"] = bool(p["heal_enabled"])
     return out
+
+
+def get_row(project_id: str) -> dict | None:
+    """Volle Zeile (mit Container und Agent) – nur für das Modul selbst, nie nach außen geben."""
+    with db() as conn:
+        r = conn.execute(f"SELECT {', '.join(_ALL)} FROM module_vibe_projects WHERE project_id = ?",
+                         (project_id,)).fetchone()
+    if r is None:
+        return None
+    row = dict(zip(_ALL, r, strict=True))
+    row["heal_enabled"] = bool(row["heal_enabled"])
+    return row
+
+
+def add_row(*, project_id: str, agent_id: str, container: str, name: str, owner: str) -> None:
+    with db() as conn:
+        conn.execute("INSERT INTO module_vibe_projects (project_id, agent_id, container, name, owner) "
+                     "VALUES (?, ?, ?, ?, ?)", (project_id, agent_id, container, name, owner))
+        conn.commit()
+
+
+def set_state(project_id: str, value: str) -> None:
+    with db() as conn:
+        conn.execute("UPDATE module_vibe_projects SET state = ? WHERE project_id = ?", (value, project_id))
+        conn.commit()
+
+
+def delete_row(project_id: str) -> None:
+    with db() as conn:
+        conn.execute("DELETE FROM module_vibe_projects WHERE project_id = ?", (project_id,))
+        conn.commit()

@@ -37,34 +37,34 @@ def _agent(aid):
 
 
 def test_entfernen_raeumt_alles_ab(env):
-    out = projects.create(admin="boss", name="Weg", model=MODEL)
+    out = run(projects.create(admin="boss", name="Weg", model=MODEL))
     cname = container.name_for(out["project_id"])
     assert cname in env.containers
-    projects.remove(out["project_id"], owner="boss")
+    run(projects.remove(out["project_id"], owner="boss"))
     assert _project(out["project_id"]) is None and _agent(out["agent_id"]) is None
     assert state.get_row(out["project_id"]) is None and cname not in env.containers
-    projects.remove(out["project_id"], owner="boss")                     # zweimal: kein Fehler
+    run(projects.remove(out["project_id"], owner="boss"))                     # zweimal: kein Fehler
 
 
 def test_entfernen_raeumt_netz_erst_beim_letzten_projekt(env):
-    a = projects.create(admin="boss", name="A", model=MODEL)
-    b = projects.create(admin="boss", name="B", model=MODEL)
-    projects.remove(a["project_id"], owner="boss")
+    a = run(projects.create(admin="boss", name="A", model=MODEL))
+    b = run(projects.create(admin="boss", name="B", model=MODEL))
+    run(projects.remove(a["project_id"], owner="boss"))
     assert network.NET in env.networks                                  # B hängt noch daran
-    projects.remove(b["project_id"], owner="boss")
+    run(projects.remove(b["project_id"], owner="boss"))
     assert network.NET not in env.networks and network.ACL not in env.acls
 
 
 def test_zweites_projekt_bleibt_beim_entfernen_unveraendert(env):
-    a = projects.create(admin="boss", name="A", model=MODEL)
-    b = projects.create(admin="boss", name="B", model=MODEL)
+    a = run(projects.create(admin="boss", name="A", model=MODEL))
+    b = run(projects.create(admin="boss", name="B", model=MODEL))
     try:
-        projects.remove(a["project_id"], owner="boss")
+        run(projects.remove(a["project_id"], owner="boss"))
         assert _project(b["project_id"]) is not None and _agent(b["agent_id"]) is not None
         assert container.name_for(b["project_id"]) in env.containers
         assert [p["project_id"] for p in state.projects_of("boss")] == [b["project_id"]]
     finally:
-        projects.remove(b["project_id"], owner="boss")
+        run(projects.remove(b["project_id"], owner="boss"))
 
 
 def test_fremdes_normales_projekt_bleibt_unangetastet(env):
@@ -74,11 +74,11 @@ def test_fremdes_normales_projekt_bleibt_unangetastet(env):
     other = project_config.create("Fremd", members=[], llm_model=MODEL, created_by="boss")
     try:
         before = dict(_project(other["id"]))
-        projects.remove(other["id"], owner="boss")                         # kein Vibe-Projekt → nichts passiert
+        run(projects.remove(other["id"], owner="boss"))                         # kein Vibe-Projekt → nichts passiert
         assert _project(other["id"]) is not None and _agent(other["agent_id"]) is not None
         assert execution.of(_project(other["id"])) == {"mode": "host"}
-        out = projects.create(admin="boss", name="Eigenes", model=MODEL)
-        projects.remove(out["project_id"], owner="boss")
+        out = run(projects.create(admin="boss", name="Eigenes", model=MODEL))
+        run(projects.remove(out["project_id"], owner="boss"))
         assert _project(other["id"]) == before and execution.of(_project(other["id"])) == {"mode": "host"}
     finally:
         project_config.delete(other["id"])
@@ -89,22 +89,22 @@ def test_set_container_nur_fuer_eigene_projekte(env, monkeypatch):
     calls = []
     orig = execution.set_container
     monkeypatch.setattr(execution, "set_container", lambda pid, name, **k: (calls.append((pid, name)), orig(pid, name, **k))[1])
-    out = projects.create(admin="boss", name="X", model=MODEL)
+    out = run(projects.create(admin="boss", name="X", model=MODEL))
     try:
         assert calls == [(out["project_id"], container.name_for(out["project_id"]))]
     finally:
-        projects.remove(out["project_id"], owner="boss")
+        run(projects.remove(out["project_id"], owner="boss"))
 
 
 def test_fremder_nutzer_kann_nicht_entfernen(env):
-    out = projects.create(admin="boss", name="Meins", model=MODEL)
+    out = run(projects.create(admin="boss", name="Meins", model=MODEL))
     try:
         with pytest.raises(projects.VibeProjectError) as e:
-            projects.remove(out["project_id"], owner="testuser")
+            run(projects.remove(out["project_id"], owner="testuser"))
         assert e.value.code == "vibe_project_not_found"
         assert _project(out["project_id"]) is not None
     finally:
-        projects.remove(out["project_id"], owner="boss")
+        run(projects.remove(out["project_id"], owner="boss"))
 
 
 def test_projekt_markierung_noetig_zum_entfernen(env):
@@ -117,7 +117,7 @@ def test_projekt_markierung_noetig_zum_entfernen(env):
                      "VALUES (?,?,?,?,?)", (other["id"], other["agent_id"], "hh-vibe-fake", "Fremd2", "boss"))
         conn.commit()
     try:
-        projects.remove(other["id"], owner="boss")
+        run(projects.remove(other["id"], owner="boss"))
         assert _project(other["id"]) is not None and _agent(other["agent_id"]) is not None
     finally:
         project_config.delete(other["id"])
@@ -129,7 +129,7 @@ def test_projekt_markierung_noetig_zum_entfernen(env):
 # --- Skills und Prompt ------------------------------------------------------------------------------------------
 
 def test_prompt_aus_moduldatei(env):
-    out = projects.create(admin="boss", name="X", model=MODEL)
+    out = run(projects.create(admin="boss", name="X", model=MODEL))
     try:
         from hydrahive.agents import config as agent_config
         prompt = agent_config.get_system_prompt(out["agent_id"])
@@ -137,7 +137,7 @@ def test_prompt_aus_moduldatei(env):
         for must in ("VIBE.md", "/work", "Container", "Server", "Vorschau", "einfach"):
             assert must in prompt, must
     finally:
-        projects.remove(out["project_id"], owner="boss")
+        run(projects.remove(out["project_id"], owner="boss"))
 
 
 def test_prompt_zeile_pro_antwort_und_keine_geheimnisse():
@@ -148,7 +148,7 @@ def test_prompt_zeile_pro_antwort_und_keine_geheimnisse():
 
 
 def test_nur_vibe_skill_sichtbar(env):
-    out = projects.create(admin="boss", name="X", model=MODEL)
+    out = run(projects.create(admin="boss", name="X", model=MODEL))
     try:
         a = _agent(out["agent_id"])
         from hydrahive.skills.loader import list_for_agent
@@ -159,7 +159,7 @@ def test_nur_vibe_skill_sichtbar(env):
                      "labor-review", "security-audit"):
             assert gone not in names, gone
     finally:
-        projects.remove(out["project_id"], owner="boss")
+        run(projects.remove(out["project_id"], owner="boss"))
 
 
 def test_skill_datei_gueltig_und_in_history():
