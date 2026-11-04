@@ -46,9 +46,9 @@ STEPS: tuple[Step, ...] = (
          "gpasswd -d labor sudo 2>/dev/null || true; rm -f /etc/sudoers.d/90-incus /etc/sudoers.d/90-cloud-init-users; "
          "install -d -o labor -g labor /work"),
     Step("packages", "set -eu; " + _APT + "apt-get update -qq; "
-         "apt-get install -y -qq --no-install-recommends git curl ca-certificates xz-utils ripgrep"),
+         "apt-get install -y -qq --no-install-recommends git curl ca-certificates xz-utils ripgrep libatomic1"),
     Step("node", "set -eu; cd /tmp; "
-         f"curl -fsSL -o {_NODE} https://nodejs.org/dist/{NODE_VERSION}/{_NODE}; "
+         f"curl -fsSL --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 180 -o {_NODE} https://nodejs.org/dist/{NODE_VERSION}/{_NODE}; "
          f'echo "{NODE_SHA256}  {_NODE}" | sha256sum -c -; '
          f"tar -xJ -C /usr/local --strip-components=1 --no-same-owner -f {_NODE}; rm -f {_NODE}; "
          f"node -v | grep -qx {NODE_VERSION}"),
