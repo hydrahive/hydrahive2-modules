@@ -94,6 +94,15 @@ def test_node_fest_gepinnt_mit_pruefsumme():
     assert "sha256sum -c" in s
 
 
+def test_node_download_mit_wiederholung_und_zeitlimit():
+    """Echte Probe hydratest 5.11.: Ein Lauf scheiterte am Node-Schritt nach 127 s, nicht wiederholbar (Ursache nicht
+    bewiesen). Ein hängender Download darf weder ewig laufen noch beim ersten Aussetzer das Projekt kippen lassen."""
+    s = step("node").script
+    for opt in ("--retry 3", "--retry-delay 2", "--connect-timeout 15", "--max-time 180"):
+        assert opt in s, opt
+    assert s.index("--max-time") < s.index("sha256sum -c")
+
+
 def test_node_ohne_pipe_in_die_shell():
     """Das Labor nutzt `curl … | bash` (NodeSource). Vibe lädt einen Tarball und prüft ihn, führt nichts Fremdes aus."""
     s = step("node").script
