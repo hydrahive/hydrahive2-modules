@@ -78,6 +78,12 @@ class FakeIncus:
             self.containers[name] = {"args": a, "running": True, "network": net}
             return 0, "", ""
         if a[0] == "list":
+            if a[-2:] == ["--format", "json"]:       # Format wie incus 6.0.0 (hydratest 5.11.): expanded_devices.*.network
+                import json
+                return 0, json.dumps([
+                    {"name": n, "status": "Running" if c["running"] else "Stopped",
+                     "expanded_devices": {"eth0": {"type": "nic", "network": c["network"]}} if c["network"] else {}}
+                    for n, c in self.containers.items()]), ""
             if a[-1] == "ns":
                 return 0, "".join(f"{n},{'RUNNING' if c['running'] else 'STOPPED'}\n"
                                   for n, c in self.containers.items()), ""

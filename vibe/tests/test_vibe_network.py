@@ -189,3 +189,12 @@ def test_aufraeumen_bei_unlesbarer_containerliste_loescht_nichts(fake_incus, no_
     fake_incus.fail["list"] = "boom"
     assert run(network.remove_if_unused()) is False
     assert network.NET in fake_incus.networks
+
+
+def test_container_an_fremdem_netz_halten_das_vibe_netz_nicht_fest(fake_incus, no_host):
+    """Mutanten-Fund: Ein Container am Netz des Labors (oder am Standardnetz) darf das Aufräumen nicht verhindern."""
+    run(network.ensure_network())
+    fake_incus.containers["hh-labor"] = {"running": True, "network": "hhlabor0"}
+    fake_incus.containers["hydratest"] = {"running": True, "network": "hhnat0"}
+    assert run(network.remove_if_unused()) is True
+    assert network.NET not in fake_incus.networks
