@@ -19,10 +19,13 @@ class FakeIncus:
         self.open_targets: set[str] = set()     # „host:port“, die bei der Netzprobe erreichbar sind
         self.dns_ok = True
         self.pool = "default"
+        self.inputs: list[tuple[list[str], bytes]] = []     # (Aufruf, stdin) – z. B. die Vorlage per tar
 
     async def run(self, *args: str, timeout: float = 60.0, input_bytes: bytes | None = None) -> tuple[int, str, str]:
         a = list(args)
         self.calls.append(a)
+        if input_bytes is not None:
+            self.inputs.append((a, input_bytes))
         line = " ".join(a)
         for key, err in self.fail.items():
             if key in line:
