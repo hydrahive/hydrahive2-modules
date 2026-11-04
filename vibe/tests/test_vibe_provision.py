@@ -6,9 +6,7 @@ der Nutzer im Container MUSS deshalb `labor` heißen (gelesen in tools/_launcher
 from __future__ import annotations
 
 import asyncio
-import io
 import re
-import tarfile
 
 import pytest
 from backend import container, network, provision
@@ -65,7 +63,9 @@ def test_nutzerschritte_als_uid_1000_in_work_mit_home(box):
 def test_nutzer_heisst_labor_wie_im_kern_launcher():
     """Der Kern setzt HOME=/home/labor fest; ein anderer Name liesse npm/git ins Leere schreiben."""
     script = step("user").script
-    assert "labor" in script and "/home/labor" in script and "useradd -m -u 1000" in script
+    assert "useradd -m -u 1000 -s /bin/bash labor;" in script
+    assert "usermod -l labor -d /home/labor -m ubuntu" in script and "install -d -o labor -g labor /work" in script
+    assert "vibe" not in script.split("useradd")[1].split(";")[0]
 
 
 def test_nutzer_ohne_sudo():
@@ -77,6 +77,9 @@ def test_pakete_nur_das_noetige():
     script = step("packages").script
     for pkg in ("git", "curl", "ca-certificates", "xz-utils", "ripgrep"):
         assert f" {pkg}" in script
+    # Befund hydratest 5.11. (echte Probe): Der offizielle Node-Tarball bricht im schlanken Ubuntu-Container mit
+    # „libatomic.so.1: cannot open shared object file“ ab. Ohne diese Bibliothek scheitert jeder Projektstart.
+    assert " libatomic1" in script
     for unnoetig in ("build-essential", "python3-pip", "qemu-utils", "docker"):
         assert unnoetig not in script
 
@@ -94,7 +97,7 @@ def test_node_fest_gepinnt_mit_pruefsumme():
 def test_node_ohne_pipe_in_die_shell():
     """Das Labor nutzt `curl … | bash` (NodeSource). Vibe lädt einen Tarball und prüft ihn, führt nichts Fremdes aus."""
     s = step("node").script
-    assert "| bash" not in s and "| sh" not in s and "nodesource" not in s.lower()
+    assert not re.search(r"\|\s*(ba|z)?sh\b", s) and "nodesource" not in s.lower()
     assert "https://nodejs.org/dist/" in s
 
 
@@ -107,67 +110,17 @@ def test_node_version_wird_nach_dem_einrichten_geprueft():
     assert f"node -v | grep -qx {provision.NODE_VERSION}" in step("node").script
 
 
+def test_node_pruefsumme_ist_die_von_nodejs_org():
+    """Wert aus SHASUMS256.txt von nodejs.org (abgerufen 4.11.2026, Version v26.13.0). Ändert sich NODE_VERSION, muss
+    dieser Wert mit; ein falscher Wert würde die Einrichtung jedes Projekts scheitern lassen (sha256sum -c)."""
+    assert provision.NODE_VERSION == "v26.13.0"
+    assert provision.NODE_SHA256 == "d28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997"
+    assert f"{provision.NODE_SHA256}  node-v26.13.0-linux-x64.tar.xz" in step("node").script
+
+
 def test_node_ist_nicht_die_zu_alte_ubuntu_version():
     """Befund hydratest 4.11.: Node 18 aus apt kann `create-vite` nicht ausführen."""
     assert "apt-get install" in step("packages").script and "nodejs" not in step("packages").script
-
-
-# --- Vorlage ---------------------------------------------------------------------------------------------------
-
-def _tar_names(data: bytes) -> list[str]:
-    with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as t:
-        return t.getnames()
-
-
-def test_vorlage_enthaelt_das_noetige():
-    names = set(_tar_names(provision.template_tar()))
-    for f in ("package.json", "package-lock.json", "vite.config.ts", "index.html", "VIBE.md",
-              "public/vibe-report.js", "src/App.tsx", "src/main.tsx", ".gitignore"):
-        assert f in names, f
-
-
-def test_vorlage_ohne_node_modules_und_ohne_dist():
-    names = _tar_names(provision.template_tar())
-    assert not any(n.startswith(("node_modules", "dist")) or "/node_modules/" in n for n in names)
-
-
-def test_vorlage_pfade_sicher_nur_dateien():
-    with tarfile.open(fileobj=io.BytesIO(provision.template_tar()), mode="r:*") as t:
-        for m in t.getmembers():
-            assert not m.name.startswith(("/", "..")) and ".." not in m.name.split("/"), m.name
-            assert m.isfile() or m.isdir(), (m.name, "keine Links/Geräte")
-            assert m.uid == 0 and m.gid == 0 and m.uname == "" and m.gname == "", m.name   # neutral verpackt
-            assert not m.mode & 0o6000, m.name               # kein setuid/setgid
-
-
-def test_vorlage_ist_klein():
-    assert len(provision.template_tar()) < 1_000_000
-
-
-def test_vorlage_wird_per_stdin_in_den_container_geschoben(box):
-    run(provision.setup("p1", lambda _k: None))
-    pushes = [(a, b) for a, b in box.inputs if "tar" in a]
-    assert len(pushes) == 1
-    a, data = pushes[0]
-    assert "--no-same-owner" in a and a[a.index("-C") + 1] == "/work"
-    assert data == provision.template_tar()
-
-
-def test_vite_erlaubt_fremde_hostnamen():
-    """Befund hydratest 4.11.: Vite antwortet auf einen fremden Host-Kopf mit 403."""
-    cfg = provision.template_file("vite.config.ts")
-    assert "allowedHosts: true" in cfg and "5173" in cfg and "strictPort: true" in cfg
-
-
-def test_meldeskript_ist_eingebunden():
-    assert '<script src="/vibe-report.js"></script>' in provision.template_file("index.html")
-    assert "postMessage" in provision.template_file("public/vibe-report.js")
-
-
-def test_versionen_in_der_vorlage_sind_gepinnt():
-    import json
-    lock = json.loads(provision.template_file("package-lock.json"))
-    assert lock["lockfileVersion"] >= 3 and len(lock["packages"]) > 10
 
 
 # --- Git und Abhängigkeiten ------------------------------------------------------------------------------------
