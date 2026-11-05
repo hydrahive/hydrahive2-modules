@@ -186,3 +186,44 @@ def test_setup_unbekannter_schritt_wird_abgelehnt(monkeypatch):
     with pytest.raises(provision.SetupError) as e:
         asyncio.run(provision.setup("p1", lambda k: None, start_at="'; rm -rf /"))
     assert e.value.code == "vibe_setup_failed"
+
+
+# --- `npm ci` kann „erfolgreich“ enden und trotzdem das native Paket von Vite auslassen -------------------------------
+# Gemessen hydratest 5.11.2026: ohne Cache fehlte in 6 von 25 Läufen (rc=0 oder Netzfehler) @rolldown/binding-linux-x64-gnu;
+# der Dev-Server stirbt dann mit „Cannot find native binding“ (npm/cli#4828). Mit Prüfung + Wiederholung 25 von 25 ok.
+
+def test_deps_prueft_ob_vite_wirklich_laedt():
+    s = step("deps").script
+    assert "node_modules/vite/dist/node/index.js" in s and "import(" in s
+
+
+def test_deps_wiederholt_selbst_bis_vite_laedt():
+    s = step("deps").script
+    assert "rm -rf node_modules" in s and re.search(r"\b(for|while)\b", s)
+
+
+def test_deps_hoechstens_drei_innere_versuche():
+    s = step("deps").script
+    assert re.search(r"\b3\b", s)
+
+
+def test_deps_scheitert_wenn_vite_nie_laedt():
+    """Das Skript muss nach dem letzten Fehlversuch mit Fehlercode enden (`exit 1`), nicht mit dem Code der Prüfung davor."""
+    s = step("deps").script
+    assert "exit 1" in s
+
+
+def test_deps_loescht_kein_projektcode():
+    """Aufgeräumt wird nur node_modules – nie /work selbst, nie src."""
+    s = step("deps").script
+    assert "rm -rf node_modules" in s and "rm -rf /work" not in s and "rm -rf src" not in s and "rm -rf *" not in s
+
+
+def test_deps_bleibt_ein_netzschritt_als_nutzer_ohne_sudo():
+    st = step("deps")
+    assert st.net and st.as_user and "sudo" not in st.script
+
+
+def test_deps_skript_hat_keine_platzhalter():
+    """Feste Texte: nichts von außen eingesetzt (kein `{name}`, kein Format-Platzhalter)."""
+    assert not re.search(r"\{[a-z_]+\}", step("deps").script)
