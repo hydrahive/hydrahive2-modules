@@ -60,10 +60,3 @@ def test_state_listet_nur_eigene_projekte_ohne_interna(client, admin_headers, fa
     assert p["name"] == "Meine App"
     assert "container" not in p and "agent_id" not in p        # keine Interna nach außen
     assert "owner" not in p
-
-
-def test_anlegen_ist_in_baustein_1_noch_nicht_da(client, admin_headers, fake_incus):
-    """Projekte entstehen erst mit Baustein 4; bis dahin darf nichts angelegt werden."""
-    r = client.post(B + "/projects", headers=admin_headers, json={"name": "x"})
-    assert r.status_code in (404, 405)
-    assert fake_incus.calls == []

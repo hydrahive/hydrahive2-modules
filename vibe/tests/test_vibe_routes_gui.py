@@ -29,11 +29,23 @@ def env(setup_test_env, db_ready, fake_incus, monkeypatch):
             report(s.key)
     monkeypatch.setattr(provision, "setup", fake_setup)
     jobs.reset()
+    from backend import routes
+    monkeypatch.setattr(routes, "_default_model", lambda: MODEL)         # im Test gibt es kein eingerichtetes Standardmodell
     return fake_incus
 
 
 def _create(client, admin_headers, name="Meine App"):
     return client.post(B + "/projects", json={"name": name}, headers=admin_headers)
+
+
+def _ready(client, admin_headers) -> None:
+    """Wartet, bis der Hintergrundauftrag das Projekt eingerichtet hat (sonst überschreibt er den Zustand im Test)."""
+    import time
+    for _ in range(100):
+        if client.get(B + "/state", headers=admin_headers).json()["projects"][0]["state"] == "ready":
+            return
+        time.sleep(0.05)
+    raise AssertionError("Projekt wurde nicht bereit")
 
 
 # --- Neues Projekt ---------------------------------------------------------------------------------------------
@@ -54,14 +66,16 @@ def test_anlegen_gibt_sofort_antwort_und_richtet_im_hintergrund_ein(env, client,
 
 
 def test_anlegen_modell_kommt_vom_system_nicht_vom_nutzer(env, client, admin_headers, monkeypatch):
+    from backend import projects
     seen = {}
+    orig = projects.create
 
     async def spy(*, admin, name, model, limits=None):
         seen["model"] = model
-        return {"project_id": "p", "agent_id": "a"}
-    monkeypatch.setattr(jobs, "create_and_setup", spy)
+        return await orig(admin=admin, name=name, model=model, limits=limits)
+    monkeypatch.setattr(projects, "create", spy)
     client.post(B + "/projects", json={"name": "x", "model": "openrouter/teuer"}, headers=admin_headers)
-    assert seen["model"] != "openrouter/teuer" and not seen["model"].startswith("openrouter/")
+    assert seen["model"] == MODEL
 
 
 def test_anlegen_ohne_name_ist_ein_fehlercode(env, client, admin_headers):
@@ -125,6 +139,7 @@ def test_chat_fremdes_projekt_nicht_gefunden(env, client, admin_headers):
 
 def test_chat_nur_wenn_das_projekt_bereit_ist(env, client, admin_headers):
     pid = _create(client, admin_headers).json()["project_id"]
+    _ready(client, admin_headers)
     state.set_state(pid, "failed", error_code="vibe_setup_failed", error_step="deps")
     r = client.post(f"{B}/projects/{pid}/chat", json={}, headers=admin_headers)
     assert r.status_code == 409 and r.json()["detail"]["code"] == "vibe_not_ready"
@@ -187,3 +202,11 @@ def test_heilung_schalter_setzen(env, client, admin_headers):
     pid = _create(client, admin_headers).json()["project_id"]
     r = client.post(f"{B}/projects/{pid}/heal", json={"enabled": False}, headers=admin_headers)
     assert r.status_code == 200 and state.get_row(pid)["heal_enabled"] is False
+
+
+def test_ohne_standardmodell_wird_nichts_angelegt(env, client, admin_headers, monkeypatch):
+    from backend import routes
+    monkeypatch.setattr(routes, "_default_model", lambda: "")
+    r = client.post(B + "/projects", json={"name": "x"}, headers=admin_headers)
+    assert r.status_code == 400 and r.json()["detail"]["code"] == "vibe_model_unavailable"
+    assert client.get(B + "/state", headers=admin_headers).json()["projects"] == []
