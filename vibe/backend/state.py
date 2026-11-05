@@ -3,9 +3,11 @@ from __future__ import annotations
 
 from hydrahive.db.connection import db
 
-_PUBLIC = ("project_id", "name", "state", "progress", "error_code", "error_step", "heal_enabled", "last_used_at",
-           "created_at")
-_ALL = ("project_id", "agent_id", "container", "name", "owner", "state", "progress", "error_code", "error_step",
+MAX_DETAIL = 600                     # wie provision.MAX_DETAIL; hier nur die harte Grenze der Spalte
+
+_PUBLIC = ("project_id", "name", "state", "progress", "error_code", "error_step", "error_detail",
+           "heal_enabled", "last_used_at", "created_at")
+_ALL = ("project_id", "agent_id", "container", "name", "owner", "state", "progress", "error_code", "error_step", "error_detail",
         "heal_enabled", "last_used_at", "created_at")
 
 
@@ -39,12 +41,12 @@ def add_row(*, project_id: str, agent_id: str, container: str, name: str, owner:
         conn.commit()
 
 
-def set_state(project_id: str, value: str, *, error_code: str = "", error_step: str = "") -> None:
+def set_state(project_id: str, value: str, *, error_code: str = "", error_step: str = "", error_detail: str = "") -> None:
     """Zustand setzen. Fehlergrund nur bei `failed`; jeder andere Zustand löscht ihn, `ready` auch den Fortschritt."""
     with db() as conn:
-        conn.execute("UPDATE module_vibe_projects SET state = ?, error_code = ?, error_step = ?, "
+        conn.execute("UPDATE module_vibe_projects SET state = ?, error_code = ?, error_step = ?, error_detail = ?, "
                      "progress = CASE WHEN ? = 'ready' THEN '' ELSE progress END WHERE project_id = ?",
-                     (value, error_code, error_step, value, project_id))
+                     (value, error_code, error_step, error_detail[:MAX_DETAIL], value, project_id))
         conn.commit()
 
 

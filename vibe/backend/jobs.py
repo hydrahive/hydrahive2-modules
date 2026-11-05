@@ -16,10 +16,11 @@ _busy: set[str] = set()
 
 
 class JobError(RuntimeError):
-    def __init__(self, code: str, step: str = ""):
+    def __init__(self, code: str, step: str = "", detail: str = ""):
         super().__init__(code)
         self.code = code
         self.step = step
+        self.detail = detail
 
 
 def reset() -> None:
@@ -33,8 +34,8 @@ async def _setup(pid: str, *, start_at: str = "") -> None:
     try:
         await provision.setup(pid, lambda step: state.set_progress(pid, step), start_at=start_at)
     except provision.SetupError as exc:
-        state.set_state(pid, "failed", error_code=exc.code, error_step=exc.step)
-        raise JobError(exc.code, exc.step) from None
+        state.set_state(pid, "failed", error_code=exc.code, error_step=exc.step, error_detail=exc.detail)
+        raise JobError(exc.code, exc.step, exc.detail) from None
     except Exception:                                    # noqa: BLE001 – Grenze des Auftrags: lesbar festhalten
         logger.exception("Vibe: Einrichtung von %s gescheitert", pid)
         step = (state.get_row(pid) or {}).get("progress", "")

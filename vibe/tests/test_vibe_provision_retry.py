@@ -203,3 +203,26 @@ def test_report_wird_je_schritt_nur_einmal_gerufen(sc):
     seen: list[str] = []
     run(provision.setup("p1", seen.append))
     assert seen.count("deps") == 1
+
+
+def test_detail_nennt_den_containernamen_nicht(sc):
+    """Der Name enthält die Projekt-ID; er soll nicht in einer Meldung an die Oberfläche stehen."""
+    sc.plan["deps"] = [(1, "", "Error: Instance hh-vibe-01a1abc-def not found")] * 3
+    with pytest.raises(provision.SetupError) as e:
+        setup()
+    assert "hh-vibe-" not in e.value.detail and "01a1abc-def" in e.value.detail and "not found" in e.value.detail
+
+
+def test_detail_hat_hoechstens_acht_zeilen(sc):
+    """Die Oberfläche zeigt einen Hinweis, kein ganzes Protokoll."""
+    sc.plan["deps"] = [(1, "\n".join(f"z{i}" for i in range(500)), "")] * 3
+    with pytest.raises(provision.SetupError) as e:
+        setup()
+    assert len(e.value.detail.splitlines()) == 8 and e.value.detail.splitlines()[-1] == "z499"
+
+
+def test_detail_leere_zeilen_zaehlen_nicht(sc):
+    sc.plan["deps"] = [(1, "a\n\n\n\nb\n\n", "")] * 3
+    with pytest.raises(provision.SetupError) as e:
+        setup()
+    assert e.value.detail == "a\nb"
