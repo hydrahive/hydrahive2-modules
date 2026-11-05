@@ -161,8 +161,8 @@ Alle Dateien ≤ 200 Zeilen (Regel des Repos). Texte de/en. Kein `print()`, kein
   mit (Abbruch nach 0 Tokens); (3) keine Rückmeldung im Chat, wenn eine Grenze greift.
 - **Echt gemessen:** Anlegen+Einrichten 39 s, 4 Züge → je genau 1 Version, kaputte Seite repariert (`tsc` ohne Fehler),
   nach 3 Versuchen genau 1 Hinweis „Ich komme nicht weiter“, Zeitgrenze meldet sich im Chat.
-- **Nicht echt gemessen:** Die Kostengrenze im echten Lauf (nur durch Tests mit Attrappe belegt). `guard.py` (Platzgrenze)
-  gehört zu Baustein 7.
+- **Kostengrenze echt gemessen (5.11., Codex gpt-5.6-luna):** Grenze 4 000 → 1 Aufruf, 2 836 Tokens, `limited=True`; Grenze
+  100 000 → 5 Aufrufe, 24 183 Tokens, `done=True`, Seite repariert. `guard.py` (Platzgrenze) gehört zu Baustein 7.
 - **Abhängigkeit:** hängende Modellaufrufe auf hydratest (Container im LAN, Ursache unbekannt) verlängerten die Läufe;
   eigener Kern-PR hydrahive/hydrahive2.0#678 (Fristen + Wiederholung). Ohne ihn sind einzelne Heilungsläufe langsamer, aber
   nicht falsch: die Zeitgrenze von 3 min fängt sie ab und meldet es im Chat.
@@ -179,7 +179,9 @@ Alle Dateien ≤ 200 Zeilen (Regel des Repos). Texte de/en. Kein `print()`, kein
   Netz-Aussetzer künstlich eingebaut: 2 Aussetzer → `ready` (78 s), 3 Aussetzer → `failed` mit Schritt und Detail, „Nochmal
   versuchen“ → `ready` in 6 s.
 - **Die Probe hat einen Fehler gefunden:** `npm ci` scheiterte beim Anlegen einmal ohne jede Spur (derselbe Befehl lief direkt
-  danach in 2 s). Ursache nicht belegt (vermutlich Netz zum Registry); behoben wurde die Folge, nicht die Ursache.
+  danach in 2 s). **Ursache gefunden (5.11.):** `npm ci` lässt ohne Cache in 6 von 25 Läufen das native Paket
+  `@rolldown/binding-linux-x64-gnu` aus (npm/cli#4828), teils mit rc=0; der Dev-Server stirbt dann mit „Cannot find native
+  binding“. Behoben: Schritt `deps` prüft, ob Vite lädt, räumt `node_modules` und wiederholt (höchstens 3×): 30 von 30 ok.
 - **Nicht gemessen / bewusst offen:** Die Platzgrenze ist **kein lückenloser Schutz** (ein Lauf kann innerhalb einer Runde
   füllen; echter Schutz wäre ein Pool-Typ mit Quota). Startzeit eines Containers nach langem Schlaf unter Last;
   der Leerlauf wurde durch Zurückstellen der Zeit geprüft, nicht durch 30 echte Minuten.
