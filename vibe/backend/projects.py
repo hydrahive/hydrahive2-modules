@@ -109,8 +109,23 @@ async def create(*, admin: str, name: str, model: str, limits: container.Limits 
     return {"project_id": pid, "agent_id": aid}
 
 
+def _drop_sessions(agent_id: str) -> None:
+    """Zuerst laufende Züge anhalten (sonst schreibt der Lauf in ein totes Projekt), dann die Sitzungen des Projekt-Agenten
+    löschen. Nur Sitzungen DIESES Agenten – er gehört nur diesem Vibe-Projekt."""
+    from hydrahive.db import sessions as sessions_db
+    from hydrahive.runner import concurrency
+    for sess in sessions_db.list_for_agent(agent_id, limit=500):
+        try:
+            if concurrency.is_running(sess.id):
+                concurrency.cancel(sess.id)
+            sessions_db.delete(sess.id)
+        except Exception:                                    # noqa: BLE001 – eine Sitzung darf das Löschen nicht stoppen
+            logger.exception("Vibe: Sitzung %s ließ sich nicht entfernen", sess.id)
+
+
 async def remove(project_id: str, *, owner: str) -> None:
-    """Nur ein eigenes Vibe-Projekt entfernen: Datenzeile des Nutzers UND Markierung am Kern-Projekt nötig."""
+    """Nur ein eigenes Vibe-Projekt entfernen: Datenzeile des Nutzers UND Markierung am Kern-Projekt nötig.
+    Entfernt Sitzungen, Container, Kern-Projekt, Agent, Datenzeile und Versionen – und nur diese."""
     from hydrahive.projects import config as project_config
     row = state.get_row(project_id)
     if row is None:
@@ -120,7 +135,8 @@ async def remove(project_id: str, *, owner: str) -> None:
     p = project_config.get(project_id)
     if p is None or (p.get("metadata") or {}).get(MODULE) != _MARK:
         return
+    _drop_sessions(row["agent_id"])
     project_config.delete(project_id)
-    state.delete_row(project_id)
+    state.delete_row(project_id)                             # Versionszeilen: ON DELETE CASCADE
     await container.remove(project_id)
     await network.remove_if_unused()

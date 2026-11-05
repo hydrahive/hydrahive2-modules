@@ -54,6 +54,17 @@ def set_progress(project_id: str, step: str) -> None:
         conn.commit()
 
 
+def touch(project_id: str, when: str = "") -> None:
+    """Letzte Nutzung vermerken (Leerlauf-Wächter). `when` nur für Tests; sonst jetzt."""
+    with db() as conn:
+        if when:
+            conn.execute("UPDATE module_vibe_projects SET last_used_at = ? WHERE project_id = ?", (when, project_id))
+        else:
+            conn.execute("UPDATE module_vibe_projects SET last_used_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') "
+                         "WHERE project_id = ?", (project_id,))
+        conn.commit()
+
+
 def set_heal(project_id: str, enabled: bool) -> None:
     with db() as conn:
         conn.execute("UPDATE module_vibe_projects SET heal_enabled = ? WHERE project_id = ?", (int(bool(enabled)), project_id))

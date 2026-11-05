@@ -36,7 +36,8 @@ def pid(env):
 
 
 def _du(env, kib: int) -> None:
-    env.exec_answers["du -sk"] = (0, f"{kib}\t/work\n")
+    env.exec_answers.clear()
+    env.exec_answers["head -1"] = (0, f"{kib}\t/work\n")
 
 
 def test_grenze_ist_fuenf_gigabyte():
@@ -76,19 +77,22 @@ def test_messung_laeuft_im_richtigen_container_als_nutzer(env, pid):
 
 def test_unlesbare_ausgabe_gilt_nicht_als_ok(env, pid):
     """Lieber einmal zu streng als einen vollen Container weiterbearbeiten."""
-    env.exec_answers["du -sk"] = (0, "Quatsch\n")
+    env.exec_answers.clear()
+    env.exec_answers["head -1"] = (0, "Quatsch\n")
     r = run(guard.check(pid))
     assert r["ok"] is False and r["bytes"] is None
 
 
 def test_befehl_scheitert_gilt_nicht_als_ok(env, pid):
-    env.exec_answers["du -sk"] = (1, "")
+    env.exec_answers.clear()
+    env.exec_answers["head -1"] = (1, "")
     assert run(guard.check(pid))["ok"] is False
 
 
 def test_negative_oder_riesige_zahl_wird_abgelehnt(env, pid):
     for bad in ("-5\t/work", "9" * 40 + "\t/work"):
-        env.exec_answers["du -sk"] = (0, bad + "\n")
+        env.exec_answers.clear()
+        env.exec_answers["head -1"] = (0, bad + "\n")
         assert run(guard.check(pid))["ok"] is False
 
 
@@ -99,17 +103,17 @@ def test_text_fuer_den_chat_nennt_groesse_und_grenze_ohne_pfade(env, pid):
 
 
 def test_meldung_nennt_was_zu_gross_ist(env, pid):
-    _du(env, 6 * 1024 * 1024)
-    env.exec_answers["du -s"] = (0, "")
-    big = "4194304\tnode_modules\n2097152\tdist\n"
-    env.exec_answers["du -sk --"] = (0, big)
+    env.exec_answers.clear()
+    env.exec_answers["head -1"] = (0, f"{6 * 1024 * 1024}\t/work\n")           # Gesamtgröße
+    env.exec_answers["sort -rn"] = (0, "4194304\tnode_modules\n2097152\tdist\n")   # größte Einträge
     r = run(guard.check(pid, detail=True))
     assert r["ok"] is False and [d["name"] for d in r["top"]][:2] == ["node_modules", "dist"]
 
 
 def test_top_namen_werden_bereinigt(env, pid):
-    _du(env, 6 * 1024 * 1024)
-    env.exec_answers["du -sk --"] = (0, "100\t" + "A" * 300 + "\n100\t\x1b[31mrot\n")
+    env.exec_answers.clear()
+    env.exec_answers["head -1"] = (0, f"{6 * 1024 * 1024}\t/work\n")
+    env.exec_answers["sort -rn"] = (0, "100\t" + "A" * 300 + "\n100\t\x1b[31mrot\n")
     names = [d["name"] for d in run(guard.check(pid, detail=True))["top"]]
     assert all(len(n) <= 80 and "\x1b" not in n for n in names)
 
@@ -117,3 +121,32 @@ def test_top_namen_werden_bereinigt(env, pid):
 def test_nur_vibe_container_werden_gemessen(env):
     with pytest.raises(container.VibeError):
         run(guard.check("../etc"))
+
+
+def test_fehlgeschlagener_befehl_mit_gueltiger_zahl_gilt_nicht_als_ok(env, pid):
+    """`du` kann teilweise lesen, eine Zahl ausgeben und trotzdem mit Fehlercode enden (z. B. Zugriff verweigert)."""
+    env.exec_answers.clear()
+    env.exec_answers["head -1"] = (2, "1024\t/work\n")
+    r = run(guard.check(pid))
+    assert r["ok"] is False and r["bytes"] is None
+
+
+def test_zahl_ueber_der_plausibilitaetsgrenze_wird_abgelehnt(env, pid):
+    """15 Ziffern passen in die Regex, liegen aber weit über jedem echten Datenträger (> 1 PiB)."""
+    env.exec_answers.clear()
+    env.exec_answers["head -1"] = (0, f"{2 ** 40 + 1}\t/work\n")
+    r = run(guard.check(pid))
+    assert r["ok"] is False and r["bytes"] is None
+
+
+def test_zahl_genau_an_der_plausibilitaetsgrenze_wird_gelesen(env, pid):
+    env.exec_answers.clear()
+    env.exec_answers["head -1"] = (0, f"{2 ** 40}\t/work\n")
+    r = run(guard.check(pid))
+    assert r["bytes"] == 2 ** 40 * 1024 and r["ok"] is False             # lesbar, aber natürlich über 5 GB
+
+
+def test_null_ist_gueltig_und_ok(env, pid):
+    env.exec_answers.clear()
+    env.exec_answers["head -1"] = (0, "0\t/work\n")
+    assert run(guard.check(pid)) == {"ok": True, "bytes": 0, "limit": 5 * GB}

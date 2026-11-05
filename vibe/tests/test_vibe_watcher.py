@@ -194,7 +194,7 @@ def test_register_beruehrt_die_datenbank_nicht(monkeypatch):
     monkeypatch.setattr(state, "all_rows", boom)
     ctx = _Ctx()
     backend.register(ctx)                                   # darf nicht werfen
-    assert [j[0] for j in ctx.jobs] == ["vibe-watcher"]
+    assert [j[0] for j in ctx.jobs] == ["vibe-watcher", "vibe-idle"]
 
 
 def test_erster_durchlauf_holt_unterbrochene_auftraege_nach_genau_einmal(kern, monkeypatch):

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 
-from . import chat, state
+from . import chat, container, idle, state
 from .version_text import _CTRL
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,8 @@ LIMIT_TEXT = ("Ich habe die Fehlerbehebung angehalten: Sie hat die Kostengrenze 
               "Wenn du magst, sag mir, was ich prüfen soll.")
 TIMEOUT_TEXT = ("Die Fehlerbehebung hat zu lange gedauert, ich habe sie abgebrochen. Sag mir, was ich prüfen soll, "
                 "oder geh in der Zeitleiste zu einem früheren Stand zurück.")
+WAKE_FAIL_TEXT = ("Das Projekt ist eingeschlafen und ließ sich nicht starten, ich konnte den Fehler deshalb nicht beheben. "
+                  "Öffne es später noch einmal.")
 GIVE_UP_TEXT = ("Ich komme nicht weiter: Der Fehler ist nach mehreren Versuchen noch da. Schau dir die Meldung in der "
                 "Vorschau an und sag mir, was ich anders machen soll – oder geh in der Zeitleiste zu einem früheren Stand zurück.")
 
@@ -139,6 +141,11 @@ async def on_error(project_id: str, report: dict) -> None:
     p["streak"], p["last"] = streak, message
     _active.add(project_id)
     try:
+        try:
+            await idle.wake(project_id)                     # schlafender Container: der Kern startet ihn nicht von selbst
+        except container.VibeError:
+            _say(project_id, WAKE_FAIL_TEXT)
+            return
         out = await _start_fix(project_id, sid, _task(message, _clean(report.get("stack"), _MAX_STACK)),
                                limit_tokens=min(LIMIT_TOKENS, MAX_TOTAL_TOKENS - p["spent"]))
         out = out or {}

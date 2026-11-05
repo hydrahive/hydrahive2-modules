@@ -64,6 +64,16 @@ async def retry_setup(project_id: str, *, owner: str) -> None:
     await _setup(project_id, start_at=row["error_step"] if row["error_step"] in {s.key for s in provision.STEPS} else "")
 
 
+async def find_orphans() -> dict:
+    """Waisen melden, NIE löschen: Container mit Vibe-Namen ohne Datenzeile und Datenzeilen ohne Container. Fremde
+    Container (anderer Name, Labor, …) kommen nie vor."""
+    rows = {r["project_id"]: r for r in state.all_rows()}
+    have = await container.all_names()
+    known = {r["container"] for r in rows.values()}
+    return {"containers": sorted(have - known),
+            "rows": sorted(pid for pid, r in rows.items() if r["container"] not in have)}
+
+
 def recover_after_restart() -> None:
     """Nach einem Neustart läuft kein Auftrag mehr: Halbes → failed (unterbrochen), Fertiges bleibt."""
     for row in state.all_rows():

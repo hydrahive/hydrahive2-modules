@@ -191,3 +191,75 @@ def test_beruehren_setzt_die_zeit_neu(env, pid):
 
 def test_sweep_interval_ist_eine_minute():
     assert idle.SWEEP_SECONDS == 60
+
+
+# --- Zusammenspiel mit Wächter und Heilung --------------------------------------------------------------------------
+
+def test_schlafendes_projekt_wird_vom_waechter_nicht_beruehrt(env, pid, monkeypatch):
+    """Ein gestoppter Container darf keinen `commit_turn` auslösen (der würde im toten Container scheitern)."""
+    from backend import watcher
+    _age(pid, 60)
+    run(idle.sweep())
+    assert state.get_row(pid)["state"] == "sleeping"
+    called: list[str] = []
+
+    async def fake_commit(p, text, *, kind="turn"):
+        called.append(p)
+    monkeypatch.setattr(watcher.versions, "commit_turn", fake_commit)
+    monkeypatch.setattr(watcher, "_is_running", lambda sid: False)
+    monkeypatch.setattr(watcher, "_last_reply", lambda sid: "neu")
+    watcher.reset()
+    run(watcher.poll())
+    run(watcher.poll())
+    assert called == []
+
+
+def test_schlafendes_projekt_wird_nicht_ein_zweites_mal_gestoppt_oder_gewecktes_nicht_sofort_gestoppt(env, pid):
+    _age(pid, 60)
+    run(idle.sweep())
+    run(idle.wake(pid))
+    run(idle.sweep())                                         # direkt danach: frisch benutzt → bleibt an
+    assert env.containers[container.name_for(pid)]["running"]
+
+
+def test_heilung_weckt_den_container_vor_dem_lauf(env, pid, monkeypatch):
+    """Ein Fehler aus der Vorschau eines schlafenden Projekts: Container wird geweckt, bevor der Agent loslegt."""
+    from backend import heal
+    _age(pid, 60)
+    run(idle.sweep())
+    order: list[str] = []
+
+    async def fake_wake(p):
+        order.append("wake")
+    monkeypatch.setattr(heal.idle, "wake", fake_wake)
+
+    async def start_fix(p, sid, task, *, limit_tokens):
+        order.append("fix")
+        return {"tokens": 0, "limited": False, "timed_out": False}
+    monkeypatch.setattr(heal, "_start_fix", start_fix)
+    monkeypatch.setattr(heal, "_session_of", lambda p: "s1")
+    monkeypatch.setattr(heal, "_busy", lambda s: False)
+    heal.reset()
+    run(heal.on_error(pid, {"kind": "error", "message": "Boom", "stack": ""}))
+    assert order == ["wake", "fix"]
+
+
+def test_heilung_bricht_ab_wenn_wecken_scheitert_und_sagt_es(env, pid, monkeypatch):
+    from backend import heal
+    said: list[str] = []
+
+    async def fake_wake(p):
+        raise container.VibeError("vibe_container_down")
+    monkeypatch.setattr(heal.idle, "wake", fake_wake)
+    ran: list[int] = []
+
+    async def start_fix(p, sid, task, *, limit_tokens):
+        ran.append(1)
+        return {}
+    monkeypatch.setattr(heal, "_start_fix", start_fix)
+    monkeypatch.setattr(heal, "_session_of", lambda p: "s1")
+    monkeypatch.setattr(heal, "_busy", lambda s: False)
+    monkeypatch.setattr(heal, "_say", lambda p, t: said.append(t))
+    heal.reset()
+    run(heal.on_error(pid, {"kind": "error", "message": "Boom", "stack": ""}))
+    assert ran == [] and said and "ließ sich nicht starten" in said[0]

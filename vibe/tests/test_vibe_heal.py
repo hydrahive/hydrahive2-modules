@@ -35,6 +35,10 @@ def lauf(monkeypatch):
     monkeypatch.setattr(heal, "_start_fix", start_fix)
     monkeypatch.setattr(heal, "_session_of", lambda pid: "s1")
     monkeypatch.setattr(heal, "_enabled", lambda pid: True)
+
+    async def wake(pid):                                    # Baustein 7: Heilung weckt den Container zuerst
+        return None
+    monkeypatch.setattr(heal.idle, "wake", wake)
     sent: list[tuple[str, str]] = []
     monkeypatch.setattr(heal, "_say", lambda pid, text: sent.append((pid, text)))
     l.sent = sent
