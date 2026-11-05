@@ -4,13 +4,16 @@ export const BASE = "/modules/vibe"
 
 export interface VibeProject {
   project_id: string; name: string; state: "new" | "setting_up" | "ready" | "sleeping" | "failed"
-  progress: string; error_code: string; error_step: string; error_detail: string; heal_enabled: boolean
+  model: string; progress: string; error_code: string; error_step: string; error_detail: string; heal_enabled: boolean
 }
 export interface VibeState { incus: boolean; error_code: string; projects: VibeProject[] }
+export interface VibeModel { id: string; label: string; provider: string }
 export interface VibeVersion { commit_id: string; summary: string; created_at: string }
 
 export const getState = () => api.get<VibeState>(`${BASE}/state`)
-export const createProject = (name: string) => api.post<{ project_id: string }>(`${BASE}/projects`, { name })
+export const getModels = () => api.get<{ default: string; items: VibeModel[] }>(`${BASE}/models`)
+export const createProject = (name: string, model: string) => api.post<{ project_id: string }>(`${BASE}/projects`, { name, model })
+export const setModel = (id: string, model: string) => api.post<{ model: string }>(`${BASE}/projects/${id}/model`, { model })
 export const removeProject = (id: string) => api.delete<{ removed: boolean }>(`${BASE}/projects/${id}`)
 export const retryProject = (id: string) => api.post<{ started: boolean }>(`${BASE}/projects/${id}/retry`, {})
 export const openChat = (id: string) => api.post<{ session_id: string; agent_id: string }>(`${BASE}/projects/${id}/chat`, {})

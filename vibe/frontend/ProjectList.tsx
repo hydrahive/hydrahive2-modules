@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import * as api from "./api"
+import { ModelSelect } from "./ModelSelect"
 import { BOX, BTN, BTN_DANGER, BTN_MAIN, INPUT } from "./ui"
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 export function ProjectList({ projects, known, onChange, onOpen, onError }: Props) {
   const { t } = useTranslation("vibe")
   const [name, setName] = useState("")
+  const [model, setModel] = useState("")
   const [busy, setBusy] = useState(false)
   const [ask, setAsk] = useState<string | null>(null)
 
@@ -19,7 +21,7 @@ export function ProjectList({ projects, known, onChange, onOpen, onError }: Prop
     setBusy(true); onError(null)
     try { await fn(); onChange() } catch (e) { onError(api.errorKey(e, known)) } finally { setBusy(false) }
   }
-  const create = () => act(async () => { await api.createProject(name.trim()); setName("") })
+  const create = () => act(async () => { await api.createProject(name.trim(), model); setName("") })
 
   return (
     <div className="space-y-4">
@@ -30,6 +32,7 @@ export function ProjectList({ projects, known, onChange, onOpen, onError }: Prop
           <input className={INPUT} value={name} maxLength={60} placeholder={t("name_placeholder")} disabled={busy}
             onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) void create() }} />
         </label>
+        <ModelSelect value={model} onChange={setModel} disabled={busy} label={t("model_label")} />
         <button type="button" className={BTN_MAIN} disabled={busy || !name.trim()} onClick={() => void create()}>{t("create")}</button>
       </section>
 

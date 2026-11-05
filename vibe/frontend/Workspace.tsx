@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { ChatPane } from "@/features/chat/ChatPane"
 import * as api from "./api"
 import { History } from "./History"
+import { ModelSelect } from "./ModelSelect"
 import { BTN } from "./ui"
 
 /** Ein geöffnetes Projekt: links der Chat mit dem Agenten, rechts die Ansicht und die Versionen („Zurück“). */
@@ -11,6 +12,12 @@ export function Workspace({ project, onBack }: { project: api.VibeProject; onBac
   const { t } = useTranslation("vibe")
   const [session, setSession] = useState<{ session_id: string; agent_id: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [model, setModel] = useState(project.model)
+  const [modelNote, setModelNote] = useState<string | null>(null)
+  const pick = (m: string) => {
+    setModel(m); setModelNote(null)
+    api.setModel(project.project_id, m).then(() => setModelNote(t("model_saved"))).catch(() => { setModel(project.model); setModelNote(t("err.vibe_model_unavailable")) })
+  }
   useEffect(() => {
     setSession(null); setError(null)
     api.openChat(project.project_id).then(setSession).catch((e) => setError(api.errorKey(e, ["vibe_container_down", "vibe_not_ready", "vibe_project_not_found"])))
@@ -21,6 +28,10 @@ export function Workspace({ project, onBack }: { project: api.VibeProject; onBac
       <div className="flex items-center gap-3">
         <button type="button" className={BTN} onClick={onBack}>← {t("back")}</button>
         <h1 className="truncate text-lg font-semibold text-[#e8eef8]">{project.name}</h1>
+        <div className="ml-auto flex items-center gap-2">
+          {modelNote && <span className="text-xs text-emerald-300" aria-live="polite">{modelNote}</span>}
+          <div className="w-72"><ModelSelect value={model} onChange={pick} /></div>
+        </div>
       </div>
       <div className="flex min-h-0 flex-1 gap-3">
         <section className="flex w-[min(560px,45vw)] shrink-0 flex-col rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_29))]">

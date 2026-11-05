@@ -7,6 +7,9 @@ const de = {
     name_label: "Wie soll es heißen?",
     name_placeholder: "z. B. Mein Zeiterfasser",
     create: "Los geht’s",
+    model_label: "Welches Modell soll bauen?",
+    model_none: "Kein Modell eingerichtet",
+    model_saved: "Modell gespeichert – gilt ab der nächsten Nachricht.",
     empty: "Noch kein Projekt. Gib oben einen Namen ein und leg los.",
     open: "Öffnen",
     remove: "Löschen",
@@ -48,7 +51,8 @@ const de = {
 const en = {
   vibe: {
     title: "Vibe", subtitle: "Say what you want to build. The agent builds it, and you see it right away.",
-    new_title: "New project", name_label: "What should it be called?", name_placeholder: "e.g. My time tracker", create: "Let’s go",
+    new_title: "New project", name_label: "What should it be called?", name_placeholder: "e.g. My time tracker", create: "Let’s go", model_label: "Which model should build?", model_none: "No model set up",
+    model_saved: "Model saved – applies from the next message.",
     empty: "No project yet. Enter a name above and start.", open: "Open", remove: "Delete",
     confirm_remove: "Really delete? The project and all versions will be gone.", yes: "Yes, delete", no: "Cancel", retry: "Try again",
     back: "Back to list", chat_title: "Say what you need", preview_title: "This is how it looks", preview_open: "Open preview in a new tab",

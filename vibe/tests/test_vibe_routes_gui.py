@@ -65,7 +65,7 @@ def test_anlegen_gibt_sofort_antwort_und_richtet_im_hintergrund_ein(env, client,
     assert row["name"] == "Meine App" and row["state"] in ("new", "setting_up", "ready")
 
 
-def test_anlegen_modell_kommt_vom_system_nicht_vom_nutzer(env, client, admin_headers, monkeypatch):
+def test_anlegen_ohne_modell_nimmt_standardmodell(env, client, admin_headers, monkeypatch):
     from backend import projects
     seen = {}
     orig = projects.create
@@ -74,8 +74,41 @@ def test_anlegen_modell_kommt_vom_system_nicht_vom_nutzer(env, client, admin_hea
         seen["model"] = model
         return await orig(admin=admin, name=name, model=model, limits=limits)
     monkeypatch.setattr(projects, "create", spy)
-    client.post(B + "/projects", json={"name": "x", "model": "openrouter/teuer"}, headers=admin_headers)
+    client.post(B + "/projects", json={"name": "x"}, headers=admin_headers)
     assert seen["model"] == MODEL
+
+
+def test_anlegen_mit_eigenem_modell(env, client, admin_headers, monkeypatch):
+    from backend import projects
+    seen = {}
+    orig = projects.create
+
+    async def spy(*, admin, name, model, limits=None):
+        seen["model"] = model
+        return await orig(admin=admin, name=name, model=model, limits=limits)
+    monkeypatch.setattr(projects, "create", spy)
+    client.post(B + "/projects", json={"name": "x", "model": MODEL}, headers=admin_headers)
+    assert seen["model"] == MODEL
+
+
+def test_modell_wechseln_und_im_zustand_sehen(env, client, admin_headers):
+    pid = _create(client, admin_headers).json()["project_id"]
+    assert client.get(B + "/state", headers=admin_headers).json()["projects"][0]["model"] == MODEL
+    r = client.post(f"{B}/projects/{pid}/model", json={"model": MODEL}, headers=admin_headers)
+    assert r.status_code == 200 and r.json() == {"model": MODEL}
+
+
+def test_modell_wechseln_unbekanntes_wird_abgelehnt(env, client, admin_headers, monkeypatch):
+    from hydrahive.agents import _validation
+    monkeypatch.setattr(_validation, "_available_models", lambda: [MODEL])   # ohne Live-Liste winkt der Kern alles durch
+    pid = _create(client, admin_headers).json()["project_id"]
+    r = client.post(f"{B}/projects/{pid}/model", json={"model": "gibt/es-nicht"}, headers=admin_headers)
+    assert r.status_code == 400 and r.json()["detail"]["code"] == "vibe_model_unavailable"
+
+
+def test_modell_wechseln_fremdes_projekt_nicht_gefunden(env, client, admin_headers):
+    r = client.post(f"{B}/projects/gibtsnicht/model", json={"model": MODEL}, headers=admin_headers)
+    assert r.status_code == 404
 
 
 def test_anlegen_ohne_name_ist_ein_fehlercode(env, client, admin_headers):

@@ -1,7 +1,8 @@
 """Schnittstellen /api/modules/vibe (PLAN-V1.md). Nur Admins, nur eigene Projekte.
 
 Klein gehalten: Zustand, Projekt anlegen/löschen, Chat öffnen, Versionen ansehen, Zurück, „Nochmal“, Heilung an/aus.
-Fehler kommen als Code (`vibe_…`), nie als Text mit Pfaden. Das Modell kommt vom System (Standardmodell), nicht vom Nutzer.
+Fehler kommen als Code (`vibe_…`), nie als Text mit Pfaden. Das Modell wählt der Nutzer (sonst gilt das Standardmodell);
+es ist das einzige freie Feld des festen Vibe-Agenten.
 """
 from __future__ import annotations
 
@@ -27,8 +28,14 @@ class Empty(BaseModel):
 
 
 class NewProject(BaseModel):
-    model_config = ConfigDict(extra="ignore")                    # ein mitgeschicktes `model` wird bewusst ignoriert
+    model_config = ConfigDict(extra="ignore")
     name: str = Field(min_length=1, max_length=projects.MAX_NAME)
+    model: str = Field(default="", max_length=200)               # leer = Standardmodell des Systems
+
+
+class ModelChoice(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    model: str = Field(min_length=1, max_length=200)
 
 
 class HealSwitch(BaseModel):
@@ -48,6 +55,12 @@ def _default_model() -> str:
     return default_model()
 
 
+def _model_of(agent_id: str) -> str:
+    from hydrahive.agents import config as agent_config
+    cfg = agent_config.get(agent_id)
+    return str((cfg or {}).get("llm_model") or "")
+
+
 async def _background(coro) -> None:
     try:
         await coro
@@ -62,13 +75,26 @@ def get_state(p: Admin) -> dict:
     """Ohne incus (z. B. Mac ohne Colima) kein Fehler, sondern ein Zustand, den die Seite erklären kann."""
     if not incus.available():
         return {"incus": False, "error_code": "vibe_no_incus", "projects": []}
-    return {"incus": True, "error_code": "", "projects": state.projects_of(p.username)}
+    rows = {r["project_id"]: r for r in state.all_rows() if r["owner"] == p.username}
+    out = []
+    for item in state.projects_of(p.username):
+        row = rows.get(item["project_id"])
+        out.append({**item, "model": _model_of(row["agent_id"]) if row else ""})
+    return {"incus": True, "error_code": "", "projects": out}
+
+
+@router.get("/models")
+async def list_models(p: Admin) -> dict:
+    """Modelle der eigenen Anbieter für die Auswahl; `default` ist das, was ohne Wahl genommen wird."""
+    from hydrahive.llm import registry
+    items = await registry.list_models("chat")
+    return {"default": _default_model(), "items": [{"id": m.id, "label": m.label, "provider": m.provider} for m in items]}
 
 
 @router.post("/projects", status_code=status.HTTP_202_ACCEPTED)
 async def create_project(p: Admin, body: NewProject) -> dict:
     """Legt an und richtet im Hintergrund ein; die Seite fragt den Fortschritt über /state ab."""
-    model = _default_model()
+    model = body.model.strip() or _default_model()
     try:
         out = await projects.create(admin=p.username, name=body.name, model=model)
     except projects.VibeProjectError as exc:
@@ -84,6 +110,20 @@ async def delete_project(project_id: str, p: Admin) -> dict:
     _own(project_id, p)
     await projects.remove(project_id, owner=p.username)
     return {"removed": True}
+
+
+@router.post("/projects/{project_id}/model")
+def set_model(project_id: str, p: Admin, body: ModelChoice) -> dict:
+    """Modell eines Projekts wechseln (gilt ab der nächsten Nachricht). Alles andere am Agenten bleibt gesperrt."""
+    from hydrahive.agents import config as agent_config
+    from hydrahive.agents._validation import AgentValidationError, validate_model
+    row = _own(project_id, p)
+    try:
+        validate_model(body.model.strip())
+    except AgentValidationError:
+        raise coded(status.HTTP_400_BAD_REQUEST, "vibe_model_unavailable") from None
+    agent_config.update(row["agent_id"], llm_model=body.model.strip())
+    return {"model": body.model.strip()}
 
 
 @router.post("/projects/{project_id}/retry", status_code=status.HTTP_202_ACCEPTED)
