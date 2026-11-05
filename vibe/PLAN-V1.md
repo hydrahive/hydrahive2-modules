@@ -167,12 +167,22 @@ Alle Dateien ≤ 200 Zeilen (Regel des Repos). Texte de/en. Kein `print()`, kein
   eigener Kern-PR hydrahive/hydrahive2.0#678 (Fristen + Wiederholung). Ohne ihn sind einzelne Heilungsläufe langsamer, aber
   nicht falsch: die Zeitgrenze von 3 min fängt sie ab und meldet es im Chat.
 
-### 7. Platz, Ruhe, Aufräumen
-- Rot: Über der Platzgrenze stoppt der Agent mit klarer Meldung; nach 30 min ohne Anfrage wird der Container gestoppt,
-  eine Anfrage weckt ihn und wartet bis er antwortet (Zeitlimit 60 s, danach Fehler `vibe_container_down`);
-  nach einem Neustart des Servers laufen keine Hörer von gestern weiter; „Projekt löschen“ entfernt Container, Projekt,
-  Agent, Datenzeile, Versionen – und **nur** diese (Gegenprobe mit zweitem Projekt).
-- `idle.py`, `guard.py`.
+### 7. Platz, Ruhe, Aufräumen — **umgesetzt (5.11.), echte Probe auf hydratest**
+- **Gebaut:** `guard.py` (Platzgrenze 5 GB per `du -sk -- /work`, unlesbare oder fehlgeschlagene Messung gilt als „nicht ok“,
+  Meldung nennt Größe und die größten Einträge, keine Pfade), `idle.py` (Leerlauf 30 min → Container stoppen, Zustand
+  `sleeping`; `wake` startet, wartet auf Adresse, Zeitlimit 60 s, sonst `vibe_container_down`; Heilung weckt vor dem Lauf),
+  `projects.remove` räumt zusätzlich Sitzungen ab und hält einen laufenden Zug an, `jobs.find_orphans` meldet Waisen
+  (löscht nie). Dazu: Einrichtung wiederholt Netz-Schritte bis zu 3× und hält die letzten Zeilen der Fehlerausgabe fest
+  (Migration `003_error_detail.sql`).
+- **Echt gemessen (hydratest, ohne Modell):** Platz 144 MB → mit 5,2 GB gefüllt `ok=False` mit Meldung → aufgeräumt `ok=True`;
+  40 min Leerlauf → Container aus, `sleeping`; Wecken **1,8 s**, Dev-Server danach HTTP 200 nach 1,9 s; Löschen ohne Waisen.
+  Netz-Aussetzer künstlich eingebaut: 2 Aussetzer → `ready` (78 s), 3 Aussetzer → `failed` mit Schritt und Detail, „Nochmal
+  versuchen“ → `ready` in 6 s.
+- **Die Probe hat einen Fehler gefunden:** `npm ci` scheiterte beim Anlegen einmal ohne jede Spur (derselbe Befehl lief direkt
+  danach in 2 s). Ursache nicht belegt (vermutlich Netz zum Registry); behoben wurde die Folge, nicht die Ursache.
+- **Nicht gemessen / bewusst offen:** Die Platzgrenze ist **kein lückenloser Schutz** (ein Lauf kann innerhalb einer Runde
+  füllen; echter Schutz wäre ein Pool-Typ mit Quota). Startzeit eines Containers nach langem Schlaf unter Last;
+  der Leerlauf wurde durch Zurückstellen der Zeit geprüft, nicht durch 30 echte Minuten.
 
 ### 8. Vorschau und Durchreiche
 - **Zuerst messen, dann bauen** (im echten Browser auf hydratest, Playwright): Reicht ein Cookie im iframe
