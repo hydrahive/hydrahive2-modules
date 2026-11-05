@@ -61,9 +61,29 @@ behebt der Agent den Fehler selbst (höchstens 3 Versuche). Der Container ruht n
    (HttpOnly, SameSite=Strict) auf `:8443`; Cookies trennen nicht nach Port. Für das iframe gilt aber SameSite=Strict
    als „anderer Kontext“, das Cookie würde dort **nicht** mitgeschickt (Browserverhalten, hier nicht getestet).
    Deshalb: `POST /api/modules/vibe/preview/open` (Admin) gibt ein **Einmal-Ticket** (60 s), die Seite setzt es als
-   `src` des iframes (`…:8444/__vibe_login?t=…`), die Durchreiche löst es ein und gibt einen **Pfad-Token im Pfad-Präfix**
-   zurück. Das genaue Verfahren (Cookie mit `SameSite=None; Secure; Partitioned` oder Token im Pfad) wird in
-   Baustein 8 **vor dem Bauen im echten Browser** gemessen. Bis dahin ist es offen, nicht entschieden.
+   `src` des iframes (`…:8444/__vibe_login?t=…`), die Durchreiche löst es ein und leitet auf einen **Pfad mit Token**
+   (`/__t/<token>/`) weiter. **Entschieden 5.11. nach Messung: Token im Pfad, kein Cookie** (siehe „Gemessen“ unten).
+
+   **Gemessen (5.11.2026, Chromium 153 über Playwright, zwei Ursprünge mit eigenem TLS, iframe mit
+   `sandbox="allow-scripts allow-forms"`, je Verfahren 3 Durchläufe, alle drei gleich):**
+
+   | Verfahren | Vorschau im iframe lädt | WebSocket (HMR-Ersatz) im iframe |
+   |---|---|---|
+   | Cookie `SameSite=Strict` | ja | **Fehler** (Cookie wird nicht gesendet) |
+   | Cookie `SameSite=None; Secure` | ja | ok |
+   | Cookie `SameSite=None; Secure; Partitioned` | ja | **Fehler** |
+   | **Token im Pfad** | ja | **ok** |
+
+   Dazu gemessen: (1) Die Seite im sandbox-iframe **kann weder `sessionStorage` des Elternfensters noch ihr eigenes
+   Storage oder `document.cookie` lesen** (`SecurityError`); der Login-Token von HydraHive ist von dort aus nicht
+   erreichbar. (2) Eine **fremde Seite** (anderer Ursprung als `frame-ancestors` erlaubt) kann die Vorschau **nicht**
+   einbetten, auch nicht mit gültigem Token im Pfad (Chromium zeigt `chrome-error`). (3) Das Top-Level-Öffnen mit Token
+   im Pfad funktioniert. **Nicht gemessen:** WebSocket durch **nginx** mit `auth_request` (hier nur ohne nginx
+   gemessen – das kommt in der Probe auf hydratest), Firefox und Safari (nur Chromium getestet), ob ein Token im Pfad in
+   Zugriffsprotokollen von nginx landet (ja: es steht im Pfad; Protokoll für diesen Port ausschalten oder maskieren).
+   **Folge:** Cookie `SameSite=Strict` scheidet aus (bricht HMR), `Partitioned` ebenfalls; `SameSite=None` würde gehen,
+   hängt aber an Cookie-Trennung nach Port (Cookies trennen nicht nach Port: ein Cookie von :8444 ginge auch an :8443
+   und :443). Token im Pfad hat dieses Problem nicht.
 8. **nginx-Datei und Port brauchen root.** Das Labor schreibt seinen Block über `sudo -n bash -c <fester Text>`
    (`probe_site.py`, Muster Radiostream/Installer-Regel); Vibe übernimmt genau diesen Weg, keine zusätzlichen
    Rechte. Ohne `sudo -n` steht in der Oberfläche eine klare Meldung, die Vorschau fehlt, das Modul bricht nicht ab.
