@@ -227,3 +227,82 @@ def test_deps_bleibt_ein_netzschritt_als_nutzer_ohne_sudo():
 def test_deps_skript_hat_keine_platzhalter():
     """Feste Texte: nichts von außen eingesetzt (kein `{name}`, kein Format-Platzhalter)."""
     assert not re.search(r"\{[a-z_]+\}", step("deps").script)
+
+
+# --- Das Skript wirklich ausführen (Ersatz-`npm` und -`node` in einem Wegwerf-Ordner) ---------------------------------
+# Der Text allein sagt nicht, ob es sich richtig verhält. Hier läuft das echte Bash-Skript des Schritts `deps`; die
+# Ersatzprogramme steuern, wann `npm ci` etwas anlegt und wann die Ladeprüfung gelingt.
+
+import os
+import subprocess
+import textwrap
+
+
+def _run_deps(tmp_path, *, load_ok_from_try: int | None, keep=("src", "package.json")):
+    """Führt das Skript aus. `load_ok_from_try`: ab dem wievielten npm-Aufruf lädt Vite (None = nie)."""
+    work = tmp_path / "work"
+    work.mkdir()
+    for k in keep:
+        (work / k).write_text("x") if "." in k else (work / k).mkdir()
+    (work / "src" / "wichtig.txt").write_text("Projektcode")
+    bin_ = tmp_path / "bin"
+    bin_.mkdir()
+    counter = tmp_path / "n"
+    counter.write_text("0")
+    (bin_ / "npm").write_text(textwrap.dedent(f"""\
+        #!/bin/bash
+        n=$(( $(cat {counter}) + 1 )); echo $n > {counter}
+        mkdir -p /work_ersatz 2>/dev/null; mkdir -p "$PWD/node_modules/vite/dist/node"
+        if [ "$n" -ge {load_ok_from_try or 99} ]; then echo ok > "$PWD/node_modules/vite/dist/node/index.js"; fi
+        exit 0
+        """))
+    (bin_ / "node").write_text(textwrap.dedent("""\
+        #!/bin/bash
+        [ -f /work/node_modules/vite/dist/node/index.js ] && exit 0 || exit 1
+        """))
+    for f in bin_.iterdir():
+        f.chmod(0o755)
+    script = provision.step_script("deps") if hasattr(provision, "step_script") else step("deps").script
+    script = script.replace("cd /work;", f"cd {work};").replace("/work/node_modules", f"{work}/node_modules")
+    (bin_ / "node").write_text((bin_ / "node").read_text().replace("/work/node_modules", f"{work}/node_modules"))
+    env = {"PATH": f"{bin_}:/usr/bin:/bin", "HOME": str(tmp_path)}
+    r = subprocess.run(["bash", "-c", script], capture_output=True, text=True, env=env, timeout=30)
+    return r, int(counter.read_text()), work
+
+
+def test_skript_erster_versuch_laedt_ein_npm_aufruf(tmp_path):
+    r, n, work = _run_deps(tmp_path, load_ok_from_try=1)
+    assert r.returncode == 0 and n == 1 and (work / "src" / "wichtig.txt").exists()
+
+
+def test_skript_zweiter_versuch_laedt_zwei_npm_aufrufe(tmp_path):
+    r, n, _ = _run_deps(tmp_path, load_ok_from_try=2)
+    assert r.returncode == 0 and n == 2
+
+
+def test_skript_dritter_versuch_laedt_drei_npm_aufrufe(tmp_path):
+    r, n, _ = _run_deps(tmp_path, load_ok_from_try=3)
+    assert r.returncode == 0 and n == 3
+
+
+def test_skript_nie_geladen_nach_genau_drei_versuchen_mit_fehlercode(tmp_path):
+    r, n, _ = _run_deps(tmp_path, load_ok_from_try=None)
+    assert r.returncode == 1 and n == 3 and "Vite lässt sich nach 3 Versuchen nicht laden" in r.stderr
+
+
+def test_skript_loescht_nur_node_modules_nie_projektcode(tmp_path):
+    r, _, work = _run_deps(tmp_path, load_ok_from_try=None)
+    assert (work / "src" / "wichtig.txt").read_text() == "Projektcode" and (work / "package.json").exists()
+    assert not (work / "node_modules").exists()                 # nach dem Fehlschlag aufgeräumt
+
+
+def test_skript_raeumt_zwischen_den_versuchen_node_modules_weg(tmp_path):
+    """Beim 2. Versuch darf nichts vom 1. übrig sein – sonst würde eine halbe Installation für fertig gehalten."""
+    r, n, work = _run_deps(tmp_path, load_ok_from_try=3)
+    assert r.returncode == 0 and n == 3 and (work / "node_modules" / "vite" / "dist" / "node" / "index.js").exists()
+
+
+def test_skript_npm_fehlercode_allein_entscheidet_nicht(tmp_path):
+    """Selbst wenn `npm ci` rc=0 meldet, zählt nur, ob Vite wirklich lädt (npm/cli#4828)."""
+    r, n, _ = _run_deps(tmp_path, load_ok_from_try=None)
+    assert r.returncode == 1

@@ -80,7 +80,15 @@ STEPS: tuple[Step, ...] = (
     Step("git", "set -eu; cd /work; git init -q -b main; git config user.name Vibe; "
          "git config user.email vibe@localhost; git config core.hooksPath /dev/null; "
          "git add -A; git commit -q -m Start", as_user=True),
-    Step("deps", "set -eu; cd /work; npm ci --no-audit --no-fund --loglevel=error", as_user=True, net=True),
+    # `npm ci` kann „erfolgreich“ enden und trotzdem das native Paket von Vite auslassen (npm/cli#4828; hydratest 5.11.:
+    # ohne Cache in 6 von 25 Läufen). Darum: nach jedem Versuch prüfen, ob Vite wirklich lädt; sonst node_modules leeren
+    # und neu (höchstens 3×). Aufgeräumt wird nur node_modules, nie Projektcode.
+    Step("deps", "set -u; cd /work; for i in 1 2 3; do "
+         "npm ci --no-audit --no-fund --loglevel=error >/dev/null 2>&1; "
+         "node -e 'import(\"/work/node_modules/vite/dist/node/index.js\").then(()=>process.exit(0),()=>process.exit(1))' "
+         ">/dev/null 2>&1 && exit 0; "
+         "rm -rf node_modules; done; echo 'Vite lässt sich nach 3 Versuchen nicht laden (npm ci unvollständig)' >&2; exit 1",
+         as_user=True, net=True),
     Step("devserver", "set -eu; cat > /etc/systemd/system/vibe-dev.service <<'EOF'\n"
          "[Unit]\nDescription=Vibe Dev-Server\nAfter=network.target\n\n"
          "[Service]\nUser=labor\nWorkingDirectory=/work\nEnvironment=HOME=/home/labor\n"
