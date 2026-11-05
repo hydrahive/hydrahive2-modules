@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, Query, Request, Response, status
@@ -29,11 +28,6 @@ def device_open() -> None:
     """Geräte-Weg braucht eine Prüfung – hier nichts vorab: Ticket bzw. Cookie prüft die Route selbst."""
 
 
-def _data_dir() -> Path:
-    from hydrahive.settings import settings
-    return settings.data_dir / "vibe" / "preview"
-
-
 @router.post("/projects/{project_id}/preview/open")
 async def preview_open(project_id: str, p: Admin, body: Empty, request: Request) -> dict:
     """Bereitet den Weg vor (Regel im Netz, nginx-Block – beides nur wenn nötig), weckt das Projekt, gibt den Link."""
@@ -48,8 +42,8 @@ async def preview_open(project_id: str, p: Admin, body: Empty, request: Request)
     except (network.VibeNetworkError, RuntimeError) as exc:
         logger.warning("Vibe: Vorschau-Weg nicht vorbereitet: %s", getattr(exc, "code", exc))
         raise coded(status.HTTP_503_SERVICE_UNAVAILABLE, getattr(exc, "code", "vibe_container_down")) from None
-    if not preview_site.is_applied(data_dir=_data_dir()):
-        ok = await asyncio.to_thread(preview_site.apply, root=preview_site.root, data_dir=_data_dir())
+    if not preview_site.is_applied(data_dir=preview_site.data_dir()):
+        ok = await asyncio.to_thread(preview_site.apply, root=preview_site.root, data_dir=preview_site.data_dir())
         if not ok:
             raise coded(status.HTTP_503_SERVICE_UNAVAILABLE, "vibe_preview_unavailable")
     ticket = preview_auth.new_ticket(p.user_id, project_id)

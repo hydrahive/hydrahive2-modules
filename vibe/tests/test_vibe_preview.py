@@ -260,3 +260,36 @@ async def test_adresse_ohne_ausgabe_oder_fehler(env, monkeypatch):  # noqa: F811
     assert await preview_net.address("p2") is None
     monkeypatch.setattr(preview_net.incus, "run", kaputt)
     assert await preview_net.address("p2") is None
+
+
+# ---- Aufräumen: letztes Projekt weg → nginx-Block weg -----------------------------------------------------------
+
+@pytest.fixture
+def fake_root(monkeypatch, tmp_path):
+    """Nie echtes sudo in Tests: root() und das Datenverzeichnis werden ersetzt."""
+    r = FakeRoot()
+    monkeypatch.setattr(preview_site, "root", r)
+    monkeypatch.setattr(preview_site, "data_dir", lambda: tmp_path)
+    (tmp_path / preview_site.CONF_NAME).write_text("x")
+    return r
+
+
+def test_letztes_projekt_loeschen_entfernt_den_nginx_block(client, admin_headers, proj, fake_root):
+    assert client.delete(f"{B}/projects/{proj}", headers=admin_headers).status_code == 200
+    assert len(fake_root.scripts) == 1 and "rm -f" in fake_root.scripts[0] and preview_site.SITE in fake_root.scripts[0]
+
+
+def test_nicht_letztes_projekt_loeschen_laesst_den_block_stehen(client, admin_headers, proj, fake_root, monkeypatch):
+    zweites = _create(client, admin_headers, name="Zweite").json()["project_id"]
+    _ready(client, admin_headers)
+    assert client.delete(f"{B}/projects/{proj}", headers=admin_headers).status_code == 200
+    assert fake_root.scripts == []
+    assert zweites
+
+
+def test_fehler_beim_entfernen_des_blocks_stoppt_das_loeschen_nicht(client, admin_headers, proj, monkeypatch, tmp_path):
+    def boom(script): raise OSError("kein sudo")
+    monkeypatch.setattr(preview_site, "root", boom)
+    monkeypatch.setattr(preview_site, "data_dir", lambda: tmp_path)
+    assert client.delete(f"{B}/projects/{proj}", headers=admin_headers).status_code == 200
+    assert state.get_row(proj) is None

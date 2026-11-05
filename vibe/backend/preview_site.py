@@ -111,6 +111,11 @@ server {{
 """
 
 
+def data_dir() -> Path:
+    from hydrahive.settings import settings
+    return settings.data_dir / "vibe" / "preview"
+
+
 def root(script: str) -> tuple[int, str]:
     """Wie hydralabor probe_site.root: `sudo -n bash` (Regel des Installers), nur feste Texte im Befehl."""
     cmd = ["bash", "-c", script] if os.getuid() == 0 else ["sudo", "-n", "bash", "-c", script]

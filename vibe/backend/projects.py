@@ -140,3 +140,17 @@ async def remove(project_id: str, *, owner: str) -> None:
     state.delete_row(project_id)                             # Versionszeilen: ON DELETE CASCADE
     await container.remove(project_id)
     await network.remove_if_unused()
+    await _drop_preview_if_unused()
+
+
+async def _drop_preview_if_unused() -> None:
+    """Letztes Vibe-Projekt weg → nginx-Block der Vorschau (Port 8444) mit entfernen. Ein Fehler hier darf das Löschen
+    nicht scheitern lassen: das Projekt ist dann schon weg, der Block würde beim nächsten Mal ohnehin überschrieben."""
+    import asyncio
+
+    from . import preview_site
+    try:
+        if not state.all_rows():
+            await asyncio.to_thread(preview_site.remove, root=preview_site.root, data_dir=preview_site.data_dir())
+    except Exception:                                          # noqa: BLE001 – siehe oben
+        logger.exception("Vibe: Vorschau-Block ließ sich nicht entfernen")
