@@ -150,16 +150,22 @@ Alle Dateien ≤ 200 Zeilen (Regel des Repos). Texte de/en. Kein `print()`, kein
 - `versions.py`. Git-Aufrufe nur als Argumentliste im Container (`incus exec … -- git …`), nie in einer Host-Shell.
   **Das Zusammenspiel `revert` bei Konflikt ist nicht gebaut und nicht getestet** – dieser Baustein ist der Test.
 
-### 6. Hörer und Fehlerbehebung
-- Rot: Beim `done` einer Vibe-Sitzung wird genau **eine** Version gespeichert (nicht doppelt bei Wiederverbinden mit
-  `after_seq`); ohne Änderungen entsteht keine leere Version; fällt der Bus aus, greift die Abfrage `run-status`;
-  Fehlerlauf: Fehler erkannt → Agentenlauf in derselben Sitzung (`runner.run`, wie Storyteller `team_job_run.py`);
-  **genau 3 Versuche**, danach Meldung „Ich komme nicht weiter“; gleicher Fehlertext zweimal in Folge bricht früher ab;
-  Schalter „Fehler selbst beheben“ aus = kein Lauf; Kostengrenze je Heilungslauf wie `team_job_run` (zwischen zwei
-  Runden, nie mitten im Modellaufruf); ein Fehler, der durch den Heilungslauf **selbst** neue Fehler ausgelöst hat,
-  zählt zum gleichen Zähler.
-- `watcher.py`, `heal.py`, `guard.py`. **Wert der Kostengrenze steht noch nicht fest**: erster Wert 100 000 Tokens je
-  Fehler, wird nach der ersten echten Abnahme angepasst (nur Vorschlag).
+### 6. Hörer und Fehlerbehebung — **umgesetzt (5.11.), echte Probe auf hydratest**
+- **Gebaut:** `watcher.py` (Poller alle 2 s, genau eine Version je Zug, kein Doppel, nachgeholt nach Fehlschlag),
+  `heal.py` (3 Versuche, gleiche Meldung 3× in Folge bricht ab, Gesamtdecke 250 000 Tokens, Schalter, ein Lauf je
+  Projekt, Meldung als Zitat), `heal_run.py` (Lauf in derselben Sitzung, Kostengrenze 100 000 Tokens je Lauf zwischen
+  zwei Runden, Zeitgrenze 3 min), `jobs.py` (Anlegen + Einrichten mit Fortschritt, „Nochmal versuchen“ ab Fehlerschritt),
+  `chat.py` (dünne Hülle um die Kern-Sitzung), Migration `002_progress.sql`.
+- **Die Probe hat drei Fehler gefunden, alle behoben:** (1) `register()` läuft im Kern **vor** den Migrationen – der
+  Zugriff auf die Datenbank dort ließ das Modul nicht laden; (2) die Kostengrenze zählte die letzte Runde des Chats davor
+  mit (Abbruch nach 0 Tokens); (3) keine Rückmeldung im Chat, wenn eine Grenze greift.
+- **Echt gemessen:** Anlegen+Einrichten 39 s, 4 Züge → je genau 1 Version, kaputte Seite repariert (`tsc` ohne Fehler),
+  nach 3 Versuchen genau 1 Hinweis „Ich komme nicht weiter“, Zeitgrenze meldet sich im Chat.
+- **Nicht echt gemessen:** Die Kostengrenze im echten Lauf (nur durch Tests mit Attrappe belegt). `guard.py` (Platzgrenze)
+  gehört zu Baustein 7.
+- **Abhängigkeit:** hängende Modellaufrufe auf hydratest (Container im LAN, Ursache unbekannt) verlängerten die Läufe;
+  eigener Kern-PR hydrahive/hydrahive2.0#678 (Fristen + Wiederholung). Ohne ihn sind einzelne Heilungsläufe langsamer, aber
+  nicht falsch: die Zeitgrenze von 3 min fängt sie ab und meldet es im Chat.
 
 ### 7. Platz, Ruhe, Aufräumen
 - Rot: Über der Platzgrenze stoppt der Agent mit klarer Meldung; nach 30 min ohne Anfrage wird der Container gestoppt,
