@@ -5,6 +5,7 @@ import { ChatPane } from "@/features/chat/ChatPane"
 import * as api from "./api"
 import { History } from "./History"
 import { ModelSelect } from "./ModelSelect"
+import { PreviewFrame } from "./PreviewFrame"
 import { BTN } from "./ui"
 
 /** Ein geöffnetes Projekt: links der Chat mit dem Agenten, rechts die Ansicht und die Versionen („Zurück“). */
@@ -13,6 +14,7 @@ export function Workspace({ project, onBack }: { project: api.VibeProject; onBac
   const [session, setSession] = useState<{ session_id: string; agent_id: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [model, setModel] = useState(project.model)
+  const [latest, setLatest] = useState("")
   const [modelNote, setModelNote] = useState<string | null>(null)
   const pick = (m: string) => {
     setModel(m); setModelNote(null)
@@ -47,9 +49,8 @@ export function Workspace({ project, onBack }: { project: api.VibeProject; onBac
           </div>
         </section>
         <section className="flex min-w-0 flex-1 flex-col gap-3 overflow-auto rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_29))] p-3">
-          <h2 className="text-sm text-[#e8eef8]">{t("preview_title")}</h2>
-          <p className="text-sm text-[#c8d2df]">{t("preview_none")}</p>
-          <History projectId={project.project_id} />
+          <PreviewFrame projectId={project.project_id} reloadKey={latest} />
+          <History projectId={project.project_id} onLatest={setLatest} />
         </section>
       </div>
     </div>

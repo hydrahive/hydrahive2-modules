@@ -17,6 +17,7 @@ export const setModel = (id: string, model: string) => api.post<{ model: string 
 export const removeProject = (id: string) => api.delete<{ removed: boolean }>(`${BASE}/projects/${id}`)
 export const retryProject = (id: string) => api.post<{ started: boolean }>(`${BASE}/projects/${id}/retry`, {})
 export const openChat = (id: string) => api.post<{ session_id: string; agent_id: string }>(`${BASE}/projects/${id}/chat`, {})
+export const openPreview = (id: string) => api.post<{ url: string }>(`${BASE}/projects/${id}/preview/open`, {})
 export const getVersions = (id: string) => api.get<{ versions: VibeVersion[] }>(`${BASE}/projects/${id}/versions`)
 export const restoreVersion = (id: string, sha: string) => api.post<unknown>(`${BASE}/projects/${id}/versions/${sha}/restore`, {})
 

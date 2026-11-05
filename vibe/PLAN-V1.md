@@ -259,3 +259,17 @@ Datenbanken außerhalb des Containers, Mac (kein incus), Freigabe für Nicht-Adm
 - Kein Aufruf von `192.168.178.1`/`.3` in Tests oder Messungen.
 - Nach „Projekt löschen“ bleibt nichts im Container-, Netz- oder nginx-Bestand zurück, ein zweites Vibe-Projekt und
   ein normales Projekt bleiben unverändert.
+
+### Gemessen 6.11.2026 (Vorschau auf hydratest, Chromium über Playwright, nginx :8444 mit auth_request)
+- **Läuft:** Ticket → Cookie → nginx prüft → Vite im Container antwortet; die Seite „Hallo Till“ mit Zähler zeigt sich im iframe
+  neben dem Chat, Klicks im iframe zählen hoch. Die Konsole blieb ohne Fehler.
+- **Abweichung von Entscheidung 7 (Einbetten):** `sandbox` **mit** `allow-same-origin`. Ohne lädt Vite nicht: Modul-Skripte tragen
+  `crossorigin`, aus einem „undurchsichtigen“ Ursprung (`null`) verlangt der Browser CORS-Köpfe, die Vite nicht sendet (Konsole:
+  „blocked by CORS policy“). Die Abschottung hält trotzdem, **weil :8444 ein anderer Ursprung als :443 ist**. Gemessen im iframe:
+  eigener Speicher leer, `document.cookie` leer, `window.parent.sessionStorage` = `SecurityError`, `fetch` auf die HydraHive-API blockiert (CSP).
+- **Abweichung von Entscheidung 7 (Anmeldung):** Cookie `SameSite=None; Secure` statt Token im Pfad. Grund: Vite nutzt absolute Pfade
+  (`/@vite/client`), ein Token im Pfad würde sie nicht tragen. Das Cookie gilt nur für die Durchreiche, es öffnet keine HydraHive-API.
+- **Kern-Änderung nötig:** Die CSP von HydraHive (`installer/modules/60-nginx.sh`) verbietet iframes (`default-src 'self'`). Es braucht
+  `frame-src 'self' https://*:8444`. Auf hydratest von Hand eingetragen (Sicherung `/root/hydrahive2.nginx.vor-vibe`); **im Installer
+  noch nicht**, und der Kern wird nicht von diesem Modul geändert.
+- **Nicht gemessen:** Firefox/Safari, Neuladen nach einem Zug (HMR zeigt Änderungen von selbst, das Neuladen ist nur Rückfall).

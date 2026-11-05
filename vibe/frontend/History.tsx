@@ -4,12 +4,12 @@ import * as api from "./api"
 import { BTN } from "./ui"
 
 /** Zeitmaschine in einfacher Form: Liste der gespeicherten Schritte, je Schritt ein Knopf „Hierhin zurück“. */
-export function History({ projectId }: { projectId: string }) {
+export function History({ projectId, onLatest }: { projectId: string; onLatest?: (id: string) => void }) {
   const { t } = useTranslation("vibe")
   const [items, setItems] = useState<api.VibeVersion[] | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const load = useCallback(() => api.getVersions(projectId).then((r) => setItems(r.versions)).catch(() => setItems([])), [projectId])
+  const load = useCallback(() => api.getVersions(projectId).then((r) => { setItems(r.versions); onLatest?.(r.versions[0]?.commit_id ?? "") }).catch(() => setItems([])), [projectId, onLatest])
   useEffect(() => { void load(); const id = setInterval(() => void load(), 5000); return () => clearInterval(id) }, [load])
 
   const back = async (sha: string) => {

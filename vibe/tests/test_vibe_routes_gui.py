@@ -30,7 +30,9 @@ def env(setup_test_env, db_ready, fake_incus, monkeypatch):
     monkeypatch.setattr(provision, "setup", fake_setup)
     jobs.reset()
     from backend import routes
+    from backend import routes_model
     monkeypatch.setattr(routes, "_default_model", lambda: MODEL)         # im Test gibt es kein eingerichtetes Standardmodell
+    monkeypatch.setattr(routes_model, "_default_model", lambda: MODEL)
     return fake_incus
 
 
