@@ -181,6 +181,9 @@ class _Ctx:
     def register_router(self, router):
         pass
 
+    def register_device_router(self, router, *, auth):
+        pass
+
     def register_job(self, name, fn, interval, **kw):
         self.jobs.append((name, fn, interval))
 
