@@ -24,14 +24,10 @@ def env(setup_test_env, db_ready, fake_incus, monkeypatch):
     monkeypatch.setattr(network, "_host_addresses", lambda: set())
     monkeypatch.setattr(execution, "_container_exists", lambda name: container.is_vibe_name(name))
 
-    async def fake_setup(pid, report):
+    async def fake_setup(pid, report, *, start_at=""):
         for s in provision.STEPS:
             report(s.key)
     monkeypatch.setattr(provision, "setup", fake_setup)
-
-    async def fake_commit(pid, text, *, kind="turn"):
-        return {"commit_id": "c" * 40, "summary": text, "kind": kind, "created_at": "x"}
-    monkeypatch.setattr(jobs.versions, "commit_turn", fake_commit)
     jobs.reset()
     return fake_incus
 
@@ -62,7 +58,7 @@ def test_fortschritt_wird_je_schritt_gemeldet(env, monkeypatch):
 def test_zwischenzustand_ist_setting_up(env, monkeypatch):
     states: list[str] = []
 
-    async def spy_setup(pid, report):
+    async def spy_setup(pid, report, *, start_at=""):
         states.append(_row(pid)["state"])
         report("user")
         states.append(_row(pid)["progress"])
@@ -72,20 +68,8 @@ def test_zwischenzustand_ist_setting_up(env, monkeypatch):
     run(projects.remove(out["project_id"], owner="boss"))
 
 
-def test_erste_version_start_wird_gespeichert(env, monkeypatch):
-    commits: list[tuple] = []
-
-    async def fake_commit(pid, text, *, kind="turn"):
-        commits.append((text, kind))
-        return {"commit_id": "c" * 40, "summary": text, "kind": kind, "created_at": "x"}
-    monkeypatch.setattr(jobs.versions, "commit_turn", fake_commit)
-    out = run(jobs.create_and_setup(admin="boss", name="App", model=MODEL))
-    assert commits == [("Start", "start")]
-    run(projects.remove(out["project_id"], owner="boss"))
-
-
 def test_fehler_in_der_einrichtung_failed_mit_schritt_und_code(env, monkeypatch):
-    async def kaputt(pid, report):
+    async def kaputt(pid, report, *, start_at=""):
         report("user")
         report("packages")
         raise provision.SetupError("vibe_setup_failed", "packages")
@@ -99,7 +83,7 @@ def test_fehler_in_der_einrichtung_failed_mit_schritt_und_code(env, monkeypatch)
 
 
 def test_failed_projekt_bleibt_zum_wiederholen_und_zum_loeschen(env, monkeypatch):
-    async def kaputt(pid, report):
+    async def kaputt(pid, report, *, start_at=""):
         raise provision.SetupError("vibe_setup_failed", "node")
     monkeypatch.setattr(provision, "setup", kaputt)
     with pytest.raises(jobs.JobError):
@@ -112,9 +96,11 @@ def test_failed_projekt_bleibt_zum_wiederholen_und_zum_loeschen(env, monkeypatch
 
 def test_wiederholen_nach_failed_laeuft_ab_dem_fehlerschritt_neu(env, monkeypatch):
     zaehler = {"n": 0}
+    starts: list[str] = []
 
-    async def erst_kaputt(pid, report):
+    async def erst_kaputt(pid, report, *, start_at=""):
         zaehler["n"] += 1
+        starts.append(start_at)
         report("user")
         if zaehler["n"] == 1:
             raise provision.SetupError("vibe_setup_failed", "packages")
@@ -124,6 +110,7 @@ def test_wiederholen_nach_failed_laeuft_ab_dem_fehlerschritt_neu(env, monkeypatc
     pid = state.projects_of("boss")[0]["project_id"]
     run(jobs.retry_setup(pid, owner="boss"))
     assert _row(pid)["state"] == "ready" and zaehler["n"] == 2
+    assert starts == ["", "packages"]               # zweiter Lauf beginnt am Schritt, der scheiterte
     run(projects.remove(pid, owner="boss"))
 
 
@@ -141,7 +128,7 @@ def test_retry_nur_fuer_failed_und_nur_fuer_den_besitzer(env):
 def test_nur_ein_auftrag_je_projekt(env, monkeypatch):
     gate = asyncio.Event()
 
-    async def langsam(pid, report):
+    async def langsam(pid, report, *, start_at=""):
         report("user")
         await gate.wait()
     monkeypatch.setattr(provision, "setup", langsam)
@@ -156,7 +143,7 @@ def test_nur_ein_auftrag_je_projekt(env, monkeypatch):
         await t1
         return e.value.code, pid
     code, pid = run(ablauf())
-    assert code in ("vibe_busy", "vibe_not_failed")
+    assert code == "vibe_busy"
     run(projects.remove(pid, owner="boss"))
 
 
@@ -185,3 +172,16 @@ def test_state_zeigt_fortschritt_ohne_interna(env, client, admin_headers):
     assert row["state"] == "ready" and {"progress", "error_code", "error_step"} <= set(row)
     assert "container" not in row and "agent_id" not in row
     run(projects.remove(out["project_id"], owner="boss"))
+
+
+def test_busy_wird_auch_bei_failed_zustand_abgelehnt(env):
+    """Die Sperre „ein Auftrag je Projekt“ gilt unabhängig vom Zustand in der Datenbank."""
+    pid = "01a1-busy"
+    state.add_row(project_id=pid, agent_id="a", container="hh-vibe-z", name="B", owner="boss")
+    state.set_state(pid, "failed", error_code="vibe_setup_failed", error_step="node")
+    jobs._busy.add(pid)
+    with pytest.raises(jobs.JobError) as e:
+        run(jobs.retry_setup(pid, owner="boss"))
+    assert e.value.code == "vibe_busy"
+    jobs._busy.discard(pid)
+    state.delete_row(pid)

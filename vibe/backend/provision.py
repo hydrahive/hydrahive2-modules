@@ -100,10 +100,14 @@ def _exec_args(name: str, step: Step) -> list[str]:
     return ["exec", name, "--", "bash", "-c", step.script]
 
 
-async def setup(project_id: str, report: Callable[[str], None]) -> None:
-    """Alle Schritte nacheinander. `report(key)` vor jedem Schritt. Ein Fehler beendet die Einrichtung sofort."""
+async def setup(project_id: str, report: Callable[[str], None], *, start_at: str = "") -> None:
+    """Alle Schritte nacheinander. `report(key)` vor jedem Schritt. Ein Fehler beendet die Einrichtung sofort.
+    `start_at`: ab diesem Schritt beginnen („Nochmal versuchen“ nach einem Fehler); unbekannter Name → Fehler."""
     name = container.name_for(project_id)
-    for step in STEPS:
+    keys = [s.key for s in STEPS]
+    if start_at and start_at not in keys:
+        raise SetupError("vibe_setup_failed", "")
+    for step in STEPS[keys.index(start_at) if start_at else 0:]:
         report(step.key)
         stdin = template_tar() if step.key == "template" else None
         rc, _, _ = await incus.run(*_exec_args(name, step), timeout=step.timeout, input_bytes=stdin)

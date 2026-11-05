@@ -153,3 +153,36 @@ def test_kein_token_in_den_befehlen(box):
     line = " ".join(" ".join(c) for c in box.calls)
     for wort in ("GH_TOKEN", "GITEA_TOKEN", "HH_SECRET", "secret_key"):
         assert wort not in line
+
+
+# --- Einrichtung ab einem Schritt (Baustein 6: „Nochmal versuchen“) ---------------------------------------------
+
+def _record_setup(monkeypatch):
+    ran: list[str] = []
+
+    async def fake_run(*args, timeout=0, input_bytes=None):
+        ran.append(args[-1])
+        return 0, "", ""
+    monkeypatch.setattr(provision.incus, "run", fake_run)
+    return ran
+
+
+def test_setup_ab_schritt_ueberspringt_die_vorherigen(monkeypatch):
+    ran = _record_setup(monkeypatch)
+    reported: list[str] = []
+    asyncio.run(provision.setup("p1", reported.append, start_at="deps"))
+    assert reported == ["deps", "devserver"] and len(ran) == 2
+
+
+def test_setup_ohne_start_at_laeuft_alles(monkeypatch):
+    _record_setup(monkeypatch)
+    reported: list[str] = []
+    asyncio.run(provision.setup("p1", reported.append))
+    assert reported == [s.key for s in provision.STEPS]
+
+
+def test_setup_unbekannter_schritt_wird_abgelehnt(monkeypatch):
+    _record_setup(monkeypatch)
+    with pytest.raises(provision.SetupError) as e:
+        asyncio.run(provision.setup("p1", lambda k: None, start_at="'; rm -rf /"))
+    assert e.value.code == "vibe_setup_failed"
