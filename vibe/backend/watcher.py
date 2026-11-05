@@ -12,16 +12,19 @@ from __future__ import annotations
 
 import logging
 
-from . import chat, heal, state, versions
+from . import chat, heal, jobs, state, versions
 
 logger = logging.getLogger(__name__)
 INTERVAL_SECONDS = 2.0
 
 _state: dict[str, dict] = {}
+_recovered = False
 
 
 def reset() -> None:
+    global _recovered
     _state.clear()
+    _recovered = False
 
 
 def _sessions() -> dict[str, str | None]:
@@ -63,8 +66,22 @@ async def _one(pid: str, sid: str) -> None:
         heal.reset_project(pid)
 
 
+def _recover_once() -> None:
+    """Halbe Einrichtungen nach einem Neustart als unterbrochen markieren – hier statt in `register()`, weil der Kern
+    `register()` VOR den Migrationen aufruft (an hydratest 5.11. gemessen: „no such table: module_vibe_projects“)."""
+    global _recovered
+    if _recovered:
+        return
+    _recovered = True
+    try:
+        jobs.recover_after_restart()
+    except Exception:                                # noqa: BLE001
+        logger.exception("Vibe: unterbrochene Aufträge nicht lesbar")
+
+
 async def poll() -> None:
     """Ein Durchlauf für alle Projekte. Ein Fehler bei einem Projekt hält die anderen nicht auf."""
+    _recover_once()
     try:
         sessions = _sessions()
     except Exception:                                # noqa: BLE001

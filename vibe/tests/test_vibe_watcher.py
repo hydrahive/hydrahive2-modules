@@ -167,3 +167,55 @@ def test_pause_wenn_projekt_gelöscht_wird(kern, monkeypatch):
     tick()
     assert kern.commits == []
     assert "p1" not in watcher._state
+
+
+# --- Start: Der Kern ruft register() VOR den Migrationen auf (an hydratest 5.11. gemessen: „no such table“) -------
+
+class _Ctx:
+    def __init__(self) -> None:
+        self.jobs: list[tuple] = []
+
+    def register_migrations(self, rel):
+        pass
+
+    def register_router(self, router):
+        pass
+
+    def register_job(self, name, fn, interval, **kw):
+        self.jobs.append((name, fn, interval))
+
+
+def test_register_beruehrt_die_datenbank_nicht(monkeypatch):
+    import backend
+    from backend import state
+
+    def boom(*a, **k):
+        raise RuntimeError("Tabelle gibt es beim register() noch nicht")
+    monkeypatch.setattr(state, "all_rows", boom)
+    ctx = _Ctx()
+    backend.register(ctx)                                   # darf nicht werfen
+    assert [j[0] for j in ctx.jobs] == ["vibe-watcher"]
+
+
+def test_erster_durchlauf_holt_unterbrochene_auftraege_nach_genau_einmal(kern, monkeypatch):
+    from backend import jobs
+    calls = {"n": 0}
+    monkeypatch.setattr(jobs, "recover_after_restart", lambda: calls.__setitem__("n", calls["n"] + 1))
+    tick()
+    tick()
+    tick()
+    assert calls["n"] == 1
+
+
+def test_fehler_beim_nachholen_stoppt_den_waechter_nicht(kern, monkeypatch):
+    from backend import jobs
+
+    def boom():
+        raise RuntimeError("DB weg")
+    monkeypatch.setattr(jobs, "recover_after_restart", boom)
+    kern.running.add("s1")
+    tick()
+    kern.running.discard("s1")
+    kern.last_text["s1"] = "x"
+    tick()
+    assert [t for _, t, _ in kern.commits] == ["x"]
