@@ -36,13 +36,15 @@ behebt der Agent den Fehler selbst (höchstens 3 Versuche). Der Container ruht n
 2. **Eigener Netz-Name `hhvibe0` und eigene ACL `hhvibe-acl`**, nicht das Netz des Labors. Beide Module dürfen nebeneinander
    laufen, keines räumt das Netz des anderen ab. Teilnetz-Auswahl wie im Labor, mit anderen Kandidaten
    (`10.79.0.0/24`, `10.80.0.0/24`, `172.31.79.0/24`), damit es keine Überschneidung gibt.
-3. **Ende eines Agenten-Zugs erkennt das Modul über den Event-Bus des Kerns** (`runner/event_bus.bus.subscribe`,
-   Ereignis `done`, Klasse `Done` in `runner/events.py`). Der Bus ist prozessweit und liefert jedes Ereignis mit `seq`.
-   Das Modul hängt eine Hintergrund-Aufgabe je laufender Vibe-Sitzung an, die beim `done` die Version speichert.
-   **Risiko:** Ob ein Modul den Bus offiziell nutzen darf, steht in keiner Spec. Er liegt in `hydrahive.runner`, wie
-   `runner.run`, das Storyteller schon benutzt. Fällt der Bus weg, bleibt als Rückfall `GET /sessions/{id}/run-status`
-   (`running` true/false) im Takt von 2 s abfragen. Der Rückfall wird in Baustein 6 gebaut und getestet, nicht nur
-   erwähnt.
+3. **Ende eines Agenten-Zugs erkennt das Modul über einen Poller (`ctx.register_job`), nicht über den Event-Bus.**
+   *Geändert 5.11. nach Lesen des Kerns (Baustein 6).* Der Event-Bus (`runner/event_bus.py`) eröffnet für jeden Lauf einen
+   **frischen Kanal** (`bus.open(session_id)` in `start_run_task`); ein Hörer, der vorher angehängt wurde, bleibt am alten
+   Kanal hängen und hört nichts (gemessen: Hörer vor `open()` bekommt 0 Ereignisse, nach `open()` alle). Ein Dauer-Hörer
+   wäre also nur über Wiederanhängen nach jedem Lauf möglich – und `register_job` ist der dafür vorgesehene, vom
+   Kern überwachte Weg. Darum: alle 2 s `is_running(session_id)` je aktivem Vibe-Projekt; Wechsel „läuft → läuft nicht“
+   = Zug zu Ende → genau eine Version speichern. Zustand je Projekt im Speicher; nach Neustart startet jedes Projekt als
+   „läuft nicht“, ein unterbrochener Zug erzeugt dann beim nächsten Wechsel höchstens eine zusätzliche Version.
+   Vorteil: kein Verlust beim Wiederverbinden, keine doppelten Versionen, nichts hängt am Bus.
 4. **Chat links = `ChatPane` des Kerns**, wie Legal (`CaseChat.tsx`) und Storyteller (`ChatDock.tsx`):
    `<ChatPane deepLinkSid projectId showSidePanels={false} preferredAgentId agentSelectionExplicit />`. Kein eigener Chat.
    Sitzung mit `metadata.embedded_in = "vibe"`, damit das Projekt-Cockpit sie nicht von selbst öffnet.
