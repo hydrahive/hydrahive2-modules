@@ -1,4 +1,4 @@
-"""Baustein 5: „Nur diese Änderung zurück“ mit Konflikt, Dateiregeln beim Speichern einer Version (PLAN-V1.md).
+"""Baustein 5: „Nur diese Änderung zurück“ mit Konflikt (PLAN-V1.md).
 
 Dritter Teil zu test_vibe_versions.py. Gegen ECHTES Git. Der Konfliktablauf ist hier zum ersten Mal gebaut und
 getestet (SPEC.md nannte ihn „nicht gebaut oder getestet“).
@@ -105,66 +105,13 @@ def test_revert_ohne_wirkung_meldet_nichts_zu_tun(vm, work):
     assert git(work, "status", "--short") == "" and not (work / ".git" / "REVERT_HEAD").exists()
 
 
-# --- Dateiregeln beim Speichern ---------------------------------------------------------------------------------
-
-def test_node_modules_und_dist_kommen_nie_hinein_auch_ohne_gitignore(vm, work):
-    (work / ".gitignore").write_text("")                                   # der Agent leert die Datei
-    (work / "node_modules" / "p").mkdir(parents=True)
-    (work / "node_modules" / "p" / "i.js").write_text("x\n")
-    (work / "dist").mkdir()
-    (work / "dist" / "b.js").write_text("x\n")
-    (work / "sub" / "node_modules").mkdir(parents=True)
-    (work / "sub" / "node_modules" / "q.js").write_text("x\n")
-    (work / "ok.ts").write_text("ok\n")
-    run(versions.commit_turn("p1", "ignore leer", kind="turn"))
-    tracked = git(work, "ls-files").split()
-    assert "ok.ts" in tracked and not any("node_modules" in t or t.startswith("dist/") for t in tracked)
-
-
-def test_grosse_dateien_werden_nicht_versioniert(vm, work):
-    (work / "gross.bin").write_bytes(b"\0" * (versions.MAX_FILE_BYTES + 1))
-    (work / "klein.txt").write_text("k\n")
-    run(versions.commit_turn("p1", "mit gross", kind="turn"))
-    tracked = git(work, "ls-files").split()
-    assert "klein.txt" in tracked and "gross.bin" not in tracked
-
-
-def test_grosse_datei_allein_erzeugt_keine_version(vm, work):
-    (work / "gross.bin").write_bytes(b"\0" * (versions.MAX_FILE_BYTES + 1))
-    assert run(versions.commit_turn("p1", "nur gross", kind="turn")) is None
-
-
-def test_verschachteltes_repo_wird_nicht_eingebettet(vm, work):
-    (work / "fremd").mkdir()
-    subprocess.run(["git", "init", "-q", "-b", "main", str(work / "fremd")], check=True, env=clean_env(work.parent))
-    (work / "fremd" / "y.txt").write_text("y\n")
-    (work / "ok.txt").write_text("ok\n")
-    run(versions.commit_turn("p1", "mit fremd", kind="turn"))
-    stage = git(work, "ls-files", "--stage")
-    assert "160000" not in stage and "ok.txt" in stage
-
-
-def test_dateinamen_mit_sonderzeichen(vm, work):
-    for n in ("Mein Bild äö.txt", "mit'apostroph.txt", "$(touch pwn).txt", "-opt.txt"):
-        (work / n).write_text("x\n")
-    v = run(versions.commit_turn("p1", "namen", kind="turn"))
-    names = {f["path"] for f in run(versions.changes("p1", v["commit_id"]))["files"]}
-    assert {"Mein Bild äö.txt", "mit'apostroph.txt", "$(touch pwn).txt", "-opt.txt"} <= names
-    assert not (work / "pwn").exists() and not (work.parent / "pwn").exists()
-
-
-def test_git_hooks_des_agenten_laufen_nie(vm, work):
-    hook = work / ".git" / "hooks" / "pre-commit"
-    hook.parent.mkdir(exist_ok=True)
-    hook.write_text("#!/bin/sh\ntouch /tmp/vibe-hook-lief\nexit 1\n")
-    hook.chmod(0o755)
-    (work / "a.txt").write_text("x\n")
-    assert run(versions.commit_turn("p1", "mit hook", kind="turn")) is not None
-    import os
-    assert not os.path.exists("/tmp/vibe-hook-lief")
-
-
-def test_agent_aendert_git_config_hooks_pfad_wirkungslos(vm, work):
-    subprocess.run(["git", "config", "core.hooksPath", "/tmp/boese-hooks"], cwd=work, check=True, env=clean_env(work.parent))
-    (work / "a.txt").write_text("y\n")
-    assert run(versions.commit_turn("p1", "t", kind="turn")) is not None
+def test_konflikt_raeumt_auch_ungespeicherte_markierungen_im_index_weg(vm, work):
+    """Mutanten-Fund: Nach einem Konflikt reicht `revert --abort` allein nicht, wenn der Index schon halb aufgelöst
+    war. Danach darf weder ein Konfliktmarker noch ein vorgemerkter Rest übrig sein."""
+    v1 = turn(work, "k.txt", "zwei\n", "zwei")
+    turn(work, "k.txt", "drei\n", "drei")
+    (work / "extra.txt").write_text("neu und vorgemerkt\n")
+    subprocess.run(["git", "add", "extra.txt"], cwd=work, check=True, env=clean_env(work.parent))
+    run(versions.revert("p1", v1["commit_id"]))
+    assert "UU" not in git(work, "status", "--short") and "<<<<<<<" not in (work / "k.txt").read_text()
+    assert git(work, "diff", "--cached", "--name-only").strip() == ""

@@ -168,3 +168,14 @@ def test_zurueck_rauemt_ungespeicherte_dateien_weg_aber_nicht_node_modules(vm, w
     turn(work, "a.txt", "zwei\n", "zwei")
     run(versions.restore("p1", v1["commit_id"]))
     assert (work / "node_modules" / "p.js").exists()
+
+
+def test_zurueck_auf_unbekannte_version_aendert_nichts(vm, work):
+    """Mutanten-Fund: Ohne Existenzprüfung würde `read-tree` mit einer unbekannten ID scheitern UND vorher nichts
+    verhindern. Hier muss die Datei unangetastet bleiben und der Code `vibe_version_not_found` kommen."""
+    turn(work, "a.txt", "wichtig\n", "wichtig")
+    (work / "lose.txt").write_text("nicht gespeichert\n")
+    with pytest.raises(versions.VersionError) as e:
+        run(versions.restore("p1", "0" * 40))
+    assert e.value.code == "vibe_version_not_found"
+    assert (work / "a.txt").read_text() == "wichtig\n" and (work / "lose.txt").exists()
