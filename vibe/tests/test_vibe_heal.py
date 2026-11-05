@@ -290,3 +290,9 @@ def test_hinweis_nennt_keine_geldbetraege_und_keine_interna(lauf, monkeypatch):
 def test_zeitgrenze_des_heilungslaufs_ist_kurz():
     from backend import heal_run
     assert heal_run.TIMEOUT_SECONDS == 3 * 60
+
+
+def test_nie_zwei_hinweise_fuer_denselben_lauf(lauf, monkeypatch):
+    _limited_run(lauf, monkeypatch, limited=True, timed_out=True)
+    report("e1")
+    assert len(lauf.sent) == 1 and "Kostengrenze" in lauf.sent[0][1]

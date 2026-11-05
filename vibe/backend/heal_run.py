@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 
 logger = logging.getLogger(__name__)
-TIMEOUT_SECONDS = 10 * 60
+TIMEOUT_SECONDS = 3 * 60          # Heilung ist klein; echte Läufe brauchten 2–10 s je Runde (hydratest 5.11.)
 
 
 def _n(v) -> int:
@@ -53,6 +53,7 @@ async def drive(project_id: str, session_id: str, task: str, *, limit_tokens: in
 
     before_n = len(_rows(session_id))
     limited = False
+    timed_out = False
     done = None
     bus.open(session_id)
     try:
@@ -70,10 +71,14 @@ async def drive(project_id: str, session_id: str, task: str, *, limit_tokens: in
                         if isinstance(ev, Done):
                             done = ev
                         bus.publish(session_id, encode_event(ev))
-                await asyncio.wait_for(_loop(), timeout=TIMEOUT_SECONDS)
+                try:
+                    await asyncio.wait_for(_loop(), timeout=TIMEOUT_SECONDS)
+                except TimeoutError:
+                    timed_out = True
             finally:
                 await gen.aclose()
     finally:
         bus.close(session_id)
         broadcaster.broadcast(session_id, '{"t":"done"}')
-    return {"tokens": spent(_rows(session_id), before_n), "limited": limited, "done": done is not None}
+    return {"tokens": spent(_rows(session_id), before_n), "limited": limited, "timed_out": timed_out,
+            "done": done is not None}

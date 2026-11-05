@@ -150,8 +150,10 @@ def test_drive_gibt_verbrauch_auch_bei_zeitgrenze_zurueck(monkeypatch):
 
 
 def test_drive_schliesst_den_generator_an_der_grenze(monkeypatch):
+    """Direkt nach `drive` geprüft, noch in derselben Ereignisschleife: Das Aufräumen am Ende von `asyncio.run` würde
+    einen liegen gelassenen Generator sonst nachträglich schließen und den Fehler verdecken."""
     closed = {"n": 0}
-    rows = _install_core(monkeypatch, events=["iter", "iter", "iter"], rows_per_round=_row(3_000))
+    _install_core(monkeypatch, events=["iter", "iter", "iter"], rows_per_round=_row(3_000))
     import sys
     orig = sys.modules["hydrahive.runner"].run
 
@@ -162,5 +164,8 @@ def test_drive_schliesst_den_generator_an_der_grenze(monkeypatch):
         finally:
             closed["n"] += 1
     sys.modules["hydrahive.runner"].run = tracked
-    asyncio.run(heal_run.drive("p", "s", "t", limit_tokens=5_000))
-    assert closed["n"] == 1 and rows
+
+    async def go():
+        await heal_run.drive("p", "s", "t", limit_tokens=5_000)
+        return closed["n"]
+    assert asyncio.run(go()) == 1

@@ -23,6 +23,10 @@ LIMIT_TOKENS = 100_000
 MAX_TOTAL_TOKENS = 250_000
 KINDS = frozenset({"error", "promise"})
 _MAX_MESSAGE, _MAX_STACK = 1500, 1000
+LIMIT_TEXT = ("Ich habe die Fehlerbehebung angehalten: Sie hat die Kostengrenze für einen Versuch erreicht. "
+              "Wenn du magst, sag mir, was ich prüfen soll.")
+TIMEOUT_TEXT = ("Die Fehlerbehebung hat zu lange gedauert, ich habe sie abgebrochen. Sag mir, was ich prüfen soll, "
+                "oder geh in der Zeitleiste zu einem früheren Stand zurück.")
 GIVE_UP_TEXT = ("Ich komme nicht weiter: Der Fehler ist nach mehreren Versuchen noch da. Schau dir die Meldung in der "
                 "Vorschau an und sag mir, was ich anders machen soll – oder geh in der Zeitleiste zu einem früheren Stand zurück.")
 
@@ -137,7 +141,12 @@ async def on_error(project_id: str, report: dict) -> None:
     try:
         out = await _start_fix(project_id, sid, _task(message, _clean(report.get("stack"), _MAX_STACK)),
                                limit_tokens=min(LIMIT_TOKENS, MAX_TOTAL_TOKENS - p["spent"]))
-        p["spent"] += int((out or {}).get("tokens") or 0)
+        out = out or {}
+        p["spent"] += int(out.get("tokens") or 0)
+        if out.get("limited"):
+            _say(project_id, LIMIT_TEXT)
+        elif out.get("timed_out"):
+            _say(project_id, TIMEOUT_TEXT)
         _fix_turns[project_id] = _fix_turns.get(project_id, 0) + 1
     except Exception:                                       # noqa: BLE001 – Grenze: Server läuft weiter, Versuch zählt
         logger.exception("Vibe: Heilungslauf für %s fehlgeschlagen", project_id)
