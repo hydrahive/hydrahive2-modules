@@ -185,3 +185,75 @@ def test_busy_wird_auch_bei_failed_zustand_abgelehnt(env):
     assert e.value.code == "vibe_busy"
     jobs._busy.discard(pid)
     state.delete_row(pid)
+
+
+# --- Fehlerausgabe festhalten (an hydratest 5.11. gefunden: npm ci scheiterte einmal ohne jede Spur) -----------------
+
+def test_migration_hat_spalte_error_detail(db_ready):
+    from hydrahive.db.connection import db
+    with db() as conn:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(module_vibe_projects)")}
+    assert "error_detail" in cols
+
+
+def test_fehlerdetail_wird_gespeichert(env, monkeypatch):
+    async def kaputt(pid, report, *, start_at=""):
+        raise provision.SetupError("vibe_setup_failed", "deps", "npm error network request failed")
+    monkeypatch.setattr(provision, "setup", kaputt)
+    with pytest.raises(jobs.JobError) as e:
+        run(jobs.create_and_setup(admin="boss", name="App", model=MODEL))
+    assert e.value.detail == "npm error network request failed"
+    row = state.projects_of("boss")[0]
+    assert row["error_detail"] == "npm error network request failed" and row["error_step"] == "deps"
+
+
+def test_fehlerdetail_kommt_in_state_fuer_die_oberflaeche(env, client, admin_headers, monkeypatch):
+    async def kaputt(pid, report, *, start_at=""):
+        raise provision.SetupError("vibe_setup_failed", "deps", "npm error network request failed")
+    monkeypatch.setattr(provision, "setup", kaputt)
+    with pytest.raises(jobs.JobError):
+        run(jobs.create_and_setup(admin="boss", name="App", model=MODEL))
+    row = client.get("/api/modules/vibe/state", headers=admin_headers).json()["projects"][0]
+    assert row["error_detail"] == "npm error network request failed"
+
+
+def test_fehlerdetail_wird_nach_erfolgreichem_wiederholen_geloescht(env, monkeypatch):
+    n = {"i": 0}
+
+    async def erst_kaputt(pid, report, *, start_at=""):
+        n["i"] += 1
+        if n["i"] == 1:
+            raise provision.SetupError("vibe_setup_failed", "deps", "alter Fehler")
+    monkeypatch.setattr(provision, "setup", erst_kaputt)
+    with pytest.raises(jobs.JobError):
+        run(jobs.create_and_setup(admin="boss", name="App", model=MODEL))
+    pid = state.projects_of("boss")[0]["project_id"]
+    run(jobs.retry_setup(pid, owner="boss"))
+    row = state.projects_of("boss")[0]
+    assert row["state"] == "ready" and row["error_detail"] == "" and row["error_code"] == ""
+
+
+def test_fehlerdetail_bei_unterbrochenem_auftrag_ist_leer(env):
+    state.add_row(project_id="01a1-detail", agent_id="a", container="hh-vibe-d", name="Halb", owner="boss")
+    state.set_state("01a1-detail", "setting_up")
+    jobs.recover_after_restart()
+    assert state.get_row("01a1-detail")["error_detail"] == ""
+    state.delete_row("01a1-detail")
+
+
+def test_fehlerdetail_anderer_fehler_im_auftrag_hat_kein_detail(env, monkeypatch):
+    async def boom(pid, report, *, start_at=""):
+        raise RuntimeError("geheimer interner Text mit /var/lib/hydrahive2/pfad")
+    monkeypatch.setattr(provision, "setup", boom)
+    with pytest.raises(jobs.JobError) as e:
+        run(jobs.create_and_setup(admin="boss", name="App", model=MODEL))
+    assert e.value.detail == "" and "geheim" not in str(state.projects_of("boss")[0])
+
+
+def test_fehlerdetail_ist_in_der_datenbank_begrenzt(env, monkeypatch):
+    async def gross(pid, report, *, start_at=""):
+        raise provision.SetupError("vibe_setup_failed", "deps", "x" * 5000)
+    monkeypatch.setattr(provision, "setup", gross)
+    with pytest.raises(jobs.JobError):
+        run(jobs.create_and_setup(admin="boss", name="App", model=MODEL))
+    assert len(state.projects_of("boss")[0]["error_detail"]) <= provision.MAX_DETAIL
