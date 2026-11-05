@@ -239,3 +239,54 @@ def test_sperre_wird_auch_nach_fehler_im_lauf_frei(lauf):
     lauf.fehler = RuntimeError("weg")
     report("a")
     assert "p1" not in heal._active
+
+
+# --- Rückmeldung bei Kostengrenze und Zeitgrenze (Baustein 6, nach der Probe auf hydratest) -----------------------
+
+def _limited_run(lauf, monkeypatch, *, limited=False, timed_out=False, tokens=0):
+    async def start_fix(pid, sid, task, *, limit_tokens):
+        return {"reply": "", "tokens": tokens, "limited": limited, "timed_out": timed_out}
+    monkeypatch.setattr(heal, "_start_fix", start_fix)
+
+
+def test_kostengrenze_gegriffen_sagt_es_im_chat(lauf, monkeypatch):
+    _limited_run(lauf, monkeypatch, limited=True, tokens=9_000)
+    report("e1")
+    assert any("Kostengrenze" in t for _, t in lauf.sent)
+
+
+def test_zeitgrenze_gegriffen_sagt_es_im_chat(lauf, monkeypatch):
+    _limited_run(lauf, monkeypatch, timed_out=True)
+    report("e1")
+    assert any("zu lange" in t.lower() for _, t in lauf.sent)
+
+
+def test_normaler_lauf_sagt_nichts(lauf, monkeypatch):
+    _limited_run(lauf, monkeypatch)
+    report("e1")
+    assert lauf.sent == []
+
+
+def test_grenze_zaehlt_als_versuch_und_schluss_nach_drei(lauf, monkeypatch):
+    _limited_run(lauf, monkeypatch, limited=True, tokens=1_000)
+    for i in range(6):
+        report(f"e{i}")
+    assert heal.status("p1")["attempts"] == 3 and heal.status("p1")["gave_up"] is True
+
+
+def test_grenze_hinweis_je_lauf_hoechstens_einmal(lauf, monkeypatch):
+    _limited_run(lauf, monkeypatch, limited=True)
+    report("e1")
+    assert sum("Kostengrenze" in t for _, t in lauf.sent) == 1
+
+
+def test_hinweis_nennt_keine_geldbetraege_und_keine_interna(lauf, monkeypatch):
+    _limited_run(lauf, monkeypatch, limited=True, tokens=123_456)
+    report("e1")
+    text = " ".join(t for _, t in lauf.sent)
+    assert "$" not in text and "€" not in text and "123456" not in text and "123 456" not in text
+
+
+def test_zeitgrenze_des_heilungslaufs_ist_kurz():
+    from backend import heal_run
+    assert heal_run.TIMEOUT_SECONDS == 3 * 60
