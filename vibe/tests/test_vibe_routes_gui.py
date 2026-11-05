@@ -243,3 +243,21 @@ def test_ohne_standardmodell_wird_nichts_angelegt(env, client, admin_headers, mo
     r = client.post(B + "/projects", json={"name": "x"}, headers=admin_headers)
     assert r.status_code == 400 and r.json()["detail"]["code"] == "vibe_model_unavailable"
     assert client.get(B + "/state", headers=admin_headers).json()["projects"] == []
+
+
+def test_modellliste_enthaelt_immer_das_standardmodell(env, client, admin_headers, monkeypatch):
+    from hydrahive.llm import registry
+
+    async def leer(kind):
+        return []
+    monkeypatch.setattr(registry, "list_models", leer)
+    d = client.get(B + "/models", headers=admin_headers).json()
+    assert d["default"] == MODEL and [i["id"] for i in d["items"]] == [MODEL]
+
+
+def test_modell_zurueck_auf_standard_geht_auch_wenn_es_nicht_in_der_liste_steht(env, client, admin_headers, monkeypatch):
+    from hydrahive.agents import _validation
+    pid = _create(client, admin_headers).json()["project_id"]
+    monkeypatch.setattr(_validation, "_available_models", lambda: ["anderes/modell"])
+    r = client.post(f"{B}/projects/{pid}/model", json={"model": MODEL}, headers=admin_headers)
+    assert r.status_code == 200 and r.json() == {"model": MODEL}

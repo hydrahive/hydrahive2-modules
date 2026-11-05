@@ -61,6 +61,19 @@ def _model_of(agent_id: str) -> str:
     return str((cfg or {}).get("llm_model") or "")
 
 
+def _write_model(agent_id: str, model: str) -> None:
+    """Nur das Feld llm_model, direkt (wie _managed.set_managed im Kern)."""
+    from hydrahive.agents._config_utils import get, save_atomic
+    from hydrahive.agents._paths import config_path
+    from hydrahive.db._utils import now_iso
+    cfg = get(agent_id)
+    if not cfg:
+        raise coded(status.HTTP_404_NOT_FOUND, "vibe_project_not_found")
+    cfg["llm_model"] = model
+    cfg["updated_at"] = now_iso()
+    save_atomic(config_path(agent_id), cfg)
+
+
 async def _background(coro) -> None:
     try:
         await coro
@@ -87,8 +100,11 @@ def get_state(p: Admin) -> dict:
 async def list_models(p: Admin) -> dict:
     """Modelle der eigenen Anbieter für die Auswahl; `default` ist das, was ohne Wahl genommen wird."""
     from hydrahive.llm import registry
-    items = await registry.list_models("chat")
-    return {"default": _default_model(), "items": [{"id": m.id, "label": m.label, "provider": m.provider} for m in items]}
+    items = [{"id": m.id, "label": m.label, "provider": m.provider} for m in await registry.list_models("chat")]
+    default = _default_model()
+    if default and all(i["id"] != default for i in items):       # das Standardmodell steht nicht immer in der Live-Liste
+        items.insert(0, {"id": default, "label": default, "provider": "standard"})
+    return {"default": default, "items": items}
 
 
 @router.post("/projects", status_code=status.HTTP_202_ACCEPTED)
@@ -118,12 +134,19 @@ def set_model(project_id: str, p: Admin, body: ModelChoice) -> dict:
     from hydrahive.agents import config as agent_config
     from hydrahive.agents._validation import AgentValidationError, validate_model
     row = _own(project_id, p)
-    try:
-        validate_model(body.model.strip())
-    except AgentValidationError:
-        raise coded(status.HTTP_400_BAD_REQUEST, "vibe_model_unavailable") from None
-    agent_config.update(row["agent_id"], llm_model=body.model.strip())
-    return {"model": body.model.strip()}
+    chosen = body.model.strip()
+    agent = agent_config.get(row["agent_id"]) or {}
+    # Das Standardmodell steht nicht immer in der Live-Liste, ist aber das, was das System selbst nimmt – also erlaubt.
+    # Auch bleibt ein schon gesetztes Modell wählbar, wenn nur die Liste gerade fehlt.
+    if chosen == _default_model() or chosen == agent.get("llm_model"):
+        _write_model(row["agent_id"], chosen)                     # agent_config.update prüft erneut gegen die Live-Liste
+    else:
+        try:
+            validate_model(chosen)
+        except AgentValidationError:
+            raise coded(status.HTTP_400_BAD_REQUEST, "vibe_model_unavailable") from None
+        agent_config.update(row["agent_id"], llm_model=chosen)
+    return {"model": chosen}
 
 
 @router.post("/projects/{project_id}/retry", status_code=status.HTTP_202_ACCEPTED)
