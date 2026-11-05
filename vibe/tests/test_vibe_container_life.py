@@ -18,7 +18,6 @@ def run(coro):
 def net(fake_incus, monkeypatch):
     monkeypatch.setattr(network, "_host_networks", lambda: set())
     monkeypatch.setattr(network, "_host_addresses", lambda: {"192.168.178.2/32"})
-    monkeypatch.setattr(container, "_ubuntu_version", lambda: "26.04")
     run(network.ensure_network())
     return fake_incus
 

@@ -115,3 +115,21 @@ def test_konflikt_raeumt_auch_ungespeicherte_markierungen_im_index_weg(vm, work)
     run(versions.revert("p1", v1["commit_id"]))
     assert "UU" not in git(work, "status", "--short") and "<<<<<<<" not in (work / "k.txt").read_text()
     assert git(work, "diff", "--cached", "--name-only").strip() == ""
+
+
+def test_konflikt_raeumt_auf_auch_wenn_revert_abort_selbst_scheitert(vm, work, monkeypatch):
+    """Mutanten-Fund: Mit diesem Git räumt `revert --abort` schon alles auf. Die zweite Absicherung (`reset --hard`)
+    greift erst, wenn der Abbruch selbst scheitert (zerschossenes .git/sequencer). Dann muss /work trotzdem sauber sein."""
+    v1 = turn(work, "k.txt", "zwei\n", "zwei")
+    turn(work, "k.txt", "drei\n", "drei")
+    real = vm.run
+
+    async def abort_kaputt(argv, **k):
+        if "revert" in argv and "--abort" in argv:
+            return 1, "", "fatal: kaputt"
+        return await real(argv, **k)
+    monkeypatch.setattr(versions, "_run", abort_kaputt)
+    res = run(versions.revert("p1", v1["commit_id"]))
+    assert res["ok"] is False and res["code"] == "vibe_revert_conflict"
+    assert "<<<<<<<" not in (work / "k.txt").read_text() and (work / "k.txt").read_text() == "drei\n"
+    assert git(work, "status", "--short") == "" and not (work / ".git" / "REVERT_HEAD").exists()

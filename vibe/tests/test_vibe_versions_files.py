@@ -141,13 +141,13 @@ def test_agent_aendert_git_config_hooks_pfad_wirkungslos(vm, work):
     assert run(versions.commit_turn("p1", "t", kind="turn")) is not None
 
 
-def test_erster_zug_ohne_jede_aenderung_erzeugt_die_startversion(work, monkeypatch):
-    """Mutanten-Fund: Auch ein leerer Ordner bekommt seine erste Version (sonst gäbe es nichts, wohin man zurück kann)."""
-    (work / "a.txt").unlink(missing_ok=True)
-    for f in list(work.iterdir()):
-        if f.name != ".git":
-            f.unlink()
-    monkeypatch.setattr(versions, "_run", Bridge(work).run)
+def test_erster_zug_ohne_jede_aenderung_erzeugt_die_startversion(tmp_path, monkeypatch):
+    """Mutanten-Fund: Auch ein leerer Ordner bekommt seine erste Version (sonst gäbe es nichts, wohin man zurück kann).
+    Eigener frischer Ordner statt Aufräumen des Fixtures – dieser Test löscht nichts."""
+    leer = tmp_path / "leer"
+    leer.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main", str(leer)], check=True, env=clean_env(tmp_path))
+    monkeypatch.setattr(versions, "_run", Bridge(leer).run)
     v = run(versions.commit_turn("p1", "Start", kind="start"))
     assert v is not None and v["summary"] == "Start"
     assert len(run(versions.history("p1"))) == 1
@@ -165,3 +165,16 @@ def test_ausnahme_fuer_inneres_repo_ist_wortwoertlich_nicht_als_muster(vm, work)
     run(versions.commit_turn("p1", "mit Glob-Namen", kind="turn"))
     tracked = git(work, "ls-files").split()
     assert "a-wichtig.txt" in tracked and "b-wichtig.txt" in tracked
+
+
+def test_zurueck_laesst_nie_versionierte_dateien_liegen(vm, work):
+    """Echte Probe 5.11.: Eine zu große Datei ist nie in einer Version. „Zurück zu hier“ stellt Versionen wieder her
+    und fasst Unversioniertes nicht an – so geht auch nichts verloren, das nie gesichert war. (Bewusste Grenze: die
+    Zeitleiste sichert nur, was in einer Version steht; große Dateien und node_modules gehören nicht dazu.)"""
+    (work / "spaeter.txt").write_text("x\n")
+    v1 = run(versions.commit_turn("p1", "mit spaeter", kind="turn"))
+    start = run(versions.history("p1"))[-1]
+    (work / "gross.bin").write_bytes(b"\0" * (versions.MAX_FILE_BYTES + 1))
+    run(versions.commit_turn("p1", "mit gross", kind="turn"))
+    run(versions.restore("p1", start["commit_id"]))
+    assert not (work / "spaeter.txt").exists() and (work / "gross.bin").exists() and v1

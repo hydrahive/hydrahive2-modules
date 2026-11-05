@@ -4,19 +4,20 @@ Bewusst NICHT über `containers.lifecycle` des Kerns: der kennt nur br0/hhnat0 u
 LXC-Hosts `security.privileged=true` trägt (Befund hydratest 30.10.). Vibe startet ohne Profil, ausdrücklich
 unprivilegiert, ohne Verschachtelung (Vibe baut Webseiten, keine Container), mit eigener Platte im Standard-Speicher-
 pool und NIC am Vibe-Netz. Mehrere Container teilen sich das Netz; der Name kommt aus der Projekt-ID und wird geprüft.
+Das Image ist fest (IMAGE_RELEASE), nicht die Ubuntu-Version des Servers.
 """
 from __future__ import annotations
 
 import asyncio
 import re
 from dataclasses import dataclass
-from pathlib import Path
 
 from . import incus, network
 
 PREFIX = network.PREFIX
-_FALLBACK = "24.04"
-_VERSION = re.compile(r'^VERSION_ID="?(\d{2}\.\d{2})"?$', re.MULTILINE)
+# Festes, getestetes Image. NICHT die Server-Version: ein Container aus images:ubuntu/26.04 bekam in der echten Probe
+# (5.11., incus 6.0.0, Ubuntu-26.04-Server) nie eine IPv4-Adresse, images:ubuntu/24.04 nach 1 s.
+IMAGE_RELEASE = "24.04"
 _POOL = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$")
 _ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,54}$")            # PREFIX (8) + 55 ≤ 63 Zeichen, K1: ^[a-z][a-z0-9-]{1,62}$
 _NAME = re.compile(r"^hh-vibe-[a-z0-9][a-z0-9-]{0,54}$")
@@ -57,16 +58,6 @@ class Limits:
             raise VibeError("vibe_limits_invalid")
 
 
-def _ubuntu_version(path: Path = Path("/etc/os-release")) -> str:
-    """Ubuntu-Version des Servers fürs Bild; sonst (Debian, unlesbar, komisch) 24.04."""
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError:
-        return _FALLBACK
-    m = _VERSION.search(text)
-    return m.group(1) if m and "ID=ubuntu" in text.split() else _FALLBACK
-
-
 async def exists(project_id: str) -> bool:
     name = name_for(project_id)
     rc, out, _ = await incus.run("list", "--format", "csv", "-c", "n")
@@ -90,7 +81,7 @@ async def launch(project_id: str, limits: Limits) -> None:
             "-c", f"limits.cpu={limits.cpu}", "-c", f"limits.memory={limits.ram_mb}MiB",
             "-c", "security.privileged=false", "-c", "security.nesting=false",
             "-d", f"root,size={limits.disk_gb}GiB",
-            "--", f"images:ubuntu/{_ubuntu_version()}", name]
+            "--", f"images:ubuntu/{IMAGE_RELEASE}", name]
     rc, _, _ = await incus.run(*args, timeout=600)
     if rc != 0:
         raise VibeError("vibe_launch_failed")

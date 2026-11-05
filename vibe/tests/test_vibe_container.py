@@ -19,7 +19,6 @@ def run(coro):
 def net(fake_incus, monkeypatch):
     monkeypatch.setattr(network, "_host_networks", lambda: set())
     monkeypatch.setattr(network, "_host_addresses", lambda: {"192.168.178.2/32"})
-    monkeypatch.setattr(container, "_ubuntu_version", lambda: "26.04")
     run(network.ensure_network())
     return fake_incus
 
@@ -75,7 +74,7 @@ def test_grenzen_raender_gueltig(kw):
 def test_launch_ohne_profil_unprivilegiert_eigenes_netz(net):
     run(container.launch("p1", container.Limits(cpu=3, ram_mb=3072, disk_gb=12)))
     a = launch_args(net)
-    assert a[-2:] == ["images:ubuntu/26.04", "hh-vibe-p1"] and a[-3] == "--"
+    assert a[-2:] == ["images:ubuntu/24.04", "hh-vibe-p1"] and a[-3] == "--"
     for opt in (["--no-profiles"], ["-s", "default"], ["-n", "hhvibe0"], ["-c", "limits.cpu=3"],
                 ["-c", "limits.memory=3072MiB"], ["-c", "security.privileged=false"],
                 ["-c", "security.nesting=false"], ["-d", "root,size=12GiB"]):
@@ -125,18 +124,3 @@ def test_launch_fehler(net):
     with pytest.raises(container.VibeError) as e:
         run(container.launch("p1", container.Limits()))
     assert e.value.code == "vibe_launch_failed"
-
-
-@pytest.mark.parametrize(("text", "ver"), [('VERSION_ID="26.04"\nID=ubuntu\n', "26.04"),
-                                         ('VERSION_ID="24.04"\nID=ubuntu\n', "24.04"),
-                                         ('VERSION_ID="12"\nID=debian\n', "24.04"), ("", "24.04"),
-                                         ('VERSION_ID="26.04;rm"\nID=ubuntu\n', "24.04"),
-                                         ('VERSION_ID="22.04"\nID=pop\n', "24.04")])
-def test_ubuntu_version_wie_server(text, ver, tmp_path):
-    f = tmp_path / "os-release"
-    f.write_text(text)
-    assert container._ubuntu_version(f) == ver
-
-
-def test_ubuntu_version_datei_fehlt(tmp_path):
-    assert container._ubuntu_version(tmp_path / "gibt-es-nicht") == "24.04"

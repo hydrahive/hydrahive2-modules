@@ -19,7 +19,6 @@ def env(setup_test_env, db_ready, fake_incus, monkeypatch):
     from hydrahive.projects import execution
     monkeypatch.setattr(network, "_host_networks", lambda: set())
     monkeypatch.setattr(network, "_host_addresses", lambda: set())
-    monkeypatch.setattr(container, "_ubuntu_version", lambda: "24.04")
     monkeypatch.setattr(execution, "_container_exists", lambda name: container.is_vibe_name(name))
     return fake_incus
 

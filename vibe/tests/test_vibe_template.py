@@ -20,7 +20,6 @@ def run(coro):
 def box(fake_incus, monkeypatch):
     monkeypatch.setattr(network, "_host_networks", lambda: set())
     monkeypatch.setattr(network, "_host_addresses", lambda: set())
-    monkeypatch.setattr(container, "_ubuntu_version", lambda: "24.04")
     run(network.ensure_network())
     run(container.launch("p1", container.Limits()))
     return fake_incus
