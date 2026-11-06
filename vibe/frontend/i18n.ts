@@ -37,7 +37,7 @@ const de = {
       user: "Benutzer anlegen", packages: "Werkzeuge installieren", node: "Programmiersprache installieren",
       template: "Startvorlage kopieren", git: "Speicher für Versionen anlegen", deps: "Bausteine laden", devserver: "Vorschau starten",
     },
-    takes: "Das dauert etwa eine Minute. Du kannst die Seite offen lassen.",
+    takes: "Das dauert ein bis zwei Minuten. Du kannst die Seite offen lassen.",
     failed_at: "Hat bei „{{step}}“ nicht geklappt.",
     detail: "Letzte Meldung:",
     err: {
@@ -75,7 +75,7 @@ const en = {
       user: "Create user", packages: "Install tools", node: "Install programming language", template: "Copy starter template",
       git: "Create storage for versions", deps: "Load building blocks", devserver: "Start preview",
     },
-    takes: "This takes about a minute. You can leave this page open.", failed_at: "Failed at “{{step}}”.", detail: "Last message:",
+    takes: "This takes one to two minutes. You can leave this page open.", failed_at: "Failed at “{{step}}”.", detail: "Last message:",
     err: {
       general: "That did not work. Please try again.", vibe_no_incus: "This server has no container management. Vibe cannot run here.",
       vibe_model_unavailable: "No default model is set up. Please choose one under “LLM” first.",
