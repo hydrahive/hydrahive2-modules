@@ -1,5 +1,7 @@
 # Zerlege-Werkstatt – Spezifikation E1
 
+> **Historischer Stand (Modul 0.4.0).** Dieses Dokument beschreibt die ausgelieferte E1-Architektur und bleibt als Nachweis erhalten. Es ist nicht mehr die Zielarchitektur. Verbindlich für V2 ist [`SPEC-V2.md`](SPEC-V2.md).
+
 **Stand:** 02.11.2026  
 **Status:** E1 umgesetzt; E2-Ausbau in Arbeit (0.2.0)
 **Task:** `ba8d88b3`  

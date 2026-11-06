@@ -1,5 +1,7 @@
 # Zerlege-Werkstatt – Spezifikation E2: native statische Analysebreite
 
+> **Historischer Stand (Modul 0.4.0).** Dieses Dokument beschreibt den verworfenen Ausbau des festen CLI-Adapters und bleibt als Nachweis erhalten. Es ist nicht mehr die Zielarchitektur. Verbindlich für V2 ist [`SPEC-V2.md`](SPEC-V2.md).
+
 **Status:** in Umsetzung
 
 ## 1. Ziel

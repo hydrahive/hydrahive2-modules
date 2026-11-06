@@ -1,7 +1,7 @@
 {
   "id": "zerlegewerkstatt",
   "name": "Zerlege-Werkstatt",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Untersucht autorisierte Windows-Programme, Android-Apps, Firmware und Netzwerk-Mitschnitte statisch und belegt die gefundenen Schnittstellen.",
   "icon": "ScanSearch",
   "nav_group": "working",

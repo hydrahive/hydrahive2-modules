@@ -22,7 +22,7 @@ def test_install_und_uninstall_existieren():
 
 def test_versionen_sind_gepinnt():
     text = read(INSTALL)
-    assert '"version": "0.4.0"' in read(MODULE_DIR / "manifest.json")
+    assert '"version": "0.4.1"' in read(MODULE_DIR / "manifest.json")
     assert 'NODE_VERSION="24.22.2"' in text
     assert 'REA_VERSION="6.8.0"' in text
     assert 'GHIDRA_VERSION="12.1.4"' in text

@@ -1,0 +1,50 @@
+{
+  "contract": "zerlegewerkstatt-legacy-v0.4.0",
+  "source_migration": "migrations/001_zerlegewerkstatt.sql",
+  "data_root": "zerlegewerkstatt/cases/<case-id>",
+  "tables": {
+    "module_zerlege_cases": [
+      "id",
+      "project_id",
+      "created_by",
+      "title",
+      "target",
+      "question",
+      "purpose",
+      "authorized",
+      "authorization_note",
+      "status",
+      "error_code",
+      "created_at",
+      "updated_at"
+    ],
+    "module_zerlege_artifacts": [
+      "id",
+      "case_id",
+      "original_name",
+      "kind",
+      "size_bytes",
+      "sha256",
+      "relative_path",
+      "created_at"
+    ],
+    "module_zerlege_jobs": [
+      "id",
+      "case_id",
+      "artifact_id",
+      "analysis_type",
+      "status",
+      "progress",
+      "result_path",
+      "log_path",
+      "error_code",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  "indexes": [
+    "idx_module_zerlege_artifacts_case",
+    "idx_module_zerlege_cases_project",
+    "idx_module_zerlege_jobs_case"
+  ]
+}
