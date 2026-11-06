@@ -101,7 +101,27 @@ async def commit_turn(pid: str, summary: str, *, kind: str = "turn") -> dict | N
 
 async def history(pid: str, limit: int = 200) -> list[dict]:
     rc, out, _ = await _git(pid, "log", f"--max-count={int(limit)}", f"--format=%H{_FIELD}%s{_FIELD}%cI")
-    return [_row(ln) for ln in out.splitlines() if ln.strip()] if rc == 0 else []
+    rows = [_row(ln) for ln in out.splitlines() if ln.strip()] if rc == 0 else []
+    done: list[dict] = []
+    for r in reversed(rows):                            # alt → neu: ein „Zurück“ auf ein „Zurück“ findet den Titel schon vor
+        done.append(_plain(r, done))
+    return list(reversed(done))
+
+
+def _plain(row: dict, older: list[dict]) -> dict:
+    """„Zurück zu 366d3c8“ → „Zurück zu: <Titel jener Version>“ (kein Hash in der Anzeige). `older` sind die älteren,
+    schon aufbereiteten Versionen. Ist die Zielversion nicht mehr da, bleibt der Text, wie er ist."""
+    prefix = {"restore": "Zurück zu ", "revert": "Rückgängig: "}.get(row["kind"])
+    if prefix is None:
+        return row
+    target = next((r for r in older if r["commit_id"].startswith(row["summary"][len(prefix):].strip())), None)
+    if target is None or not target["summary"]:
+        return row
+    name = target["summary"]
+    for p in ("Zurück zu: ", "Rückgängig: "):          # nicht „Zurück zu: Zurück zu: …“ stapeln
+        if name.startswith(p):
+            name = name[len(p):]
+    return {**row, "summary": f"{prefix.rstrip(' :')}: {name}"}
 
 
 async def _exists(pid: str, sha: str) -> None:

@@ -179,3 +179,32 @@ def test_zurueck_auf_unbekannte_version_aendert_nichts(vm, work):
         run(versions.restore("p1", "0" * 40))
     assert e.value.code == "vibe_version_not_found"
     assert (work / "a.txt").read_text() == "wichtig\n" and (work / "lose.txt").exists()
+
+
+def test_verlauf_zeigt_zurueck_im_klartext_ohne_hash(vm, work):
+    """Die Anzeige nennt den Titel der Zielversion, nie den Git-Hash."""
+    work.joinpath("a.txt").write_text("1")
+    run(versions.commit_turn("p1", "Knopf orange gemacht", kind="turn"))
+    first = run(versions.history("p1"))[0]["commit_id"]
+    work.joinpath("a.txt").write_text("2")
+    run(versions.commit_turn("p1", "Knopf grün gemacht", kind="turn"))
+    run(versions.restore("p1", first))
+    top = run(versions.history("p1"))[0]
+    assert top["kind"] == "restore" and top["summary"] == "Zurück zu: Knopf orange gemacht"
+    assert first[:7] not in top["summary"]
+
+
+def test_verlauf_zurueck_auf_ein_zurueck_zeigt_den_urspruenglichen_titel(vm, work):
+    work.joinpath("a.txt").write_text("1")
+    run(versions.commit_turn("p1", "Knopf orange gemacht", kind="turn"))
+    orange = run(versions.history("p1"))[0]["commit_id"]
+    work.joinpath("a.txt").write_text("2")
+    run(versions.commit_turn("p1", "Knopf grün gemacht", kind="turn"))
+    run(versions.restore("p1", orange))
+    back1 = run(versions.history("p1"))[0]["commit_id"]
+    work.joinpath("a.txt").write_text("3")
+    run(versions.commit_turn("p1", "Knopf rot gemacht", kind="turn"))
+    run(versions.restore("p1", back1))
+    sums = [v["summary"] for v in run(versions.history("p1"))]
+    assert sums[0] == "Zurück zu: Knopf orange gemacht" and sums[2] == "Zurück zu: Knopf orange gemacht"
+    assert not any("Zurück zu: Zurück" in x for x in sums)

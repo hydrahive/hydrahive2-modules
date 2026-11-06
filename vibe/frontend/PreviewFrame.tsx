@@ -33,7 +33,7 @@ export function PreviewFrame({ projectId, reloadKey }: { projectId: string; relo
   }, [reloadKey, reload])
 
   return (
-    <div className="flex min-h-[320px] flex-1 flex-col gap-2">
+    <div className="flex min-h-[200px] flex-[3] flex-col gap-2">
       <div className="flex items-center gap-2">
         <h2 className="flex-1 text-sm text-[#e8eef8]">{t("preview_title")}</h2>
         <button type="button" className={BTN} title={t("preview_reload")} aria-label={t("preview_reload")} onClick={() => url ? reload() : start()}>
@@ -43,7 +43,7 @@ export function PreviewFrame({ projectId, reloadKey }: { projectId: string; relo
       {!url && !error && <div className="flex flex-1 items-center justify-center text-sm text-[#9aa7bc]"><Loader2 size={14} className="mr-2 animate-spin" />{t("preview_loading")}</div>}
       {url && (
         <iframe key={nonce} title={t("preview_title")} src={url} sandbox="allow-scripts allow-forms allow-popups allow-same-origin"
-          className="min-h-[320px] w-full flex-1 rounded border border-[rgb(var(--hh-s-rand,42_54_75))] bg-white" />
+          className="min-h-0 w-full flex-1 rounded border border-[rgb(var(--hh-s-rand,42_54_75))] bg-white" />
       )}
     </div>
   )

@@ -21,12 +21,12 @@ export function History({ projectId, onLatest }: { projectId: string; onLatest?:
     catch { setNote(t("err.general")) } finally { setBusy(false) }
   }
   return (
-    <div className="space-y-2">
+    <div className="flex max-h-[28%] min-h-[96px] shrink-0 flex-col gap-1">
       <h3 className="text-sm font-semibold text-[#e8eef8]">{t("history")}</h3>
       <p className="text-xs text-[#9aa7bc]">{t("history_hint")}</p>
       {note && <p className="text-sm text-emerald-300" aria-live="polite">{note}</p>}
       {items && items.length === 0 && <p className="text-sm text-[#c8d2df]">{t("no_versions")}</p>}
-      <ul className="space-y-1">
+      <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
         {(items ?? []).map((v, i) => (
           <li key={v.commit_id} className="flex items-center gap-2 text-sm text-[#c8d2df]">
             <span className="flex-1 truncate">{v.summary || "…"}</span>

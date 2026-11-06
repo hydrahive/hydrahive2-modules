@@ -48,7 +48,7 @@ export function Workspace({ project, onBack }: { project: api.VibeProject; onBac
             )}
           </div>
         </section>
-        <section className="flex min-w-0 flex-1 flex-col gap-3 overflow-auto rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_29))] p-3">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_19_29))] p-3">
           <PreviewFrame projectId={project.project_id} reloadKey={latest} />
           <History projectId={project.project_id} onLatest={setLatest} />
         </section>
