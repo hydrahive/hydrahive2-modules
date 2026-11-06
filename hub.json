@@ -81,6 +81,11 @@
       "path": "atelier"
     },
     {
+      "id": "game-studio",
+      "name": "Game Studio",
+      "path": "game-studio"
+    },
+    {
       "id": "videoeditor",
       "name": "Video-Editor",
       "path": "videoeditor"
