@@ -22,7 +22,7 @@ EXPECTED = {
     "blueprint": "schreiben",
     "deepresearch": "wissen", "archiver": "wissen", "legal": "wissen", "opentor": "wissen",
     "zerlegewerkstatt": "wissen",
-    "tickets": "agenten", "hydralabor": "agenten",
+    "tickets": "agenten", "hydralabor": "agenten", "vibe": "agenten",
     "mailbox": "kommunikation", "telephony": "kommunikation", "voice": "kommunikation",
     "haushaltsbuch": "zuhause", "patientenakte": "zuhause", "homeassistant": "zuhause", "cryptoboard": "zuhause",
     "mining": "zuhause", "vitrine": "zuhause", "network": "zuhause",
