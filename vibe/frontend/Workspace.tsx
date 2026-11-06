@@ -22,7 +22,7 @@ export function Workspace({ project, onBack }: { project: api.VibeProject; onBac
   }
   useEffect(() => {
     setSession(null); setError(null)
-    api.openChat(project.project_id).then(setSession).catch((e) => setError(api.errorKey(e, ["vibe_container_down", "vibe_not_ready", "vibe_project_not_found"])))
+    api.openChat(project.project_id).then(setSession).catch((e) => setError(api.errorKey(e, ["vibe_container_down", "vibe_not_ready", "vibe_project_not_found", "vibe_workspace_unavailable", "vibe_workspace_conflict", "vibe_workspace_migration_failed", "vibe_busy"])))
   }, [project.project_id])
 
   return (

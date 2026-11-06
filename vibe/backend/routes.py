@@ -15,7 +15,18 @@ from hydrahive.api.middleware.auth import AuthPrincipal, require_admin_principal
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import chat, container, idle, incus, jobs, projects, state, version_text, versions
+from . import (
+    chat,
+    container,
+    idle,
+    incus,
+    jobs,
+    projects,
+    state,
+    version_text,
+    versions,
+    workspace,
+)
 from .routes_model import _default_model, _model_of, _own
 
 logger = logging.getLogger(__name__)
@@ -44,7 +55,7 @@ async def _background(coro) -> None:
         await coro
     except (jobs.JobError, projects.VibeProjectError, container.VibeError) as exc:
         logger.warning("Vibe: Auftrag endete mit %s", getattr(exc, "code", exc))
-    except Exception:                                    # noqa: BLE001 – Grenze des Hintergrundauftrags
+    except Exception:
         logger.exception("Vibe: Auftrag fehlgeschlagen")
 
 
@@ -78,7 +89,10 @@ async def create_project(p: Admin, body: NewProject) -> dict:
 @router.delete("/projects/{project_id}")
 async def delete_project(project_id: str, p: Admin) -> dict:
     _own(project_id, p)
-    await projects.remove(project_id, owner=p.username)
+    try:
+        await projects.remove(project_id, owner=p.username)
+    except (projects.VibeProjectError, container.VibeError) as exc:
+        raise coded(status.HTTP_409_CONFLICT, exc.code) from None
     return {"removed": True}
 
 
@@ -101,9 +115,11 @@ async def open_chat(project_id: str, p: Admin, body: Empty) -> dict:
     if row["state"] not in ("ready", "sleeping"):
         raise coded(status.HTTP_409_CONFLICT, "vibe_not_ready")
     try:
+        await workspace.ensure(project_id, agent_id=row["agent_id"])
         await idle.wake(project_id)
     except container.VibeError as exc:
-        raise coded(status.HTTP_503_SERVICE_UNAVAILABLE, exc.code) from None
+        gone = exc.code == "vibe_project_not_found"
+        raise coded(status.HTTP_404_NOT_FOUND if gone else status.HTTP_503_SERVICE_UNAVAILABLE, exc.code) from None
     from hydrahive.db import sessions as sessions_db
     sid = chat.session_id(row["agent_id"])
     if sid is None:

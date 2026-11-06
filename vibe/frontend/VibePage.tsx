@@ -5,7 +5,8 @@ import { ProjectList } from "./ProjectList"
 import { Workspace } from "./Workspace"
 
 const KNOWN = ["vibe_no_incus", "vibe_model_unavailable", "vibe_project_not_found", "vibe_not_ready", "vibe_not_failed",
-  "vibe_container_down", "vibe_version_invalid", "vibe_busy"] as const
+  "vibe_container_down", "vibe_version_invalid", "vibe_busy", "vibe_workspace_unavailable",
+  "vibe_workspace_conflict", "vibe_workspace_migration_failed", "vibe_container_remove_failed"] as const
 const POLL_MS = 2000
 
 /** Modulseite Vibe (nur Admins): Liste der Projekte, dazu ein Projekt öffnen = Chat links, Ansicht rechts. */

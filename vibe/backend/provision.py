@@ -68,7 +68,9 @@ STEPS: tuple[Step, ...] = (
          "if id ubuntu >/dev/null 2>&1; then usermod -l labor -d /home/labor -m ubuntu; groupmod -n labor ubuntu; fi; "
          "id labor >/dev/null 2>&1 || useradd -m -u 1000 -s /bin/bash labor; "
          "gpasswd -d labor sudo 2>/dev/null || true; rm -f /etc/sudoers.d/90-incus /etc/sudoers.d/90-cloud-init-users; "
-         "install -d -o labor -g labor /work"),
+         "install -d -o labor -g labor /work; "
+         "grep -qx 'umask 0002' /home/labor/.profile 2>/dev/null || echo 'umask 0002' >> /home/labor/.profile; "
+         "chown labor:labor /home/labor/.profile"),
     Step("packages", "set -eu; " + _APT + "apt-get update -qq; "
          "apt-get install -y -qq --no-install-recommends git curl ca-certificates xz-utils ripgrep libatomic1", net=True),
     Step("node", "set -eu; cd /tmp; "
@@ -77,7 +79,8 @@ STEPS: tuple[Step, ...] = (
          f"tar -xJ -C /usr/local --strip-components=1 --no-same-owner -f {_NODE}; rm -f {_NODE}; "
          f"node -v | grep -qx {NODE_VERSION}", net=True),
     Step("template", "set -eu; cd /work; tar -x -C /work --no-same-owner -f -", as_user=True),
-    Step("git", "set -eu; cd /work; git init -q -b main; git config user.name Vibe; "
+    Step("git", "set -eu; git config --global --add safe.directory /work; cd /work; "
+         "git init -q -b main --shared=group; git config user.name Vibe; "
          "git config user.email vibe@localhost; git config core.hooksPath /dev/null; "
          "git add -A; git commit -q -m Start", as_user=True),
     # `npm ci` kann „erfolgreich“ enden und trotzdem das native Paket von Vite auslassen (npm/cli#4828; hydratest 5.11.:
@@ -91,7 +94,7 @@ STEPS: tuple[Step, ...] = (
          as_user=True, net=True),
     Step("devserver", "set -eu; cat > /etc/systemd/system/vibe-dev.service <<'EOF'\n"
          "[Unit]\nDescription=Vibe Dev-Server\nAfter=network.target\n\n"
-         "[Service]\nUser=labor\nWorkingDirectory=/work\nEnvironment=HOME=/home/labor\n"
+         "[Service]\nUser=labor\nWorkingDirectory=/work\nEnvironment=HOME=/home/labor\nUMask=0002\n"
          "ExecStart=/usr/local/bin/node /work/node_modules/vite/bin/vite.js\nRestart=always\nRestartSec=2\n\n"
          "[Install]\nWantedBy=multi-user.target\nEOF\n"
          "systemctl daemon-reload; systemctl enable --now vibe-dev.service; "

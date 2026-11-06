@@ -101,7 +101,7 @@ behebt der Agent den Fehler selbst (höchstens 3 Versuche). Der Container ruht n
 
 ```
 vibe/
-  manifest.json              id vibe, Version 0.1.0, nav_group working, capability module.vibe (admin_only)
+  manifest.json              id vibe, Version 0.1.1, nav_group working, capability module.vibe (admin_only)
   SPEC.md  PLAN-V1.md
   agent/PROMPT.md            Systemprompt des Vibe-Agenten
   skills/vibe-regeln/        Skill: VIBE.md-Format, kurze Schritte, Fehlerbehebung
@@ -273,3 +273,65 @@ Datenbanken außerhalb des Containers, Mac (kein incus), Freigabe für Nicht-Adm
   `frame-src 'self' https://*:8444`. Auf hydratest von Hand eingetragen (Sicherung `/root/hydrahive2.nginx.vor-vibe`); **im Installer
   noch nicht**, und der Kern wird nicht von diesem Modul geändert.
 - **Nicht gemessen:** Firefox/Safari, Neuladen nach einem Zug (HMR zeigt Änderungen von selbst, das Neuladen ist nur Rückfall).
+
+## Korrektur 0.1.1 – Projektworkspace statt versteckter Containerdaten
+
+Der V1-Entwurf legte Git und Quellcode ausschließlich auf der Container-Rootdisk unter `/work` ab. Dadurch blieb der
+normale HydraHive-Projektworkspace leer. 0.1.1 korrigiert die Datenhoheit:
+
+1. Neues Vibe-Projekt erzeugt zuerst seinen normalen HydraHive-Projektworkspace.
+2. Der Workspace erhält ACLs für den unprivilegierten Containerbenutzer und wird als `/work` eingehängt.
+3. Host-Dateiwerkzeuge, Samba und Container arbeiten auf demselben Datenbestand.
+4. Bestehende Container werden beim ersten Öffnen migriert, wenn der Host-Workspace leer ist. Der ganze Vorgang läuft
+   unter einer Projektsperre (asyncio-Lock + `flock`-Datei, ein zweiter Prozess bekommt `vibe_busy`); auch das
+   Löschen eines Projekts läuft unter dieser Sperre. Die Sperrdatei wird nur unter der Sperre entfernt, und wer sie
+   öffnet, prüft nach dem `flock`, dass der Name noch auf dieselbe Inode zeigt (sonst erneut).
+   **Ruhigstellen:** Das Modul hält den Session-Lauf-Guard des Kerns für ALLE Sitzungen, die zum Projekt gehören – die
+   des Projekt-Agenten UND jede Sitzung (auch von Spezialisten), deren `project_id` auf das Projekt zeigt, ohne
+   Mengenlimit (direkte SQL-Abfrage). Die Guards werden vor dem Auslesen gegriffen, direkt vor dem Stoppen erneut
+   erfasst (neu entstandene Sitzungen) und erst nach dem Stopp freigegeben; ein laufender Lauf ergibt `vibe_busy`.
+   Auch das Löschen bricht zuerst alle Läufe des Projekts ab, greift dann die Guards und löscht erst danach.
+   Grenze: Der Guard des Kerns gilt nur innerhalb EINES Serverprozesses (`concurrency.py`: „Single-Process-Schutz“).
+5. Migration (Marker-Stufen `new → pulled → stopped → published → mounted`, jede Stufe wiederholbar). **Datenweg ist
+   `tar`, nie `incus file pull`:** Ein FIFO im Container ließ `incus file pull -r` samt root-Daemonhelfer
+   (`incusd forkfile`) endlos hängen (echter Vorfall 6.11.; ein Client-Timeout beendet den Helfer nicht). `tar` öffnet
+   FIFOs nie und überspringt Sockets. Ablauf: Agentenläufe ruhigstellen → Container (falls aus) starten →
+   Dev-Server (`vibe-dev.service`) anhalten → `/work` **zweimal** als tar-Strom per `incus exec … tar` in eine Datei
+   lesen (Größen- und Zeitlimit) → beide Archive **sicher** entpacken (eigener Entpacker statt `extractall`: keine
+   absoluten oder `..`-Pfade, nie durch einen Symlink hindurch – auch nicht, wenn ein Verzeichniseintrag den Namen
+   eines zuvor abgelegten Symlinks trägt (vorhandene Einträge müssen echte Verzeichnisse sein; Rechte und Zeit
+   werden am Ende nur über ein `O_NOFOLLOW`-Handle gesetzt) –, Hardlinks nur innerhalb, Setuid/Setgid verworfen;
+   FIFOs und Geräte im Archiv → Abbruch `vibe_workspace_special_files`; Grenzen gegen Archivbomben: höchstens
+   500.000 Einträge, 8 GiB Summe der DEKLARIERTEN Dateigrößen (auch Sparse-Mitglieder zählen mit ihrer
+   deklarierten Größe), 128 Pfadkomponenten, 4096 Zeichen je Pfad → `vibe_workspace_too_large`; Zeitstempel werden
+   auf 1970–2100 begrenzt; jede unerwartete Ausnahme des Entpackers wird zu `vibe_workspace_migration_failed`)
+   → vergleichen (Pfade, Arten, Modi, erweiterte
+   Attribute, Linkziele, SHA-256 der Inhalte). Jeder Fehler davor – auch ein Abbruch des Tasks, ein Incus-Timeout, ein
+   fehlendes Incus oder ein unerwarteter Fehler – stellt den Ausgangszustand wieder her (Dev-Server wieder an bzw.
+   Container wieder aus, Marker und Staging weg); `run_to_file` beendet den `incus`-Prozess bei Timeout und Abbruch. Danach noch einmal Läufe prüfen → Container
+   vollständig stoppen, `security.idmap.isolated=true` setzen → Inode des entpackten Baums im Marker festhalten → mit
+   `os.replace` an die Stelle des leeren Host-Workspaces setzen → ACLs setzen → als `/work` mounten → Marker löschen.
+   Nach einem Absturz gilt „Quelle fehlt, Host befüllt“ nur als erfolgreich, wenn der Host genau diese Inode trägt.
+6. Das interne `/work` im Container wird nie verändert oder gelöscht; es bleibt unter dem Mount als Rückfallebene auf
+   der Container-Rootdisk. Ein Fehler vor der Veröffentlichung hinterlässt den Host-Workspace unverändert; der
+   Container wird danach wieder gestartet, wenn er vorher lief. Sind Host und Container bereits beide befüllt, wird
+   nichts überschrieben und ein Konflikt gemeldet.
+7. Rechte: ACL-Sollzustand wird vollständig gesetzt (erst `setfacl -b` und `-k` – Default-ACLs werden ausdrücklich
+   entfernt –, dann genau Hostdienst + abgebildete Container-UID/GID, `other` nur lesen). Die abgebildete ID kommt aus `volatile.idmap.next` (gilt nach dem Isolieren
+   ab dem nächsten Start), erst danach `current`. Bei jedem Öffnen werden Wurzel-ACL und `o+w` im Baum neu bereinigt: auf dem Host nur über Dateideskriptoren
+   (`O_NOFOLLOW`, `fchmod`; ein vom Container eingeschleuster Symlink wird nie verfolgt), bei Dateien der abgebildeten
+   UID zusätzlich im laufenden Container als UID 1000 (`find … ! -type l`). Ein gestoppter Container wird dafür nicht
+   gestartet.
+8. Nachzügler: `ensure()` und `attach_new()` prüfen UNTER der Projektsperre, dass das Kern-Projekt noch existiert
+   (`vibe_project_not_found`); ein Chat-Aufruf, der erst nach dem Löschen die Sperre bekommt, legt weder den
+   Host-Workspace noch eine Sperrdatei neu an.
+9. **Betriebsvorbedingung für die Live-Migration (offene Kern-Themen aus Review 4):** Geplante Butler-Agentenläufe
+   (`butler/_scheduled_agent_run.py`) und geplante Direktaufgaben (`schedules/execution.py`) rufen `runner.run()` ohne
+   `session_run_guard` und ohne Task-Registry auf; das Modul kann sie weder erkennen noch abbrechen. Ebenso gibt es
+   im Kern keine atomare „Annahmesperre“ für neue Sitzungen zwischen dem letzten Erfassen und dem Stopp. Darum läuft
+   die Migration nur, wenn für das Projekt keine geplanten Aufgaben/Butler-Läufe existieren und niemand arbeitet
+   (hier: genau ein Projekt, niemand arbeitet). Kern-Ticket: Scheduler-Läufe an den Guard anbinden.
+10. Bekannte Grenze: Der Herkunftsnachweis (Inode im Marker) schützt gegen Abstürze und Fehlbedienung, nicht gegen
+   jemanden, der die Host-Metadaten gezielt manipuliert; wer Schreibzugriff auf `data_dir` hat, ist ohnehin
+   vertrauenswürdig. Außerdem bleibt `o+w` zwischen zwei Öffnungen bestehen, wenn der Container es neu setzt – es wird
+   bei jedem Öffnen wieder entfernt, nicht laufend überwacht.

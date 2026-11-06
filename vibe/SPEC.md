@@ -46,9 +46,10 @@ Entweder die Dateien werden kopiert und angepasst, oder gemeinsamer Code wandert
 ## Rahmen und Entscheidungen
 
 - **Eigene Vibe-Projekte.** Vibe legt für jede App ein eigenes Projekt an (Name frei wählbar). „Projekt auswählen“ zeigt
-  diese Vibe-Projekte und „Neues Projekt“. **Bestehende normale Projekte fasst Vibe nicht an.** Grund: K1 stellt ein
-  Projekt auf `execution=container` um. Danach hätten seine Agenten nur noch die Allowlist und arbeiten unter `/work`,
-  nicht mehr im bisherigen Arbeitsordner. Das wäre für ein laufendes Projekt eine stille Verhaltensänderung.
+  diese Vibe-Projekte und „Neues Projekt“. **Bestehende normale Projekte fasst Vibe nicht an.** Der normale
+  HydraHive-Projektworkspace des neuen Vibe-Projekts wird in den Container als `/work` eingehängt. Host-Dateimanager,
+  Samba, Projektwerkzeuge und Container-Agent sehen dadurch denselben Datenbestand; es gibt keine zweite versteckte
+  Kopie nur im Container.
 - **Ein Container je Vibe-Projekt**, Name `hh-vibe-<projekt>` (K1: `^[a-z][a-z0-9-]{1,62}$`). Grenzen als Vorschlag
   2 CPU / 2 GB RAM / 10 GB (Hydra-Labor misst mit 2 CPU / 4 GB: `npm run build` 15 s). **Vor dem Bau messen.**
 - **Ruhender Container:** Nach 30 Minuten ohne Nutzung wird er gestoppt, beim Öffnen automatisch gestartet. Startzeit
@@ -92,7 +93,7 @@ Entweder die Dateien werden kopiert und angepasst, oder gemeinsamer Code wandert
  └───────────────────────────┴──────────────────────────────┘
         │ Befehle/Dateien                 ▲ Durchreiche mit Anmeldung
         ▼                                 │
- Container hh-vibe-<projekt>: /work (Git), Entwicklungs-Server auf Port 5173/8000
+ HydraHive-Projektworkspace ↔ Container hh-vibe-<projekt>:/work (Git), Entwicklungs-Server auf Port 5173/8000
 ```
 
 ## Etappen
@@ -153,6 +154,7 @@ Containers, Zugriff auf Dateien des Servers, Vorlagen über V2 hinaus.
 2. **Fremdprojekt:** Vibe ändert `execution` nie bei einem Projekt, das es nicht selbst angelegt hat (Gegenprobe).
 3. **Vorschau:** Antwort ohne gültige Anmeldung = 401. Anfragen aus der Vorschau erreichen den Server nicht (CSP).
 4. **Zeitmaschine:** Nach „Zurück“ entspricht `/work` exakt der gewählten Version. Spätere Versionen bleiben erreichbar.
+   `/work` ist derselbe Datenbestand wie der normale HydraHive-Projektworkspace.
 5. **Ruhezustand:** Nach der Leerlaufzeit ist der Container aus. Öffnen startet ihn, Vorschau kommt wieder.
 6. **Ohne incus:** klare Meldung, kein halb angelegtes Projekt.
 7. **Einbetten:** Die Vorschau lässt sich nur von der Adresse von HydraHive einbetten (`frame-ancestors`), von keiner
@@ -165,6 +167,10 @@ Containers, Zugriff auf Dateien des Servers, Vorlagen über V2 hinaus.
 ## Akzeptanzkriterien (V1)
 
 - Ein Nutzer ohne Git- und Terminal-Kenntnisse legt in unter 2 Minuten ein Projekt an und sieht sein erstes Ergebnis.
+- Alle Quelldaten liegen im normalen HydraHive-Projektworkspace und sind dort über Dateimanager/Samba erreichbar; der
+  Container sieht exakt diesen Workspace als `/work`.
+- Bestehende Vibe-0.1.0-Projekte werden beim ersten Öffnen erst nach Kopie und Vergleich umgestellt; bei Fehler bleibt
+  das ursprüngliche Container-`/work` erhalten.
 - „Zurück“ holt jede frühere Version zurück, auch nach einem kaputten Schritt.
 - Der Server ist vom Container aus nicht erreichbar (wie beim Labor geprüft).
 - Ein absichtlich eingebauter Fehler wird vom Agenten selbst behoben, ohne dass der Nutzer etwas tut, und ein

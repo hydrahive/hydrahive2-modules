@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 
-from . import container, projects, provision, state
+from . import container, projects, provision, state, workspace
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +32,17 @@ async def _setup(pid: str, *, start_at: str = "") -> None:
     _busy.add(pid)
     state.set_state(pid, "setting_up")
     try:
+        row = state.get_row(pid) or {}
+        await workspace.ensure(pid, agent_id=row.get("agent_id", ""))
         await provision.setup(pid, lambda step: state.set_progress(pid, step), start_at=start_at)
     except provision.SetupError as exc:
         state.set_state(pid, "failed", error_code=exc.code, error_step=exc.step, error_detail=exc.detail)
         raise JobError(exc.code, exc.step, exc.detail) from None
-    except Exception:                                    # noqa: BLE001 – Grenze des Auftrags: lesbar festhalten
+    except container.VibeError as exc:                   # z. B. vibe_project_not_found: der genaue Code bleibt sichtbar
+        step = (state.get_row(pid) or {}).get("progress", "")
+        state.set_state(pid, "failed", error_code=exc.code, error_step=step)
+        raise JobError(exc.code, step) from None
+    except Exception:
         logger.exception("Vibe: Einrichtung von %s gescheitert", pid)
         step = (state.get_row(pid) or {}).get("progress", "")
         state.set_state(pid, "failed", error_code="vibe_setup_failed", error_step=step)

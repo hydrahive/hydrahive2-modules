@@ -64,6 +64,7 @@ def test_nutzer_heisst_labor_wie_im_kern_launcher():
     script = step("user").script
     assert "useradd -m -u 1000 -s /bin/bash labor;" in script
     assert "usermod -l labor -d /home/labor -m ubuntu" in script and "install -d -o labor -g labor /work" in script
+    assert "umask 0002" in script
     assert "vibe" not in script.split("useradd")[1].split(";")[0]
 
 
@@ -89,6 +90,8 @@ def test_git_erst_commit_start_ohne_hooks():
     s = step("git").script
     assert "git init" in s and "Start" in s and "core.hooksPath /dev/null" in s
     assert "user.name" in s and "user.email" in s
+    assert "git config --global --add safe.directory /work" in s
+    assert "--shared=group" in s
 
 
 def test_git_ohne_zugangsdaten_und_ohne_remote():
@@ -106,6 +109,7 @@ def test_abhaengigkeiten_mit_npm_ci_als_nutzer():
 def test_devserver_als_dienst_der_nach_dem_wecken_wieder_startet():
     s = step("devserver").script
     assert "vibe-dev.service" in s and "Restart=always" in s and "User=labor" in s
+    assert "UMask=0002" in s
     assert "systemctl enable" in s and "WantedBy=multi-user.target" in s
     assert "/work/node_modules/vite/bin/vite.js" in s
 

@@ -6,6 +6,7 @@ unprivilegiert, ohne Verschachtelung (Vibe baut Webseiten, keine Container), mit
 pool und NIC am Vibe-Netz. Mehrere Container teilen sich das Netz; der Name kommt aus der Projekt-ID und wird geprüft.
 Das Image ist fest (IMAGE_RELEASE), nicht die Ubuntu-Version des Servers.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -19,7 +20,9 @@ PREFIX = network.PREFIX
 # (5.11., incus 6.0.0, Ubuntu-26.04-Server) nie eine IPv4-Adresse, images:ubuntu/24.04 nach 1 s.
 IMAGE_RELEASE = "24.04"
 _POOL = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$")
-_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,54}$")            # PREFIX (8) + 55 ≤ 63 Zeichen, K1: ^[a-z][a-z0-9-]{1,62}$
+_ID = re.compile(
+    r"^[a-z0-9][a-z0-9-]{0,54}$"
+)  # PREFIX (8) + 55 ≤ 63 Zeichen, K1: ^[a-z][a-z0-9-]{1,62}$
 _NAME = re.compile(r"^hh-vibe-[a-z0-9][a-z0-9-]{0,54}$")
 _WAIT_TRIES = 60
 _WAIT_STEP = 1.0
@@ -54,14 +57,20 @@ class Limits:
     disk_gb: int = 10
 
     def __post_init__(self) -> None:
-        if not (_int_in(self.cpu, 1, 16) and _int_in(self.ram_mb, 512, 32768) and _int_in(self.disk_gb, 2, 200)):
+        if not (
+            _int_in(self.cpu, 1, 16)
+            and _int_in(self.ram_mb, 512, 32768)
+            and _int_in(self.disk_gb, 2, 200)
+        ):
             raise VibeError("vibe_limits_invalid")
 
 
 async def exists(project_id: str) -> bool:
     name = name_for(project_id)
     rc, out, _ = await incus.run("list", "--format", "csv", "-c", "n")
-    return rc == 0 and name in out.split()
+    if rc != 0:
+        raise VibeError("vibe_container_down")
+    return name in out.split()
 
 
 async def _pool() -> str:
@@ -77,11 +86,29 @@ async def launch(project_id: str, limits: Limits) -> None:
     if await exists(project_id):
         return
     pool = await _pool()
-    args = ["launch", "--no-profiles", "-s", pool, "-n", network.NET,
-            "-c", f"limits.cpu={limits.cpu}", "-c", f"limits.memory={limits.ram_mb}MiB",
-            "-c", "security.privileged=false", "-c", "security.nesting=false",
-            "-d", f"root,size={limits.disk_gb}GiB",
-            "--", f"images:ubuntu/{IMAGE_RELEASE}", name]
+    args = [
+        "launch",
+        "--no-profiles",
+        "-s",
+        pool,
+        "-n",
+        network.NET,
+        "-c",
+        f"limits.cpu={limits.cpu}",
+        "-c",
+        f"limits.memory={limits.ram_mb}MiB",
+        "-c",
+        "security.privileged=false",
+        "-c",
+        "security.nesting=false",
+        "-c",
+        "security.idmap.isolated=true",
+        "-d",
+        f"root,size={limits.disk_gb}GiB",
+        "--",
+        f"images:ubuntu/{IMAGE_RELEASE}",
+        name,
+    ]
     rc, _, _ = await incus.run(*args, timeout=600)
     if rc != 0:
         raise VibeError("vibe_launch_failed")
@@ -91,8 +118,15 @@ async def wait_for_address(project_id: str) -> None:
     """Bis eth0 eine IPv4 hat (direkt nach dem Start: noch keine → DNS-Probe schlüge fälschlich fehl)."""
     name = name_for(project_id)
     for _ in range(_WAIT_TRIES):
-        rc, _, _ = await incus.run("exec", name, "--", "bash", "-c", "ip -4 -o addr show eth0 | grep -q inet",
-                                   timeout=20)
+        rc, _, _ = await incus.run(
+            "exec",
+            name,
+            "--",
+            "bash",
+            "-c",
+            "ip -4 -o addr show eth0 | grep -q inet",
+            timeout=20,
+        )
         if rc == 0:
             return
         await asyncio.sleep(_WAIT_STEP)
@@ -110,22 +144,37 @@ async def launch_and_probe(project_id: str, limits: Limits) -> dict:
         raise
 
 
-async def running(project_id: str) -> bool:
-    name = name_for(project_id)
+async def running_name(name: str) -> bool:
+    if not is_vibe_name(name):
+        raise VibeError("vibe_name_invalid")
     rc, out, _ = await incus.run("list", "--format", "csv", "-c", "ns")
-    return rc == 0 and any(line.split(",")[:2] == [name, "RUNNING"] for line in out.splitlines())
+    if rc != 0:
+        raise VibeError("vibe_container_down")
+    return any(line.split(",")[:2] == [name, "RUNNING"] for line in out.splitlines())
+
+
+async def running(project_id: str) -> bool:
+    return await running_name(name_for(project_id))
 
 
 async def stop(project_id: str) -> None:
-    await incus.run("stop", name_for(project_id), "--force", timeout=120)
+    rc, _, _ = await incus.run("stop", name_for(project_id), "--force", timeout=120)
+    if rc != 0 or await running(project_id):
+        raise VibeError("vibe_container_down")
 
 
 async def start(project_id: str) -> None:
-    await incus.run("start", name_for(project_id), timeout=120)
+    rc, _, _ = await incus.run("start", name_for(project_id), timeout=120)
+    if rc != 0 or not await running(project_id):
+        raise VibeError("vibe_container_down")
 
 
 async def remove(project_id: str) -> None:
-    await incus.run("delete", name_for(project_id), "--force", timeout=120)
+    if not await exists(project_id):
+        return
+    rc, _, _ = await incus.run("delete", name_for(project_id), "--force", timeout=120)
+    if rc != 0 or await exists(project_id):
+        raise VibeError("vibe_container_remove_failed")
 
 
 async def all_names() -> set[str]:

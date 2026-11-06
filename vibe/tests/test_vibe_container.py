@@ -77,7 +77,8 @@ def test_launch_ohne_profil_unprivilegiert_eigenes_netz(net):
     assert a[-2:] == ["images:ubuntu/24.04", "hh-vibe-p1"] and a[-3] == "--"
     for opt in (["--no-profiles"], ["-s", "default"], ["-n", "hhvibe0"], ["-c", "limits.cpu=3"],
                 ["-c", "limits.memory=3072MiB"], ["-c", "security.privileged=false"],
-                ["-c", "security.nesting=false"], ["-d", "root,size=12GiB"]):
+                ["-c", "security.nesting=false"], ["-c", "security.idmap.isolated=true"],
+                ["-d", "root,size=12GiB"]):
         assert any(a[i:i + len(opt)] == opt for i in range(len(a))), opt
     line = " ".join(a)
     assert "br0" not in line and "hhnat0" not in line and "hhlabor0" not in line and "privileged=true" not in line

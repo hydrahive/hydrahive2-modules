@@ -1,7 +1,7 @@
 {
   "id": "vibe",
   "name": "Vibe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Beschreiben, ansehen, weitermachen: Chat mit einem Agenten, der eine App in einem abgeschotteten Container baut, mit Live-Vorschau und Zeitleiste zum Zurückgehen.",
   "icon": "Sparkles",
   "nav_group": "working",
