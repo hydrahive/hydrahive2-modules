@@ -9,7 +9,10 @@ export function History({ projectId, onLatest }: { projectId: string; onLatest?:
   const [items, setItems] = useState<api.VibeVersion[] | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const load = useCallback(() => api.getVersions(projectId).then((r) => { setItems(r.versions); onLatest?.(r.versions[0]?.commit_id ?? "") }).catch(() => setItems([])), [projectId, onLatest])
+  const load = useCallback(() => api.getVersions(projectId).then((r) => {
+    if (r.versions.length === 0) { setItems((cur) => cur ?? []); return }   // „Start“ gibt es immer: leer nach Daten = Aussetzer
+    setItems(r.versions); onLatest?.(r.versions[0].commit_id)
+  }).catch(() => setItems((cur) => cur ?? [])), [projectId, onLatest])   // Aussetzer: alte Liste behalten, nicht leeren
   useEffect(() => { void load(); const id = setInterval(() => void load(), 5000); return () => clearInterval(id) }, [load])
 
   const back = async (sha: string) => {
