@@ -1,13 +1,14 @@
 import { ArchiveRestore, ArrowRight, FolderGit2, Gamepad2, Plus, Sparkles } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { WorkstationPanel } from "./components/WorkstationPanel"
-import type { EntryKind, GameDraft, WorkstationStatus } from "./types"
+import type { EntryKind, GameProject, SharingStatus, WorkstationStatus } from "./types"
 
 interface Props {
-  drafts: GameDraft[]
+  projects: GameProject[]
   workstation: WorkstationStatus
+  sharing: SharingStatus
   onStart: (kind: EntryKind) => void
-  onOpen: (draft: GameDraft) => void
+  onOpen: (project: GameProject) => void
 }
 
 const ENTRY_ICONS = {
@@ -16,7 +17,7 @@ const ENTRY_ICONS = {
   archive: ArchiveRestore,
 } as const
 
-export function LandingPage({ drafts, workstation, onStart, onOpen }: Props) {
+export function LandingPage({ projects, workstation, sharing, onStart, onOpen }: Props) {
   const { t } = useTranslation("gameStudio")
 
   return (
@@ -64,19 +65,19 @@ export function LandingPage({ drafts, workstation, onStart, onOpen }: Props) {
               <Plus size={14} aria-hidden="true" /> {t("drafts.new")}
             </button>
           </div>
-          {drafts.length === 0 ? (
+          {projects.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-box,21_28_43))] px-5 py-8 text-center">
               <p className="text-sm font-medium text-[#c8d2df]">{t("drafts.emptyTitle")}</p>
               <p className="mt-1 text-xs text-[#9aa7bc]">{t("drafts.emptyText")}</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {drafts.map((draft) => (
-                <button key={draft.draft_id} type="button" onClick={() => onOpen(draft)} className="flex w-full items-center gap-3 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-4 py-3 text-left hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
+              {projects.map((project) => (
+                <button key={project.project_id} type="button" onClick={() => onOpen(project)} className="flex w-full items-center gap-3 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-4 py-3 text-left hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#69d7ff]/10 text-[#69d7ff]"><Gamepad2 size={18} aria-hidden="true" /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-[#e8eef8]">{draft.title}</span>
-                    <span className="block text-[11px] text-[#9aa7bc]">{t(`entry.${draft.entry_kind}.title`)} · {t("drafts.step", { step: draft.current_step })}</span>
+                    <span className="block truncate text-sm font-medium text-[#e8eef8]">{project.title}</span>
+                    <span className="block text-[11px] text-[#9aa7bc]">{t(`engine.${project.engine}`)} · {t("drafts.step", { step: project.current_step })}</span>
                   </span>
                   <ArrowRight size={16} className="text-[#9aa7bc]" aria-hidden="true" />
                 </button>
@@ -84,7 +85,7 @@ export function LandingPage({ drafts, workstation, onStart, onOpen }: Props) {
             </div>
           )}
         </section>
-        <WorkstationPanel status={workstation} />
+        <WorkstationPanel status={workstation} sharing={sharing} />
       </div>
     </main>
   )

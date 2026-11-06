@@ -1,9 +1,18 @@
 export type EntryKind = "new" | "adopt" | "archive"
 export type TargetPlatform = "desktop" | "web" | "mobile"
+export type GameEngine = "godot" | "unreal" | "unity"
 
-export interface GameDraft {
-  draft_id: string
+export interface SambaShare {
+  enabled: boolean
+  share_name: string
+  user: string
+  platform: "linux" | "mac"
+}
+
+export interface GameProject {
+  project_id: string
   entry_kind: EntryKind
+  engine: GameEngine
   title: string
   idea: string
   genre: string
@@ -14,6 +23,7 @@ export interface GameDraft {
   revision: number
   created_at: string
   updated_at: string
+  sharing: SambaShare
 }
 
 export interface WorkstationStatus {
@@ -22,23 +32,29 @@ export interface WorkstationStatus {
   build_available: false
 }
 
-export interface GameStudioOverview {
-  drafts: GameDraft[]
-  workstation: WorkstationStatus
-  runner: {
-    code: "runner_pending_pr4"
-    build_available: false
-  }
+export interface SharingStatus {
+  available: boolean
+  running: boolean
+  user: string
+  platform: "linux" | "mac"
 }
 
-export interface DraftCreate {
+export interface GameStudioOverview {
+  projects: GameProject[]
+  sharing: SharingStatus
+  workstation: WorkstationStatus
+  runner: { code: "runner_pending_pr4"; build_available: false }
+}
+
+export interface ProjectCreate {
   entry_kind: EntryKind
+  engine: GameEngine
   title: string
   idea: string
   genre: string
   target_platform: TargetPlatform
 }
 
-export type DraftPatch = Partial<Pick<GameDraft,
+export type ProjectPatch = Partial<Pick<GameProject,
   "title" | "idea" | "genre" | "target_platform" | "core_action" | "success_condition" | "current_step"
 >> & { revision: number }

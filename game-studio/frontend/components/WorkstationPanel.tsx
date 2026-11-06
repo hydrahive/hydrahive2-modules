@@ -1,12 +1,13 @@
-import { CheckCircle2, CircleAlert, Monitor, ShieldCheck } from "lucide-react"
+import { CheckCircle2, CircleAlert, Monitor, Share2, ShieldCheck } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import type { WorkstationStatus } from "../types"
+import type { SharingStatus, WorkstationStatus } from "../types"
 
 interface Props {
   status: WorkstationStatus
+  sharing: SharingStatus
 }
 
-export function WorkstationPanel({ status }: Props) {
+export function WorkstationPanel({ status, sharing }: Props) {
   const { t } = useTranslation("gameStudio")
   const ready = status.ready
   const Icon = ready ? CheckCircle2 : CircleAlert
@@ -24,6 +25,10 @@ export function WorkstationPanel({ status }: Props) {
           </div>
           <p className="mt-1 text-xs leading-5 text-[#9aa7bc]">{t(`workstation.${status.code}`)}</p>
           <div className="mt-3 flex items-center gap-2 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2">
+            <Share2 size={15} className={`shrink-0 ${sharing.available && sharing.running ? "text-emerald-300" : "text-amber-300"}`} aria-hidden="true" />
+            <span className="text-[11px] leading-4 text-[#c8d2df]">{t(sharing.available && sharing.running ? "sharing.available" : "sharing.unavailable")}</span>
+          </div>
+          <div className="mt-2 flex items-center gap-2 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2">
             <ShieldCheck size={15} className="shrink-0 text-[#69d7ff]" aria-hidden="true" />
             <span className="text-[11px] leading-4 text-[#c8d2df]">{t("workstation.runnerPending")}</span>
           </div>

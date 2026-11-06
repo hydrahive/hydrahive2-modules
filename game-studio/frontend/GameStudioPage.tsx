@@ -4,13 +4,13 @@ import { useTranslation } from "react-i18next"
 import { gameStudioApi } from "./api"
 import { GuidedFlow } from "./GuidedFlow"
 import { LandingPage } from "./LandingPage"
-import type { DraftCreate, DraftPatch, EntryKind, GameDraft, GameStudioOverview } from "./types"
+import type { ProjectCreate, ProjectPatch, EntryKind, GameProject, GameStudioOverview } from "./types"
 
 export function GameStudioPage() {
   const { t } = useTranslation("gameStudio")
   const [overview, setOverview] = useState<GameStudioOverview | null>(null)
   const [kind, setKind] = useState<EntryKind | null>(null)
-  const [draft, setDraft] = useState<GameDraft | null>(null)
+  const [project, setProject] = useState<GameProject | null>(null)
   const [error, setError] = useState(false)
 
   const reload = () => {
@@ -22,34 +22,34 @@ export function GameStudioPage() {
 
   const start = (entryKind: EntryKind) => {
     setKind(entryKind)
-    setDraft(null)
+    setProject(null)
   }
 
-  const open = (selected: GameDraft) => {
+  const open = (selected: GameProject) => {
     setKind(selected.entry_kind)
-    setDraft(selected)
+    setProject(selected)
   }
 
-  const create = async (body: DraftCreate) => {
-    const created = await gameStudioApi.createDraft(body)
-    setDraft(created)
-    setOverview((current) => current ? { ...current, drafts: [created, ...current.drafts] } : current)
+  const create = async (body: ProjectCreate) => {
+    const created = await gameStudioApi.createProject(body)
+    setProject(created)
+    setOverview((current) => current ? { ...current, projects: [created, ...current.projects] } : current)
     return created
   }
 
-  const update = async (currentDraft: GameDraft, patch: DraftPatch) => {
-    const updated = await gameStudioApi.updateDraft(currentDraft.draft_id, patch)
-    setDraft(updated)
+  const update = async (currentProject: GameProject, patch: ProjectPatch) => {
+    const updated = await gameStudioApi.updateProject(currentProject.project_id, patch)
+    setProject(updated)
     setOverview((current) => current ? {
       ...current,
-      drafts: current.drafts.map((item) => item.draft_id === updated.draft_id ? updated : item),
+      projects: current.projects.map((item) => item.project_id === updated.project_id ? updated : item),
     } : current)
     return updated
   }
 
   const back = () => {
     setKind(null)
-    setDraft(null)
+    setProject(null)
     reload()
   }
 
@@ -66,8 +66,8 @@ export function GameStudioPage() {
   }
 
   if (kind) {
-    return <GuidedFlow kind={kind} draft={draft} onBack={back} onCreate={create} onUpdate={update} />
+    return <GuidedFlow kind={kind} project={project} onBack={back} onCreate={create} onUpdate={update} />
   }
 
-  return <LandingPage drafts={overview.drafts} workstation={overview.workstation} onStart={start} onOpen={open} />
+  return <LandingPage projects={overview.projects} workstation={overview.workstation} sharing={overview.sharing} onStart={start} onOpen={open} />
 }

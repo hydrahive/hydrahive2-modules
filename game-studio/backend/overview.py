@@ -5,8 +5,9 @@ from __future__ import annotations
 import sqlite3
 
 from hydrahive.db.connection import db
+from hydrahive.samba import samba_status
 
-from . import store
+from . import projects
 
 
 def _workstation_status() -> dict:
@@ -22,11 +23,7 @@ def _workstation_status() -> dict:
                    WHERE approval.status = 'active' AND node.status IN ('online', 'degraded')"""
             ).fetchone()[0]
     except sqlite3.OperationalError:
-        return {
-            "code": "core_update_required",
-            "ready": False,
-            "build_available": False,
-        }
+        return {"code": "core_update_required", "ready": False, "build_available": False}
     counts = {row["status"]: row["amount"] for row in nodes}
     connected = counts.get("online", 0) + counts.get("degraded", 0)
     if not nodes:
@@ -37,19 +34,23 @@ def _workstation_status() -> dict:
         code = "approval_required"
     else:
         code = "ready_for_binding"
+    return {"code": code, "ready": code == "ready_for_binding", "build_available": False}
+
+
+def _sharing_status() -> dict:
+    status = samba_status()
     return {
-        "code": code,
-        "ready": code == "ready_for_binding",
-        "build_available": False,
+        "available": bool(status.get("installed")),
+        "running": bool(status.get("running")),
+        "user": str(status.get("user") or ""),
+        "platform": str(status.get("platform") or "linux"),
     }
 
 
-def overview(owner_user_id: str) -> dict:
+def overview(username: str, role: str) -> dict:
     return {
-        "drafts": store.list_for(owner_user_id),
+        "projects": projects.list_for(username, role),
+        "sharing": _sharing_status(),
         "workstation": _workstation_status(),
-        "runner": {
-            "code": "runner_pending_pr4",
-            "build_available": False,
-        },
+        "runner": {"code": "runner_pending_pr4", "build_available": False},
     }

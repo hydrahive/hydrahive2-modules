@@ -47,6 +47,7 @@ def setup_test_env():
         (root / "config" / "users.json").write_text(
             json.dumps(
                 {
+                    "admin": {"password_hash": password_hash, "role": "admin"},
                     "testuser": {"password_hash": password_hash, "role": "user"},
                     "other": {"password_hash": password_hash, "role": "user"},
                 }
@@ -91,12 +92,38 @@ def auth_headers(client):
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
 
 
+@pytest.fixture
+def admin_headers(client):
+    response = client.post("/api/auth/login", json={"username": "admin", "password": "testpass123"})
+    assert response.status_code == 200
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
 @pytest.fixture(autouse=True)
-def _draft_db(setup_test_env):
+def _module_state(setup_test_env, monkeypatch):
+    from backend import overview, projects
     from hydrahive.db import init_db
     from hydrahive.modules.migrations import apply_module_migrations
+    from hydrahive.projects import config as project_config
 
     init_db()
     apply_module_migrations("game-studio", MODULE_DIR / "migrations")
-    with only_own_rows("module_game_studio_drafts"):
-        yield
+    created: list[str] = []
+    original_create = projects.create
+
+    def tracked_create(*args, **kwargs):
+        result = original_create(*args, **kwargs)
+        created.append(result["project_id"])
+        return result
+
+    monkeypatch.setattr(projects, "create", tracked_create)
+    monkeypatch.setattr(projects, "default_model", lambda: "test/model")
+    monkeypatch.setattr(projects, "enable_share", lambda project_id, name: (True, ""))
+    monkeypatch.setattr(projects, "is_share_enabled", lambda project_id: True)
+    monkeypatch.setattr(projects.samba_manager, "share_user", lambda: "test-share")
+    monkeypatch.setattr(overview, "samba_status", lambda: {
+        "installed": True, "running": True, "user": "test-share", "platform": "linux"
+    })
+    yield
+    for project_id in created:
+        project_config.delete(project_id)
