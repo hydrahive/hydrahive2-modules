@@ -1,4 +1,4 @@
-"""Authenticated API for the visible Game Studio concept flow."""
+"""Authenticated API for workspace-backed Game Studio projects."""
 
 from __future__ import annotations
 
@@ -7,16 +7,26 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 from hydrahive.api.middleware.errors import coded
+from hydrahive.api.routes._project_route_helpers import check_project_access
 
-from . import overview, store
-from .models import DraftCreate, DraftUpdate
+from . import overview, projects, workspace_files
+from .models import ProjectCreate, ProjectUpdate, WorkspaceProject
 
 router = APIRouter()
 Principal = Annotated[AuthPrincipal, Depends(require_principal)]
 
 
-def _step_is_complete(current: dict, changes: dict[str, object]) -> bool:
-    merged = {**current, **changes}
+def _game_project(project_id: str, principal: AuthPrincipal, required: str) -> tuple[dict, WorkspaceProject]:
+    found = projects.get(project_id)
+    if found is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "game_studio_project_not_found")
+    config, project = found
+    check_project_access(config, principal.username, principal.role, required=required)
+    return config, project
+
+
+def _step_is_complete(current: WorkspaceProject, changes: dict[str, object]) -> bool:
+    merged = {**current.model_dump(mode="python"), **changes}
     step = int(merged.get("current_step", 1))
     if step >= 2 and not (str(merged.get("title", "")).strip() and str(merged.get("idea", "")).strip()):
         return False
@@ -29,49 +39,49 @@ def _step_is_complete(current: dict, changes: dict[str, object]) -> bool:
     )
 
 
+def _provision_error(exc: projects.ProjectProvisionError) -> None:
+    code = str(exc)
+    http_status = status.HTTP_400_BAD_REQUEST if code == "samba_not_installed" else status.HTTP_409_CONFLICT
+    raise coded(http_status, code)
+
+
 @router.get("/overview")
 def get_overview(principal: Principal) -> dict:
-    return overview.overview(principal.user_id)
+    return overview.overview(principal.username, principal.role)
 
 
-@router.get("/drafts/{draft_id}")
-def get_draft(draft_id: str, principal: Principal) -> dict:
-    draft = store.get(principal.user_id, draft_id)
-    if draft is None:
-        raise coded(status.HTTP_404_NOT_FOUND, "game_studio_draft_not_found")
-    return draft
+@router.get("/projects/{project_id}")
+def get_project(project_id: str, principal: Principal) -> dict:
+    config, project = _game_project(project_id, principal, "read")
+    return projects.public_project(config, project)
 
 
-@router.post("/drafts", status_code=status.HTTP_201_CREATED)
-def create_draft(body: DraftCreate, principal: Principal) -> dict:
+@router.post("/projects", status_code=status.HTTP_201_CREATED)
+def create_project(body: ProjectCreate, principal: Principal) -> dict:
+    if principal.role != "admin":
+        raise coded(status.HTTP_403_FORBIDDEN, "admin_only")
     try:
-        return store.create(
-            principal.user_id,
-            entry_kind=body.entry_kind,
-            title=body.title.strip(),
-            idea=body.idea.strip(),
-            genre=body.genre.strip(),
-            target_platform=body.target_platform,
-        )
-    except store.DraftConflict as exc:
+        return projects.create(principal.username, body)
+    except projects.ProjectProvisionError as exc:
+        _provision_error(exc)
+    except workspace_files.WorkspaceFileError as exc:
         raise coded(status.HTTP_409_CONFLICT, str(exc))
 
 
-@router.patch("/drafts/{draft_id}")
-def update_draft(draft_id: str, body: DraftUpdate, principal: Principal) -> dict:
+@router.patch("/projects/{project_id}")
+def update_project(project_id: str, body: ProjectUpdate, principal: Principal) -> dict:
+    config, current = _game_project(project_id, principal, "write")
     changes = body.model_dump(exclude={"revision"}, exclude_unset=True)
     for field in ("title", "idea", "genre", "core_action", "success_condition"):
         if field in changes and isinstance(changes[field], str):
             changes[field] = changes[field].strip()
-    current = store.get(principal.user_id, draft_id)
-    if current is None:
-        raise coded(status.HTTP_404_NOT_FOUND, "game_studio_draft_not_found")
     if not _step_is_complete(current, changes):
         raise coded(status.HTTP_400_BAD_REQUEST, "game_studio_step_incomplete")
     try:
-        updated = store.update(principal.user_id, draft_id, body.revision, changes)
-    except store.DraftConflict as exc:
-        raise coded(status.HTTP_409_CONFLICT, str(exc))
-    if updated is None:
-        raise coded(status.HTTP_404_NOT_FOUND, "game_studio_draft_not_found")
-    return updated
+        return projects.update(config, body.revision, changes)
+    except projects.ProjectProvisionError as exc:
+        _provision_error(exc)
+    except workspace_files.WorkspaceFileError as exc:
+        code = str(exc)
+        http_status = status.HTTP_409_CONFLICT if code.endswith("conflict") else status.HTTP_400_BAD_REQUEST
+        raise coded(http_status, code)

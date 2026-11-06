@@ -22,9 +22,16 @@ export const i18n = {
         open: "Öffnen",
       },
       drafts: {
-        title: "Meine Spielentwürfe", new: "Neuer Entwurf", emptyTitle: "Noch kein Spielentwurf",
-        emptyText: "Wähle oben einen Einstieg. Dein Entwurf wird gespeichert und bleibt über Sitzungen erhalten.",
+        title: "Meine Spielprojekte", new: "Neues Projekt", emptyTitle: "Noch kein Spielprojekt",
+        emptyText: "Wähle oben einen Einstieg. Das Projekt wird im Workspace angelegt und über Samba freigegeben.",
         step: "Schritt {{step}} von 5",
+      },
+      engine: { godot: "Godot", unreal: "Unreal Engine", unity: "Unity" },
+      sharing: {
+        title: "Samba-Workspace",
+        user: "Freigabe-Benutzer",
+        available: "Samba ist bereit. Neue Projekte werden als eigene Workspace-Freigabe angelegt.",
+        unavailable: "Samba ist noch nicht betriebsbereit. Neue Projekte können erst danach angelegt werden.",
       },
       workstation: {
         title: "Workstation und sichere Ausführung",
@@ -40,7 +47,8 @@ export const i18n = {
         stepCount: "Schritt {{step}} von 5", saveFailed: "Der Entwurf konnte nicht gespeichert werden.",
         saving: "Speichert…", continue: "Speichern und weiter", briefEmpty: "Beschreibe zuerst deine Spielidee.",
         runnerLockedTitle: "Bauen und Testen ist noch nicht freigeschaltet",
-        runnerLockedText: "Dein Entwurf ist gespeichert. Der echte Godot-Lauf folgt mit dem isolierten Runner aus PR4.",
+        runnerLockedGodot: "Das Projekt liegt im Samba-Workspace. Der automatische Godot-Lauf folgt mit dem isolierten Runner aus PR4.",
+        runnerLockedExternal: "Das Projekt liegt im Samba-Workspace und kann mit {{engine}} geöffnet werden. Ein automatischer sicherer Runner ist dafür noch nicht freigegeben.",
         runnerSafety: "Kein Host-Fallback und keine vorgetäuschten Ergebnisse.", buildDisabled: "Build starten · folgt mit PR4",
         steps: { idea: "Idee", brief: "Game Brief", slice: "Spielkern", run: "Bauen", evidence: "Ergebnis" },
         intro: {
@@ -57,6 +65,7 @@ export const i18n = {
         },
       },
       fields: {
+        engine: "Engine für dieses Projekt",
         title: "Arbeitstitel", titlePlaceholder: "z. B. Leuchtturm im Sturm", idea: "Deine Spielidee",
         ideaPlaceholder: {
           new: "Was tut der Spieler, und welches Gefühl soll entstehen?",
@@ -86,8 +95,15 @@ export const i18n = {
         open: "Open",
       },
       drafts: {
-        title: "My game drafts", new: "New draft", emptyTitle: "No game draft yet",
-        emptyText: "Choose a starting point above. Your draft is saved across sessions.", step: "Step {{step}} of 5",
+        title: "My game projects", new: "New project", emptyTitle: "No game project yet",
+        emptyText: "Choose a starting point. The project is created in its workspace and shared through Samba.", step: "Step {{step}} of 5",
+      },
+      engine: { godot: "Godot", unreal: "Unreal Engine", unity: "Unity" },
+      sharing: {
+        title: "Samba workspace",
+        user: "Share user",
+        available: "Samba is ready. New projects receive their own workspace share.",
+        unavailable: "Samba is not ready yet. New projects can only be created after it is available.",
       },
       workstation: {
         title: "Workstation and safe execution", core_update_required: "Update HydraHive Core before a game workstation can be detected.",
@@ -101,7 +117,8 @@ export const i18n = {
         navigation: "Steps to the first vertical slice", back: "Back to overview", untitled: "New game draft",
         stepCount: "Step {{step}} of 5", saveFailed: "The draft could not be saved.", saving: "Saving…", continue: "Save and continue",
         briefEmpty: "Describe your game idea first.", runnerLockedTitle: "Build and test are not available yet",
-        runnerLockedText: "Your draft is saved. The real Godot run follows with the isolated runner in PR4.",
+        runnerLockedGodot: "The project is in its Samba workspace. Automated Godot runs follow with the isolated runner in PR4.",
+        runnerLockedExternal: "The project is in its Samba workspace and can be opened with {{engine}}. An automated safe runner is not approved for it yet.",
         runnerSafety: "No host fallback and no fabricated results.", buildDisabled: "Start build · follows with PR4",
         steps: { idea: "Idea", brief: "Game brief", slice: "Playable core", run: "Build", evidence: "Result" },
         intro: {
@@ -118,6 +135,7 @@ export const i18n = {
         },
       },
       fields: {
+        engine: "Engine for this project",
         title: "Working title", titlePlaceholder: "e.g. Lighthouse in the storm", idea: "Your game idea",
         ideaPlaceholder: { new: "What does the player do, and how should it feel?", adopt: "What exists, and how should Game Studio help?", archive: "Where is the archive from, and what should be recovered?" },
         genre: "Genre", genrePlaceholder: "e.g. puzzle adventure", platform: "Target platform",
