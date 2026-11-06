@@ -53,13 +53,16 @@ def _write_model(agent_id: str, model: str) -> None:
 
 @router.get("/models")
 async def list_models(p: Admin) -> dict:
-    """Modelle der eigenen Anbieter für die Auswahl; `default` ist das, was ohne Wahl genommen wird."""
+    """Modelle der eigenen Anbieter für die Auswahl. `default` ist das Standardmodell des Systems.
+    `default_listed` sagt, ob es in der Live-Liste der eingerichteten Anbieter steht: wenn nicht, hat der Server dafür
+    vermutlich keinen Zugang (hydratest 6.11.: claude-sonnet-4-6 ohne Anthropic-Login) und der Chat bräche mit einer Meldung ab."""
     from hydrahive.llm import registry
     items = [{"id": m.id, "label": m.label, "provider": m.provider} for m in await registry.list_models("chat")]
     default = _default_model()
-    if default and all(i["id"] != default for i in items):       # das Standardmodell steht nicht immer in der Live-Liste
+    listed = any(i["id"] == default for i in items)
+    if default and not listed:                              # das Standardmodell steht nicht immer in der Live-Liste
         items.insert(0, {"id": default, "label": default, "provider": "standard"})
-    return {"default": default, "items": items}
+    return {"default": default, "default_listed": listed or not items[1:], "items": items}
 
 
 @router.post("/projects/{project_id}/model")

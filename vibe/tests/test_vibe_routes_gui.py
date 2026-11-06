@@ -255,6 +255,7 @@ def test_modellliste_enthaelt_immer_das_standardmodell(env, client, admin_header
     monkeypatch.setattr(registry, "list_models", leer)
     d = client.get(B + "/models", headers=admin_headers).json()
     assert d["default"] == MODEL and [i["id"] for i in d["items"]] == [MODEL]
+    assert d["default_listed"] is True                                  # keine Liste da → kein Alarm
 
 
 def test_modell_zurueck_auf_standard_geht_auch_wenn_es_nicht_in_der_liste_steht(env, client, admin_headers, monkeypatch):
@@ -263,3 +264,26 @@ def test_modell_zurueck_auf_standard_geht_auch_wenn_es_nicht_in_der_liste_steht(
     monkeypatch.setattr(_validation, "_available_models", lambda: ["anderes/modell"])
     r = client.post(f"{B}/projects/{pid}/model", json={"model": MODEL}, headers=admin_headers)
     assert r.status_code == 200 and r.json() == {"model": MODEL}
+
+
+def test_modellliste_meldet_standardmodell_ohne_zugang(env, client, admin_headers, monkeypatch):
+    from hydrahive.llm import registry
+    from types import SimpleNamespace as NS
+
+    async def andere(kind):
+        return [NS(id="openai-codex/gpt-5.4", label="gpt-5.4", provider="openai-codex")]
+    monkeypatch.setattr(registry, "list_models", andere)
+    d = client.get(B + "/models", headers=admin_headers).json()
+    assert d["default"] == MODEL and d["default_listed"] is False
+    assert d["items"][0]["id"] == MODEL and d["items"][1]["id"] == "openai-codex/gpt-5.4"
+
+
+def test_modellliste_standardmodell_in_liste_kein_alarm(env, client, admin_headers, monkeypatch):
+    from hydrahive.llm import registry
+    from types import SimpleNamespace as NS
+
+    async def mit(kind):
+        return [NS(id=MODEL, label=MODEL, provider="anthropic"), NS(id="x/y", label="y", provider="x")]
+    monkeypatch.setattr(registry, "list_models", mit)
+    d = client.get(B + "/models", headers=admin_headers).json()
+    assert d["default_listed"] is True and [i["id"] for i in d["items"]] == [MODEL, "x/y"]

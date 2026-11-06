@@ -14,6 +14,7 @@ export function ProjectList({ projects, known, onChange, onOpen, onError }: Prop
   const { t } = useTranslation("vibe")
   const [name, setName] = useState("")
   const [model, setModel] = useState("")
+  const [usable, setUsable] = useState(false)
   const [busy, setBusy] = useState(false)
   const [ask, setAsk] = useState<string | null>(null)
 
@@ -30,10 +31,10 @@ export function ProjectList({ projects, known, onChange, onOpen, onError }: Prop
         <label className="block space-y-1 text-sm text-[#c8d2df]">
           <span>{t("name_label")}</span>
           <input className={INPUT} value={name} maxLength={60} placeholder={t("name_placeholder")} disabled={busy}
-            onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) void create() }} />
+            onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && name.trim() && usable) void create() }} />
         </label>
-        <ModelSelect value={model} onChange={setModel} disabled={busy} label={t("model_label")} />
-        <button type="button" className={BTN_MAIN} disabled={busy || !name.trim()} onClick={() => void create()}>{t("create")}</button>
+        <ModelSelect value={model} onChange={setModel} disabled={busy} label={t("model_label")} onUsable={setUsable} />
+        <button type="button" className={BTN_MAIN} disabled={busy || !name.trim() || !usable} onClick={() => void create()}>{t("create")}</button>
       </section>
 
       {projects.length === 0 && <p className="text-sm text-[#c8d2df]">{t("empty")}</p>}
