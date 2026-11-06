@@ -16,7 +16,7 @@ AREAS = {"medien", "schreiben", "wissen", "agenten", "kommunikation", "zuhause",
 
 # Von Till am 24.10.2026 freigegebene Zuordnung (wie die Kern-Tabelle aus hydrahive2.0#618).
 EXPECTED = {
-    "studio": "medien", "atelier": "medien", "videoeditor": "medien", "tonstudio": "medien", "musicplayer": "medien",
+    "studio": "medien", "atelier": "medien", "game-studio": "medien", "videoeditor": "medien", "tonstudio": "medien", "musicplayer": "medien",
     "radiostream": "medien",
     "storyteller": "schreiben", "notizbuch": "schreiben", "scratchpad": "schreiben", "diagramme": "schreiben",
     "blueprint": "schreiben",

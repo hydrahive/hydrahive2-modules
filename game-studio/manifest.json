@@ -1,0 +1,11 @@
+{
+  "id": "game-studio",
+  "name": "Game Studio",
+  "version": "0.1.0",
+  "description": "Geführtes Projekt-Cockpit vom Spieleinfall zum belegten, spielbaren Prototyp. Mit sicherer Workstation-Anbindung, klaren Schritten und ehrlicher Evidenz.",
+  "icon": "Gamepad2",
+  "nav_group": "working",
+  "permissions": [],
+  "has_service": false,
+  "min_core_version": "2.0.0"
+}
