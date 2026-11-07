@@ -10,6 +10,7 @@ const project = (changes: Partial<GameProject> = {}): GameProject => ({
   engine_project_name: "",
   engine_project_path: "",
   engine_project_ready: false,
+  last_engine_run: null,
   title: "Leuchtturm",
   idea: "Ein Leuchtfeuer im Sturm erhalten.",
   genre: "Puzzle",

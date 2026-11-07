@@ -341,6 +341,153 @@ void A{name}GameMode::StartPlay()
     Super::StartPlay();
 }}
 '''
+    automation_cpp = f'''#if WITH_DEV_AUTOMATION_TESTS
+
+#include "{name}Character.h"
+#include "{name}GameMode.h"
+#include "{name}Goal.h"
+#include "Misc/AutomationTest.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    F{name}StarterClassesTest,
+    "GameStudio.{name}.StarterClasses",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool F{name}StarterClassesTest::RunTest(const FString& Parameters)
+{{
+    TestNotNull(TEXT("Character class exists"), A{name}Character::StaticClass());
+    TestNotNull(TEXT("Game mode class exists"), A{name}GameMode::StaticClass());
+    TestNotNull(TEXT("Goal class exists"), A{name}Goal::StaticClass());
+    return true;
+}}
+
+#endif
+'''
+    common_script = f'''#!/usr/bin/env bash
+set -u -o pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")" && pwd)"
+PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+WORKSPACE_ROOT="$(cd -- "$PROJECT_ROOT/../.." && pwd)"
+PROJECT_FILE="$PROJECT_ROOT/{name}.uproject"
+LOG_DIR="$PROJECT_ROOT/Saved/GameStudio"
+RESULT_DIR="$WORKSPACE_ROOT/game-studio/results"
+mkdir -p "$LOG_DIR" "$RESULT_DIR"
+
+game_studio_timestamp() {{
+    date -u +%Y-%m-%dT%H:%M:%SZ
+}}
+
+game_studio_file_timestamp() {{
+    date -u +%Y%m%dT%H%M%SZ
+}}
+
+game_studio_write_result() {{
+    local kind="$1"
+    local exit_code="$2"
+    local log_file="$3"
+    local status="failed"
+    if [[ "$exit_code" -eq 0 ]]; then status="passed"; fi
+    local finished_at
+    finished_at="$(game_studio_timestamp)"
+    local relative_log="${{log_file#"$WORKSPACE_ROOT/"}}"
+    local filename="${{kind#unreal-}}.json"
+    local target="$RESULT_DIR/unreal-$filename"
+    local temporary="$target.tmp.$$"
+    printf '{{"schema_version":1,"kind":"%s","status":"%s","exit_code":%d,"finished_at":"%s","log_path":"%s"}}\n' \\
+        "$kind" "$status" "$exit_code" "$finished_at" "$relative_log" > "$temporary"
+    mv -f -- "$temporary" "$target"
+}}
+
+game_studio_editor_binary() {{
+    local candidate="$UNREAL_ROOT/Engine/Binaries/Linux/UnrealEditor"
+    if [[ -x "$candidate" ]]; then printf '%s\n' "$candidate"; return; fi
+    return 1
+}}
+
+game_studio_command_binary() {{
+    local candidate="$UNREAL_ROOT/Engine/Binaries/Linux/UnrealEditor-Cmd"
+    if [[ -x "$candidate" ]]; then printf '%s\n' "$candidate"; return; fi
+    game_studio_editor_binary
+}}
+'''
+    build_script = f'''#!/usr/bin/env bash
+source "$(cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")" && pwd)/common.sh"
+TIMESTAMP="$(game_studio_file_timestamp)"
+LOG_FILE="$LOG_DIR/build-$TIMESTAMP.log"
+
+if [[ -z "${{UNREAL_ROOT:-}}" ]]; then
+    echo "Fehler: UNREAL_ROOT muss auf die gewünschte Unreal-Installation zeigen." | tee "$LOG_FILE"
+    game_studio_write_result "unreal-build" 2 "$LOG_FILE"
+    exit 2
+fi
+BUILD_TOOL="$UNREAL_ROOT/Engine/Build/BatchFiles/Linux/Build.sh"
+if [[ ! -f "$BUILD_TOOL" ]]; then
+    echo "Fehler: Unreal-Buildskript nicht gefunden: $BUILD_TOOL" | tee "$LOG_FILE"
+    game_studio_write_result "unreal-build" 127 "$LOG_FILE"
+    exit 127
+fi
+
+set +e
+bash "$BUILD_TOOL" {name}Editor Linux Development "$PROJECT_FILE" -WaitMutex -NoHotReloadFromIDE 2>&1 | tee "$LOG_FILE"
+EXIT_CODE=${{PIPESTATUS[0]}}
+set -e
+game_studio_write_result "unreal-build" "$EXIT_CODE" "$LOG_FILE"
+exit "$EXIT_CODE"
+'''
+    open_script = '''#!/usr/bin/env bash
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+
+if [[ -z "${UNREAL_ROOT:-}" ]]; then
+    echo "Fehler: UNREAL_ROOT muss auf die gewünschte Unreal-Installation zeigen." >&2
+    exit 2
+fi
+EDITOR_BINARY="$(game_studio_editor_binary)" || {
+    echo "Fehler: UnrealEditor wurde unter $UNREAL_ROOT nicht gefunden." >&2
+    exit 127
+}
+exec "$EDITOR_BINARY" "$PROJECT_FILE" "$@"
+'''
+    test_script = f'''#!/usr/bin/env bash
+source "$(cd -- "$(dirname -- "${{BASH_SOURCE[0]}}")" && pwd)/common.sh"
+TIMESTAMP="$(game_studio_file_timestamp)"
+LOG_FILE="$LOG_DIR/test-$TIMESTAMP.log"
+REPORT_DIR="$LOG_DIR/test-report-$TIMESTAMP"
+
+if [[ -z "${{UNREAL_ROOT:-}}" ]]; then
+    echo "Fehler: UNREAL_ROOT muss auf die gewünschte Unreal-Installation zeigen." | tee "$LOG_FILE"
+    game_studio_write_result "unreal-test" 2 "$LOG_FILE"
+    exit 2
+fi
+EDITOR_BINARY="$(game_studio_command_binary)" || {{
+    echo "Fehler: UnrealEditor wurde unter $UNREAL_ROOT nicht gefunden." | tee "$LOG_FILE"
+    game_studio_write_result "unreal-test" 127 "$LOG_FILE"
+    exit 127
+}}
+
+set +e
+"$EDITOR_BINARY" "$PROJECT_FILE" -unattended -nop4 -nosplash -NullRHI \\
+    -ExecCmds="Automation RunTests GameStudio.{name}" \\
+    -TestExit="Automation Test Queue Empty" -ReportExportPath="$REPORT_DIR" \\
+    -stdout -FullStdOutLogOutput 2>&1 | tee "$LOG_FILE"
+EXIT_CODE=${{PIPESTATUS[0]}}
+set -e
+game_studio_write_result "unreal-test" "$EXIT_CODE" "$LOG_FILE"
+exit "$EXIT_CODE"
+'''
+    scripts_readme = f'''# Lokaler Unreal-Ablauf unter Linux
+
+Setze `UNREAL_ROOT` auf die Unreal-Version, die dieses Projekt verwenden soll.
+
+```bash
+export UNREAL_ROOT="/pfad/zu/UnrealEngine"
+bash Scripts/build-editor-linux.sh
+bash Scripts/test-linux.sh
+bash Scripts/open-editor-linux.sh
+```
+
+Build- und Testlogs landen unter `Saved/GameStudio/`. Die letzten echten Exit-Codes werden zusätzlich als JSON unter `../../game-studio/results/` abgelegt und von Game Studio angezeigt.
+'''
     engine_ini = f'''[/Script/EngineSettings.GameMapsSettings]
 GameDefaultMap=/Engine/Maps/Entry
 EditorStartupMap=/Engine/Maps/Entry
@@ -374,6 +521,8 @@ Dieses C++-Starterprojekt wurde von HydraHive Game Studio erzeugt und liegt voll
 Starte die gewünschte Unreal-Installation mit der Datei `{name}.uproject`. Unreal erzeugt seine Dateien wie `Binaries`, `Intermediate` und `Saved` direkt in diesem Ordner.
 
 Der Starter enthält eine steuerbare Spielfigur, eine Lauf-/Sprungsteuerung, eine erzeugte Bodenfläche und ein erreichbares Ziel. Das ist echter editierbarer C++-Quellcode; es werden keine fertigen Builds oder Testergebnisse behauptet.
+
+Unter `Scripts/` liegen Linux-Helfer zum Bauen, Testen und Öffnen mit einer frei gewählten Unreal-Installation. Logs bleiben unter `Saved/GameStudio/` im Projekt; Game Studio zeigt ausschließlich die von diesen lokalen Läufen geschriebenen Exit-Codes an.
 '''
     gitignore = '''Binaries/
 DerivedDataCache/
@@ -416,6 +565,12 @@ Saved/
         f"Source/{name}/{name}Goal.cpp": goal_cpp,
         f"Source/{name}/{name}GameMode.h": game_mode_h,
         f"Source/{name}/{name}GameMode.cpp": game_mode_cpp,
+        f"Source/{name}/{name}Automation.cpp": automation_cpp,
+        "Scripts/common.sh": common_script,
+        "Scripts/build-editor-linux.sh": build_script,
+        "Scripts/open-editor-linux.sh": open_script,
+        "Scripts/test-linux.sh": test_script,
+        "Scripts/README.md": scripts_readme,
         ".game-studio-generated.json": marker,
     }
 
@@ -425,9 +580,6 @@ def generate(project: WorkspaceProject) -> WorkspaceProject:
         raise UnrealProjectError("game_studio_unreal_engine_required")
     if project.current_step < 4 or not (project.core_action.strip() and project.success_condition.strip()):
         raise UnrealProjectError("game_studio_step_incomplete")
-    if project.engine_project_ready:
-        return project
-
     name = project.engine_project_name or project_name(project.title, project.project_id)
     root = ensure_workspace(project.project_id)
     target = _directory(root, Path(_ENGINE_DIR) / name)
@@ -441,8 +593,11 @@ def generate(project: WorkspaceProject) -> WorkspaceProject:
         if path.is_symlink():
             raise UnrealProjectError("game_studio_unreal_symlink")
         try:
-            if path.exists() and path.read_text(encoding="utf-8") != content:
-                raise UnrealProjectError("game_studio_unreal_file_exists")
+            if path.exists():
+                if project.engine_project_ready:
+                    continue
+                if path.read_text(encoding="utf-8") != content:
+                    raise UnrealProjectError("game_studio_unreal_file_exists")
         except OSError as exc:
             raise UnrealProjectError("game_studio_unreal_file_unreadable") from exc
         targets[relative] = (path, content)
@@ -450,7 +605,8 @@ def generate(project: WorkspaceProject) -> WorkspaceProject:
     for relative, (path, content) in targets.items():
         if relative != marker:
             _atomic_write(path, content)
-    _atomic_write(*targets[marker])
+    if marker in targets:
+        _atomic_write(*targets[marker])
 
     return project.model_copy(update={
         "engine_project_name": name,

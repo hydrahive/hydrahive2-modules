@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import secrets
 from pathlib import Path
@@ -10,10 +11,13 @@ from pathlib import Path
 from hydrahive.db._utils import now_iso
 from hydrahive.projects._paths import ensure_workspace
 
-from .models import ProjectCreate, WorkspaceProject
+from .models import EngineRun, ProjectCreate, WorkspaceProject
 
 _DATA_DIR = "game-studio"
 _PROJECT_FILE = "project.json"
+_RESULT_FILES = ("unreal-build.json", "unreal-test.json")
+_MAX_RESULT_BYTES = 16_384
+logger = logging.getLogger(__name__)
 
 
 class WorkspaceFileError(RuntimeError):
@@ -124,6 +128,27 @@ def read(project_id: str) -> WorkspaceProject | None:
         return None
     except (OSError, ValueError) as exc:
         raise WorkspaceFileError("game_studio_project_file_invalid") from exc
+
+
+def read_last_run(project_id: str) -> EngineRun | None:
+    root = ensure_workspace(project_id)
+    result_directory = root / _DATA_DIR / "results"
+    if result_directory.is_symlink() or not result_directory.is_dir():
+        return None
+    runs: list[EngineRun] = []
+    for filename in _RESULT_FILES:
+        path = result_directory / filename
+        try:
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > _MAX_RESULT_BYTES:
+                continue
+            run = EngineRun.model_validate_json(path.read_text(encoding="utf-8"))
+            log_path = root / run.log_path
+            if not log_path.resolve().is_relative_to(root.resolve()) or not log_path.is_file():
+                continue
+            runs.append(run)
+        except (OSError, ValueError):
+            logger.warning("Ungültiges Game-Studio-Ergebnis ignoriert: %s", path)
+    return max(runs, key=lambda run: (run.finished_at, run.kind)) if runs else None
 
 
 def update(project_id: str, revision: int, changes: dict[str, object]) -> WorkspaceProject:
