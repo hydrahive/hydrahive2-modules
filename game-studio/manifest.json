@@ -1,8 +1,8 @@
 {
   "id": "game-studio",
   "name": "Game Studio",
-  "version": "0.4.0",
-  "description": "Unreal-C++-Starter im Samba-Workspace mit lokalem Linux-Build, Automation-Test, Paketierung und echten Ergebnisdateien.",
+  "version": "0.4.1",
+  "description": "Spielprojekt im Samba-Workspace anlegen und direkt in Unreal, Godot oder Unity öffnen.",
   "icon": "Gamepad2",
   "nav_group": "working",
   "permissions": [],

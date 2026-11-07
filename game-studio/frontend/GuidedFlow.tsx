@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, CheckCircle2, Copy, RefreshCw, Save, Share2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, CheckCircle2, Copy, Save, Share2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { FlowRail } from "./components/FlowRail"
@@ -12,12 +12,11 @@ interface Props {
   onCreate: (body: ProjectCreate) => Promise<GameProject>
   onUpdate: (project: GameProject, patch: ProjectPatch) => Promise<GameProject>
   onGenerateUnreal: (project: GameProject) => Promise<GameProject>
-  onReloadProject: (project: GameProject) => Promise<GameProject>
 }
 
 const fieldClass = "w-full rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2.5 text-sm text-[#e8eef8] placeholder:text-[#596579] focus:border-[#69d7ff]/60 focus:outline-none focus:ring-1 focus:ring-[#69d7ff]/40"
 
-export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenerateUnreal, onReloadProject }: Props) {
+export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenerateUnreal }: Props) {
   const { t } = useTranslation("gameStudio")
   const [activeStep, setActiveStep] = useState(project?.current_step ?? 1)
   const [engine, setEngine] = useState<GameEngine>(project?.engine ?? "godot")
@@ -30,7 +29,6 @@ export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenera
   const [successCondition, setSuccessCondition] = useState(project?.success_condition ?? "")
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState("")
 
@@ -53,11 +51,6 @@ export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenera
   const sharePath = project?.sharing.enabled ? `//${host}/${shareName}` : ""
   const localMountPath = `$HOME/HydraHive/${shareName}`
   const localProjectPath = project?.engine_project_path ? `${localMountPath}/${project.engine_project_path}` : localMountPath
-  const localProjectRoot = localProjectPath.includes("/") ? localProjectPath.slice(0, localProjectPath.lastIndexOf("/")) : localProjectPath
-  const buildCommand = `UNREAL_ROOT="/pfad/zu/UnrealEngine" bash "${localProjectRoot}/Scripts/build-editor-linux.sh"`
-  const testCommand = `UNREAL_ROOT="/pfad/zu/UnrealEngine" bash "${localProjectRoot}/Scripts/test-linux.sh"`
-  const packageCommand = `UNREAL_ROOT="/pfad/zu/UnrealEngine" bash "${localProjectRoot}/Scripts/package-linux.sh"`
-  const openCommand = `UNREAL_ROOT="/pfad/zu/UnrealEngine" bash "${localProjectRoot}/Scripts/open-editor-linux.sh"`
   const mountCommand = project?.sharing.enabled
     ? `mkdir -p "${localMountPath}" && sudo mount -t cifs ${sharePath} "${localMountPath}" -o username=${project.sharing.user},uid=$(id -u),gid=$(id -g),file_mode=0775,dir_mode=0775,vers=3.0,noserverino`
     : ""
@@ -83,19 +76,6 @@ export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenera
       setError(t("flow.generateFailed"))
     } finally {
       setGenerating(false)
-    }
-  }
-
-  const refreshProject = async () => {
-    if (!project) return
-    setRefreshing(true)
-    setError("")
-    try {
-      await onReloadProject(project)
-    } catch {
-      setError(t("flow.refreshFailed"))
-    } finally {
-      setRefreshing(false)
     }
   }
 
@@ -201,18 +181,6 @@ export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenera
               {copied && <p className="mt-2 text-xs text-emerald-300">{t("flow.copied")}</p>}
               <p className="mt-3 break-all text-xs leading-5 text-[#c8d2df]">{t("flow.openEngine", { engine: t(`engine.${project.engine}`), path: localProjectPath })}</p>
             </div>}
-            {project.engine === "unreal" && project.engine_project_ready && <>
-              <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-4">
-                <h3 className="text-sm font-semibold text-[#e8eef8]">{t("flow.localWorkflowTitle")}</h3>
-                <p className="mt-1 text-xs leading-5 text-[#9aa7bc]">{t("flow.localWorkflowText")}</p>
-                <button type="button" disabled={generating} onClick={() => void generateUnrealProject()} className="mt-3 flex items-center gap-1 rounded-md border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1.5 text-[11px] text-[#9aa7bc] hover:text-[#e8eef8] disabled:opacity-50"><RefreshCw size={13} className={generating ? "animate-spin" : ""} aria-hidden="true" />{t("flow.syncHelpers")}</button>
-                {([["build", buildCommand], ["test", testCommand], ["package", packageCommand], ["open", openCommand]] as const).map(([kind, command]) => <div key={kind} className="mt-3"><p className="mb-1 text-[11px] font-medium text-[#c8d2df]">{t(`flow.localCommand.${kind}`)}</p><code className="block select-all break-all rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#080d16] p-3 text-[11px] leading-5 text-emerald-200">{command}</code></div>)}
-              </div>
-              <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-4">
-                <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold text-[#e8eef8]">{t("flow.realResultTitle")}</h3><button type="button" disabled={refreshing} onClick={() => void refreshProject()} className="flex items-center gap-1 rounded-md border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1.5 text-[11px] text-[#9aa7bc] hover:text-[#e8eef8] disabled:opacity-50"><RefreshCw size={13} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />{t("flow.refreshResult")}</button></div>
-                {project.last_engine_run ? <div className={`mt-3 rounded-lg border p-3 ${project.last_engine_run.status === "passed" ? "border-emerald-300/20 bg-emerald-300/[0.05]" : "border-red-300/20 bg-red-300/[0.05]"}`}><p className={`text-xs font-semibold ${project.last_engine_run.status === "passed" ? "text-emerald-300" : "text-red-300"}`}>{t(`flow.runStatus.${project.last_engine_run.status}`)} · {t(`flow.runKind.${project.last_engine_run.kind}`)}</p><p className="mt-1 text-[11px] text-[#9aa7bc]">{project.last_engine_run.finished_at} · Exit-Code {project.last_engine_run.exit_code}</p><p className="mt-1 break-all font-mono text-[10px] text-[#c8d2df]">{project.last_engine_run.log_path}</p></div> : <p className="mt-3 text-xs leading-5 text-[#9aa7bc]">{t("flow.noRealResult")}</p>}
-              </div>
-            </>}
           </div>
         )}
 

@@ -35,7 +35,7 @@ describe("Alter Look entfernt", () => {
     expect(text).toContain("onGenerateUnreal")
     expect(text).toContain("Echtes Unreal-Projekt erzeugen")
     expect(text).toContain("last_engine_run")
-    expect(text).toContain("build-editor-linux.sh")
+    expect(text).not.toContain("build-editor-linux.sh")
     expect(text).not.toMatch(/PR4|runnerLocked|Build starten|Schritt \{\{step\}\} von 5/)
   })
 })

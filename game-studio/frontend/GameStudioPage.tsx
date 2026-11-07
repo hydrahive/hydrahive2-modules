@@ -47,16 +47,6 @@ export function GameStudioPage() {
     return updated
   }
 
-  const reloadProject = async (currentProject: GameProject) => {
-    const updated = await gameStudioApi.project(currentProject.project_id)
-    setProject(updated)
-    setOverview((current) => current ? {
-      ...current,
-      projects: current.projects.map((item) => item.project_id === updated.project_id ? updated : item),
-    } : current)
-    return updated
-  }
-
   const generateUnrealProject = async (currentProject: GameProject) => {
     const updated = await gameStudioApi.generateUnrealProject(currentProject.project_id, currentProject.revision)
     setProject(updated)
@@ -86,7 +76,7 @@ export function GameStudioPage() {
   }
 
   if (kind) {
-    return <GuidedFlow kind={kind} project={project} onBack={back} onCreate={create} onUpdate={update} onGenerateUnreal={generateUnrealProject} onReloadProject={reloadProject} />
+    return <GuidedFlow kind={kind} project={project} onBack={back} onCreate={create} onUpdate={update} onGenerateUnreal={generateUnrealProject} />
   }
 
   return <LandingPage projects={overview.projects} sharing={overview.sharing} onStart={start} onOpen={open} />
