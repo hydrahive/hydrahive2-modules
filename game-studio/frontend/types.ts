@@ -11,7 +11,7 @@ export interface SambaShare {
 
 export interface EngineRun {
   schema_version: 1
-  kind: "unreal-build" | "unreal-test"
+  kind: "unreal-build" | "unreal-test" | "unreal-package"
   status: "passed" | "failed"
   exit_code: number
   finished_at: string

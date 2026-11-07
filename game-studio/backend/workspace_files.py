@@ -15,7 +15,7 @@ from .models import EngineRun, ProjectCreate, WorkspaceProject
 
 _DATA_DIR = "game-studio"
 _PROJECT_FILE = "project.json"
-_RESULT_FILES = ("unreal-build.json", "unreal-test.json")
+_RESULT_FILES = ("unreal-build.json", "unreal-test.json", "unreal-package.json")
 _MAX_RESULT_BYTES = 16_384
 logger = logging.getLogger(__name__)
 

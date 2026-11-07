@@ -475,6 +475,34 @@ set -e
 game_studio_write_result "unreal-test" "$EXIT_CODE" "$LOG_FILE"
 exit "$EXIT_CODE"
 '''
+    package_script = '''#!/usr/bin/env bash
+source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/common.sh"
+TIMESTAMP="$(game_studio_file_timestamp)"
+LOG_FILE="$LOG_DIR/package-$TIMESTAMP.log"
+ARCHIVE_DIR="$PROJECT_ROOT/Builds/Linux"
+mkdir -p "$ARCHIVE_DIR"
+
+if [[ -z "${UNREAL_ROOT:-}" ]]; then
+    echo "Fehler: UNREAL_ROOT muss auf die gewünschte Unreal-Installation zeigen." | tee "$LOG_FILE"
+    game_studio_write_result "unreal-package" 2 "$LOG_FILE"
+    exit 2
+fi
+UAT="$UNREAL_ROOT/Engine/Build/BatchFiles/RunUAT.sh"
+if [[ ! -f "$UAT" ]]; then
+    echo "Fehler: RunUAT.sh nicht gefunden: $UAT" | tee "$LOG_FILE"
+    game_studio_write_result "unreal-package" 127 "$LOG_FILE"
+    exit 127
+fi
+
+set +e
+bash "$UAT" BuildCookRun -project="$PROJECT_FILE" -noP4 -platform=Linux \\
+    -clientconfig=Development -build -cook -stage -pak -archive \\
+    -archivedirectory="$ARCHIVE_DIR" -utf8output 2>&1 | tee "$LOG_FILE"
+EXIT_CODE=${PIPESTATUS[0]}
+set -e
+game_studio_write_result "unreal-package" "$EXIT_CODE" "$LOG_FILE"
+exit "$EXIT_CODE"
+'''
     scripts_readme = f'''# Lokaler Unreal-Ablauf unter Linux
 
 Setze `UNREAL_ROOT` auf die Unreal-Version, die dieses Projekt verwenden soll.
@@ -483,10 +511,11 @@ Setze `UNREAL_ROOT` auf die Unreal-Version, die dieses Projekt verwenden soll.
 export UNREAL_ROOT="/pfad/zu/UnrealEngine"
 bash Scripts/build-editor-linux.sh
 bash Scripts/test-linux.sh
+bash Scripts/package-linux.sh
 bash Scripts/open-editor-linux.sh
 ```
 
-Build- und Testlogs landen unter `Saved/GameStudio/`. Die letzten echten Exit-Codes werden zusätzlich als JSON unter `../../game-studio/results/` abgelegt und von Game Studio angezeigt.
+Build-, Test- und Paketierungslogs landen unter `Saved/GameStudio/`. Das Linux-Paket wird unter `Builds/Linux/` archiviert. Die letzten echten Exit-Codes werden zusätzlich als JSON unter `../../game-studio/results/` abgelegt und von Game Studio angezeigt.
 '''
     engine_ini = f'''[/Script/EngineSettings.GameMapsSettings]
 GameDefaultMap=/Engine/Maps/Entry
@@ -528,6 +557,7 @@ Unter `Scripts/` liegen Linux-Helfer zum Bauen, Testen und Öffnen mit einer fre
 DerivedDataCache/
 Intermediate/
 Saved/
+Builds/
 .vscode/
 .idea/
 *.sln
@@ -570,6 +600,7 @@ Saved/
         "Scripts/build-editor-linux.sh": build_script,
         "Scripts/open-editor-linux.sh": open_script,
         "Scripts/test-linux.sh": test_script,
+        "Scripts/package-linux.sh": package_script,
         "Scripts/README.md": scripts_readme,
         ".game-studio-generated.json": marker,
     }
