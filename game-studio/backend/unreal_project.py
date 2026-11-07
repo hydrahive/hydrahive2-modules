@@ -346,9 +346,9 @@ void A{name}GameMode::StartPlay()
     Super::StartPlay();
 }}
 '''
+    # Kein Start-Level vorgeben: /Engine/Maps/Entry gehört zur Engine-Installation; wer dort speichert,
+    # überschreibt Engine-Dateien. Unreal öffnet ohne Eintrag ein leeres, ungespeichertes Level.
     engine_ini = f'''[/Script/EngineSettings.GameMapsSettings]
-GameDefaultMap=/Engine/Maps/Entry
-EditorStartupMap=/Engine/Maps/Entry
 GlobalDefaultGameMode=/Script/{name}.{name}GameMode
 
 [/Script/Engine.Engine]
