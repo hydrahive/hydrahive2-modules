@@ -163,7 +163,9 @@ def test_unreal_generator_creates_real_version_neutral_cpp_project(client, admin
     assert "MouseX" in (root / "Config" / "DefaultInput.ini").read_text()
     assert (root / "Source" / "HafenWachter2" / "HafenWachter2GameMode.cpp").is_file()
     assert (root / "Source" / "HafenWachter2" / "HafenWachter2Goal.cpp").is_file()
-    assert (root / "Config" / "DefaultEngine.ini").is_file()
+    engine_ini = (root / "Config" / "DefaultEngine.ini").read_text()
+    assert "/Engine/Maps/" not in engine_ini
+    assert "GlobalDefaultGameMode=/Script/HafenWachter2.HafenWachter2GameMode" in engine_ini
     assert (root / "Config" / "DefaultInput.ini").is_file()
     assert (root / ".game-studio-generated.json").is_file()
     assert not (root / "Scripts").exists()
