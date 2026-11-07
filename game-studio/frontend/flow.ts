@@ -16,3 +16,9 @@ export function highestAvailableStep(project: GameProject): number {
   if (!completedStep(project, 3)) return 3
   return 4
 }
+
+/** Fertig eingerichtet: Unreal-Projekt erzeugt bzw. bei anderen Engines alle Schritte erledigt. */
+export function setupComplete(project: GameProject): boolean {
+  if (project.engine === "unreal") return project.engine_project_ready
+  return project.current_step >= 4 && highestAvailableStep(project) === 4
+}

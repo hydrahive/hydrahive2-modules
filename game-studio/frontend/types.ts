@@ -52,6 +52,31 @@ export interface GameStudioOverview {
   sharing: SharingStatus
 }
 
+export interface DesignDocMeta {
+  slug: string
+  title: string
+  etag: string
+  size: number
+}
+
+export interface DesignDoc {
+  slug: string
+  title: string
+  etag: string
+  content: string
+}
+
+export interface ChatInfo {
+  agent: { id: string; name: string } | null
+  can_start: boolean
+}
+
+export interface ChatStart {
+  session_id: string
+  reused: boolean
+  agent: { id: string; name: string }
+}
+
 export interface ProjectCreate {
   entry_kind: EntryKind
   engine: GameEngine

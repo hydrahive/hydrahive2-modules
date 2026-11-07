@@ -2,14 +2,18 @@ import { AlertTriangle, LoaderCircle } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { gameStudioApi } from "./api"
+import { setupComplete } from "./flow"
 import { GuidedFlow } from "./GuidedFlow"
 import { LandingPage } from "./LandingPage"
+import { ProjectWorkspace } from "./ProjectWorkspace"
 import type { ProjectCreate, ProjectPatch, EntryKind, GameProject, GameStudioOverview } from "./types"
+
+type View = { mode: "landing" } | { mode: "setup"; kind: EntryKind } | { mode: "workspace" }
 
 export function GameStudioPage() {
   const { t } = useTranslation("gameStudio")
   const [overview, setOverview] = useState<GameStudioOverview | null>(null)
-  const [kind, setKind] = useState<EntryKind | null>(null)
+  const [view, setView] = useState<View>({ mode: "landing" })
   const [project, setProject] = useState<GameProject | null>(null)
   const [error, setError] = useState(false)
 
@@ -20,14 +24,23 @@ export function GameStudioPage() {
 
   useEffect(() => { reload() }, [])
 
+  const replaceProject = (updated: GameProject) => {
+    setProject(updated)
+    setOverview((current) => current ? {
+      ...current,
+      projects: current.projects.map((item) => item.project_id === updated.project_id ? updated : item),
+    } : current)
+    return updated
+  }
+
   const start = (entryKind: EntryKind) => {
-    setKind(entryKind)
     setProject(null)
+    setView({ mode: "setup", kind: entryKind })
   }
 
   const open = (selected: GameProject) => {
-    setKind(selected.entry_kind)
     setProject(selected)
+    setView(setupComplete(selected) ? { mode: "workspace" } : { mode: "setup", kind: selected.entry_kind })
   }
 
   const create = async (body: ProjectCreate) => {
@@ -37,29 +50,18 @@ export function GameStudioPage() {
     return created
   }
 
-  const update = async (currentProject: GameProject, patch: ProjectPatch) => {
-    const updated = await gameStudioApi.updateProject(currentProject.project_id, patch)
-    setProject(updated)
-    setOverview((current) => current ? {
-      ...current,
-      projects: current.projects.map((item) => item.project_id === updated.project_id ? updated : item),
-    } : current)
-    return updated
-  }
+  const update = async (currentProject: GameProject, patch: ProjectPatch) =>
+    replaceProject(await gameStudioApi.updateProject(currentProject.project_id, patch))
 
-  const generateUnrealProject = async (currentProject: GameProject) => {
-    const updated = await gameStudioApi.generateUnrealProject(currentProject.project_id, currentProject.revision)
-    setProject(updated)
-    setOverview((current) => current ? {
-      ...current,
-      projects: current.projects.map((item) => item.project_id === updated.project_id ? updated : item),
-    } : current)
-    return updated
-  }
+  const generateUnrealProject = async (currentProject: GameProject) =>
+    replaceProject(await gameStudioApi.generateUnrealProject(currentProject.project_id, currentProject.revision))
 
   const back = () => {
-    setKind(null)
+    setView({ mode: "landing" })
     setProject(null)
+    const url = new URL(window.location.href)
+    url.searchParams.delete("tab")
+    window.history.replaceState(window.history.state, "", url)
     reload()
   }
 
@@ -75,8 +77,13 @@ export function GameStudioPage() {
     return <div className="flex min-h-[60vh] items-center justify-center"><LoaderCircle className="animate-spin text-[#69d7ff]" aria-label={t("loading")} /></div>
   }
 
-  if (kind) {
-    return <GuidedFlow kind={kind} project={project} onBack={back} onCreate={create} onUpdate={update} onGenerateUnreal={generateUnrealProject} />
+  if (view.mode === "workspace" && project) {
+    return <ProjectWorkspace project={project} onBack={back} onSetup={() => setView({ mode: "setup", kind: project.entry_kind })} />
+  }
+
+  if (view.mode === "setup") {
+    return <GuidedFlow kind={view.kind} project={project} onBack={back} onCreate={create} onUpdate={update} onGenerateUnreal={generateUnrealProject}
+      onOpenWorkspace={project && setupComplete(project) ? () => setView({ mode: "workspace" }) : undefined} />
   }
 
   return <LandingPage projects={overview.projects} sharing={overview.sharing} onStart={start} onOpen={open} />
