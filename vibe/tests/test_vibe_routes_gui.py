@@ -149,12 +149,14 @@ def test_loeschen_nur_admin(env, client, user_headers):
 
 def test_chat_gibt_sitzung_und_agent_zurueck(env, client, admin_headers):
     pid = _create(client, admin_headers).json()["project_id"]
+    _ready(client, admin_headers)
     r = client.post(f"{B}/projects/{pid}/chat", json={}, headers=admin_headers)
-    assert r.status_code == 200 and r.json()["session_id"] and r.json()["agent_id"]
+    assert r.status_code == 200 and r.json()["session_id"] and r.json()["agent_id"], r.text
 
 
 def test_chat_zweimal_gibt_dieselbe_sitzung(env, client, admin_headers):
     pid = _create(client, admin_headers).json()["project_id"]
+    _ready(client, admin_headers)
     a = client.post(f"{B}/projects/{pid}/chat", json={}, headers=admin_headers).json()
     b = client.post(f"{B}/projects/{pid}/chat", json={}, headers=admin_headers).json()
     assert a["session_id"] == b["session_id"]
@@ -163,6 +165,7 @@ def test_chat_zweimal_gibt_dieselbe_sitzung(env, client, admin_headers):
 def test_chat_sitzung_ist_fuer_vibe_markiert_und_weckt_den_container(env, client, admin_headers):
     from hydrahive.db import sessions as sdb
     pid = _create(client, admin_headers).json()["project_id"]
+    _ready(client, admin_headers)
     r = client.post(f"{B}/projects/{pid}/chat", json={}, headers=admin_headers).json()
     assert sdb.get(r["session_id"]).metadata.get("embedded_in") == "vibe"
 
@@ -287,3 +290,22 @@ def test_modellliste_standardmodell_in_liste_kein_alarm(env, client, admin_heade
     monkeypatch.setattr(registry, "list_models", mit)
     d = client.get(B + "/models", headers=admin_headers).json()
     assert d["default_listed"] is True and [i["id"] for i in d["items"]] == [MODEL, "x/y"]
+
+
+def test_chat_oeffnen_meldet_404_wenn_das_projekt_inzwischen_weg_ist(env, client, admin_headers, monkeypatch):
+    """Review 6: `vibe_project_not_found` aus `workspace.ensure` kam als 503; andere Fehler bleiben 503."""
+    from backend import routes
+
+    pid = _create(client, admin_headers).json()["project_id"]
+    _ready(client, admin_headers)
+
+    async def gone(*_a, **_k):
+        raise container.VibeError("vibe_project_not_found")
+
+    async def down(*_a, **_k):
+        raise container.VibeError("vibe_container_down")
+
+    for fake, status in ((gone, 404), (down, 503)):
+        monkeypatch.setattr(routes.workspace, "ensure", fake)
+        res = client.post(f"{B}/projects/{pid}/chat", json={}, headers=admin_headers)
+        assert res.status_code == status, res.text

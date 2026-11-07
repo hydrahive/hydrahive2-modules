@@ -130,10 +130,22 @@ def test_loeschen_waehrend_des_laufs_eines_zuges(env, monkeypatch):
     a = _make("A")
     sess = _add_session(a["agent_id"], a["project_id"])
     stopped: list[str] = []
-    monkeypatch.setattr(concurrency, "is_running", lambda sid: sid == sess.id)
-    monkeypatch.setattr(concurrency, "cancel", lambda sid: stopped.append(sid) or True)
+    holder: dict[str, asyncio.Task] = {}
+
+    def get_task(_sid):
+        holder.setdefault("task", asyncio.create_task(asyncio.sleep(3600)))
+        return holder["task"]
+
+    def cancel(sid):
+        stopped.append(sid)
+        holder["task"].cancel()
+        return True
+
+    monkeypatch.setattr(concurrency, "get_task", get_task)
+    monkeypatch.setattr(concurrency, "is_running", lambda _sid: not holder["task"].done())
+    monkeypatch.setattr(concurrency, "cancel", cancel)
     run(projects.remove(a["project_id"], owner="boss"))
-    assert stopped == [sess.id]
+    assert stopped == [sess.id] and holder["task"].done()
 
 
 def test_neustart_vergisst_zustand_der_hoerer_von_gestern(env):

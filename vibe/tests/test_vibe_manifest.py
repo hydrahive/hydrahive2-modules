@@ -17,6 +17,7 @@ def _manifest() -> dict:
 def test_manifest_felder():
     m = _manifest()
     assert m["id"] == "vibe" and m["name"] == "Vibe"
+    assert m["version"] == "0.1.1"
     assert m["nav_group"] == "working"
     assert m["has_service"] is False
     assert m["default_agent_tools"] is False       # Agenten bekommen die Vibe-Werkzeuge nicht von selbst

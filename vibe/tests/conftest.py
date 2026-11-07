@@ -57,11 +57,12 @@ def setup_test_env():
 
 def _mount_like_core() -> None:
     """Router über den echten Kern-Weg einhängen (Muster hydralabor/tests/conftest.py)."""
-    import backend
     from hydrahive.api import main
     from hydrahive.modules.context import ModuleContext
     from hydrahive.modules.manifest import ModuleManifest
     from hydrahive.modules.registry import REGISTRY, LoadedModule
+
+    import backend
 
     ctx = ModuleContext("vibe")
     backend.register(ctx)
@@ -90,10 +91,12 @@ def db_ready(setup_test_env):
 
 @pytest.fixture
 def fake_incus(monkeypatch):
-    from backend import incus
     from fake_incus import FakeIncus
+
+    from backend import incus
     fake = FakeIncus()
     monkeypatch.setattr(incus, "run", fake.run)
+    monkeypatch.setattr(incus, "run_to_file", fake.run_to_file)
     monkeypatch.setattr(incus, "available", lambda: True)
     return fake
 
@@ -133,3 +136,21 @@ def user_headers(client):
 @pytest.fixture
 def admin_headers(client):
     return _login(client, "boss")
+
+
+@pytest.fixture(autouse=True)
+def core_project_exists(monkeypatch, request):
+    """Die Workspace-Tests arbeiten mit festen IDs (p1, p2) ohne echtes Kern-Projekt. `workspace.ensure()` verlangt
+    unter der Sperre ein vorhandenes Kern-Projekt (Review 4: kein Neuanlegen nach dem Löschen) – hier gilt es für p1/p2
+    als vorhanden. Tests, die das Gegenteil prüfen, verwenden echte Projekte und sind davon nicht betroffen."""
+    from hydrahive.projects import config as project_config
+
+    real_get = project_config.get
+
+    def get(project_id):
+        found = real_get(project_id)
+        if found is None and project_id in ("p1", "p2"):
+            return {"id": project_id}
+        return found
+
+    monkeypatch.setattr(project_config, "get", get)
