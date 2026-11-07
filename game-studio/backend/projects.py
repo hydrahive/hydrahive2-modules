@@ -100,3 +100,8 @@ def update(config: dict, revision: int, changes: dict[str, object]) -> dict:
     if project.title != config["name"]:
         config = project_config.update(config["id"], name=project.title)
     return public_project(config, project)
+
+
+def generate_unreal(config: dict, revision: int) -> dict:
+    project = workspace_files.generate_unreal(config["id"], revision)
+    return public_project(config, project)

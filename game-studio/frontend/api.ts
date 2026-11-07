@@ -9,4 +9,6 @@ export const gameStudioApi = {
   createProject: (body: ProjectCreate): Promise<GameProject> => api.post<GameProject>(`${BASE}/projects`, body),
   updateProject: (projectId: string, body: ProjectPatch): Promise<GameProject> =>
     api.patch<GameProject>(`${BASE}/projects/${projectId}`, body),
+  generateUnrealProject: (projectId: string, revision: number): Promise<GameProject> =>
+    api.post<GameProject>(`${BASE}/projects/${projectId}/unreal-project`, { revision }),
 }

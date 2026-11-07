@@ -32,10 +32,11 @@ def _login(client, username: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
 
 
-def _project(title: str = "Leuchtturm im Sturm", engine: str = "godot") -> dict:
+def _project(title: str = "Leuchtturm im Sturm", engine: str = "godot", engine_version: str = "auto") -> dict:
     return {
         "entry_kind": "new",
         "engine": engine,
+        "engine_version": engine_version,
         "title": title,
         "idea": "Der Spieler hält ein Leuchtfeuer während eines Sturms am Leben.",
         "genre": "Puzzle-Abenteuer",
@@ -61,8 +62,8 @@ def test_overview_starts_without_demo_projects_and_reports_real_sharing(client, 
         "user": "test-share",
         "platform": "linux",
     }
-    assert body["workstation"]["build_available"] is False
-    assert body["runner"] == {"code": "runner_pending_pr4", "build_available": False}
+    assert "workstation" not in body
+    assert "runner" not in body
 
 
 def test_project_is_canonical_in_workspace_and_shared_for_selected_engine(client, admin_headers) -> None:
@@ -124,6 +125,114 @@ def test_workspace_project_survives_steps_and_uses_optimistic_revision(client, a
     assert conflict.status_code == 409
 
 
+def test_unreal_generator_creates_real_version_neutral_cpp_project(client, admin_headers) -> None:
+    created = client.post(
+        f"{BASE}/projects", headers=admin_headers,
+        json=_project(title="Hafen Wächter 2", engine="unreal", engine_version="5.5"),
+    ).json()
+    project_id = created["project_id"]
+    assert created["engine_version"] == "5.5"
+    assert created["engine_project_ready"] is False
+    assert created["engine_project_name"] == "HafenWachter2"
+
+    prepared = client.patch(
+        f"{BASE}/projects/{project_id}", headers=admin_headers,
+        json={
+            "revision": 1,
+            "core_action": "Mit WASD zum Leuchtfeuer laufen und springen.",
+            "success_condition": "Am Ziel erscheint sichtbar Ziel erreicht.",
+            "current_step": 4,
+        },
+    ).json()
+    generated_response = client.post(
+        f"{BASE}/projects/{project_id}/unreal-project", headers=admin_headers,
+        json={"revision": prepared["revision"]},
+    )
+    assert generated_response.status_code == 200, generated_response.text
+    generated = generated_response.json()
+    assert generated["engine_project_ready"] is True
+    assert generated["engine_project_path"] == "unreal/HafenWachter2/HafenWachter2.uproject"
+    assert generated["revision"] == 3
+
+    root = workspace_path(project_id) / "unreal" / "HafenWachter2"
+    descriptor = (root / "HafenWachter2.uproject").read_text()
+    assert '"EngineAssociation"' not in descriptor
+    assert '"Name": "HafenWachter2"' in descriptor
+    character = (root / "Source" / "HafenWachter2" / "HafenWachter2Character.cpp").read_text()
+    assert "AddControllerYawInput" in character
+    assert "MouseX" in (root / "Config" / "DefaultInput.ini").read_text()
+    assert (root / "Source" / "HafenWachter2" / "HafenWachter2GameMode.cpp").is_file()
+    assert (root / "Source" / "HafenWachter2" / "HafenWachter2Goal.cpp").is_file()
+    assert (root / "Config" / "DefaultEngine.ini").is_file()
+    assert (root / "Config" / "DefaultInput.ini").is_file()
+    assert (root / ".game-studio-generated.json").is_file()
+    targets = (root / "Source" / "HafenWachter2.Target.cs").read_text()
+    assert "BuildSettingsVersion" not in targets
+    assert "IncludeOrderVersion" not in targets
+
+    repeated = client.post(
+        f"{BASE}/projects/{project_id}/unreal-project", headers=admin_headers,
+        json={"revision": generated["revision"]},
+    )
+    assert repeated.status_code == 200
+    assert repeated.json()["revision"] == generated["revision"]
+
+
+def test_unreal_generator_never_overwrites_existing_project_files(client, admin_headers) -> None:
+    created = client.post(
+        f"{BASE}/projects", headers=admin_headers,
+        json=_project(title="Vorhandenes Projekt", engine="unreal"),
+    ).json()
+    project_id = created["project_id"]
+    prepared = client.patch(
+        f"{BASE}/projects/{project_id}", headers=admin_headers,
+        json={
+            "revision": 1,
+            "core_action": "Laufen",
+            "success_condition": "Ziel erreichen",
+            "current_step": 4,
+        },
+    ).json()
+    descriptor = workspace_path(project_id) / created["engine_project_path"]
+    descriptor.parent.mkdir(parents=True)
+    descriptor.write_text("USER FILE\n")
+
+    response = client.post(
+        f"{BASE}/projects/{project_id}/unreal-project", headers=admin_headers,
+        json={"revision": prepared["revision"]},
+    )
+    assert response.status_code == 409
+    assert descriptor.read_text() == "USER FILE\n"
+    assert not (descriptor.parent / "Source").exists()
+
+
+def test_unreal_generator_rejects_workspace_symlink(client, admin_headers, tmp_path) -> None:
+    created = client.post(
+        f"{BASE}/projects", headers=admin_headers,
+        json=_project(title="Symlink Test", engine="unreal"),
+    ).json()
+    project_id = created["project_id"]
+    prepared = client.patch(
+        f"{BASE}/projects/{project_id}", headers=admin_headers,
+        json={
+            "revision": 1,
+            "core_action": "Laufen",
+            "success_condition": "Ziel erreichen",
+            "current_step": 4,
+        },
+    ).json()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (workspace_path(project_id) / "unreal").symlink_to(outside, target_is_directory=True)
+
+    response = client.post(
+        f"{BASE}/projects/{project_id}/unreal-project", headers=admin_headers,
+        json={"revision": prepared["revision"]},
+    )
+    assert response.status_code == 409
+    assert list(outside.iterdir()) == []
+
+
 def test_project_access_uses_core_project_roles(client, admin_headers) -> None:
     project_id = client.post(f"{BASE}/projects", headers=admin_headers, json=_project()).json()["project_id"]
     other = _login(client, "other")
@@ -132,6 +241,10 @@ def test_project_access_uses_core_project_roles(client, admin_headers) -> None:
     assert client.patch(
         f"{BASE}/projects/{project_id}", headers=other,
         json={"revision": 1, "title": "Fremd"},
+    ).status_code == 403
+    assert client.post(
+        f"{BASE}/projects/{project_id}/unreal-project", headers=other,
+        json={"revision": 1},
     ).status_code == 403
 
 
@@ -160,3 +273,9 @@ def test_sqlite_content_table_is_removed_and_schemas_are_strict(client, admin_he
     assert client.post(f"{BASE}/projects", headers=admin_headers, json=unknown).status_code == 422
     assert client.post(f"{BASE}/projects", headers=admin_headers, json=_project("   ")).status_code == 422
     assert client.post(f"{BASE}/projects", headers=admin_headers, json=_project(engine="cryengine")).status_code == 422
+    assert client.post(
+        f"{BASE}/projects", headers=admin_headers, json=_project(engine="unreal", engine_version="latest")
+    ).status_code == 422
+    assert client.post(
+        f"{BASE}/projects", headers=admin_headers, json=_project(engine="unity", engine_version="5.5")
+    ).status_code == 422

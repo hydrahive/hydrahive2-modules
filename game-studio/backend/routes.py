@@ -9,8 +9,8 @@ from hydrahive.api.middleware.auth import AuthPrincipal, require_principal
 from hydrahive.api.middleware.errors import coded
 from hydrahive.api.routes._project_route_helpers import check_project_access
 
-from . import overview, projects, workspace_files
-from .models import ProjectCreate, ProjectUpdate, WorkspaceProject
+from . import overview, projects, unreal_project, workspace_files
+from .models import ProjectCreate, ProjectGenerate, ProjectUpdate, WorkspaceProject
 
 router = APIRouter()
 Principal = Annotated[AuthPrincipal, Depends(require_principal)]
@@ -66,6 +66,23 @@ def create_project(body: ProjectCreate, principal: Principal) -> dict:
         _provision_error(exc)
     except workspace_files.WorkspaceFileError as exc:
         raise coded(status.HTTP_409_CONFLICT, str(exc))
+
+
+@router.post("/projects/{project_id}/unreal-project")
+def generate_unreal_project(project_id: str, body: ProjectGenerate, principal: Principal) -> dict:
+    config, _current = _game_project(project_id, principal, "write")
+    try:
+        return projects.generate_unreal(config, body.revision)
+    except unreal_project.UnrealProjectError as exc:
+        code = str(exc)
+        http_status = status.HTTP_400_BAD_REQUEST if code in {
+            "game_studio_unreal_engine_required", "game_studio_step_incomplete",
+        } else status.HTTP_409_CONFLICT
+        raise coded(http_status, code)
+    except workspace_files.WorkspaceFileError as exc:
+        code = str(exc)
+        http_status = status.HTTP_409_CONFLICT if code.endswith("conflict") else status.HTTP_400_BAD_REQUEST
+        raise coded(http_status, code)
 
 
 @router.patch("/projects/{project_id}")

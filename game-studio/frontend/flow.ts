@@ -1,6 +1,6 @@
 import type { GameProject } from "./types"
 
-export const FLOW_STEPS = ["idea", "brief", "slice", "run", "evidence"] as const
+export const FLOW_STEPS = ["idea", "brief", "slice", "ready"] as const
 export type FlowStep = typeof FLOW_STEPS[number]
 
 export function completedStep(project: GameProject, step: number): boolean {

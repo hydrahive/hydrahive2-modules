@@ -1,8 +1,8 @@
 {
   "id": "game-studio",
   "name": "Game Studio",
-  "version": "0.1.1",
-  "description": "Geführtes Projekt-Cockpit für Godot, Unreal Engine und Unity. Alle Projektdaten liegen im Core-Workspace und werden projektbezogen über Samba freigegeben.",
+  "version": "0.2.0",
+  "description": "Projekt-Cockpit mit echtem Unreal-C++-Starter, Core-Workspace und automatischer Samba-Freigabe.",
   "icon": "Gamepad2",
   "nav_group": "working",
   "permissions": [],

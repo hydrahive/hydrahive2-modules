@@ -11,7 +11,7 @@ interface Props {
 export function FlowRail({ activeStep, availableStep, onSelect }: Props) {
   const { t } = useTranslation("gameStudio")
   return (
-    <nav aria-label={t("flow.navigation")} className="grid grid-cols-5 gap-1 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-1.5">
+    <nav aria-label={t("flow.navigation")} className="grid grid-cols-4 gap-1 rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-1.5">
       {FLOW_STEPS.map((key, index) => {
         const step = index + 1
         const available = step <= availableStep

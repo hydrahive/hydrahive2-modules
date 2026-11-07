@@ -56,6 +56,7 @@ def _brief(project: WorkspaceProject) -> str:
         f"## Idee\n\n{project.idea or 'Noch nicht beschrieben.'}\n\n"
         f"## Genre\n\n{project.genre or 'Noch nicht festgelegt.'}\n\n"
         f"## Engine\n\n{project.engine}\n\n"
+        f"## Engine-Version\n\n{project.engine_version}\n\n"
         f"## Zielplattform\n\n{project.target_platform}\n"
     )
 
@@ -74,6 +75,8 @@ def _readme(project: WorkspaceProject) -> str:
         "Dieser Ordner enthält die kanonischen Planungsdaten des Projekts. "
         "Das Engine-Projekt liegt im übergeordneten Workspace und wird über dessen Samba-Freigabe geöffnet.\n\n"
         f"- Engine: `{project.engine}`\n"
+        f"- Engine-Version: `{project.engine_version}`\n"
+        f"- Engine-Projekt: `{project.engine_project_path or 'noch nicht erzeugt'}`\n"
         "- `project.json`: maschinenlesbarer Projektstand\n"
         "- `game-brief.md`: Idee, Genre und Zielplattform\n"
         "- `vertical-slice.md`: kleinster spielbarer Kern und Erfolgskriterium\n"
@@ -91,11 +94,17 @@ def write(project: WorkspaceProject) -> None:
 
 
 def create(project_id: str, body: ProjectCreate) -> WorkspaceProject:
+    from . import unreal_project
+
     timestamp = now_iso()
+    engine_project_name = unreal_project.project_name(body.title, project_id) if body.engine == "unreal" else ""
     project = WorkspaceProject(
         project_id=project_id,
         entry_kind=body.entry_kind,
         engine=body.engine,
+        engine_version=body.engine_version,
+        engine_project_name=engine_project_name,
+        engine_project_path=unreal_project.project_file(engine_project_name) if engine_project_name else "",
         title=body.title,
         idea=body.idea.strip(),
         genre=body.genre.strip(),
@@ -127,5 +136,21 @@ def update(project_id: str, revision: int, changes: dict[str, object]) -> Worksp
     values.update({key: value for key, value in changes.items() if value is not None})
     values.update(revision=revision + 1, updated_at=now_iso())
     updated = WorkspaceProject.model_validate(values)
+    write(updated)
+    return updated
+
+
+def generate_unreal(project_id: str, revision: int) -> WorkspaceProject:
+    from . import unreal_project
+
+    current = read(project_id)
+    if current is None:
+        raise WorkspaceFileError("game_studio_project_file_missing")
+    if current.revision != revision:
+        raise WorkspaceFileError("game_studio_revision_conflict")
+    generated = unreal_project.generate(current)
+    if generated.engine_project_ready == current.engine_project_ready:
+        return current
+    updated = generated.model_copy(update={"revision": revision + 1, "updated_at": now_iso()})
     write(updated)
     return updated
