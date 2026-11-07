@@ -97,6 +97,8 @@ public class {name}Target : TargetRules
     public {name}Target(TargetInfo Target) : base(Target)
     {{
         Type = TargetType.Game;
+        DefaultBuildSettings = BuildSettingsVersion.Latest;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
         ExtraModuleNames.Add("{name}");
     }}
 }}
@@ -109,6 +111,8 @@ public class {name}EditorTarget : TargetRules
     public {name}EditorTarget(TargetInfo Target) : base(Target)
     {{
         Type = TargetType.Editor;
+        DefaultBuildSettings = BuildSettingsVersion.Latest;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
         ExtraModuleNames.Add("{name}");
     }}
 }}
@@ -328,6 +332,7 @@ void A{name}GameMode::StartPlay()
         if (UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")))
         {{
             AStaticMeshActor* Floor = World->SpawnActor<AStaticMeshActor>(FVector(0.0f, 0.0f, -50.0f), FRotator::ZeroRotator);
+            Floor->GetStaticMeshComponent()->SetMobility(EComponentMobility::Movable);
             Floor->GetStaticMeshComponent()->SetStaticMesh(Cube);
             Floor->SetActorScale3D(FVector(20.0f, 20.0f, 0.5f));
         }}
