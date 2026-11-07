@@ -9,6 +9,15 @@ export interface SambaShare {
   platform: "linux" | "mac"
 }
 
+export interface EngineRun {
+  schema_version: 1
+  kind: "unreal-build" | "unreal-test"
+  status: "passed" | "failed"
+  exit_code: number
+  finished_at: string
+  log_path: string
+}
+
 export interface GameProject {
   project_id: string
   entry_kind: EntryKind
@@ -17,6 +26,7 @@ export interface GameProject {
   engine_project_name: string
   engine_project_path: string
   engine_project_ready: boolean
+  last_engine_run: EngineRun | null
   title: string
   idea: string
   genre: string

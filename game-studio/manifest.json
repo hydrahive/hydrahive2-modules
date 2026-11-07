@@ -1,8 +1,8 @@
 {
   "id": "game-studio",
   "name": "Game Studio",
-  "version": "0.2.0",
-  "description": "Projekt-Cockpit mit echtem Unreal-C++-Starter, Core-Workspace und automatischer Samba-Freigabe.",
+  "version": "0.3.0",
+  "description": "Unreal-C++-Starter im Samba-Workspace mit lokalem Linux-Build, Automation-Test und echten Ergebnisdateien.",
   "icon": "Gamepad2",
   "nav_group": "working",
   "permissions": [],

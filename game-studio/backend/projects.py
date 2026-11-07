@@ -40,7 +40,12 @@ def _sharing(config: dict) -> dict:
 
 
 def public_project(config: dict, project: WorkspaceProject) -> dict:
-    return {**project.model_dump(mode="json"), "sharing": _sharing(config)}
+    last_run = workspace_files.read_last_run(project.project_id)
+    return {
+        **project.model_dump(mode="json"),
+        "sharing": _sharing(config),
+        "last_engine_run": last_run.model_dump(mode="json") if last_run else None,
+    }
 
 
 def list_for(username: str, role: str) -> list[dict]:

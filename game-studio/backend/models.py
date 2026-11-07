@@ -64,6 +64,23 @@ class ProjectGenerate(StrictModel):
     revision: int = Field(ge=1)
 
 
+class EngineRun(StrictModel):
+    schema_version: Literal[1] = 1
+    kind: Literal["unreal-build", "unreal-test"]
+    status: Literal["passed", "failed"]
+    exit_code: int = Field(ge=0, le=255)
+    finished_at: str = Field(min_length=20, max_length=32, pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+    log_path: str = Field(min_length=1, max_length=512)
+
+    @model_validator(mode="after")
+    def _result_is_consistent(self) -> "EngineRun":
+        if (self.status == "passed") != (self.exit_code == 0):
+            raise ValueError("run status and exit code disagree")
+        if self.log_path.startswith("/") or ".." in self.log_path.split("/"):
+            raise ValueError("log_path must stay inside the workspace")
+        return self
+
+
 class WorkspaceProject(StrictModel):
     schema_version: Literal[1] = 1
     project_id: str = Field(min_length=1, max_length=128)

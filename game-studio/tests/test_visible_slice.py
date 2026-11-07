@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import subprocess
+
 from hydrahive.projects import config as project_config
 from hydrahive.projects._paths import workspace_path
 
@@ -125,7 +128,7 @@ def test_workspace_project_survives_steps_and_uses_optimistic_revision(client, a
     assert conflict.status_code == 409
 
 
-def test_unreal_generator_creates_real_version_neutral_cpp_project(client, admin_headers) -> None:
+def test_unreal_generator_creates_real_version_neutral_cpp_project(client, admin_headers, tmp_path) -> None:
     created = client.post(
         f"{BASE}/projects", headers=admin_headers,
         json=_project(title="Hafen Wächter 2", engine="unreal", engine_version="5.5"),
@@ -166,16 +169,63 @@ def test_unreal_generator_creates_real_version_neutral_cpp_project(client, admin
     assert (root / "Config" / "DefaultEngine.ini").is_file()
     assert (root / "Config" / "DefaultInput.ini").is_file()
     assert (root / ".game-studio-generated.json").is_file()
+    assert (root / "Source" / "HafenWachter2" / "HafenWachter2Automation.cpp").is_file()
+    scripts = [
+        root / "Scripts" / "common.sh",
+        root / "Scripts" / "build-editor-linux.sh",
+        root / "Scripts" / "open-editor-linux.sh",
+        root / "Scripts" / "test-linux.sh",
+    ]
+    for script in scripts:
+        subprocess.run(["bash", "-n", str(script)], check=True)
     targets = (root / "Source" / "HafenWachter2.Target.cs").read_text()
     assert "BuildSettingsVersion" not in targets
     assert "IncludeOrderVersion" not in targets
 
+    environment = dict(os.environ)
+    environment.pop("UNREAL_ROOT", None)
+    local_build = subprocess.run(
+        ["bash", str(root / "Scripts" / "build-editor-linux.sh")],
+        cwd=root,
+        env=environment,
+        capture_output=True,
+        text=True,
+    )
+    assert local_build.returncode == 2
+    refreshed = client.get(f"{BASE}/projects/{project_id}", headers=admin_headers).json()
+    assert refreshed["last_engine_run"]["kind"] == "unreal-build"
+    assert refreshed["last_engine_run"]["status"] == "failed"
+    assert refreshed["last_engine_run"]["exit_code"] == 2
+    assert (workspace_path(project_id) / refreshed["last_engine_run"]["log_path"]).is_file()
+
+    fake_build = tmp_path / "UnrealEngine" / "Engine" / "Build" / "BatchFiles" / "Linux" / "Build.sh"
+    fake_build.parent.mkdir(parents=True)
+    fake_build.write_text("#!/usr/bin/env bash\necho REAL LOCAL BUILD\nexit 0\n")
+    environment["UNREAL_ROOT"] = str(tmp_path / "UnrealEngine")
+    successful_build = subprocess.run(
+        ["bash", str(root / "Scripts" / "build-editor-linux.sh")],
+        cwd=root,
+        env=environment,
+        capture_output=True,
+        text=True,
+    )
+    assert successful_build.returncode == 0
+    refreshed = client.get(f"{BASE}/projects/{project_id}", headers=admin_headers).json()
+    assert refreshed["last_engine_run"]["status"] == "passed"
+    assert refreshed["last_engine_run"]["exit_code"] == 0
+
+    descriptor_path = root / "HafenWachter2.uproject"
+    descriptor_path.write_text("USER MODIFIED PROJECT FILE\n")
+    missing_script = root / "Scripts" / "test-linux.sh"
+    missing_script.unlink()
     repeated = client.post(
         f"{BASE}/projects/{project_id}/unreal-project", headers=admin_headers,
         json={"revision": generated["revision"]},
     )
     assert repeated.status_code == 200
     assert repeated.json()["revision"] == generated["revision"]
+    assert descriptor_path.read_text() == "USER MODIFIED PROJECT FILE\n"
+    assert missing_script.is_file()
 
 
 def test_unreal_generator_never_overwrites_existing_project_files(client, admin_headers) -> None:
@@ -231,6 +281,23 @@ def test_unreal_generator_rejects_workspace_symlink(client, admin_headers, tmp_p
     )
     assert response.status_code == 409
     assert list(outside.iterdir()) == []
+
+
+def test_invalid_local_result_is_not_exposed(client, admin_headers) -> None:
+    created = client.post(
+        f"{BASE}/projects", headers=admin_headers,
+        json=_project(title="Result Test", engine="unreal"),
+    ).json()
+    root = workspace_path(created["project_id"])
+    results = root / "game-studio" / "results"
+    results.mkdir()
+    (results / "unreal-build.json").write_text(
+        '{"schema_version":1,"kind":"unreal-build","status":"passed","exit_code":0,'
+        '"finished_at":"2026-11-07T10:00:00Z","log_path":"../../etc/passwd"}\n'
+    )
+
+    project = client.get(f"{BASE}/projects/{created['project_id']}", headers=admin_headers).json()
+    assert project["last_engine_run"] is None
 
 
 def test_project_access_uses_core_project_roles(client, admin_headers) -> None:
