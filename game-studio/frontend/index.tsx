@@ -78,6 +78,21 @@ export const i18n = {
         success: "Was soll beim Test sichtbar passieren?", successPlaceholder: "z. B. Die Figur erreicht die Tür, die Tür öffnet sich und ‚Ziel erreicht‘ erscheint.",
       },
       platform: { desktop: "Desktop", web: "Web", mobile: "Mobil" },
+      workspace: {
+        setup: "Einrichtung", tablist: "Bereiche des Projekts", openFromSetup: "Zur Projekt-Arbeitsfläche",
+        tabs: { overview: "Übersicht", design: "Spieldesign" },
+        overview: { idea: "Spielidee", engine: "Engine", genre: "Genre", platform: "Plattform", projectFile: "Projektdatei", askAgent: "Mit dem Agenten weiterplanen" },
+        design: {
+          save: "Speichern", saved: "Gespeichert.", saveFailed: "Speichern fehlgeschlagen.", loadFailed: "Die Designdokumente konnten nicht geladen werden.",
+          conflict: "Das Dokument wurde inzwischen geändert (z. B. vom Agenten). Deine Änderung wurde nicht gespeichert.", reload: "Neu laden",
+          discard: "Ungespeicherte Änderungen verwerfen?", newPlaceholder: "Neues Dokument", create: "Dokument anlegen",
+          exists: "Ein Dokument mit diesem Namen gibt es schon.", createFailed: "Das Dokument konnte nicht angelegt werden.",
+        },
+        agent: {
+          title: "Projektagent", open: "Agent", close: "Chat schließen", resize: "Chatbreite ändern", loading: "Chat wird geöffnet…",
+          failed: "Der Chat konnte nicht geöffnet werden.", noAgent: "Dieses Projekt hat keinen Projektagenten.", readOnly: "Du hast in diesem Projekt nur Leserechte.",
+        },
+      },
       error: { title: "Game Studio konnte nicht geladen werden", text: "Bitte versuche es erneut. Es werden keine Demo-Daten angezeigt.", retry: "Erneut laden" },
     },
   },
@@ -148,6 +163,21 @@ export const i18n = {
         success: "What should visibly happen during the test?", successPlaceholder: "e.g. The character reaches the door, it opens, and ‘Goal reached’ appears.",
       },
       platform: { desktop: "Desktop", web: "Web", mobile: "Mobile" },
+      workspace: {
+        setup: "Setup", tablist: "Project areas", openFromSetup: "Go to project workspace",
+        tabs: { overview: "Overview", design: "Game design" },
+        overview: { idea: "Game idea", engine: "Engine", genre: "Genre", platform: "Platform", projectFile: "Project file", askAgent: "Keep planning with the agent" },
+        design: {
+          save: "Save", saved: "Saved.", saveFailed: "Saving failed.", loadFailed: "The design documents could not be loaded.",
+          conflict: "The document was changed in the meantime (e.g. by the agent). Your change was not saved.", reload: "Reload",
+          discard: "Discard unsaved changes?", newPlaceholder: "New document", create: "Create document",
+          exists: "A document with this name already exists.", createFailed: "The document could not be created.",
+        },
+        agent: {
+          title: "Project agent", open: "Agent", close: "Close chat", resize: "Change chat width", loading: "Opening chat…",
+          failed: "The chat could not be opened.", noAgent: "This project has no project agent.", readOnly: "You only have read access to this project.",
+        },
+      },
       error: { title: "Game Studio could not be loaded", text: "Please try again. No demo data will be shown.", retry: "Try again" },
     },
   },

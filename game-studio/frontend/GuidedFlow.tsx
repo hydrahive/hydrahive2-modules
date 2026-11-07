@@ -12,11 +12,12 @@ interface Props {
   onCreate: (body: ProjectCreate) => Promise<GameProject>
   onUpdate: (project: GameProject, patch: ProjectPatch) => Promise<GameProject>
   onGenerateUnreal: (project: GameProject) => Promise<GameProject>
+  onOpenWorkspace?: () => void
 }
 
 const fieldClass = "w-full rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] px-3 py-2.5 text-sm text-[#e8eef8] placeholder:text-[#596579] focus:border-[#69d7ff]/60 focus:outline-none focus:ring-1 focus:ring-[#69d7ff]/40"
 
-export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenerateUnreal }: Props) {
+export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenerateUnreal, onOpenWorkspace }: Props) {
   const { t } = useTranslation("gameStudio")
   const [activeStep, setActiveStep] = useState(project?.current_step ?? 1)
   const [engine, setEngine] = useState<GameEngine>(project?.engine ?? "godot")
@@ -184,6 +185,11 @@ export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenera
           </div>
         )}
 
+        {activeStep === 4 && onOpenWorkspace && (
+          <button type="button" onClick={onOpenWorkspace} className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#69d7ff] px-4 py-2.5 text-sm font-semibold text-[#0d1420] hover:bg-[#9ee6ff]">
+            <ArrowRight size={15} aria-hidden="true" />{t("workspace.openFromSetup")}
+          </button>
+        )}
         {error && <p role="alert" className="mt-4 text-xs text-red-300">{error}</p>}
         {activeStep <= 3 && (
           <div className="mt-6 flex justify-end">
