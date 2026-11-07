@@ -56,6 +56,7 @@ export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenera
   const localProjectRoot = localProjectPath.includes("/") ? localProjectPath.slice(0, localProjectPath.lastIndexOf("/")) : localProjectPath
   const buildCommand = `UNREAL_ROOT="/pfad/zu/UnrealEngine" bash "${localProjectRoot}/Scripts/build-editor-linux.sh"`
   const testCommand = `UNREAL_ROOT="/pfad/zu/UnrealEngine" bash "${localProjectRoot}/Scripts/test-linux.sh"`
+  const packageCommand = `UNREAL_ROOT="/pfad/zu/UnrealEngine" bash "${localProjectRoot}/Scripts/package-linux.sh"`
   const openCommand = `UNREAL_ROOT="/pfad/zu/UnrealEngine" bash "${localProjectRoot}/Scripts/open-editor-linux.sh"`
   const mountCommand = project?.sharing.enabled
     ? `mkdir -p "${localMountPath}" && sudo mount -t cifs ${sharePath} "${localMountPath}" -o username=${project.sharing.user},uid=$(id -u),gid=$(id -g),file_mode=0775,dir_mode=0775,vers=3.0,noserverino`
@@ -205,7 +206,7 @@ export function GuidedFlow({ kind, project, onBack, onCreate, onUpdate, onGenera
                 <h3 className="text-sm font-semibold text-[#e8eef8]">{t("flow.localWorkflowTitle")}</h3>
                 <p className="mt-1 text-xs leading-5 text-[#9aa7bc]">{t("flow.localWorkflowText")}</p>
                 <button type="button" disabled={generating} onClick={() => void generateUnrealProject()} className="mt-3 flex items-center gap-1 rounded-md border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1.5 text-[11px] text-[#9aa7bc] hover:text-[#e8eef8] disabled:opacity-50"><RefreshCw size={13} className={generating ? "animate-spin" : ""} aria-hidden="true" />{t("flow.syncHelpers")}</button>
-                {([["build", buildCommand], ["test", testCommand], ["open", openCommand]] as const).map(([kind, command]) => <div key={kind} className="mt-3"><p className="mb-1 text-[11px] font-medium text-[#c8d2df]">{t(`flow.localCommand.${kind}`)}</p><code className="block select-all break-all rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#080d16] p-3 text-[11px] leading-5 text-emerald-200">{command}</code></div>)}
+                {([["build", buildCommand], ["test", testCommand], ["package", packageCommand], ["open", openCommand]] as const).map(([kind, command]) => <div key={kind} className="mt-3"><p className="mb-1 text-[11px] font-medium text-[#c8d2df]">{t(`flow.localCommand.${kind}`)}</p><code className="block select-all break-all rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[#080d16] p-3 text-[11px] leading-5 text-emerald-200">{command}</code></div>)}
               </div>
               <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-4">
                 <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold text-[#e8eef8]">{t("flow.realResultTitle")}</h3><button type="button" disabled={refreshing} onClick={() => void refreshProject()} className="flex items-center gap-1 rounded-md border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1.5 text-[11px] text-[#9aa7bc] hover:text-[#e8eef8] disabled:opacity-50"><RefreshCw size={13} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />{t("flow.refreshResult")}</button></div>

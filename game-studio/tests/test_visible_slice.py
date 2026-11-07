@@ -175,6 +175,7 @@ def test_unreal_generator_creates_real_version_neutral_cpp_project(client, admin
         root / "Scripts" / "build-editor-linux.sh",
         root / "Scripts" / "open-editor-linux.sh",
         root / "Scripts" / "test-linux.sh",
+        root / "Scripts" / "package-linux.sh",
     ]
     for script in scripts:
         subprocess.run(["bash", "-n", str(script)], check=True)
@@ -213,6 +214,23 @@ def test_unreal_generator_creates_real_version_neutral_cpp_project(client, admin
     refreshed = client.get(f"{BASE}/projects/{project_id}", headers=admin_headers).json()
     assert refreshed["last_engine_run"]["status"] == "passed"
     assert refreshed["last_engine_run"]["exit_code"] == 0
+
+    fake_uat = tmp_path / "UnrealEngine" / "Engine" / "Build" / "BatchFiles" / "RunUAT.sh"
+    fake_uat.write_text("#!/usr/bin/env bash\nprintf '%s\\n' \"$@\"\nexit 0\n")
+    packaged = subprocess.run(
+        ["bash", str(root / "Scripts" / "package-linux.sh")],
+        cwd=root,
+        env=environment,
+        capture_output=True,
+        text=True,
+    )
+    assert packaged.returncode == 0
+    assert "BuildCookRun" in packaged.stdout
+    assert "-platform=Linux" in packaged.stdout
+    assert "Builds/Linux" in packaged.stdout
+    refreshed = client.get(f"{BASE}/projects/{project_id}", headers=admin_headers).json()
+    assert refreshed["last_engine_run"]["kind"] == "unreal-package"
+    assert refreshed["last_engine_run"]["status"] == "passed"
 
     descriptor_path = root / "HafenWachter2.uproject"
     descriptor_path.write_text("USER MODIFIED PROJECT FILE\n")

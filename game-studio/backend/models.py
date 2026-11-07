@@ -66,7 +66,7 @@ class ProjectGenerate(StrictModel):
 
 class EngineRun(StrictModel):
     schema_version: Literal[1] = 1
-    kind: Literal["unreal-build", "unreal-test"]
+    kind: Literal["unreal-build", "unreal-test", "unreal-package"]
     status: Literal["passed", "failed"]
     exit_code: int = Field(ge=0, le=255)
     finished_at: str = Field(min_length=20, max_length=32, pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
