@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Engine = Literal["godot", "unreal", "unity"]
 EntryKind = Literal["new", "adopt", "archive"]
@@ -18,6 +18,7 @@ class StrictModel(BaseModel):
 class ProjectCreate(StrictModel):
     entry_kind: EntryKind
     engine: Engine
+    engine_version: str = Field(default="auto", min_length=1, max_length=32, pattern=r"^(?:auto|\d+\.\d+(?:\.\d+)?)$")
     title: str = Field(min_length=1, max_length=120)
     idea: str = Field(default="", max_length=4000)
     genre: str = Field(default="", max_length=120)
@@ -30,6 +31,12 @@ class ProjectCreate(StrictModel):
         if not stripped:
             raise ValueError("title must not be blank")
         return stripped
+
+    @model_validator(mode="after")
+    def _version_matches_engine(self) -> "ProjectCreate":
+        if self.engine != "unreal" and self.engine_version != "auto":
+            raise ValueError("engine_version is only supported for Unreal Engine")
+        return self
 
 
 class ProjectUpdate(StrictModel):
@@ -53,11 +60,19 @@ class ProjectUpdate(StrictModel):
         return stripped
 
 
+class ProjectGenerate(StrictModel):
+    revision: int = Field(ge=1)
+
+
 class WorkspaceProject(StrictModel):
     schema_version: Literal[1] = 1
     project_id: str = Field(min_length=1, max_length=128)
     entry_kind: EntryKind
     engine: Engine
+    engine_version: str = Field(default="auto", min_length=1, max_length=32, pattern=r"^(?:auto|\d+\.\d+(?:\.\d+)?)$")
+    engine_project_name: str = Field(default="", max_length=64, pattern=r"^(?:|[A-Za-z][A-Za-z0-9]{0,63})$")
+    engine_project_path: str = Field(default="", max_length=512)
+    engine_project_ready: bool = False
     title: str = Field(min_length=1, max_length=120)
     idea: str = Field(default="", max_length=4000)
     genre: str = Field(default="", max_length=120)
@@ -68,3 +83,13 @@ class WorkspaceProject(StrictModel):
     revision: int = Field(default=1, ge=1)
     created_at: str
     updated_at: str
+
+    @model_validator(mode="after")
+    def _engine_project_is_consistent(self) -> "WorkspaceProject":
+        if self.engine != "unreal" and self.engine_version != "auto":
+            raise ValueError("engine_version is only supported for Unreal Engine")
+        if self.engine_project_path and (self.engine_project_path.startswith("/") or ".." in self.engine_project_path.split("/")):
+            raise ValueError("engine_project_path must stay inside the workspace")
+        if self.engine_project_ready and not (self.engine_project_name and self.engine_project_path):
+            raise ValueError("ready engine project requires name and path")
+        return self

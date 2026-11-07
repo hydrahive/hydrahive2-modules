@@ -1,11 +1,10 @@
 import { ArchiveRestore, ArrowRight, FolderGit2, Gamepad2, Plus, Sparkles } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { WorkstationPanel } from "./components/WorkstationPanel"
-import type { EntryKind, GameProject, SharingStatus, WorkstationStatus } from "./types"
+import type { EntryKind, GameProject, SharingStatus } from "./types"
 
 interface Props {
   projects: GameProject[]
-  workstation: WorkstationStatus
   sharing: SharingStatus
   onStart: (kind: EntryKind) => void
   onOpen: (project: GameProject) => void
@@ -17,7 +16,7 @@ const ENTRY_ICONS = {
   archive: ArchiveRestore,
 } as const
 
-export function LandingPage({ projects, workstation, sharing, onStart, onOpen }: Props) {
+export function LandingPage({ projects, sharing, onStart, onOpen }: Props) {
   const { t } = useTranslation("gameStudio")
 
   return (
@@ -85,7 +84,7 @@ export function LandingPage({ projects, workstation, sharing, onStart, onOpen }:
             </div>
           )}
         </section>
-        <WorkstationPanel status={workstation} sharing={sharing} />
+        <WorkstationPanel sharing={sharing} />
       </div>
     </main>
   )

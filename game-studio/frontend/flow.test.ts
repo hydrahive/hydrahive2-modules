@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest"
-import { completedStep, highestAvailableStep } from "./flow"
+import { completedStep, FLOW_STEPS, highestAvailableStep } from "./flow"
 import type { GameProject } from "./types"
 
 const project = (changes: Partial<GameProject> = {}): GameProject => ({
   project_id: "project-a",
   entry_kind: "new",
   engine: "godot",
+  engine_version: "auto",
+  engine_project_name: "",
+  engine_project_path: "",
+  engine_project_ready: false,
   title: "Leuchtturm",
   idea: "Ein Leuchtfeuer im Sturm erhalten.",
   genre: "Puzzle",
@@ -28,8 +32,8 @@ describe("Game-Studio-Flow", () => {
     expect(highestAvailableStep(project())).toBe(4)
   })
 
-  it("behauptet ohne Runner nie, dass Build oder Evidenz abgeschlossen sind", () => {
+  it("endet nach vier echten Schritten mit dem Samba-Workspace", () => {
+    expect(FLOW_STEPS).toEqual(["idea", "brief", "slice", "ready"])
     expect(completedStep(project(), 4)).toBe(false)
-    expect(completedStep(project(), 5)).toBe(false)
   })
 })

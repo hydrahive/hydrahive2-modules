@@ -13,6 +13,10 @@ export interface GameProject {
   project_id: string
   entry_kind: EntryKind
   engine: GameEngine
+  engine_version: string
+  engine_project_name: string
+  engine_project_path: string
+  engine_project_ready: boolean
   title: string
   idea: string
   genre: string
@@ -26,12 +30,6 @@ export interface GameProject {
   sharing: SambaShare
 }
 
-export interface WorkstationStatus {
-  code: "core_update_required" | "not_connected" | "offline" | "approval_required" | "ready_for_binding"
-  ready: boolean
-  build_available: false
-}
-
 export interface SharingStatus {
   available: boolean
   running: boolean
@@ -42,13 +40,12 @@ export interface SharingStatus {
 export interface GameStudioOverview {
   projects: GameProject[]
   sharing: SharingStatus
-  workstation: WorkstationStatus
-  runner: { code: "runner_pending_pr4"; build_available: false }
 }
 
 export interface ProjectCreate {
   entry_kind: EntryKind
   engine: GameEngine
+  engine_version: string
   title: string
   idea: string
   genre: string

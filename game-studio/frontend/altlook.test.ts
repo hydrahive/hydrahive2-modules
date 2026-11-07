@@ -29,4 +29,11 @@ describe("Alter Look entfernt", () => {
   it("keine bunten Bereichsfarben (rgbFor) – .box/CollapsibleBox sind Kern-Bausteine und dürfen bleiben", () => {
     expect(funde(/rgbFor\(/g)).toEqual([])
   })
+  it("zeigt den echten Unreal-Generator statt gesperrter Dummy-Schritte", () => {
+    const text = QUELLEN.map((quelle) => quelle.text).join("\n")
+    expect(text).toContain("engine_project_ready")
+    expect(text).toContain("onGenerateUnreal")
+    expect(text).toContain("Echtes Unreal-Projekt erzeugen")
+    expect(text).not.toMatch(/PR4|runnerLocked|Build starten|Schritt \{\{step\}\} von 5/)
+  })
 })
