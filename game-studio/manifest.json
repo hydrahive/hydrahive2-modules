@@ -1,7 +1,7 @@
 {
   "id": "game-studio",
   "name": "Game Studio",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Spielprojekt im Samba-Workspace anlegen und direkt in Unreal, Godot oder Unity öffnen.",
   "icon": "Gamepad2",
   "nav_group": "working",

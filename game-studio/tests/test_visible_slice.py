@@ -168,8 +168,12 @@ def test_unreal_generator_creates_real_version_neutral_cpp_project(client, admin
     assert (root / ".game-studio-generated.json").is_file()
     assert not (root / "Scripts").exists()
     targets = (root / "Source" / "HafenWachter2.Target.cs").read_text()
-    assert "BuildSettingsVersion" not in targets
-    assert "IncludeOrderVersion" not in targets
+    assert "DefaultBuildSettings = BuildSettingsVersion.Latest;" in targets
+    assert "IncludeOrderVersion = EngineIncludeOrderVersion.Latest;" in targets
+    editor_target = (root / "Source" / "HafenWachter2Editor.Target.cs").read_text()
+    assert "DefaultBuildSettings = BuildSettingsVersion.Latest;" in editor_target
+    assert "BuildEnvironment" not in editor_target
+    assert "SetMobility(EComponentMobility::Movable)" in (root / "Source" / "HafenWachter2" / "HafenWachter2GameMode.cpp").read_text()
 
     descriptor_path = root / "HafenWachter2.uproject"
     descriptor_path.write_text("USER MODIFIED PROJECT FILE\n")
