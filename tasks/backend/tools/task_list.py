@@ -111,7 +111,8 @@ async def _execute(args: dict, ctx: ToolContext) -> ToolResult:
     if page_args is None:
         return ToolResult.fail("Ungültige Pagination: limit muss 1–100, offset mindestens 0 sein.")
     limit, offset = page_args
-    filters = {"status": args.get("status"), "project_id": args.get("project_id")}
+    # Wie task_write: ctx.project_id als Standard-Filter, explizites Argument hat Vorrang (Core e51b17ee).
+    filters = {"status": args.get("status"), "project_id": args.get("project_id") or ctx.project_id or None}
 
     total = service.count_tasks(username, **filters)
     requested_tasks = service.list_tasks(username, **filters, limit=limit, offset=offset)
