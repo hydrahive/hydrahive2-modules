@@ -44,6 +44,19 @@ def test_list_returns_created_task(client, alice):
     assert "Task B" in titles
 
 
+def test_http_list_remains_unpaginated_and_returns_full_descriptions(client, alice):
+    for index in range(25):
+        client.post(
+            BASE,
+            json={"title": f"Task {index}", "description": f"Vollständig {index}"},
+            headers=alice,
+        )
+
+    tasks = client.get(BASE, headers=alice).json()
+    assert len(tasks) == 25
+    assert {task["description"] for task in tasks} == {f"Vollständig {index}" for index in range(25)}
+
+
 def test_high_priority_sorted_first(client, alice):
     client.post(BASE, json={"title": "Low",    "priority": "low"},    headers=alice)
     client.post(BASE, json={"title": "High",   "priority": "high"},   headers=alice)

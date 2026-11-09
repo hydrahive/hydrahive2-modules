@@ -1,9 +1,11 @@
 """Unit-Tests für die Agent-Tools des Tasks-Moduls."""
 from __future__ import annotations
 
-import pytest
+import json
 from pathlib import Path
 from unittest.mock import AsyncMock
+
+import pytest
 
 from hydrahive.db import init_db
 from hydrahive.tools.base import ToolContext
@@ -118,6 +120,97 @@ async def test_task_list_user_isolation():
     alice_result = await lst.execute({}, make_ctx("alice"))
     assert alice_result.output["count"] == 1
     assert alice_result.output["tasks"][0]["title"] == "Alices Task"
+
+
+@pytest.mark.asyncio
+async def test_task_list_paginates_compact_results_with_bounded_output():
+    from backend.tools.task_list import TOOL as lst
+    from backend.tools.task_write import TOOL as write
+
+    ctx = make_ctx()
+    for index in range(25):
+        await write.execute(
+            {"title": f"Task {index:02d}", "description": f"Beschreibung {index}: " + "x" * 10_000},
+            ctx,
+        )
+
+    first = await lst.execute({}, ctx)
+    assert first.success
+    assert first.output["count"] == 25
+    assert first.output["returned"] == 20
+    assert first.output["limit"] == 20
+    assert first.output["offset"] == 0
+    assert first.output["has_more"] is True
+    assert first.output["next_offset"] == 20
+    assert first.output["budget_limited"] is False
+    assert all("description" not in task for task in first.output["tasks"])
+    assert all(len(task["description_preview"]) <= 80 for task in first.output["tasks"])
+    assert len(json.dumps(first.output, ensure_ascii=False)) < 15_000
+
+    second = await lst.execute({"limit": 10, "offset": 20}, ctx)
+    assert second.output["count"] == 25
+    assert second.output["returned"] == 5
+    assert second.output["has_more"] is False
+    assert second.output["next_offset"] is None
+    first_ids = {task["id"] for task in first.output["tasks"]}
+    second_ids = {task["id"] for task in second.output["tasks"]}
+    assert first_ids.isdisjoint(second_ids)
+    assert len(first_ids | second_ids) == 25
+
+
+@pytest.mark.asyncio
+async def test_task_list_shortens_page_to_hard_output_budget():
+    from backend.tools.task_list import TOOL as lst
+    from backend.tools.task_write import TOOL as write
+
+    ctx = make_ctx()
+    for index in range(100):
+        await write.execute(
+            {"title": f"{index:03d}-" + "T" * 495, "description": "D" * 10_000},
+            ctx,
+        )
+
+    result = await lst.execute({"limit": 100}, ctx)
+    serialized = json.dumps(result.output, ensure_ascii=False)
+    assert result.output["count"] == 100
+    assert result.output["budget_limited"] is True
+    assert 0 < result.output["returned"] < 100
+    assert result.output["next_offset"] == result.output["returned"]
+    assert len(serialized) <= 40_000
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "args",
+    [
+        {"limit": 0},
+        {"limit": 101},
+        {"limit": True},
+        {"offset": -1},
+        {"offset": False},
+    ],
+)
+async def test_task_list_rejects_invalid_pagination(args):
+    from backend.tools.task_list import TOOL
+
+    result = await TOOL.execute(args, make_ctx())
+    assert not result.success
+    assert "Pagination" in result.error
+
+
+@pytest.mark.asyncio
+async def test_task_list_project_filter_applies_to_page_and_total():
+    from backend.tools.task_list import TOOL as lst
+    from backend.tools.task_write import TOOL as write
+
+    ctx = make_ctx()
+    await write.execute({"title": "Projekt A", "project_id": "a"}, ctx)
+    await write.execute({"title": "Projekt B", "project_id": "b"}, ctx)
+
+    result = await lst.execute({"project_id": "a"}, ctx)
+    assert result.output["count"] == 1
+    assert result.output["returned"] == 1
+    assert result.output["tasks"][0]["project_id"] == "a"
 
 
 # ── task_read ─────────────────────────────────────────────────────────────
