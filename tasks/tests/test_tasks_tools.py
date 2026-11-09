@@ -384,3 +384,20 @@ async def test_foreign_prefix_not_found(tool):
     assert not r2.success
     assert "Bobs Geheimnis" not in str(r2.output)
     assert service.get_task("bob", bob_id) is not None
+
+
+@pytest.mark.asyncio
+async def test_task_list_filtert_standardmaessig_nach_ctx_projekt():
+    """Regression: Projekt-Scope aus Core e51b17ee ging bei der Modul-Übernahme verloren."""
+    from backend.tools.task_list import TOOL as lst
+    from backend.tools.task_write import TOOL as write
+
+    await write.execute({"title": "In A", "project_id": "a"}, make_ctx())
+    await write.execute({"title": "In B", "project_id": "b"}, make_ctx())
+    ctx = make_ctx()
+    ctx.project_id = "a"
+
+    scoped = await lst.execute({}, ctx)
+    assert [t["title"] for t in scoped.output["tasks"]] == ["In A"]
+    explicit = await lst.execute({"project_id": "b"}, ctx)
+    assert [t["title"] for t in explicit.output["tasks"]] == ["In B"]
