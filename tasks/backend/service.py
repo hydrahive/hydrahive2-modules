@@ -13,22 +13,52 @@ VALID_PRIORITIES = {"low", "medium", "high"}
 HISTORY_LIMIT = 200  # Verlaufseinträge pro Task (restored-Einträge zählen mit, werden aber nie entfernt)
 
 
+def _task_filter(
+    username: str,
+    status: str | None,
+    project_id: str | None,
+) -> tuple[str, list[Any]]:
+    where = "username = ?"
+    params: list[Any] = [username]
+    if status:
+        where += " AND status = ?"
+        params.append(status)
+    if project_id:
+        where += " AND project_id = ?"
+        params.append(project_id)
+    return where, params
+
+
 def list_tasks(
     username: str,
     status: str | None = None,
     project_id: str | None = None,
+    *,
+    limit: int | None = None,
+    offset: int = 0,
 ) -> list[dict[str, Any]]:
-    sql = "SELECT * FROM module_tasks WHERE username = ?"
-    params: list[Any] = [username]
-    if status:
-        sql += " AND status = ?"
-        params.append(status)
-    if project_id:
-        sql += " AND project_id = ?"
-        params.append(project_id)
-    sql += " ORDER BY CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, created_at ASC"
+    where, params = _task_filter(username, status, project_id)
+    sql = (
+        f"SELECT * FROM module_tasks WHERE {where} "
+        "ORDER BY CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, "
+        "created_at ASC, id ASC"
+    )
+    if limit is not None:
+        sql += " LIMIT ? OFFSET ?"
+        params.extend((limit, offset))
     with db() as c:
         return [dict(r) for r in c.execute(sql, params).fetchall()]
+
+
+def count_tasks(
+    username: str,
+    status: str | None = None,
+    project_id: str | None = None,
+) -> int:
+    where, params = _task_filter(username, status, project_id)
+    with db() as c:
+        row = c.execute(f"SELECT COUNT(*) AS count FROM module_tasks WHERE {where}", params).fetchone()
+    return int(row["count"])
 
 
 def get_task(username: str, task_id: str) -> dict[str, Any] | None:
