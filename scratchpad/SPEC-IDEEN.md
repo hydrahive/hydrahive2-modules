@@ -132,8 +132,7 @@ Beim ersten Zugriff eines Nutzers (Liste oder Werkzeug), solange die alten Datei
    deshalb nichts doppelt an.
 5. Danach werden die Dateien zu `user.md.imported` und `agent.md.imported` umbenannt, nicht gelöscht.
 
-Für die vorhandenen Daten heißt das: eine Idee „systemadmin seite“ vom Nutzer und drei vom
-Agenten (Lizenzsystem, Zentrale Konfiguration, Ältere Notizen).
+Für die vorhandenen Daten heißt das: eine Idee vom Nutzer und drei vom Agenten.
 
 ## Oberfläche
 
