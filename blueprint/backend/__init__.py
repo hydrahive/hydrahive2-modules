@@ -1,8 +1,9 @@
 """Blueprint-Modul — Backend.
 
 register(ctx) →
-  - Router     (/api/modules/blueprint/boards) — per-User Board-CRUD
-  - Migrationen (Boards-Tabelle, additiv)
+  - Router     (/api/modules/blueprint/boards) — per-User Board-CRUD, Projekt am Board,
+               Vorschlag übernehmen/verwerfen, frühere Fassungen
+  - Migrationen (Boards-Tabelle, Projekt und Vorschlag, Versionen; additiv)
   - Agent-Tool blueprint_read — eigene Boards auflisten und als Text lesen
 
 Blueprint ist ein visueller Node-Editor (xyflow) als nonverbaler Ideen-Kanal
