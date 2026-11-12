@@ -1,14 +1,23 @@
 import { api } from "@/shared/api-client"
-
-export interface ScratchpadData {
-  user_content: string
-  agent_content: string
-}
+import type { Idea, IdeaChanges, IdeaListItem, IdeaMeta, StatusCounts } from "./types"
 
 const BASE = "/modules/scratchpad"
 
-export const scratchpadApi = {
-  get: () => api.get<ScratchpadData>(BASE),
-  saveUser: (content: string) => api.put<{ saved: boolean }>(BASE, { content }),
-  clearAgent: () => api.delete<{ cleared: boolean }>(`${BASE}/agent`),
+export interface IdeaListResponse {
+  ideas: IdeaListItem[]
+  counts: StatusCounts
+}
+
+export const ideasApi = {
+  meta: () => api.get<IdeaMeta>(`${BASE}/meta`),
+  /** Alle Ideen des Nutzers. Gefiltert und gezählt wird in der Oberfläche (ideaView.ts). */
+  list: () => api.get<IdeaListResponse>(`${BASE}/ideas`),
+  get: (id: string) => api.get<Idea>(`${BASE}/ideas/${encodeURIComponent(id)}`),
+  create: (data: { title: string; body: string; project_id: string | null }) =>
+    api.post<Idea>(`${BASE}/ideas`, data),
+  update: (id: string, changes: IdeaChanges) =>
+    api.patch<Idea>(`${BASE}/ideas/${encodeURIComponent(id)}`, changes),
+  remove: (id: string) => api.delete<{ removed: boolean }>(`${BASE}/ideas/${encodeURIComponent(id)}`),
+  removeNote: (id: string, noteId: number) =>
+    api.delete<{ removed: boolean }>(`${BASE}/ideas/${encodeURIComponent(id)}/notes/${noteId}`),
 }
