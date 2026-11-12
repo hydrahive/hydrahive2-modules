@@ -1,7 +1,7 @@
 {
   "id": "scratchpad",
   "name": "Ideen",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Ideen einzeln festhalten: Kopfzeile, Beschreibung, Projekt und Status. Agenten lesen sie und schreiben Anmerkungen daneben, deinen Text ändern sie nicht.",
   "icon": "Lightbulb",
   "nav_group": "working",
