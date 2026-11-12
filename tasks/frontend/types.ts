@@ -14,6 +14,9 @@ export interface Task {
   updated_at: string
   /** Anzahl früherer Fassungen (Verlauf, Task df2f2eb2). Fehlt bei älteren Backends. */
   history_count?: number
+  /** Herkunft, zum Beispiel "idea" und die ID der Idee. Fehlt bei Backends vor 1.3.0. */
+  source_kind?: string | null
+  source_id?: string | null
 }
 
 export interface TaskVersion {
