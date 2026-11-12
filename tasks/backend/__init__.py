@@ -3,7 +3,7 @@
 register(ctx) →
   - Router   /api/modules/tasks/tasks/*
   - Tools    task_write, task_list, task_read, task_delete
-  - Migration 001_tasks.sql
+  - Migrationen 001_tasks.sql, 002_task_history.sql, 003_task_source.sql
 """
 from __future__ import annotations
 

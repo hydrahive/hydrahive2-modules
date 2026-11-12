@@ -22,6 +22,16 @@ _SCHEMA = {
 }
 
 
+def _source_line(task: dict) -> str | None:
+    """Woraus der Task entstanden ist. Unbekannte Arten erscheinen unverändert."""
+    kind, source_id = task.get("source_kind"), task.get("source_id")
+    if not kind or not source_id:
+        return None
+    if kind == "idea":
+        return f"Herkunft: Idee {source_id[:8]} (lesen mit idea_read)"
+    return f"Herkunft: {kind} {source_id}"
+
+
 async def _execute(args: dict, ctx: ToolContext) -> ToolResult:
     username = ctx.user_id
     if not username:
@@ -42,6 +52,9 @@ async def _execute(args: dict, ctx: ToolContext) -> ToolResult:
         lines.append(f"Beschreibung: {task['description']}")
     if task.get("project_id"):
         lines.append(f"Projekt:  {task['project_id']}")
+    source = _source_line(task)
+    if source:
+        lines.append(source)
     lines.append(f"Erstellt: {task['created_at']}")
     lines.append(f"Geändert: {task['updated_at']}")
 

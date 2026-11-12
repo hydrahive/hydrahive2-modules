@@ -68,6 +68,25 @@ export function groupByProject(list: readonly IdeaListItem[], projects: readonly
     || (a.name ?? a.projectId ?? "").localeCompare(b.name ?? b.projectId ?? "", undefined, { sensitivity: "base" }))
 }
 
+const IDEA_ID = /^[A-Za-z0-9-]{8,64}$/
+
+/** ID aus dem Direktlink /scratchpad?idea=<id>. null bei allem, was keine ID sein kann. */
+export function linkedIdea(value: string | null | undefined): string | null {
+  const id = (value ?? "").trim()
+  return IDEA_ID.test(id) ? id : null
+}
+
+/** Projektfilter, der die Idee zeigt: der aktuelle, wenn er passt, sonst „alle Projekte“. */
+export function projectShowing(idea: IdeaListItem, current: ProjectFilter): ProjectFilter {
+  return inProject(idea, current) ? current : "all"
+}
+
+/** Statusfilter, der die Idee zeigt: der aktuelle, wenn er passt, sonst „Offen“ oder „Alle“. */
+export function statusShowing(idea: IdeaListItem, current: StatusFilter): StatusFilter {
+  if (filterIdeas([idea], "all", current).length > 0) return current
+  return OPEN_STATUSES.includes(idea.status) ? "open" : "all"
+}
+
 export function upsertIdea(list: readonly IdeaListItem[], item: IdeaListItem): IdeaListItem[] {
   return sortIdeas([...list.filter((idea) => idea.id !== item.id), item])
 }

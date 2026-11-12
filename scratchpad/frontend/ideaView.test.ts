@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
-  countByStatus, filterIdeas, formatStamp, groupByProject, openCount, parseStamp, relativeTime, sortIdeas, toListItem,
-  upsertIdea, validProject,
+  countByStatus, filterIdeas, formatStamp, groupByProject, linkedIdea, openCount, parseStamp, projectShowing, relativeTime,
+  sortIdeas, statusShowing, toListItem, upsertIdea, validProject,
 } from "./ideaView"
 import type { Idea, IdeaListItem } from "./types"
 
@@ -153,5 +153,36 @@ describe("formatStamp", () => {
     expect(formatStamp("2026-11-12T08:15:30.123456Z", "de")).toMatch(/2026.*\d{2}:\d{2}/)
     expect(formatStamp("2026-11-12T08:15:30.123456Z", "en")).toContain("2026")
     expect(formatStamp("gestern", "de")).toBe("—")
+  })
+})
+
+describe("Direktlink /scratchpad?idea=<id>", () => {
+  it("nimmt eine ID aus der Adresse", () => {
+    expect(linkedIdea("aaaa1111-0000-4000-8000-000000000001")).toBe("aaaa1111-0000-4000-8000-000000000001")
+    expect(linkedIdea("  aaaa1111  ")).toBe("aaaa1111")
+  })
+
+  it("verwirft Leeres und alles, was keine ID sein kann", () => {
+    for (const bad of [null, "", "   ", "kurz", "../../etc/passwd", "a".repeat(65), "aaaa1111?x=1"]) {
+      expect(linkedIdea(bad)).toBeNull()
+    }
+  })
+
+  it("lässt Filter stehen, die die Idee schon zeigen", () => {
+    const idea = item("a", { project_id: "p-alpha", status: "planned" })
+    expect(projectShowing(idea, "p-alpha")).toBe("p-alpha")
+    expect(projectShowing(idea, "all")).toBe("all")
+    expect(statusShowing(idea, "open")).toBe("open")
+    expect(statusShowing(idea, "planned")).toBe("planned")
+    expect(statusShowing(idea, "all")).toBe("all")
+  })
+
+  it("öffnet Filter, die die Idee verstecken würden", () => {
+    const idea = item("a", { project_id: "p-alpha", status: "done" })
+    expect(projectShowing(idea, "none")).toBe("all")
+    expect(projectShowing(idea, "p-beta")).toBe("all")
+    expect(statusShowing(idea, "open")).toBe("all")
+    expect(statusShowing(idea, "parked")).toBe("all")
+    expect(statusShowing(item("b", { status: "review" }), "done")).toBe("open")
   })
 })
