@@ -33,7 +33,8 @@ def status_label(status: str) -> str:
 
 
 def _stamp(value: str) -> str:
-    return (value or "")[:16].replace("T", " ")
+    """Minutengenau und als UTC gekennzeichnet: so liegt es in der Datenbank, die Oberfläche zeigt Ortszeit."""
+    return f"{(value or '')[:16].replace('T', ' ')} UTC"
 
 
 def summary_line(idea: dict, project_name: str | None) -> str:
@@ -45,7 +46,7 @@ def summary_line(idea: dict, project_name: str | None) -> str:
     notes = idea.get("note_count") or 0
     if notes:
         parts.append("1 Anmerkung" if notes == 1 else f"{notes} Anmerkungen")
-    parts.append(f"geändert {_stamp(idea['updated_at'])[:10]}")
+    parts.append(f"geändert {(idea['updated_at'] or '')[:10]}")
     return f"[{idea['id'][:8]}] {idea['title']} — {' · '.join(parts)}"
 
 
