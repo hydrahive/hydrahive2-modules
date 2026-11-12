@@ -246,10 +246,11 @@ vor → wenn es passt: Task anlegen.
   `board_text_case.json` wird erweitert.
 - **Direktlink:** `/blueprint?board=<id>` öffnet das Board.
 - **Chat neben dem Board:** rechts ein Chat-Fenster mit dem Agenten nach dem Muster von Game Studio
-  und Storyteller, eine Sitzung je Board. Mit Projekt ist es der Projekt-Agent, ohne Projekt der
-  Buddy des Nutzers. Solange das Fenster offen ist, fragt die Seite alle 5 Sekunden nach einem neuen
-  Vorschlag. Fehlen dem Agenten `blueprint_read`, `blueprint_propose` oder `idea_read`, steht dort
-  ein Hinweis; Admins können sie per Knopf ergänzen.
+  und Storyteller, eine Sitzung je Board. Mit Projekt ist es der Projekt-Agent. Boards ohne
+  Projekt haben keinen Chat (siehe „Nachträge aus dem Bau“). Die Seite fragt alle 5 Sekunden nach
+  einem neuen Stand, auch ohne offenes Chat-Fenster. Fehlen dem Agenten `blueprint_read`,
+  `blueprint_propose` oder `idea_read`, steht dort ein Hinweis; Admins können sie per Knopf
+  ergänzen.
 
 Änderungen am Ideen-Modul:
 
@@ -257,6 +258,56 @@ vor → wenn es passt: Task anlegen.
   und merkt sich `board_id`. Danach heißt der Knopf „Board öffnen“.
 - `idea_read` nennt das Board („lies es mit `blueprint_read`“). Der Chat neben dem Board startet mit
   dem Verweis auf Idee und Board.
+
+### Nachträge aus dem Bau (PR #373, gemergt am 12.11.2026)
+
+3a und 3b sind zusammen als blueprint 1.3.0 und scratchpad 2.3.0 ausgeliefert. Gegenüber dem Text
+oben gilt:
+
+- **Fassungszähler:** `002_project_proposal.sql` ergänzt zusätzlich `revision`. Die Zeichenfläche
+  nennt beim Speichern den Stand, den sie kennt (`base_revision`); ist er überholt, antwortet die
+  Route mit 409 `board_changed` und die Oberfläche bietet „Meine behalten“ oder „Neue laden“ an.
+  „Meine behalten“ sichert die ersetzte Fassung vorher bei den früheren Fassungen (`keep_previous`).
+  Grund: Die offene Zeichenfläche hätte einen direkt gezeichneten Entwurf des Agenten sonst
+  überschrieben.
+- **Zustands-Route:** `GET /boards/{id}/state` liefert nur `revision` und `proposal_at`. Die Seite
+  fragt sie alle 5 Sekunden ab, solange ein Board offen ist, nicht nur bei offenem Chat.
+- **Frühere Fassungen** tragen ihre Herkunft: `proposal` (Vorschlag übernommen), `restore`
+  (Wiederherstellung), `overwrite` („Meine behalten“). Routen: `GET /boards/{id}/versions`,
+  `POST /boards/{id}/versions/{version_id}/restore`.
+- **Übernehmen gilt dem gesehenen Vorschlag:** `POST /boards/{id}/proposal/accept` nennt
+  `proposal_at`. Hat der Agent inzwischen einen neuen Vorschlag abgelegt, antwortet die Route mit
+  409 `proposal_changed`. Verwerfen: `DELETE /boards/{id}/proposal`.
+- **Strengere Prüfung in `blueprint_propose`:** höchstens 400 Verbindungen; die Notiz zum Vorschlag
+  höchstens 500 Zeichen; `event` und `note` haben keinen Eingang, `display` und `note` keinen
+  Ausgang; Verbindungen aus einer Bedingung brauchen ja oder nein, andere dürfen es nicht tragen.
+  Ein neues Board übernimmt das Projekt der Sitzung nur, wenn der Nutzer dort Zugriff hat.
+- **Anordnung:** Aufbau-Bausteine stehen als eigenes Band unter dem Ablauf.
+- **Board-Text:** Bausteine einer unbekannten Gruppe stehen beim Ablauf, statt zu fehlen.
+  `blueprint_read` nennt einen offenen Vorschlag.
+- **Chat neben dem Board:**
+  - Routen `GET /boards/{id}/chat` (Agent, Grund wenn es keinen Chat gibt, fehlende Werkzeuge) und
+    `POST /boards/{id}/chat` (Sitzung holen oder anlegen). Starten braucht Schreibrecht im Projekt
+    (403 `project_read_only`).
+  - **Kein Chat ohne Projekt.** Vorgesehen war dort der Buddy. Eine neue Sitzung mit dem Buddy würde
+    auf der Buddy-Seite zur aktuellen Unterhaltung, solange dort keine gemerkt ist; verhindern lässt
+    sich das nur im Kern. Entschieden am 12.11.2026: Es bleibt dabei, der Hinweis im Chat nennt den
+    Weg (Board einem Projekt zuordnen).
+  - **Einstiegstext statt Kontextübergabe:** Der Agent erfährt nicht von selbst, um welches Board
+    es geht. Der Chat zeigt einen Text mit Board, Idee und Werkzeugen, den der Nutzer seiner ersten
+    Nachricht voranstellt. Der Text ist deutsch, auch bei englischer Oberfläche.
+  - **Breite:** 360 px bis 45 % des Fensters, ziehbar, im Browser gemerkt. Der Chat gibt nach, damit
+    Palette und Zeichenfläche zusammen 480 px behalten. Reicht der Platz nicht für beide, liegt der
+    Chat über dem Board und schließt, sobald der Nutzer „Vorschau“ oder „Frühere Fassungen“ wählt.
+  - Scheitert das Ergänzen der Werkzeuge (zum Beispiel bei einem vom Modul verwalteten Agenten),
+    steht der Grund am Hinweis.
+- **Idee zu Board:** Die Route antwortet 201 für ein neues und 200 für das vorhandene Board, ohne
+  Blueprint-Modul 409 `blueprint_not_installed`. Die Obergrenze des Blueprint-Moduls (200 Boards je
+  Nutzer) gilt auch hier.
+
+Nicht geprüft und bekannt offen: Im Chat neben dem Board wurde mit keinem echten Agenten
+gearbeitet. Ist bei offenem Chat ein Baustein gewählt, wird die Zeichenfläche zwischen 1100 und
+1300 px Fensterbreite schmal. Der Hilfe-Artikel im Kern fehlt noch.
 
 ## Etappe 4: Schlagworte, Suche, Spaltenansicht
 
@@ -290,8 +341,8 @@ vor → wenn es passt: Task anlegen.
 | 1 Ideenliste | scratchpad 2.0.0 | Hilfe-Artikel `scratchpad.md` (de/en), Beschriftung „Ideen“ |
 | 2 Idee zu Task | scratchpad 2.1.0 | – |
 | 2 Nachtrag: Rückverweis vom Task zur Idee | tasks 1.3.0, scratchpad 2.2.0 | – |
-| 3a Vorschläge, Anordnung, Aufbau-Bausteine | blueprint 1.3.0, scratchpad 2.3.0 | Hilfe-Artikel Blueprint |
-| 3b Chat neben dem Board | blueprint 1.4.0 | nur falls die Kontextübergabe es braucht |
+| 3a Vorschläge, Anordnung, Aufbau-Bausteine | blueprint 1.3.0, scratchpad 2.3.0 | Hilfe-Artikel Blueprint (offen) |
+| 3b Chat neben dem Board | in blueprint 1.3.0 enthalten (ein PR mit 3a) | – |
 | 4 Schlagworte, Suche, Spalten | scratchpad 2.4.0 | – |
 
 Die Etappen 1 und 2 sind ohne Blueprint nutzbar. Nach Etappe 2 wird entschieden, ob Etappe 3
@@ -312,11 +363,7 @@ davon zu Tasks wurden.
 
 ## Ungeprüft, mit Prüfschritt
 
-1. **Kontext für den Chat neben dem Board:** `ChatPane` kennt keinen vorbelegten Text. Offen ist,
-   ob der Kern Sitzungs-Metadaten als Zusatz in den System-Prompt gibt und ob `ChatPane` einen von
-   außen gestarteten Lauf anzeigt. Etappe 3b beginnt deshalb mit einem kurzen Versuch. Rückfall:
-   Einstiegstext zum Kopieren, wie im Storyteller.
-2. **Buddy für Boards ohne Projekt:** wie der Buddy eines Nutzers sauber ermittelt wird (Etappe 3b).
+Derzeit nichts. Die beiden Prüfpunkte zu Etappe 3b sind geklärt (siehe unten).
 
 ## Geklärt am 12.11.2026
 
@@ -328,6 +375,15 @@ davon zu Tasks wurden.
 - **README des Modul-Repos:** Die Tabelle der Module steht in `README.md` und `README.de.md`.
   Sie ist bei mehreren Modulen veraltet (Scratchpad 1.0.2 statt 1.0.6, Tasks 1.0.1 statt 1.2.1,
   Blueprint 1.0.2 statt 1.2.1). In Etappe 1 wird nur die Zeile des Scratchpads berichtigt.
+
+- **Kontext für den Chat neben dem Board** (früher Prüfpunkt 1): Im Kern nachgelesen, nicht
+  ausgeführt. Sitzungs-Metadaten erreichen den Agenten nicht, und die Chatansicht kennt keinen
+  vorbelegten Text. Ein von außen gestarteter Lauf ginge nur über einen internen Helfer des Kerns,
+  den ein Modul nicht aufrufen soll. Deshalb der Einstiegstext.
+- **Buddy für Boards ohne Projekt** (früher Prüfpunkt 2): Der Buddy eines Nutzers lässt sich über
+  die öffentliche Agenten-Konfiguration ermitteln. In der Testumgebung nachgestellt: Eine neue
+  Sitzung mit ihm wird auf der Buddy-Seite zur aktuellen Unterhaltung. Deshalb kein Chat ohne
+  Projekt.
 
 ## Nicht enthalten
 

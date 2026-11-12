@@ -161,6 +161,10 @@ Entschieden am 12.11.2026: Etappe 3 wird gebaut.
 
 ## Etappe 3a: Vorschläge im Blueprint (blueprint 1.3.0, scratchpad 2.3.0)
 
+Stand: gemergt am 12.11.2026 mit PR #373, zusammen mit 3b. Die Kästchen unten sind nicht einzeln
+abgehakt; was gebaut wurde und wo es vom Plan abweicht, steht in der Spec unter „Nachträge aus dem
+Bau“. Die Abnahme mit einem echten Agenten steht aus.
+
 Dateien Blueprint: `migrations/002_project_proposal.sql`, `migrations/003_versions.sql`,
 `backend/layout.py`, `backend/proposal.py`, `backend/tools_propose.py`, `backend/versions.py` (neu);
 `backend/store.py`, `backend/routes.py`, `backend/render.py`, `backend/__init__.py`,
@@ -190,7 +194,11 @@ Dateien Ideen: `backend/board_link.py` (neu), `backend/routes.py`, `backend/rend
 - [ ] Abnahme: Idee anlegen, Board skizzieren lassen (Auftrag im Chat), Vorschlag übernehmen,
       Bausteine verschieben, zweiten Vorschlag verwerfen, alte Fassung wiederherstellen.
 
-## Etappe 3b: Chat neben dem Board (blueprint 1.4.0)
+## Etappe 3b: Chat neben dem Board (in blueprint 1.3.0)
+
+Stand: gemergt am 12.11.2026 mit PR #373. Abweichungen vom Plan: kein Chat für Boards ohne Projekt
+(kein Buddy), Einstiegstext statt Kontextübergabe, die Abfrage läuft immer und nicht nur bei offenem
+Fenster. Die Abnahme unten steht aus.
 
 - [ ] Versuch (Prüfpunkt 1 der Spec): Kommt Kontext aus den Sitzungs-Metadaten beim Agenten an, und
       zeigt `ChatPane` einen von außen gestarteten Lauf? Ergebnis in die Spec schreiben, dann den
@@ -215,6 +223,7 @@ Dateien Ideen: `backend/board_link.py` (neu), `backend/routes.py`, `backend/rend
 2. Modul-PR Etappe 1 und Kern-PR für Hilfe und Beschriftung. Erst der Modul-PR, dann der Kern-PR.
 3. Modul-PR Etappe 2, danach Modul-PR Rückverweis (tasks 1.3.0, scratchpad 2.2.0).
 4. Nach der Entscheidung: Modul-PR Blueprint 3a, danach Modul-PR Ideen 2.3.0, danach 3b.
+   Tatsächlich ein gemeinsamer PR (#373) für 3a, den Ideen-Teil und 3b.
 5. Modul-PR Etappe 4.
 
 ## Akzeptanzkriterien
