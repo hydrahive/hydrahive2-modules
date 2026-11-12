@@ -2,7 +2,7 @@
 
 register(ctx) →
   - Router     (/api/modules/blueprint/boards) — per-User Board-CRUD, Projekt am Board,
-               Vorschlag übernehmen/verwerfen, frühere Fassungen
+               Vorschlag übernehmen/verwerfen, frühere Fassungen, Chat neben dem Board
   - Migrationen (Boards-Tabelle, Projekt und Vorschlag, Versionen; additiv)
   - Agent-Tool blueprint_read — eigene Boards auflisten und als Text lesen
   - Agent-Tool blueprint_propose — Entwurf als Vorschlag ablegen (überschreibt nie)

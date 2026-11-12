@@ -5,7 +5,8 @@ Schreiben als gültiges JSON validiert und auf eine Maximalgröße begrenzt, bev
 es gespeichert wird — kein Schmuggel beliebiger Payloads in die DB.
 
 Ein Board kann einem Projekt zugeordnet sein (access.py prüft den Zugriff).
-Die Routen für Vorschlag und frühere Fassungen stehen in routes_proposal.py.
+Die Routen für Vorschlag und frühere Fassungen stehen in routes_proposal.py,
+die für den Chat neben dem Board in routes_chat.py.
 """
 from __future__ import annotations
 
@@ -19,10 +20,12 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
 from . import access, store
+from .routes_chat import router as chat_router
 from .routes_proposal import router as proposal_router
 
 router = APIRouter()
 router.include_router(proposal_router)
+router.include_router(chat_router)
 
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
 

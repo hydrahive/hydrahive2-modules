@@ -44,3 +44,20 @@ def session_project(username: str, project_id: str | None) -> str | None:
         return check_project(username, system_role(username), project_id)
     except BoardError:
         return None
+
+
+def project_state(username: str, role: str, project_id: str | None) -> tuple[dict | None, str]:
+    """Projekt und was der Nutzer dort darf: ``ok`` (Schreibrecht), ``read_only`` oder ``missing``.
+
+    ``missing`` gilt für unbekannte Projekte genauso wie für solche, in denen der Nutzer kein Mitglied ist.
+    """
+    wanted = (project_id or "").strip()
+    project = projects.get(wanted) if _PROJECT_ID.match(wanted) else None
+    if project is None:
+        return None, "missing"
+    if role == "admin":
+        return project, "ok"
+    member = _members_model.role_of(project, username)
+    if member is None:
+        return None, "missing"
+    return project, "ok" if _members_model.has_at_least(member, "write") else "read_only"
