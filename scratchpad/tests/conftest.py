@@ -31,7 +31,7 @@ MODULE_DIR = Path(__file__).resolve().parents[1]
 if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
-from helpers import MOD_PREFIX, PROJECT_A, PROJECT_B, TABLES  # noqa: E402
+from helpers import MOD_PREFIX, PROJECT_A, PROJECT_B, TABLES, ensure_tasks_table  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -65,6 +65,7 @@ def setup_test_env():
         from hydrahive.modules.migrations import apply_module_migrations
         init_db()
         apply_module_migrations("scratchpad", MODULE_DIR / "migrations")
+        ensure_tasks_table(MODULE_DIR)
 
         from hydrahive.api import main
         from backend.routes import router

@@ -13,13 +13,16 @@ from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, Field
 
-from . import access, legacy_import, meta, notes, store
+from . import access, legacy_import, meta, notes, store, task_link
 
 router = APIRouter()
 
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
 
-_STATUS_CODES = {"project_not_found": status.HTTP_404_NOT_FOUND, "ideas_full": status.HTTP_409_CONFLICT}
+_STATUS_CODES = {
+    "project_not_found": status.HTTP_404_NOT_FOUND, "ideas_full": status.HTTP_409_CONFLICT,
+    "task_already_linked": status.HTTP_409_CONFLICT, "tasks_not_installed": status.HTTP_409_CONFLICT,
+}
 _RAW_TITLE = store.MAX_TITLE * 2  # Leerraum wird erst im Speicher gekürzt, dort gilt die echte Grenze
 
 
@@ -34,6 +37,7 @@ def _not_found():
 def _detail(username: str, idea: dict) -> dict:
     public = {key: value for key, value in idea.items() if key != "username"}
     public["notes"] = notes.list_for(username, idea["id"])
+    public["task"] = task_link.info(username, idea)
     return public
 
 
@@ -115,6 +119,19 @@ def update_idea(auth: Auth, idea_id: str, body: IdeaUpdate) -> dict:
             if name in sent:
                 changes[name] = getattr(body, name)
         idea = store.update(user, idea_id, **changes)
+    except store.IdeaError as exc:
+        raise _fail(exc)
+    if idea is None:
+        raise _not_found()
+    return _detail(user, idea)
+
+
+@router.post("/ideas/{idea_id}/task", status_code=status.HTTP_201_CREATED)
+def create_task(auth: Auth, idea_id: str) -> dict:
+    """Aus der Idee einen Task machen. Die Idee merkt sich den Task und steht danach auf „Geplant“."""
+    user, _ = auth
+    try:
+        idea = task_link.create(user, idea_id)
     except store.IdeaError as exc:
         raise _fail(exc)
     if idea is None:
