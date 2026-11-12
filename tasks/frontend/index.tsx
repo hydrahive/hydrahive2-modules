@@ -1,5 +1,7 @@
 import { TaskBuddyBox } from "./components/TaskBuddyBox"
 import { TaskPanel } from "./components/TaskPanel"
+import { de } from "./texts.de"
+import { en } from "./texts.en"
 
 export const routes = [] as const
 
@@ -9,7 +11,5 @@ export const workspaceTabs = [{ id: "tasks", label: "Tasks", component: TaskPane
 
 export const nav = [] as const
 
-export const i18n = {
-  de: { tasks: { title: "Aufgaben" } },
-  en: { tasks: { title: "Tasks" } },
-}
+// Der Modulname kommt aus tasks:title (Kern shared/nav-label.ts).
+export const i18n = { de: { tasks: de }, en: { tasks: en } }

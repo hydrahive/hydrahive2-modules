@@ -1,11 +1,13 @@
 import { useState } from "react"
 import { History } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { tasksApi } from "../api"
 import type { TaskVersion } from "../types"
 
 /** Aufklappbarer Verlauf früherer Fassungen eines Tasks (Task df2f2eb2).
  *  Lädt erst beim Aufklappen; bei 0 Fassungen wird nichts angezeigt. */
 export function TaskHistory({ taskId, count }: { taskId: string; count: number }) {
+  const { t } = useTranslation("tasks")
   const [open, setOpen] = useState(false)
   const [versions, setVersions] = useState<TaskVersion[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -18,7 +20,7 @@ export function TaskHistory({ taskId, count }: { taskId: string; count: number }
       try {
         setVersions(await tasksApi.history(taskId))
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Verlauf nicht ladbar")
+        setError(e instanceof Error ? e.message : "")
       }
     }
   }
@@ -26,17 +28,17 @@ export function TaskHistory({ taskId, count }: { taskId: string; count: number }
   return (
     <div className="ml-5 mt-0.5">
       <button onClick={() => void toggle()} className="inline-flex items-center gap-1 text-[10px] text-[#9aa7bc] hover:text-[#c8d2df]">
-        <History size={10} /> Verlauf ({count})
+        <History size={10} /> {t("history", { n: count })}
       </button>
       {open && (
         <div className="mt-1 space-y-1.5 border-l border-[rgb(var(--hh-s-rand,42_54_75))] pl-2">
-          {error && <p className="text-[10px] text-rose-400">{error}</p>}
-          {versions === null && !error && <p className="text-[10px] text-[#9aa7bc]">lädt…</p>}
+          {error !== null && <p className="text-[10px] text-rose-400">{error || t("history_error")}</p>}
+          {versions === null && error === null && <p className="text-[10px] text-[#9aa7bc]">{t("history_loading")}</p>}
           {versions?.map((v, i) => (
             <div key={`${v.changed_at}-${i}`} className="text-[10px]">
               <div className="text-[#9aa7bc]">
                 {v.changed_at.replace("T", " ").slice(0, 16)}
-                {v.source === "restored" ? " · aus Chat-Verlauf wiederhergestellt" : ""}
+                {v.source === "restored" ? ` · ${t("history_restored")}` : ""}
               </div>
               {v.title && <div className="text-[#c8d2df]">{v.title}</div>}
               <p className="whitespace-pre-wrap text-[#9aa7bc]">{v.description}</p>

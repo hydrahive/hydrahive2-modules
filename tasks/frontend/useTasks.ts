@@ -21,7 +21,7 @@ export function useTasks(opts: UseTasksOptions = {}) {
       setTasks(data)
       setError(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ladefehler")
+      setError(e instanceof Error ? e.message : "")
     } finally {
       setLoading(false)
     }

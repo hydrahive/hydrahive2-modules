@@ -1,4 +1,5 @@
 import { CheckSquare } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { CollapsibleBox } from "@/shared/CollapsibleBox"
 import { useTasks } from "../useTasks"
 import type { Task } from "../types"
@@ -14,48 +15,49 @@ interface Props {
 }
 
 export function TaskBuddyBox({ onPrompt }: Props) {
+  const { t } = useTranslation("tasks")
   const { tasks, complete } = useTasks({ status: "open", pollMs: 8000 })
-  const inProgress = tasks.filter((t) => t.status === "in_progress")
-  const open = tasks.filter((t) => t.status === "open")
+  const inProgress = tasks.filter((task) => task.status === "in_progress")
+  const open = tasks.filter((task) => task.status === "open")
   const visible = [...inProgress, ...open].slice(0, 6)
 
   return (
     <CollapsibleBox
       boxId="buddy-tasks"
       icon={<CheckSquare size={14} className="text-yellow-300" />}
-      title="Aufgaben"
+      title={t("title")}
       color="250 204 21"
       defaultCollapsed={false}
       className="w-60"
       headerRight={
         <span className="text-[10px] text-[#9aa7bc]">
-          {tasks.length > 0 ? `${tasks.length} offen` : "keine"}
+          {tasks.length > 0 ? t("buddy_count", { n: tasks.length }) : t("buddy_none")}
         </span>
       }
     >
       <div className="p-2 space-y-1">
         {visible.length === 0 ? (
-          <p className="text-[11px] text-[#9aa7bc] px-1 py-0.5">Keine offenen Aufgaben</p>
+          <p className="text-[11px] text-[#9aa7bc] px-1 py-0.5">{t("buddy_empty")}</p>
         ) : (
           visible.map((task) => (
             <div key={task.id} className="relative flex items-start gap-1.5 group">
               <button
                 onClick={() => complete(task.id)}
                 className="mt-0.5 flex-shrink-0 w-3.5 h-3.5 rounded border border-[rgb(var(--hh-s-rand,42_54_75))] hover:border-yellow-400/50 hover:bg-yellow-400/10 transition-colors"
-                title="Als erledigt markieren"
+                title={t("mark_done")}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
                   <div className={`flex-shrink-0 w-1.5 h-1.5 rounded-full ${PRIORITY_DOT[task.priority]}`} />
                   <span
                     className="text-[11px] text-[#c8d2df] truncate cursor-pointer hover:text-yellow-200 transition-colors"
-                    onClick={() => onPrompt(`Zeige mir den Status von Task: "${task.title}"`)}
+                    onClick={() => onPrompt(t("prompt_status", { title: task.title }))}
                   >
                     {task.title}
                   </span>
                 </div>
                 {task.status === "in_progress" && (
-                  <span className="text-[9px] text-amber-400 ml-3">in Arbeit</span>
+                  <span className="text-[9px] text-amber-400 ml-3">{t("buddy_in_progress")}</span>
                 )}
               </div>
 
@@ -76,20 +78,20 @@ export function TaskBuddyBox({ onPrompt }: Props) {
         )}
         {tasks.length > 6 && (
           <p className="text-[10px] text-[#9aa7bc] px-1 pt-1">
-            +{tasks.length - 6} weitere →{" "}
+            {t("buddy_more", { n: tasks.length - 6 })} →{" "}
             <button
-              onClick={() => onPrompt("Zeige mir alle offenen Aufgaben")}
+              onClick={() => onPrompt(t("prompt_all"))}
               className="text-yellow-400 hover:text-yellow-300 underline"
             >
-              Alle anzeigen
+              {t("buddy_show_all")}
             </button>
           </p>
         )}
         <button
-          onClick={() => onPrompt("Welche Aufgaben sind noch offen? Gib mir eine kurze Übersicht.")}
+          onClick={() => onPrompt(t("prompt_overview"))}
           className="w-full text-left text-xs px-2 py-1.5 mt-1 rounded-lg border border-[rgb(var(--hh-s-rand,42_54_75))] hover:border-yellow-400/20 hover:bg-yellow-400/[3%] text-[#c8d2df] hover:text-yellow-300 transition-all"
         >
-          ✦ Aufgaben besprechen
+          ✦ {t("buddy_discuss")}
         </button>
       </div>
     </CollapsibleBox>
