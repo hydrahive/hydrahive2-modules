@@ -1,15 +1,25 @@
 import { moduleIcon } from "@/shared/module-icon"
 import { PALETTE } from "./palette-data"
+import { RAND } from "./styles"
+import type { NodeKind } from "./types"
 
-/** Linke Leiste: Bausteine per Drag aufs Canvas ziehen. */
-export function NodePalette() {
+const ITEM_STYLE: Record<NodeKind, string> = {
+  layout: "border-[rgb(var(--hh-s-rand,42_54_75)/0.6)] bg-[rgb(var(--hh-s-innen,17_24_39)/0.5)] text-[#c8d2df] " +
+    "hover:bg-[rgb(var(--hh-s-hebung,27_37_54)/0.6)]",
+  flow: "border-sky-800/40 bg-sky-950/30 text-sky-200 hover:bg-sky-900/40",
+  build: "border-teal-800/40 bg-teal-950/30 text-teal-200 hover:bg-teal-900/40",
+}
+
+/** Linke Leiste: Bausteine per Drag aufs Canvas ziehen. disabled: Die Zeichenfläche lässt sich gerade nicht bearbeiten. */
+export function NodePalette({ disabled }: { disabled: boolean }) {
   const onDragStart = (e: React.DragEvent, subtype: string) => {
     e.dataTransfer.setData("application/blueprint-node", JSON.stringify({ subtype }))
     e.dataTransfer.effectAllowed = "move"
   }
 
   return (
-    <div className="w-44 shrink-0 overflow-y-auto border-r border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32)/0.4)] p-3">
+    <div aria-disabled={disabled} className={`w-44 shrink-0 overflow-y-auto border-r ${RAND} p-3 ` +
+      `bg-[rgb(var(--hh-s-tief,13_20_32)/0.4)] ${disabled ? "opacity-50" : ""}`}>
       {PALETTE.map((group) => (
         <div key={group.kind} className="mb-4">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#9aa7bc]">
@@ -21,13 +31,11 @@ export function NodePalette() {
               return (
                 <div
                   key={it.subtype}
-                  draggable
+                  draggable={!disabled}
                   onDragStart={(e) => onDragStart(e, it.subtype)}
-                  className={`flex cursor-grab items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors active:cursor-grabbing ${
-                    group.kind === "layout"
-                      ? "border-[rgb(var(--hh-s-rand,42_54_75)/0.6)] bg-[rgb(var(--hh-s-innen,17_24_39)/0.5)] text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54)/0.6)]"
-                      : "border-sky-800/40 bg-sky-950/30 text-sky-200 hover:bg-sky-900/40"
-                  }`}
+                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${
+                    disabled ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"
+                  } ${ITEM_STYLE[group.kind]}`}
                 >
                   <Icon size={13} className="shrink-0" />
                   <span className="truncate">{it.label}</span>

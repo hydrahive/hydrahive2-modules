@@ -45,10 +45,19 @@ export interface IdeaTaskRef {
   missing: boolean
 }
 
+/** Das Blueprint-Board zur Idee. missing: gelöscht, fremd oder Blueprint-Modul fehlt. */
+export interface IdeaBoardRef {
+  id: number
+  name: string | null
+  has_proposal: boolean
+  missing: boolean
+}
+
 export interface Idea extends IdeaBase {
   body: string
   notes: IdeaNote[]
   task: IdeaTaskRef | null
+  board: IdeaBoardRef | null
 }
 
 export interface ProjectRef {

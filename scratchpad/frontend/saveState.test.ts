@@ -80,6 +80,8 @@ describe("errorText", () => {
     expect(errorText(failure(422, "title_too_long"), t)).toBe(de.too_long)
     expect(errorText(failure(409, "task_already_linked"), t)).toBe(de.task_linked_error)
     expect(errorText(failure(409, "tasks_not_installed"), t)).toBe(de.tasks_missing_error)
+    expect(errorText(failure(409, "blueprint_not_installed"), t)).toBe(de.blueprint_missing_error)
+    expect(errorText(failure(409, "boards_full"), t)).toBe(de.boards_full_error)
   })
 
   it("nennt sonst die Meldung des Servers", () => {

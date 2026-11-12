@@ -70,6 +70,16 @@ export const de = {
   task_status_cancelled: "Abgebrochen",
   task_linked_error: "Zu dieser Idee gibt es schon einen Task.",
   tasks_missing_error: "Das Tasks-Modul ist nicht installiert.",
+  board_title: "Board",
+  board_create: "Als Board skizzieren",
+  board_open: "Board öffnen",
+  board_hint:
+    "Legt ein leeres Blueprint-Board mit dieser Kopfzeile und diesem Projekt an. " +
+    "Zeichnen kannst du selbst oder der Agent.",
+  board_missing: "Das verknüpfte Board ist nicht mehr vorhanden.",
+  board_proposal: "Vorschlag offen",
+  blueprint_missing_error: "Das Blueprint-Modul ist nicht installiert.",
+  boards_full_error: "Die Obergrenze für Boards ist erreicht. Lösch zuerst alte Boards.",
 }
 
 export type TextKey = keyof typeof de

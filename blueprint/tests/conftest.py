@@ -31,6 +31,10 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 MOD_PREFIX = "/api/modules/blueprint"
+# Test-Projekte: PROJECT_A gehört testuser, PROJECT_B gehört other.
+PROJECT_A = "blueprint-projekt-testuser"
+PROJECT_B = "blueprint-projekt-other"
+TABLES = ("module_blueprint_boards", "module_blueprint_versions")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -51,6 +55,13 @@ def setup_test_env():
             "testuser": {"password_hash": ph, "role": "user"},
             "other": {"password_hash": ph, "role": "user"},
         }, indent=2))
+
+        for pid, creator in ((PROJECT_A, "testuser"), (PROJECT_B, "other")):
+            pdir = tmp_path / "data" / "projects" / pid
+            pdir.mkdir(parents=True, exist_ok=True)
+            (pdir / "config.json").write_text(json.dumps({
+                "id": pid, "name": f"Projekt {creator}", "members": [creator], "created_by": creator,
+            }, indent=2))
 
         from hydrahive.api import main
         from backend.routes import router
@@ -95,5 +106,5 @@ def _boards_db(setup_test_env):
 
     init_db()
     apply_module_migrations("blueprint", MODULE_DIR / "migrations")
-    with only_own_rows("module_blueprint_boards"):
+    with only_own_rows(*TABLES):
         yield

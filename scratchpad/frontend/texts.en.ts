@@ -71,5 +71,13 @@ export const en: Record<TextKey, string> = {
   task_status_done: "Done",
   task_status_cancelled: "Cancelled",
   task_linked_error: "This idea already has a task.",
+  board_title: "Board",
+  board_create: "Sketch as a board",
+  board_open: "Open board",
+  board_hint: "Creates an empty Blueprint board with this headline and project. You or the agent can draw on it.",
+  board_missing: "The linked board no longer exists.",
+  board_proposal: "Proposal waiting",
+  blueprint_missing_error: "The Blueprint module is not installed.",
+  boards_full_error: "The limit for boards is reached. Delete old boards first.",
   tasks_missing_error: "The tasks module is not installed.",
 }

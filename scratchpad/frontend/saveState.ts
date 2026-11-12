@@ -43,7 +43,7 @@ export function pendingChanges(draft: Draft, stored: Draft): Partial<Draft> {
 }
 
 type Translate = (key: "project_error" | "full_error" | "gone" | "too_long" | "title_required" | "action_error"
-  | "task_linked_error" | "tasks_missing_error",
+  | "task_linked_error" | "tasks_missing_error" | "blueprint_missing_error" | "boards_full_error",
   vars?: Record<string, string | number>) => string
 
 /** Meldung für eine fehlgeschlagene Aktion (anlegen, Status, Projekt, löschen). */
@@ -53,6 +53,8 @@ export function errorText(error: unknown, t: Translate): string {
   if (code === "ideas_full") return t("full_error")
   if (code === "task_already_linked") return t("task_linked_error")
   if (code === "tasks_not_installed") return t("tasks_missing_error")
+  if (code === "blueprint_not_installed") return t("blueprint_missing_error")
+  if (code === "boards_full") return t("boards_full_error")
   const state = saveStateForError(error)
   if (state === "gone" || state === "title_required") return t(state)
   if (state === "too_long" && code !== undefined) return t("too_long")

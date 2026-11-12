@@ -5,6 +5,7 @@ import { formatStamp } from "../ideaView"
 import { beginSave, draftProblem, pendingChanges, saveStateForError, type SaveState } from "../saveState"
 import type { T } from "../texts.de"
 import { STATUSES, type Idea, type IdeaChanges, type IdeaStatus, type ProjectRef } from "../types"
+import { IdeaBoard } from "./IdeaBoard"
 import { IdeaNotes } from "./IdeaNotes"
 import { IdeaTask } from "./IdeaTask"
 import { BADGE, BUTTON, BUTTON_DANGER, ERROR_BOX, FIELD, LABEL, PANEL, SELECT } from "./styles"
@@ -21,6 +22,8 @@ interface Props {
   onRemoveNote: (id: string, noteId: number) => Promise<void>
   tasksInstalled: boolean
   onCreateTask: (id: string) => Promise<unknown>
+  blueprintInstalled: boolean
+  onCreateBoard: (id: string) => Promise<unknown>
   /** Die Idee gibt es auf dem Server nicht mehr: aus der Liste nehmen, den Text aber stehen lassen. */
   onGone: (id: string) => void
   errorOf: (error: unknown) => string
@@ -31,7 +34,10 @@ const SAVE_TEXT: Record<SaveState, "saved" | "saving" | "not_saved" | "too_long"
 }
 
 /** Eine Idee bearbeiten. Kopfzeile und Beschreibung speichern von selbst; die Seite setzt je Idee einen eigenen key. */
-export function IdeaDetail({ idea, projects, locale, t, onUpdate, onRemove, onRemoveNote, tasksInstalled, onCreateTask, onGone, errorOf }: Props) {
+export function IdeaDetail({
+  idea, projects, locale, t, onUpdate, onRemove, onRemoveNote, tasksInstalled, onCreateTask, blueprintInstalled,
+  onCreateBoard, onGone, errorOf,
+}: Props) {
   const [title, setTitle] = useState(idea.title)
   const [body, setBody] = useState(idea.body)
   const [saveState, setSaveState] = useState<SaveState>("saved")
@@ -39,6 +45,7 @@ export function IdeaDetail({ idea, projects, locale, t, onUpdate, onRemove, onRe
   const [confirming, setConfirming] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [taskBusy, setTaskBusy] = useState(false)
+  const [boardBusy, setBoardBusy] = useState(false)
   const draft = useRef({ title: idea.title, body: idea.body })
   const stored = useRef({ title: idea.title, body: idea.body })
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -91,16 +98,7 @@ export function IdeaDetail({ idea, projects, locale, t, onUpdate, onRemove, onRe
     timer.current = setTimeout(flush, SAVE_DELAY_MS)
   }
 
-  async function change(changes: IdeaChanges) {
-    setActionError(null)
-    try {
-      await onUpdate(idea.id, changes)
-    } catch (problem) {
-      setActionError(errorOf(problem))
-    }
-  }
-
-  async function act(run: () => Promise<void>) {
+  async function act(run: () => Promise<unknown>) {
     setActionError(null)
     try {
       await run()
@@ -108,16 +106,16 @@ export function IdeaDetail({ idea, projects, locale, t, onUpdate, onRemove, onRe
       setActionError(errorOf(problem))
     }
   }
+  const change = (changes: IdeaChanges) => act(() => onUpdate(idea.id, changes))
 
-  async function createTask() {
-    setTaskBusy(true)
-    flush()  // der Task übernimmt den gespeicherten Text: erst speichern, dann anlegen
+  /** Task oder Board anlegen. Beide übernehmen den gespeicherten Text: erst speichern, dann anlegen. */
+  async function link(setBusy: (busy: boolean) => void, create: (id: string) => Promise<unknown>) {
+    setBusy(true)
+    flush()
     await queue.current
-    // Ließ sich der Text nicht speichern, entsteht kein Task aus dem alten Stand. Der Speicherstatus zeigt den Grund.
-    if (Object.keys(pendingChanges(draft.current, stored.current)).length === 0) {
-      await act(async () => { await onCreateTask(idea.id) })
-    }
-    if (alive.current) setTaskBusy(false)
+    // Ließ sich der Text nicht speichern, entsteht nichts aus dem alten Stand. Der Speicherstatus zeigt den Grund.
+    if (Object.keys(pendingChanges(draft.current, stored.current)).length === 0) await act(() => create(idea.id))
+    if (alive.current) setBusy(false)
   }
 
   const failed = saveState === "error" || saveState === "too_long" || saveState === "title_required" || saveState === "gone"
@@ -172,7 +170,11 @@ export function IdeaDetail({ idea, projects, locale, t, onUpdate, onRemove, onRe
 
       {actionError && <p role="alert" className={ERROR_BOX}>{actionError}</p>}
 
-      <IdeaTask task={idea.task} installed={tasksInstalled} busy={taskBusy} t={t} onCreate={() => void createTask()} />
+      <IdeaTask task={idea.task} installed={tasksInstalled} busy={taskBusy} t={t}
+        onCreate={() => void link(setTaskBusy, onCreateTask)} />
+
+      <IdeaBoard board={idea.board} installed={blueprintInstalled} busy={boardBusy} t={t}
+        onCreate={() => void link(setBoardBusy, onCreateBoard)} />
 
       <IdeaNotes notes={idea.notes} locale={locale} t={t} onRemove={(noteId) => void act(() => onRemoveNote(idea.id, noteId))} />
 

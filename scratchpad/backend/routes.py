@@ -8,12 +8,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, Field
 
-from . import access, legacy_import, meta, notes, store, task_link
+from . import access, board_link, legacy_import, meta, notes, store, task_link
 
 router = APIRouter()
 
@@ -22,6 +22,7 @@ Auth = Annotated[tuple[str, str], Depends(require_auth)]
 _STATUS_CODES = {
     "project_not_found": status.HTTP_404_NOT_FOUND, "ideas_full": status.HTTP_409_CONFLICT,
     "task_already_linked": status.HTTP_409_CONFLICT, "tasks_not_installed": status.HTTP_409_CONFLICT,
+    "blueprint_not_installed": status.HTTP_409_CONFLICT, "boards_full": status.HTTP_409_CONFLICT,
 }
 _RAW_TITLE = store.MAX_TITLE * 2  # Leerraum wird erst im Speicher gekürzt, dort gilt die echte Grenze
 
@@ -38,6 +39,7 @@ def _detail(username: str, idea: dict) -> dict:
     public = {key: value for key, value in idea.items() if key != "username"}
     public["notes"] = notes.list_for(username, idea["id"])
     public["task"] = task_link.info(username, idea)
+    public["board"] = board_link.info(username, idea)
     return public
 
 
@@ -137,6 +139,22 @@ def create_task(auth: Auth, idea_id: str) -> dict:
         raise _fail(exc)
     if idea is None:
         raise _not_found()
+    return _detail(user, idea)
+
+
+@router.post("/ideas/{idea_id}/board", status_code=status.HTTP_201_CREATED)
+def create_board(auth: Auth, idea_id: str, response: Response) -> dict:
+    """Zur Idee ein Blueprint-Board anlegen. Gibt es schon eines, kommt die Idee mit diesem Board zurück (200)."""
+    user, _ = auth
+    try:
+        result = board_link.create(user, idea_id)
+    except store.IdeaError as exc:
+        raise _fail(exc)
+    if result is None:
+        raise _not_found()
+    idea, created = result
+    if not created:
+        response.status_code = status.HTTP_200_OK
     return _detail(user, idea)
 
 

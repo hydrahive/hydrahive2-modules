@@ -3,21 +3,29 @@
 Per-User Board-CRUD, ownership-strikt (require_auth). graph_json wird beim
 Schreiben als gültiges JSON validiert und auf eine Maximalgröße begrenzt, bevor
 es gespeichert wird — kein Schmuggel beliebiger Payloads in die DB.
+
+Ein Board kann einem Projekt zugeordnet sein (access.py prüft den Zugriff).
+Die Routen für Vorschlag und frühere Fassungen stehen in routes_proposal.py,
+die für den Chat neben dem Board in routes_chat.py.
 """
 from __future__ import annotations
 
 import json
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import store
+from . import access, store
+from .routes_chat import router as chat_router
+from .routes_proposal import router as proposal_router
 
 router = APIRouter()
+router.include_router(proposal_router)
+router.include_router(chat_router)
 
 Auth = Annotated[tuple[str, str], Depends(require_auth)]
 
@@ -36,10 +44,21 @@ def _valid_graph(raw: str) -> str:
     return raw
 
 
+def _project(user: str, role: str, project_id: str | None) -> str | None:
+    try:
+        return access.check_project(user, role, project_id)
+    except store.BoardError as exc:
+        raise coded(status.HTTP_404_NOT_FOUND, exc.code)
+
+
 @router.get("/boards")
-def list_boards(auth: Auth) -> list[dict]:
+def list_boards(
+    auth: Auth,
+    project_id: Annotated[str | None, Query(max_length=64)] = None,
+) -> list[dict]:
+    """Eigene Boards, auf Wunsch nur die eines Projekts."""
     user, _ = auth
-    return store.list_for(user)
+    return store.list_for(user, project_id=project_id or None)
 
 
 @router.get("/boards/{board_id}")
@@ -51,32 +70,57 @@ def get_board(auth: Auth, board_id: int) -> dict:
     return board
 
 
+@router.get("/boards/{board_id}/state")
+def board_state(auth: Auth, board_id: int) -> dict:
+    """Zähler und Zeit des Vorschlags. Die offene Zeichenfläche fragt damit nach Neuem, ohne den Graphen zu laden."""
+    user, _ = auth
+    found = store.state(user, board_id)
+    if found is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "board_not_found")
+    return found
+
+
 class BoardCreate(BaseModel):
     name: str = Field(default="Neues Board", min_length=1, max_length=120)
+    project_id: str | None = Field(default=None, max_length=64)
 
 
 @router.post("/boards", status_code=status.HTTP_201_CREATED)
 def create_board(auth: Auth, body: BoardCreate) -> dict:
-    user, _ = auth
+    user, role = auth
+    project = _project(user, role, body.project_id)
     try:
-        return store.create(user, body.name.strip() or "Neues Board")
-    except ValueError:
-        raise coded(status.HTTP_409_CONFLICT, "boards_full")
+        return store.create(user, body.name.strip() or "Neues Board", project_id=project)
+    except store.BoardError as exc:
+        raise coded(status.HTTP_409_CONFLICT, exc.code)
 
 
 class BoardUpdate(BaseModel):
     name: str | None = Field(default=None, max_length=120)
     graph_json: str | None = None
+    # Fehlt das Feld, bleibt das Projekt. null löst das Board vom Projekt.
+    project_id: str | None = Field(default=None, max_length=64)
+    # Stand, den die Zeichenfläche kennt. Weicht er ab, wird nichts gespeichert (409 board_changed).
+    base_revision: int | None = Field(default=None, ge=0)
+    # Die Fassung, die ersetzt wird, vorher in die früheren Fassungen legen.
+    keep_previous: bool = False
 
 
 @router.put("/boards/{board_id}")
 def update_board(auth: Auth, board_id: int, body: BoardUpdate) -> dict:
-    user, _ = auth
+    user, role = auth
     graph = _valid_graph(body.graph_json) if body.graph_json is not None else None
     name = body.name.strip() if body.name is not None else None
     if name == "":
         name = None
-    updated = store.update(user, board_id, name=name, graph_json=graph)
+    changes: dict = {"name": name, "graph_json": graph, "base_revision": body.base_revision,
+                     "keep_previous": body.keep_previous}
+    if "project_id" in body.model_fields_set:
+        changes["project_id"] = _project(user, role, body.project_id)
+    try:
+        updated = store.update(user, board_id, **changes)
+    except store.BoardError as exc:
+        raise coded(status.HTTP_409_CONFLICT, exc.code)
     if updated is None:
         raise coded(status.HTTP_404_NOT_FOUND, "board_not_found")
     return updated

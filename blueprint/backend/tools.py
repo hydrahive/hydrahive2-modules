@@ -1,4 +1,7 @@
-"""Agent-Tool blueprint_read: eigene Boards auflisten und als Text lesen (Task 9111b283)."""
+"""Agent-Tool blueprint_read: eigene Boards auflisten und als Text lesen (Task 9111b283).
+
+Gelesen wird immer die Fassung des Nutzers. Liegt ein Vorschlag des Agenten offen, steht das darunter.
+"""
 from __future__ import annotations
 
 from hydrahive.tools.base import Tool, ToolContext, ToolResult
@@ -34,7 +37,8 @@ def _list(user: str) -> ToolResult:
     return ToolResult.ok("\n".join(lines))
 
 
-def _find(user: str, ref: str) -> tuple[dict | None, str | None]:
+def find_board(user: str, ref: str) -> tuple[dict | None, str | None]:
+    """Eigenes Board über ID oder Name. Liefert (Board, None) oder (None, Fehlertext)."""
     if ref.isdigit():
         board = store.get(user, int(ref))
         if board:
@@ -57,10 +61,21 @@ async def _execute(args: dict, ctx: ToolContext) -> ToolResult:
     ref = str(args.get("board") or "").strip()
     if not ref:
         return _list(user)
-    board, error = _find(user, ref)
+    board, error = find_board(user, ref)
     if not board:
         return ToolResult.fail(error or "Board nicht gefunden.")
-    return ToolResult.ok(render_board(board, board["graph_json"]))
+    return ToolResult.ok(render_board(board, board["graph_json"]) + _proposal_line(board))
+
+
+def _proposal_line(board: dict) -> str:
+    if not board.get("proposal_json"):
+        return ""
+    note = " ".join(str(board.get("proposal_note") or "").split())
+    count = store.node_count(board["proposal_json"])
+    line = f"\n\nOffener Vorschlag des Agenten vom {board['proposal_at']}: {count} Bausteine"
+    if note:
+        line += f", Notiz: „{note}“"
+    return line + ". Der Nutzer hat ihn noch nicht übernommen; oben steht seine Fassung."
 
 
 READ_TOOL = Tool(name="blueprint_read", description=_DESCRIPTION, schema=_SCHEMA,

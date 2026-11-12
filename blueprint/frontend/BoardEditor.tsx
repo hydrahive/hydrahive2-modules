@@ -1,63 +1,145 @@
-import { useState } from "react"
-import { ReactFlowProvider } from "@xyflow/react"
-import { Copy } from "lucide-react"
+import { useRef, useState } from "react"
+import { ReactFlowProvider, useEdgesState, useNodesState } from "@xyflow/react"
+import { AgentDock } from "./AgentDock"
+import { blueprintApi } from "./api"
+import { previewNodes } from "./boardGraph"
 import { boardText } from "./boardText"
+import { dockLayout, loadDock, saveDock, type DockState } from "./dock"
+import { EditorActions } from "./EditorActions"
+import { errorText } from "./boardView"
 import { useBoard } from "./useBoard"
+import { useProposal, useVersions } from "./useProposal"
+import { useWidth } from "./useWidth"
 import { NodePalette } from "./NodePalette"
 import { Canvas } from "./Canvas"
 import { PropertiesPanel } from "./PropertiesPanel"
+import { ProposalBanner } from "./ProposalBanner"
+import { SyncNotice } from "./SyncNotice"
+import { VersionList } from "./VersionList"
+import { ERROR_BOX, RAND, SELECT, SIDE_PANEL_WIDTH } from "./styles"
+import type { T } from "./texts.de"
+import type { Board, Graph, ProjectRef, SyncStatus } from "./types"
 
 interface Props {
   boardId: number
   boardName: string
+  projects: ProjectRef[]
+  locale: string
+  t: T
+  /** Stand des offenen Boards für die Liste (Name, Projekt, offener Vorschlag). */
+  onBoard: (board: Board) => void
 }
 
-function EditorInner({ boardId, boardName }: Props) {
-  const b = useBoard(boardId)
+const TROUBLE: readonly SyncStatus[] = ["save_error", "conflict", "load_error", "unreadable", "gone"]
+
+/** Der Vorschlag zum Ansehen: eigene Zeichenfläche mit eigenem Zustand, die Fassung des Nutzers bleibt unberührt. */
+function PreviewCanvas({ graph, freshIds, t }: { graph: Graph; freshIds: ReadonlySet<string>; t: T }) {
+  const [nodes, , onNodesChange] = useNodesState(previewNodes(graph.nodes, freshIds))
+  const [edges, , onEdgesChange] = useEdgesState(graph.edges)
+  return <Canvas nodes={nodes} edges={edges} readOnly t={t} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} />
+}
+
+function EditorInner({ boardId, boardName, projects, locale, t, onBoard }: Props) {
+  const b = useBoard(boardId, onBoard)
+  const proposal = useProposal(b.board, b.nodes, b.edges, b.actions, t)
+  const [showVersions, setShowVersions] = useState(false)
+  const versions = useVersions(boardId, showVersions, b.board?.revision, b.actions, t)
   const [copied, setCopied] = useState<"" | "ok" | "fail">("")
-  // Board als Text in die Zwischenablage — gleicher Text wie das Agent-Tool blueprint_read.
+  const [projectError, setProjectError] = useState<string | null>(null)
+  const [dock, setDockState] = useState<DockState>(loadDock)
+  const setDock = (next: DockState) => { setDockState(next); saveDock(next) }
+  const shown = proposal.preview && proposal.graph ? proposal.graph : { nodes: b.nodes, edges: b.edges }
+  const projectId = b.board?.project_id ?? null
+  const projectKnown = projectId === null || projects.some((item) => item.id === projectId)
+  // Chat und Board teilen sich die Zeile unter der Kopfzeile. Mit offenem Chat steht die rechte Spalte nur da,
+  // wenn sie gebraucht wird; der Chat gibt dann nach (dockLayout).
+  const row = useRef<HTMLDivElement>(null)
+  const space = useWidth(row)
+  const chatOpen = dock.open && b.board !== null
+  const nodePanel = Boolean(b.selectedNode) && !proposal.preview
+  const layout = chatOpen
+    ? dockLayout(dock.width, space, showVersions || nodePanel ? SIDE_PANEL_WIDTH : 0)
+    : { over: false, width: dock.width }
+  // Liegt der Chat über dem Board, macht er Platz, sobald der Nutzer etwas am Board sehen will.
+  const showBoard = () => { if (layout.over) setDock({ ...dock, open: false }) }
+
+  // Das Gezeigte als Text in die Zwischenablage — gleicher Text wie das Agent-Tool blueprint_read.
   async function copyAsText() {
     try {
-      await navigator.clipboard.writeText(boardText(boardName, b.nodes, b.edges))
+      await navigator.clipboard.writeText(boardText(boardName, shown.nodes, shown.edges))
       setCopied("ok")
     } catch {
       setCopied("fail")
     }
     setTimeout(() => setCopied(""), 2000)
   }
+
+  async function changeProject(next: string | null) {
+    setProjectError(null)
+    try {
+      b.actions.adopt(await blueprintApi.update(boardId, { project_id: next }))
+    } catch (problem) {
+      setProjectError(errorText(problem, t))
+    }
+  }
+
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="flex items-center gap-3 border-b border-[rgb(var(--hh-s-rand,42_54_75))] px-4 py-2.5">
-        <span className="text-sm font-medium text-[#e8eef8]">{boardName}</span>
-        <span className="text-xs text-[#9aa7bc]">{b.saved ? "gespeichert" : "speichert…"}</span>
-        <button
-          type="button"
-          onClick={() => void copyAsText()}
-          title="Board als Text kopieren, zum Einfügen in einen Chat"
-          className="ml-auto flex items-center gap-1.5 rounded-md border border-[rgb(var(--hh-s-rand,42_54_75))] px-2 py-1 text-xs text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]"
-        >
-          <Copy size={13} />
-          {copied === "ok" ? "Kopiert" : copied === "fail" ? "Kopieren nicht möglich" : "Als Text kopieren"}
-        </button>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-b ${RAND} px-4 py-2.5`}>
+        <span className="truncate text-sm font-medium text-[#e8eef8]">{boardName}</span>
+        <span role="status" className={`text-xs ${TROUBLE.includes(b.status) ? "text-rose-200" : "text-[#9aa7bc]"}`}>
+          {t(`status_${b.status}`)}
+        </span>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {b.board && (projects.length > 0 || projectId !== null) && (
+            <select value={projectId ?? ""} onChange={(e) => void changeProject(e.target.value || null)}
+              aria-label={t("project_label")} title={t("project_label")} className={`${SELECT} w-auto max-w-[14rem]`}>
+              <option value="">{t("no_project")}</option>
+              {!projectKnown && <option value={projectId ?? ""}>{t("unknown_project")}</option>}
+              {projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          )}
+          <EditorActions versionsOpen={showVersions} chatOpen={dock.open} copied={copied} t={t}
+            onVersions={() => { showBoard(); setShowVersions((open) => !open) }}
+            onChat={() => setDock({ ...dock, open: !dock.open })} onCopy={() => void copyAsText()} />
+        </div>
       </div>
-      <div className="flex flex-1 overflow-hidden">
-        <NodePalette />
-        <Canvas
-          nodes={b.nodes}
-          edges={b.edges}
-          onNodesChange={b.onNodesChange}
-          onEdgesChange={b.onEdgesChange}
-          onConnect={b.onConnect}
-          onNodeClick={b.onNodeClick}
-          onPaneClick={b.onPaneClick}
-          onDrop={b.onDrop}
-          onDragOver={b.onDragOver}
-        />
-        <PropertiesPanel
-          node={b.selectedNode}
-          onChange={b.updateNodeData}
-          onDelete={b.deleteSelected}
-        />
+      <SyncNotice status={b.status} busy={false} t={t} onRetry={() => void b.actions.retry()}
+        onKeepMine={() => void b.actions.keepMine()} onTakeTheirs={() => void b.actions.takeTheirs()} />
+      {projectError && <p role="alert" className={`${ERROR_BOX} m-2`}>{projectError}</p>}
+      {proposal.open && (
+        <ProposalBanner note={b.board?.proposal_note ?? null} at={b.board?.proposal_at ?? null} diff={proposal.diff}
+          preview={proposal.preview} busy={proposal.busy} error={proposal.error} locale={locale} t={t}
+          onPreview={() => { showBoard(); proposal.togglePreview() }} onAccept={() => void proposal.accept()}
+          onDiscard={() => void proposal.discard()} />
+      )}
+      <div ref={row} className="flex min-h-0 flex-1 overflow-hidden">
+        {/* Über dem Board liegt der Chat nur optisch: Die Zeichenfläche bleibt eingehängt und behält ihren Stand. */}
+        <div className={layout.over ? "hidden" : "contents"}>
+          <NodePalette disabled={!b.editable || proposal.preview} />
+          {proposal.preview && proposal.graph && proposal.diff ? (
+            <ReactFlowProvider key={b.board?.proposal_at ?? "vorschau"}>
+              <PreviewCanvas graph={proposal.graph} freshIds={proposal.diff.freshIds} t={t} />
+            </ReactFlowProvider>
+          ) : (
+            <Canvas nodes={b.nodes} edges={b.edges} readOnly={!b.editable} t={t}
+              onNodesChange={b.onNodesChange} onEdgesChange={b.onEdgesChange} onConnect={b.onConnect}
+              onNodeClick={b.onNodeClick} onPaneClick={b.onPaneClick} onDrop={b.onDrop} onDragOver={b.onDragOver} />
+          )}
+          {showVersions ? (
+            <VersionList versions={versions.versions} error={versions.loadFailed} message={versions.message}
+              busy={versions.busy} locale={locale} t={t} onRestore={(id) => void versions.restore(id)}
+              onClose={() => setShowVersions(false)} />
+          ) : (!chatOpen || nodePanel) && (
+            <PropertiesPanel node={b.selectedNode} preview={proposal.preview} t={t}
+              onChange={b.updateNodeData} onDelete={b.deleteSelected} />
+          )}
+        </div>
+        {chatOpen && (
+          <AgentDock key={`${boardId}:${projectId ?? ""}`} boardId={boardId} projectId={projectId} width={layout.width}
+            over={layout.over} t={t} onWidth={(width) => setDock({ open: true, width })}
+            onClose={() => setDock({ ...dock, open: false })} />
+        )}
       </div>
     </div>
   )
