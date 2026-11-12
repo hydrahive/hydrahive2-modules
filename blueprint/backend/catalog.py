@@ -44,6 +44,9 @@ SUBTYPES: dict[str, Subtype] = {
     "agent_tool": Subtype("build", "Agent-Werkzeug"),
 }
 
+# Bausteine mit einem Platzhalter-Feld (hasPlaceholder in frontend/palette-data.ts).
+WITH_PLACEHOLDER = frozenset({"input"})
+
 
 def kind_of(value: object) -> str:
     """Gruppe eines Bausteins. Unbekannte und fehlende Angaben zählen zum Ablauf."""

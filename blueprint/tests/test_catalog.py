@@ -52,6 +52,12 @@ def test_liste_stimmt_mit_der_palette_der_oberflaeche_ueberein():
     assert palette == {subtype: (entry.kind, entry.name) for subtype, entry in catalog.SUBTYPES.items()}
 
 
+def test_platzhalter_bausteine_stimmen_mit_der_palette_ueberein():
+    source = (FRONTEND / "palette-data.ts").read_text(encoding="utf-8")
+    with_placeholder = set(re.findall(r'subtype: "(\w+)"[^}\n]*hasPlaceholder: true', source))
+    assert with_placeholder == set(catalog.WITH_PLACEHOLDER) and with_placeholder
+
+
 def test_aufbau_steht_als_dritte_gruppe_im_text():
     text = _render([
         node("m", "module", "build", "Ideen-Modul", "Backend und Oberfläche"),
