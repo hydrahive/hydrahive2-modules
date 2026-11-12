@@ -67,6 +67,16 @@ def get_board(auth: Auth, board_id: int) -> dict:
     return board
 
 
+@router.get("/boards/{board_id}/state")
+def board_state(auth: Auth, board_id: int) -> dict:
+    """Zähler und Zeit des Vorschlags. Die offene Zeichenfläche fragt damit nach Neuem, ohne den Graphen zu laden."""
+    user, _ = auth
+    found = store.state(user, board_id)
+    if found is None:
+        raise coded(status.HTTP_404_NOT_FOUND, "board_not_found")
+    return found
+
+
 class BoardCreate(BaseModel):
     name: str = Field(default="Neues Board", min_length=1, max_length=120)
     project_id: str | None = Field(default=None, max_length=64)

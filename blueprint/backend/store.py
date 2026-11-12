@@ -70,6 +70,15 @@ def fetch(conn: sqlite3.Connection, user: str, board_id: int) -> dict | None:
     return dict(row) if row else None
 
 
+def state(user: str, board_id: int) -> dict | None:
+    """Zähler und Zeit des Vorschlags, ohne den Graphen. Für die Abfrage der offenen Zeichenfläche."""
+    with db() as c:
+        row = c.execute(
+            f'SELECT revision, proposal_at FROM {TABLE} WHERE "user" = ? AND id = ?', (user, board_id)
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def get(user: str, board_id: int) -> dict | None:
     """Ein vollständiges Board (inkl. graph_json und offenem Vorschlag) des Users."""
     with db() as c:

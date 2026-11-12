@@ -152,3 +152,21 @@ def test_bestehende_boards_bekommen_den_zaehler_null():
         assert conn.execute("SELECT revision FROM module_blueprint_boards").fetchone()["revision"] == 0
     finally:
         conn.close()
+
+
+def test_zustand_nennt_zaehler_und_vorschlag_ohne_den_graphen(client, auth_headers):
+    bid = _new(client, auth_headers)["id"]
+    assert client.get(f"{BASE}/{bid}/state", headers=auth_headers).json() == {"revision": 0, "proposal_at": None}
+    _save(client, auth_headers, bid, 2, "nutzer")
+    proposals.put("testuser", bid, graph(3, "agent"), "")
+    state = client.get(f"{BASE}/{bid}/state", headers=auth_headers).json()
+    assert state["revision"] == 1 and state["proposal_at"]
+    assert set(state) == {"revision", "proposal_at"}
+
+
+def test_zustand_fremder_boards_bleibt_unsichtbar(client, auth_headers):
+    bid = _new(client, auth_headers)["id"]
+    r = client.get(f"{BASE}/{bid}/state", headers=_h(client))
+    assert r.status_code == 404 and _code(r) == "board_not_found"
+    assert client.get(f"{BASE}/{bid}/state").status_code in (401, 403)
+    assert client.get(f"{BASE}/999999/state", headers=auth_headers).status_code == 404
