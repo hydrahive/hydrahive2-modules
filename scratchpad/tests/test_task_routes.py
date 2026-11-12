@@ -1,7 +1,7 @@
 """Route POST /ideas/{id}/task und der Task-Verweis in Detail, Meta und idea_read."""
 from __future__ import annotations
 
-from helpers import MOD_PREFIX, PROJECT_A, make_ctx, task_row
+from helpers import MOD_PREFIX, PROJECT_A, TASKS_TABLE, make_ctx, task_row
 
 BASE = f"{MOD_PREFIX}/ideas"
 
@@ -113,3 +113,15 @@ def test_taskzeile_uebersetzt_bekannte_status_und_zeigt_unbekannte_roh():
     assert "· Erledigt ·" in _line(status="done")
     assert "· Abgebrochen ·" in _line(status="cancelled")
     assert "· wartet ·" in _line(status="wartet")
+
+
+def test_liste_traegt_die_herkunft_frueherer_tasks_nach(client, alice):
+    from hydrahive.db.connection import db
+
+    idea = client.post(f"{MOD_PREFIX}/ideas", json={"title": "Früher verknüpft"}, headers=alice).json()
+    task_id = client.post(f"{MOD_PREFIX}/ideas/{idea['id']}/task", headers=alice).json()["task_id"]
+    with db() as conn:
+        conn.execute(f"UPDATE {TASKS_TABLE} SET source_kind = NULL, source_id = NULL WHERE id = ?", (task_id,))
+    assert client.get(f"{MOD_PREFIX}/ideas", headers=alice).status_code == 200
+    task = task_row(task_id)
+    assert (task["source_kind"], task["source_id"]) == ("idea", idea["id"])

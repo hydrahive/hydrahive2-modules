@@ -78,6 +78,7 @@ def list_ideas(
     user, _ = auth
     statuses = _statuses(status_filter)
     legacy_import.import_for(user)
+    task_link.backfill(user)
     project = project_id or None
     return {
         "ideas": store.list_ideas(user, project=project, statuses=statuses),

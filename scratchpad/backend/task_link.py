@@ -5,6 +5,10 @@ Tickets-Modul (``tickets/backend/task_link.py``) schreibt diese Brücke direkt i
 dessen Tabelle ``module_tasks``, aber nur mit dem eigenen Nutzernamen und nur,
 wenn es die Tabelle gibt. Task, Verweis an der Idee, Status und Anmerkung
 entstehen in einer Transaktion: scheitert ein Schritt, bleibt nichts zurück.
+
+Ab Tasks 1.3.0 trägt der Task die Idee als Herkunft (``source_kind``,
+``source_id``). Ein älteres Tasks-Modul ohne diese Spalten bekommt den Task
+wie bisher, nur ohne Rückverweis.
 """
 from __future__ import annotations
 
@@ -18,12 +22,56 @@ from . import notes, render, store
 TASKS_TABLE = "module_tasks"
 _IDEAS = "module_scratchpad_ideas"
 _PLANNED = "planned"
+SOURCE_KIND = "idea"
+_SOURCE_COLUMNS = {"source_kind", "source_id"}
 
 
 def _exists(conn: sqlite3.Connection) -> bool:
     return conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (TASKS_TABLE,)
     ).fetchone() is not None
+
+
+def _has_source(conn: sqlite3.Connection) -> bool:
+    """Kennt das installierte Tasks-Modul die Spalten für die Herkunft?"""
+    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({TASKS_TABLE})")}
+    return _SOURCE_COLUMNS <= columns
+
+
+def _insert_task(conn: sqlite3.Connection, task_id: str, username: str, idea: sqlite3.Row) -> None:
+    values = {
+        "id": task_id, "username": username, "project_id": idea["project_id"], "session_id": None,
+        "title": idea["title"], "description": _description(idea), "priority": "medium",
+    }
+    if _has_source(conn):
+        values.update(source_kind=SOURCE_KIND, source_id=idea["id"])
+    columns, marks = ", ".join(values), ", ".join("?" for _ in values)
+    conn.execute(f"INSERT INTO {TASKS_TABLE} ({columns}) VALUES ({marks})", list(values.values()))
+
+
+def backfill(username: str) -> int:
+    """Herkunft bei Tasks nachtragen, die vor Tasks 1.3.0 aus einer Idee entstanden sind.
+
+    Nur eigene Tasks, nur wenn dort noch keine Herkunft steht. Titel, Beschreibung
+    und Änderungszeit des Tasks bleiben unberührt. Liefert die Zahl der Nachträge.
+    """
+    with db() as conn:
+        if not _exists(conn) or not _has_source(conn):
+            return 0
+        rows = conn.execute(
+            f"SELECT i.id AS idea_id, i.task_id FROM {_IDEAS} i "
+            f"JOIN {TASKS_TABLE} t ON t.id = i.task_id AND t.username = i.username "
+            "WHERE i.username = ? AND t.source_kind IS NULL AND t.source_id IS NULL",
+            (username,),
+        ).fetchall()
+        # Geschrieben wird nur, wenn es etwas nachzutragen gibt: der Normalfall bleibt ein reiner Lesezugriff.
+        for row in rows:
+            conn.execute(
+                f"UPDATE {TASKS_TABLE} SET source_kind = ?, source_id = ? "
+                "WHERE id = ? AND username = ? AND source_kind IS NULL AND source_id IS NULL",
+                (SOURCE_KIND, row["idea_id"], row["task_id"], username),
+            )
+    return len(rows)
 
 
 def installed() -> bool:
@@ -76,11 +124,7 @@ def create(username: str, idea_id: str) -> dict | None:
         # Ein Verweis auf einen gelöschten Task sperrt nicht: dann darf ein neuer entstehen.
         if idea["task_id"] and _task(conn, username, idea["task_id"]) is not None:
             raise store.IdeaError("task_already_linked")
-        conn.execute(
-            f"INSERT INTO {TASKS_TABLE} (id, username, project_id, session_id, title, description, priority) "
-            "VALUES (?, ?, ?, NULL, ?, ?, 'medium')",
-            (task_id, username, idea["project_id"], idea["title"], _description(idea)),
-        )
+        _insert_task(conn, task_id, username, idea)
         conn.execute(
             f"UPDATE {_IDEAS} SET task_id = ?, status = ?, updated_at = ? WHERE username = ? AND id = ?",
             (task_id, _PLANNED, stamp, username, idea_id),
