@@ -6,6 +6,7 @@ import { beginSave, draftProblem, pendingChanges, saveStateForError, type SaveSt
 import type { T } from "../texts.de"
 import { STATUSES, type Idea, type IdeaChanges, type IdeaStatus, type ProjectRef } from "../types"
 import { IdeaNotes } from "./IdeaNotes"
+import { IdeaTask } from "./IdeaTask"
 import { BADGE, BUTTON, BUTTON_DANGER, ERROR_BOX, FIELD, LABEL, PANEL, SELECT } from "./styles"
 
 const SAVE_DELAY_MS = 800
@@ -18,6 +19,8 @@ interface Props {
   onUpdate: (id: string, changes: IdeaChanges) => Promise<Idea>
   onRemove: (id: string) => Promise<void>
   onRemoveNote: (id: string, noteId: number) => Promise<void>
+  tasksInstalled: boolean
+  onCreateTask: (id: string) => Promise<unknown>
   /** Die Idee gibt es auf dem Server nicht mehr: aus der Liste nehmen, den Text aber stehen lassen. */
   onGone: (id: string) => void
   errorOf: (error: unknown) => string
@@ -28,13 +31,14 @@ const SAVE_TEXT: Record<SaveState, "saved" | "saving" | "not_saved" | "too_long"
 }
 
 /** Eine Idee bearbeiten. Kopfzeile und Beschreibung speichern von selbst; die Seite setzt je Idee einen eigenen key. */
-export function IdeaDetail({ idea, projects, locale, t, onUpdate, onRemove, onRemoveNote, onGone, errorOf }: Props) {
+export function IdeaDetail({ idea, projects, locale, t, onUpdate, onRemove, onRemoveNote, tasksInstalled, onCreateTask, onGone, errorOf }: Props) {
   const [title, setTitle] = useState(idea.title)
   const [body, setBody] = useState(idea.body)
   const [saveState, setSaveState] = useState<SaveState>("saved")
   const [preview, setPreview] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [taskBusy, setTaskBusy] = useState(false)
   const draft = useRef({ title: idea.title, body: idea.body })
   const stored = useRef({ title: idea.title, body: idea.body })
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -105,6 +109,17 @@ export function IdeaDetail({ idea, projects, locale, t, onUpdate, onRemove, onRe
     }
   }
 
+  async function createTask() {
+    setTaskBusy(true)
+    flush()  // der Task übernimmt den gespeicherten Text: erst speichern, dann anlegen
+    await queue.current
+    // Ließ sich der Text nicht speichern, entsteht kein Task aus dem alten Stand. Der Speicherstatus zeigt den Grund.
+    if (Object.keys(pendingChanges(draft.current, stored.current)).length === 0) {
+      await act(async () => { await onCreateTask(idea.id) })
+    }
+    if (alive.current) setTaskBusy(false)
+  }
+
   const failed = saveState === "error" || saveState === "too_long" || saveState === "title_required" || saveState === "gone"
   const projectKnown = idea.project_id === null || projects.some((item) => item.id === idea.project_id)
 
@@ -156,6 +171,8 @@ export function IdeaDetail({ idea, projects, locale, t, onUpdate, onRemove, onRe
       </div>
 
       {actionError && <p role="alert" className={ERROR_BOX}>{actionError}</p>}
+
+      <IdeaTask task={idea.task} installed={tasksInstalled} busy={taskBusy} t={t} onCreate={() => void createTask()} />
 
       <IdeaNotes notes={idea.notes} locale={locale} t={t} onRemove={(noteId) => void act(() => onRemoveNote(idea.id, noteId))} />
 

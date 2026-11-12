@@ -17,7 +17,10 @@ import { useIdeas } from "./useIdeas"
 export function IdeasPage() {
   const { t: translate, i18n } = useTranslation("scratchpad")
   const t: T = useCallback((key, vars) => String(translate(key, vars)), [translate])
-  const { ideas, projects, active, loading, loadFailed, reload, select, create, update, remove, removeNote, forget } = useIdeas()
+  const {
+    ideas, projects, active, loading, loadFailed, tasksInstalled,
+    reload, select, create, update, createTask, remove, removeNote, forget,
+  } = useIdeas()
   const [project, setProject] = useState<ProjectFilter>("all")
   const [status, setStatus] = useState<StatusFilter>("open")
   const [selectError, setSelectError] = useState<string | null>(null)
@@ -74,7 +77,8 @@ export function IdeasPage() {
             <div ref={detailRef} className="min-w-0 scroll-mt-4">
               {active ? (
                 <IdeaDetail key={active.id} idea={active} projects={projects} locale={i18n.language} t={t}
-                  onUpdate={update} onRemove={remove} onRemoveNote={removeNote} onGone={forget} errorOf={errorOf} />
+                  onUpdate={update} onRemove={remove} onRemoveNote={removeNote} tasksInstalled={tasksInstalled}
+                  onCreateTask={createTask} onGone={forget} errorOf={errorOf} />
               ) : (
                 <p className={`${PANEL} hidden px-4 py-10 text-center text-sm text-[#9aa7bc] lg:block`}>{t("detail_empty")}</p>
               )}

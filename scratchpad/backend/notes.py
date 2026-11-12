@@ -29,17 +29,20 @@ def add(username: str, idea_id: str, *, author: str, body: Any, agent_name: str 
         raise IdeaError("note_too_long")
     if author not in AUTHORS:
         raise IdeaError("invalid_author")
-    stamp = now()
     with db(immediate=True) as conn:
         if not _owned(conn, username, idea_id):
             return None
-        cur = conn.execute(
-            f"INSERT INTO {_NOTES} (idea_id, author, agent_name, body, created_at) VALUES (?, ?, ?, ?, ?)",
-            (idea_id, author, (agent_name or None), text, stamp),
-        )
-        conn.execute(f"UPDATE {_IDEAS} SET updated_at = ? WHERE id = ?", (stamp, idea_id))
-        row = conn.execute(f"SELECT * FROM {_NOTES} WHERE id = ?", (cur.lastrowid,)).fetchone()
-    return dict(row)
+        return insert(conn, idea_id, author=author, body=text, agent_name=agent_name, stamp=now())
+
+
+def insert(conn, idea_id: str, *, author: str, body: str, stamp: str, agent_name: str | None = None) -> dict:
+    """Anmerkung in einer laufenden Transaktion schreiben. Besitz und Grenzen prüft der Aufrufer."""
+    cur = conn.execute(
+        f"INSERT INTO {_NOTES} (idea_id, author, agent_name, body, created_at) VALUES (?, ?, ?, ?, ?)",
+        (idea_id, author, (agent_name or None), body, stamp),
+    )
+    conn.execute(f"UPDATE {_IDEAS} SET updated_at = ? WHERE id = ?", (stamp, idea_id))
+    return dict(conn.execute(f"SELECT * FROM {_NOTES} WHERE id = ?", (cur.lastrowid,)).fetchone())
 
 
 def list_for(username: str, idea_id: str) -> list[dict]:

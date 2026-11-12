@@ -2,8 +2,9 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 import { IdeaList } from "./components/IdeaList"
 import { IdeaNotes } from "./components/IdeaNotes"
+import { IdeaTask } from "./components/IdeaTask"
 import { de, type T } from "./texts.de"
-import type { IdeaListItem, IdeaNote, ProjectFilter, StatusFilter } from "./types"
+import type { IdeaListItem, IdeaNote, IdeaTaskRef, ProjectFilter, StatusFilter } from "./types"
 
 const t: T = (key, vars) => de[key].replace(/\{\{(\w+)\}\}/g, (_match, name: string) => String(vars?.[name] ?? ""))
 const PROJECTS = [{ id: "p-alpha", name: "Alpha" }]
@@ -97,5 +98,52 @@ describe("IdeaNotes", () => {
     expect(html).toContain(`>${de.note_author_system}<`)
     expect(html).toContain("Status: Neu → Geplant")
     expect(html.match(new RegExp(`aria-label="${de.note_delete}"`, "g"))).toHaveLength(3)
+  })
+})
+
+describe("IdeaTask", () => {
+  const ref = (over: Partial<IdeaTaskRef> = {}): IdeaTaskRef =>
+    ({ id: "aaaabbbb-0000-4000-8000-000000000001", short_id: "aaaabbbb", title: "Admin-Seite", status: "open", missing: false, ...over })
+  const view = (task: IdeaTaskRef | null, installed = true) =>
+    renderToStaticMarkup(<IdeaTask task={task} installed={installed} busy={false} t={t} onCreate={noop} />)
+
+  it("bietet ohne Task den Knopf an und sagt, was er tut", () => {
+    const html = view(null)
+    expect(html).toContain(de.task_create)
+    expect(html).toContain(de.task_hint)
+  })
+
+  it("zeigt ohne Tasks-Modul nichts", () => {
+    expect(view(null, false)).toBe("")
+  })
+
+  it("zeigt Titel, Status und Kurz-ID des Tasks und keinen Knopf mehr", () => {
+    const html = view(ref({ status: "in_progress" }))
+    expect(html).toContain("Admin-Seite")
+    expect(html).toContain(de.task_status_in_progress)
+    expect(html).toContain("aaaabbbb")
+    expect(html).not.toContain(de.task_create)
+  })
+
+  it("zeigt einen unbekannten Task-Status roh", () => {
+    expect(view(ref({ status: "wartet" }))).toContain("wartet")
+  })
+
+  it("meldet einen gelöschten Task und bietet den Knopf wieder an", () => {
+    const html = view(ref({ title: null, status: null, missing: true }))
+    expect(html).toContain(de.task_missing)
+    expect(html).toContain(de.task_create)
+  })
+
+  it("bietet bei gelöschtem Task ohne Tasks-Modul keinen Knopf an", () => {
+    const html = view(ref({ title: null, status: null, missing: true }), false)
+    expect(html).toContain(de.task_missing)
+    expect(html).not.toContain(de.task_create)
+  })
+
+  it("gibt den Tasktitel als Text aus, nicht als HTML", () => {
+    const html = view(ref({ title: "<img src=x onerror=alert(1)>" }))
+    expect(html).toContain("&lt;img src=x")
+    expect(html).not.toContain("<img src=x")
   })
 })

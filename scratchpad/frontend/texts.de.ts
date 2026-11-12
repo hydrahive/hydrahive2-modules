@@ -60,6 +60,16 @@ export const de = {
   action_error: "Das hat nicht geklappt: {{message}}",
   project_error: "Projekt nicht gefunden oder kein Zugriff.",
   full_error: "Die Obergrenze für Ideen ist erreicht. Lösch zuerst alte Ideen.",
+  task_title: "Task",
+  task_create: "Task anlegen",
+  task_hint: "Legt einen Task mit dieser Kopfzeile und Beschreibung an. Die Idee steht danach auf „Geplant“.",
+  task_missing: "Der verknüpfte Task ist nicht mehr vorhanden.",
+  task_status_open: "Offen",
+  task_status_in_progress: "In Arbeit",
+  task_status_done: "Erledigt",
+  task_status_cancelled: "Abgebrochen",
+  task_linked_error: "Zu dieser Idee gibt es schon einen Task.",
+  tasks_missing_error: "Das Tasks-Modul ist nicht installiert.",
 }
 
 export type TextKey = keyof typeof de

@@ -73,7 +73,7 @@ export function upsertIdea(list: readonly IdeaListItem[], item: IdeaListItem): I
 }
 
 export function toListItem(idea: Idea): IdeaListItem {
-  const { body, notes, ...rest } = idea
+  const { body, notes, task: _task, ...rest } = idea
   return {
     ...rest,
     body_preview: body.split(/\s+/).filter(Boolean).join(" ").slice(0, PREVIEW_CHARS),

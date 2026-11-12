@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from hydrahive.db.connection import db
 
-from . import store
+from . import store, task_link
 
-_TASKS_TABLE = "module_tasks"
 _BOARDS_TABLE = "module_blueprint_boards"
 
 
@@ -20,7 +19,7 @@ def describe() -> dict:
     return {
         "statuses": list(store.STATUSES),
         "open_statuses": list(store.OPEN_STATUSES),
-        "tasks_installed": table_exists(_TASKS_TABLE),
+        "tasks_installed": task_link.installed(),
         "blueprint_installed": table_exists(_BOARDS_TABLE),
         "limits": {"title": store.MAX_TITLE, "body": store.MAX_BODY, "ideas": store.MAX_IDEAS},
     }
