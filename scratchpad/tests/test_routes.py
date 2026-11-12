@@ -29,7 +29,7 @@ def test_meta(client, alice):
     data = client.get(f"{MOD_PREFIX}/meta", headers=alice).json()
     assert data["statuses"] == ["new", "review", "planned", "parked", "done", "dropped"]
     assert data["open_statuses"] == ["new", "review", "planned"]
-    assert data["tasks_installed"] is True and data["blueprint_installed"] is False
+    assert data["tasks_installed"] is True and data["blueprint_installed"] is True
     assert data["limits"] == {"title": 200, "body": 50000, "ideas": 2000}
 
 
