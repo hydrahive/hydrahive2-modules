@@ -19,13 +19,49 @@ export type BPNode = Node<BlueprintNodeData>
 export interface BoardMeta {
   id: number
   name: string
+  project_id: string | null
   created_at: string
   updated_at: string
 }
 
-export interface Board extends BoardMeta {
-  graph_json: string
+/** Zeile der Board-Liste: ohne Graphen. */
+export interface BoardListItem extends BoardMeta {
+  has_proposal: boolean
 }
+
+export interface Board extends BoardMeta {
+  /** Zählt jede Änderung an graph_json. Beim Speichern nennt die Zeichenfläche den Stand, den sie kennt. */
+  revision: number
+  graph_json: string
+  /** Offener Vorschlag des Agenten neben der Fassung des Nutzers, oder null. */
+  proposal_json: string | null
+  proposal_note: string | null
+  proposal_at: string | null
+}
+
+/** Antwort der leichten Abfrage: hat sich die Fassung geändert, liegt ein neuer Vorschlag vor? */
+export interface BoardState {
+  revision: number
+  proposal_at: string | null
+}
+
+export type VersionSource = "proposal" | "restore" | "overwrite"
+
+/** Frühere Fassung eines Boards, ohne den Graphen. */
+export interface BoardVersion {
+  id: number
+  source: VersionSource
+  node_count: number
+  created_at: string
+}
+
+export interface ProjectRef {
+  id: string
+  name: string
+}
+
+/** "all" = alle Projekte, "none" = ohne Projekt, sonst eine Projekt-ID. */
+export type ProjectFilter = "all" | "none" | (string & {})
 
 export interface Graph {
   nodes: BPNode[]
