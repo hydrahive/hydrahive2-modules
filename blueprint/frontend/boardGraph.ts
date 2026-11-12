@@ -1,7 +1,7 @@
 // Reine Helfer rund um den Board-Graphen: lesen, vergleichen, Vorschlag gegen die eigene Fassung
-// stellen, Direktlink und Projektfilter. Ohne React und ohne Netz, damit alles direkt testbar ist.
+// stellen. Ohne React und ohne Netz, damit alles direkt testbar ist. Liste und Texte: boardView.ts.
 import type { Edge } from "@xyflow/react"
-import type { BoardListItem, BPNode, Graph, ProjectFilter } from "./types"
+import type { BPNode, Graph } from "./types"
 
 /** Gespeicherter Graph, oder null, wenn er nicht lesbar ist. Unlesbar ist nicht dasselbe wie leer:
  *  Ein unlesbares Board darf die Zeichenfläche nie als leeres Board speichern. */
@@ -82,24 +82,9 @@ export function proposalDiff(mine: Graph, proposal: Graph): ProposalDiff {
   return { nodes: proposal.nodes.length, edges: proposal.edges.length, kept, added, removed, freshIds }
 }
 
-/** Board-ID aus /blueprint?board=<id>. Alles andere als eine saubere Zahl zählt nicht. */
-export function linkedBoard(value: string | null | undefined): number | null {
-  return value && /^[1-9]\d{0,14}$/.test(value) ? Number(value) : null
-}
+const FRESH = { outline: "2px solid #69d7ff", outlineOffset: 4, borderRadius: 14 }
 
-export function filterBoards<T extends { project_id: string | null }>(boards: readonly T[], project: ProjectFilter): T[] {
-  if (project === "all") return [...boards]
-  return boards.filter((board) => (project === "none" ? board.project_id === null : board.project_id === project))
-}
-
-/** Filter, mit dem dieses Board in der Liste steht: bleibt, wenn er passt, sonst „alle“. */
-export function projectShowing(board: Pick<BoardListItem, "project_id">, current: ProjectFilter): ProjectFilter {
-  return filterBoards([board], current).length > 0 ? current : "all"
-}
-
-/** Zeitstempel des Servers als Datum mit Uhrzeit in der Sprache der Oberfläche. */
-export function formatStamp(value: string | null | undefined, locale: string): string {
-  const date = value ? new Date(value) : null
-  if (!date || Number.isNaN(date.getTime())) return value ?? ""
-  return date.toLocaleString(locale.startsWith("de") ? "de" : "en", { dateStyle: "medium", timeStyle: "short" })
+/** Bausteine des Vorschlags für die Vorschau: Die neuen bekommen einen Rahmen. Der Vorschlag bleibt, wie er ist. */
+export function previewNodes(nodes: readonly BPNode[], freshIds: ReadonlySet<string>): BPNode[] {
+  return nodes.map((node) => (freshIds.has(node.id) ? { ...node, style: { ...node.style, ...FRESH } } : node))
 }

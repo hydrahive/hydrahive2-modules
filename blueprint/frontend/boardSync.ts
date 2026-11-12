@@ -1,6 +1,4 @@
-// Abgleich einer offenen Zeichenfläche mit dem Server, ohne React (direkt testbar).
-//
-// Regeln:
+// Abgleich einer offenen Zeichenfläche mit dem Server, ohne React (direkt testbar). Regeln:
 //  - Gespeichert wird erst, wenn das Board geladen und lesbar ist. Ein Ladefehler oder ein
 //    unlesbares Board führt nie dazu, dass ein leeres Board gespeichert wird.
 //  - Jedes Speichern nennt den Stand (revision), den die Zeichenfläche kennt. Hat inzwischen der
@@ -145,18 +143,23 @@ export class BoardSync {
   }
 
   /** Konflikt: die eigene Fassung behalten. Die andere Fassung legt der Server zu den früheren. */
-  keepMine(): Promise<void> {
-    return this.status === "conflict" ? this.flush(true) : Promise.resolve()
-  }
+  keepMine = () => (this.status === "conflict" ? this.flush(true) : Promise.resolve())
 
   /** Konflikt: die Fassung des Servers laden, der eigene Entwurf entfällt. */
-  takeTheirs(): Promise<void> {
-    return this.status === "conflict" ? this.load() : Promise.resolve()
-  }
+  takeTheirs = () => (this.status === "conflict" ? this.load() : Promise.resolve())
 
-  /** Antwort auf Übernehmen, Verwerfen oder Wiederherstellen einsetzen. */
+  /** Antwort des Servers einsetzen. Die Zeichenfläche ändert sich nur, wenn die Fassung eine andere ist. */
   adopt(board: Board) {
     this.show(board, board.revision !== this.revision)
+  }
+
+  /** Übernehmen, Wiederherstellen: erst die eigene Fassung speichern (sie wird gesichert), dann die Aktion.
+   *  false, wenn sich die eigene Fassung nicht speichern lässt. Dann läuft die Aktion nicht. */
+  async apply(action: () => Promise<Board>): Promise<boolean> {
+    if (this.status !== "unreadable" && !(await this.settle())) return false
+    const board = await action()
+    if (this.alive) this.adopt(board)
+    return true
   }
 
   async poll(): Promise<void> {

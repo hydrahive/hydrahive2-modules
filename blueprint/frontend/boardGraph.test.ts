@@ -1,9 +1,7 @@
 import type { Edge } from "@xyflow/react"
 import { describe, expect, it } from "vitest"
-import {
-  cleanGraph, filterBoards, graphSignature, linkedBoard, parseGraph, projectShowing, proposalDiff,
-} from "./boardGraph"
-import type { BoardListItem, BPNode } from "./types"
+import { cleanGraph, graphSignature, parseGraph, previewNodes, proposalDiff } from "./boardGraph"
+import type { BPNode } from "./types"
 
 function node(id: string, label: string, subtype = "action", extra: Record<string, unknown> = {}): BPNode {
   const data = { kind: "flow", subtype, label, note: "" }
@@ -90,29 +88,12 @@ describe("proposalDiff", () => {
   })
 })
 
-describe("Direktlink und Projektfilter", () => {
-  const board = (id: number, project_id: string | null): BoardListItem =>
-    ({ id, name: `Board ${id}`, project_id, created_at: "", updated_at: "", has_proposal: false })
-
-  it("liest nur eine saubere Board-ID aus dem Verweis", () => {
-    expect(linkedBoard("12")).toBe(12)
-    for (const bad of ["", " ", "abc", "1.5", "-3", "0", "12abc", "99999999999999999999", null, undefined]) {
-      expect(linkedBoard(bad), String(bad)).toBeNull()
-    }
-  })
-
-  it("filtert nach Projekt, „ohne Projekt“ und „alle“", () => {
-    const boards = [board(1, "p-a"), board(2, null), board(3, "p-b")]
-    expect(filterBoards(boards, "all").map((b) => b.id)).toEqual([1, 2, 3])
-    expect(filterBoards(boards, "none").map((b) => b.id)).toEqual([2])
-    expect(filterBoards(boards, "p-a").map((b) => b.id)).toEqual([1])
-  })
-
-  it("öffnet den Filter nur, wenn er das verlinkte Board ausblenden würde", () => {
-    expect(projectShowing(board(1, "p-a"), "p-a")).toBe("p-a")
-    expect(projectShowing(board(1, "p-a"), "all")).toBe("all")
-    expect(projectShowing(board(1, "p-a"), "p-b")).toBe("all")
-    expect(projectShowing(board(2, null), "none")).toBe("none")
-    expect(projectShowing(board(2, null), "p-a")).toBe("all")
+describe("previewNodes", () => {
+  it("hebt nur die neuen Bausteine hervor und ändert den Vorschlag nicht", () => {
+    const nodes = [node("alt", "Alt"), node("neu", "Neu", "action", { style: { width: 240 } })]
+    const shown = previewNodes(nodes, new Set(["neu"]))
+    expect(shown[0]).toBe(nodes[0])
+    expect(shown[1].style).toMatchObject({ width: 240, outline: expect.stringContaining("solid") })
+    expect(nodes[1].style).toEqual({ width: 240 })
   })
 })
