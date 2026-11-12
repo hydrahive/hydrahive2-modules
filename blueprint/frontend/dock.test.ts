@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { addMissingTools, clampWidth, DOCK_DEFAULT, DOCK_MIN, openChat, readDock, withTools } from "./dock"
+import {
+  addMissingTools, clampWidth, DOCK_DEFAULT, DOCK_MIN, openChat, readDock, startResize, withTools,
+  type ResizeTarget,
+} from "./dock"
 import type { ChatInfo, ChatStart } from "./types"
 
 describe("Chat neben dem Board: Breite und Zustand", () => {
@@ -122,5 +125,73 @@ describe("Chat neben dem Board: fehlende Werkzeuge ergänzen", () => {
     const blocked: ChatInfo = { agent: null, reason: "no_agent", can_start: false, tools_missing: [] }
     expect(await addMissingTools(7, blocked, api, describeProblem)).toEqual({ info: blocked, toolsError: null })
     expect(api.calls).toEqual([])
+  })
+})
+
+describe("Chat neben dem Board: Breite ziehen", () => {
+  type Listener = (event: { clientX: number; buttons: number }) => void
+
+  /** Ersatz für das Fenster: merkt sich die angemeldeten Zuhörer und löst Ereignisse aus. */
+  function fakeWindow(innerWidth = 1500) {
+    const listeners = new Map<string, Set<Listener>>()
+    const target = {
+      innerWidth,
+      addEventListener: (type: string, fn: Listener) => { listeners.set(type, (listeners.get(type) ?? new Set()).add(fn)) },
+      removeEventListener: (type: string, fn: Listener) => { listeners.get(type)?.delete(fn) },
+    }
+    return {
+      target: target as unknown as ResizeTarget,
+      fire: (type: string, clientX = 0, buttons = 1) =>
+        [...(listeners.get(type) ?? [])].forEach((fn) => fn({ clientX, buttons })),
+      count: () => [...listeners.values()].reduce((sum, set) => sum + set.size, 0),
+    }
+  }
+
+  function drag(startX = 1000, startWidth = 420) {
+    const win = fakeWindow()
+    const widths: number[] = []
+    let prevented = 0
+    startResize({ clientX: startX, preventDefault: () => { prevented += 1 } }, startWidth, win.target, (w) => widths.push(w))
+    return { win, widths, prevented: () => prevented }
+  }
+
+  it("folgt der Maus: nach links breiter, nach rechts schmaler, innerhalb der Grenzen", () => {
+    const { win, widths } = drag()
+    win.fire("pointermove", 900)
+    win.fire("pointermove", 1050)
+    win.fire("pointermove", 100)
+    win.fire("pointermove", 1400)
+    expect(widths).toEqual([520, 370, 675, DOCK_MIN])
+  })
+
+  it("verhindert, dass der Zug Text markiert", () => {
+    // Im Browser gesehen (12.11.2026): Ohne das markiert der Zug Text, und der nächste Zug zieht die Markierung.
+    expect(drag().prevented()).toBe(1)
+  })
+
+  it("endet beim Loslassen und räumt seine Zuhörer ab", () => {
+    const { win, widths } = drag()
+    win.fire("pointermove", 900)
+    win.fire("pointerup")
+    win.fire("pointermove", 500)
+    expect(widths).toEqual([520])
+    expect(win.count()).toBe(0)
+  })
+
+  it("endet auch, wenn der Browser den Zug abbricht (pointercancel), statt der Maus weiter zu folgen", () => {
+    const { win, widths } = drag()
+    win.fire("pointercancel")
+    win.fire("pointermove", 500)
+    expect(widths).toEqual([])
+    expect(win.count()).toBe(0)
+  })
+
+  it("endet, wenn sich die Maus ohne gedrückte Taste bewegt: Das Loslassen kam dann nicht an", () => {
+    const { win, widths } = drag()
+    win.fire("pointermove", 900)
+    win.fire("pointermove", 500, 0)
+    win.fire("pointermove", 400)
+    expect(widths).toEqual([520])
+    expect(win.count()).toBe(0)
   })
 })

@@ -94,3 +94,36 @@ export async function addMissingTools(
     return { info, toolsError: describe(problem) }
   }
 }
+
+interface ResizeEvent { clientX: number; buttons: number }
+type ResizeType = "pointermove" | "pointerup" | "pointercancel"
+/** Was der Ziehgriff vom Fenster braucht (window erfüllt das). */
+export interface ResizeTarget {
+  innerWidth: number
+  addEventListener: (type: ResizeType, listener: (event: ResizeEvent) => void) => void
+  removeEventListener: (type: ResizeType, listener: (event: ResizeEvent) => void) => void
+}
+
+/**
+ * Breite mit der Maus ziehen. Der Zug endet beim Loslassen, beim Abbruch durch den Browser (pointercancel)
+ * und sobald sich die Maus ohne gedrückte Taste bewegt – sonst folgte die Breite der Maus weiter.
+ * preventDefault am Anfang: Der Zug soll keinen Text markieren.
+ */
+export function startResize(
+  down: { clientX: number; preventDefault: () => void }, startWidth: number, target: ResizeTarget,
+  onWidth: (width: number) => void,
+): void {
+  down.preventDefault()
+  const stop = () => {
+    target.removeEventListener("pointermove", move)
+    target.removeEventListener("pointerup", stop)
+    target.removeEventListener("pointercancel", stop)
+  }
+  const move = (event: ResizeEvent) => {
+    if (event.buttons === 0) return stop()
+    onWidth(clampWidth(startWidth + (down.clientX - event.clientX), target.innerWidth))
+  }
+  target.addEventListener("pointermove", move)
+  target.addEventListener("pointerup", stop)
+  target.addEventListener("pointercancel", stop)
+}

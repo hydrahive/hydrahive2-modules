@@ -7,7 +7,7 @@ import { ChatPane } from "@/features/chat/ChatPane"
 import { blueprintApi } from "./api"
 import { errorText } from "./boardView"
 import { ChatNotice } from "./ChatNotice"
-import { addMissingTools, clampWidth, openChat } from "./dock"
+import { addMissingTools, openChat, startResize } from "./dock"
 import { RAND } from "./styles"
 import type { T } from "./texts.de"
 import type { ChatInfo, ChatStart } from "./types"
@@ -68,21 +68,14 @@ export function AgentDock({ boardId, projectId, width, t, onWidth, onClose }: Pr
     setTimeout(() => setCopied(""), 2000)
   }
 
-  const drag = (event: React.PointerEvent<HTMLDivElement>) => {
-    const startX = event.clientX
-    const startWidth = width
-    const move = (e: PointerEvent) => onWidth(clampWidth(startWidth + (startX - e.clientX), window.innerWidth))
-    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up) }
-    window.addEventListener("pointermove", move)
-    window.addEventListener("pointerup", up)
-  }
+  const drag = (event: React.PointerEvent<HTMLDivElement>) => startResize(event, width, window, onWidth)
 
   const waiting = !failed && started === null && (info === null || info.can_start)
   return (
     <aside aria-label={t("chat_title")} style={{ width }}
       className={`relative flex shrink-0 flex-col border-l ${RAND} bg-[rgb(var(--hh-s-box,21_28_43))]`}>
       <div onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label={t("chat_resize")}
-        className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize hover:bg-[#69d7ff]/30" />
+        className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize touch-none select-none hover:bg-[#69d7ff]/30" />
       <div className={`flex shrink-0 items-center gap-2 border-b ${RAND} px-3 py-1.5 text-sm text-[#e8eef8]`}>
         <MessagesSquare size={15} className="shrink-0 text-[#69d7ff]" aria-hidden />
         <span className="flex-1 truncate">{info?.agent?.name ?? t("chat_title")}</span>
