@@ -6,7 +6,7 @@ from typing import Any
 
 from hydrahive.tools.base import Tool, ToolContext, ToolResult
 
-from . import access, legacy_import, notes, render, store, task_link
+from . import access, board_link, legacy_import, notes, render, store, task_link
 from ._ids import resolve
 
 _DEFAULT_LIMIT = 20
@@ -145,8 +145,8 @@ async def _read(args: dict, ctx: ToolContext) -> ToolResult:
         return ToolResult.fail(error)
     pid = idea["project_id"]
     name = access.project_names(username, access.system_role(username)).get(pid, pid) if pid else None
-    task = task_link.info(username, idea)
-    return ToolResult.ok(render.render_idea(idea, notes.list_for(username, idea["id"]), name, task))
+    task, board = task_link.info(username, idea), board_link.info(username, idea)
+    return ToolResult.ok(render.render_idea(idea, notes.list_for(username, idea["id"]), name, task, board))
 
 
 LIST_TOOL = Tool(

@@ -1,7 +1,7 @@
 """Ideen-Modul (Modul-ID scratchpad): einzelne Ideen je Nutzer statt eines Freitexts.
 
 register(ctx) →
-  - Router      /api/modules/scratchpad (meta, ideas, Anmerkungen)
+  - Router      /api/modules/scratchpad (meta, ideas, Anmerkungen, Task und Board zur Idee)
   - Migrationen module_scratchpad_ideas, module_scratchpad_idea_notes
   - Werkzeuge   idea_list, idea_read, idea_write
                 read_scratchpad bleibt als veralteter Lese-Alias für ältere Agenten
