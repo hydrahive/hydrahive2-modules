@@ -1,6 +1,7 @@
 # Scratchpad wird Ideen: projektbezogenes Ideen-Management
 
-Task 954f2958. Wunsch Till 12.11.2026. Stand: Entwurf, noch nichts gebaut.
+Task 954f2958. Wunsch Till 12.11.2026. Stand 12.11.2026: Die Etappen 1 bis 3 sind gebaut und gemergt
+(PRs #368, #369, #370 und #373). Etappe 4 ist begonnen und pausiert, davon ist nichts gemergt.
 Bauplan mit Einzelschritten: `PLAN-IDEEN.md`.
 
 ## Problem

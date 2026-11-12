@@ -1,6 +1,7 @@
 # Plan: Scratchpad wird Ideen
 
-Gehört zu `SPEC-IDEEN.md` (Task 954f2958). Stand 12.11.2026: Entwurf, noch nichts gebaut.
+Gehört zu `SPEC-IDEEN.md` (Task 954f2958). Stand 12.11.2026: Die Etappen 1 bis 3 sind gebaut und gemergt
+(PRs #368, #369, #370 und #373). Etappe 4 ist begonnen und pausiert, davon ist nichts gemergt.
 
 ## Ziel
 
@@ -212,6 +213,10 @@ Fenster. Die Abnahme unten steht aus.
       Neuladen.
 
 ## Etappe 4: Schlagworte, Suche, Spalten (scratchpad 2.4.0)
+
+Stand 12.11.2026: pausiert, nichts gemergt. Speicher, Routen und Werkzeuge für Schlagworte und Suche
+sind gebaut und getestet, aber nur in einem Arbeitszweig. Die Oberfläche (Schlagworte, Suchfeld,
+Spaltenansicht) fehlt noch. Deshalb sind die Kästchen unten offen.
 
 - [ ] `migrations/002_tags.sql`, Tests und Code für Schlagworte (höchstens 10, Vorschläge).
 - [ ] Tests und Code für die Suche `q` über Kopfzeile und Beschreibung.
