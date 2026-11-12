@@ -135,3 +135,11 @@ def test_scheitert_ein_schritt_bleibt_nichts_halbes_zurueck(monkeypatch):
     with db() as conn:
         left = conn.execute(f"SELECT COUNT(*) FROM {TASKS_TABLE} WHERE title = ?", ("Ganz oder gar nicht",)).fetchone()[0]
     assert left == 0
+
+
+def test_idee_loeschen_laesst_den_task_stehen():
+    store, _, task_link = _mods()
+    idea = store.create("alice", title="Idee geht, Task bleibt")
+    linked = task_link.create("alice", idea["id"])
+    assert store.delete("alice", idea["id"]) is True
+    assert task_row(linked["task_id"])["title"] == "Idee geht, Task bleibt"
