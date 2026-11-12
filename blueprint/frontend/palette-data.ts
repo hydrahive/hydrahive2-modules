@@ -1,11 +1,14 @@
 /**
  * Baustein-Palette: alle verfügbaren Node-Typen, gruppiert in Layout (Seiten-
- * Design) und Flow (Funktionsplan). Jeder Eintrag definiert subtype, Anzeige-
- * Label, lucide-Icon-Name und ob ein Platzhalter-Feld sinnvoll ist.
+ * Design), Flow (Funktionsplan) und Aufbau (wie man es bauen könnte). Jeder
+ * Eintrag definiert subtype, Anzeige-Label, lucide-Icon-Name und ob ein
+ * Platzhalter-Feld sinnvoll ist. Dieselbe Liste führt backend/catalog.py.
  *
  * Client-seitig definiert (kein Backend) — das Board ist reines Skizzen-Werkzeug,
  * die Bedeutung interpretiert der Agent beim Lesen.
  */
+import type { NodeKind } from "./types"
+
 export interface PaletteItem {
   subtype: string
   label: string
@@ -14,7 +17,7 @@ export interface PaletteItem {
 }
 
 export interface PaletteGroup {
-  kind: "layout" | "flow"
+  kind: NodeKind
   label: string
   items: PaletteItem[]
 }
@@ -46,14 +49,25 @@ export const PALETTE: PaletteGroup[] = [
       { subtype: "note", label: "Notiz", icon: "StickyNote" },
     ],
   },
+  {
+    kind: "build",
+    label: "Aufbau",
+    items: [
+      { subtype: "module", label: "Modul", icon: "Package" },
+      { subtype: "interface", label: "Schnittstelle", icon: "Plug" },
+      { subtype: "database", label: "Datenbank / Tabelle", icon: "Table2" },
+      { subtype: "file", label: "Datei", icon: "FileCode" },
+      { subtype: "agent_tool", label: "Agent-Werkzeug", icon: "Wrench" },
+    ],
+  },
 ]
 
 // subtype → kind, für schnelles Nachschlagen.
-const KIND_OF: Record<string, "layout" | "flow"> = Object.fromEntries(
+const KIND_OF: Record<string, NodeKind> = Object.fromEntries(
   PALETTE.flatMap((g) => g.items.map((it) => [it.subtype, g.kind])),
 )
 
-export function kindOf(subtype: string): "layout" | "flow" {
+export function kindOf(subtype: string): NodeKind {
   return KIND_OF[subtype] ?? "layout"
 }
 

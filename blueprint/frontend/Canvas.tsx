@@ -3,7 +3,7 @@ import {
   ReactFlow, Background, Controls, MiniMap, BackgroundVariant, Panel,
   type Connection, type Edge, type OnNodesChange, type OnEdgesChange,
 } from "@xyflow/react"
-import { NODE_TYPES } from "./nodes"
+import { BUILD_DOT, NODE_TYPES } from "./nodes"
 import type { BPNode } from "./types"
 
 interface Props {
@@ -38,7 +38,7 @@ export function Canvas(p: Props) {
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.05)" />
         <Controls />
-        <MiniMap nodeColor={(n) => (n.type === "layoutNode" ? "#71717a" : "#0ea5e9")} />
+        <MiniMap nodeColor={(n) => (n.type === "layoutNode" ? "#71717a" : n.type === "buildNode" ? BUILD_DOT : "#0ea5e9")} />
         {p.nodes.length === 0 && (
           <Panel position="top-center" style={{ marginTop: 48 }}>
             <div className="pointer-events-none text-center">

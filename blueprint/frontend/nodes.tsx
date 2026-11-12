@@ -1,15 +1,17 @@
 /**
- * Custom-Node-Komponenten für Blueprint. Zwei Familien:
+ * Custom-Node-Komponenten für Blueprint. Drei Familien:
  *  - Layout-Nodes (kind="layout"): neutral/zinc, zeigen wie eine Seite aussehen
  *    soll. Andockpunkte oben/unten (vertikaler Fluss von Layout-Hierarchie).
  *  - Flow-Nodes (kind="flow"): bunt nach Rolle, zeigen Abläufe. Andockpunkte
  *    links/rechts (horizontaler Datenfluss).
- * Beide teilen sich ein Board und sind frei verbindbar (jeder Handle an jeden).
+ *  - Aufbau-Nodes (kind="build"): eine eigene Farbe, zeigen, woraus es gebaut
+ *    werden könnte. Andockpunkte links/rechts.
+ * Alle teilen sich ein Board und sind frei verbindbar (jeder Handle an jeden).
  */
 import { Handle, NodeResizer, Position, type NodeTypes } from "@xyflow/react"
 import { moduleIcon } from "@/shared/module-icon"
 import { iconOf, labelOf } from "./palette-data"
-import type { BlueprintNodeData } from "./types"
+import type { BlueprintNodeData, NodeKind } from "./types"
 
 interface NodeProps {
   data: BlueprintNodeData
@@ -110,12 +112,31 @@ export function FlowNodeComp({ data, selected }: NodeProps) {
   )
 }
 
+export const BUILD_DOT = "#14b8a6"
+
+// Aufbau-Node: eine Farbe für alle Arten, Handles links (Input) + rechts (Output).
+export function BuildNodeComp({ data, selected }: NodeProps) {
+  return (
+    <div className="h-full w-full">
+      <Handle type="target" position={Position.Left} id="in"
+        style={{ ...DOT, background: BUILD_DOT, border: `2px solid ${BUILD_DOT}` }} />
+      <Shell data={data} selected={selected} resizeColor={BUILD_DOT}
+        accent="border-teal-500/60 bg-teal-950/40 text-teal-200" />
+      <Handle type="source" position={Position.Right} id="out"
+        style={{ ...DOT, background: BUILD_DOT, border: `2px solid ${BUILD_DOT}` }} />
+    </div>
+  )
+}
+
 export const NODE_TYPES: NodeTypes = {
   layoutNode: LayoutNodeComp as never,
   flowNode: FlowNodeComp as never,
+  buildNode: BuildNodeComp as never,
 }
 
-// subtype → ReactFlow node-type
-export function nodeTypeFor(kind: "layout" | "flow"): string {
-  return kind === "layout" ? "layoutNode" : "flowNode"
+const NODE_TYPE_OF: Record<NodeKind, string> = { layout: "layoutNode", flow: "flowNode", build: "buildNode" }
+
+// Gruppe → ReactFlow node-type
+export function nodeTypeFor(kind: NodeKind): string {
+  return NODE_TYPE_OF[kind] ?? "flowNode"
 }

@@ -1,9 +1,12 @@
 import type { Edge, Node } from "@xyflow/react"
 
-// kind: "layout" = Seiten-Design-Baustein, "flow" = Funktionsplan-Baustein.
-// Beide leben auf demselben Board und dürfen frei verbunden werden.
+// kind: "layout" = Seiten-Design-Baustein, "flow" = Funktionsplan-Baustein,
+// "build" = Aufbau-Baustein (wie man es bauen könnte). Alle leben auf demselben
+// Board und dürfen frei verbunden werden.
+export type NodeKind = "layout" | "flow" | "build"
+
 export interface BlueprintNodeData {
-  kind: "layout" | "flow"
+  kind: NodeKind
   subtype: string
   label: string
   note: string

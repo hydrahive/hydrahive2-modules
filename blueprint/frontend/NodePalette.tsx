@@ -1,5 +1,12 @@
 import { moduleIcon } from "@/shared/module-icon"
 import { PALETTE } from "./palette-data"
+import type { NodeKind } from "./types"
+
+const ITEM_STYLE: Record<NodeKind, string> = {
+  layout: "border-[rgb(var(--hh-s-rand,42_54_75)/0.6)] bg-[rgb(var(--hh-s-innen,17_24_39)/0.5)] text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54)/0.6)]",
+  flow: "border-sky-800/40 bg-sky-950/30 text-sky-200 hover:bg-sky-900/40",
+  build: "border-teal-800/40 bg-teal-950/30 text-teal-200 hover:bg-teal-900/40",
+}
 
 /** Linke Leiste: Bausteine per Drag aufs Canvas ziehen. */
 export function NodePalette() {
@@ -23,11 +30,7 @@ export function NodePalette() {
                   key={it.subtype}
                   draggable
                   onDragStart={(e) => onDragStart(e, it.subtype)}
-                  className={`flex cursor-grab items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors active:cursor-grabbing ${
-                    group.kind === "layout"
-                      ? "border-[rgb(var(--hh-s-rand,42_54_75)/0.6)] bg-[rgb(var(--hh-s-innen,17_24_39)/0.5)] text-[#c8d2df] hover:bg-[rgb(var(--hh-s-hebung,27_37_54)/0.6)]"
-                      : "border-sky-800/40 bg-sky-950/30 text-sky-200 hover:bg-sky-900/40"
-                  }`}
+                  className={`flex cursor-grab items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs transition-colors active:cursor-grabbing ${ITEM_STYLE[group.kind]}`}
                 >
                   <Icon size={13} className="shrink-0" />
                   <span className="truncate">{it.label}</span>
