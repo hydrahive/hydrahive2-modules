@@ -1,14 +1,10 @@
 import { Trash2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { Task, TaskStatus, TaskPriority } from "../types"
 import { TaskHistory } from "./TaskHistory"
 import { TaskSource } from "./TaskSource"
 
-const STATUS_LABEL: Record<TaskStatus, string> = {
-  open:        "Offen",
-  in_progress: "In Arbeit",
-  done:        "Erledigt",
-  cancelled:   "Abgebrochen",
-}
+const STATUSES: TaskStatus[] = ["open", "in_progress", "done", "cancelled"]
 
 const STATUS_COLOR: Record<TaskStatus, string> = {
   open:        "text-[#c8d2df]",
@@ -34,6 +30,7 @@ interface TaskRowProps {
 }
 
 export function TaskRow({ task, onStatusChange, onDelete }: TaskRowProps) {
+  const { t } = useTranslation("tasks")
   const isDone = task.status === "done" || task.status === "cancelled"
 
   return (
@@ -45,7 +42,7 @@ export function TaskRow({ task, onStatusChange, onDelete }: TaskRowProps) {
             ? "bg-emerald-500/20 border-emerald-500/40"
             : "border-[rgb(var(--hh-s-rand,42_54_75))] hover:border-[#69d7ff]/50 hover:bg-[#69d7ff]/10"
           }`}
-        title={isDone ? "Wieder öffnen" : "Als erledigt markieren"}
+        title={isDone ? t("reopen") : t("mark_done")}
       >
         {isDone && <span className="flex items-center justify-center w-full h-full text-[8px] text-emerald-400">✓</span>}
       </button>
@@ -74,15 +71,15 @@ export function TaskRow({ task, onStatusChange, onDelete }: TaskRowProps) {
             onClick={(e) => e.stopPropagation()}
             className={`bg-transparent border-0 text-[10px] focus:outline-none cursor-pointer ${STATUS_COLOR[task.status]}`}
           >
-            {(Object.entries(STATUS_LABEL) as [TaskStatus, string][]).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
+            {STATUSES.map((status) => (
+              <option key={status} value={status}>{t(`status_${status}`)}</option>
             ))}
           </select>
         </div>
         <button
           onClick={() => onDelete(task.id)}
           className="text-[#9aa7bc] hover:text-rose-400 transition-colors"
-          title="Task löschen"
+          title={t("delete")}
         >
           <Trash2 size={11} />
         </button>
