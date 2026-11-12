@@ -17,6 +17,8 @@ export const ideasApi = {
     api.post<Idea>(`${BASE}/ideas`, data),
   update: (id: string, changes: IdeaChanges) =>
     api.patch<Idea>(`${BASE}/ideas/${encodeURIComponent(id)}`, changes),
+  /** Aus der Idee einen Task machen. Liefert die Idee mit Task-Verweis und neuem Status. */
+  createTask: (id: string) => api.post<Idea>(`${BASE}/ideas/${encodeURIComponent(id)}/task`, {}),
   remove: (id: string) => api.delete<{ removed: boolean }>(`${BASE}/ideas/${encodeURIComponent(id)}`),
   removeNote: (id: string, noteId: number) =>
     api.delete<{ removed: boolean }>(`${BASE}/ideas/${encodeURIComponent(id)}/notes/${noteId}`),

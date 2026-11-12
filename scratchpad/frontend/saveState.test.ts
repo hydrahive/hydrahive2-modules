@@ -78,6 +78,8 @@ describe("errorText", () => {
     expect(errorText(failure(409, "ideas_full"), t)).toBe(de.full_error)
     expect(errorText(failure(404, "idea_not_found"), t)).toBe(de.gone)
     expect(errorText(failure(422, "title_too_long"), t)).toBe(de.too_long)
+    expect(errorText(failure(409, "task_already_linked"), t)).toBe(de.task_linked_error)
+    expect(errorText(failure(409, "tasks_not_installed"), t)).toBe(de.tasks_missing_error)
   })
 
   it("nennt sonst die Meldung des Servers", () => {

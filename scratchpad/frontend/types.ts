@@ -36,9 +36,19 @@ export interface IdeaNote {
   created_at: string
 }
 
+/** Der aus der Idee entstandene Task. missing: gelöscht, fremd oder Tasks-Modul fehlt. */
+export interface IdeaTaskRef {
+  id: string
+  short_id: string
+  title: string | null
+  status: string | null
+  missing: boolean
+}
+
 export interface Idea extends IdeaBase {
   body: string
   notes: IdeaNote[]
+  task: IdeaTaskRef | null
 }
 
 export interface ProjectRef {
