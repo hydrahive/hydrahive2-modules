@@ -174,6 +174,13 @@ describe("BoardSidebar", () => {
     expect(html).not.toContain("Board 1")
   })
 
+  it("der Projektfilter der Liste heißt anders als die Projekt-Auswahl am Board", () => {
+    // Im Browser gesehen (12.11.2026): Beide Felder hießen „Projekt“ und ließen sich nicht unterscheiden.
+    const html = sidebar([board(1)])
+    expect(html).toContain(`<select aria-label="${de.project_filter_label}"`)
+    expect(html).not.toContain(`aria-label="${de.project_label}"`)
+  })
+
   it("zeigt nur die Boards des gewählten Projekts", () => {
     const html = sidebar([board(1, { project_id: "p-alpha" }), board(2)], "p-alpha")
     expect(html).toContain("Board 1")

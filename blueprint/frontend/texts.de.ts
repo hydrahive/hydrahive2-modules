@@ -18,6 +18,7 @@ export const de = {
   no_project: "Ohne Projekt",
   unknown_project: "Unbekanntes Projekt",
   project_label: "Projekt",
+  project_filter_label: "Boards nach Projekt filtern",
   has_proposal: "Vorschlag des Agenten offen",
   status_loading: "lädt…",
   status_saved: "gespeichert",

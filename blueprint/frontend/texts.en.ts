@@ -19,6 +19,7 @@ export const en: Record<TextKey, string> = {
   no_project: "No project",
   unknown_project: "Unknown project",
   project_label: "Project",
+  project_filter_label: "Filter boards by project",
   has_proposal: "Agent proposal waiting",
   status_loading: "loading…",
   status_saved: "saved",

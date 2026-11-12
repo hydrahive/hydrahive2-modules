@@ -51,8 +51,8 @@ export function BoardSidebar({ boards, projects, project, activeId, t, onProject
 
       {projects.length > 0 && (
         <div className={`border-b ${RAND} p-2`}>
-          <select value={project} onChange={(e) => onProject(e.target.value)} aria-label={t("project_label")}
-            className={SELECT}>
+          <select value={project} onChange={(e) => onProject(e.target.value)}
+            aria-label={t("project_filter_label")} title={t("project_filter_label")} className={SELECT}>
             <option value="all">{t("all_projects")}</option>
             <option value="none">{t("no_project")}</option>
             {projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}

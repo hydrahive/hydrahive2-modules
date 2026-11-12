@@ -60,6 +60,12 @@ describe("Chat neben dem Board im Editor", () => {
     Object.assign(state, { dock: { open: false, width: 420 }, board: BOARD, selectedNode: undefined, preview: false })
   })
 
+  it("die Projekt-Auswahl am Board trägt ihren eigenen Namen", () => {
+    const html = editor()
+    expect(html).toContain(`aria-label="${de.project_label}"`)
+    expect(html).not.toContain(`aria-label="${de.project_filter_label}"`)
+  })
+
   it("ohne offenen Chat steht kein Dock da, die rechte Spalte bleibt wie bisher", () => {
     const html = editor()
     expect(html).not.toContain('data-part="dock"')

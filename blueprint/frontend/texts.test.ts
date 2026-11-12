@@ -33,6 +33,14 @@ describe("Texte des Blueprint-Moduls", () => {
     expect(abweichend).toEqual([])
   })
 
+  it("Projektfilter und Projekt am Board heißen in beiden Sprachen verschieden", () => {
+    for (const texts of [de, en]) {
+      // Ein fehlender Schlüssel wäre auch „verschieden“: deshalb zuerst prüfen, dass es den Text gibt.
+      expect(texts.project_filter_label).toEqual(expect.stringMatching(/\S/))
+      expect(texts.project_filter_label).not.toBe(texts.project_label)
+    }
+  })
+
   it("jeder Zustand der Zeichenfläche und jede Herkunft einer Fassung hat eine Beschriftung", () => {
     for (const status of ["loading", "saved", "saving", "save_error", "conflict", "load_error", "unreadable", "gone"]) {
       expect(de).toHaveProperty(`status_${status}`)
