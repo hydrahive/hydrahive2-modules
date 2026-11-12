@@ -61,7 +61,8 @@ def test_fremdes_und_unbekanntes_projekt_sehen_gleich_aus(client, auth_headers):
 
 def test_projekt_am_board_aendern_und_entfernen(client, auth_headers):
     bid = _board(client, auth_headers, 0)
-    assert client.put(f"{BASE}/{bid}", json={"project_id": PROJECT_A}, headers=auth_headers).json()["project_id"] == PROJECT_A
+    moved = client.put(f"{BASE}/{bid}", json={"project_id": PROJECT_A}, headers=auth_headers).json()
+    assert moved["project_id"] == PROJECT_A
     # Ohne Angabe bleibt das Projekt stehen, mit null wird es entfernt.
     assert client.put(f"{BASE}/{bid}", json={"name": "Neu"}, headers=auth_headers).json()["project_id"] == PROJECT_A
     assert client.put(f"{BASE}/{bid}", json={"project_id": None}, headers=auth_headers).json()["project_id"] is None

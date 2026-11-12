@@ -76,7 +76,11 @@ export function BoardSidebar({ boards, projects, project, activeId, t, onProject
 
       <div className="flex-1 overflow-y-auto p-2">
         {boards.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-4 text-center"><img src={leerBild} alt="" loading="lazy" draggable={false} className="mx-auto h-20 w-20 select-none object-contain" /><p className="text-xs text-[#9aa7bc]">{t("boards_empty")}</p></div>
+          <div className="flex flex-col items-center gap-2 py-4 text-center">
+            <img src={leerBild} alt="" loading="lazy" draggable={false}
+              className="mx-auto h-20 w-20 select-none object-contain" />
+            <p className="text-xs text-[#9aa7bc]">{t("boards_empty")}</p>
+          </div>
         ) : shown.length === 0 ? (
           <div className="space-y-2 py-4 text-center text-xs text-[#9aa7bc]">
             <p>{t("boards_empty_filtered")}</p>
