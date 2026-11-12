@@ -106,7 +106,7 @@ def entries(text: str) -> list[tuple[str, str]]:
 
 
 def _idea_id(username: str, zone: str, index: int, title: str, body: str) -> str:
-    digest = hashlib.sha256(f"{title}\n{body}".encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(f"{title}\n{body}".encode()).hexdigest()
     return str(uuid.uuid5(_NAMESPACE, f"{username}\n{zone}\n{index}\n{digest}"))
 
 

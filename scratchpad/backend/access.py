@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import re
 
-from hydrahive.projects import _members_model
 from hydrahive.projects import _config_io as projects
+from hydrahive.projects import _members_model
 
 from .store import IdeaError
 

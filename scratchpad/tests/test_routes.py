@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from helpers import MOD_PREFIX, PROJECT_A, PROJECT_B
 
 BASE = f"{MOD_PREFIX}/ideas"
@@ -70,7 +69,7 @@ def test_liste_mit_filter_und_zaehlung(client, alice):
     assert [i["title"] for i in data["ideas"]] == ["A", "Frei"]
     assert data["counts"]["new"] == 1 and data["counts"]["done"] == 1
     assert "body" not in data["ideas"][0] and "body_preview" in data["ideas"][0]
-    only = lambda query: [i["title"] for i in client.get(f"{BASE}?{query}", headers=alice).json()["ideas"]]  # noqa: E731
+    only = lambda query: [i["title"] for i in client.get(f"{BASE}?{query}", headers=alice).json()["ideas"]]
     assert only(f"project_id={PROJECT_A}") == ["A"]
     assert only("project_id=none") == ["Frei"]
     assert only("status=open") == ["Frei"]

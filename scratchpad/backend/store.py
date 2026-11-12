@@ -7,7 +7,7 @@ Nutzer auf das Projekt zugreifen darf, prüft ``access.py`` vor dem Schreiben.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from hydrahive.db.connection import db
@@ -41,7 +41,7 @@ class IdeaError(ValueError):
 
 def now() -> str:
     """UTC mit Mikrosekunden, damit „neueste Änderung zuerst“ eindeutig sortiert."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def clean_title(title: Any) -> str:

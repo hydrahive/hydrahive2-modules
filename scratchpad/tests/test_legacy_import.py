@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from legacy_samples import AGENT_SAMPLE, USER_SAMPLE
 
 

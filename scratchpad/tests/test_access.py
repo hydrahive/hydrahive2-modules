@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-
 from helpers import PROJECT_A, PROJECT_B
 
 
