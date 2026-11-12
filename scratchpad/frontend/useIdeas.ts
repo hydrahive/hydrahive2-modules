@@ -12,6 +12,7 @@ export function useIdeas() {
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
   const [tasksInstalled, setTasksInstalled] = useState(false)
+  const [blueprintInstalled, setBlueprintInstalled] = useState(false)
   const wanted = useRef<string | null>(null)
 
   const reload = useCallback(async () => {
@@ -32,7 +33,10 @@ export function useIdeas() {
     projectsApi.list()
       .then((list) => setProjects(list.map((project) => ({ id: project.id, name: project.name }))))
       .catch(() => setProjects([]))
-    ideasApi.meta().then((meta) => setTasksInstalled(meta.tasks_installed)).catch(() => setTasksInstalled(false))
+    // Ohne Stammdaten gibt es keine Knöpfe für Task und Board; alles andere geht weiter.
+    ideasApi.meta()
+      .then((meta) => { setTasksInstalled(meta.tasks_installed); setBlueprintInstalled(meta.blueprint_installed) })
+      .catch(() => { setTasksInstalled(false); setBlueprintInstalled(false) })
   }, [reload])
 
   const show = useCallback((idea: Idea) => {
@@ -73,6 +77,13 @@ export function useIdeas() {
     return idea
   }, [])
 
+  const createBoard = useCallback(async (id: string) => {
+    const idea = await ideasApi.createBoard(id)
+    setIdeas((current) => upsertIdea(current, toListItem(idea)))
+    if (wanted.current === id) setActive(idea)
+    return idea
+  }, [])
+
   /** Nur aus der Liste nehmen. Eine geöffnete Idee bleibt stehen, damit ihr Text nicht verloren geht. */
   const forget = useCallback((id: string) => {
     setIdeas((current) => current.filter((idea) => idea.id !== id))
@@ -95,7 +106,7 @@ export function useIdeas() {
   }, [])
 
   return {
-    ideas, projects, active, loading, loadFailed, tasksInstalled,
-    reload, select, create, update, createTask, remove, removeNote, forget,
+    ideas, projects, active, loading, loadFailed, tasksInstalled, blueprintInstalled,
+    reload, select, create, update, createTask, createBoard, remove, removeNote, forget,
   }
 }

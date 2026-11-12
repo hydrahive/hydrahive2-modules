@@ -19,6 +19,8 @@ export const ideasApi = {
     api.patch<Idea>(`${BASE}/ideas/${encodeURIComponent(id)}`, changes),
   /** Aus der Idee einen Task machen. Liefert die Idee mit Task-Verweis und neuem Status. */
   createTask: (id: string) => api.post<Idea>(`${BASE}/ideas/${encodeURIComponent(id)}/task`, {}),
+  /** Zur Idee ein Blueprint-Board anlegen. Gibt es schon eines, kommt die Idee mit diesem Board zurück. */
+  createBoard: (id: string) => api.post<Idea>(`${BASE}/ideas/${encodeURIComponent(id)}/board`, {}),
   remove: (id: string) => api.delete<{ removed: boolean }>(`${BASE}/ideas/${encodeURIComponent(id)}`),
   removeNote: (id: string, noteId: number) =>
     api.delete<{ removed: boolean }>(`${BASE}/ideas/${encodeURIComponent(id)}/notes/${noteId}`),

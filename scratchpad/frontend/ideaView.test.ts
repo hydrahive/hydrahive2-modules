@@ -97,6 +97,7 @@ describe("toListItem", () => {
       ...item("a"), body: "Erste Zeile\n\n  zweite   Zeile " + "x".repeat(300),
       notes: [{ id: 1, idea_id: "a", author: "agent", agent_name: "Buddy", body: "Hinweis", created_at: "" }],
       task: { id: "t-1", short_id: "t-1", title: "Task", status: "open", missing: false },
+      board: { id: 7, name: "Board", has_proposal: true, missing: false }, board_id: 7,
     }
     const row = toListItem(idea)
     expect(row.note_count).toBe(1)
@@ -105,6 +106,8 @@ describe("toListItem", () => {
     expect("body" in row).toBe(false)
     expect("notes" in row).toBe(false)
     expect("task" in row).toBe(false)
+    expect("board" in row).toBe(false)
+    expect(row.board_id).toBe(7)  // der Verweis selbst bleibt, die Liste zeigt damit ihr Symbol
   })
 })
 

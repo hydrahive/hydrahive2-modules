@@ -1,10 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server"
+import { MemoryRouter } from "react-router-dom"
 import { describe, expect, it } from "vitest"
+import { IdeaBoard } from "./components/IdeaBoard"
 import { IdeaList } from "./components/IdeaList"
 import { IdeaNotes } from "./components/IdeaNotes"
 import { IdeaTask } from "./components/IdeaTask"
 import { de, type T } from "./texts.de"
-import type { IdeaListItem, IdeaNote, IdeaTaskRef, ProjectFilter, StatusFilter } from "./types"
+import type { IdeaBoardRef, IdeaListItem, IdeaNote, IdeaTaskRef, ProjectFilter, StatusFilter } from "./types"
 
 const t: T = (key, vars) => de[key].replace(/\{\{(\w+)\}\}/g, (_match, name: string) => String(vars?.[name] ?? ""))
 const PROJECTS = [{ id: "p-alpha", name: "Alpha" }]
@@ -143,6 +145,63 @@ describe("IdeaTask", () => {
 
   it("gibt den Tasktitel als Text aus, nicht als HTML", () => {
     const html = view(ref({ title: "<img src=x onerror=alert(1)>" }))
+    expect(html).toContain("&lt;img src=x")
+    expect(html).not.toContain("<img src=x")
+  })
+})
+
+describe("IdeaBoard", () => {
+  const ref = (over: Partial<IdeaBoardRef> = {}): IdeaBoardRef =>
+    ({ id: 7, name: "Admin-Seite", has_proposal: false, missing: false, ...over })
+  const view = (board: IdeaBoardRef | null, installed = true, busy = false) =>
+    renderToStaticMarkup(
+      <MemoryRouter><IdeaBoard board={board} installed={installed} busy={busy} t={t} onCreate={noop} /></MemoryRouter>,
+    )
+
+  it("bietet ohne Board den Knopf an und sagt, was er tut", () => {
+    const html = view(null)
+    expect(html).toContain(`${de.board_create}</button>`)
+    expect(html).toContain(de.board_hint)
+    expect(html).not.toContain("href=")
+  })
+
+  it("zeigt ohne Blueprint-Modul nichts", () => {
+    expect(view(null, false)).toBe("")
+  })
+
+  it("verlinkt das Board und bietet keinen Knopf mehr an", () => {
+    const html = view(ref())
+    expect(html).toContain('href="/blueprint?board=7"')
+    expect(html).toContain(de.board_open)
+    expect(html).toContain("Admin-Seite")
+    expect(html).not.toContain(de.board_create)
+    expect(html).not.toContain(de.board_proposal)
+  })
+
+  it("sagt, wenn ein Vorschlag des Agenten offen liegt", () => {
+    expect(view(ref({ has_proposal: true }))).toContain(de.board_proposal)
+  })
+
+  it("meldet ein gelöschtes Board und bietet den Knopf wieder an", () => {
+    const html = view(ref({ name: null, missing: true }))
+    expect(html).toContain(de.board_missing)
+    expect(html).toContain(`${de.board_create}</button>`)
+    expect(html).not.toContain("href=")
+  })
+
+  it("bietet bei gelöschtem Board ohne Blueprint-Modul keinen Knopf an", () => {
+    const html = view(ref({ name: null, missing: true }), false)
+    expect(html).toContain(de.board_missing)
+    expect(html).not.toContain(de.board_create)
+  })
+
+  it("sperrt den Knopf, solange das Board angelegt wird", () => {
+    expect(view(null, true, true)).toContain('disabled=""')
+    expect(view(null, true, false)).not.toContain('disabled=""')
+  })
+
+  it("gibt den Board-Namen als Text aus, nicht als HTML", () => {
+    const html = view(ref({ name: "<img src=x onerror=alert(1)>" }))
     expect(html).toContain("&lt;img src=x")
     expect(html).not.toContain("<img src=x")
   })
