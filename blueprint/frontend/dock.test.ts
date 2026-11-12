@@ -13,6 +13,13 @@ describe("Chat neben dem Board: Breite und Zustand", () => {
     expect(clampWidth(Number.NaN, 1500)).toBe(DOCK_DEFAULT)
   })
 
+  it("das Mindestmaß lässt dem Eingabefeld des Chats Platz", () => {
+    // Im Browser gemessen (12.11.2026): Links vom Eingabefeld stehen vier Knöpfe der Chatansicht. Bei 320 px
+    // blieben dem Feld 94 px, bei 360 px sind es 134 px. Game Studio und Storyteller nehmen ebenfalls 360.
+    expect(DOCK_MIN).toBe(360)
+    expect(DOCK_DEFAULT).toBeGreaterThan(DOCK_MIN)
+  })
+
   it("lässt der Zeichenfläche auf schmalen Fenstern Platz, unterschreitet das Mindestmaß aber nie", () => {
     expect(clampWidth(DOCK_DEFAULT, 800)).toBe(360)
     expect(clampWidth(DOCK_DEFAULT, 500)).toBe(DOCK_MIN)

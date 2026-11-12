@@ -2,7 +2,8 @@
 import type { ChatInfo, ChatStart } from "./types"
 
 export const DOCK_KEY = "blueprint.agentDock"
-export const DOCK_MIN = 320
+// 360 wie bei Game Studio und Storyteller: Darunter bleibt dem Eingabefeld der Chatansicht zu wenig Platz.
+export const DOCK_MIN = 360
 export const DOCK_DEFAULT = 420
 export interface DockState { open: boolean; width: number }
 
