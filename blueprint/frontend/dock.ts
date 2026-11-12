@@ -14,6 +14,21 @@ export function clampWidth(width: number, viewport: number): number {
   return Math.min(max, Math.max(DOCK_MIN, Math.round(width)))
 }
 
+// Palette (176 px) plus mindestens 304 px Zeichenfläche: So viel bleibt dem Board neben dem Chat.
+export const BOARD_MIN = 480
+export interface DockLayout { over: boolean; width: number }
+
+/**
+ * Wie der Chat steht. space: Breite der Zeile aus Board und Chat (null vor der ersten Messung),
+ * panel: Breite der rechten Spalte, wenn sie gezeigt wird. Der Chat gibt nach, damit das Board sein
+ * Mindestmaß behält. Reicht der Platz nicht für beide Mindestmaße, liegt der Chat über dem Board.
+ */
+export function dockLayout(wanted: number, space: number | null, panel = 0): DockLayout {
+  if (space === null) return { over: false, width: wanted }
+  if (space < BOARD_MIN + DOCK_MIN) return { over: true, width: space }
+  return { over: false, width: Math.max(DOCK_MIN, Math.min(wanted, space - BOARD_MIN - panel)) }
+}
+
 export function readDock(raw: string | null, viewport: number): DockState {
   try {
     const value = JSON.parse(raw ?? "") as Partial<DockState>

@@ -19,15 +19,15 @@ describe("Höhe der Zeichenfläche", () => {
     expect(column).toEqual(expect.arrayContaining(["flex", "flex-col", "flex-1", "min-h-0", "min-w-0"]))
   })
 
-  it("die Zeile aus Editor und Chat daneben lässt nichts überstehen", () => {
-    const row = classesOf(read("BoardEditor.tsx"), "return (\n    <div className=\"flex ")
-    expect(row).toEqual(expect.arrayContaining(["flex", "flex-1", "min-h-0", "min-w-0"]))
+  it("die Zeile mit Palette, Zeichenfläche, rechter Spalte und Chat lässt nichts überstehen", () => {
+    const row = classesOf(read("BoardEditor.tsx"), "className=\"flex min-h-0 flex-1 overflow-hidden\"")
+    expect(row).toEqual(expect.arrayContaining(["flex", "min-h-0", "flex-1", "overflow-hidden"]))
     expect(row).not.toContain("flex-col")
   })
 
-  it("die Zeile mit Palette, Zeichenfläche und rechter Spalte ebenso", () => {
-    const row = classesOf(read("BoardEditor.tsx"), "<div className=\"flex min-h-0 flex-1 overflow-hidden\">")
-    expect(row).toEqual(expect.arrayContaining(["min-h-0", "flex-1", "overflow-hidden"]))
+  it("der Editor ist die Wurzel: Die Kopfzeile reicht über die ganze Breite, der Chat steht darunter", () => {
+    const root = classesOf(read("BoardEditor.tsx"), "return (\n    <div className=\"flex ")
+    expect(root).toEqual(expect.arrayContaining(["flex", "flex-col", "flex-1", "min-h-0", "min-w-0"]))
   })
 
   it("der Behälter der Seite neben der Board-Liste lässt nichts überstehen", () => {

@@ -17,6 +17,8 @@ interface Props {
   /** Projekt des Boards. Der Editor setzt je Board und Projekt einen eigenen key: Der Zustand beginnt dann neu. */
   projectId: string | null
   width: number
+  /** Kein Platz neben dem Board: Der Chat füllt die Zeile, ohne Griff zum Ziehen. */
+  over: boolean
   t: T
   onWidth: (width: number) => void
   onClose: () => void
@@ -26,7 +28,7 @@ interface Props {
 const PANE = "min-h-0 flex-1 [&_h2]:whitespace-normal [&_div:has(>h2)]:min-w-[12rem] [&_div:has(>div>h2)]:flex-wrap " +
   "[&_div:has(>div>h2)>div:last-child]:shrink [&_div:has(>div>h2)>div:last-child]:flex-wrap"
 
-export function AgentDock({ boardId, projectId, width, t, onWidth, onClose }: Props) {
+export function AgentDock({ boardId, projectId, width, over, t, onWidth, onClose }: Props) {
   const isAdmin = useAuthStore((state) => state.role) === "admin"
   const [info, setInfo] = useState<ChatInfo | null>(null)
   const [started, setStarted] = useState<ChatStart | null>(null)
@@ -72,10 +74,13 @@ export function AgentDock({ boardId, projectId, width, t, onWidth, onClose }: Pr
 
   const waiting = !failed && started === null && (info === null || info.can_start)
   return (
-    <aside aria-label={t("chat_title")} style={{ width }}
-      className={`relative flex shrink-0 flex-col border-l ${RAND} bg-[rgb(var(--hh-s-box,21_28_43))]`}>
-      <div onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label={t("chat_resize")}
-        className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize touch-none select-none hover:bg-[#69d7ff]/30" />
+    <aside aria-label={t("chat_title")} style={over ? undefined : { width }}
+      className={`flex flex-col bg-[rgb(var(--hh-s-box,21_28_43))] ` +
+        (over ? "min-w-0 flex-1" : `relative shrink-0 border-l ${RAND}`)}>
+      {!over && (
+        <div onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label={t("chat_resize")}
+          className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize touch-none select-none hover:bg-[#69d7ff]/30" />
+      )}
       <div className={`flex shrink-0 items-center gap-2 border-b ${RAND} px-3 py-1.5 text-sm text-[#e8eef8]`}>
         <MessagesSquare size={15} className="shrink-0 text-[#69d7ff]" aria-hidden />
         <span className="flex-1 truncate">{info?.agent?.name ?? t("chat_title")}</span>

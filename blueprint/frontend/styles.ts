@@ -24,4 +24,6 @@ export const BUTTON_PRIMARY =
 
 export const ERROR_BOX = "rounded-md border border-rose-400/40 bg-rose-400/10 px-2.5 py-1.5 text-xs text-rose-100"
 
+/** Breite der rechten Spalte in px (w-64). dockLayout rechnet damit. */
+export const SIDE_PANEL_WIDTH = 256
 export const SIDE_PANEL = `w-64 shrink-0 border-l ${RAND} bg-[rgb(var(--hh-s-tief,13_20_32)/0.4)]`

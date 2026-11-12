@@ -1,21 +1,22 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { ReactFlowProvider, useEdgesState, useNodesState } from "@xyflow/react"
-import { Copy, History, MessagesSquare } from "lucide-react"
 import { AgentDock } from "./AgentDock"
 import { blueprintApi } from "./api"
 import { previewNodes } from "./boardGraph"
 import { boardText } from "./boardText"
-import { loadDock, saveDock, type DockState } from "./dock"
+import { dockLayout, loadDock, saveDock, type DockState } from "./dock"
+import { EditorActions } from "./EditorActions"
 import { errorText } from "./boardView"
 import { useBoard } from "./useBoard"
 import { useProposal, useVersions } from "./useProposal"
+import { useWidth } from "./useWidth"
 import { NodePalette } from "./NodePalette"
 import { Canvas } from "./Canvas"
 import { PropertiesPanel } from "./PropertiesPanel"
 import { ProposalBanner } from "./ProposalBanner"
 import { SyncNotice } from "./SyncNotice"
 import { VersionList } from "./VersionList"
-import { BUTTON, BUTTON_ON, ERROR_BOX, RAND, SELECT } from "./styles"
+import { ERROR_BOX, RAND, SELECT, SIDE_PANEL_WIDTH } from "./styles"
 import type { T } from "./texts.de"
 import type { Board, Graph, ProjectRef, SyncStatus } from "./types"
 
@@ -50,6 +51,17 @@ function EditorInner({ boardId, boardName, projects, locale, t, onBoard }: Props
   const shown = proposal.preview && proposal.graph ? proposal.graph : { nodes: b.nodes, edges: b.edges }
   const projectId = b.board?.project_id ?? null
   const projectKnown = projectId === null || projects.some((item) => item.id === projectId)
+  // Chat und Board teilen sich die Zeile unter der Kopfzeile. Mit offenem Chat steht die rechte Spalte nur da,
+  // wenn sie gebraucht wird; der Chat gibt dann nach (dockLayout).
+  const row = useRef<HTMLDivElement>(null)
+  const space = useWidth(row)
+  const chatOpen = dock.open && b.board !== null
+  const nodePanel = Boolean(b.selectedNode) && !proposal.preview
+  const layout = chatOpen
+    ? dockLayout(dock.width, space, showVersions || nodePanel ? SIDE_PANEL_WIDTH : 0)
+    : { over: false, width: dock.width }
+  // Liegt der Chat über dem Board, macht er Platz, sobald der Nutzer etwas am Board sehen will.
+  const showBoard = () => { if (layout.over) setDock({ ...dock, open: false }) }
 
   // Das Gezeigte als Text in die Zwischenablage — gleicher Text wie das Agent-Tool blueprint_read.
   async function copyAsText() {
@@ -72,46 +84,38 @@ function EditorInner({ boardId, boardName, projects, locale, t, onBoard }: Props
   }
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-b ${RAND} px-4 py-2.5`}>
-          <span className="truncate text-sm font-medium text-[#e8eef8]">{boardName}</span>
-          <span role="status" className={`text-xs ${TROUBLE.includes(b.status) ? "text-rose-200" : "text-[#9aa7bc]"}`}>
-            {t(`status_${b.status}`)}
-          </span>
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            {b.board && (projects.length > 0 || projectId !== null) && (
-              <select value={projectId ?? ""} onChange={(e) => void changeProject(e.target.value || null)}
-                aria-label={t("project_label")} title={t("project_label")} className={`${SELECT} w-auto max-w-[14rem]`}>
-                <option value="">{t("no_project")}</option>
-                {!projectKnown && <option value={projectId ?? ""}>{t("unknown_project")}</option>}
-                {projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-            )}
-            <button type="button" onClick={() => setShowVersions((open) => !open)} aria-pressed={showVersions}
-              className={showVersions ? BUTTON_ON : BUTTON}>
-              <History size={13} aria-hidden />{t("versions_title")}
-            </button>
-            <button type="button" onClick={() => setDock({ ...dock, open: !dock.open })} aria-pressed={dock.open}
-              title={t("chat_title")} className={dock.open ? BUTTON_ON : BUTTON}>
-              <MessagesSquare size={13} aria-hidden />{t("chat_open")}
-            </button>
-            <button type="button" onClick={() => void copyAsText()} title={t("copy_hint")} className={BUTTON}>
-              <Copy size={13} aria-hidden />
-              {copied === "ok" ? t("copied") : copied === "fail" ? t("copy_failed") : t("copy")}
-            </button>
-          </div>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-b ${RAND} px-4 py-2.5`}>
+        <span className="truncate text-sm font-medium text-[#e8eef8]">{boardName}</span>
+        <span role="status" className={`text-xs ${TROUBLE.includes(b.status) ? "text-rose-200" : "text-[#9aa7bc]"}`}>
+          {t(`status_${b.status}`)}
+        </span>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {b.board && (projects.length > 0 || projectId !== null) && (
+            <select value={projectId ?? ""} onChange={(e) => void changeProject(e.target.value || null)}
+              aria-label={t("project_label")} title={t("project_label")} className={`${SELECT} w-auto max-w-[14rem]`}>
+              <option value="">{t("no_project")}</option>
+              {!projectKnown && <option value={projectId ?? ""}>{t("unknown_project")}</option>}
+              {projects.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          )}
+          <EditorActions versionsOpen={showVersions} chatOpen={dock.open} copied={copied} t={t}
+            onVersions={() => { showBoard(); setShowVersions((open) => !open) }}
+            onChat={() => setDock({ ...dock, open: !dock.open })} onCopy={() => void copyAsText()} />
         </div>
-        <SyncNotice status={b.status} busy={false} t={t} onRetry={() => void b.actions.retry()}
-          onKeepMine={() => void b.actions.keepMine()} onTakeTheirs={() => void b.actions.takeTheirs()} />
-        {projectError && <p role="alert" className={`${ERROR_BOX} m-2`}>{projectError}</p>}
-        {proposal.open && (
-          <ProposalBanner note={b.board?.proposal_note ?? null} at={b.board?.proposal_at ?? null} diff={proposal.diff}
-            preview={proposal.preview} busy={proposal.busy} error={proposal.error} locale={locale} t={t}
-            onPreview={proposal.togglePreview} onAccept={() => void proposal.accept()}
-            onDiscard={() => void proposal.discard()} />
-        )}
-        <div className="flex min-h-0 flex-1 overflow-hidden">
+      </div>
+      <SyncNotice status={b.status} busy={false} t={t} onRetry={() => void b.actions.retry()}
+        onKeepMine={() => void b.actions.keepMine()} onTakeTheirs={() => void b.actions.takeTheirs()} />
+      {projectError && <p role="alert" className={`${ERROR_BOX} m-2`}>{projectError}</p>}
+      {proposal.open && (
+        <ProposalBanner note={b.board?.proposal_note ?? null} at={b.board?.proposal_at ?? null} diff={proposal.diff}
+          preview={proposal.preview} busy={proposal.busy} error={proposal.error} locale={locale} t={t}
+          onPreview={() => { showBoard(); proposal.togglePreview() }} onAccept={() => void proposal.accept()}
+          onDiscard={() => void proposal.discard()} />
+      )}
+      <div ref={row} className="flex min-h-0 flex-1 overflow-hidden">
+        {/* Über dem Board liegt der Chat nur optisch: Die Zeichenfläche bleibt eingehängt und behält ihren Stand. */}
+        <div className={layout.over ? "hidden" : "contents"}>
           <NodePalette disabled={!b.editable || proposal.preview} />
           {proposal.preview && proposal.graph && proposal.diff ? (
             <ReactFlowProvider key={b.board?.proposal_at ?? "vorschau"}>
@@ -126,16 +130,17 @@ function EditorInner({ boardId, boardName, projects, locale, t, onBoard }: Props
             <VersionList versions={versions.versions} error={versions.loadFailed} message={versions.message}
               busy={versions.busy} locale={locale} t={t} onRestore={(id) => void versions.restore(id)}
               onClose={() => setShowVersions(false)} />
-          ) : (!dock.open || (b.selectedNode && !proposal.preview)) && (
+          ) : (!chatOpen || nodePanel) && (
             <PropertiesPanel node={b.selectedNode} preview={proposal.preview} t={t}
               onChange={b.updateNodeData} onDelete={b.deleteSelected} />
           )}
         </div>
+        {chatOpen && (
+          <AgentDock key={`${boardId}:${projectId ?? ""}`} boardId={boardId} projectId={projectId} width={layout.width}
+            over={layout.over} t={t} onWidth={(width) => setDock({ open: true, width })}
+            onClose={() => setDock({ ...dock, open: false })} />
+        )}
       </div>
-      {dock.open && b.board && (
-        <AgentDock key={`${boardId}:${projectId ?? ""}`} boardId={boardId} projectId={projectId} width={dock.width}
-          t={t} onWidth={(width) => setDock({ open: true, width })} onClose={() => setDock({ ...dock, open: false })} />
-      )}
     </div>
   )
 }
