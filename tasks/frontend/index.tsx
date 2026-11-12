@@ -7,7 +7,8 @@ export const routes = [] as const
 
 export const buddyWidgets = [TaskBuddyBox]
 
-export const workspaceTabs = [{ id: "tasks", label: "Tasks", component: TaskPanel }]
+// labelKey: Der Kern übersetzt die Beschriftung des Reiters. Ein Kern, der labelKey nicht kennt, zeigt label.
+export const workspaceTabs = [{ id: "tasks", label: "Tasks", labelKey: "tasks:title", component: TaskPanel }]
 
 export const nav = [] as const
 

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest"
 // Der Modul-Index des Kerns importiert dieses Modul; ohne diese Mocks entsteht im Test ein Import-Kreis.
 vi.mock("@/shared/api-client", () => ({ api: {} }))
 vi.mock("@/shared/CollapsibleBox", () => ({ CollapsibleBox: () => null }))
-import { i18n } from "./index"
+import { i18n, workspaceTabs } from "./index"
 import { de } from "./texts.de"
 import { en } from "./texts.en"
 
@@ -83,5 +83,14 @@ describe("Anmeldung im Kern", () => {
     expect(i18n.en.tasks).toBe(en)
     expect(i18n.de.tasks.title).toBe("Aufgaben")
     expect(i18n.en.tasks.title).toBe("Tasks")
+  })
+
+  it("der Workspace-Reiter folgt der Sprache und behält eine feste Beschriftung als Rückfall", () => {
+    expect(workspaceTabs).toHaveLength(1)
+    expect(workspaceTabs[0]).toMatchObject({ id: "tasks", label: "Tasks", labelKey: "tasks:title" })
+    // labelKey zeigt auf einen Text, den es in beiden Sprachen gibt.
+    const [namespace, key] = workspaceTabs[0].labelKey.split(":")
+    expect(i18n.de[namespace as "tasks"][key as "title"]).toBe("Aufgaben")
+    expect(i18n.en[namespace as "tasks"][key as "title"]).toBe("Tasks")
   })
 })
