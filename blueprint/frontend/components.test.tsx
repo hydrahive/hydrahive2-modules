@@ -4,11 +4,12 @@ import { describe, expect, it, vi } from "vitest"
 vi.mock("@/i18n/HelpButton", () => ({ HelpButton: () => null }))
 vi.mock("@/shared/module-icon", () => ({ moduleIcon: () => () => null }))
 import { BoardSidebar } from "./BoardSidebar"
+import { ChatNotice } from "./ChatNotice"
 import { ProposalBanner } from "./ProposalBanner"
 import { SyncNotice } from "./SyncNotice"
 import { de, type T } from "./texts.de"
 import { VersionList } from "./VersionList"
-import type { BoardListItem, BoardVersion, ProjectFilter, SyncStatus } from "./types"
+import type { BoardListItem, BoardVersion, ChatInfo, ProjectFilter, SyncStatus } from "./types"
 import type { ProposalDiff } from "./boardGraph"
 import { NodePalette } from "./NodePalette"
 
@@ -204,5 +205,75 @@ describe("NodePalette", () => {
     const off = renderToStaticMarkup(<NodePalette disabled />)
     expect(off).not.toContain('draggable="true"')
     expect(off).toContain('aria-disabled="true"')
+  })
+})
+
+describe("ChatNotice", () => {
+  const AGENT = { id: "agent-1", name: "Projekt-Agent" }
+  const info = (over: Partial<ChatInfo> = {}): ChatInfo =>
+    ({ agent: AGENT, reason: null, can_start: true, tools_missing: [], ...over })
+  const notice = (over: Partial<Parameters<typeof ChatNotice>[0]> = {}) =>
+    renderToStaticMarkup(
+      <ChatNotice info={info()} intro={null} showIntro={false} isAdmin={false} busy={false} failed={false}
+        copied="" t={t} onAddTools={noop} onCopy={noop} onToggleIntro={noop} {...over} />,
+    )
+
+  it("schweigt, wenn alles da ist und kein Einstiegstext vorliegt", () => {
+    expect(notice()).toBe("")
+  })
+
+  it("nennt je Grund, warum es keinen Chat gibt", () => {
+    for (const reason of ["no_project", "project_missing", "no_agent", "read_only"] as const) {
+      const html = notice({ info: info({ agent: null, reason, can_start: false }) })
+      expect(html, reason).toContain(de[`chat_reason_${reason}`])
+    }
+  })
+
+  it("meldet fehlende Werkzeuge; nur Admins bekommen den Knopf", () => {
+    const missing = info({ tools_missing: ["blueprint_propose", "idea_read"] })
+    const user = notice({ info: missing })
+    expect(user).toContain("blueprint_propose, idea_read")
+    expect(user).toContain(de.chat_tools_ask_admin)
+    expect(user).not.toContain("<button")
+    const admin = notice({ info: missing, isAdmin: true })
+    expect(admin).toContain(`${de.chat_tools_add}</button>`)
+    expect(admin).not.toContain(de.chat_tools_ask_admin)
+    expect(notice({ info: missing, isAdmin: true, busy: true })).toContain('disabled=""')
+  })
+
+  it("sagt, warum sich die Werkzeuge nicht ergänzen ließen, und nennt das nicht einen Fehler beim Öffnen", () => {
+    const missing = info({ tools_missing: ["blueprint_propose"] })
+    const reason = "Dieser Agent wird von einem Modul verwaltet."
+    const html = notice({ info: missing, isAdmin: true, toolsError: reason })
+    expect(html).toMatch(new RegExp(`role="alert"[^>]*>${reason}`))
+    expect(html).not.toContain(de.chat_failed)
+    // Der Knopf bleibt: Der Admin kann es nach einer Störung erneut versuchen.
+    expect(html).toContain(`${de.chat_tools_add}</button>`)
+    expect(notice({ info: missing, isAdmin: true })).not.toContain('role="alert"')
+  })
+
+  it("zeigt den Einstiegstext zum Kopieren und sagt, wozu er dient", () => {
+    const html = notice({ intro: "Ich arbeite am Board „Admin“ (ID 7).", showIntro: true })
+    expect(html).toContain(de.chat_intro_hint)
+    expect(html).toContain("Ich arbeite am Board „Admin“ (ID 7).")
+    expect(html).toContain(`${de.chat_intro_copy}</button>`)
+    expect(notice({ intro: "Text", showIntro: true, copied: "ok" })).toContain(`${de.copied}</button>`)
+    expect(notice({ intro: "Text", showIntro: true, copied: "fail" })).toContain(`${de.copy_failed}</button>`)
+  })
+
+  it("klappt den Einstiegstext ein, lässt ihn aber erreichbar", () => {
+    const html = notice({ intro: "Geheimer Rest", showIntro: false })
+    expect(html).toContain(`${de.chat_intro_show}</button>`)
+    expect(html).not.toContain("Geheimer Rest")
+  })
+
+  it("meldet einen Fehler beim Öffnen", () => {
+    expect(notice({ info: null, failed: true })).toMatch(new RegExp(`role="alert"[^>]*>${de.chat_failed}`))
+  })
+
+  it("gibt Namen aus dem Einstiegstext als Text aus, nicht als HTML", () => {
+    const html = notice({ intro: 'Board „<img src=x onerror="alert(1)">“', showIntro: true })
+    expect(html).not.toContain("<img")
+    expect(html).toContain("&lt;img")
   })
 })

@@ -1,5 +1,6 @@
 import { api } from "@/shared/api-client"
-import type { Board, BoardListItem, BoardPatch, BoardState, BoardVersion } from "./types"
+import { withTools } from "./dock"
+import type { Board, BoardListItem, BoardPatch, BoardState, BoardVersion, ChatInfo, ChatStart } from "./types"
 
 const BASE = "/modules/blueprint"
 
@@ -29,4 +30,16 @@ export const blueprintApi = {
 
   restoreVersion: (id: number, versionId: number): Promise<Board> =>
     api.post<Board>(`${BASE}/boards/${id}/versions/${versionId}/restore`, {}),
+
+  chatInfo: (id: number): Promise<ChatInfo> => api.get<ChatInfo>(`${BASE}/boards/${id}/chat`),
+
+  /** Sitzung zum Board holen oder anlegen (dieselbe je Board). */
+  startChat: (id: number): Promise<ChatStart> => api.post<ChatStart>(`${BASE}/boards/${id}/chat`, {}),
+
+  /** Fehlende Werkzeuge am Agenten ergänzen. Das darf im Kern nur ein Admin. */
+  addTools: async (agentId: string, missing: string[]): Promise<void> => {
+    const path = `/agents/${encodeURIComponent(agentId)}`
+    const agent = await api.get<{ tools?: string[] }>(path)
+    await api.patch(path, { tools: withTools(agent.tools ?? [], missing) })
+  },
 }

@@ -5,6 +5,8 @@ vi.mock("@/shared/api-client", () => ({ api: {} }))
 vi.mock("@/features/projects/api", () => ({ projectsApi: {} }))
 vi.mock("@/shared/module-icon", () => ({ moduleIcon: () => () => null }))
 vi.mock("@/i18n/HelpButton", () => ({ HelpButton: () => null }))
+vi.mock("@/features/chat/ChatPane", () => ({ ChatPane: () => null }))
+vi.mock("@/features/auth/useAuthStore", () => ({ useAuthStore: () => "user" }))
 import { errorText } from "./boardView"
 import { i18n, nav, routes } from "./index"
 import { de, type T } from "./texts.de"

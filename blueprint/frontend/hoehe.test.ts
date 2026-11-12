@@ -15,8 +15,14 @@ const classesOf = (source: string, marker: string) => {
 
 describe("Höhe der Zeichenfläche", () => {
   it("der Editor darf in seiner Spalte schrumpfen", () => {
-    const root = classesOf(read("BoardEditor.tsx"), "return (\n    <div className=\"flex ")
-    expect(root).toEqual(expect.arrayContaining(["flex", "flex-col", "flex-1", "min-h-0"]))
+    const column = classesOf(read("BoardEditor.tsx"), "<div className=\"flex min-h-0 min-w-0 flex-1 flex-col\">")
+    expect(column).toEqual(expect.arrayContaining(["flex", "flex-col", "flex-1", "min-h-0", "min-w-0"]))
+  })
+
+  it("die Zeile aus Editor und Chat daneben lässt nichts überstehen", () => {
+    const row = classesOf(read("BoardEditor.tsx"), "return (\n    <div className=\"flex ")
+    expect(row).toEqual(expect.arrayContaining(["flex", "flex-1", "min-h-0", "min-w-0"]))
+    expect(row).not.toContain("flex-col")
   })
 
   it("die Zeile mit Palette, Zeichenfläche und rechter Spalte ebenso", () => {

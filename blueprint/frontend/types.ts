@@ -93,3 +93,23 @@ export interface SyncEvents {
   /** Aktueller Stand des Boards samt offenem Vorschlag. */
   onBoard: (board: Board) => void
 }
+
+/** Warum es neben dem Board keinen Chat gibt. */
+export type ChatReason = "no_project" | "project_missing" | "no_agent" | "read_only"
+export interface AgentRef { id: string; name: string }
+
+/** Wer neben dem Board antwortet, ob der Nutzer starten darf, welche Werkzeuge dem Agenten fehlen. */
+export interface ChatInfo {
+  agent: AgentRef | null
+  reason: ChatReason | null
+  can_start: boolean
+  tools_missing: string[]
+}
+
+/** Sitzung zum Board. intro: Einstiegstext, den der Nutzer seiner ersten Nachricht voranstellt. */
+export interface ChatStart {
+  session_id: string
+  reused: boolean
+  agent: AgentRef
+  intro: string
+}
