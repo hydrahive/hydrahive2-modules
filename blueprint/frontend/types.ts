@@ -45,6 +45,15 @@ export interface BoardState {
   proposal_at: string | null
 }
 
+/** Änderung an einem Board. base_revision: bekannter Stand; keep_previous: ersetzte Fassung vorher sichern. */
+export interface BoardPatch {
+  name?: string
+  graph_json?: string
+  project_id?: string | null
+  base_revision?: number
+  keep_previous?: boolean
+}
+
 export type VersionSource = "proposal" | "restore" | "overwrite"
 
 /** Frühere Fassung eines Boards, ohne den Graphen. */
@@ -66,4 +75,21 @@ export type ProjectFilter = "all" | "none" | (string & {})
 export interface Graph {
   nodes: BPNode[]
   edges: Edge[]
+}
+
+/** Zustand der offenen Zeichenfläche gegenüber dem Server (boardSync.ts). */
+export type SyncStatus = "loading" | "saved" | "saving" | "save_error" | "conflict" | "load_error" | "unreadable" | "gone"
+
+export interface SyncApi {
+  get: (id: number) => Promise<Board>
+  state: (id: number) => Promise<BoardState>
+  update: (id: number, patch: BoardPatch) => Promise<Board>
+}
+
+export interface SyncEvents {
+  /** Die Zeichenfläche soll diesen Graphen zeigen (geladen, übernommen, von anderer Stelle geändert). */
+  onGraph: (graph: Graph) => void
+  onStatus: (status: SyncStatus) => void
+  /** Aktueller Stand des Boards samt offenem Vorschlag. */
+  onBoard: (board: Board) => void
 }

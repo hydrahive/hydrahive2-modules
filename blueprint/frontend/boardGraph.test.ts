@@ -1,10 +1,13 @@
 import type { Edge } from "@xyflow/react"
 import { describe, expect, it } from "vitest"
-import { cleanGraph, filterBoards, graphSignature, linkedBoard, parseGraph, projectShowing, proposalDiff } from "./boardGraph"
+import {
+  cleanGraph, filterBoards, graphSignature, linkedBoard, parseGraph, projectShowing, proposalDiff,
+} from "./boardGraph"
 import type { BoardListItem, BPNode } from "./types"
 
 function node(id: string, label: string, subtype = "action", extra: Record<string, unknown> = {}): BPNode {
-  return { id, type: "flowNode", position: { x: 0, y: 0 }, data: { kind: "flow", subtype, label, note: "" }, ...extra } as BPNode
+  const data = { kind: "flow", subtype, label, note: "" }
+  return { id, type: "flowNode", position: { x: 0, y: 0 }, data, ...extra } as BPNode
 }
 const edge = (source: string, target: string): Edge => ({ id: `${source}-${target}`, source, target })
 
@@ -30,7 +33,9 @@ describe("graphSignature", () => {
   it("Auswahl, Ziehen und gemessene Größe sind kein Inhalt", () => {
     const plain = { nodes: [node("a", "A")], edges: [edge("a", "b")] }
     const touched = {
-      nodes: [node("a", "A", "action", { selected: true, dragging: false, resizing: false, measured: { width: 210, height: 64 } })],
+      nodes: [node("a", "A", "action", {
+        selected: true, dragging: false, resizing: false, measured: { width: 210, height: 64 },
+      })],
       edges: [{ ...edge("a", "b"), selected: true }],
     }
     expect(graphSignature(touched)).toBe(graphSignature(plain))
@@ -55,9 +60,14 @@ describe("graphSignature", () => {
 
 describe("proposalDiff", () => {
   it("vergleicht nach Art und Beschriftung, nicht nach ID", () => {
-    const mine = { nodes: [node("x1", "Start", "event"), node("x2", "Speichern"), node("x3", "Alte Anzeige", "display")], edges: [] }
+    const mine = {
+      nodes: [node("x1", "Start", "event"), node("x2", "Speichern"), node("x3", "Alte Anzeige", "display")], edges: [],
+    }
     const proposal = {
-      nodes: [node("start", "start ", "event"), node("save", "Speichern"), node("check", "Gültig?", "condition"), node("err", "Fehler", "display")],
+      nodes: [
+        node("start", "start ", "event"), node("save", "Speichern"),
+        node("check", "Gültig?", "condition"), node("err", "Fehler", "display"),
+      ],
       edges: [edge("start", "save"), edge("save", "check")],
     }
     const diff = proposalDiff(mine, proposal)
@@ -74,7 +84,8 @@ describe("proposalDiff", () => {
   })
 
   it("gleiche Beschriftung mit anderer Art ist ein anderer Baustein", () => {
-    const diff = proposalDiff({ nodes: [node("a", "Liste", "display")], edges: [] }, { nodes: [node("b", "Liste", "action")], edges: [] })
+    const mine = { nodes: [node("a", "Liste", "display")], edges: [] }
+    const diff = proposalDiff(mine, { nodes: [node("b", "Liste", "action")], edges: [] })
     expect(diff).toMatchObject({ kept: 0, added: ["Liste"], removed: ["Liste"] })
   })
 })
