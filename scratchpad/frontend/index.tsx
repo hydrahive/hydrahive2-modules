@@ -1,48 +1,11 @@
-import { ScratchpadPage } from "./ScratchpadPage"
+import { IdeasPage } from "./IdeasPage"
+import { de } from "./texts.de"
+import { en } from "./texts.en"
 
-export const routes = [{ path: "/scratchpad", element: <ScratchpadPage /> }]
+// Adresse und Modul-ID bleiben scratchpad, damit bestehende Installationen und Verknüpfungen weiter gehen.
+export const routes = [{ path: "/scratchpad", element: <IdeasPage /> }]
 export const nav = [
-  { path: "/scratchpad", icon: "StickyNote", labelKey: "scratchpad", group: "working", area: "schreiben", roles: [], cockpit: true },
+  { path: "/scratchpad", icon: "Lightbulb", labelKey: "scratchpad", group: "working", area: "schreiben", roles: [], cockpit: true },
 ]
-export const i18n = {
-  de: {
-    scratchpad: {
-      title: "Scratchpad",
-      saved: "gespeichert",
-      saving: "speichert…",
-      not_saved: "Nicht gespeichert",
-      too_large: "Zu lang, maximal 256 KB",
-      retry: "Erneut versuchen",
-      load_error: "Scratchpad konnte nicht geladen werden. Deine gespeicherten Notizen wurden nicht verändert.",
-      clear_error: "Agent-Notizen konnten nicht geleert werden.",
-      my_ideas: "Meine Ideen",
-      placeholder: "Ideen, Notizen, Aufgaben (Markdown, `- [ ]` für Checkboxen)…",
-      empty_preview: "_(leer)_",
-      agent_notes: "Agent-Notizen",
-      agent_notes_hint: "(nur der Agent schreibt hier)",
-      agent_notes_empty: "_(noch keine Agent-Notizen)_",
-      clear: "Leeren",
-      clear_confirm: "Agent-Notizen wirklich leeren?",
-    },
-  },
-  en: {
-    scratchpad: {
-      title: "Scratchpad",
-      saved: "saved",
-      saving: "saving…",
-      not_saved: "Not saved",
-      too_large: "Too long, maximum 256 KB",
-      retry: "Try again",
-      load_error: "Scratchpad could not be loaded. Your saved notes were not changed.",
-      clear_error: "Agent notes could not be cleared.",
-      my_ideas: "My Ideas",
-      placeholder: "Ideas, notes, tasks (Markdown, `- [ ]` for checkboxes)…",
-      empty_preview: "_(empty)_",
-      agent_notes: "Agent Notes",
-      agent_notes_hint: "(only the agent writes here)",
-      agent_notes_empty: "_(no agent notes yet)_",
-      clear: "Clear",
-      clear_confirm: "Really clear agent notes?",
-    },
-  },
-}
+// Der Menütitel kommt aus scratchpad:title (Kern shared/nav-label.ts).
+export const i18n = { de: { scratchpad: de }, en: { scratchpad: en } }
