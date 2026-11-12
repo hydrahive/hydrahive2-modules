@@ -68,7 +68,7 @@ function EditorInner({ boardId, boardName, projects, locale, t, onBoard }: Props
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-b ${RAND} px-4 py-2.5`}>
         <span className="truncate text-sm font-medium text-[#e8eef8]">{boardName}</span>
         <span role="status" className={`text-xs ${TROUBLE.includes(b.status) ? "text-rose-200" : "text-[#9aa7bc]"}`}>

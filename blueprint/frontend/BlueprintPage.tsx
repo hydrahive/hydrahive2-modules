@@ -102,10 +102,10 @@ export function BlueprintPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
+    <div className="flex h-full min-h-0 overflow-hidden">
       <BoardSidebar boards={boards ?? []} projects={projects} project={project} activeId={activeId} t={t}
         onProject={setProject} onSelect={open} onCreate={(name) => void handleCreate(name)} onDelete={handleDelete} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {loadFailed && (
           <div role="alert" className={`${ERROR_BOX} m-2 flex flex-wrap items-center gap-3`}>
             <span>{t("boards_load_error")}</span>
