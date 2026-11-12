@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useSearchParams } from "react-router-dom"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { HelpButton } from "@/i18n/HelpButton"
@@ -7,13 +8,14 @@ import { IdeaDetail } from "./components/IdeaDetail"
 import { IdeaForm } from "./components/IdeaForm"
 import { IdeaList } from "./components/IdeaList"
 import { BUTTON, ERROR_BOX, PANEL } from "./components/styles"
-import { filterIdeas, toListItem } from "./ideaView"
+import { filterIdeas, linkedIdea, projectShowing, statusShowing, toListItem } from "./ideaView"
 import { errorText } from "./saveState"
 import type { T } from "./texts.de"
 import type { ProjectFilter, StatusFilter } from "./types"
 import { useIdeas } from "./useIdeas"
 
-/** Seite „Ideen“ unter /scratchpad: oben festhalten, links die Liste, rechts die ausgewählte Idee. */
+/** Seite „Ideen“ unter /scratchpad: oben festhalten, links die Liste, rechts die ausgewählte Idee.
+ *  /scratchpad?idea=<id> öffnet eine Idee direkt, zum Beispiel aus dem Task heraus. */
 export function IdeasPage() {
   const { t: translate, i18n } = useTranslation("scratchpad")
   const t: T = useCallback((key, vars) => String(translate(key, vars)), [translate])
@@ -26,6 +28,9 @@ export function IdeasPage() {
   const [selectError, setSelectError] = useState<string | null>(null)
   const detailRef = useRef<HTMLDivElement>(null)
   const errorOf = useCallback((error: unknown) => errorText(error, t), [t])
+  const [params, setParams] = useSearchParams()
+  const linkParam = params.get("idea")
+  const handledLink = useRef<string | null>(null)
 
   async function onCreate(data: { title: string; body: string; project_id: string | null }) {
     const idea = await create(data)
@@ -36,16 +41,38 @@ export function IdeasPage() {
     }
   }
 
-  async function onSelect(id: string) {
+  /** Idee öffnen. Bei einem Direktlink gehen die Filter so weit auf, dass sie auch in der Liste steht. */
+  const openIdea = useCallback(async (id: string, viaLink = false) => {
     setSelectError(null)
     try {
-      await select(id)
+      const idea = await select(id)
+      if (viaLink && idea) {
+        const row = toListItem(idea)
+        setProject((current) => projectShowing(row, current))
+        setStatus((current) => statusShowing(row, current))
+      }
       if (window.matchMedia("(max-width: 1023px)").matches) detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     } catch (problem) {
       setSelectError(errorOf(problem))
       if ((problem as { status?: number }).status === 404) forget(id)
     }
-  }
+  }, [select, forget, errorOf])
+
+  useEffect(() => {
+    if (linkParam === null) {
+      handledLink.current = null
+      return
+    }
+    // Läuft der Effekt für denselben Verweis zweimal, zählt nur der erste Lauf.
+    if (handledLink.current === linkParam) return
+    handledLink.current = linkParam
+    const id = linkedIdea(linkParam)
+    queueMicrotask(() => {
+      // Den Verweis nur einmal auswerten: danach gilt wieder, was in der Liste gewählt wird.
+      setParams((current) => { const next = new URLSearchParams(current); next.delete("idea"); return next }, { replace: true })
+      if (id) void openIdea(id, true)
+    })
+  }, [linkParam, openIdea, setParams])
 
   return (
     <CockpitShell title={t("title")} className="flex h-full min-h-0 flex-col overflow-hidden bg-[rgb(var(--hh-s-grund,8_11_17))]" hideHeader>
@@ -73,7 +100,7 @@ export function IdeasPage() {
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
             <IdeaList ideas={ideas} projects={projects} project={project} status={status} activeId={active?.id ?? null}
               loading={loading} locale={i18n.language} t={t} onProject={setProject} onStatus={setStatus}
-              onSelect={(id) => void onSelect(id)} />
+              onSelect={(id) => void openIdea(id)} />
             <div ref={detailRef} className="min-w-0 scroll-mt-4">
               {active ? (
                 <IdeaDetail key={active.id} idea={active} projects={projects} locale={i18n.language} t={t}

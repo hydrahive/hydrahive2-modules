@@ -45,11 +45,12 @@ export function useIdeas() {
     wanted.current = id
     if (id === null) {
       setActive(null)
-      return
+      return null
     }
     const idea = await ideasApi.get(id)
     // Wurde inzwischen eine andere Idee gewählt, die späte Antwort verwerfen.
     if (wanted.current === id) setActive(idea)
+    return idea
   }, [])
 
   const create = useCallback(async (data: { title: string; body: string; project_id: string | null }) => {
