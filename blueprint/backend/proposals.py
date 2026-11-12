@@ -31,10 +31,10 @@ def _is_empty(graph_json: str) -> bool:
 
 
 def put(user: str, board_id: int, graph: dict, note: str = "") -> dict | None:
-    """Vorschlag ablegen. Liefert ``{"drawn": bool, "board": ...}`` oder ``None`` bei fremdem Board.
+    """Vorschlag ablegen. Liefert ``{"drawn", "replaced", "board"}`` oder ``None`` bei fremdem Board.
 
     ``drawn`` ist wahr, wenn das Board leer war und der Vorschlag direkt gezeichnet wurde.
-    Ein älterer offener Vorschlag wird ersetzt.
+    ``replaced`` ist wahr, wenn dabei ein älterer offener Vorschlag ersetzt wurde.
     """
     raw = json.dumps(graph, ensure_ascii=False)
     with db(immediate=True) as conn:
@@ -53,7 +53,8 @@ def put(user: str, board_id: int, graph: dict, note: str = "") -> dict | None:
                 f"UPDATE {store.TABLE} SET proposal_json = ?, proposal_note = ?, proposal_at = {store.NOW} {_MINE}",
                 (raw, (note or "").strip()[:MAX_NOTE], user, board_id),
             )
-        return {"drawn": drawn, "board": store.fetch(conn, user, board_id)}
+        replaced = board["proposal_json"] is not None
+        return {"drawn": drawn, "replaced": replaced, "board": store.fetch(conn, user, board_id)}
 
 
 def accept(user: str, board_id: int) -> dict | None:

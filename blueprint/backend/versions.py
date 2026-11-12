@@ -7,7 +7,6 @@ aktuellen Stand, damit nichts verloren geht.
 """
 from __future__ import annotations
 
-import json
 import sqlite3
 
 from hydrahive.db.connection import db
@@ -18,14 +17,6 @@ TABLE = "module_blueprint_versions"
 KEEP = 20
 
 
-def _node_count(graph_json: str) -> int:
-    try:
-        nodes = json.loads(graph_json).get("nodes")
-    except (json.JSONDecodeError, TypeError, AttributeError):
-        return 0
-    return len(nodes) if isinstance(nodes, list) else 0
-
-
 def save(conn: sqlite3.Connection, board_id: int, graph_json: str, source: str) -> None:
     """Fassung innerhalb einer laufenden Transaktion sichern und auf ``KEEP`` Fassungen kürzen.
 
@@ -34,7 +25,7 @@ def save(conn: sqlite3.Connection, board_id: int, graph_json: str, source: str) 
     conn.execute(
         f"INSERT INTO {TABLE} (board_id, graph_json, node_count, source, created_at) "
         f"VALUES (?, ?, ?, ?, {store.NOW})",
-        (board_id, graph_json, _node_count(graph_json), source),
+        (board_id, graph_json, store.node_count(graph_json), source),
     )
     conn.execute(
         f"DELETE FROM {TABLE} WHERE board_id = ? AND id NOT IN "

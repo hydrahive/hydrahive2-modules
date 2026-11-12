@@ -11,6 +11,7 @@ der Fassung des Nutzers und ändert graph_json nicht.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 
 from hydrahive.db.connection import db
@@ -30,6 +31,15 @@ class BoardError(ValueError):
     def __init__(self, code: str) -> None:
         super().__init__(code)
         self.code = code
+
+
+def node_count(graph_json: str) -> int:
+    """Zahl der Bausteine eines gespeicherten Graphen. 0, wenn er nicht lesbar ist."""
+    try:
+        nodes = json.loads(graph_json).get("nodes")
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        return 0
+    return len(nodes) if isinstance(nodes, list) else 0
 
 
 def list_for(user: str, project_id: str | None = None) -> list[dict]:

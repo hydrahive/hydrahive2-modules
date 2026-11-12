@@ -28,3 +28,19 @@ def check_project(username: str, role: str, project_id: str | None) -> str | Non
     if role != "admin" and _members_model.role_of(project, username) is None:
         raise BoardError("project_not_found")
     return wanted
+
+
+def system_role(username: str) -> str:
+    """Aktuelle Systemrolle eines Nutzers. Werkzeuge kennen nur den Namen, nicht die Rolle."""
+    from hydrahive.api.middleware.users import get_by_username
+
+    user = get_by_username(username) if username else None
+    return user["role"] if user else "user"
+
+
+def session_project(username: str, project_id: str | None) -> str | None:
+    """Projekt der Sitzung für ein neues Board. ``None``, wenn der Nutzer es nicht sehen darf."""
+    try:
+        return check_project(username, system_role(username), project_id)
+    except BoardError:
+        return None
