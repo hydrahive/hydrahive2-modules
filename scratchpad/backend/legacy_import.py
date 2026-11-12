@@ -143,7 +143,11 @@ def _import_file(username: str, path: Path, zone: str, origin: str) -> int:
                            path.name, exc.code)
             return created
         created += 1
-    os.replace(path, _free_name(path))
+    try:
+        os.replace(path, _free_name(path))
+    except OSError:
+        # Die Ideen sind angelegt. Der nächste Lauf erkennt sie an der ID und versucht es erneut.
+        logger.warning("scratchpad: %s konnte nicht umbenannt werden", path.name)
     return created
 
 

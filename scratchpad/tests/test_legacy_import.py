@@ -186,3 +186,18 @@ def test_aufbau_wie_die_alten_zettel(zettel):
     assert ideas[1]["body"].endswith("- **B) Tabelle im Notizbuch**")
     assert "---" not in ideas[2]["body"]
     assert ideas[3]["body"].startswith("- Fahrradreparatur")
+
+
+def test_fehlgeschlagenes_umbenennen_bricht_nichts(zettel, monkeypatch):
+    from backend import legacy_import
+
+    folder = zettel("alice", user="# Eins\n")
+
+    def kaputt(src, dst):
+        raise PermissionError("kein Schreibrecht")
+
+    monkeypatch.setattr(legacy_import.os, "replace", kaputt)
+    assert _run("alice") == 1
+    assert (folder / "user.md").exists()
+    assert _run("alice") == 0
+    assert len(_ideas("alice")) == 1
