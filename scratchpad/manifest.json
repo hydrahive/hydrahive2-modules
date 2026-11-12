@@ -1,9 +1,9 @@
 {
   "id": "scratchpad",
-  "name": "Scratchpad",
-  "version": "1.0.6",
-  "description": "Gemeinsamer Notizzettel zwischen dir und dem Agenten für schnelle Ideen. Der Agent hat einen eigenen Bereich, dein Bereich bleibt ihm vorbehalten.",
-  "icon": "StickyNote",
+  "name": "Ideen",
+  "version": "2.0.0",
+  "description": "Ideen einzeln festhalten: Kopfzeile, Beschreibung, Projekt und Status. Agenten lesen sie und schreiben Anmerkungen daneben, deinen Text ändern sie nicht.",
+  "icon": "Lightbulb",
   "nav_group": "working",
   "permissions": [],
   "has_service": false,
