@@ -44,7 +44,7 @@ def put(user: str, board_id: int, graph: dict, note: str = "") -> dict | None:
         drawn = _is_empty(board["graph_json"])
         if drawn:
             conn.execute(
-                f"UPDATE {store.TABLE} SET graph_json = ?, {_CLEAR}, updated_at = {store.NOW} {_MINE}",
+                f"UPDATE {store.TABLE} SET graph_json = ?, {store.BUMP}, {_CLEAR}, updated_at = {store.NOW} {_MINE}",
                 (raw, user, board_id),
             )
         else:
@@ -67,7 +67,7 @@ def accept(user: str, board_id: int) -> dict | None:
             raise store.BoardError("no_proposal")
         versions.save(conn, board_id, board["graph_json"], "proposal")
         conn.execute(
-            f"UPDATE {store.TABLE} SET graph_json = ?, {_CLEAR}, updated_at = {store.NOW} {_MINE}",
+            f"UPDATE {store.TABLE} SET graph_json = ?, {store.BUMP}, {_CLEAR}, updated_at = {store.NOW} {_MINE}",
             (board["proposal_json"], user, board_id),
         )
         return store.fetch(conn, user, board_id)

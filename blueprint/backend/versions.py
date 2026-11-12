@@ -20,7 +20,8 @@ KEEP = 20
 def save(conn: sqlite3.Connection, board_id: int, graph_json: str, source: str) -> None:
     """Fassung innerhalb einer laufenden Transaktion sichern und auf ``KEEP`` Fassungen kürzen.
 
-    ``source``: ``proposal`` (vor dem Übernehmen eines Vorschlags) oder ``restore`` (vor dem Wiederherstellen).
+    ``source``: ``proposal`` (vor dem Übernehmen eines Vorschlags), ``restore`` (vor dem Wiederherstellen)
+    oder ``overwrite`` (der Nutzer stellt seine Fassung über eine neuere).
     """
     conn.execute(
         f"INSERT INTO {TABLE} (board_id, graph_json, node_count, source, created_at) "
@@ -63,7 +64,7 @@ def restore(user: str, board_id: int, version_id: int) -> dict | None:
             return None
         save(conn, board_id, board["graph_json"], "restore")
         conn.execute(
-            f'UPDATE {store.TABLE} SET graph_json = ?, updated_at = {store.NOW} WHERE "user" = ? AND id = ?',
+            f'UPDATE {store.TABLE} SET graph_json = ?, {store.BUMP}, updated_at = {store.NOW} WHERE "user" = ? AND id = ?',
             (row["graph_json"], user, board_id),
         )
         return store.fetch(conn, user, board_id)

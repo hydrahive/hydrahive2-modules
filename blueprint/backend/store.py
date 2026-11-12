@@ -7,7 +7,8 @@ Route).
 
 Seit 1.3.0 kann ein Board einem Projekt zugeordnet sein und höchstens einen
 offenen Vorschlag des Agenten tragen (proposals.py). Der Vorschlag liegt neben
-der Fassung des Nutzers und ändert graph_json nicht.
+der Fassung des Nutzers und ändert graph_json nicht. ``revision`` zählt jede Änderung
+an graph_json: Wer speichert, kann den Stand nennen, den er kennt (``base_revision``).
 """
 from __future__ import annotations
 
@@ -22,7 +23,9 @@ EMPTY = '{"nodes":[],"edges":[]}'
 _MAX = 200
 _UNSET = object()
 _META = "id, name, project_id, created_at, updated_at"
-_FULL = f"{_META}, graph_json, proposal_json, proposal_note, proposal_at"
+_FULL = f"{_META}, revision, graph_json, proposal_json, proposal_note, proposal_at"
+# In jedem UPDATE, das graph_json ersetzt.
+BUMP = "revision = revision + 1"
 
 
 class BoardError(ValueError):
@@ -88,31 +91,40 @@ def create(user: str, name: str, project_id: str | None = None) -> dict:
 
 
 def update(user: str, board_id: int, *, name: str | None = None, graph_json: str | None = None,
-           project_id: str | None | object = _UNSET) -> dict | None:
-    """Name, Graph und/oder Projekt aktualisieren. Nur eigene Boards.
+           project_id: str | None | object = _UNSET, base_revision: int | None = None,
+           keep_previous: bool = False) -> dict | None:
+    """Name, Graph und/oder Projekt aktualisieren. Nur eigene Boards, ``None`` bei fremdem Board.
 
     ``project_id=None`` löst das Board vom Projekt; ohne Angabe bleibt das Projekt, wie es ist.
+    ``base_revision``: der Stand, den der Aufrufer kennt. Weicht er ab, hat inzwischen jemand anderes
+    gezeichnet und es wird nichts gespeichert (``BoardError("board_changed")``).
+    ``keep_previous``: die Fassung, die ersetzt wird, vorher in die früheren Fassungen legen.
     """
-    sets: list[str] = []
-    args: list = []
-    if name is not None:
-        sets.append("name = ?")
-        args.append(name)
-    if graph_json is not None:
-        sets.append("graph_json = ?")
-        args.append(graph_json)
-    if project_id is not _UNSET:
-        sets.append("project_id = ?")
-        args.append(project_id)
-    if not sets:
-        return get(user, board_id)
-    sets.append(f"updated_at = {NOW}")
-    args.extend([user, board_id])
-    with db() as c:
-        cur = c.execute(f'UPDATE {TABLE} SET {", ".join(sets)} WHERE "user" = ? AND id = ?', tuple(args))
-        if cur.rowcount == 0:
+    with db(immediate=True) as c:
+        board = fetch(c, user, board_id)
+        if board is None:
             return None
-    return get(user, board_id)
+        if base_revision is not None and base_revision != board["revision"]:
+            raise BoardError("board_changed")
+        sets: list[str] = []
+        args: list = []
+        if name is not None:
+            sets.append("name = ?")
+            args.append(name)
+        if graph_json is not None and graph_json != board["graph_json"]:
+            if keep_previous and node_count(board["graph_json"]):
+                from . import versions  # erst hier: versions.py lädt dieses Modul
+
+                versions.save(c, board_id, board["graph_json"], "overwrite")
+            sets += ["graph_json = ?", BUMP]
+            args.append(graph_json)
+        if project_id is not _UNSET:
+            sets.append("project_id = ?")
+            args.append(project_id)
+        if sets:
+            sets.append(f"updated_at = {NOW}")
+            c.execute(f'UPDATE {TABLE} SET {", ".join(sets)} WHERE "user" = ? AND id = ?', (*args, user, board_id))
+        return fetch(c, user, board_id)
 
 
 def remove(user: str, board_id: int) -> bool:

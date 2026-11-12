@@ -87,6 +87,10 @@ class BoardUpdate(BaseModel):
     graph_json: str | None = None
     # Fehlt das Feld, bleibt das Projekt. null löst das Board vom Projekt.
     project_id: str | None = Field(default=None, max_length=64)
+    # Stand, den die Zeichenfläche kennt. Weicht er ab, wird nichts gespeichert (409 board_changed).
+    base_revision: int | None = Field(default=None, ge=0)
+    # Die Fassung, die ersetzt wird, vorher in die früheren Fassungen legen.
+    keep_previous: bool = False
 
 
 @router.put("/boards/{board_id}")
@@ -96,10 +100,14 @@ def update_board(auth: Auth, board_id: int, body: BoardUpdate) -> dict:
     name = body.name.strip() if body.name is not None else None
     if name == "":
         name = None
-    changes: dict = {"name": name, "graph_json": graph}
+    changes: dict = {"name": name, "graph_json": graph, "base_revision": body.base_revision,
+                     "keep_previous": body.keep_previous}
     if "project_id" in body.model_fields_set:
         changes["project_id"] = _project(user, role, body.project_id)
-    updated = store.update(user, board_id, **changes)
+    try:
+        updated = store.update(user, board_id, **changes)
+    except store.BoardError as exc:
+        raise coded(status.HTTP_409_CONFLICT, exc.code)
     if updated is None:
         raise coded(status.HTTP_404_NOT_FOUND, "board_not_found")
     return updated
