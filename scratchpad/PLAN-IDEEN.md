@@ -137,12 +137,29 @@ Dateien: `backend/task_link.py` (neu), `backend/routes.py`, `backend/render.py`,
       hat keine Adresse je Task).
 - [ ] Abnahme: Idee zu Task, Task erscheint im Tasks-Modul unter dem richtigen Projekt.
 
+## Nachtrag zu Etappe 2: Rückverweis (tasks 1.3.0, scratchpad 2.2.0)
+
+Dateien Tasks: `migrations/003_task_source.sql`, `backend/tools/task_read.py`,
+`frontend/components/TaskSource.tsx` (neu), `frontend/components/TaskPanel.tsx`, `frontend/types.ts`.
+Dateien Ideen: `backend/task_link.py`, `backend/routes.py`, `frontend/IdeasPage.tsx`,
+`frontend/ideaView.ts`, `frontend/useIdeas.ts`.
+
+- [ ] Tests und Migration: `source_kind` und `source_id` in `module_tasks`, bestehende Tasks
+      behalten ihre Daten, über die Routen des Tasks-Moduls nicht setzbar.
+- [ ] `task_read` nennt die Herkunft, der Tasks-Reiter zeigt „Aus Idee“.
+- [ ] Ideen schreiben die Herkunft beim Anlegen, auch gegen ein Tasks-Modul ohne die Spalten (Test).
+- [ ] Früher verknüpfte Tasks bekommen die Herkunft nachgetragen (Test).
+- [ ] `/scratchpad?idea=<id>` öffnet die Idee und stellt die Filter passend.
+- [ ] Abnahme: im Tasks-Reiter auf „Aus Idee“ klicken, die Idee geht auf.
+
 ## Entscheidungspunkt nach Etappe 2
 
 Mit Till: Wird Etappe 3 gebaut? Anhaltspunkt sind die angelegten Ideen und die daraus entstandenen
 Tasks seit Etappe 1.
 
-## Etappe 3a: Vorschläge im Blueprint (blueprint 1.3.0, scratchpad 2.2.0)
+Entschieden am 12.11.2026: Etappe 3 wird gebaut.
+
+## Etappe 3a: Vorschläge im Blueprint (blueprint 1.3.0, scratchpad 2.3.0)
 
 Dateien Blueprint: `migrations/002_project_proposal.sql`, `migrations/003_versions.sql`,
 `backend/layout.py`, `backend/proposal.py`, `backend/tools_propose.py`, `backend/versions.py` (neu);
@@ -186,7 +203,7 @@ Dateien Ideen: `backend/board_link.py` (neu), `backend/routes.py`, `backend/rend
 - [ ] Abnahme: Idee → Board → im Chat „zeig mir, wie es ablaufen würde“ → Vorschlag erscheint ohne
       Neuladen.
 
-## Etappe 4: Schlagworte, Suche, Spalten (scratchpad 2.3.0)
+## Etappe 4: Schlagworte, Suche, Spalten (scratchpad 2.4.0)
 
 - [ ] `migrations/002_tags.sql`, Tests und Code für Schlagworte (höchstens 10, Vorschläge).
 - [ ] Tests und Code für die Suche `q` über Kopfzeile und Beschreibung.
@@ -196,8 +213,8 @@ Dateien Ideen: `backend/board_link.py` (neu), `backend/routes.py`, `backend/rend
 
 1. Dieser PR: Spec und Plan (nur `.md`).
 2. Modul-PR Etappe 1 und Kern-PR für Hilfe und Beschriftung. Erst der Modul-PR, dann der Kern-PR.
-3. Modul-PR Etappe 2.
-4. Nach der Entscheidung: Modul-PR Blueprint 3a, danach Modul-PR Ideen 2.2.0, danach 3b.
+3. Modul-PR Etappe 2, danach Modul-PR Rückverweis (tasks 1.3.0, scratchpad 2.2.0).
+4. Nach der Entscheidung: Modul-PR Blueprint 3a, danach Modul-PR Ideen 2.3.0, danach 3b.
 5. Modul-PR Etappe 4.
 
 ## Akzeptanzkriterien

@@ -211,6 +211,11 @@ selbst. Projekt-Agenten bekommen sie über die Agenten-Einstellungen (Admin).
 - Im Detail steht der verknüpfte Task mit Titel und Status. Ist der Task gelöscht, steht dort
   „Task nicht mehr vorhanden“ und der Knopf erscheint wieder.
 - `idea_read` nennt den Task, damit der Agent den Zusammenhang kennt.
+- Rückverweis (Nachtrag, tasks 1.3.0 und scratchpad 2.2.0): Der Task trägt die Idee als Herkunft
+  in `module_tasks` (`source_kind` = `idea`, `source_id` = ID der Idee). Im Tasks-Reiter führt
+  „Aus Idee“ auf `/scratchpad?idea=<id>`, `task_read` nennt die Herkunft. Ein Tasks-Modul ohne
+  diese Spalten bekommt den Task wie bisher, nur ohne Rückverweis. Früher verknüpfte Tasks
+  bekommen die Herkunft beim Laden der Ideenliste nachgetragen.
 
 ## Etappe 3: Blueprint-Entwurf zu einer Idee
 
@@ -284,9 +289,10 @@ vor → wenn es passt: Task anlegen.
 |---|---|---|
 | 1 Ideenliste | scratchpad 2.0.0 | Hilfe-Artikel `scratchpad.md` (de/en), Beschriftung „Ideen“ |
 | 2 Idee zu Task | scratchpad 2.1.0 | – |
-| 3a Vorschläge, Anordnung, Aufbau-Bausteine | blueprint 1.3.0, scratchpad 2.2.0 | Hilfe-Artikel Blueprint |
+| 2 Nachtrag: Rückverweis vom Task zur Idee | tasks 1.3.0, scratchpad 2.2.0 | – |
+| 3a Vorschläge, Anordnung, Aufbau-Bausteine | blueprint 1.3.0, scratchpad 2.3.0 | Hilfe-Artikel Blueprint |
 | 3b Chat neben dem Board | blueprint 1.4.0 | nur falls die Kontextübergabe es braucht |
-| 4 Schlagworte, Suche, Spalten | scratchpad 2.3.0 | – |
+| 4 Schlagworte, Suche, Spalten | scratchpad 2.4.0 | – |
 
 Die Etappen 1 und 2 sind ohne Blueprint nutzbar. Nach Etappe 2 wird entschieden, ob Etappe 3
 gebaut wird: Blueprint wird bisher kaum genutzt, die Annahme „der Agent zeichnet den ersten Entwurf,
