@@ -10,7 +10,7 @@ describe("Leer-Bild (blueprint)", () => {
     expect(SRC).toMatch(/import leerBild from "\.\/assets\/leer\.webp"/)
   })
   it("das Bild steht im Leer-Zustand direkt beim Leer-Text", () => {
-    const i = SRC.indexOf("Noch keine Boards")
+    const i = SRC.indexOf('t("boards_empty")')  // der Text selbst steht in texts.de.ts
     expect(i).toBeGreaterThan(0)
     expect(SRC.slice(Math.max(0, i - 400), i)).toContain("<img src={leerBild} alt=\"\"")
   })

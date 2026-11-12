@@ -1,5 +1,8 @@
 import { BlueprintPage } from "./BlueprintPage"
+import { de } from "./texts.de"
+import { en } from "./texts.en"
 
+// /blueprint?board=<id> öffnet ein Board direkt (Verweis aus einer Idee oder aus der Antwort des Agenten).
 export const routes = [{ path: "/blueprint", element: <BlueprintPage /> }]
 
 export const nav = [
@@ -12,17 +15,4 @@ export const nav = [
   },
 ]
 
-export const i18n = {
-  de: {
-    blueprint: {
-      title: "Blueprint",
-      subtitle: "Layouts & Abläufe visuell skizzieren",
-    },
-  },
-  en: {
-    blueprint: {
-      title: "Blueprint",
-      subtitle: "Sketch layouts & flows visually",
-    },
-  },
-}
+export const i18n = { de: { blueprint: de }, en: { blueprint: en } }
