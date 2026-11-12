@@ -57,14 +57,20 @@ def put(user: str, board_id: int, graph: dict, note: str = "") -> dict | None:
         return {"drawn": drawn, "replaced": replaced, "board": store.fetch(conn, user, board_id)}
 
 
-def accept(user: str, board_id: int) -> dict | None:
-    """Vorschlag übernehmen: Die bisherige Fassung wandert in die Versionen. ``None`` bei fremdem Board."""
+def accept(user: str, board_id: int, seen_at: str | None = None) -> dict | None:
+    """Vorschlag übernehmen: Die bisherige Fassung wandert in die Versionen. ``None`` bei fremdem Board.
+
+    ``seen_at``: Zeit des Vorschlags, den der Nutzer vor sich hat. Liegt inzwischen ein anderer
+    Vorschlag da, wird nichts übernommen (``BoardError("proposal_changed")``).
+    """
     with db(immediate=True) as conn:
         board = store.fetch(conn, user, board_id)
         if board is None:
             return None
         if board["proposal_json"] is None:
             raise store.BoardError("no_proposal")
+        if seen_at is not None and seen_at != board["proposal_at"]:
+            raise store.BoardError("proposal_changed")
         versions.save(conn, board_id, board["graph_json"], "proposal")
         conn.execute(
             f"UPDATE {store.TABLE} SET graph_json = ?, {store.BUMP}, {_CLEAR}, updated_at = {store.NOW} {_MINE}",

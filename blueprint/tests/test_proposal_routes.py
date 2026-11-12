@@ -5,6 +5,7 @@ import json
 
 from backend import proposals
 from conftest import PROJECT_A, PROJECT_B
+from hydrahive.db.connection import db
 
 BASE = "/api/modules/blueprint/boards"
 
@@ -136,3 +137,20 @@ def test_vorschlag_laesst_sich_ueber_die_routen_nicht_einschleusen(client, auth_
     bid = _board(client, auth_headers)
     r = client.put(f"{BASE}/{bid}", json={"proposal_json": json.dumps(graph(1)), "proposal_note": "x"}, headers=auth_headers)
     assert r.status_code == 200 and r.json()["proposal_json"] is None and r.json()["proposal_note"] is None
+
+
+def test_uebernommen_wird_nur_der_vorschlag_den_der_nutzer_gesehen_hat(client, auth_headers):
+    bid = _board(client, auth_headers)
+    proposals.put("testuser", bid, graph(3, "erster"), "")
+    seen = client.get(f"{BASE}/{bid}", headers=auth_headers).json()["proposal_at"]
+    # Der Agent ersetzt den Vorschlag, während der Nutzer noch den ersten vor sich hat.
+    with db(immediate=True) as conn:
+        conn.execute("UPDATE module_blueprint_boards SET proposal_json = ?, proposal_at = ? WHERE id = ?",
+                     (json.dumps(graph(1, "zweiter")), "2099-01-01T00:00:00Z", bid))
+    r = client.post(f"{BASE}/{bid}/proposal/accept", json={"proposal_at": seen}, headers=auth_headers)
+    assert r.status_code == 409 and _code(r) == "proposal_changed"
+    board = client.get(f"{BASE}/{bid}", headers=auth_headers).json()
+    assert ids(board["graph_json"]) == ["alt0", "alt1"] and ids(board["proposal_json"]) == ["zweiter0"]
+    assert client.get(f"{BASE}/{bid}/versions", headers=auth_headers).json() == []
+    r = client.post(f"{BASE}/{bid}/proposal/accept", json={"proposal_at": board["proposal_at"]}, headers=auth_headers)
+    assert r.status_code == 200 and ids(r.json()["graph_json"]) == ["zweiter0"]
