@@ -116,15 +116,27 @@ async def _step(step: Step) -> None:
     raise SetupError("tvw_setup_failed", step.key, detail)
 
 
-async def push_keystore() -> bool:
-    """Gesicherten Schlüssel in den Container legen (nur lesbar für ubuntu). False, wenn keiner gesichert ist."""
-    src = keystore_path()
-    if not src.is_file():
-        return False
+def adbkey_dir():
+    """Gesicherter adb-Schlüssel (SPEC Entscheidung 8): Der Fernseher kennt ihn, fragt also nach einem Abbau nicht neu."""
+    return settings.data_dir / "tvwerkstatt" / "adb"
+
+
+async def _push(src, dst_name: str) -> None:
     rc, _, _ = await incus.run("file", "push", "--uid", UID, "--gid", UID, "--mode", "0600", str(src),
-                               f"{container.NAME}{HOME}/.android/debug.keystore")
+                               f"{container.NAME}{HOME}/.android/{dst_name}")
     if rc != 0:
         raise SetupError("tvw_setup_failed", "keystore")
+
+
+async def push_keystore() -> bool:
+    """Gesicherte Schlüssel (Signieren, adb) in den Container legen, nur lesbar für ubuntu. False: keiner gesichert."""
+    src = keystore_path()
+    for name in ("adbkey", "adbkey.pub"):
+        if (adbkey_dir() / name).is_file():
+            await _push(adbkey_dir() / name, name)
+    if not src.is_file():
+        return False
+    await _push(src, "debug.keystore")
     return True
 
 

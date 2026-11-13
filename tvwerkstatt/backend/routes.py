@@ -46,7 +46,8 @@ async def get_state(p: Admin) -> dict:
     if not incus.available():
         return {"incus": False, "error_code": "tvw_no_incus", "devices": [], "builds": [],
                 "container": "missing", "setup": None}
-    return {"incus": True, "error_code": "", "devices": state.devices(), "builds": state.builds(),
+    devices = [{**d, "check": jobs.last_job("probe", d["device_id"])} for d in state.devices()]
+    return {"incus": True, "error_code": "", "devices": devices, "builds": state.builds(),
             "container": await container.status(), "setup": jobs.last_setup()}
 
 

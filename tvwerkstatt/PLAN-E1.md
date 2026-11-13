@@ -1,6 +1,6 @@
 # TV-Werkstatt – Bauplan Etappe E1 (Bauen und schieben)
 
-Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Bausteine 1–2 gemergt (#375, #376), Baustein 3 gebaut (Zweig `feat/tvwerkstatt-e1-container`).
+Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Bausteine 1–3 gemergt (#375–#377), Baustein 5 gebaut (Zweig `feat/tvwerkstatt-e1-geraete`).
 
 ## Ziel
 
@@ -68,7 +68,16 @@ Container, das Netz des Containers ist gesperrt bis auf das Internet und Port 55
 - Tests: mehrere Geräte; Art (Android TV / Google TV) und Original-Startbildschirm werden gelesen, nicht angenommen;
   Verbindung über Port 5555 oder über gekoppeltes Google-`adb` (Port wechselt, Sperrliste folgt); Adresse nur im Heimnetz, Probe liest Modell/Android/SDK, `tvw_adb_unauthorized` bei fehlender Bestätigung,
   `tvw_sdk_too_old` unter SDK 26, Ausnahme in der Sperrliste wird beim Eintragen gesetzt und beim Löschen entfernt.
-- Code: `device.py`.
+- Code: `device.py`, `device_jobs.py`, `routes_devices.py`, Migration 002 (`current_home`), Bereich „Fernseher“.
+- **Gemessen 13.11.2026 am Sony** (nur lesend, adb aus dem Container): erster Kontakt `unauthorized`, Freigabe am
+  Fernseher durch Till, danach `device`. Gelesen: Sony BRAVIA 4K GB ATV3, Android 9, SDK 28, Build PTT1.190515.001.S54,
+  Home `com.gathin.tvhome`, Original `com.google.android.tvlauncher` (installiert, abgeschaltet) → Art Android TV.
+  adb-Schlüssel des Containers nach `<Datenordner>/tvwerkstatt/adb/` gesichert (0700/0600).
+- Fund am Sony: `adb get-state` schreibt bei fehlender Freigabe 4 Zeilen, „unauthorized“ steht in der ersten. Der Zustand
+  wird darum aus `adb devices` für genau diese Adresse gelesen (Test).
+- Abweichung: Gewartet wird bis 5 Minuten auf die Freigabe (Schritt „auf dem Fernseher bestätigen“); danach
+  `tvw_adb_unauthorized` und „Erneut prüfen“. Das Original wird nur aus einer festen Liste bekannter Startbildschirme
+  übernommen; ist unser Startbildschirm schon Home, gilt der installierte `com.google.android.tvlauncher`.
 
 ### 6. Installieren und zurück
 - Tests: Installation nur mit Rückfrage-Kennzeichen, Ergebnis vom Gerät zurückgelesen (Home-Eigentümer), Rückweg stellt
