@@ -101,3 +101,21 @@ export const openStore = (id: string, target: { package?: string; query?: string
   api.post<{ job_id: string }>(`${dev(id)}/store/open`, target)
 export const uninstallApp = (id: string, pkg: string) =>
   api.post<{ job_id: string }>(`${dev(id)}/store/uninstall`, { confirm: true, package: pkg })
+
+// --- Zusätze (E3) -------------------------------------------------------------------------------------------
+export interface TvwAddonPerm { name: string; level: "" | "yellow" | "red" }
+export interface TvwAddon {
+  id: string; name: string; what: string; author: string; tested: string; permissions_text: string; package: string
+  min_sdk: number; dream: boolean; permissions: TvwAddonPerm[]; has_image: boolean
+  installed: { version: string; permissions: string[]; installed_at: string } | null
+}
+export interface TvwAddons {
+  items: TvwAddon[] | null; commit_id: string
+  job: (TvwJob & { kind: "addon_catalog" | "addon_install" | "addon_remove" }) | null
+}
+export const getAddons = (id: string) => api.get<TvwAddons>(`${dev(id)}/addons`)
+export const loadCatalog = (id: string) => api.post<{ job_id: string }>(`${dev(id)}/addons/catalog`, {})
+export const installAddon = (id: string, addon: string) =>
+  api.post<{ job_id: string }>(`${dev(id)}/addons/install`, { confirm: true, addon })
+export const removeAddon = (id: string, addon: string) =>
+  api.post<{ job_id: string }>(`${dev(id)}/addons/remove`, { confirm: true, addon })

@@ -1,9 +1,11 @@
 // Deutsche Texte der TV-Werkstatt. Einfach, ohne Fachwörter des Servers.
+import { add, addErr } from "./i18n.add.de"
 import { apps, appsErr } from "./i18n.apps.de"
 import { deb, debErr } from "./i18n.deb.de"
 
 export const de = {
   tvwerkstatt: {
+    add,
     apps,
     deb,
     title: "TV-Werkstatt",
@@ -65,7 +67,6 @@ export const de = {
     },
     tab: {
       desktop: "Desktop", debloat: "Entrümpeln", apps: "Apps", addons: "Zusätze", devices: "Geräte", build: "Bauumgebung",
-      addons_soon: "Zusätze kommen danach: Katalog von cleanyourtv und eigene Zusätze per GitHub-Adresse.",
     },
     mood: { morning: "Morgen", evening: "Abend", night: "Nacht" },
     desk: {
@@ -125,6 +126,7 @@ export const de = {
       done: "Fertig",
     },
     err: {
+      ...addErr,
       ...appsErr,
       ...debErr,
       general: "Das hat nicht geklappt. Bitte später noch einmal versuchen.",
