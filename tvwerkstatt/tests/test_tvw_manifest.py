@@ -22,7 +22,7 @@ def _cols(table: str) -> set[str]:
 def test_manifest_felder():
     m = _manifest()
     assert m["id"] == "tvwerkstatt" and m["name"] == "TV-Werkstatt"
-    assert m["version"] == "0.1.0"
+    assert m["version"] == "0.2.0"
     assert m["has_service"] is False
     assert m["default_agent_tools"] is False        # SPEC: keine Werkzeuge für Agenten in E1
     assert m["min_core_version"]
