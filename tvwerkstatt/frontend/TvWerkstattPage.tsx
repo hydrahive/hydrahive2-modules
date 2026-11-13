@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import * as api from "./api"
 import { BuildPanel } from "./BuildPanel"
 import { type AddonsActions, AddonsTab } from "./AddonsTab"
+import { type AppDeviceActions, AppDevicesPanel } from "./AppDevicesPanel"
 import { type AppsActions, AppsTab } from "./AppsTab"
 import { type DebloatActions, DebloatTab } from "./DebloatTab"
 import { DesktopTab, type DesktopActions } from "./DesktopTab"
@@ -14,6 +15,7 @@ import { SetupPanel, type SetupActions } from "./SetupPanel"
 import { setupView } from "./setupLogic"
 import { type Tab, TABS } from "./tabs"
 import { BOX, BOX_HEAD, INPUT, MUTED, TAB, TAB_ON } from "./ui"
+import { sideActions } from "./sideActions"
 import { useWorkshop } from "./useWorkshop"
 
 /** Modulseite TV-Werkstatt (nur Admins). Aufbau wie die Klick-Demo: Reiter, Desktop in drei Spalten. */
@@ -21,6 +23,7 @@ export function TvWerkstattPage() {
   const { t } = useTranslation("tvwerkstatt")
   const w = useWorkshop()
   const [tab, setTab] = useState<Tab>("desktop")
+  const [code, setCode] = useState<api.TvwAppCode | null>(null)
   const [picked, setPicked] = useState<{ id: string; set: Set<string> }>({ id: "", set: new Set() })
   const [now, setNow] = useState(() => new Date())
   const [mood, setMood] = useState(() => moodAt(new Date().getHours()))
@@ -28,26 +31,7 @@ export function TvWerkstattPage() {
   const id = w.deviceId ?? ""
   const sel = picked.id === id ? picked.set : new Set<string>()
   const list = (p: string[]) => p.map((x) => `• ${x}`).join("\n")
-  const appsAct: AppsActions = {
-    onRead: () => w.act(() => api.readStore(id)),
-    onOpen: (pkg) => w.act(() => api.openStore(id, { package: pkg })),
-    onSearch: (q) => w.act(() => api.openStore(id, { query: q })),
-    onUninstall: (pkg) => {
-      const name = w.desk?.apps.find((a) => a.package === pkg)?.label || pkg
-      if (window.confirm(t("apps.uninstall_confirm", { name }))) w.act(() => api.uninstallApp(id, pkg))
-    },
-  }
-  const addonsAct: AddonsActions = {
-    onCatalog: () => w.act(() => api.loadCatalog(id)),
-    onInstall: (a) => {
-      const perms = (a.installed ? a.installed.permissions : a.permissions.map((p) => p.name))
-        .map((n) => t(`add.perm.${n}`, { defaultValue: n })).join(", ") || t("add.no_perms")
-      if (window.confirm(t("add.confirm_install", { name: a.name, perms }))) w.act(() => api.installAddon(id, a.id))
-    },
-    onRemove: (a) => {
-      if (window.confirm(t("add.confirm_remove", { name: a.name }))) w.act(() => api.removeAddon(id, a.id))
-    },
-  }
+  const { appsAct, appAct, addonsAct } = sideActions(w, id, t, setCode)
   const debloat: DebloatActions = {
     onRead: () => w.act(() => api.readDebloat(id)),
     onPick: (pkgs, on) => setPicked(() => {
@@ -97,11 +81,12 @@ export function TvWerkstattPage() {
   }
   return <PageView s={w.s} msg={w.msg} busy={w.busy} tab={tab} onTab={setTab} deviceId={w.deviceId}
     onDevice={w.setDeviceId} desk={w.desk} deb={w.deb} debloat={debloat} picked={sel} store={w.store} apps={appsAct}
-    addons={w.addons} addonsAct={addonsAct}
+    addons={w.addons} addonsAct={addonsAct} appDevs={w.appDevs} appCode={code} appAct={appAct}
     draft={w.draft} mood={mood} now={now}
     setup={setup} devices={devices} desktop={desktop} onBuild={() => w.act(api.startBuild)} />
 }
 
+const NOOP_APP: AppDeviceActions = { onCode: () => {}, onRevoke: () => {}, onRemove: () => {}, onNotice: () => {} }
 const NOOP_ADDONS: AddonsActions = { onCatalog: () => {}, onInstall: () => {}, onRemove: () => {} }
 const NOOP_APPS: AppsActions = { onRead: () => {}, onOpen: () => {}, onSearch: () => {}, onUninstall: () => {} }
 const NOOP_DEBLOAT: DebloatActions = { onRead: () => {}, onPick: () => {}, onOff: () => {}, onOn: () => {},
@@ -117,6 +102,7 @@ export function PageView(p: {
   deviceId?: string | null; onDevice?: (id: string) => void; desk?: api.TvwDesktop | null; draft?: api.TvwLook | null
   deb?: api.TvwDebloat | null; debloat?: DebloatActions; picked?: Set<string>; store?: api.TvwStore | null
   apps?: AppsActions; addons?: api.TvwAddons | null; addonsAct?: AddonsActions
+  appDevs?: api.TvwAppDevice[]; appCode?: api.TvwAppCode | null; appAct?: AppDeviceActions
   mood?: api.Mood; now?: Date; setup?: SetupActions; devices?: DeviceActions; desktop?: DesktopActions
   onBuild?: () => void
 }) {
@@ -173,8 +159,12 @@ export function PageView(p: {
             : <AddonsTab dev={dev} data={p.addons ?? null} busy={working} actions={p.addonsAct ?? NOOP_ADDONS} />
       )}
       {s?.incus && tab === "devices" && (
-        <DevicePanel devices={s.devices} ready={ready} busy={working} hasBuild={s.builds.some((b) => b.state === "done")}
-          actions={p.devices ?? NOOP_DEVICES} />
+        <div className="grid gap-4 xl:grid-cols-2">
+          <DevicePanel devices={s.devices} ready={ready} busy={working} hasBuild={s.builds.some((b) => b.state === "done")}
+            actions={p.devices ?? NOOP_DEVICES} />
+          <AppDevicesPanel devices={p.appDevs ?? []} code={p.appCode ?? null} busy={working} now={p.now ?? new Date()}
+            actions={p.appAct ?? NOOP_APP} />
+        </div>
       )}
       {s?.incus && tab === "build" && (
         <div className="grid gap-4 lg:grid-cols-2">

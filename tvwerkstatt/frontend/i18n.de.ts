@@ -1,11 +1,13 @@
 // Deutsche Texte der TV-Werkstatt. Einfach, ohne Fachwörter des Servers.
 import { add, addErr } from "./i18n.add.de"
+import { app, appErr } from "./i18n.app.de"
 import { apps, appsErr } from "./i18n.apps.de"
 import { deb, debErr } from "./i18n.deb.de"
 
 export const de = {
   tvwerkstatt: {
     add,
+    app,
     apps,
     deb,
     title: "TV-Werkstatt",
@@ -127,6 +129,7 @@ export const de = {
     },
     err: {
       ...addErr,
+      ...appErr,
       ...appsErr,
       ...debErr,
       general: "Das hat nicht geklappt. Bitte später noch einmal versuchen.",
