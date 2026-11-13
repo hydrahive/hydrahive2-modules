@@ -35,7 +35,7 @@ export function useWorkshop() {
   const debFor = deviceId && deb?.device_id === deviceId ? deb.data : null
 
   const deskRunning = (!!deskFor && [deskFor.read_job, deskFor.push_job].some((j) => j?.state === "running"))
-    || deb?.data.read_job?.state === "running"
+    || [deb?.data.read_job, deb?.data.switch_job].some((j) => j?.state === "running")
   const running = !!s && (anyChecking(s.devices) || s.build?.state === "running" || deskRunning)
   const ms = s ? pollMs(setupView(s.setup, s.container), running) : null
   useEffect(() => {
