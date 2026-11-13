@@ -22,6 +22,13 @@ def no_host(monkeypatch):
     monkeypatch.setattr(network, "_host_addresses", lambda: {"192.168.178.2/32", "203.0.113.9/32"})
 
 
+@pytest.fixture(autouse=True)
+def laufender_container(request):
+    """Die Probe läuft im Container: in der Attrappe muss er laufen (exec auf einen gestoppten scheitert wie echt)."""
+    if "fake_incus" in request.fixturenames:
+        request.getfixturevalue("fake_incus").containers["hh-tvwerkstatt"] = {"running": True, "network": "hhtvw0"}
+
+
 # --- Probe im Container ---------------------------------------------------------------------------------------
 
 def test_probe_ziele(no_host):
@@ -83,6 +90,7 @@ def test_netz_bleibt_solange_ein_container_daran_haengt(fake_incus, no_host):
 
 
 def test_netz_weg_wenn_unbenutzt_fremde_netze_bleiben(fake_incus, no_host):
+    fake_incus.containers.pop("hh-tvwerkstatt", None)
     fake_incus.networks["hhvibe0"] = {}
     fake_incus.acls["hhvibe-acl"] = {"egress": [], "ingress": []}
     fake_incus.containers["hydratest"] = {"running": True, "network": "hhnat0"}

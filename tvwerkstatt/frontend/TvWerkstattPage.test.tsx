@@ -8,7 +8,7 @@ import type { TvwState } from "./api"
 import { PageView } from "./TvWerkstattPage"
 
 const html = (s: TvwState | null, msg: string | null = null) => renderToStaticMarkup(<PageView s={s} msg={msg} />)
-const LEER: TvwState = { incus: true, error_code: "", devices: [], builds: [] }
+const LEER: TvwState = { incus: true, error_code: "", devices: [], builds: [], container: "missing", setup: null }
 
 describe("TV-Werkstatt: Seite", () => {
   it("ohne Container-Umgebung eine verständliche Meldung statt einer leeren Seite", () => {
@@ -34,6 +34,16 @@ describe("TV-Werkstatt: Seite", () => {
     const out = html(null, "err.general")
     expect(out).toContain("err.general")
     expect(out).toContain('role="alert"')
+  })
+
+  it("mit Container-Umgebung steht der Bereich Bauumgebung über den Geräten", () => {
+    const out = html(LEER)
+    expect(out).toContain("setup.title")
+    expect(out.indexOf("setup.title")).toBeLessThan(out.indexOf("devices"))
+  })
+
+  it("ohne Container-Umgebung kein Knopf zum Einrichten", () => {
+    expect(html({ ...LEER, incus: false, error_code: "tvw_no_incus" })).not.toContain("setup.start")
   })
 
   it("noch nichts geladen und kein Fehler: Ladeanzeige", () => {
