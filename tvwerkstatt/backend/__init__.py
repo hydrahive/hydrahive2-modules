@@ -1,13 +1,15 @@
 """Modul TV-Werkstatt – Startbildschirm und Zusätze für Android-TV (SPEC.md, PLAN-E1.md).
 
-Baustein 1: Gerüst, Zugriff nur für Admins, Tabellen. Netz, Container, Bau, Geräte und Installation folgen mit den
-weiteren Bausteinen des Plans.
+Bausteine 1–3 und 5: Gerüst, Netz mit Sperrliste, Bauumgebung, Fernseher eintragen und prüfen. Bau und
+Installation folgen mit den weiteren Bausteinen des Plans.
 """
 from __future__ import annotations
 
 from .routes import router
+from .routes_devices import router as devices_router
 
 
 def register(ctx) -> None:
     ctx.register_migrations("migrations")
+    ctx.register_router(devices_router)
     ctx.register_router(router)

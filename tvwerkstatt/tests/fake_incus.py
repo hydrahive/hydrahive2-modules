@@ -63,6 +63,10 @@ class FakeIncus:
         if a[:2] == ["file", "push"]:
             self.pushed.append(a)
             return 0, "", ""
+        if a[:2] == ["file", "pull"]:
+            from pathlib import Path
+            Path(a[-1]).write_text("erfundener-schluessel", encoding="utf-8")
+            return 0, "", ""
         return 0, "", ""
 
     def _network(self, a: list[str]) -> tuple[int, str, str]:

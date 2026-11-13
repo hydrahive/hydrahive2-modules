@@ -8,6 +8,22 @@ const de = {
     adb: {
       open: "Debugging offen", closed: "Debugging zu", unauthorized: "Freigabe am Fernseher fehlt", unknown: "nicht geprüft",
     },
+    kind: { android_tv: "Android TV", google_tv: "Google TV" },
+    device: {
+      need_setup: "Fernseher lassen sich eintragen, sobald die Werkstatt eingerichtet ist.",
+      add_title: "Fernseher hinzufügen",
+      add_explain: "Am Fernseher muss das Debugging über das Netzwerk eingeschaltet sein. Beim ersten Prüfen fragt der "
+        + "Fernseher „Debugging zulassen?“ – bitte mit der Fernbedienung bestätigen. Am Fernseher wird dabei nichts "
+        + "verstellt, nur gelesen.",
+      name: "Name", name_ph: "z. B. Wohnzimmer", address: "Adresse im Heimnetz",
+      add: "Hinzufügen und prüfen",
+      checking: "Wird geprüft …",
+      authorize: "Bitte jetzt am Fernseher „Debugging zulassen?“ bestätigen (am besten „Immer zulassen“).",
+      check: "Erneut prüfen",
+      remove: "Entfernen",
+      remove_confirm: "Fernseher aus der Werkstatt entfernen? Am Fernseher selbst ändert sich nichts.",
+      our_home: "Startbildschirm der Werkstatt ist aktiv",
+    },
     container: {
       missing: "nicht eingerichtet", stopped: "bereit (ruht)", running: "läuft", unknown: "Zustand unbekannt",
     },
@@ -62,6 +78,15 @@ const de = {
       tvw_subnet_unavailable: "Für das abgeschottete Netz ist kein freier Adressbereich da.",
       tvw_acl_dirty: "Die Sperrliste enthält doppelte Regeln. Bitte die Werkstatt abbauen und neu einrichten.",
       tvw_bad_address: "Diese Adresse passt nicht zu einem Fernseher im Heimnetz.",
+      tvw_bad_name: "Bitte einen kurzen Namen ohne Sonderzeichen angeben (höchstens 60 Zeichen).",
+      tvw_not_set_up: "Bitte zuerst die Werkstatt einrichten.",
+      tvw_device_exists: "Ein Fernseher mit dieser Adresse ist schon eingetragen.",
+      tvw_device_not_found: "Diesen Fernseher gibt es nicht (mehr).",
+      tvw_device_probe_failed: "Der Fernseher ließ sich nicht abfragen.",
+      tvw_adb_unauthorized: "Am Fernseher wurde „Debugging zulassen?“ nicht bestätigt. Bitte „Erneut prüfen“ und "
+        + "dann am Fernseher bestätigen.",
+      tvw_adb_closed: "Der Fernseher antwortet nicht. Ist er an und das Debugging über das Netzwerk eingeschaltet?",
+      tvw_sdk_too_old: "Das Android auf diesem Fernseher ist zu alt für den Startbildschirm (mindestens Android 8).",
     },
   },
 }
@@ -74,6 +99,21 @@ const en = {
     no_devices: "No TV added yet.",
     adb: {
       open: "Debugging open", closed: "Debugging closed", unauthorized: "Not allowed on the TV yet", unknown: "not checked",
+    },
+    kind: { android_tv: "Android TV", google_tv: "Google TV" },
+    device: {
+      need_setup: "You can add TVs once the workshop is set up.",
+      add_title: "Add a TV",
+      add_explain: "Network debugging must be switched on at the TV. On the first check the TV asks \"Allow "
+        + "debugging?\" – please confirm with the remote. Nothing is changed on the TV, it is only read.",
+      name: "Name", name_ph: "e.g. Living room", address: "Address on the home network",
+      add: "Add and check",
+      checking: "Checking …",
+      authorize: "Please confirm \"Allow debugging?\" on the TV now (ideally \"Always allow\").",
+      check: "Check again",
+      remove: "Remove",
+      remove_confirm: "Remove this TV from the workshop? Nothing changes on the TV itself.",
+      our_home: "Workshop home screen is active",
     },
     container: {
       missing: "not set up", stopped: "ready (resting)", running: "running", unknown: "state unknown",
@@ -128,6 +168,15 @@ const en = {
       tvw_subnet_unavailable: "There is no free address range for the sealed-off network.",
       tvw_acl_dirty: "The block list contains duplicate rules. Please remove the workshop and set it up again.",
       tvw_bad_address: "This address does not fit a TV on the home network.",
+      tvw_bad_name: "Please give a short name without special characters (at most 60 characters).",
+      tvw_not_set_up: "Please set up the workshop first.",
+      tvw_device_exists: "A TV with this address is already added.",
+      tvw_device_not_found: "This TV does not exist (any more).",
+      tvw_device_probe_failed: "The TV could not be queried.",
+      tvw_adb_unauthorized: "\"Allow debugging?\" was not confirmed on the TV. Please \"Check again\" and then "
+        + "confirm on the TV.",
+      tvw_adb_closed: "The TV does not answer. Is it on and is network debugging switched on?",
+      tvw_sdk_too_old: "The Android on this TV is too old for the home screen (at least Android 8).",
     },
   },
 }

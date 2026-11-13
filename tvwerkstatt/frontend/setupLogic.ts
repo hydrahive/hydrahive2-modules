@@ -20,7 +20,7 @@ export function stepIndex(step: string): { n: number; total: number } {
   return { n: i < 0 ? 0 : i + 1, total: SETUP_STEPS.length }
 }
 
-/** Während eines Auftrags öfter nachsehen, sonst gar nicht. */
-export function pollMs(view: SetupView): number | null {
-  return view === "running" ? 2000 : null
+/** Während eines Auftrags (Einrichten oder Prüfen eines Fernsehers) öfter nachsehen, sonst gar nicht. */
+export function pollMs(view: SetupView, deviceBusy = false): number | null {
+  return view === "running" || deviceBusy ? 2000 : null
 }
