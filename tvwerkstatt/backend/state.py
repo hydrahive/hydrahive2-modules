@@ -21,3 +21,10 @@ def builds(limit: int = 20) -> list[dict]:
         rows = conn.execute(f"SELECT {', '.join(_BUILD_PUBLIC)} FROM module_tvwerkstatt_builds "
                             "ORDER BY created_at DESC, build_id LIMIT ?", (limit,)).fetchall()
     return [dict(zip(_BUILD_PUBLIC, r, strict=True)) for r in rows]
+
+
+def device_targets() -> list[tuple[str, int]]:
+    """Adresse und ADB-Port aller eingetragenen Fernseher – daraus entstehen die Ausnahmen der Sperrliste."""
+    with db() as conn:
+        rows = conn.execute("SELECT address, adb_port FROM module_tvwerkstatt_devices ORDER BY address").fetchall()
+    return [(str(a), int(p)) for a, p in rows]

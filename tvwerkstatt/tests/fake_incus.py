@@ -22,6 +22,9 @@ class FakeIncus:
         self.exec_answers: dict[str, tuple[int, str]] = {}
         self.open_targets: set[str] = set()
         self.dns_ok = True
+        self.pool = "ssd"
+        self.pushed: list[list[str]] = []
+        self.exec_log: list[str] = []
 
     async def run(self, *args: str, timeout: float = 60.0, input_bytes: bytes | None = None) -> tuple[int, str, str]:
         a = list(args)
@@ -46,7 +49,8 @@ class FakeIncus:
             self.containers[a[1]]["running"] = a[0] == "start"
             return 0, "", ""
         if a[0] == "delete":
-            self.containers.pop(a[-1], None)
+            for name in [x for x in a[1:] if not x.startswith("-")]:
+                self.containers.pop(name, None)
             return 0, "", ""
         if a[0] == "list":
             return 0, json.dumps([{"name": n, "status": "Running" if c["running"] else "Stopped",
@@ -54,6 +58,11 @@ class FakeIncus:
                                    if c["network"] else {}} for n, c in self.containers.items()]), ""
         if a[0] == "exec":
             return self._exec(a)
+        if a[:4] == ["profile", "device", "get", "default"]:
+            return 0, self.pool + "\n", ""
+        if a[:2] == ["file", "push"]:
+            self.pushed.append(a)
+            return 0, "", ""
         return 0, "", ""
 
     def _network(self, a: list[str]) -> tuple[int, str, str]:
@@ -109,6 +118,9 @@ class FakeIncus:
 
     def _exec(self, a: list[str]) -> tuple[int, str, str]:
         body = " ".join(a[a.index("--") + 1:]) if "--" in a else ""
+        if a[1] not in self.containers or not self.containers[a[1]]["running"]:
+            return 1, "", "Error: Instance is not running"
+        self.exec_log.append(body)
         hits = [k for k in self.exec_answers if k in body]
         if hits:
             rc, out = self.exec_answers[max(hits, key=len)]

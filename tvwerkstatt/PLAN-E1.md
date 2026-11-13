@@ -1,6 +1,6 @@
 # TV-Werkstatt – Bauplan Etappe E1 (Bauen und schieben)
 
-Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Baustein 1 gemergt (#375), Baustein 2 gebaut (Zweig `feat/tvwerkstatt-e1-netz`).
+Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Bausteine 1–2 gemergt (#375, #376), Baustein 3 gebaut (Zweig `feat/tvwerkstatt-e1-container`).
 
 ## Ziel
 
@@ -38,6 +38,9 @@ Container, das Netz des Containers ist gesperrt bis auf das Internet und Port 55
   den gesperrten Bereichen herausgerechnet und nur für TCP 5555 erlaubt; Probe meldet offen/zu.
 - Echte Messung auf dem Server (mit OK): aus dem Container Server und Gateway :22/:443 zu, Fernseher :5555 offen,
   Fernseher :80 zu, Internet und Namensauflösung offen. Ergebnis hier eintragen.
+- **Gemessen 13.11.2026** (Wegwerf-Container an `hhtvw0`, 10.81.0.1/24): 17 Ziele zu (Gateway, alle Adressen des Servers
+  je :22/:443, Fernseher :80), Fernseher :5555 offen, Namensauflösung und Internet :443 offen. Danach alles entfernt.
+  Router `.1` und `.3` nicht angesprochen.
 - Abweichung beim Bau: Router (.1) und .3 werden auch zur Probe nie angesprochen (Tills Regel), die Sperre für sie ist
   nur über die Regeln belegt. Gleiche Regeln in anderer Reihenfolge lösen keinen Umbau aus; doppelte Regeln im Ist
   ergeben `tvw_acl_dirty` statt eines Umbaus (incus kann eine von zwei gleichen Regeln nicht einzeln entfernen).
@@ -46,7 +49,15 @@ Container, das Netz des Containers ist gesperrt bis auf das Internet und Port 55
 - Tests: Anlegen mit festen Grenzen (unprivilegiert, kein Nesting, idmap isoliert), Namensauflösung wird gesetzt,
   Prüfsumme der cmdline-tools gegen Googles Verzeichnis, Abbruch bei Abweichung ohne Entpacken, Lizenz nur nach
   Bestätigung im Auftrag.
-- Code: `container.py`, `provision.py`.
+- Code: `container.py`, `provision.py`, `jobs.py`, Bereich „Bauumgebung“ der Seite.
+- **Gemessen 13.11.2026** (echter Lauf mit dem Code des Zweigs): eingerichtet in 36 s (Netz 1,4 s, Container 1,3 s,
+  Pakete 7 s, Werkzeuge 4 s, Android-Bausteine 6 s, Probe 15 s). Im Container: openjdk 17.0.21, build-tools 34.0.0,
+  android-34, adb 37.0.1, Heimordner 449 MB, Bau-Nutzer ohne sudo, Signierschlüssel byte-gleich mit der Sicherung.
+  Probe: 17 Ziele zu, Fernseher :5555 offen. Danach angehalten.
+- Prüfsummen-Sperre im echten Container probiert: Datei mit richtiger Größe, falschem Inhalt → Exit 3, nichts entpackt,
+  Datei gelöscht; falsche Größe → Exit 3.
+- Abweichung: Der Schlüssel zum Signieren liegt unter `<Datenordner>/tvwerkstatt/signing/`. Fehlt er, wird nichts
+  hineingelegt; der erste Bau erzeugt dann einen neuen (Updates auf dem Sony gingen dann nur nach Deinstallation).
 
 ### 4. Quelle und Bau
 - Tests: Commit festgenagelt, Wrapper-Prüfsumme gegen gradle.org, Bau-Fehler → `tvw_build_failed` mit Protokollende,
