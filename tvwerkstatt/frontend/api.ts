@@ -36,3 +36,32 @@ export const installHome = (id: string) =>
   api.post<{ job_id: string }>(`${BASE}/devices/${encodeURIComponent(id)}/install`, { confirm: true })
 export const restoreHome = (id: string) =>
   api.post<{ job_id: string }>(`${BASE}/devices/${encodeURIComponent(id)}/restore`, { confirm: true })
+
+// --- Desktop (E2) --------------------------------------------------------------------------------------------
+export type Mood = "morning" | "evening" | "night"
+export interface TvwLook {
+  dock: string[]; hidden: string[]; labels: Record<string, string>; columns: number; rows_below_dock: number
+  background_color: string; wallpaper_dim: number; dock_opacity: number; rotation_minutes: number
+  sky_intensity: number; clock_format: "12" | "24" | "system"; show_greeting: boolean; greeting_name: string
+}
+export interface TvwApp { package: string; label: string; version: string; has_banner: number; color: string }
+export interface TvwWallpaper { wallpaper_id: string; mood: Mood; file_name: string; title: string; created_at: string }
+export interface TvwDesktop {
+  look: TvwLook; apps: TvwApp[]; wallpapers: TvwWallpaper[]; pushed_at: string; pushed_current: boolean
+  read_job: TvwJob | null; push_job: TvwJob | null
+}
+const dev = (id: string) => `${BASE}/devices/${encodeURIComponent(id)}`
+export const getDesktop = (id: string) => api.get<TvwDesktop>(`${dev(id)}/desktop`)
+export const saveLook = (id: string, look: TvwLook) => api.put<{ look: TvwLook }>(`${dev(id)}/look`, look)
+export const readApps = (id: string) => api.post<{ job_id: string }>(`${dev(id)}/apps/read`, {})
+export const pushLook = (id: string) => api.post<{ job_id: string }>(`${dev(id)}/look/push`, { confirm: true })
+export const uploadWallpaper = (id: string, mood: Mood, file: File) => {
+  const form = new FormData()
+  form.append("mood", mood)
+  form.append("file", file)
+  return api.postForm<{ wallpaper: TvwWallpaper }>(`${dev(id)}/wallpapers`, form)
+}
+export const deleteWallpaper = (id: string, wid: string) =>
+  api.delete<{ ok: boolean }>(`${dev(id)}/wallpapers/${encodeURIComponent(wid)}`)
+export const appImagePath = (id: string, pkg: string) => `/api${dev(id)}/apps/${encodeURIComponent(pkg)}/image`
+export const wallpaperPath = (id: string, wid: string) => `/api${dev(id)}/wallpapers/${encodeURIComponent(wid)}/image`

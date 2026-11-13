@@ -27,7 +27,8 @@ if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
 TABLES = ("module_tvwerkstatt_devices", "module_tvwerkstatt_sources", "module_tvwerkstatt_builds",
-          "module_tvwerkstatt_installed", "module_tvwerkstatt_jobs")
+          "module_tvwerkstatt_installed", "module_tvwerkstatt_jobs", "module_tvwerkstatt_looks",
+          "module_tvwerkstatt_apps", "module_tvwerkstatt_wallpapers")
 
 
 @pytest.fixture(scope="session", autouse=True)

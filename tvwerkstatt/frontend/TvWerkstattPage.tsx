@@ -1,54 +1,58 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import * as api from "./api"
 import { BuildPanel } from "./BuildPanel"
+import { DesktopTab, type DesktopActions } from "./DesktopTab"
+import { moodAt } from "./desktopLogic"
 import { DevicePanel, type DeviceActions } from "./DevicePanel"
 import { anyChecking } from "./deviceLogic"
 import { errorKey } from "./logic"
 import { SetupPanel, type SetupActions } from "./SetupPanel"
-import { lastGood } from "./buildLogic"
-import { pollMs, setupView } from "./setupLogic"
-import { MUTED } from "./ui"
+import { setupView } from "./setupLogic"
+import { type Tab, TABS } from "./tabs"
+import { BOX, BOX_HEAD, INPUT, MUTED, TAB, TAB_ON } from "./ui"
+import { useWorkshop } from "./useWorkshop"
 
-/** Modulseite TV-Werkstatt (nur Admins). E1 Bausteine 3–5: Bauumgebung, Fernseher, Startbildschirm bauen. */
+/** Modulseite TV-Werkstatt (nur Admins). Aufbau wie die Klick-Demo: Reiter, Desktop in drei Spalten. */
 export function TvWerkstattPage() {
   const { t } = useTranslation("tvwerkstatt")
-  const [s, setS] = useState<api.TvwState | null>(null)
-  const [msg, setMsg] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const alive = useRef(true)
-
-  const load = useCallback(() => api.getState()
-    .then((r) => { if (alive.current) { setS(r); setMsg(null) } })
-    .catch((e) => { if (alive.current) setMsg(errorKey(e)) }), [])
-  useEffect(() => { alive.current = true; load(); return () => { alive.current = false } }, [load])
-
-  const ms = s ? pollMs(setupView(s.setup, s.container), anyChecking(s.devices) || s.build?.state === "running") : null
-  useEffect(() => {
-    if (ms === null) return
-    const id = setTimeout(load, ms)
-    return () => clearTimeout(id)
-  }, [ms, s, load])
-
-  const act = useCallback((fn: () => Promise<unknown>) => {
-    setBusy(true)
-    fn().then(load).catch((e) => { if (alive.current) setMsg(errorKey(e)) })
-      .finally(() => { if (alive.current) setBusy(false) })
-  }, [load])
+  const w = useWorkshop()
+  const [tab, setTab] = useState<Tab>("desktop")
+  const [now, setNow] = useState(() => new Date())
+  const [mood, setMood] = useState(() => moodAt(new Date().getHours()))
+  useEffect(() => { const id = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(id) }, [])
+  const id = w.deviceId ?? ""
 
   const setup: SetupActions = {
-    onSetup: (accept) => act(() => api.startSetup(accept)),
-    onStop: () => act(api.stopContainer),
-    onRemove: () => { if (window.confirm(t("setup.remove_confirm"))) act(api.removeContainer) },
+    onSetup: (accept) => w.act(() => api.startSetup(accept)),
+    onStop: () => w.act(api.stopContainer),
+    onRemove: () => { if (window.confirm(t("setup.remove_confirm"))) w.act(api.removeContainer) },
   }
   const devices: DeviceActions = {
-    onAdd: (name, address) => act(() => api.addDevice(name.trim(), address.trim())),
-    onCheck: (id) => act(() => api.checkDevice(id)),
-    onRemove: (id) => { if (window.confirm(t("device.remove_confirm"))) act(() => api.removeDevice(id)) },
-    onInstall: (id) => { if (window.confirm(t("install.confirm"))) act(() => api.installHome(id)) },
-    onRestore: (id) => { if (window.confirm(t("install.restore_confirm"))) act(() => api.restoreHome(id)) },
+    onAdd: (name, address) => w.act(() => api.addDevice(name.trim(), address.trim())),
+    onCheck: (d) => w.act(() => api.checkDevice(d)),
+    onRemove: (d) => { if (window.confirm(t("device.remove_confirm"))) w.act(() => api.removeDevice(d)) },
+    onInstall: (d) => { if (window.confirm(t("install.confirm"))) w.act(() => api.installHome(d)) },
+    onRestore: (d) => { if (window.confirm(t("install.restore_confirm"))) w.act(() => api.restoreHome(d)) },
   }
-  return <PageView s={s} msg={msg} busy={busy} setup={setup} devices={devices} onBuild={() => act(api.startBuild)} />
+  const desktop: DesktopActions = {
+    onLook: w.editDraft,
+    onSave: () => { if (w.draft) w.act(() => api.saveLook(id, w.draft!), w.clearDirty) },
+    onReadApps: () => w.act(() => api.readApps(id)),
+    onPushLook: () => {
+      if (!w.draft || !window.confirm(t("desk.push_confirm"))) return
+      w.act(async () => { await api.saveLook(id, w.draft!); w.clearDirty(); return api.pushLook(id) })
+    },
+    onBuild: () => w.act(api.startBuild),
+    onInstall: () => devices.onInstall(id),
+    onRestore: () => devices.onRestore(id),
+    onMood: setMood,
+    onUpload: (m, f) => w.act(() => api.uploadWallpaper(id, m, f)),
+    onDeleteWall: (wid) => { if (window.confirm(t("desk.remove_image_confirm"))) w.act(() => api.deleteWallpaper(id, wid)) },
+  }
+  return <PageView s={w.s} msg={w.msg} busy={w.busy} tab={tab} onTab={setTab} deviceId={w.deviceId}
+    onDevice={w.setDeviceId} desk={w.desk} draft={w.draft} mood={mood} now={now}
+    setup={setup} devices={devices} desktop={desktop} onBuild={() => w.act(api.startBuild)} />
 }
 
 const NOOP_SETUP: SetupActions = { onSetup: () => {}, onStop: () => {}, onRemove: () => {} }
@@ -57,26 +61,63 @@ const NOOP_DEVICES: DeviceActions = {
 }
 
 /** Reine Ansicht: Zustand rein, Seite raus (getrennt, damit sie ohne Server testbar ist). */
-export function PageView({ s, msg, busy = false, setup = NOOP_SETUP, devices = NOOP_DEVICES, onBuild = () => {} }: {
-  s: api.TvwState | null; msg: string | null; busy?: boolean; setup?: SetupActions; devices?: DeviceActions
+export function PageView(p: {
+  s: api.TvwState | null; msg: string | null; busy?: boolean; tab?: Tab; onTab?: (t: Tab) => void
+  deviceId?: string | null; onDevice?: (id: string) => void; desk?: api.TvwDesktop | null; draft?: api.TvwLook | null
+  mood?: api.Mood; now?: Date; setup?: SetupActions; devices?: DeviceActions; desktop?: DesktopActions
   onBuild?: () => void
 }) {
   const { t } = useTranslation("tvwerkstatt")
+  const { s, msg, busy = false, tab = "desktop" } = p
   const ready = !!s && s.container !== "missing" && setupView(s.setup, s.container) !== "running"
   const working = busy || !!s && (anyChecking(s.devices) || s.build?.state === "running")
+  const dev = s?.devices.find((d) => d.device_id === p.deviceId)
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-4">
-      <header className="space-y-1">
+    <div className="mx-auto max-w-[1400px] space-y-4 p-4">
+      <header className="flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-semibold text-[#e8eef8]">{t("title")}</h1>
-        <p className={MUTED}>{t("subtitle")}</p>
+        {s?.incus && s.devices.length > 0 && (
+          <select className={`${INPUT} w-auto`} aria-label={t("desk.choose")} value={p.deviceId ?? ""}
+            onChange={(e) => p.onDevice?.(e.target.value)}>
+            {s.devices.map((d) => <option key={d.device_id} value={d.device_id}>{d.name} · {d.address}</option>)}
+          </select>
+        )}
+        <p className={`${MUTED} basis-full`}>{t("subtitle")}</p>
       </header>
       {msg && <p className="text-sm text-red-300" role="alert">{t(msg)}</p>}
       {!s && !msg && <p className={MUTED}>…</p>}
       {s && !s.incus && <p className="text-sm text-amber-200">{t(errorKey(s.error_code))}</p>}
-      {s?.incus && <SetupPanel job={s.setup} container={s.container} busy={busy} actions={setup} />}
-      {s?.incus && <DevicePanel devices={s.devices} ready={ready} busy={working} hasBuild={!!lastGood(s.builds)}
-        actions={devices} />}
-      {s?.incus && <BuildPanel job={s.build} builds={s.builds} ready={ready} busy={working} onBuild={onBuild} />}
+      {s?.incus && (
+        <nav className="flex flex-wrap gap-1 border-b border-[rgb(var(--hh-s-rand,52_66_92))]" role="tablist">
+          {TABS.map((k) => (
+            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => p.onTab?.(k)}
+              className={tab === k ? TAB_ON : TAB}>{t(`tab.${k}`)}</button>
+          ))}
+        </nav>
+      )}
+      {s?.incus && tab === "desktop" && (
+        !ready ? <Hint text={t("desk.need_setup")} />
+          : !dev ? <Hint text={t("desk.need_device")} />
+            : !p.desk || !p.draft ? <p className={MUTED}>…</p>
+              : <DesktopTab s={s} dev={dev} desk={p.desk} draft={p.draft} mood={p.mood ?? "evening"}
+                now={p.now ?? new Date()} busy={working} actions={p.desktop!} />
+      )}
+      {s?.incus && tab === "debloat" && <Hint text={t("tab.debloat_soon")} />}
+      {s?.incus && tab === "addons" && <Hint text={t("tab.addons_soon")} />}
+      {s?.incus && tab === "devices" && (
+        <DevicePanel devices={s.devices} ready={ready} busy={working} hasBuild={s.builds.some((b) => b.state === "done")}
+          actions={p.devices ?? NOOP_DEVICES} />
+      )}
+      {s?.incus && tab === "build" && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <SetupPanel job={s.setup} container={s.container} busy={busy} actions={p.setup ?? NOOP_SETUP} />
+          <BuildPanel job={s.build} builds={s.builds} ready={ready} busy={working} onBuild={p.onBuild ?? (() => {})} />
+        </div>
+      )}
     </div>
   )
+}
+
+function Hint({ text }: { text: string }) {
+  return <section className={BOX}><h2 className={BOX_HEAD}>{text}</h2></section>
 }
