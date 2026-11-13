@@ -49,3 +49,17 @@ def pin_for(host: str) -> str | None:
         return spki_pin((settings.config_dir / "tls" / "hydrahive.crt").read_bytes())
     except OSError:
         return None
+
+
+def short(pin: str | None) -> str | None:
+    """Kurzform zum Vergleichen am Gerät: erste 12 Hex-Zeichen des Hashes, groß, in Vierergruppen (wie Logic.shortPin)."""
+    if not pin or not pin.startswith("sha256/"):
+        return None
+    try:
+        raw = base64.b64decode(pin[7:], validate=True)
+    except ValueError:
+        return None
+    if len(raw) != 32:
+        return None
+    h = raw.hex()[:12].upper()
+    return f"{h[:4]} {h[4:8]} {h[8:12]}"
