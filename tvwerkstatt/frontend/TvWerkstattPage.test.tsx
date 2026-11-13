@@ -67,8 +67,15 @@ describe("TV-Werkstatt: Seite", () => {
     expect(out).toContain("build.title")
   })
 
-  it("Entrümpeln und Zusätze sagen, was kommt", () => {
-    expect(html(LEER, "debloat")).toContain("tab.debloat_soon")
+  it("Entrümpeln: ohne Fernseher Hinweis, mit Fernseher der echte Reiter (kein Platzhalter mehr)", () => {
+    expect(html(LEER, "debloat")).toContain("desk.need_device")
+    const tv = { device_id: "t1", name: "Wohnzimmer", address: "192.0.2.11" }
+    const out = renderToStaticMarkup(<PageView s={{ ...LEER, devices: [tv] }} msg={null} tab="debloat" deviceId="t1" />)
+    expect(out).toContain("deb.read")
+    expect(out).not.toContain("debloat_soon")
+  })
+
+  it("Zusätze sagen noch, was kommt", () => {
     expect(html(LEER, "addons")).toContain("tab.addons_soon")
   })
 

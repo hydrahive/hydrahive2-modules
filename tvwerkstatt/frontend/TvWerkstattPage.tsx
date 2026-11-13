@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import * as api from "./api"
 import { BuildPanel } from "./BuildPanel"
+import { DebloatTab } from "./DebloatTab"
 import { DesktopTab, type DesktopActions } from "./DesktopTab"
 import { moodAt } from "./desktopLogic"
 import { DevicePanel, type DeviceActions } from "./DevicePanel"
@@ -53,7 +54,8 @@ export function TvWerkstattPage() {
     onDeleteWall: (wid) => { if (window.confirm(t("desk.remove_image_confirm"))) w.act(() => api.deleteWallpaper(id, wid)) },
   }
   return <PageView s={w.s} msg={w.msg} busy={w.busy} tab={tab} onTab={setTab} deviceId={w.deviceId}
-    onDevice={w.setDeviceId} desk={w.desk} draft={w.draft} mood={mood} now={now}
+    onDevice={w.setDeviceId} desk={w.desk} deb={w.deb} onReadDebloat={() => w.act(() => api.readDebloat(id))}
+    draft={w.draft} mood={mood} now={now}
     setup={setup} devices={devices} desktop={desktop} onBuild={() => w.act(api.startBuild)} />
 }
 
@@ -66,6 +68,7 @@ const NOOP_DEVICES: DeviceActions = {
 export function PageView(p: {
   s: api.TvwState | null; msg: string | null; busy?: boolean; tab?: Tab; onTab?: (t: Tab) => void
   deviceId?: string | null; onDevice?: (id: string) => void; desk?: api.TvwDesktop | null; draft?: api.TvwLook | null
+  deb?: api.TvwDebloat | null; onReadDebloat?: () => void
   mood?: api.Mood; now?: Date; setup?: SetupActions; devices?: DeviceActions; desktop?: DesktopActions
   onBuild?: () => void
 }) {
@@ -104,7 +107,11 @@ export function PageView(p: {
               : <DesktopTab s={s} dev={dev} desk={p.desk} draft={p.draft} mood={p.mood ?? "evening"}
                 now={p.now ?? new Date()} busy={working} actions={p.desktop!} />
       )}
-      {s?.incus && tab === "debloat" && <Hint text={t("tab.debloat_soon")} />}
+      {s?.incus && tab === "debloat" && (
+        !ready ? <Hint text={t("desk.need_setup")} />
+          : !dev ? <Hint text={t("desk.need_device")} />
+            : <DebloatTab dev={dev} data={p.deb ?? null} busy={working} onRead={p.onReadDebloat ?? (() => {})} />
+      )}
       {s?.incus && tab === "addons" && <Hint text={t("tab.addons_soon")} />}
       {s?.incus && tab === "devices" && (
         <DevicePanel devices={s.devices} ready={ready} busy={working} hasBuild={s.builds.some((b) => b.state === "done")}

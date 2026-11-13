@@ -6,6 +6,7 @@ Installation folgen mit den weiteren Bausteinen des Plans.
 from __future__ import annotations
 
 from .routes import router
+from .routes_debloat import router as debloat_router
 from .routes_devices import router as devices_router
 from .routes_look import router as look_router
 
@@ -14,4 +15,5 @@ def register(ctx) -> None:
     ctx.register_migrations("migrations")
     ctx.register_router(devices_router)
     ctx.register_router(look_router)
+    ctx.register_router(debloat_router)
     ctx.register_router(router)
