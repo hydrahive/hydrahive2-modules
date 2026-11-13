@@ -3,7 +3,7 @@
 > Neues Modul `tvwerkstatt`. Wunsch Till 13.11.2026: „modul bauen das den passenden container zur verfügung stellt und den
 > ganzen desktop dann hübsch zu managen, klicken zum bauen und irgendwie auf den tv schieben“, Zusätze „auch flexibel im
 > modul mit einbauen, addon hinzufügen“, fremde Repos „ja erlaubt“. Name „TV-Werkstatt“ von Till bestätigt.
-> **Status: Entwurf. Gebaut wird erst nach Tills Freigabe, Etappe für Etappe.** Task 42c78c45.
+> **Status: von Till freigegeben am 13.11.2026. Gebaut wird Etappe für Etappe, in kleinen PRs.** Task 42c78c45.
 
 ## Problem
 

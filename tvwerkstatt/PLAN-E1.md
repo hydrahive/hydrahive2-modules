@@ -1,6 +1,6 @@
 # TV-Werkstatt – Bauplan Etappe E1 (Bauen und schieben)
 
-Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: Entwurf, noch nichts gebaut.
+Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Baustein 1 gebaut (Zweig `feat/tvwerkstatt-e1`).
 
 ## Ziel
 
