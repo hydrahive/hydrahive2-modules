@@ -51,7 +51,8 @@ Container, das Netz des Containers ist gesperrt bis auf das Internet und Port 55
 - Code: `source.py`, `build.py`, `jobs.py`.
 
 ### 5. Gerät
-- Tests: Adresse nur im Heimnetz, Probe liest Modell/Android/SDK, `tvw_adb_unauthorized` bei fehlender Bestätigung,
+- Tests: mehrere Geräte; Art (Android TV / Google TV) und Original-Startbildschirm werden gelesen, nicht angenommen;
+  Verbindung über Port 5555 oder über gekoppeltes Google-`adb` (Port wechselt, Sperrliste folgt); Adresse nur im Heimnetz, Probe liest Modell/Android/SDK, `tvw_adb_unauthorized` bei fehlender Bestätigung,
   `tvw_sdk_too_old` unter SDK 26, Ausnahme in der Sperrliste wird beim Eintragen gesetzt und beim Löschen entfernt.
 - Code: `device.py`.
 

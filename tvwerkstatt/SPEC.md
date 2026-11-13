@@ -12,6 +12,9 @@ Startbildschirm (cleanyourtv, com.gathin.tvhome). Jeder Schritt dahin war Handar
 Android-Werkzeuge laden, bauen, per ADB schieben, Aussehen als JSON schreiben. Das kann nur ein Agent oder ein Entwickler.
 Till will das Aussehen, die Apps und Zusätze selbst in HydraHive verwalten.
 
+Der Sony ist das **Testgerät**, das Debugging bleibt dort an (Till 13.11.). Das eigentliche Gerät kommt später: ein
+**TCL 98C7L** (SQD-Mini LED, Google TV). Das Modul muss deshalb von Anfang an mehrere Geräte und beide Arten tragen.
+
 ## Ziel
 
 Eine Seite „TV-Werkstatt“ (nur Admins), auf der man
@@ -41,6 +44,21 @@ Eine Seite „TV-Werkstatt“ (nur Admins), auf der man
 - Netz `hhnat0` hat keinen Namensdienst am Gateway: im Container musste die Namensauflösung von Hand gesetzt werden.
 - Ohne Sperrliste erreichte der Container den Server selbst (SSH, HTTPS) und den Router. Das darf das Modul nicht.
 - Gradle hinterließ trotz `--no-daemon` einen Java-Prozess. Container nach dem Bau anhalten.
+
+## Zwei Gerätearten (aus den Listen von cleanyourtv, Stand b953804)
+
+| | Sony KD-60XF8305 (Test) | TCL 98C7L (kommt) |
+|---|---|---|
+| System | Android TV 9 (SDK 28), am Gerät gelesen | Google TV 14 – angenommen nach 55C7K/65C7K/65C7L, am Gerät nicht gelesen |
+| Startbildschirm ab Werk | `com.google.android.tvlauncher` | `com.google.android.apps.tv.launcherx` |
+| Live-TV/HDMI-App | `com.sony.dtv.tvx` | `com.tcl.tv` |
+| Debugging | USB-Debugging, Port 5555 offen | Kabelloses Debugging mit Kopplungscode (verschlüsselt); Port 5555 antwortete bei 65C7L ohne Kopplung |
+| Besonderheit | – | `setupwraith` kann das gespeicherte WLAN besitzen und Home übernehmen; `com.tcl.ttvs` ist Samba-Tracking UND Firmware-Updater |
+| Vorlage Abschaltliste | `examples/sony-kd-55xf8096` | `examples/tcl-55c7k-uk`, `tcl-65c7k-google-tv`, `tcl-65c7l-google-tv` (Board G08, Build UTT2.250416.001) |
+
+Folgen: Geräte-Tabelle statt eines festen Fernsehers; Verbindung wahlweise Port 5555 (`tv.py`) oder gekoppelt über
+Googles `adb` (`TV_ADB_BINARY`, `tools/native-adb.md`), dann wechselt der Port und die Sperrliste muss ihm folgen.
+Ob der 98C7L dasselbe Board und denselben Build hat, liest das Modul beim Eintragen aus.
 
 ## Rahmen und Entscheidungen
 
@@ -116,9 +134,10 @@ kein echter Fernseher in pytest. Echte Proben gegen den Sony nur mit Tills OK, j
 
 ## Offen (braucht Messung oder Till)
 
-1. Greift die Ausnahme für Port 5555 in der Sperrliste (Messung Baustein 2)?
-2. Schaltet `settings put global adb_enabled 0` das Netz-Debugging am Sony wirklich ab (Messung Baustein 7)?
-3. Der Probe-Container `hh-tvwerkstatt` von Hand (auf `hhnat0`) muss vor der Abnahme weg, sonst kollidiert der Name.
+1. TCL 98C7L: System, Build und Debugging-Weg am Gerät lesen, sobald er da ist (Board G08 wie 55/65C7K?).
+2. Greift die Ausnahme für Port 5555 in der Sperrliste (Messung Baustein 2)?
+3. Schaltet `settings put global adb_enabled 0` das Netz-Debugging am Sony wirklich ab (Messung Baustein 7)?
+4. Der Probe-Container `hh-tvwerkstatt` von Hand (auf `hhnat0`) muss vor der Abnahme weg, sonst kollidiert der Name.
    Löschen nur mit Tills OK.
-4. Der Fernseher vertraut heute dem Schlüssel aus dem Probelauf (`_work/cleanyourtv/tools/adbkey` auf dem Server). Nach
+5. Der Sony vertraut heute dem Schlüssel aus dem Probelauf (`_work/cleanyourtv/tools/adbkey` auf dem Server). Nach
    dem Umzug in den Container fragt er neu; den alten Schlüssel am Fernseher widerrufen (Entwickleroptionen).
