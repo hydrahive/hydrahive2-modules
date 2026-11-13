@@ -39,6 +39,21 @@ export const de = {
       container: "Bauumgebung starten", fetch: "Quelle holen", verify: "Quelle prüfen", build: "Bauen",
       collect: "Ergebnis prüfen", done: "Fertig",
     },
+    install: {
+      start: "Auf den Fernseher schieben",
+      confirm: "Startbildschirm jetzt auf den Fernseher schieben? Danach ist er Home; der bisherige Startbildschirm wird "
+        + "nur abgeschaltet, nicht gelöscht. „Zurück zum Original“ geht jederzeit.",
+      restore: "Zurück zum Original",
+      restore_confirm: "Wieder den ursprünglichen Startbildschirm verwenden? Der Startbildschirm der Werkstatt bleibt "
+        + "installiert, ist aber nicht mehr Home.",
+      running: "Wird aufgespielt … {{step}}",
+      restoring: "Original wird zurückgeholt …",
+      need_build: "Zum Aufspielen zuerst unten den Startbildschirm bauen.",
+    },
+    istep: {
+      container: "Bauumgebung starten", verify: "Gebaute App prüfen", push: "Auf den Fernseher übertragen",
+      start: "Neuen Startbildschirm starten", switch: "Home umstellen", restore: "Original zurückholen",
+    },
     container: {
       missing: "nicht eingerichtet", stopped: "bereit (ruht)", running: "läuft", unknown: "Zustand unbekannt",
     },
@@ -107,6 +122,16 @@ export const de = {
       tvw_build_failed: "Der Bau ist gescheitert. Das Protokoll zeigt, woran.",
       tvw_build_unreadable: "Die gebaute App ließ sich nicht prüfen.",
       tvw_build_unexpected: "Der Bau hat eine andere App erzeugt als erwartet. Sie wird nicht verwendet.",
+      tvw_confirm_required: "Bitte die Rückfrage bestätigen.",
+      tvw_no_build: "Es gibt noch keinen fertigen Bau. Bitte zuerst den Startbildschirm bauen.",
+      tvw_no_stock_home: "Der ursprüngliche Startbildschirm dieses Fernsehers ist unbekannt. Aus Vorsicht wird nichts "
+        + "umgestellt. Bitte „Erneut prüfen“.",
+      tvw_build_changed: "Die gebaute App hat sich verändert. Bitte neu bauen.",
+      tvw_install_failed: "Das Aufspielen ist gescheitert. Am Fernseher wurde nichts umgestellt.",
+      tvw_home_not_started: "Der neue Startbildschirm ließ sich nicht starten. Am Fernseher wurde nichts umgestellt.",
+      tvw_home_not_switched: "Home ließ sich nicht umstellen. Der ursprüngliche Startbildschirm ist wieder aktiv.",
+      tvw_restore_incomplete: "Der ursprüngliche Startbildschirm ließ sich nicht sicher zurückholen. Bitte am "
+        + "Fernseher die Home-Taste drücken und „Erneut prüfen“.",
       tvw_signer_mismatch: "Die gebaute App trägt eine fremde Unterschrift. Auf dem Fernseher ließe sie sich nicht "
         + "einspielen.",
     },

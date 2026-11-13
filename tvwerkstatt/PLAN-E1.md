@@ -1,6 +1,6 @@
 # TV-Werkstatt – Bauplan Etappe E1 (Bauen und schieben)
 
-Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Bausteine 1–3 und 5 gemergt (#375–#378), Baustein 4 gebaut (Zweig `feat/tvwerkstatt-e1-bau`).
+Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Bausteine 1–5 gemergt (#375–#379), Baustein 6 gebaut (Zweig `feat/tvwerkstatt-e1-installieren`).
 
 ## Ziel
 
@@ -89,7 +89,14 @@ Container, das Netz des Containers ist gesperrt bis auf das Internet und Port 55
 ### 6. Installieren und zurück
 - Tests: Installation nur mit Rückfrage-Kennzeichen, Ergebnis vom Gerät zurückgelesen (Home-Eigentümer), Rückweg stellt
   den gespeicherten Original-Startbildschirm her, `tvw_home_not_switched` mit automatischem Rückweg.
-- Code: `install.py`.
+- Code: `install.py`, `install_jobs.py`, Routen `/devices/{id}/install` und `/restore` (nur mit `confirm`),
+  `DeviceRow.tsx`.
+- Reihenfolge wie cleanyourtv `launcher/build-and-install.sh` (b953804): Prüfsumme der gebauten App im Container →
+  aufspielen → neuen Startbildschirm starten → erst dann Original abschalten (`pm disable-user`, nie deinstallieren) und
+  Home setzen → Home zurücklesen. Springt Home nicht um: von selbst zurück (`tvw_home_not_switched`).
+- Drei Mutanten an den heiklen Stellen (Rückweg weg, Rückfrage weg, Prüfsumme weg): alle gefangen.
+- Echt am Sony: noch nicht (braucht Tills OK). Stand 13.11.: Home `com.gathin.tvhome` 3.4 (aus dem Probelauf, gleiche
+  Signatur), Original `com.google.android.tvlauncher` abgeschaltet.
 
 ### 7. Debugging-Anzeige und Abschalten
 - Tests: Zustand offen/zu aus der Probe, „ausschalten“ sendet nur den einen Befehl.
