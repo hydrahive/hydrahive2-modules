@@ -5,7 +5,8 @@ from hydrahive.db.connection import db
 
 _DEVICE_PUBLIC = ("device_id", "name", "address", "adb_port", "kind", "model", "android", "sdk", "build",
                   "stock_home", "current_home", "live_tv", "adb_state", "checked_at", "created_at")
-_BUILD_PUBLIC = ("build_id", "part", "commit_id", "sha256", "package", "state", "created_at")
+_BUILD_PUBLIC = ("build_id", "part", "commit_id", "sha256", "package", "version", "size", "signer", "state",
+                 "log_tail", "created_at")
 
 
 def devices() -> list[dict]:

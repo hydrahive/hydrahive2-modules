@@ -1,6 +1,6 @@
 # TV-Werkstatt – Bauplan Etappe E1 (Bauen und schieben)
 
-Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Bausteine 1–3 gemergt (#375–#377), Baustein 5 gebaut (Zweig `feat/tvwerkstatt-e1-geraete`).
+Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Bausteine 1–3 und 5 gemergt (#375–#378), Baustein 4 gebaut (Zweig `feat/tvwerkstatt-e1-bau`).
 
 ## Ziel
 
@@ -62,7 +62,14 @@ Container, das Netz des Containers ist gesperrt bis auf das Internet und Port 55
 ### 4. Quelle und Bau
 - Tests: Commit festgenagelt, Wrapper-Prüfsumme gegen gradle.org, Bau-Fehler → `tvw_build_failed` mit Protokollende,
   Prüfsumme der App gespeichert, Container danach angehalten.
-- Code: `source.py`, `build.py`, `jobs.py`.
+- Code: `source.py`, `build.py`, `build_jobs.py`, Migration 003 (Version, Größe, Signatur), Bereich „Startbildschirm“.
+- **Gemessen 13.11.2026** (echt, Skripte des Zweigs): Quelle am Commit b953804 in 2 s geholt, Wrapper und Distribution
+  geprüft, Bau 40 s (erster Lauf) bzw. 3 s (zweiter Lauf, Gradle-Zwischenstand). App: `com.gathin.tvhome` 3.4 (13),
+  588.009 Bytes, sha256 c6d21b45…84b92780 in beiden Läufen gleich, Signatur 7676576025d1… = Schlüssel des Moduls =
+  Zertifikat der App auf dem Sony. Danach angehalten.
+- Zwei Mutanten an den heiklen Stellen (Signaturprüfung weg, Prüfschritt übersprungen): beide von Tests gefangen.
+- Abweichung: Neue Quellen-Stände kommen in E1 nur mit einer neuen Modulversion; der Knopf „Aktualisieren“ mit Anzeige
+  der Änderungen folgt mit den Zusätzen (E3).
 
 ### 5. Gerät
 - Tests: mehrere Geräte; Art (Android TV / Google TV) und Original-Startbildschirm werden gelesen, nicht angenommen;

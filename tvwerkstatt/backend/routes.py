@@ -14,7 +14,7 @@ from hydrahive.api.middleware.auth import AuthPrincipal, require_admin_principal
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, ConfigDict
 
-from . import container, incus, jobs, state
+from . import build_jobs, container, incus, jobs, state
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -45,10 +45,13 @@ async def get_state(p: Admin) -> dict:
     """Ohne incus kein Fehler, sondern ein Zustand, den die Seite erklären kann."""
     if not incus.available():
         return {"incus": False, "error_code": "tvw_no_incus", "devices": [], "builds": [],
-                "container": "missing", "setup": None}
+                "container": "missing", "setup": None, "build": None}
     devices = [{**d, "check": jobs.last_job("probe", d["device_id"])} for d in state.devices()]
+    build = jobs.last_job("build")
+    if build and build["state"] == "failed" and build["error_code"] == "tvw_interrupted":
+        build_jobs.interrupted_builds()
     return {"incus": True, "error_code": "", "devices": devices, "builds": state.builds(),
-            "container": await container.status(), "setup": jobs.last_setup()}
+            "container": await container.status(), "setup": jobs.last_setup(), "build": build}
 
 
 @router.post("/setup", status_code=status.HTTP_202_ACCEPTED)
@@ -63,6 +66,23 @@ async def start_setup(p: Admin, body: SetupBody) -> dict:
         code = status.HTTP_400_BAD_REQUEST if exc.code == "tvw_license_required" else status.HTTP_409_CONFLICT
         raise coded(code, exc.code) from None
     task = asyncio.create_task(_background(jobs.run_setup(job_id, start_at=start_at)))
+    _tasks.add(task)
+    task.add_done_callback(_tasks.discard)
+    return {"job_id": job_id}
+
+
+@router.post("/build", status_code=status.HTTP_202_ACCEPTED)
+async def start_build(p: Admin, body: Empty) -> dict:
+    """Startbildschirm bauen (Quelle am festen Commit). Am Fernseher passiert dabei nichts."""
+    if not incus.available():
+        raise coded(status.HTTP_409_CONFLICT, "tvw_no_incus")
+    if await container.status() == "missing":
+        raise coded(status.HTTP_409_CONFLICT, "tvw_not_set_up")
+    try:
+        job_id = jobs.begin("build", "launcher", p.username, "container")
+    except jobs.JobError as exc:
+        raise coded(status.HTTP_409_CONFLICT, exc.code) from None
+    task = asyncio.create_task(_background(build_jobs.run_build(job_id)))
     _tasks.add(task)
     task.add_done_callback(_tasks.discard)
     return {"job_id": job_id}
