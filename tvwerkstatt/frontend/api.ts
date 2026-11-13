@@ -85,3 +85,19 @@ export const debloatOff = (id: string, packages: string[]) =>
   api.post<{ job_id: string }>(`${dev(id)}/debloat/off`, { confirm: true, packages })
 export const debloatOn = (id: string, packages?: string[]) =>
   api.post<{ job_id: string }>(`${dev(id)}/debloat/on`, { confirm: true, packages: packages ?? null })
+
+// --- Apps (App-Verwaltung mit dem Play Store) ----------------------------------------------------------------
+export interface TvwStoreApp {
+  package: string; version_code: string; version_name: string; installer: string; enabled: boolean; store: boolean
+  locked: boolean
+}
+export interface TvwStore {
+  view: { apps: TvwStoreApp[]; read_at: string } | null
+  job: (TvwJob & { kind: "store_read" | "store_open" | "store_uninstall" }) | null
+}
+export const getStore = (id: string) => api.get<TvwStore>(`${dev(id)}/store`)
+export const readStore = (id: string) => api.post<{ job_id: string }>(`${dev(id)}/store/read`, {})
+export const openStore = (id: string, target: { package?: string; query?: string }) =>
+  api.post<{ job_id: string }>(`${dev(id)}/store/open`, target)
+export const uninstallApp = (id: string, pkg: string) =>
+  api.post<{ job_id: string }>(`${dev(id)}/store/uninstall`, { confirm: true, package: pkg })

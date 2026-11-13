@@ -1,8 +1,10 @@
 // English texts of the TV Workshop. Plain words, no server jargon.
+import { apps, appsErr } from "./i18n.apps.en"
 import { deb, debErr } from "./i18n.deb.en"
 
 export const en = {
   tvwerkstatt: {
+    apps,
     deb,
     title: "TV Workshop",
     subtitle: "Build a home screen and add-ons for your TV and push them over.",
@@ -61,7 +63,8 @@ export const en = {
       start: "Start new home screen", switch: "Switch Home", restore: "Bring back the original",
     },
     tab: {
-      desktop: "Desktop", debloat: "Declutter", addons: "Add-ons", devices: "Devices", build: "Build environment",
+      desktop: "Desktop", debloat: "Declutter", apps: "Apps", addons: "Add-ons", devices: "Devices",
+      build: "Build environment",
       addons_soon: "Add-ons come after that: the cleanyourtv catalogue and your own add-ons by GitHub address.",
     },
     mood: { morning: "Morning", evening: "Evening", night: "Night" },
@@ -121,6 +124,7 @@ export const en = {
       done: "Done",
     },
     err: {
+      ...appsErr,
       ...debErr,
       general: "That did not work. Please try again later.",
       tvw_no_incus: "This server has no container environment. The TV Workshop needs it for building.",

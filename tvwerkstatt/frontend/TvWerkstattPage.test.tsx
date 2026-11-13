@@ -33,7 +33,8 @@ describe("TV-Werkstatt: Seite", () => {
 
   it("Reiter wie die Demo, in dieser Reihenfolge", () => {
     const out = html(LEER)
-    const pos = ["tab.desktop", "tab.debloat", "tab.addons", "tab.devices", "tab.build"].map((k) => out.indexOf(k))
+    const pos = ["tab.desktop", "tab.debloat", "tab.apps", "tab.addons", "tab.devices", "tab.build"]
+      .map((k) => out.indexOf(k))
     expect(pos.every((p) => p >= 0)).toBe(true)
     expect([...pos].sort((a, b) => a - b)).toEqual(pos)
   })

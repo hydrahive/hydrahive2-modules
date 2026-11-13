@@ -9,6 +9,7 @@ from .routes import router
 from .routes_debloat import router as debloat_router
 from .routes_devices import router as devices_router
 from .routes_look import router as look_router
+from .routes_store import router as store_router
 
 
 def register(ctx) -> None:
@@ -16,4 +17,5 @@ def register(ctx) -> None:
     ctx.register_router(devices_router)
     ctx.register_router(look_router)
     ctx.register_router(debloat_router)
+    ctx.register_router(store_router)
     ctx.register_router(router)
