@@ -8,7 +8,8 @@ export interface TvwDevice {
   check?: TvwJob | null
 }
 export interface TvwBuild {
-  build_id: string; part: string; commit_id: string; sha256: string; state: string; created_at: string
+  build_id: string; part: string; commit_id: string; sha256: string; package?: string; version?: string
+  size?: number; signer?: string; state: string; log_tail?: string; created_at: string
 }
 export interface TvwJob {
   job_id: string; state: "running" | "done" | "failed" | string; step: string; error_code: string
@@ -17,7 +18,7 @@ export interface TvwJob {
 export type ContainerState = "missing" | "stopped" | "running" | "unknown"
 export interface TvwState {
   incus: boolean; error_code: string; devices: TvwDevice[]; builds: TvwBuild[]
-  container: ContainerState; setup: TvwJob | null
+  container: ContainerState; setup: TvwJob | null; build?: TvwJob | null
 }
 
 export const getState = () => api.get<TvwState>(`${BASE}/state`)
@@ -30,3 +31,4 @@ export const addDevice = (name: string, address: string, port = 5555) =>
 export const checkDevice = (id: string) =>
   api.post<{ job_id: string }>(`${BASE}/devices/${encodeURIComponent(id)}/check`, {})
 export const removeDevice = (id: string) => api.delete<{ ok: boolean }>(`${BASE}/devices/${encodeURIComponent(id)}`)
+export const startBuild = () => api.post<{ job_id: string }>(`${BASE}/build`, {})

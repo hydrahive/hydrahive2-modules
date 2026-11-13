@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import * as api from "./api"
+import { BuildPanel } from "./BuildPanel"
 import { DevicePanel, type DeviceActions } from "./DevicePanel"
 import { anyChecking } from "./deviceLogic"
 import { errorKey } from "./logic"
@@ -8,7 +9,7 @@ import { SetupPanel, type SetupActions } from "./SetupPanel"
 import { pollMs, setupView } from "./setupLogic"
 import { MUTED } from "./ui"
 
-/** Modulseite TV-Werkstatt (nur Admins). E1 Bausteine 3 und 5: Bauumgebung einrichten, Fernseher eintragen und prüfen. */
+/** Modulseite TV-Werkstatt (nur Admins). E1 Bausteine 3–5: Bauumgebung, Fernseher, Startbildschirm bauen. */
 export function TvWerkstattPage() {
   const { t } = useTranslation("tvwerkstatt")
   const [s, setS] = useState<api.TvwState | null>(null)
@@ -21,7 +22,7 @@ export function TvWerkstattPage() {
     .catch((e) => { if (alive.current) setMsg(errorKey(e)) }), [])
   useEffect(() => { alive.current = true; load(); return () => { alive.current = false } }, [load])
 
-  const ms = s ? pollMs(setupView(s.setup, s.container), anyChecking(s.devices)) : null
+  const ms = s ? pollMs(setupView(s.setup, s.container), anyChecking(s.devices) || s.build?.state === "running") : null
   useEffect(() => {
     if (ms === null) return
     const id = setTimeout(load, ms)
@@ -44,18 +45,20 @@ export function TvWerkstattPage() {
     onCheck: (id) => act(() => api.checkDevice(id)),
     onRemove: (id) => { if (window.confirm(t("device.remove_confirm"))) act(() => api.removeDevice(id)) },
   }
-  return <PageView s={s} msg={msg} busy={busy} setup={setup} devices={devices} />
+  return <PageView s={s} msg={msg} busy={busy} setup={setup} devices={devices} onBuild={() => act(api.startBuild)} />
 }
 
 const NOOP_SETUP: SetupActions = { onSetup: () => {}, onStop: () => {}, onRemove: () => {} }
 const NOOP_DEVICES: DeviceActions = { onAdd: () => {}, onCheck: () => {}, onRemove: () => {} }
 
 /** Reine Ansicht: Zustand rein, Seite raus (getrennt, damit sie ohne Server testbar ist). */
-export function PageView({ s, msg, busy = false, setup = NOOP_SETUP, devices = NOOP_DEVICES }: {
+export function PageView({ s, msg, busy = false, setup = NOOP_SETUP, devices = NOOP_DEVICES, onBuild = () => {} }: {
   s: api.TvwState | null; msg: string | null; busy?: boolean; setup?: SetupActions; devices?: DeviceActions
+  onBuild?: () => void
 }) {
   const { t } = useTranslation("tvwerkstatt")
   const ready = !!s && s.container !== "missing" && setupView(s.setup, s.container) !== "running"
+  const working = busy || !!s && (anyChecking(s.devices) || s.build?.state === "running")
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4">
       <header className="space-y-1">
@@ -66,8 +69,8 @@ export function PageView({ s, msg, busy = false, setup = NOOP_SETUP, devices = N
       {!s && !msg && <p className={MUTED}>…</p>}
       {s && !s.incus && <p className="text-sm text-amber-200">{t(errorKey(s.error_code))}</p>}
       {s?.incus && <SetupPanel job={s.setup} container={s.container} busy={busy} actions={setup} />}
-      {s?.incus && <DevicePanel devices={s.devices} ready={ready} busy={busy || anyChecking(s.devices)}
-        actions={devices} />}
+      {s?.incus && <DevicePanel devices={s.devices} ready={ready} busy={working} actions={devices} />}
+      {s?.incus && <BuildPanel job={s.build} builds={s.builds} ready={ready} busy={working} onBuild={onBuild} />}
     </div>
   )
 }

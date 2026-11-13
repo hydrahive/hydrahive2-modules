@@ -46,6 +46,12 @@ describe("TV-Werkstatt: Seite", () => {
     expect(html({ ...LEER, incus: false, error_code: "tvw_no_incus" })).not.toContain("setup.start")
   })
 
+  it("Reihenfolge: Bauumgebung, Fernseher, Startbildschirm", () => {
+    const out = html(LEER)
+    expect(out.indexOf("setup.title")).toBeLessThan(out.indexOf("devices"))
+    expect(out.indexOf("devices")).toBeLessThan(out.indexOf("build.title"))
+  })
+
   it("noch nichts geladen und kein Fehler: Ladeanzeige", () => {
     expect(html(null)).toContain("…")
   })
