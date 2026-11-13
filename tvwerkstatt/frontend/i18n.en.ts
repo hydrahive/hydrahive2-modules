@@ -40,6 +40,9 @@ export const en = {
     },
     install: {
       start: "Push to the TV",
+      confirm_gtv: "Push the home screen to this Google TV now? Google's setup helper is switched off first, otherwise "
+        + "it would take over Home. The YouTube and TV buttons on the remote do nothing afterwards. Nothing is "
+        + "deleted; \"Back to the original\" switches everything on again.",
       confirm: "Push the home screen to the TV now? It becomes Home; the previous home screen is only switched off, not "
         + "deleted. \"Back to the original\" works at any time.",
       restore: "Back to the original",
@@ -50,7 +53,8 @@ export const en = {
       need_build: "Build the home screen below first to install it.",
     },
     istep: {
-      container: "Start build environment", verify: "Check built app", push: "Transfer to the TV",
+      container: "Start build environment", verify: "Check built app", guard: "Prepare the TV",
+      push: "Transfer to the TV",
       start: "Start new home screen", switch: "Switch Home", restore: "Bring back the original",
     },
     tab: {
@@ -167,6 +171,10 @@ export const en = {
       tvw_image_too_large: "The picture is too large (at most 15 MB).",
       tvw_too_many_images: "There are already 30 pictures for this TV. Please remove one first.",
       tvw_image_not_found: "This picture does not exist (any more).",
+      tvw_wifi_owned_by_setup: "The saved Wi-Fi belongs to Google's setup helper. Switching it off would delete the "
+        + "Wi-Fi. Please forget the Wi-Fi on the TV and join it again, then try once more. Nothing was changed.",
+      tvw_wifi_unreadable: "It could not be read who owns the saved Wi-Fi. To be safe, nothing was changed.",
+      tvw_guard_failed: "Preparing the TV did not go as expected. The original home screen is active again.",
       tvw_signer_mismatch: "The built app carries a foreign signature. It could not be installed on the TV.",
     },
   },

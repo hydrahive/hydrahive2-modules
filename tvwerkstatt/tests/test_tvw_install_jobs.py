@@ -37,6 +37,7 @@ def env(fake_incus, db_ready, monkeypatch):
     a["am start -W"] = (0, "__TVW__ state=device\nStatus: ok\nComplete\n")
     a["pm disable-user"] = (0, "__TVW__ state=device\n" + OURS)
     a["pm enable --user 0"] = (0, "__TVW__ state=device\n" + STOCK)
+    a["query-activities"] = (0, "__TVW__ state=device\n__TVW__ claims=com.google.android.tvlauncher,\n" + STOCK)
     jobs.reset()
     yield fake_incus
     jobs.reset()
@@ -68,7 +69,7 @@ def test_aufspielen_ganz(env):
 
 def test_reihenfolge_pruefen_aufspielen_starten_umschalten(env):
     _go("install")
-    keys = ("__TVW__ sha256", "pm install -r", "am start -W", "pm disable-user")
+    keys = ("__TVW__ sha256", "query-activities", "pm install -r", "am start -W", "pm disable-user")
     order = [next(k for k in keys if k in b) for b in env.exec_log if any(k in b for k in keys)]
     assert order == list(keys)
 

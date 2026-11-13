@@ -49,9 +49,13 @@ export const de = {
       running: "Wird aufgespielt … {{step}}",
       restoring: "Original wird zurückgeholt …",
       need_build: "Zum Aufspielen zuerst unten den Startbildschirm bauen.",
+      confirm_gtv: "Startbildschirm jetzt auf diesen Google-TV-Fernseher schieben? Vorher wird Googles Einrichtungs-"
+        + "Helfer abgeschaltet, sonst würde er Home übernehmen. Die Tasten YouTube und TV-Symbol auf der Fernbedienung "
+        + "tun danach nichts mehr. Nichts wird gelöscht; „Zurück zum Original“ schaltet alles wieder ein.",
     },
     istep: {
-      container: "Bauumgebung starten", verify: "Gebaute App prüfen", push: "Auf den Fernseher übertragen",
+      container: "Bauumgebung starten", verify: "Gebaute App prüfen", guard: "Fernseher vorbereiten",
+      push: "Auf den Fernseher übertragen",
       start: "Neuen Startbildschirm starten", switch: "Home umstellen", restore: "Original zurückholen",
     },
     tab: {
@@ -170,6 +174,12 @@ export const de = {
       tvw_image_too_large: "Das Bild ist zu groß (höchstens 15 MB).",
       tvw_too_many_images: "Es sind schon 30 Bilder für diesen Fernseher da. Bitte erst eines entfernen.",
       tvw_image_not_found: "Dieses Bild gibt es nicht (mehr).",
+      tvw_wifi_owned_by_setup: "Das gespeicherte WLAN gehört Googles Einrichtungs-Helfer. Abschalten würde das WLAN "
+        + "löschen. Bitte am Fernseher das WLAN entfernen und neu verbinden, dann noch einmal. Nichts wurde umgestellt.",
+      tvw_wifi_unreadable: "Es ließ sich nicht lesen, wem das gespeicherte WLAN gehört. Aus Vorsicht wurde nichts "
+        + "umgestellt.",
+      tvw_guard_failed: "Die Vorbereitung am Fernseher lief nicht wie erwartet. Der ursprüngliche Startbildschirm ist "
+        + "wieder aktiv.",
       tvw_signer_mismatch: "Die gebaute App trägt eine fremde Unterschrift. Auf dem Fernseher ließe sie sich nicht "
         + "einspielen.",
     },

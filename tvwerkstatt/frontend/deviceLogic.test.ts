@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { TvwDevice, TvwJob } from "./api"
 import {
-  ACTION_STEPS, actionView, anyChecking, canInstall, checkView, kindKey, looksLikeAddress, ourHome,
+  ACTION_STEPS, actionView, anyChecking, canInstall, checkView, installConfirmKey, kindKey, looksLikeAddress, ourHome,
 } from "./deviceLogic"
 import { tvwerkstattI18n } from "./i18n"
 import { pollMs } from "./setupLogic"
@@ -60,6 +60,22 @@ describe("TV-Werkstatt: Fernseher (Logik)", () => {
     expect(canInstall(ok, false)).toBe(false)
     expect(canInstall({ ...ok, adb_state: "unauthorized" }, true)).toBe(false)
     expect(canInstall({ ...ok, stock_home: "" }, true)).toBe(false)
+  })
+
+  it("Google TV bekommt die Rückfrage mit Einrichtungs-Helfer und fehlenden Tasten", () => {
+    expect(installConfirmKey({ kind: "google_tv" } as TvwDevice)).toBe("install.confirm_gtv")
+    expect(installConfirmKey({ kind: "android_tv" } as TvwDevice)).toBe("install.confirm")
+    expect(installConfirmKey(undefined)).toBe("install.confirm")
+    for (const lang of ["de", "en"] as const) {
+      expect((tvwerkstattI18n[lang].tvwerkstatt.install as Record<string, string>).confirm_gtv, lang).toBeTruthy()
+    }
+  })
+
+  it("neue Fehler der Vorbereitung haben einen Text (de/en)", () => {
+    for (const lang of ["de", "en"] as const) {
+      const err = tvwerkstattI18n[lang].tvwerkstatt.err as Record<string, string>
+      expect(["tvw_wifi_owned_by_setup", "tvw_wifi_unreadable", "tvw_guard_failed"].filter((k) => !err[k])).toEqual([])
+    }
   })
 
   it("jeder Schritt am Fernseher hat einen Text (de/en)", () => {
