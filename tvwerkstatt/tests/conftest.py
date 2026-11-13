@@ -91,6 +91,16 @@ def db_ready(setup_test_env):
 
 
 @pytest.fixture
+def fake_incus(monkeypatch):
+    from backend import incus
+    from fake_incus import FakeIncus
+    fake = FakeIncus()
+    monkeypatch.setattr(incus, "run", fake.run)
+    monkeypatch.setattr(incus, "available", lambda: True)
+    return fake
+
+
+@pytest.fixture
 def client(setup_test_env, db_ready):
     from contextlib import asynccontextmanager
 

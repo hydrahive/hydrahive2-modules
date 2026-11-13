@@ -1,6 +1,6 @@
 # TV-Werkstatt – Bauplan Etappe E1 (Bauen und schieben)
 
-Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Baustein 1 gebaut (Zweig `feat/tvwerkstatt-e1`).
+Gehört zu `SPEC.md` (Task 42c78c45). Stand 13.11.2026: freigegeben. Baustein 1 gemergt (#375), Baustein 2 gebaut (Zweig `feat/tvwerkstatt-e1-netz`).
 
 ## Ziel
 
@@ -36,8 +36,11 @@ Container, das Netz des Containers ist gesperrt bis auf das Internet und Port 55
 ### 2. Netz und Sperrliste
 - Tests: Sperrliste enthält alle privaten Bereiche und die eigenen Adressen des Servers; eine Fernseher-Adresse wird aus
   den gesperrten Bereichen herausgerechnet und nur für TCP 5555 erlaubt; Probe meldet offen/zu.
-- Echte Messung auf dem Server (mit OK): aus dem Container Server :22/:443 und Router :80 zu, Fernseher :5555 offen,
-  Fernseher :80 zu, Internet offen. Ergebnis hier eintragen.
+- Echte Messung auf dem Server (mit OK): aus dem Container Server und Gateway :22/:443 zu, Fernseher :5555 offen,
+  Fernseher :80 zu, Internet und Namensauflösung offen. Ergebnis hier eintragen.
+- Abweichung beim Bau: Router (.1) und .3 werden auch zur Probe nie angesprochen (Tills Regel), die Sperre für sie ist
+  nur über die Regeln belegt. Gleiche Regeln in anderer Reihenfolge lösen keinen Umbau aus; doppelte Regeln im Ist
+  ergeben `tvw_acl_dirty` statt eines Umbaus (incus kann eine von zwei gleichen Regeln nicht einzeln entfernen).
 
 ### 3. Container und Einrichtung
 - Tests: Anlegen mit festen Grenzen (unprivilegiert, kein Nesting, idmap isoliert), Namensauflösung wird gesetzt,
