@@ -15,6 +15,7 @@ export function useWorkshop() {
   const [deb, setDeb] = useState<{ device_id: string; data: api.TvwDebloat } | null>(null)
   const [store, setStore] = useState<{ device_id: string; data: api.TvwStore } | null>(null)
   const [addons, setAddons] = useState<{ device_id: string; data: api.TvwAddons } | null>(null)
+  const [appDevs, setAppDevs] = useState<api.TvwAppDevice[]>([])
   const alive = useRef(true)
   const dirtyRef = useRef(false)
 
@@ -25,6 +26,9 @@ export function useWorkshop() {
     api.getAddons(id).then((d) => { if (alive.current) setAddons({ device_id: id, data: d }) }),
   ]).catch((e) => { if (alive.current) setMsg(errorKey(e)) }), [])
 
+  const loadApps = useCallback(() => api.getAppDevices()
+    .then((r) => { if (alive.current) setAppDevs(r.devices) }).catch(() => {}), [])
+
   const load = useCallback(() => api.getState()
     .then((r) => {
       if (!alive.current) return
@@ -33,7 +37,7 @@ export function useWorkshop() {
     })
     .catch((e) => { if (alive.current) setMsg(errorKey(e)) }), [])
 
-  useEffect(() => { alive.current = true; load(); return () => { alive.current = false } }, [load])
+  useEffect(() => { alive.current = true; load(); loadApps(); return () => { alive.current = false } }, [load, loadApps])
   useEffect(() => { if (deviceId) { dirtyRef.current = false; loadDesk(deviceId) } }, [deviceId, loadDesk])
   const deskFor = desk && deviceId ? desk : null
   const debFor = deviceId && deb?.device_id === deviceId ? deb.data : null
@@ -47,16 +51,16 @@ export function useWorkshop() {
   const ms = s ? pollMs(setupView(s.setup, s.container), running) : null
   useEffect(() => {
     if (ms === null) return
-    const id = setTimeout(() => { load(); if (deviceId) loadDesk(deviceId) }, ms)
+    const id = setTimeout(() => { load(); loadApps(); if (deviceId) loadDesk(deviceId) }, ms)
     return () => clearTimeout(id)
-  }, [ms, s, desk, load, loadDesk, deviceId])
+  }, [ms, s, desk, load, loadApps, loadDesk, deviceId])
 
   const act = useCallback((fn: () => Promise<unknown>, after?: () => void) => {
     setBusy(true)
-    fn().then(() => { after?.(); load(); if (deviceId) loadDesk(deviceId) })
+    fn().then(() => { after?.(); load(); loadApps(); if (deviceId) loadDesk(deviceId) })
       .catch((e) => { if (alive.current) setMsg(errorKey(e)) })
       .finally(() => { if (alive.current) setBusy(false) })
-  }, [load, loadDesk, deviceId])
+  }, [load, loadApps, loadDesk, deviceId])
 
   const editDraft = useCallback((l: api.TvwLook) => {
     setDraft(l)
@@ -64,6 +68,6 @@ export function useWorkshop() {
   }, [desk])
 
   return { s, msg, busy: busy || running, deviceId, setDeviceId, desk: deskFor, deb: debFor, store: storeFor,
-    addons: addonsFor, draft,
+    addons: addonsFor, appDevs, draft,
     editDraft, act, load, clearDirty: () => { dirtyRef.current = false } }
 }

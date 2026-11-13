@@ -119,3 +119,26 @@ export const installAddon = (id: string, addon: string) =>
   api.post<{ job_id: string }>(`${dev(id)}/addons/install`, { confirm: true, addon })
 export const removeAddon = (id: string, addon: string) =>
   api.post<{ job_id: string }>(`${dev(id)}/addons/remove`, { confirm: true, addon })
+
+// --- HydraHive-App (G1): Kopplung, App-Geräte, Testmeldung ---------------------------------------------------
+export interface TvwAppDevice {
+  app_id: string; name: string; device_id: string; kind: string; model: string; android: string; app_version: string
+  status: "active" | "revoked" | string; remote_ip: string; created_at: string; last_seen: string
+  state: Record<string, unknown>
+}
+export interface TvwAppCode { code: string; name: string; expires_at: string; server: string; pin: string | null }
+export interface TvwAppEvent { event_id: number; kind: string; data: Record<string, unknown>; created_at: string }
+export interface TvwAppNotice {
+  notice_id: number; title: string; body: string; buttons: string[]; answer: string; created_at: string
+  delivered_at: string; answered_at: string
+}
+export const getAppDevices = () => api.get<{ devices: TvwAppDevice[] }>(`${BASE}/app/devices`)
+export const newAppCode = (name: string, deviceId = "") =>
+  api.post<TvwAppCode>(`${BASE}/app/pairing`, { name, device_id: deviceId })
+export const revokeApp = (id: string) =>
+  api.post<{ ok: boolean }>(`${BASE}/app/devices/${encodeURIComponent(id)}/revoke`, {})
+export const removeApp = (id: string) => api.delete<{ ok: boolean }>(`${BASE}/app/devices/${encodeURIComponent(id)}`)
+export const sendAppNotice = (id: string, title: string, body: string, buttons: string[]) =>
+  api.post<{ notice_id: number }>(`${BASE}/app/devices/${encodeURIComponent(id)}/notices`, { title, body, buttons })
+export const getAppActivity = (id: string) => api.get<{ events: TvwAppEvent[]; notices: TvwAppNotice[] }>(
+  `${BASE}/app/devices/${encodeURIComponent(id)}/activity`)

@@ -1,11 +1,13 @@
 // English texts of the TV Workshop. Plain words, no server jargon.
 import { add, addErr } from "./i18n.add.en"
+import { app, appErr } from "./i18n.app.en"
 import { apps, appsErr } from "./i18n.apps.en"
 import { deb, debErr } from "./i18n.deb.en"
 
 export const en = {
   tvwerkstatt: {
     add,
+    app,
     apps,
     deb,
     title: "TV Workshop",
@@ -126,6 +128,7 @@ export const en = {
     },
     err: {
       ...addErr,
+      ...appErr,
       ...appsErr,
       ...debErr,
       general: "That did not work. Please try again later.",
