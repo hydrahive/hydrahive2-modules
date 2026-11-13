@@ -184,6 +184,11 @@
       "id": "vibe",
       "name": "Vibe",
       "path": "vibe"
+    },
+    {
+      "id": "tvwerkstatt",
+      "name": "TV-Werkstatt",
+      "path": "tvwerkstatt"
     }
   ]
 }
