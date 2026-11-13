@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from .routes import router
 from .routes_devices import router as devices_router
+from .routes_look import router as look_router
 
 
 def register(ctx) -> None:
     ctx.register_migrations("migrations")
     ctx.register_router(devices_router)
+    ctx.register_router(look_router)
     ctx.register_router(router)
