@@ -65,3 +65,17 @@ export const deleteWallpaper = (id: string, wid: string) =>
   api.delete<{ ok: boolean }>(`${dev(id)}/wallpapers/${encodeURIComponent(wid)}`)
 export const appImagePath = (id: string, pkg: string) => `/api${dev(id)}/apps/${encodeURIComponent(pkg)}/image`
 export const wallpaperPath = (id: string, wid: string) => `/api${dev(id)}/wallpapers/${encodeURIComponent(wid)}/image`
+
+// --- Entrümpeln (E4, Teil 1: nur lesen) ---------------------------------------------------------------------
+export type DebloatGroup = "tracking" | "ads" | "demo" | "home" | "help" | "other"
+export interface TvwDebloatRow {
+  package: string; state: "on" | "off"; recommended: boolean; of: number; kept: number; lists: number; note: string
+  group: DebloatGroup; locked: "" | "core" | "home"
+}
+export interface TvwDebloatView {
+  lists_used: string[]; score: number; total_lists: number; packages: TvwDebloatRow[]; off_count: number
+  recommended_on: number; read_at: string; commit_id: string
+}
+export interface TvwDebloat { view: TvwDebloatView | null; read_job: TvwJob | null }
+export const getDebloat = (id: string) => api.get<TvwDebloat>(`${dev(id)}/debloat`)
+export const readDebloat = (id: string) => api.post<{ job_id: string }>(`${dev(id)}/debloat/read`, {})

@@ -1,6 +1,9 @@
 // English texts of the TV Workshop. Plain words, no server jargon.
+import { deb } from "./i18n.deb.en"
+
 export const en = {
   tvwerkstatt: {
+    deb,
     title: "TV Workshop",
     subtitle: "Build a home screen and add-ons for your TV and push them over.",
     devices: "TVs",
@@ -59,7 +62,6 @@ export const en = {
     },
     tab: {
       desktop: "Desktop", debloat: "Declutter", addons: "Add-ons", devices: "Devices", build: "Build environment",
-      debloat_soon: "Declutter comes next: switch off preinstalled apps, with a backup and \"Undo all\".",
       addons_soon: "Add-ons come after that: the cleanyourtv catalogue and your own add-ons by GitHub address.",
     },
     mood: { morning: "Morning", evening: "Evening", night: "Night" },
@@ -175,6 +177,8 @@ export const en = {
         + "Wi-Fi. Please forget the Wi-Fi on the TV and join it again, then try once more. Nothing was changed.",
       tvw_wifi_unreadable: "It could not be read who owns the saved Wi-Fi. To be safe, nothing was changed.",
       tvw_guard_failed: "Preparing the TV did not go as expected. The original home screen is active again.",
+      tvw_debloat_read_failed: "No list of apps could be read from the TV.",
+      tvw_debloat_lists_failed: "The cleanyourtv lists could not be read.",
       tvw_signer_mismatch: "The built app carries a foreign signature. It could not be installed on the TV.",
     },
   },

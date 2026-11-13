@@ -1,6 +1,9 @@
 // Deutsche Texte der TV-Werkstatt. Einfach, ohne Fachwörter des Servers.
+import { deb } from "./i18n.deb.de"
+
 export const de = {
   tvwerkstatt: {
+    deb,
     title: "TV-Werkstatt",
     subtitle: "Startbildschirm und Zusätze für deinen Fernseher bauen und hinüberschieben.",
     devices: "Fernseher",
@@ -60,8 +63,6 @@ export const de = {
     },
     tab: {
       desktop: "Desktop", debloat: "Entrümpeln", addons: "Zusätze", devices: "Geräte", build: "Bauumgebung",
-      debloat_soon: "Entrümpeln kommt als Nächstes: vorinstallierte Apps per Schalter abschalten, mit Sicherung "
-        + "und „Alles zurück“.",
       addons_soon: "Zusätze kommen danach: Katalog von cleanyourtv und eigene Zusätze per GitHub-Adresse.",
     },
     mood: { morning: "Morgen", evening: "Abend", night: "Nacht" },
@@ -180,6 +181,8 @@ export const de = {
         + "umgestellt.",
       tvw_guard_failed: "Die Vorbereitung am Fernseher lief nicht wie erwartet. Der ursprüngliche Startbildschirm ist "
         + "wieder aktiv.",
+      tvw_debloat_read_failed: "Vom Fernseher ließ sich keine App-Liste lesen.",
+      tvw_debloat_lists_failed: "Die Listen von cleanyourtv ließen sich nicht lesen.",
       tvw_signer_mismatch: "Die gebaute App trägt eine fremde Unterschrift. Auf dem Fernseher ließe sie sich nicht "
         + "einspielen.",
     },
