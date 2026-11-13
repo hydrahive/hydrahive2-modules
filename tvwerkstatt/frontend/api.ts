@@ -5,7 +5,7 @@ export const BASE = "/modules/tvwerkstatt"
 export interface TvwDevice {
   device_id: string; name: string; address: string; adb_port?: number; model?: string; android?: string
   sdk?: number; kind?: string; stock_home?: string; current_home?: string; adb_state?: string; checked_at?: string
-  check?: TvwJob | null
+  check?: TvwJob | null; action?: (TvwJob & { kind: "install" | "restore" }) | null
 }
 export interface TvwBuild {
   build_id: string; part: string; commit_id: string; sha256: string; package?: string; version?: string
@@ -32,3 +32,7 @@ export const checkDevice = (id: string) =>
   api.post<{ job_id: string }>(`${BASE}/devices/${encodeURIComponent(id)}/check`, {})
 export const removeDevice = (id: string) => api.delete<{ ok: boolean }>(`${BASE}/devices/${encodeURIComponent(id)}`)
 export const startBuild = () => api.post<{ job_id: string }>(`${BASE}/build`, {})
+export const installHome = (id: string) =>
+  api.post<{ job_id: string }>(`${BASE}/devices/${encodeURIComponent(id)}/install`, { confirm: true })
+export const restoreHome = (id: string) =>
+  api.post<{ job_id: string }>(`${BASE}/devices/${encodeURIComponent(id)}/restore`, { confirm: true })

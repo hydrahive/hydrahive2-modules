@@ -40,13 +40,20 @@ async def _background(coro) -> None:
         logger.exception("TV-Werkstatt: Auftrag fehlgeschlagen")
 
 
+def _last_action(device_id: str) -> dict | None:
+    """Letzter Auftrag am Fernseher (aufspielen oder zurück), der neuere von beiden."""
+    found = [{**j, "kind": kind} for kind in ("install", "restore") if (j := jobs.last_job(kind, device_id))]
+    return max(found, key=lambda j: j["created_at"]) if found else None
+
+
 @router.get("/state")
 async def get_state(p: Admin) -> dict:
     """Ohne incus kein Fehler, sondern ein Zustand, den die Seite erklären kann."""
     if not incus.available():
         return {"incus": False, "error_code": "tvw_no_incus", "devices": [], "builds": [],
                 "container": "missing", "setup": None, "build": None}
-    devices = [{**d, "check": jobs.last_job("probe", d["device_id"])} for d in state.devices()]
+    devices = [{**d, "check": jobs.last_job("probe", d["device_id"]), "action": _last_action(d["device_id"])}
+               for d in state.devices()]
     build = jobs.last_job("build")
     if build and build["state"] == "failed" and build["error_code"] == "tvw_interrupted":
         build_jobs.interrupted_builds()

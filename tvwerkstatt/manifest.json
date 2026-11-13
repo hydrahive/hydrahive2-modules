@@ -1,7 +1,7 @@
 {
   "id": "tvwerkstatt",
   "name": "TV-Werkstatt",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Startbildschirm und Zusätze für Android-TV und Google TV per Klick bauen und auf den Fernseher schieben, Werbung und Tracking abschalten. Alles Fremde läuft in einem abgeschotteten Container.",
   "icon": "Tv",
   "nav_group": "working",

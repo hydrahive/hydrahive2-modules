@@ -38,6 +38,21 @@ export const en = {
       container: "Start build environment", fetch: "Get source", verify: "Check source", build: "Build",
       collect: "Check result", done: "Done",
     },
+    install: {
+      start: "Push to the TV",
+      confirm: "Push the home screen to the TV now? It becomes Home; the previous home screen is only switched off, not "
+        + "deleted. \"Back to the original\" works at any time.",
+      restore: "Back to the original",
+      restore_confirm: "Use the original home screen again? The workshop home screen stays installed, but is no longer "
+        + "Home.",
+      running: "Installing … {{step}}",
+      restoring: "Bringing back the original …",
+      need_build: "Build the home screen below first to install it.",
+    },
+    istep: {
+      container: "Start build environment", verify: "Check built app", push: "Transfer to the TV",
+      start: "Start new home screen", switch: "Switch Home", restore: "Bring back the original",
+    },
     container: {
       missing: "not set up", stopped: "ready (resting)", running: "running", unknown: "state unknown",
     },
@@ -105,6 +120,16 @@ export const en = {
       tvw_build_failed: "The build failed. The log shows why.",
       tvw_build_unreadable: "The built app could not be checked.",
       tvw_build_unexpected: "The build produced a different app than expected. It will not be used.",
+      tvw_confirm_required: "Please confirm the question.",
+      tvw_no_build: "There is no finished build yet. Please build the home screen first.",
+      tvw_no_stock_home: "The original home screen of this TV is unknown. To be safe, nothing is switched. Please "
+        + "\"Check again\".",
+      tvw_build_changed: "The built app has changed. Please build again.",
+      tvw_install_failed: "Installing failed. Nothing was switched on the TV.",
+      tvw_home_not_started: "The new home screen could not be started. Nothing was switched on the TV.",
+      tvw_home_not_switched: "Home could not be switched. The original home screen is active again.",
+      tvw_restore_incomplete: "The original home screen could not be brought back safely. Please press Home on the "
+        + "TV and \"Check again\".",
       tvw_signer_mismatch: "The built app carries a foreign signature. It could not be installed on the TV.",
     },
   },

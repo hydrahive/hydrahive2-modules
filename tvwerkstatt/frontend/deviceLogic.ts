@@ -11,9 +11,26 @@ export function checkView(d: TvwDevice): CheckView {
   return "idle"
 }
 
-/** Läuft irgendwo ein Prüfauftrag → öfter nachsehen. */
+/** Läuft irgendwo ein Auftrag am Fernseher (prüfen, aufspielen, zurück) → öfter nachsehen, Knöpfe sperren. */
 export function anyChecking(devices: TvwDevice[]): boolean {
-  return devices.some((d) => d.check?.state === "running")
+  return devices.some((d) => d.check?.state === "running" || d.action?.state === "running")
+}
+
+export const ACTION_STEPS = ["container", "verify", "push", "start", "switch"] as const
+
+/** Was am Fernseher gerade passiert oder zuletzt schiefging. */
+export type ActionView = "installing" | "restoring" | "failed" | "idle"
+
+export function actionView(d: TvwDevice): ActionView {
+  const a = d.action
+  if (a?.state === "running") return a.kind === "install" ? "installing" : "restoring"
+  if (a?.state === "failed") return "failed"
+  return "idle"
+}
+
+/** Aufspielen geht nur mit fertigem Bau, offenem Debugging und bekanntem Original. */
+export function canInstall(d: TvwDevice, hasBuild: boolean): boolean {
+  return hasBuild && d.adb_state === "open" && !!d.stock_home
 }
 
 /** „Android TV“ / „Google TV“ aus der gelesenen Art; unbekannt → leer. */

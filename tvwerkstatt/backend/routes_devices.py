@@ -13,7 +13,7 @@ from hydrahive.api.middleware.auth import AuthPrincipal, require_admin_principal
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import container, device, device_jobs, incus, jobs, state
+from . import container, device, device_jobs, incus, install_jobs, jobs, state
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -32,6 +32,11 @@ class Empty(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class Confirm(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    confirm: bool = False                       # Rückfrage auf der Seite bestätigt
+
+
 async def _guard() -> None:
     if not incus.available():
         raise coded(status.HTTP_409_CONFLICT, "tvw_no_incus")
@@ -39,12 +44,12 @@ async def _guard() -> None:
         raise coded(status.HTTP_409_CONFLICT, "tvw_not_set_up")
 
 
-def _start_check(device_id: str, admin: str) -> str:
+def _start(kind: str, device_id: str, admin: str, runner) -> str:
     try:
-        job_id = jobs.begin("probe", device_id, admin, "network")
+        job_id = jobs.begin(kind, device_id, admin, "container" if kind != "probe" else "network")
     except jobs.JobError as exc:
         raise coded(status.HTTP_409_CONFLICT, exc.code) from None
-    task = asyncio.create_task(device_jobs.run_check(job_id, device_id))
+    task = asyncio.create_task(runner(job_id, device_id))
     _tasks.add(task)
     task.add_done_callback(_tasks.discard)
     return job_id
@@ -60,15 +65,41 @@ async def add_device(p: Admin, body: NewDevice) -> dict:
     except device.TvwDeviceError as exc:
         raise coded(status.HTTP_400_BAD_REQUEST if exc.code != "tvw_device_exists" else status.HTTP_409_CONFLICT,
                     exc.code) from None
-    return {"device_id": device_id, "job_id": _start_check(device_id, p.username)}
+    return {"device_id": device_id, "job_id": _start("probe", device_id, p.username, device_jobs.run_check)}
 
 
 @router.post("/devices/{device_id}/check", status_code=status.HTTP_202_ACCEPTED)
 async def check_device(device_id: str, p: Admin, body: Empty) -> dict:
     await _guard()
+    _known(device_id)
+    return {"job_id": _start("probe", device_id, p.username, device_jobs.run_check)}
+
+
+def _known(device_id: str) -> None:
     if not any(d["device_id"] == device_id for d in state.devices()):
         raise coded(status.HTTP_404_NOT_FOUND, "tvw_device_not_found")
-    return {"job_id": _start_check(device_id, p.username)}
+
+
+@router.post("/devices/{device_id}/install", status_code=status.HTTP_202_ACCEPTED)
+async def install_home(device_id: str, p: Admin, body: Confirm) -> dict:
+    """Startbildschirm aufspielen und zu Home machen – schaltet am Fernseher, darum nur mit Rückfrage."""
+    if not body.confirm:
+        raise coded(status.HTTP_400_BAD_REQUEST, "tvw_confirm_required")
+    await _guard()
+    _known(device_id)
+    if install_jobs.good_build() is None:
+        raise coded(status.HTTP_409_CONFLICT, "tvw_no_build")
+    return {"job_id": _start("install", device_id, p.username, install_jobs.run_install)}
+
+
+@router.post("/devices/{device_id}/restore", status_code=status.HTTP_202_ACCEPTED)
+async def restore_home(device_id: str, p: Admin, body: Confirm) -> dict:
+    """Zurück zum Original-Startbildschirm. Unser Startbildschirm bleibt installiert, ist nur nicht mehr Home."""
+    if not body.confirm:
+        raise coded(status.HTTP_400_BAD_REQUEST, "tvw_confirm_required")
+    await _guard()
+    _known(device_id)
+    return {"job_id": _start("restore", device_id, p.username, install_jobs.run_restore)}
 
 
 @router.delete("/devices/{device_id}")

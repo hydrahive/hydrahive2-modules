@@ -6,6 +6,7 @@ import { DevicePanel, type DeviceActions } from "./DevicePanel"
 import { anyChecking } from "./deviceLogic"
 import { errorKey } from "./logic"
 import { SetupPanel, type SetupActions } from "./SetupPanel"
+import { lastGood } from "./buildLogic"
 import { pollMs, setupView } from "./setupLogic"
 import { MUTED } from "./ui"
 
@@ -44,12 +45,16 @@ export function TvWerkstattPage() {
     onAdd: (name, address) => act(() => api.addDevice(name.trim(), address.trim())),
     onCheck: (id) => act(() => api.checkDevice(id)),
     onRemove: (id) => { if (window.confirm(t("device.remove_confirm"))) act(() => api.removeDevice(id)) },
+    onInstall: (id) => { if (window.confirm(t("install.confirm"))) act(() => api.installHome(id)) },
+    onRestore: (id) => { if (window.confirm(t("install.restore_confirm"))) act(() => api.restoreHome(id)) },
   }
   return <PageView s={s} msg={msg} busy={busy} setup={setup} devices={devices} onBuild={() => act(api.startBuild)} />
 }
 
 const NOOP_SETUP: SetupActions = { onSetup: () => {}, onStop: () => {}, onRemove: () => {} }
-const NOOP_DEVICES: DeviceActions = { onAdd: () => {}, onCheck: () => {}, onRemove: () => {} }
+const NOOP_DEVICES: DeviceActions = {
+  onAdd: () => {}, onCheck: () => {}, onRemove: () => {}, onInstall: () => {}, onRestore: () => {},
+}
 
 /** Reine Ansicht: Zustand rein, Seite raus (getrennt, damit sie ohne Server testbar ist). */
 export function PageView({ s, msg, busy = false, setup = NOOP_SETUP, devices = NOOP_DEVICES, onBuild = () => {} }: {
@@ -69,7 +74,8 @@ export function PageView({ s, msg, busy = false, setup = NOOP_SETUP, devices = N
       {!s && !msg && <p className={MUTED}>…</p>}
       {s && !s.incus && <p className="text-sm text-amber-200">{t(errorKey(s.error_code))}</p>}
       {s?.incus && <SetupPanel job={s.setup} container={s.container} busy={busy} actions={setup} />}
-      {s?.incus && <DevicePanel devices={s.devices} ready={ready} busy={working} actions={devices} />}
+      {s?.incus && <DevicePanel devices={s.devices} ready={ready} busy={working} hasBuild={!!lastGood(s.builds)}
+        actions={devices} />}
       {s?.incus && <BuildPanel job={s.build} builds={s.builds} ready={ready} busy={working} onBuild={onBuild} />}
     </div>
   )
