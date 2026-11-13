@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import * as api from "./api"
 import { BuildPanel } from "./BuildPanel"
+import { lastGood } from "./buildLogic"
 import { type AddonsActions, AddonsTab } from "./AddonsTab"
 import { type AppDeviceActions, AppDevicesPanel } from "./AppDevicesPanel"
 import { type AppsActions, AppsTab } from "./AppsTab"
@@ -86,7 +87,9 @@ export function TvWerkstattPage() {
     setup={setup} devices={devices} desktop={desktop} onBuild={() => w.act(api.startBuild)} />
 }
 
-const NOOP_APP: AppDeviceActions = { onCode: () => {}, onRevoke: () => {}, onRemove: () => {}, onNotice: () => {} }
+const NOOP_APP: AppDeviceActions = { onCode: () => {}, onRevoke: () => {}, onRemove: () => {}, onNotice: () => {},
+  onBuild: () => {}, onDownload: () => {} }
+const NO_APPS: api.TvwAppDevices = { devices: [], build: null, apk: null }
 const NOOP_ADDONS: AddonsActions = { onCatalog: () => {}, onInstall: () => {}, onRemove: () => {} }
 const NOOP_APPS: AppsActions = { onRead: () => {}, onOpen: () => {}, onSearch: () => {}, onUninstall: () => {} }
 const NOOP_DEBLOAT: DebloatActions = { onRead: () => {}, onPick: () => {}, onOff: () => {}, onOn: () => {},
@@ -102,7 +105,7 @@ export function PageView(p: {
   deviceId?: string | null; onDevice?: (id: string) => void; desk?: api.TvwDesktop | null; draft?: api.TvwLook | null
   deb?: api.TvwDebloat | null; debloat?: DebloatActions; picked?: Set<string>; store?: api.TvwStore | null
   apps?: AppsActions; addons?: api.TvwAddons | null; addonsAct?: AddonsActions
-  appDevs?: api.TvwAppDevice[]; appCode?: api.TvwAppCode | null; appAct?: AppDeviceActions
+  appDevs?: api.TvwAppDevices; appCode?: api.TvwAppCode | null; appAct?: AppDeviceActions
   mood?: api.Mood; now?: Date; setup?: SetupActions; devices?: DeviceActions; desktop?: DesktopActions
   onBuild?: () => void
 }) {
@@ -160,9 +163,10 @@ export function PageView(p: {
       )}
       {s?.incus && tab === "devices" && (
         <div className="grid gap-4 xl:grid-cols-2">
-          <DevicePanel devices={s.devices} ready={ready} busy={working} hasBuild={s.builds.some((b) => b.state === "done")}
+          <DevicePanel devices={s.devices} ready={ready} busy={working} hasBuild={!!lastGood(s.builds)}
             actions={p.devices ?? NOOP_DEVICES} />
-          <AppDevicesPanel devices={p.appDevs ?? []} code={p.appCode ?? null} busy={working} now={p.now ?? new Date()}
+          <AppDevicesPanel data={p.appDevs ?? NO_APPS} code={p.appCode ?? null} ready={ready} busy={working}
+            now={p.now ?? new Date()}
             actions={p.appAct ?? NOOP_APP} />
         </div>
       )}

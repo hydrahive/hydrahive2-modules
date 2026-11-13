@@ -3,6 +3,7 @@ import type { AddonsActions } from "./AddonsTab"
 import type { AppDeviceActions } from "./AppDevicesPanel"
 import type { AppsActions } from "./AppsTab"
 import * as api from "./api"
+import { downloadApk } from "./download"
 import type { useWorkshop } from "./useWorkshop"
 
 /** Handgriffe der Reiter Apps, Zusätze und der HydraHive-App (ausgelagert, damit die Seite klein bleibt). */
@@ -20,11 +21,13 @@ export function sideActions(w: ReturnType<typeof useWorkshop>, id: string, t: TF
   const appAct: AppDeviceActions = {
     onCode: (name) => w.act(() => api.newAppCode(name).then(setCode)),
     onRevoke: (a) => {
-      const name = w.appDevs.find((d) => d.app_id === a)?.name ?? a
+      const name = w.appDevs.devices.find((d) => d.app_id === a)?.name ?? a
       if (window.confirm(t("app.revoke_confirm", { name }))) w.act(() => api.revokeApp(a))
     },
     onRemove: (a) => w.act(() => api.removeApp(a)),
     onNotice: (a, title, body, buttons) => w.act(() => api.sendAppNotice(a, title, body, buttons)),
+    onBuild: () => w.act(api.buildApp),
+    onDownload: () => w.act(() => downloadApk(api.APP_APK_URL)),
   }
   const addonsAct: AddonsActions = {
     onCatalog: () => w.act(() => api.loadCatalog(id)),

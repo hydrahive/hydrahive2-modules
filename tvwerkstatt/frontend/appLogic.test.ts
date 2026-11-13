@@ -1,7 +1,9 @@
 // Reine Logik der App-Geräte.
 import { describe, expect, it } from "vitest"
-import type { TvwAppDevice } from "./api"
-import { appLine, buttonsOf, minutesLeft, online } from "./appLogic"
+import type { TvwAppDevice, TvwJob } from "./api"
+import { app as de } from "./i18n.app.de"
+import { app as en } from "./i18n.app.en"
+import { APP_BUILD_STEPS, appBuildStep, appBuildView, appLine, buttonsOf, minutesLeft, online } from "./appLogic"
 
 const NOW = new Date("2026-11-13T12:00:00Z")
 const DEV: TvwAppDevice = { app_id: "a1", name: "Küche", device_id: "", kind: "tablet", model: "Galaxy Tab A",
@@ -35,5 +37,22 @@ describe("TV-Werkstatt: App-Logik", () => {
     expect(minutesLeft("2026-11-13T12:14:59Z", NOW)).toBe(14)
     expect(minutesLeft("2026-11-13T11:00:00Z", NOW)).toBe(0)
     expect(minutesLeft("kaputt", NOW)).toBe(0)
+  })
+
+  it("Bau-Schritte wie im Backend, jeder mit Text de/en", () => {
+    expect([...APP_BUILD_STEPS]).toEqual(["container", "fetch", "verify", "unpack", "build", "collect"])
+    expect(appBuildStep("unpack")).toEqual({ n: 4, total: 6 })
+    expect(appBuildStep("quatsch")).toEqual({ n: 0, total: 6 })
+    for (const [lang, t] of [["de", de], ["en", en]] as const)
+      expect(APP_BUILD_STEPS.filter((k) => !(t.bstep as Record<string, string>)[k]), lang).toEqual([])
+  })
+
+  it("Bau-Zustand: laufend und gescheitert gehen vor, sonst fertig nur mit App", () => {
+    const j = (state: string) => ({ state } as TvwJob)
+    expect(appBuildView(j("running"), true)).toBe("running")
+    expect(appBuildView(j("failed"), true)).toBe("failed")
+    expect(appBuildView(j("done"), true)).toBe("done")
+    expect(appBuildView(j("done"), false)).toBe("none")
+    expect(appBuildView(null, false)).toBe("none")
   })
 })

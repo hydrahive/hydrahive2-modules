@@ -1,17 +1,20 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import type { TvwAppCode, TvwAppDevice } from "./api"
-import { appLine, buttonsOf, minutesLeft, online } from "./appLogic"
-import { BOX, BOX_HEAD, BTN, BTN_DANGER, BTN_MAIN, INPUT, MUTED, ROW } from "./ui"
+import type { TvwAppCode, TvwAppDevices } from "./api"
+import { AppBuildBox } from "./AppBuildBox"
+import { AppRow } from "./AppRow"
+import { minutesLeft } from "./appLogic"
+import { BOX, BOX_HEAD, BTN_MAIN, INPUT, MUTED } from "./ui"
 
 export interface AppDeviceActions {
   onCode: (name: string) => void; onRevoke: (id: string) => void; onRemove: (id: string) => void
   onNotice: (id: string, title: string, body: string, buttons: string[]) => void
+  onBuild: () => void; onDownload: () => void
 }
 
-/** Bereich „HydraHive-App“ im Reiter Geräte: Code zum Koppeln, gekoppelte Fernseher/Tablets, Testmeldung. */
-export function AppDevicesPanel({ devices, code, busy, now, actions }: {
-  devices: TvwAppDevice[]; code: TvwAppCode | null; busy: boolean; now: Date; actions: AppDeviceActions
+/** Bereich „HydraHive-App“ im Reiter Geräte: App bauen/laden, Code zum Koppeln, gekoppelte Geräte, Testmeldung. */
+export function AppDevicesPanel({ data, code, ready, busy, now, actions }: {
+  data: TvwAppDevices; code: TvwAppCode | null; ready: boolean; busy: boolean; now: Date; actions: AppDeviceActions
 }) {
   const { t } = useTranslation("tvwerkstatt")
   const [name, setName] = useState("")
@@ -19,8 +22,9 @@ export function AppDevicesPanel({ devices, code, busy, now, actions }: {
     <section className={BOX} aria-label={t("app.title")}>
       <h2 className={BOX_HEAD}>{t("app.title")}</h2>
       <p className={MUTED}>{t("app.explain")}</p>
-      {devices.length === 0 && <p className={MUTED}>{t("app.none")}</p>}
-      {devices.map((d) => <AppRow key={d.app_id} d={d} now={now} busy={busy} actions={actions} />)}
+      <AppBuildBox job={data.build} apk={data.apk} ready={ready} busy={busy} actions={actions} />
+      {data.devices.length === 0 && <p className={MUTED}>{t("app.none")}</p>}
+      {data.devices.map((d) => <AppRow key={d.app_id} d={d} now={now} busy={busy} actions={actions} />)}
       <form className="flex flex-wrap gap-2"
         onSubmit={(e) => { e.preventDefault(); if (name.trim()) { actions.onCode(name.trim()); setName("") } }}>
         <input className={`${INPUT} max-w-xs`} value={name} maxLength={40} placeholder={t("app.name_ph")}
@@ -34,52 +38,14 @@ export function AppDevicesPanel({ devices, code, busy, now, actions }: {
           <div className="text-xs text-[#9aa7bc]">
             {t("app.code_valid", { n: minutesLeft(code.expires_at, now) })} · {t("app.server")}: {code.server}
           </div>
-          {code.pin && <div className="break-all text-[11px] text-[#9aa7bc]">{t("app.pin")}: {code.pin}</div>}
-          <p className="text-xs text-[#9aa7bc]">{t("app.code_hint")}</p>
+          {code.pin_short && (
+            <div className="text-xs text-[#9aa7bc]">
+              {t("app.pin")}: <span className="font-mono text-base text-[#e8eef8]">{code.pin_short}</span>
+            </div>
+          )}
+          <p className="text-xs text-[#9aa7bc]">{t(code.pin_short ? "app.code_hint_pin" : "app.code_hint")}</p>
         </div>
       )}
     </section>
-  )
-}
-
-function AppRow({ d, now, busy, actions }: { d: TvwAppDevice; now: Date; busy: boolean; actions: AppDeviceActions }) {
-  const { t } = useTranslation("tvwerkstatt")
-  const [title, setTitle] = useState("")
-  const [btns, setBtns] = useState("")
-  const on = online(d, now)
-  const active = d.status === "active"
-  return (
-    <div className={`${ROW} flex-col items-stretch`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="truncate text-sm text-[#e8eef8]">{d.name}</div>
-          <div className="truncate text-xs text-[#9aa7bc]">{appLine(d) || "–"}</div>
-        </div>
-        <span className={`shrink-0 text-xs ${!active ? "text-red-300" : on ? "text-emerald-300" : "text-[#9aa7bc]"}`}>
-          {t(!active ? "app.revoked" : on ? "app.online" : "app.offline")}
-        </span>
-      </div>
-      {active && (
-        <form className="flex flex-wrap gap-2" onSubmit={(e) => {
-          e.preventDefault()
-          if (title.trim()) { actions.onNotice(d.app_id, title.trim(), "", buttonsOf(btns)); setTitle("") }
-        }}>
-          <input className={`${INPUT} max-w-xs`} value={title} maxLength={80} placeholder={t("app.notice_ph")}
-            aria-label={t("app.notice")} onChange={(e) => setTitle(e.target.value)} />
-          <input className={`${INPUT} max-w-[14rem]`} value={btns} maxLength={70} placeholder={t("app.buttons_ph")}
-            aria-label={t("app.buttons")} onChange={(e) => setBtns(e.target.value)} />
-          <button type="submit" className={BTN} disabled={busy || !title.trim()}>{t("app.send")}</button>
-        </form>
-      )}
-      <div className="flex gap-2">
-        {active ? (
-          <button type="button" className={BTN_DANGER} disabled={busy} onClick={() => actions.onRevoke(d.app_id)}>
-            {t("app.revoke")}</button>
-        ) : (
-          <button type="button" className={BTN} disabled={busy} onClick={() => actions.onRemove(d.app_id)}>
-            {t("app.remove")}</button>
-        )}
-      </div>
-    </div>
   )
 }
