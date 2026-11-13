@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import * as api from "./api"
 import { BuildPanel } from "./BuildPanel"
+import { type AppsActions, AppsTab } from "./AppsTab"
 import { type DebloatActions, DebloatTab } from "./DebloatTab"
 import { DesktopTab, type DesktopActions } from "./DesktopTab"
 import { moodAt } from "./desktopLogic"
@@ -26,6 +27,15 @@ export function TvWerkstattPage() {
   const id = w.deviceId ?? ""
   const sel = picked.id === id ? picked.set : new Set<string>()
   const list = (p: string[]) => p.map((x) => `• ${x}`).join("\n")
+  const appsAct: AppsActions = {
+    onRead: () => w.act(() => api.readStore(id)),
+    onOpen: (pkg) => w.act(() => api.openStore(id, { package: pkg })),
+    onSearch: (q) => w.act(() => api.openStore(id, { query: q })),
+    onUninstall: (pkg) => {
+      const name = w.desk?.apps.find((a) => a.package === pkg)?.label || pkg
+      if (window.confirm(t("apps.uninstall_confirm", { name }))) w.act(() => api.uninstallApp(id, pkg))
+    },
+  }
   const debloat: DebloatActions = {
     onRead: () => w.act(() => api.readDebloat(id)),
     onPick: (pkgs, on) => setPicked(() => {
@@ -74,11 +84,12 @@ export function TvWerkstattPage() {
     onDeleteWall: (wid) => { if (window.confirm(t("desk.remove_image_confirm"))) w.act(() => api.deleteWallpaper(id, wid)) },
   }
   return <PageView s={w.s} msg={w.msg} busy={w.busy} tab={tab} onTab={setTab} deviceId={w.deviceId}
-    onDevice={w.setDeviceId} desk={w.desk} deb={w.deb} debloat={debloat} picked={sel}
+    onDevice={w.setDeviceId} desk={w.desk} deb={w.deb} debloat={debloat} picked={sel} store={w.store} apps={appsAct}
     draft={w.draft} mood={mood} now={now}
     setup={setup} devices={devices} desktop={desktop} onBuild={() => w.act(api.startBuild)} />
 }
 
+const NOOP_APPS: AppsActions = { onRead: () => {}, onOpen: () => {}, onSearch: () => {}, onUninstall: () => {} }
 const NOOP_DEBLOAT: DebloatActions = { onRead: () => {}, onPick: () => {}, onOff: () => {}, onOn: () => {},
   onUndoAll: () => {} }
 const NOOP_SETUP: SetupActions = { onSetup: () => {}, onStop: () => {}, onRemove: () => {} }
@@ -90,7 +101,8 @@ const NOOP_DEVICES: DeviceActions = {
 export function PageView(p: {
   s: api.TvwState | null; msg: string | null; busy?: boolean; tab?: Tab; onTab?: (t: Tab) => void
   deviceId?: string | null; onDevice?: (id: string) => void; desk?: api.TvwDesktop | null; draft?: api.TvwLook | null
-  deb?: api.TvwDebloat | null; debloat?: DebloatActions; picked?: Set<string>
+  deb?: api.TvwDebloat | null; debloat?: DebloatActions; picked?: Set<string>; store?: api.TvwStore | null
+  apps?: AppsActions
   mood?: api.Mood; now?: Date; setup?: SetupActions; devices?: DeviceActions; desktop?: DesktopActions
   onBuild?: () => void
 }) {
@@ -134,6 +146,12 @@ export function PageView(p: {
           : !dev ? <Hint text={t("desk.need_device")} />
             : <DebloatTab dev={dev} data={p.deb ?? null} picked={p.picked ?? new Set()} busy={working}
               actions={p.debloat ?? NOOP_DEBLOAT} />
+      )}
+      {s?.incus && tab === "apps" && (
+        !ready ? <Hint text={t("desk.need_setup")} />
+          : !dev ? <Hint text={t("desk.need_device")} />
+            : <AppsTab dev={dev} data={p.store ?? null} desk={p.desk ?? null} busy={working}
+              actions={p.apps ?? NOOP_APPS} />
       )}
       {s?.incus && tab === "addons" && <Hint text={t("tab.addons_soon")} />}
       {s?.incus && tab === "devices" && (

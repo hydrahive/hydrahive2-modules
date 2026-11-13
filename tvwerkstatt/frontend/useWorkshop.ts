@@ -13,12 +13,14 @@ export function useWorkshop() {
   const [desk, setDesk] = useState<api.TvwDesktop | null>(null)
   const [draft, setDraft] = useState<api.TvwLook | null>(null)
   const [deb, setDeb] = useState<{ device_id: string; data: api.TvwDebloat } | null>(null)
+  const [store, setStore] = useState<{ device_id: string; data: api.TvwStore } | null>(null)
   const alive = useRef(true)
   const dirtyRef = useRef(false)
 
   const loadDesk = useCallback((id: string) => Promise.all([
     api.getDesktop(id).then((d) => { if (!alive.current) return; setDesk(d); if (!dirtyRef.current) setDraft(d.look) }),
     api.getDebloat(id).then((d) => { if (alive.current) setDeb({ device_id: id, data: d }) }),
+    api.getStore(id).then((d) => { if (alive.current) setStore({ device_id: id, data: d }) }),
   ]).catch((e) => { if (alive.current) setMsg(errorKey(e)) }), [])
 
   const load = useCallback(() => api.getState()
@@ -33,9 +35,10 @@ export function useWorkshop() {
   useEffect(() => { if (deviceId) { dirtyRef.current = false; loadDesk(deviceId) } }, [deviceId, loadDesk])
   const deskFor = desk && deviceId ? desk : null
   const debFor = deviceId && deb?.device_id === deviceId ? deb.data : null
+  const storeFor = deviceId && store?.device_id === deviceId ? store.data : null
 
   const deskRunning = (!!deskFor && [deskFor.read_job, deskFor.push_job].some((j) => j?.state === "running"))
-    || [deb?.data.read_job, deb?.data.switch_job].some((j) => j?.state === "running")
+    || [deb?.data.read_job, deb?.data.switch_job, store?.data.job].some((j) => j?.state === "running")
   const running = !!s && (anyChecking(s.devices) || s.build?.state === "running" || deskRunning)
   const ms = s ? pollMs(setupView(s.setup, s.container), running) : null
   useEffect(() => {
@@ -56,6 +59,6 @@ export function useWorkshop() {
     dirtyRef.current = !!desk && JSON.stringify(l) !== JSON.stringify(desk.look)
   }, [desk])
 
-  return { s, msg, busy: busy || running, deviceId, setDeviceId, desk: deskFor, deb: debFor, draft, editDraft, act,
-    load, clearDirty: () => { dirtyRef.current = false } }
+  return { s, msg, busy: busy || running, deviceId, setDeviceId, desk: deskFor, deb: debFor, store: storeFor, draft,
+    editDraft, act, load, clearDirty: () => { dirtyRef.current = false } }
 }

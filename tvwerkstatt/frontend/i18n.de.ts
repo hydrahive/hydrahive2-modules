@@ -1,8 +1,10 @@
 // Deutsche Texte der TV-Werkstatt. Einfach, ohne Fachwörter des Servers.
+import { apps, appsErr } from "./i18n.apps.de"
 import { deb, debErr } from "./i18n.deb.de"
 
 export const de = {
   tvwerkstatt: {
+    apps,
     deb,
     title: "TV-Werkstatt",
     subtitle: "Startbildschirm und Zusätze für deinen Fernseher bauen und hinüberschieben.",
@@ -62,7 +64,7 @@ export const de = {
       start: "Neuen Startbildschirm starten", switch: "Home umstellen", restore: "Original zurückholen",
     },
     tab: {
-      desktop: "Desktop", debloat: "Entrümpeln", addons: "Zusätze", devices: "Geräte", build: "Bauumgebung",
+      desktop: "Desktop", debloat: "Entrümpeln", apps: "Apps", addons: "Zusätze", devices: "Geräte", build: "Bauumgebung",
       addons_soon: "Zusätze kommen danach: Katalog von cleanyourtv und eigene Zusätze per GitHub-Adresse.",
     },
     mood: { morning: "Morgen", evening: "Abend", night: "Nacht" },
@@ -123,6 +125,7 @@ export const de = {
       done: "Fertig",
     },
     err: {
+      ...appsErr,
       ...debErr,
       general: "Das hat nicht geklappt. Bitte später noch einmal versuchen.",
       tvw_no_incus: "Auf diesem Server gibt es keine Container-Umgebung. Die TV-Werkstatt braucht sie für den Bau.",
