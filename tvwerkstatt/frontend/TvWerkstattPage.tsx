@@ -5,7 +5,7 @@ import { BuildPanel } from "./BuildPanel"
 import { DesktopTab, type DesktopActions } from "./DesktopTab"
 import { moodAt } from "./desktopLogic"
 import { DevicePanel, type DeviceActions } from "./DevicePanel"
-import { anyChecking } from "./deviceLogic"
+import { anyChecking, installConfirmKey } from "./deviceLogic"
 import { errorKey } from "./logic"
 import { SetupPanel, type SetupActions } from "./SetupPanel"
 import { setupView } from "./setupLogic"
@@ -32,7 +32,9 @@ export function TvWerkstattPage() {
     onAdd: (name, address) => w.act(() => api.addDevice(name.trim(), address.trim())),
     onCheck: (d) => w.act(() => api.checkDevice(d)),
     onRemove: (d) => { if (window.confirm(t("device.remove_confirm"))) w.act(() => api.removeDevice(d)) },
-    onInstall: (d) => { if (window.confirm(t("install.confirm"))) w.act(() => api.installHome(d)) },
+    onInstall: (d) => {
+      if (window.confirm(t(installConfirmKey(w.s?.devices.find((x) => x.device_id === d))))) w.act(() => api.installHome(d))
+    },
     onRestore: (d) => { if (window.confirm(t("install.restore_confirm"))) w.act(() => api.restoreHome(d)) },
   }
   const desktop: DesktopActions = {

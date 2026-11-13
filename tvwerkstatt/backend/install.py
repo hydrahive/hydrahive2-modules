@@ -72,10 +72,12 @@ def switch_script(serial: str, stock_pkg: str) -> str:
             + home_line(serial))
 
 
-def restore_script(serial: str, stock_pkg: str) -> str:
-    """Original einschalten und als Home setzen (Android 9 braucht Paket/Aktivität → auf dem Gerät auflösen)."""
+def restore_script(serial: str, stock_pkg: str, extras: tuple[str, ...] = ()) -> str:
+    """Original und mit ihm Abgeschaltetes einschalten, dann Original als Home setzen – erst danach, weil Android die
+    Wahl verwirft, sobald sich die Menge der Home-Apps ändert (Android 9 braucht Paket/Aktivität → auf dem Gerät)."""
     s = stock(stock_pkg)
-    return (_connect(serial) + _adb(serial, f"pm enable --user 0 {s}") + "; "
+    more = "".join(_adb(serial, f"pm enable --user 0 {p}") + "; " for p in extras if _PKG.match(p))
+    return (_connect(serial) + _adb(serial, f"pm enable --user 0 {s}") + "; " + more
             + _adb(serial, f"cmd package set-home-activity --user 0 $({_HOME_Q} {s} | tail -n 1)") + "; "
             + home_line(serial))
 

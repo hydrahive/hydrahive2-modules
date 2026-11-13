@@ -16,7 +16,7 @@ export function anyChecking(devices: TvwDevice[]): boolean {
   return devices.some((d) => d.check?.state === "running" || d.action?.state === "running")
 }
 
-export const ACTION_STEPS = ["container", "verify", "push", "start", "switch"] as const
+export const ACTION_STEPS = ["container", "verify", "guard", "push", "start", "switch"] as const
 
 /** Was am Fernseher gerade passiert oder zuletzt schiefging. */
 export type ActionView = "installing" | "restoring" | "failed" | "idle"
@@ -31,6 +31,11 @@ export function actionView(d: TvwDevice): ActionView {
 /** Aufspielen geht nur mit fertigem Bau, offenem Debugging und bekanntem Original. */
 export function canInstall(d: TvwDevice, hasBuild: boolean): boolean {
   return hasBuild && d.adb_state === "open" && !!d.stock_home
+}
+
+/** Rückfrage vor dem Aufspielen: Google TV sagt dazu, was zusätzlich abgeschaltet wird und welche Tasten fehlen. */
+export function installConfirmKey(d: TvwDevice | undefined): string {
+  return d?.kind === "google_tv" ? "install.confirm_gtv" : "install.confirm"
 }
 
 /** „Android TV“ / „Google TV“ aus der gelesenen Art; unbekannt → leer. */
