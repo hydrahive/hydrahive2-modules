@@ -1,9 +1,11 @@
 // English texts of the TV Workshop. Plain words, no server jargon.
+import { add, addErr } from "./i18n.add.en"
 import { apps, appsErr } from "./i18n.apps.en"
 import { deb, debErr } from "./i18n.deb.en"
 
 export const en = {
   tvwerkstatt: {
+    add,
     apps,
     deb,
     title: "TV Workshop",
@@ -65,7 +67,6 @@ export const en = {
     tab: {
       desktop: "Desktop", debloat: "Declutter", apps: "Apps", addons: "Add-ons", devices: "Devices",
       build: "Build environment",
-      addons_soon: "Add-ons come after that: the cleanyourtv catalogue and your own add-ons by GitHub address.",
     },
     mood: { morning: "Morning", evening: "Evening", night: "Night" },
     desk: {
@@ -124,6 +125,7 @@ export const en = {
       done: "Done",
     },
     err: {
+      ...addErr,
       ...appsErr,
       ...debErr,
       general: "That did not work. Please try again later.",
