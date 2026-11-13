@@ -131,7 +131,7 @@ def test_nur_admins(client, user_headers, env):
 
 def test_zustand_vor_dem_lesen(client, admin_headers, env):
     r = client.get(B + "/devices/t1/debloat", headers=admin_headers)
-    assert r.status_code == 200 and r.json() == {"view": None, "read_job": None}
+    assert r.status_code == 200 and r.json() == {"view": None, "read_job": None, "switch_job": None, "backup_at": ""}
 
 
 def test_lesen_starten(client, admin_headers, env):

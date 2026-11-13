@@ -31,7 +31,27 @@ Gemessen 13.11.2026, echt und nur lesend:
 
 Listen holen beim ersten Mal ~10 s, Pakete lesen ~2 s.
 
-## Teil 2 – Schalter (nächster PR)
+## Teil 2 – Schalter (0.10.0)
 
-Schalter je Paket, Sicherung des Stands vor dem ersten Abschalten, in Schüben mit Home-Prüfung danach, „Alles zurück“,
-„Nach Update prüfen“ (was eine neue Firmware wieder eingeschaltet hat). Erster echter Schub am TCL gemeinsam mit Till.
+- **Haken** je App (gesperrte nicht wählbar), „Empfohlene anhaken“, „Ausgewählte abschalten (n)“, „Wieder einschalten (n)“
+  für Apps, die schon aus sind. Jede Aktion mit Rückfrage, die die Apps nennt.
+- **Schutzprüfung am Fernseher** vor jedem Abschalten (nur lesend, wie cleanyourtv `tools/disable.sh`):
+  `TV_INPUT_HARDWARE` in den angefragten Rechten (Schicht unter HDMI/AV/Tuner, #321), Apps, mit denen der Fernseher
+  Eingänge (`vnd.android.cursor.item/channel`) oder Einstellungen öffnet. Nicht lesbar oder Dumps abgeschaltet → gilt als
+  geschützt. Ist eine gewählte App betroffen, wird **nichts** abgeschaltet (`tvw_debloat_blocked`).
+- **Sicherung:** Stand aller Pakete vor der ersten Änderung je Fernseher (`module_tvwerkstatt_debloat_backup`).
+- **Schübe zu 4:** erst vermerken (`module_tvwerkstatt_debloat_changes`), dann `pm disable-user --user 0`, zurücklesen.
+  Ist eine App danach nicht aus oder Home ein anderer als vorher → alles aus diesem Auftrag sofort wieder an, Vermerke
+  nur dort weg, wo zurückgelesen wieder an. Scheitert auch das → `tvw_debloat_restore_incomplete`, Vermerk bleibt.
+- **„Alles zurück“:** schaltet alles ein, was die Werkstatt abgeschaltet hat (nicht, was schon vorher aus war).
+- **„Nach Update prüfen“:** liest neu; Apps, die die Werkstatt abgeschaltet hatte und die wieder an sind, werden gemeldet.
+- Höchstens 40 Apps je Auftrag. Nie `uninstall`, nie `pm disable` ohne `-user`.
+
+Gemessen 13.11.2026 am Sony, echt und ohne Änderung des Zustands (nur Apps „abgeschaltet“, die schon aus waren):
+Schutzprüfung 1,0 s, Schub zu 4 Apps 0,5 s, Home danach gleich, Stand vorher = nachher (184 Pakete). Schutzprüfung am
+TCL (nur lesend): `com.tcl.tv` und `com.tcl.tvinput` als Eingänge erkannt, 13 empfohlene Apps frei.
+
+## Danach
+
+App-Verwaltung mit dem App-Store des Fernsehers (Task 3f282d28): Play Store ist an beiden Geräten an, `market://details`
+und `market://search` werden aufgelöst – Installieren selbst bestätigt man am Fernseher.

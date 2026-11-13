@@ -31,3 +31,28 @@ export function listName(path: string): string {
 export function listNames(paths: string[]): string {
   return [...new Set(paths.map(listName))].sort().join(", ")
 }
+
+/** Was ein Haken auslösen würde: abschalten (an, nicht gesperrt) oder wieder einschalten (aus, nicht gesperrt). */
+export function canPick(r: TvwDebloatRow): boolean {
+  return !r.locked
+}
+
+/** Auswahl aufteilen: was angeht ist „aus“, was ausgeht ist „an“. Gesperrte und Unbekannte fallen weg. */
+export function split(v: TvwDebloatView, picked: Set<string>): { off: string[]; on: string[] } {
+  const rows = v.packages.filter((r) => picked.has(r.package) && canPick(r))
+  return { off: rows.filter((r) => r.state === "on").map((r) => r.package),
+    on: rows.filter((r) => r.state === "off").map((r) => r.package) }
+}
+
+/** Vorschlag zum Anhaken: empfohlen, noch an, nicht gesperrt. */
+export function suggested(v: TvwDebloatView): string[] {
+  return v.packages.filter((r) => r.recommended && r.state === "on" && !r.locked).map((r) => r.package)
+}
+
+/** Schritt eines Auftrags als Text-Schlüssel und Werte („batch 2“ → Schub 2). */
+export function stepText(step: string): { key: string; n?: number } {
+  const m = step.match(/^batch (\d+)$/)
+  if (m) return { key: "deb.step.batch", n: Number(m[1]) }
+  return { key: `deb.step.${["container", "lists", "packages", "guard", "backup", "restore", "read"].includes(step)
+    ? step : "other"}` }
+}

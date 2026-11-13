@@ -1,5 +1,5 @@
 // Deutsche Texte der TV-Werkstatt. Einfach, ohne Fachwörter des Servers.
-import { deb } from "./i18n.deb.de"
+import { deb, debErr } from "./i18n.deb.de"
 
 export const de = {
   tvwerkstatt: {
@@ -123,6 +123,7 @@ export const de = {
       done: "Fertig",
     },
     err: {
+      ...debErr,
       general: "Das hat nicht geklappt. Bitte später noch einmal versuchen.",
       tvw_no_incus: "Auf diesem Server gibt es keine Container-Umgebung. Die TV-Werkstatt braucht sie für den Bau.",
       tvw_busy: "Es läuft gerade schon etwas. Bitte kurz warten.",
@@ -181,8 +182,6 @@ export const de = {
         + "umgestellt.",
       tvw_guard_failed: "Die Vorbereitung am Fernseher lief nicht wie erwartet. Der ursprüngliche Startbildschirm ist "
         + "wieder aktiv.",
-      tvw_debloat_read_failed: "Vom Fernseher ließ sich keine App-Liste lesen.",
-      tvw_debloat_lists_failed: "Die Listen von cleanyourtv ließen sich nicht lesen.",
       tvw_signer_mismatch: "Die gebaute App trägt eine fremde Unterschrift. Auf dem Fernseher ließe sie sich nicht "
         + "einspielen.",
     },

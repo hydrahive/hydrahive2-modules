@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import * as api from "./api"
 import { BuildPanel } from "./BuildPanel"
-import { DebloatTab } from "./DebloatTab"
+import { type DebloatActions, DebloatTab } from "./DebloatTab"
 import { DesktopTab, type DesktopActions } from "./DesktopTab"
 import { moodAt } from "./desktopLogic"
 import { DevicePanel, type DeviceActions } from "./DevicePanel"
@@ -19,10 +19,30 @@ export function TvWerkstattPage() {
   const { t } = useTranslation("tvwerkstatt")
   const w = useWorkshop()
   const [tab, setTab] = useState<Tab>("desktop")
+  const [picked, setPicked] = useState<{ id: string; set: Set<string> }>({ id: "", set: new Set() })
   const [now, setNow] = useState(() => new Date())
   const [mood, setMood] = useState(() => moodAt(new Date().getHours()))
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(id) }, [])
   const id = w.deviceId ?? ""
+  const sel = picked.id === id ? picked.set : new Set<string>()
+  const list = (p: string[]) => p.map((x) => `• ${x}`).join("\n")
+  const debloat: DebloatActions = {
+    onRead: () => w.act(() => api.readDebloat(id)),
+    onPick: (pkgs, on) => setPicked(() => {
+      const next = new Set(sel); pkgs.forEach((p) => (on ? next.add(p) : next.delete(p))); return { id, set: next }
+    }),
+    onOff: (p) => {
+      if (window.confirm(t("deb.confirm_off", { n: p.length, list: list(p) })))
+        w.act(() => api.debloatOff(id, p), () => setPicked({ id, set: new Set() }))
+    },
+    onOn: (p) => {
+      if (window.confirm(t("deb.confirm_on", { n: p.length, list: list(p) })))
+        w.act(() => api.debloatOn(id, p), () => setPicked({ id, set: new Set() }))
+    },
+    onUndoAll: () => {
+      if (window.confirm(t("deb.confirm_undo", { n: w.deb?.view?.ours.length ?? 0 }))) w.act(() => api.debloatOn(id))
+    },
+  }
 
   const setup: SetupActions = {
     onSetup: (accept) => w.act(() => api.startSetup(accept)),
@@ -54,11 +74,13 @@ export function TvWerkstattPage() {
     onDeleteWall: (wid) => { if (window.confirm(t("desk.remove_image_confirm"))) w.act(() => api.deleteWallpaper(id, wid)) },
   }
   return <PageView s={w.s} msg={w.msg} busy={w.busy} tab={tab} onTab={setTab} deviceId={w.deviceId}
-    onDevice={w.setDeviceId} desk={w.desk} deb={w.deb} onReadDebloat={() => w.act(() => api.readDebloat(id))}
+    onDevice={w.setDeviceId} desk={w.desk} deb={w.deb} debloat={debloat} picked={sel}
     draft={w.draft} mood={mood} now={now}
     setup={setup} devices={devices} desktop={desktop} onBuild={() => w.act(api.startBuild)} />
 }
 
+const NOOP_DEBLOAT: DebloatActions = { onRead: () => {}, onPick: () => {}, onOff: () => {}, onOn: () => {},
+  onUndoAll: () => {} }
 const NOOP_SETUP: SetupActions = { onSetup: () => {}, onStop: () => {}, onRemove: () => {} }
 const NOOP_DEVICES: DeviceActions = {
   onAdd: () => {}, onCheck: () => {}, onRemove: () => {}, onInstall: () => {}, onRestore: () => {},
@@ -68,7 +90,7 @@ const NOOP_DEVICES: DeviceActions = {
 export function PageView(p: {
   s: api.TvwState | null; msg: string | null; busy?: boolean; tab?: Tab; onTab?: (t: Tab) => void
   deviceId?: string | null; onDevice?: (id: string) => void; desk?: api.TvwDesktop | null; draft?: api.TvwLook | null
-  deb?: api.TvwDebloat | null; onReadDebloat?: () => void
+  deb?: api.TvwDebloat | null; debloat?: DebloatActions; picked?: Set<string>
   mood?: api.Mood; now?: Date; setup?: SetupActions; devices?: DeviceActions; desktop?: DesktopActions
   onBuild?: () => void
 }) {
@@ -110,7 +132,8 @@ export function PageView(p: {
       {s?.incus && tab === "debloat" && (
         !ready ? <Hint text={t("desk.need_setup")} />
           : !dev ? <Hint text={t("desk.need_device")} />
-            : <DebloatTab dev={dev} data={p.deb ?? null} busy={working} onRead={p.onReadDebloat ?? (() => {})} />
+            : <DebloatTab dev={dev} data={p.deb ?? null} picked={p.picked ?? new Set()} busy={working}
+              actions={p.debloat ?? NOOP_DEBLOAT} />
       )}
       {s?.incus && tab === "addons" && <Hint text={t("tab.addons_soon")} />}
       {s?.incus && tab === "devices" && (

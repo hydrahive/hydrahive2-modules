@@ -1,5 +1,5 @@
 // English texts of the TV Workshop. Plain words, no server jargon.
-import { deb } from "./i18n.deb.en"
+import { deb, debErr } from "./i18n.deb.en"
 
 export const en = {
   tvwerkstatt: {
@@ -121,6 +121,7 @@ export const en = {
       done: "Done",
     },
     err: {
+      ...debErr,
       general: "That did not work. Please try again later.",
       tvw_no_incus: "This server has no container environment. The TV Workshop needs it for building.",
       tvw_busy: "Something is already running. Please wait a moment.",
@@ -177,8 +178,6 @@ export const en = {
         + "Wi-Fi. Please forget the Wi-Fi on the TV and join it again, then try once more. Nothing was changed.",
       tvw_wifi_unreadable: "It could not be read who owns the saved Wi-Fi. To be safe, nothing was changed.",
       tvw_guard_failed: "Preparing the TV did not go as expected. The original home screen is active again.",
-      tvw_debloat_read_failed: "No list of apps could be read from the TV.",
-      tvw_debloat_lists_failed: "The cleanyourtv lists could not be read.",
       tvw_signer_mismatch: "The built app carries a foreign signature. It could not be installed on the TV.",
     },
   },

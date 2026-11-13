@@ -74,8 +74,14 @@ export interface TvwDebloatRow {
 }
 export interface TvwDebloatView {
   lists_used: string[]; score: number; total_lists: number; packages: TvwDebloatRow[]; off_count: number
-  recommended_on: number; read_at: string; commit_id: string
+  recommended_on: number; read_at: string; commit_id: string; ours: string[]; back_on: string[]
 }
-export interface TvwDebloat { view: TvwDebloatView | null; read_job: TvwJob | null }
+export interface TvwDebloat {
+  view: TvwDebloatView | null; read_job: TvwJob | null; switch_job: TvwJob | null; backup_at: string
+}
 export const getDebloat = (id: string) => api.get<TvwDebloat>(`${dev(id)}/debloat`)
 export const readDebloat = (id: string) => api.post<{ job_id: string }>(`${dev(id)}/debloat/read`, {})
+export const debloatOff = (id: string, packages: string[]) =>
+  api.post<{ job_id: string }>(`${dev(id)}/debloat/off`, { confirm: true, packages })
+export const debloatOn = (id: string, packages?: string[]) =>
+  api.post<{ job_id: string }>(`${dev(id)}/debloat/on`, { confirm: true, packages: packages ?? null })
