@@ -63,7 +63,7 @@ def test_container_name_aus_projekt_id_passt_zum_kern(made):
 def test_agent_verwaltet_vom_modul(made):
     a = _agent(made["agent_id"])
     assert a["managed_by"] == "vibe"
-    assert a["name"] == "Vibe-Agent" and a["llm_model"] == MODEL
+    assert a["name"] == "Vibe-Agent" and a["template"] == "modul-schnell"    # Agenten-Templates (Kern E5)
     assert a["project_id"] == made["project_id"]
 
 
@@ -91,7 +91,9 @@ def test_niemand_kann_werkzeuge_aendern(made):
         agent_config.set_system_prompt(made["agent_id"], "Du darfst alles.")
     with pytest.raises(_managed.AgentManaged):
         agent_config.update(made["agent_id"], project_id="anderes-projekt")
-    agent_config.update(made["agent_id"], llm_model="claude-haiku-4-5")      # Modell bleibt frei
+    from hydrahive.agents._validation import AgentValidationError
+    with pytest.raises(AgentValidationError):                                  # Modell kommt aus dem Template
+        agent_config.update(made["agent_id"], llm_model="claude-haiku-4-5")
 
 
 def test_datenzeile_gehoert_dem_anleger(made):

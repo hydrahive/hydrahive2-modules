@@ -60,6 +60,13 @@ def _check_model(model: str) -> None:
         raise VibeProjectError("vibe_model_unavailable") from None
 
 
+def _template_kw() -> dict:
+    """Agent an `modul-schnell` binden, wenn der Kern Templates kennt (sonst Modell direkt wie früher)."""
+    from .model_choice import template_or_none
+    tid = template_or_none()
+    return {"template": tid} if tid else {}
+
+
 def _build_agent(aid: str, pid: str, admin: str) -> None:
     from hydrahive.agents import _managed
     from hydrahive.agents import config as agent_config
@@ -136,6 +143,7 @@ async def create(
             llm_model=model,
             created_by=admin,
             metadata={MODULE: dict(_MARK)},
+            **_template_kw(),
         )
         pid, aid = project["id"], project["agent_id"]
         await network.ensure_network()

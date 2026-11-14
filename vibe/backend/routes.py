@@ -21,6 +21,7 @@ from . import (
     idle,
     incus,
     jobs,
+    model_choice,
     projects,
     state,
     version_text,
@@ -75,11 +76,18 @@ def get_state(p: Admin) -> dict:
 @router.post("/projects", status_code=status.HTTP_202_ACCEPTED)
 async def create_project(p: Admin, body: NewProject) -> dict:
     """Legt an und richtet im Hintergrund ein; die Seite fragt den Fortschritt über /state ab."""
-    model = body.model.strip() or _default_model()
+    chain = model_choice.template_chain()
+    model = body.model.strip() or (chain[0] if chain else _default_model())
+    if chain and model not in chain:
+        raise coded(status.HTTP_400_BAD_REQUEST, "vibe_model_unavailable")
     try:
         out = await projects.create(admin=p.username, name=body.name, model=model)
     except projects.VibeProjectError as exc:
         raise coded(status.HTTP_400_BAD_REQUEST, exc.code) from None
+    if chain and model != chain[0]:                      # gewählt aus der Kette → Sitzungsmodell des Vibe-Chats
+        row = state.get_row(out["project_id"])
+        if row:
+            chat.ensure_session(row, p.username, {"model_override": model})
     task = asyncio.create_task(_background(jobs._setup(out["project_id"])))
     _tasks.add(task)
     task.add_done_callback(_tasks.discard)
@@ -121,11 +129,9 @@ async def open_chat(project_id: str, p: Admin, body: Empty) -> dict:
         gone = exc.code == "vibe_project_not_found"
         raise coded(status.HTTP_404_NOT_FOUND if gone else status.HTTP_503_SERVICE_UNAVAILABLE, exc.code) from None
     from hydrahive.db import sessions as sessions_db
-    sid = chat.session_id(row["agent_id"])
-    if sid is None:
-        sid = sessions_db.create(agent_id=row["agent_id"], user_id=p.username, project_id=project_id,
-                                 title=row["name"][:200], metadata={"embedded_in": "vibe"}).id
-    else:
+    known = chat.session_id(row["agent_id"])
+    sid = chat.ensure_session(row, p.username)
+    if known is not None:
         sessions_db.touch(sid)
     return {"session_id": sid, "agent_id": row["agent_id"]}
 

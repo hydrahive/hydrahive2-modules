@@ -17,6 +17,16 @@ def session_id(agent_id: str) -> str | None:
     return pick.id if pick else None
 
 
+def ensure_session(row: dict, user: str, metadata: dict | None = None) -> str:
+    """Vibe-Sitzung des Projekts; fehlt sie, wird sie angelegt (markiert mit `embedded_in = "vibe"`)."""
+    from hydrahive.db import sessions as sessions_db
+    sid = session_id(row["agent_id"])
+    if sid is None:
+        sid = sessions_db.create(agent_id=row["agent_id"], user_id=user, project_id=row["project_id"],
+                                 title=row["name"][:200], metadata={"embedded_in": "vibe", **(metadata or {})}).id
+    return sid
+
+
 def is_running(sid: str) -> bool:
     from hydrahive.runner.concurrency import is_running as running
     return bool(running(sid))
