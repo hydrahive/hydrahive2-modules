@@ -81,10 +81,14 @@ export interface CaseSnapshot { case: CaseRow; state_name: string; parties: Part
 export interface CalcResult { event_date: string; kind: string; amount: number; state: string; start: string; raw_end: string; due_date: string; weekday: string; steps: string[]; warnings: string[] }
 export interface DeadlineInput { event_date: string; kind: string; amount: number; start_rule: string }
 
+/** Template des Rechts-Agenten (Agenten-Templates im Kern). null = älterer Kern, freie Modellwahl. */
+export interface AgentTemplateInfo { id: string; label: string; chain: string[] }
+
 const c = (pid: string) => `${BASE}/cases/${encodeURIComponent(pid)}`
 
 export const caseApi = {
   states: () => api.get<{ states: Record<string, string> }>(`${BASE}/states`),
+  agentTemplate: () => api.get<{ template: AgentTemplateInfo | null }>(`${BASE}/agent-template`),
   list: () => api.get<{ cases: CaseListItem[] }>(`${BASE}/cases`),
   create: (body: Partial<CaseRow> & { title: string; state: string; model?: string }) =>
     api.post<{ project_id: string; agent_id: string; case: CaseRow }>(`${BASE}/cases`, body),

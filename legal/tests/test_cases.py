@@ -90,8 +90,10 @@ def test_failure_after_project_rolls_back(created, monkeypatch):
 
 
 def test_model_falls_back_to_default_and_no_model_is_refused(created, monkeypatch):
+    """Älterer Kern ohne Agenten-Templates (Verhalten vor Recht 0.5.0)."""
     from hydrahive.agents import config as ac
     from hydrahive.projects import config as pc
+    monkeypatch.setattr(cases, "template_or_none", lambda: None)
     monkeypatch.setattr(cases, "default_model", lambda: "claude-haiku-4-5")
     out = _make(created, model="")
     assert ac.get(pc.get(out["project_id"])["agent_id"])["llm_model"] == "claude-haiku-4-5"
@@ -99,6 +101,23 @@ def test_model_falls_back_to_default_and_no_model_is_refused(created, monkeypatc
     with pytest.raises(cases.CaseError) as e:
         _make(created, model="")
     assert e.value.code == "no_model"
+
+
+def test_agent_bound_to_template_and_model_ignored(created):
+    """Agenten-Templates (Kern E5): Rechts-Agent an modul-schreiber gebunden, ein mitgeschicktes Modell zählt nicht."""
+    from hydrahive.agents import config as ac
+    from hydrahive.agents import templates as tpl
+    from hydrahive.projects import config as pc
+    out = _make(created, model="claude-haiku-4-5")
+    agent = ac.get(pc.get(out["project_id"])["agent_id"])
+    assert agent["template"] == "modul-schreiber"
+    assert agent["llm_model"] == tpl.get("modul-schreiber")["chain"][0]
+
+
+def test_template_info_for_form():
+    from hydrahive.agents import templates as tpl
+    info = cases.template_info()
+    assert info["id"] == "modul-schreiber" and info["chain"] == tpl.get("modul-schreiber")["chain"]
 
 
 # ── Zugriff über die Projektrolle ─────────────────────────────────────────────

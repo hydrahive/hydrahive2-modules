@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import { caseApi } from "./api"
+import { caseApi, type AgentTemplateInfo } from "./api"
 import { caseFormErrors, errorText, modelState } from "./caseFormat"
 import { CaseModel } from "./CaseModel"
+import { CaseTemplate } from "./CaseTemplate"
 import { useModelCatalog } from "./useModelCatalog"
 
 const input = "w-full rounded-[4px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] px-2 py-1.5 text-sm text-[#e8eef8]"
@@ -17,9 +18,11 @@ export function CaseNew({ onCancel, onCreated }: { onCancel: () => void; onCreat
   const [error, setError] = useState<string | null>(null)
   const catalog = useModelCatalog()
   const [model, setModel] = useState("")
+  const [tpl, setTpl] = useState<AgentTemplateInfo | null | undefined>(undefined)   // undefined = lädt noch
 
   useEffect(() => { caseApi.states().then((r) => setStates(r.states)).catch((e) => setError(errorText(e))) }, [])
-  const errs = caseFormErrors(f, modelState(catalog, model))
+  useEffect(() => { caseApi.agentTemplate().then((r) => setTpl(r.template)).catch(() => setTpl(null)) }, [])
+  const errs = caseFormErrors(f, tpl ? undefined : modelState(catalog, model))
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setF((o) => ({ ...o, [k]: e.target.value }))
 
@@ -29,7 +32,7 @@ export function CaseNew({ onCancel, onCreated }: { onCancel: () => void; onCreat
     if (Object.keys(errs).length) return
     setBusy(true); setError(null)
     try {
-      const out = await caseApi.create({ ...f, title: f.title.trim(), ...(model ? { model } : {}) })
+      const out = await caseApi.create({ ...f, title: f.title.trim(), ...(model && !tpl ? { model } : {}) })
       onCreated(out.project_id)
     } catch (err) { setError(errorText(err)) } finally { setBusy(false) }
   }
@@ -71,7 +74,8 @@ export function CaseNew({ onCancel, onCreated }: { onCancel: () => void; onCreat
           <input value={f.their_ref} onChange={set("their_ref")} maxLength={100} className={input} />
         </label>
       </div>
-      <CaseModel catalog={catalog} value={model} onChange={setModel} error={touched ? errs.model : undefined} />
+      {tpl ? <CaseTemplate info={tpl} />
+        : <CaseModel catalog={catalog} value={model} onChange={setModel} error={touched ? errs.model : undefined} />}
       <p className="text-[11px] leading-4 text-[#9aa7bc]">Bekannte Fristen trägst du danach in der Fallakte unter „Fristen“ ein – dort wird mit Rechenweg gerechnet.</p>
       {error && <p className="text-xs text-rose-300">{error}</p>}
       <div className="flex gap-2">
