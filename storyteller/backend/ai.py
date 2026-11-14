@@ -6,9 +6,8 @@ import re
 import time
 from collections import defaultdict, deque
 
-from hydrahive.llm.client import complete
-
 from . import storage
+from ._llm import complete
 from ._names import KIND_LABEL, LANGUAGE_LABEL
 from ._texts import texts
 from ._think import strip_think

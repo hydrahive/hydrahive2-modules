@@ -52,6 +52,10 @@ def _check(project_id: str, book_id: str) -> dict:
         raise StoryError("run_active", 409)
     if any(j["status"] in team_jobs.ACTIVE for j in team_jobs.list_jobs(project_id, book_id)):
         raise StoryError("job_active", 409)
+    if setup.template_or_none():                                       # Team-Modell aus dem Agenten-Template
+        if book.get("model"):
+            setup.check_model(book["model"])
+        return book
     if not book.get("model") and not setup.default_model():
         raise StoryError("no_model", 409)
     setup.check_model(book.get("model") or setup.default_model())   # sonst HTTP 500 mitten im Anlegen

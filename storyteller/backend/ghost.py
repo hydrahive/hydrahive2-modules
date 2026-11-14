@@ -7,18 +7,17 @@ HydraHive-Standard (``None``).
 from __future__ import annotations
 
 import re
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import AsyncIterator
-
-from hydrahive.llm.client import complete, stream
 
 from . import storage
 from ._files import StoryError
 from ._ghost_settings import ghost_of
-from ._names import KIND_LABEL, LANGUAGE_LABEL
-from ._think import ThinkFilter
+from ._llm import complete, stream
 from ._memory import PREV_END, MemoryIndex
+from ._names import KIND_LABEL, LANGUAGE_LABEL
 from ._texts import Texts, texts
+from ._think import ThinkFilter
 from .ai import clean_proposal
 
 MAX_SECTIONS = 4

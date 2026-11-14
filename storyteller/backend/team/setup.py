@@ -24,6 +24,18 @@ def default_model() -> str:
     return get_default("chat")
 
 
+TEMPLATE = "storyteller-ghostwriter"
+
+
+def template_or_none() -> str | None:
+    """Template des Schreib-Teams (Manifest), sonst `modul-schreiber`; None = Kern ohne Agenten-Templates."""
+    try:
+        from hydrahive.agents._binding import template_if_available
+    except ImportError:
+        return None
+    return template_if_available(TEMPLATE) or template_if_available("modul-schreiber")
+
+
 def _installed_tools() -> set[str]:
     from hydrahive.tools import REGISTRY
     return set(REGISTRY)
@@ -50,8 +62,10 @@ def new_team_project(username: str, title: str, model: str) -> dict[str, Any]:
     )
     from hydrahive.projects import config as project_config
     installed = _installed_tools()
+    tid = template_or_none()
+    bind = {"template": tid} if tid else {}       # Agenten-Templates (Kern E5): Modell/Budget aus dem Template
     project = project_config.create(title, description="Buch im Storyteller (eigenes Projekt mit Schreib-Team)",
-                                    members=[], llm_model=model, created_by=username)
+                                    members=[], llm_model=model, created_by=username, **bind)
     pid, helper_ids = project["id"], []
     try:
         for role in HELPERS:
@@ -60,7 +74,7 @@ def new_team_project(username: str, title: str, model: str) -> dict[str, Any]:
                 tools=available_tools(role, installed), owner=username, created_by=project["agent_id"],
                 description=role.description, temperature=DEFAULT_TEMPERATURE, max_tokens=DEFAULT_MAX_TOKENS,
                 thinking_budget=DEFAULT_THINKING_BUDGET, project_id=pid,
-                system_prompt=prompt_for(role, book_title=title))
+                system_prompt=prompt_for(role, book_title=title), **bind)
             helper_ids.append(helper["id"])
         ids = {role.key: hid for role, hid in zip(HELPERS, helper_ids)}
         agent_config.update(project["agent_id"], name=f"{title} — {AUTHOR.name}"[:200],
@@ -102,14 +116,18 @@ def check_model(model: str) -> None:
 def create_book_project(username: str, fields: dict[str, Any], *, model: str = "") -> dict[str, Any]:
     _precheck(fields)
     use_model = (model or "").strip() or default_model()
-    if not use_model:
-        raise StoryError("no_model", 409)
-    check_model(use_model)
+    if not template_or_none():          # mit Template kommt das Team-Modell von dort; Buch-Modell bleibt optional
+        if not use_model:
+            raise StoryError("no_model", 409)
+        check_model(use_model)
+    elif model and model.strip():
+        check_model(use_model)          # eigenes Buch-Modell (Ghostwriter) muss es geben
     title = str(fields["title"]).strip()
     team = new_team_project(username, title, use_model)
     pid = team["project_id"]
     try:
-        book = storage.create_book(pid, {**fields, "title": title, "model": use_model})
+        book = storage.create_book(pid, {**fields, "title": title,
+                                         "model": use_model if not template_or_none() else (model or "").strip()})
         mark_book_project(pid, book["id"])
     except Exception:
         logger.exception("Buch-Projekt '%s' konnte nicht vollständig angelegt werden – räume auf", title)

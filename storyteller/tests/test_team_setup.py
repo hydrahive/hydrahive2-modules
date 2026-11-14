@@ -34,7 +34,7 @@ def _make(created, **kw):
     return out
 
 
-def test_creates_project_book_author_and_seven_helpers(created):
+def test_creates_project_book_author_and_seven_helpers(legacy, created):
     from hydrahive.agents import config as ac
     from hydrahive.projects import config as pc
     out = _make(created, model="claude-sonnet-4-6")
@@ -63,7 +63,7 @@ def test_creates_project_book_author_and_seven_helpers(created):
         assert h["id"] in prompt
 
 
-def test_model_falls_back_to_hydrahive_default(created, monkeypatch):
+def test_model_falls_back_to_hydrahive_default(legacy, created, monkeypatch):
     from hydrahive.agents import config as ac
     from hydrahive.projects import config as pc
     monkeypatch.setattr(setup, "default_model", lambda: "claude-haiku-4-5")
@@ -73,7 +73,7 @@ def test_model_falls_back_to_hydrahive_default(created, monkeypatch):
     assert {ac.get(i)["llm_model"] for i in p["allowed_specialists"]} == {"claude-haiku-4-5"}
 
 
-def test_no_model_at_all_is_refused_and_nothing_created(created, monkeypatch, setup_test_env):
+def test_no_model_at_all_is_refused_and_nothing_created(legacy, created, monkeypatch, setup_test_env):
     from backend._files import StoryError
     monkeypatch.setattr(setup, "default_model", lambda: "")
     before = _inventory(setup_test_env)
@@ -128,3 +128,24 @@ def test_unknown_model_gives_readable_error_and_creates_nothing(monkeypatch, set
     assert exc.value.code == "model_unavailable" and exc.value.status == 400
     assert exc.value.detail == {"model": "gibt-es-nicht-1"}
     assert _inventory(setup_test_env) == before
+
+
+def test_team_bound_to_storyteller_template(created):
+    """Agenten-Templates (Kern E5): Autor und alle 7 Helfer am Template, ohne Buch-Modell geht es auch."""
+    from hydrahive.agents import config as ac
+    from hydrahive.agents import templates as tpl
+    from hydrahive.projects import config as pc
+    out = _make(created, model="")
+    p = pc.get(out["project_id"])
+    tid = setup.template_or_none()
+    assert tid in ("storyteller-ghostwriter", "modul-schreiber")
+    agents = [ac.get(p["agent_id"]), *[ac.get(i) for i in p["allowed_specialists"]]]
+    assert len(agents) == 8 and {a["template"] for a in agents} == {tid}
+    assert {a["llm_model"] for a in agents} == {tpl.get(tid)["chain"][0]}
+    assert storage.get_book(p["id"], out["book"]["id"])["model"] == ""      # Ghostwriter fragt dann die Rolle an
+
+
+def test_own_book_model_is_kept_for_the_ghostwriter(created):
+    from hydrahive.projects import config as pc
+    out = _make(created, model="claude-sonnet-4-6")
+    assert storage.get_book(pc.get(out["project_id"])["id"], out["book"]["id"])["model"] == "claude-sonnet-4-6"
