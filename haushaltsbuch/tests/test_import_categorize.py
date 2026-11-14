@@ -98,7 +98,7 @@ def test_llm_suggestion_dedupes_and_applies(client, owner_headers, monkeypatch):
 
     calls: list = []
 
-    async def _fake_complete(messages, *, model=None, temperature=0.0, max_tokens=2048):
+    async def _fake_complete(messages, *, model=None, temperature=0.0, max_tokens=2048, **kw):
         calls.append(messages)
         prompt = messages[-1]["content"]
         # Für jeden merchant_key im Prompt die Lebensmittel-Kategorie vorschlagen.
@@ -135,7 +135,7 @@ def test_accept_suggestions_then_complete(client, owner_headers, monkeypatch):
     account = _create_account(client, owner_headers, opening_balance=0)
     category = _expense_category(client, owner_headers)
 
-    async def _fake_complete(messages, *, model=None, temperature=0.0, max_tokens=2048):
+    async def _fake_complete(messages, *, model=None, temperature=0.0, max_tokens=2048, **kw):
         prompt = messages[-1]["content"]
         keys = [line.split(" :: ")[0] for line in prompt.splitlines() if " :: " in line]
         return json.dumps([

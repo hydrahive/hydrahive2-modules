@@ -35,6 +35,12 @@ SYSTEM_PROMPT = (
 )
 
 
+def _role_kw(model: str | None, template: str) -> dict:
+    """Ohne eigenes Modell die Rolle (Agenten-Template, Kern E5) anfragen; älterer Kern ohne `template=` → wie früher."""
+    from hydrahive.llm import client as _c
+    return {} if model or not getattr(_c, "SUPPORTS_TEMPLATE", False) else {"template": template}
+
+
 def scene_context(pid: str, scene: dict) -> str:
     """Lesbarer Kontext für das LLM: Szene, Look des Drehbuchs, Bausteine der Szene, Dialoge, erlaubte Shot-Arten."""
     head = plan.get_head(pid)
@@ -96,7 +102,8 @@ async def decompose(pid: str, scene_id: str, *, replace: bool = False) -> list[d
         messages = [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": scene_context(pid, scene)}]
         model = plan.get_head(pid)["models"]["text"] or None
         try:
-            raw = await llm_client.complete(messages, model=model, temperature=0.7, max_tokens=2000)
+            raw = await llm_client.complete(messages, model=model, temperature=0.7, max_tokens=2000,
+                                            **_role_kw(model, "modul-schnell"))
         except Exception as e:
             logger.warning("Studio-Regie: LLM-Fehler (Projekt %s, Szene %s): %s", pid, scene_id, e)
             raise plan.PlanError("studio_decompose_failed", 502) from e

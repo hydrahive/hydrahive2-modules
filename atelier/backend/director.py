@@ -27,6 +27,12 @@ _VALID_STATUS = {"planned", "image_ready", "video_processing", "done", "failed"}
 _SHOT_KEYS = list(presets.GROUPS.get("shot", {}).keys())
 
 
+def _role_kw(model: str | None, template: str) -> dict:
+    """Ohne eigenes Modell die Rolle (Agenten-Template, Kern E5) anfragen; älterer Kern ohne `template=` → wie früher."""
+    from hydrahive.llm import client as _c
+    return {} if model or not getattr(_c, "SUPPORTS_TEMPLATE", False) else {"template": template}
+
+
 def _read_json(path, default: Any) -> Any:
     if not path.is_file():
         return default
@@ -192,7 +198,8 @@ async def decompose_scene(project_id: str, scene: dict, *, model: str | None = N
         {"role": "user", "content": _scene_context(project_id, scene)},
     ]
     try:
-        raw = await llm_client.complete(messages, model=model, temperature=0.7, max_tokens=2000)
+        raw = await llm_client.complete(messages, model=model, temperature=0.7, max_tokens=2000,
+                                        **_role_kw(model, "modul-schnell"))
     except Exception as e:  # noqa: BLE001 - LLM-Fehler nicht in den Aufrufer durchreichen
         logger.warning("decompose_scene LLM-Fehler (scene=%s): %s", scene_id, e)
         return []

@@ -14,9 +14,16 @@ TEMPERATURE = 0.3
 MAX_TOKENS = 1500   # 400 war zu knapp: Antworten mit Notizen wurden mitten im Satz abgeschnitten (Till 25.10.)
 
 
+def _role_kw(model: str | None, template: str) -> dict:
+    """Ohne eigenes Modell die Rolle (Agenten-Template, Kern E5) anfragen; älterer Kern ohne `template=` → wie früher."""
+    from hydrahive.llm import client as _c
+    return {} if model or not getattr(_c, "SUPPORTS_TEMPLATE", False) else {"template": template}
+
+
 async def _complete(messages, model=None, temperature=0.7, max_tokens=4096):
     from hydrahive.llm import client
-    return await client.complete(messages, model=model, temperature=temperature, max_tokens=max_tokens)
+    return await client.complete(messages, model=model, temperature=temperature, max_tokens=max_tokens,
+                                 **_role_kw(model, "modul-schnell"))
 
 
 async def _transcribe(pcm16k: bytes) -> str:

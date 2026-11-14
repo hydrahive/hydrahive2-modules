@@ -13,7 +13,7 @@ from backend.research import run_research
 from backend.research.models import RunState
 
 
-async def fake_complete(messages, model=None, temperature=0.7, max_tokens=4096):
+async def fake_complete(messages, model=None, temperature=0.7, max_tokens=4096, **kw):
     content = messages[-1]["content"]
     if "Zerlege die Frage" in content:
         return '{"category":"general","subquestions":["Was ist X?","Wie funktioniert X?"]}'
@@ -47,7 +47,7 @@ async def fake_fetch(url):
     return ("Langer Seitentext über X. " * 30, "https://img.test/og.jpg")
 
 
-async def fake_stream(messages, model=None, temperature=0.7, max_tokens=4096):
+async def fake_stream(messages, model=None, temperature=0.7, max_tokens=4096, **kw):
     # Bericht läuft seit SPEC „ausführlich“ per Streaming – gleiche Antworten wie fake_complete
     yield await fake_complete(messages, model, temperature, max_tokens)
 
