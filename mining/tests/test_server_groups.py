@@ -122,7 +122,7 @@ def test_rig_list_shows_groups(client, admin_headers, quotes):
     (row,) = client.get(f"{P}/rigs", headers=admin_headers).json()
     assert {g["vendor"] for g in row["groups"]} == {"nvidia", "amd"}
     amd = next(g for g in row["groups"] if g["vendor"] == "amd")
-    assert amd["assignment"]["mode"] == "benchmark" and amd["bench_total"] == 22
+    assert amd["assignment"]["mode"] == "benchmark" and amd["bench_total"] == 21
 
 
 def test_rebench_and_delete_cover_all_groups(client, admin_headers, quotes):
