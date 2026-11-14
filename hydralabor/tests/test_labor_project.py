@@ -39,7 +39,7 @@ def test_projekt_fuehrt_im_labor_container_aus(made):
 def test_labor_agent_verwaltet_vom_modul(made):
     a = _agent(made["agent_id"])
     assert a["managed_by"] == "hydralabor"
-    assert a["name"] == "Labor-Agent" and a["llm_model"] == MODEL
+    assert a["name"] == "Labor-Agent" and a["template"] in ("labor", "modul-schnell")   # Agenten-Templates (E5)
     assert a["project_id"] == made["project_id"]
 
 
@@ -83,7 +83,9 @@ def test_niemand_kann_werkzeuge_aendern(made):
         agent_config.update(made["agent_id"], tools=["shell_exec", "fetch_url", "remote_exec"])
     with pytest.raises(_managed.AgentManaged):
         agent_config.set_system_prompt(made["agent_id"], "Du darfst alles.")
-    agent_config.update(made["agent_id"], llm_model="claude-haiku-4-5")      # Modell bleibt frei
+    from hydrahive.agents._validation import AgentValidationError
+    with pytest.raises(AgentValidationError):                                  # Modell kommt aus dem Template
+        agent_config.update(made["agent_id"], llm_model="claude-haiku-4-5")
 
 
 def test_entfernen_raeumt_projekt_und_agent(setup_test_env, monkeypatch):

@@ -80,7 +80,7 @@ def test_voraussetzungen(client, admin_headers, clean, monkeypatch):
     assert r.status_code == 200 and r.json()["args"] == [30, 8192]
 
 
-def test_anlegen_speichert_wahl_und_startet(client, admin_headers, clean, started, monkeypatch):
+def test_anlegen_speichert_wahl_und_startet(legacy, client, admin_headers, clean, started, monkeypatch):
     from hydrahive.agents import _validation
     monkeypatch.setattr(_validation, "_available_models", lambda: {MODEL})
     r = client.post(B + "/create", headers=admin_headers,
@@ -185,7 +185,7 @@ def test_zustand_laufend_aus_incus(client, admin_headers, clean, fake_incus):
     assert client.get(B + "/state", headers=admin_headers).json()["container_running"] is False
 
 
-def test_modelle_nur_chat(client, admin_headers, clean, monkeypatch):
+def test_modelle_nur_chat(legacy, client, admin_headers, clean, monkeypatch):
     from hydrahive.llm import registry
 
     async def fake(modality=None):

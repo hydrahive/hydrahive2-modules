@@ -12,7 +12,7 @@ from hydrahive.api.middleware.auth import AuthPrincipal, require_admin_principal
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import checks, container, jobs, lab_chat, lab_project, state
+from . import checks, container, jobs, lab_chat, lab_project, model_choice, state
 from .container import LaborError, Limits
 
 router = APIRouter()
@@ -73,6 +73,10 @@ async def get_state(p: Admin) -> dict:
 
 @router.get("/models")
 async def models(p: Admin) -> dict:
+    """Mit Agenten-Templates nur das Primärmodell des Templates `labor` (Wechsel in der Kette im Chat)."""
+    first = model_choice.primary()
+    if first:
+        return {"items": [{"id": first, "label": first, "provider": "Template Hydra-Labor"}]}
     from hydrahive.llm import registry
     items = await registry.list_models("chat")
     return {"items": [{"id": m.id, "label": m.label, "provider": m.provider} for m in items]}
@@ -89,6 +93,9 @@ async def create(p: Admin, body: CreateIn) -> dict:
     lim = _limits(body)
     if state.get()["step"] == "ready":
         raise coded(status.HTTP_409_CONFLICT, "labor_already_ready")
+    first = model_choice.primary()
+    if first and body.model != first:
+        raise coded(status.HTTP_400_BAD_REQUEST, "labor_model_unavailable")
     try:
         lab_project._check_model(body.model)
     except LaborError as e:

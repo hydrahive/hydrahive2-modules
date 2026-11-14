@@ -198,3 +198,10 @@ def ready(fake_github, db_ready, monkeypatch, tmp_path):
     monkeypatch.setattr(submit, "_versions", lambda: {"hydrahive": "2.0.0", "hydralabor": "0.2.0"})
     yield box
     github_auth.disconnect()
+
+
+@pytest.fixture
+def legacy(monkeypatch):
+    """Älterer Kern ohne Agenten-Templates: freie Modellwahl (Verhalten vor Hydra-Labor 0.4.0)."""
+    from backend import model_choice
+    monkeypatch.setattr(model_choice, "template_or_none", lambda: None)

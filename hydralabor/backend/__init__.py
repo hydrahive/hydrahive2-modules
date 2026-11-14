@@ -25,5 +25,7 @@ def register(ctx) -> None:
     skill_sync.install()
     try:
         state.recover_after_restart()
+        from . import model_choice
+        model_choice.bind_existing(state.get()["made"].get("agent_id"), "hydralabor")   # Agenten-Templates (E5)
     except Exception:  # noqa: BLE001 - Tabelle evtl. noch nicht da (erste Installation); Modulstart nie verhindern
         logger.info("Hydra-Labor: Zustand beim Start nicht lesbar (erste Installation?)")

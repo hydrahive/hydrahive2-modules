@@ -25,6 +25,12 @@ def _check_model(model: str) -> None:
         raise LaborError("labor_model_unavailable") from None
 
 
+def _template_kw() -> dict:
+    from .model_choice import template_or_none
+    tid = template_or_none()
+    return {"template": tid} if tid else {}
+
+
 def create(*, admin: str, model: str) -> dict:
     _check_model(model)
     from hydrahive.agents import _managed
@@ -38,7 +44,8 @@ def create(*, admin: str, model: str) -> dict:
     skill_sync.install()
     project = project_config.create(PROJECT_NAME, description="Labor zum Mitbauen an HydraHive (Modul Hydra-Labor). "
                                     "Alle Befehle laufen im abgeschotteten Container.", members=[],
-                                    llm_model=model, created_by=admin, metadata={MODULE: dict(_MARK)})
+                                    llm_model=model, created_by=admin, metadata={MODULE: dict(_MARK)},
+                                    **_template_kw())
     pid, aid = project["id"], project["agent_id"]
     try:
         execution.set_container(pid, NAME, actor=admin)
