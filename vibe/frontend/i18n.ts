@@ -43,7 +43,7 @@ const de = {
     err: {
       general: "Das hat nicht geklappt. Versuch es noch einmal.",
       vibe_no_incus: "Auf diesem Server fehlt die Container-Verwaltung. Vibe kann hier nicht laufen.",
-      vibe_model_unavailable: "Es ist kein Standardmodell eingerichtet. Bitte zuerst unter „LLM“ eines wählen.",
+      vibe_model_unavailable: "Dieses Modell ist hier nicht wählbar. Erlaubt sind die Modelle des Templates „Modul-Schnell“ (LLM → Agenten-Templates).",
       vibe_project_not_found: "Das Projekt gibt es nicht mehr.",
       vibe_not_ready: "Das Projekt ist noch nicht bereit.",
       vibe_not_failed: "Hier gibt es nichts zu wiederholen.",
@@ -84,7 +84,7 @@ const en = {
     takes: "This takes one to two minutes. You can leave this page open.", failed_at: "Failed at “{{step}}”.", detail: "Last message:",
     err: {
       general: "That did not work. Please try again.", vibe_no_incus: "This server has no container management. Vibe cannot run here.",
-      vibe_model_unavailable: "No default model is set up. Please choose one under “LLM” first.",
+      vibe_model_unavailable: "This model cannot be chosen here. Allowed are the models of the “Modul-Schnell” template (LLM → Agent templates).",
       vibe_project_not_found: "That project no longer exists.", vibe_not_ready: "The project is not ready yet.",
       vibe_not_failed: "Nothing to retry here.", vibe_container_down: "The project could not be woken up. Try again shortly.",
       vibe_version_invalid: "That version does not exist.", vibe_busy: "Something is already running.",

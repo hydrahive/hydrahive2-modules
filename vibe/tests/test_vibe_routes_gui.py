@@ -18,6 +18,13 @@ def run(coro):
 
 
 @pytest.fixture
+def legacy(monkeypatch):
+    """Älterer Kern ohne Agenten-Templates: Modell direkt am Agenten (Verhalten vor Vibe 0.2.0)."""
+    from backend import model_choice
+    monkeypatch.setattr(model_choice, "template_or_none", lambda: None)
+
+
+@pytest.fixture
 def env(setup_test_env, db_ready, fake_incus, monkeypatch):
     from hydrahive.projects import execution
     monkeypatch.setattr(network, "_host_networks", lambda: set())
@@ -67,7 +74,7 @@ def test_anlegen_gibt_sofort_antwort_und_richtet_im_hintergrund_ein(env, client,
     assert row["name"] == "Meine App" and row["state"] in ("new", "setting_up", "ready")
 
 
-def test_anlegen_ohne_modell_nimmt_standardmodell(env, client, admin_headers, monkeypatch):
+def test_anlegen_ohne_modell_nimmt_standardmodell(legacy, env, client, admin_headers, monkeypatch):
     from backend import projects
     seen = {}
     orig = projects.create
@@ -80,7 +87,7 @@ def test_anlegen_ohne_modell_nimmt_standardmodell(env, client, admin_headers, mo
     assert seen["model"] == MODEL
 
 
-def test_anlegen_mit_eigenem_modell(env, client, admin_headers, monkeypatch):
+def test_anlegen_mit_eigenem_modell(legacy, env, client, admin_headers, monkeypatch):
     from backend import projects
     seen = {}
     orig = projects.create
@@ -93,14 +100,14 @@ def test_anlegen_mit_eigenem_modell(env, client, admin_headers, monkeypatch):
     assert seen["model"] == MODEL
 
 
-def test_modell_wechseln_und_im_zustand_sehen(env, client, admin_headers):
+def test_modell_wechseln_und_im_zustand_sehen(legacy, env, client, admin_headers):
     pid = _create(client, admin_headers).json()["project_id"]
     assert client.get(B + "/state", headers=admin_headers).json()["projects"][0]["model"] == MODEL
     r = client.post(f"{B}/projects/{pid}/model", json={"model": MODEL}, headers=admin_headers)
     assert r.status_code == 200 and r.json() == {"model": MODEL}
 
 
-def test_modell_wechseln_unbekanntes_wird_abgelehnt(env, client, admin_headers, monkeypatch):
+def test_modell_wechseln_unbekanntes_wird_abgelehnt(legacy, env, client, admin_headers, monkeypatch):
     from hydrahive.agents import _validation
     monkeypatch.setattr(_validation, "_available_models", lambda: [MODEL])   # ohne Live-Liste winkt der Kern alles durch
     pid = _create(client, admin_headers).json()["project_id"]
@@ -242,7 +249,7 @@ def test_heilung_schalter_setzen(env, client, admin_headers):
     assert r.status_code == 200 and state.get_row(pid)["heal_enabled"] is False
 
 
-def test_ohne_standardmodell_wird_nichts_angelegt(env, client, admin_headers, monkeypatch):
+def test_ohne_standardmodell_wird_nichts_angelegt(legacy, env, client, admin_headers, monkeypatch):
     from backend import routes
     monkeypatch.setattr(routes, "_default_model", lambda: "")
     r = client.post(B + "/projects", json={"name": "x"}, headers=admin_headers)
@@ -250,7 +257,7 @@ def test_ohne_standardmodell_wird_nichts_angelegt(env, client, admin_headers, mo
     assert client.get(B + "/state", headers=admin_headers).json()["projects"] == []
 
 
-def test_modellliste_enthaelt_immer_das_standardmodell(env, client, admin_headers, monkeypatch):
+def test_modellliste_enthaelt_immer_das_standardmodell(legacy, env, client, admin_headers, monkeypatch):
     from hydrahive.llm import registry
 
     async def leer(kind):
@@ -261,7 +268,7 @@ def test_modellliste_enthaelt_immer_das_standardmodell(env, client, admin_header
     assert d["default_listed"] is True                                  # keine Liste da → kein Alarm
 
 
-def test_modell_zurueck_auf_standard_geht_auch_wenn_es_nicht_in_der_liste_steht(env, client, admin_headers, monkeypatch):
+def test_modell_zurueck_auf_standard_geht_auch_wenn_es_nicht_in_der_liste_steht(legacy, env, client, admin_headers, monkeypatch):
     from hydrahive.agents import _validation
     pid = _create(client, admin_headers).json()["project_id"]
     monkeypatch.setattr(_validation, "_available_models", lambda: ["anderes/modell"])
@@ -269,7 +276,7 @@ def test_modell_zurueck_auf_standard_geht_auch_wenn_es_nicht_in_der_liste_steht(
     assert r.status_code == 200 and r.json() == {"model": MODEL}
 
 
-def test_modellliste_meldet_standardmodell_ohne_zugang(env, client, admin_headers, monkeypatch):
+def test_modellliste_meldet_standardmodell_ohne_zugang(legacy, env, client, admin_headers, monkeypatch):
     from hydrahive.llm import registry
     from types import SimpleNamespace as NS
 
@@ -281,7 +288,7 @@ def test_modellliste_meldet_standardmodell_ohne_zugang(env, client, admin_header
     assert d["items"][0]["id"] == MODEL and d["items"][1]["id"] == "openai-codex/gpt-5.4"
 
 
-def test_modellliste_standardmodell_in_liste_kein_alarm(env, client, admin_headers, monkeypatch):
+def test_modellliste_standardmodell_in_liste_kein_alarm(legacy, env, client, admin_headers, monkeypatch):
     from hydrahive.llm import registry
     from types import SimpleNamespace as NS
 

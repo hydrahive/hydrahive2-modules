@@ -1,5 +1,5 @@
-"""Modell eines Vibe-Projekts: Liste, Wahl, Wechsel. Das Modell ist das einzige freie Feld des festen Vibe-Agenten
-(Kern agents/_managed.py: FREE). Standardmodell des Systems gilt, wenn nichts gewählt wird."""
+"""Modell eines Vibe-Projekts: Liste, Wahl, Wechsel. Mit Agenten-Templates (Kern) nur aus der Kette von
+`modul-schnell` (backend/model_choice.py); ohne Templates wie früher direkt am Agenten (agents/_managed.py: FREE)."""
 from __future__ import annotations
 
 from typing import Annotated
@@ -9,7 +9,7 @@ from hydrahive.api.middleware.auth import AuthPrincipal, require_admin_principal
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import state
+from . import chat, model_choice, state
 
 router = APIRouter()
 Admin = Annotated[AuthPrincipal, Depends(require_admin_principal)]
@@ -34,8 +34,8 @@ def _default_model() -> str:
 
 def _model_of(agent_id: str) -> str:
     from hydrahive.agents import config as agent_config
-    cfg = agent_config.get(agent_id)
-    return str((cfg or {}).get("llm_model") or "")
+    cfg = agent_config.get(agent_id) or {}
+    return model_choice.current(cfg, chat.session_id(agent_id)) if cfg else ""
 
 
 def _write_model(agent_id: str, model: str) -> None:
@@ -53,9 +53,12 @@ def _write_model(agent_id: str, model: str) -> None:
 
 @router.get("/models")
 async def list_models(p: Admin) -> dict:
-    """Modelle der eigenen Anbieter für die Auswahl. `default` ist das Standardmodell des Systems.
-    `default_listed` sagt, ob es in der Live-Liste der eingerichteten Anbieter steht: wenn nicht, hat der Server dafür
-    vermutlich keinen Zugang (hydratest 6.11.: claude-sonnet-4-6 ohne Anthropic-Login) und der Chat bräche mit einer Meldung ab."""
+    """Wählbare Modelle. Mit Template (Kern ab den Agenten-Templates): nur die Kette von `modul-schnell`,
+    `default` = Primär. Sonst wie früher: alle Modelle der eingerichteten Anbieter, `default` = Standardmodell;
+    `default_listed` sagt, ob es in der Live-Liste steht (hydratest 6.11.: claude-sonnet-4-6 ohne Anthropic-Login)."""
+    chain = model_choice.template_chain()
+    if chain:
+        return {"default": chain[0], "default_listed": True, "items": model_choice.items(chain)}
     from hydrahive.llm import registry
     items = [{"id": m.id, "label": m.label, "provider": m.provider} for m in await registry.list_models("chat")]
     default = _default_model()
@@ -67,14 +70,21 @@ async def list_models(p: Admin) -> dict:
 
 @router.post("/projects/{project_id}/model")
 def set_model(project_id: str, p: Admin, body: ModelChoice) -> dict:
-    """Modell eines Projekts wechseln (gilt ab der nächsten Nachricht). Alles andere am Agenten bleibt gesperrt."""
+    """Modell eines Projekts wechseln (gilt ab der nächsten Nachricht). Alles andere am Agenten bleibt gesperrt.
+    Gebunden: nur Modelle der Kette, gespeichert als Sitzungsmodell des Vibe-Chats."""
     from hydrahive.agents import config as agent_config
     from hydrahive.agents._validation import AgentValidationError, validate_model
     row = _own(project_id, p)
     chosen = body.model.strip()
     agent = agent_config.get(row["agent_id"]) or {}
-    # Das Standardmodell steht nicht immer in der Live-Liste, ist aber das, was das System selbst nimmt – also erlaubt.
-    # Auch bleibt ein schon gesetztes Modell wählbar, wenn nur die Liste gerade fehlt.
+    chain = model_choice.chain_of(agent)
+    if chain:
+        if chosen not in chain:
+            raise coded(status.HTTP_400_BAD_REQUEST, "vibe_model_unavailable")
+        model_choice.set_session_model(chat.ensure_session(row, p.username), chain, chosen)
+        return {"model": chosen}
+    # Altbestand ohne Template: Das Standardmodell steht nicht immer in der Live-Liste, ist aber das, was das System
+    # selbst nimmt – also erlaubt. Auch bleibt ein schon gesetztes Modell wählbar, wenn nur die Liste gerade fehlt.
     if chosen == _default_model() or chosen == agent.get("llm_model"):
         _write_model(row["agent_id"], chosen)                     # agent_config.update prüft erneut gegen die Live-Liste
     else:
