@@ -15,7 +15,7 @@ export function useWorkshop() {
   const [deb, setDeb] = useState<{ device_id: string; data: api.TvwDebloat } | null>(null)
   const [store, setStore] = useState<{ device_id: string; data: api.TvwStore } | null>(null)
   const [addons, setAddons] = useState<{ device_id: string; data: api.TvwAddons } | null>(null)
-  const [appDevs, setAppDevs] = useState<api.TvwAppDevice[]>([])
+  const [appDevs, setAppDevs] = useState<api.TvwAppDevices>({ devices: [], build: null, apk: null })
   const alive = useRef(true)
   const dirtyRef = useRef(false)
 
@@ -27,7 +27,7 @@ export function useWorkshop() {
   ]).catch((e) => { if (alive.current) setMsg(errorKey(e)) }), [])
 
   const loadApps = useCallback(() => api.getAppDevices()
-    .then((r) => { if (alive.current) setAppDevs(r.devices) }).catch(() => {}), [])
+    .then((r) => { if (alive.current) setAppDevs(r) }).catch(() => {}), [])
 
   const load = useCallback(() => api.getState()
     .then((r) => {
@@ -47,13 +47,14 @@ export function useWorkshop() {
   const deskRunning = (!!deskFor && [deskFor.read_job, deskFor.push_job].some((j) => j?.state === "running"))
     || [deb?.data.read_job, deb?.data.switch_job, store?.data.job, addons?.data.job]
       .some((j) => j?.state === "running")
-  const running = !!s && (anyChecking(s.devices) || s.build?.state === "running" || deskRunning)
+  const running = !!s && (anyChecking(s.devices) || s.build?.state === "running" || deskRunning
+    || appDevs.build?.state === "running")
   const ms = s ? pollMs(setupView(s.setup, s.container), running) : null
   useEffect(() => {
     if (ms === null) return
     const id = setTimeout(() => { load(); loadApps(); if (deviceId) loadDesk(deviceId) }, ms)
     return () => clearTimeout(id)
-  }, [ms, s, desk, load, loadApps, loadDesk, deviceId])
+  }, [ms, s, desk, appDevs, load, loadApps, loadDesk, deviceId])
 
   const act = useCallback((fn: () => Promise<unknown>, after?: () => void) => {
     setBusy(true)

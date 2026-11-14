@@ -36,7 +36,8 @@ class Notice(BaseModel):
 
 @router.get("/app/devices")
 def list_devices(p: Admin) -> dict:
-    return {"devices": app_pairing.all_devices()}
+    from .routes_app_build import build_view
+    return {"devices": app_pairing.all_devices(), **build_view()}
 
 
 @router.post("/app/pairing", status_code=status.HTTP_201_CREATED)
@@ -46,7 +47,8 @@ def new_code(request: Request, body: NewCode, p: Admin) -> dict:
     except app_pairing.AppError as exc:
         raise _err(exc) from None
     host = request.headers.get("host", "")
-    return {**out, "server": f"https://{host}" if host else "", "pin": app_tls.pin_for(host)}
+    pin = app_tls.pin_for(host)
+    return {**out, "server": f"https://{host}" if host else "", "pin": pin, "pin_short": app_tls.short(pin)}
 
 
 @router.post("/app/devices/{app_id}/revoke")

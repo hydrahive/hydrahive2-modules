@@ -25,6 +25,8 @@ class FakeIncus:
         self.pool = "ssd"
         self.pushed: list[list[str]] = []
         self.exec_log: list[str] = []
+        self.stdin_log: list[tuple[str, bytes | None]] = []
+        self.pull_bytes = b""
 
     async def run(self, *args: str, timeout: float = 60.0, input_bytes: bytes | None = None) -> tuple[int, str, str]:
         a = list(args)
@@ -57,6 +59,7 @@ class FakeIncus:
                                    "expanded_devices": {"eth0": {"type": "nic", "network": c["network"]}}
                                    if c["network"] else {}} for n, c in self.containers.items()]), ""
         if a[0] == "exec":
+            self.stdin_log.append((line, input_bytes))
             return self._exec(a)
         if a[:4] == ["profile", "device", "get", "default"]:
             return 0, self.pool + "\n", ""
@@ -65,9 +68,15 @@ class FakeIncus:
             return 0, "", ""
         if a[:2] == ["file", "pull"]:
             from pathlib import Path
-            Path(a[-1]).write_text("erfundener-schluessel", encoding="utf-8")
+            if self.pull_bytes:
+                Path(a[-1]).write_bytes(self.pull_bytes)
+            else:
+                Path(a[-1]).write_text("erfundener-schluessel", encoding="utf-8")
             return 0, "", ""
         return 0, "", ""
+
+    def stdin_for(self, key: str) -> bytes | None:
+        return next((b for line, b in self.stdin_log if key in line), None)
 
     def _network(self, a: list[str]) -> tuple[int, str, str]:
         verb = a[1]

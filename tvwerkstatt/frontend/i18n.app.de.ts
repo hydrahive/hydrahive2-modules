@@ -11,6 +11,17 @@ export const app = {
   buttons_ph: "Knöpfe, z. B. Ansehen, Später", send: "Schicken",
   revoke: "Sperren", remove: "Entfernen",
   revoke_confirm: "„{{name}}“ sperren? Die App verliert sofort den Zugang und muss neu gekoppelt werden.",
+  code_hint_pin: "Die App zeigt beim Koppeln einen Fingerabdruck. Er muss genau so aussehen wie hier, sonst abbrechen.",
+  build: "App bauen", build_again: "App neu bauen", download: "App herunterladen",
+  build_none: "Die App ist noch nicht gebaut. Das dauert etwa eine Minute, am Fernseher passiert dabei nichts.",
+  build_need_setup: "Bauen geht, sobald die Werkstatt eingerichtet ist.",
+  build_running: "App wird gebaut … Schritt {{n}} von {{total}}", built: "Gebaut: Version {{v}}",
+  download_hint: "Zum Aufspielen von Hand, z. B. auf ein Tablet: Datei aufs Gerät bringen und dort öffnen. "
+    + "Das Gerät fragt einmal, ob es Apps aus dieser Quelle erlauben soll.",
+  bstep: {
+    container: "Bauumgebung starten", fetch: "Werkzeuge holen", verify: "Werkzeuge prüfen", unpack: "Quelltext übertragen",
+    build: "Prüfen und bauen", collect: "Ergebnis prüfen",
+  },
 }
 
 // Fehlertexte (werden in err.* eingemischt).
@@ -25,4 +36,8 @@ export const appErr = {
   tvw_app_event_too_large: "Die Meldung der App war zu groß.",
   tvw_app_notice_not_found: "Diese Einblendung gibt es nicht (mehr).",
   tvw_app_bad_answer: "Diese Antwort passt zu keinem Knopf der Einblendung.",
+  tvw_app_no_build: "Die App ist noch nicht gebaut.",
+  tvw_app_build_perms: "Die gebaute App verlangt andere Rechte als erwartet. Sie wird nicht angeboten.",
+  tvw_app_build_too_large: "Die gebaute App ist unerwartet groß. Sie wird nicht angeboten.",
+  tvw_app_build_tests: "Die Prüfungen der App sind fehlgeschlagen oder liefen nicht. Sie wird nicht angeboten.",
 }

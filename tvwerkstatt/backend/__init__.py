@@ -10,6 +10,7 @@ import logging
 from .routes import router
 from .routes_addons import router as addons_router
 from .routes_app_admin import router as app_admin_router
+from .routes_app_build import router as app_build_router
 from .routes_app_device import app_auth, device_router
 from .routes_debloat import router as debloat_router
 from .routes_devices import router as devices_router
@@ -27,6 +28,7 @@ def register(ctx) -> None:
     ctx.register_router(store_router)
     ctx.register_router(addons_router)
     ctx.register_router(app_admin_router)
+    ctx.register_router(app_build_router)
     if hasattr(ctx, "register_device_router"):          # Geräte-Routen der HydraHive-App (Kern ab #507)
         ctx.register_device_router(device_router, auth=app_auth)
     else:

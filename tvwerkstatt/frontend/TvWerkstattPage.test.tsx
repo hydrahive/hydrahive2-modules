@@ -56,6 +56,18 @@ describe("TV-Werkstatt: Seite", () => {
     expect(out).toContain("Wohnzimmer · 192.0.2.10")
   })
 
+  it("Reiter Geräte: nur ein Bau des Startbildschirms gilt zum Aufspielen (nicht App oder Zusatz)", () => {
+    const tv = { ...SONY, current_home: "com.google.android.tvlauncher" }
+    const other = (part: string) => ({ build_id: part, part, commit_id: "c", sha256: "s", state: "done", created_at: "" })
+    const out = html({ ...LEER, devices: [tv], builds: [other("hydra-app"), other("tv-inspector")] }, "devices")
+    expect(out).toContain("install.need_build")
+    expect(html({ ...LEER, devices: [tv], builds: [other("launcher")] }, "devices")).not.toContain("install.need_build")
+  })
+
+  it("Reiter Geräte: Bereich HydraHive-App neben den Fernsehern", () => {
+    expect(html({ ...LEER, devices: [SONY] }, "devices")).toContain("app.title")
+  })
+
   it("Reiter Geräte: Liste und Formular", () => {
     const out = html({ ...LEER, devices: [SONY] }, "devices")
     expect(out).toContain("Wohnzimmer")

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Banner für den Fernseh-Starter (320x180). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#FF0B1220" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#FF69D7FF" android:pathData="M160,40 L194.6,60 L194.6,100 L160,120 L125.4,100 L125.4,60 Z" />
+    <path android:fillColor="#FF0B1220" android:pathData="M160,58 L175.6,67 L175.6,93 L160,102 L144.4,93 L144.4,67 Z" />
+</vector>

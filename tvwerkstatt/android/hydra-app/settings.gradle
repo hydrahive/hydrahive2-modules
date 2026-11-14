@@ -1,0 +1,18 @@
+// HydraHive-App (TV-Werkstatt G2). Gebaut nur im Container der Werkstatt mit dem geprüften Gradle-Wrapper von
+// cleanyourtv (launcher/gradlew -p …), siehe tvwerkstatt/PLAN-APP.md.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "hydra-app"
+include ':app'

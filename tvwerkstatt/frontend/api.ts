@@ -126,13 +126,19 @@ export interface TvwAppDevice {
   status: "active" | "revoked" | string; remote_ip: string; created_at: string; last_seen: string
   state: Record<string, unknown>
 }
-export interface TvwAppCode { code: string; name: string; expires_at: string; server: string; pin: string | null }
+export interface TvwAppCode {
+  code: string; name: string; expires_at: string; server: string; pin: string | null; pin_short: string | null
+}
+export interface TvwAppApk { version: string; size: number; sha256: string; created_at: string }
+export interface TvwAppDevices { devices: TvwAppDevice[]; build: TvwJob | null; apk: TvwAppApk | null }
 export interface TvwAppEvent { event_id: number; kind: string; data: Record<string, unknown>; created_at: string }
 export interface TvwAppNotice {
   notice_id: number; title: string; body: string; buttons: string[]; answer: string; created_at: string
   delivered_at: string; answered_at: string
 }
-export const getAppDevices = () => api.get<{ devices: TvwAppDevice[] }>(`${BASE}/app/devices`)
+export const getAppDevices = () => api.get<TvwAppDevices>(`${BASE}/app/devices`)
+export const buildApp = () => api.post<{ job_id: string }>(`${BASE}/app/build`, {})
+export const APP_APK_URL = `${BASE}/app/apk`
 export const newAppCode = (name: string, deviceId = "") =>
   api.post<TvwAppCode>(`${BASE}/app/pairing`, { name, device_id: deviceId })
 export const revokeApp = (id: string) =>

@@ -1,5 +1,5 @@
 /** Reine Logik der App-Geräte (ohne React), einzeln testbar. */
-import type { TvwAppDevice } from "./api"
+import type { TvwAppDevice, TvwJob } from "./api"
 
 /** Online, wenn das letzte Lebenszeichen höchstens 90 s her ist (die App meldet sich alle ~25 s). */
 export function online(d: TvwAppDevice, now: Date): boolean {
@@ -23,4 +23,20 @@ export function buttonsOf(text: string): string[] {
 export function minutesLeft(expires: string, now: Date): number {
   const t = Date.parse(expires)
   return Number.isFinite(t) ? Math.max(0, Math.floor((t - now.getTime()) / 60_000)) : 0
+}
+
+/** Schritte des Auftrags „App bauen“ (backend/app_build.py). */
+export const APP_BUILD_STEPS = ["container", "fetch", "verify", "unpack", "build", "collect"] as const
+
+/** „Schritt n von m“; unbekannter Schritt → 0. */
+export function appBuildStep(step: string): { n: number; total: number } {
+  const i = (APP_BUILD_STEPS as readonly string[]).indexOf(step)
+  return { n: i < 0 ? 0 : i + 1, total: APP_BUILD_STEPS.length }
+}
+
+/** Zustand des Bau-Bereichs: läuft, gescheitert (mit Fehler), fertig (App da), noch nie gebaut. */
+export function appBuildView(job: TvwJob | null | undefined, hasApk: boolean): "running" | "failed" | "done" | "none" {
+  if (job?.state === "running") return "running"
+  if (job?.state === "failed") return "failed"
+  return hasApk ? "done" : "none"
 }

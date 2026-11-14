@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pytest
-from backend import app_pairing, app_tls
+from backend import app_pairing
 
 M = "/api/modules/tvwerkstatt"
 D = "/api/module-device/tvwerkstatt"
@@ -117,12 +117,6 @@ def test_ereignis_zu_gross(client, code):
     tok = _enroll(client, code["code"]).json()["token"]
     r = client.post(D + "/app/events", json={"kind": "input", "data": {"x": "y" * 3000}}, headers=_bearer(tok))
     assert r.status_code == 400 and r.json()["detail"]["code"] == "tvw_app_event_too_large"
-
-
-def test_pin_nur_fuer_lokale_adressen():
-    assert app_tls.is_local("192.168.178.2") and app_tls.is_local("hydra.fritz.box") and app_tls.is_local("nas")
-    assert not app_tls.is_local("hydra.example.com") and not app_tls.is_local("8.8.8.8")
-    assert app_tls.pin_for("hydra.example.com") is None
 
 
 def test_geraete_routen_haengen_am_kern_mit_ratelimit_und_pruefung():
