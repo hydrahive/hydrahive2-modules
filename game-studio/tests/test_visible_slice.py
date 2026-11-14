@@ -309,3 +309,24 @@ def test_sqlite_content_table_is_removed_and_schemas_are_strict(client, admin_he
     assert client.post(
         f"{BASE}/projects", headers=admin_headers, json=_project(engine="unity", engine_version="5.5")
     ).status_code == 422
+
+
+def test_project_agent_bound_to_template(client, admin_headers) -> None:
+    """Agenten-Templates (Kern E5): Projekt-Agent an modul-schreiber, Modell aus dem Template (Game-Studio 0.6.0)."""
+    from hydrahive.agents import config as agent_config
+    from hydrahive.agents import templates as tpl
+    response = client.post(f"{BASE}/projects", headers=admin_headers, json=_project(title="Template-Probe"))
+    assert response.status_code == 201, response.text
+    agent = agent_config.get(project_config.get(response.json()["project_id"])["agent_id"])
+    assert agent["template"] == "modul-schreiber"
+    assert agent["llm_model"] == tpl.get("modul-schreiber")["chain"][0]
+
+
+def test_older_core_without_templates_uses_default_model(client, admin_headers, monkeypatch) -> None:
+    from backend import projects
+    from hydrahive.agents import config as agent_config
+    monkeypatch.setattr(projects, "_template", lambda: None)
+    response = client.post(f"{BASE}/projects", headers=admin_headers, json=_project(title="Alt-Probe"))
+    assert response.status_code == 201, response.text
+    agent = agent_config.get(project_config.get(response.json()["project_id"])["agent_id"])
+    assert not agent.get("template") and agent["llm_model"] == "test/model"
