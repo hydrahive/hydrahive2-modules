@@ -178,3 +178,8 @@ def test_chat_session_with_case_agent_is_reused(client, made):
     assert client.post(f"{PREFIX}/cases/{pid}/chat", headers=a).json()["session_id"] == out["session_id"]
     pc.update(pid, members=[{"username": "bob", "role": "read"}])
     assert client.post(f"{PREFIX}/cases/{pid}/chat", headers=_login(client, "bob")).status_code == 403
+
+
+def test_agent_template_route(client):
+    r = client.get(f"{PREFIX}/agent-template", headers=_login(client, "alice"))
+    assert r.status_code == 200 and r.json()["template"]["id"] == "modul-schreiber"

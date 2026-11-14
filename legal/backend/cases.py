@@ -40,6 +40,28 @@ def default_model() -> str:
     return get_default("chat")
 
 
+TEMPLATE = "modul-schreiber"
+
+
+def template_or_none() -> str | None:
+    """`modul-schreiber`, wenn der Kern Agenten-Templates kennt (Plan E5); sonst None = freie Modellwahl wie früher."""
+    try:
+        from hydrahive.agents._binding import template_if_available
+    except ImportError:
+        return None
+    return template_if_available(TEMPLATE)
+
+
+def template_info() -> dict[str, Any] | None:
+    """Template und Kette für die Anzeige im Formular; None ohne Templates."""
+    tid = template_or_none()
+    if not tid:
+        return None
+    from hydrahive.agents import templates as tpl
+    t = tpl.get(tid) or {}
+    return {"id": tid, "label": t.get("label") or tid, "chain": list(t.get("chain") or [])}
+
+
 def _clean(fields: dict[str, Any], *, partial: bool) -> dict[str, Any]:
     unknown = set(fields) - _UPDATABLE
     if unknown:
@@ -98,16 +120,22 @@ def _description(data: dict[str, Any]) -> str:
 
 def create_case(username: str, fields: dict[str, Any], *, model: str = "") -> dict[str, Any]:
     data = _clean(fields, partial=False)
-    use_model = (model or "").strip() or default_model()
-    if not use_model:
-        raise CaseError("no_model", 409)
-    _check_model(use_model)
+    tid = template_or_none()
+    if tid:     # Agenten-Templates: Modell kommt aus dem Template; ein mitgeschicktes Modell (alte Oberfläche) zählt nicht
+        if (model or "").strip():
+            logger.info("Recht: Modell %r ignoriert – Rechts-Agent nutzt Template %s", model, tid)
+        use_model, bind = "", {"template": tid}
+    else:
+        use_model, bind = (model or "").strip() or default_model(), {}
+        if not use_model:
+            raise CaseError("no_model", 409)
+        _check_model(use_model)
     from hydrahive.agents import config as agent_config
     from hydrahive.projects import config as project_config
     from hydrahive.tools import REGISTRY
     name = f"Recht – {data['title']}"[:200]
     project = project_config.create(name, description=_description(data), members=[], llm_model=use_model,
-                                    created_by=username, metadata={"legal": {"case": True}})
+                                    created_by=username, metadata={"legal": {"case": True}}, **bind)
     pid = project["id"]
     try:
         _insert_case(pid, data, username)

@@ -60,6 +60,12 @@ def states(_: Principal) -> dict:
     return {"states": STATES}
 
 
+@router.get("/agent-template")
+def agent_template(_: Principal) -> dict:
+    """Template des Rechts-Agenten (Agenten-Templates im Kern); `template: null` = freie Modellwahl (älterer Kern)."""
+    return {"template": cases.template_info()}
+
+
 @router.post("/deadline/calc")
 def deadline_calc(body: CalcIn, _: Principal) -> dict:
     return _call(casefile.calc, body.model_dump(), body.state.upper())
