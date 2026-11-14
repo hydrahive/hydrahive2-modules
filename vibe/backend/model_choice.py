@@ -71,6 +71,7 @@ def bind_existing(module: str) -> int:
     if not tid:
         return 0
     from hydrahive.agents import config as agent_config
+
     from . import state
     n = 0
     for row in state.all_rows():
