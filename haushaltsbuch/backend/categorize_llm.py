@@ -28,6 +28,12 @@ _SYSTEM = (
 )
 
 
+def _role_kw(model: str | None, template: str) -> dict:
+    """Ohne eigenes Modell die Rolle (Agenten-Template, Kern E5) anfragen; älterer Kern ohne `template=` → wie früher."""
+    from hydrahive.llm import client as _c
+    return {} if model or not getattr(_c, "SUPPORTS_TEMPLATE", False) else {"template": template}
+
+
 def _merchant_label(row: sqlite3.Row) -> str:
     parts = [row["counterparty"] or "", row["purpose"] or ""]
     return " – ".join(part for part in parts if part).strip()[:180]
@@ -121,6 +127,7 @@ async def suggest(
         model=model,
         temperature=0.0,
         max_tokens=2048,
+        **_role_kw(model, "modul-schnell"),
     )
     parsed = _parse(raw)
     if not isinstance(parsed, list):

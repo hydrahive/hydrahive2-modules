@@ -54,12 +54,12 @@ class Model:
             return "report", LONG_REPORT
         return "other", ""
 
-    async def complete(self, messages, model=None, temperature=0.7, max_tokens=4096):
+    async def complete(self, messages, model=None, temperature=0.7, max_tokens=4096, **kw):
         step, text = self._answer(messages[-1]["content"])
         self.limits[step] = max_tokens
         return _cut(text, max_tokens)
 
-    async def stream(self, messages, model=None, temperature=0.7, max_tokens=4096):
+    async def stream(self, messages, model=None, temperature=0.7, max_tokens=4096, **kw):
         step, text = self._answer(messages[-1]["content"])
         self.limits[step] = max_tokens
         self.streamed.append(max_tokens)
@@ -142,7 +142,7 @@ async def test_zweimal_kaputt_wird_gezaehlt_und_erklaert(model) -> None:
 
 @pytest.mark.asyncio
 async def test_nicht_relevant_ist_kein_fehler(model, monkeypatch) -> None:
-    async def irrelevant(messages, model=None, temperature=0.7, max_tokens=4096):
+    async def irrelevant(messages, model=None, temperature=0.7, max_tokens=4096, **kw):
         if "Extrahiere" in messages[-1]["content"]:
             return '{"relevant": false}'
         return await m_complete(messages, model, temperature, max_tokens)
@@ -182,7 +182,7 @@ def test_prompts_fordern_ausfuehrlichkeit() -> None:
 async def test_json_liste_statt_objekt_gilt_als_unlesbar(model, monkeypatch) -> None:
     """Ein Modell, das eine Liste statt eines Objekts schreibt, ist nicht auswertbar
     (wird wiederholt und dann gezählt) – kein Absturz bei data.get()."""
-    async def as_list(messages, model=None, temperature=0.7, max_tokens=4096):
+    async def as_list(messages, model=None, temperature=0.7, max_tokens=4096, **kw):
         if "Extrahiere" in messages[-1]["content"]:
             return '["relevant", "summary"]'
         return await m_complete(messages, model, temperature, max_tokens)

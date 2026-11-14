@@ -26,6 +26,12 @@ _SYSTEM = (
 )
 
 
+def _role_kw(model: str | None, template: str) -> dict:
+    """Ohne eigenes Modell die Rolle (Agenten-Template, Kern E5) anfragen; älterer Kern ohne `template=` → wie früher."""
+    from hydrahive.llm import client as _c
+    return {} if model or not getattr(_c, "SUPPORTS_TEMPLATE", False) else {"template": template}
+
+
 def _strip_thinking(text: str) -> str:
     return _THINK.sub("", text or "").strip()
 
@@ -91,7 +97,7 @@ async def choose_move(
         {"role": "user", "content": prompt},
     ]
     try:
-        raw = await complete(messages, model=model, temperature=0.2, max_tokens=64)
+        raw = await complete(messages, model=model, temperature=0.2, max_tokens=64, **_role_kw(model, "modul-schnell"))
     except Exception:  # noqa: BLE001 — jeder LLM-Fehler → Fallback, nie ein 500
         return {"move": None, "index": -1, "source": "invalid"}
 

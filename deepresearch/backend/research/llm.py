@@ -20,6 +20,12 @@ def strip_thinking(text: str) -> str:
     return _THINK.sub("", text or "").strip()
 
 
+def _role_kw(model: str | None, template: str) -> dict:
+    """Ohne eigenes Modell die Rolle (Agenten-Template, Kern E5) anfragen; älterer Kern ohne `template=` → wie früher."""
+    from hydrahive.llm import client as _c
+    return {} if model or not getattr(_c, "SUPPORTS_TEMPLATE", False) else {"template": template}
+
+
 async def ask(
     prompt: str,
     *,
@@ -32,7 +38,8 @@ async def ask(
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
-    out = await complete(messages, model=model, temperature=temperature, max_tokens=max_tokens)
+    out = await complete(messages, model=model, temperature=temperature, max_tokens=max_tokens,
+                         **_role_kw(model, "recherche"))
     return strip_thinking(out or "")
 
 
@@ -50,7 +57,8 @@ async def ask_streamed(
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
-    parts = [chunk async for chunk in stream(messages, model=model, temperature=temperature, max_tokens=max_tokens)]
+    parts = [chunk async for chunk in stream(messages, model=model, temperature=temperature, max_tokens=max_tokens,
+                                             **_role_kw(model, "recherche"))]
     return strip_thinking("".join(parts))
 
 
