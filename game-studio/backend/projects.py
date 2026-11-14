@@ -69,9 +69,19 @@ def get(project_id: str) -> tuple[dict, WorkspaceProject] | None:
     return (config, project) if project is not None else None
 
 
+def _template() -> str | None:
+    """`modul-schreiber`, wenn der Kern Agenten-Templates kennt (Plan E5); sonst None = Standardmodell wie früher."""
+    try:
+        from hydrahive.agents._binding import template_if_available
+    except ImportError:
+        return None
+    return template_if_available("modul-schreiber")
+
+
 def create(username: str, body: ProjectCreate) -> dict:
-    model = default_model().strip()
-    if not model:
+    tid = _template()
+    model = "" if tid else default_model().strip()
+    if not tid and not model:
         raise ProjectProvisionError("game_studio_llm_not_configured")
     config: dict | None = None
     try:
@@ -83,6 +93,7 @@ def create(username: str, body: ProjectCreate) -> dict:
             created_by=username,
             init_git=True,
             metadata={"game_studio": {"schema_version": 1}},
+            **({"template": tid} if tid else {}),
         )
         project = workspace_files.create(config["id"], body)
         enabled, error = enable_share(config["id"], _share_label(config["id"]))
