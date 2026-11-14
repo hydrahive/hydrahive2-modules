@@ -1,7 +1,7 @@
 {
   "id": "hydralabor",
   "name": "Hydra-Labor",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Sicher an HydraHive mitbauen: eigener abgeschotteter Container mit Labor-Agent, Testlauf und Zurücksetzen; das Ergebnis als Probe im Browser ansehen; Änderungen und Fehler per Knopf über das eigene GitHub-Konto einreichen. Der Server bleibt unberührt.",
   "icon": "FlaskConical",
   "nav_group": "working",
@@ -15,5 +15,12 @@
   ],
   "has_service": false,
   "default_agent_tools": false,
-  "min_core_version": "2.0.0"
+  "min_core_version": "2.0.0",
+  "templates": [
+    {
+      "id": "labor",
+      "label": "Hydra-Labor",
+      "base": "modul-schnell"
+    }
+  ]
 }

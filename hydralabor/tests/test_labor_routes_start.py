@@ -18,7 +18,7 @@ def clean(db_ready):
 @pytest.mark.parametrize(("job", "path", "body", "ready"), [
     ("probe", "/probe", {}, True), ("reset", "/reset", {}, True), ("test", "/test", {}, True),
     ("remove", "/remove", {"confirm": "LABOR"}, True), ("create", "/create", {"model": MODEL}, False)])
-def test_echter_start_ueber_schnittstelle(client, admin_headers, clean, monkeypatch, job, path, body, ready):
+def test_echter_start_ueber_schnittstelle(legacy, client, admin_headers, clean, monkeypatch, job, path, body, ready):
     """Ohne Attrappe für jobs.start: Befund hydratest 30.10. – sync-Route lief im Thread ohne Ereignisschleife,
     create_task scheiterte mit 500 und der Zustand blieb auf „läuft“ hängen."""
     import time
