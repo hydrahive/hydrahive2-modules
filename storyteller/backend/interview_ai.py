@@ -11,11 +11,10 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from hydrahive.llm.client import complete
-
 from . import interviews, storage
 from ._files import StoryError
 from ._ghost_settings import ghost_of
+from ._llm import complete
 from ._names import KIND_LABEL, LANGUAGE_LABEL
 from ._texts import Texts
 from ._think import strip_think

@@ -91,7 +91,7 @@ def test_admin_may_always(client, admin_headers, cleanup):
     cleanup.append(r.json()["project_id"])
 
 
-def test_errors_are_coded(client, admin_headers, monkeypatch):
+def test_errors_are_coded(legacy, client, admin_headers, monkeypatch):
     from backend.team import setup
     bad = client.post(URL, json={**BODY, "kind": "gedicht"}, headers=admin_headers)
     assert bad.status_code == 400 and bad.json()["detail"]["code"] == "kind_or_language_invalid"

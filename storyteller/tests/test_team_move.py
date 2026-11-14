@@ -162,7 +162,7 @@ def test_fingerprint_sees_text_and_scene_count(tmp_path):
     assert move._fingerprint(d)[0] != one[0]
 
 
-def test_title_and_model_come_from_the_book(moved):
+def test_title_and_model_come_from_the_book(legacy, moved):
     from hydrahive.agents import config as ac
     from hydrahive.projects import config as pc
     bid, _sid = _book(title="Das Schloss")

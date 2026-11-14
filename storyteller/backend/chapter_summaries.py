@@ -9,11 +9,10 @@ Kapitels – gespeichert wird erst, was der Autor übernimmt. Nichts wird automa
 """
 from __future__ import annotations
 
-from hydrahive.llm.client import complete
-
 from . import storage
 from ._book import Conflict, _existing, _now
 from ._files import StoryError, check_id, read_json, write_json
+from ._llm import complete
 from ._locks import locked
 from ._names import LANGUAGE_LABEL
 from ._texts import texts

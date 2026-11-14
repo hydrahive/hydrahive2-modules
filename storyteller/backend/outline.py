@@ -11,12 +11,11 @@ import json
 import re
 from typing import Any
 
-from hydrahive.llm.client import complete
-
 from . import storage
 from ._book import MAX_SCENES, _existing, _now
 from ._files import StoryError, new_id, read_json, write_json, write_scene
 from ._ghost_settings import ghost_of
+from ._llm import complete
 from ._locks import locked
 from ._names import KIND_LABEL, LANGUAGE_LABEL, is_fiction
 from ._think import strip_think

@@ -136,3 +136,10 @@ def _clean_story_dirs(setup_test_env):
     _rate.clear()
     _busy.clear()
     yield
+
+
+@pytest.fixture
+def legacy(monkeypatch):
+    """Älterer Kern ohne Agenten-Templates: Team-Modell aus Buch bzw. Standardmodell (vor Storyteller 0.21.0)."""
+    from backend.team import setup
+    monkeypatch.setattr(setup, "template_or_none", lambda: None)
