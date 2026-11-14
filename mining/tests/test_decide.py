@@ -175,5 +175,5 @@ def test_all_sixteen_coins_are_benchmarked_on_nvidia():
     from backend.decide import pending_benchmarks
     quotes = {c: _q(c) for c in catalog.coins()}
     todo = pending_benchmarks("nvidia", set(), quotes, mem_mb=16384)
-    assert {c for c, _, _ in todo} == set(catalog.coins()) and len(todo) == 35
-    assert len(pending_benchmarks("amd", set(), quotes, mem_mb=16384)) == 22
+    assert {c for c, _, _ in todo} == set(catalog.coins()) and len(todo) == 34      # ALPH ohne SRBMiner (ab 3.7.7)
+    assert len(pending_benchmarks("amd", set(), quotes, mem_mb=16384)) == 21

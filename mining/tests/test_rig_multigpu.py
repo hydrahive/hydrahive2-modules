@@ -147,6 +147,7 @@ def test_summary_single_card_keeps_plain_model(monkeypatch):
     card = {"gpu_vendor": "nvidia", "gpu_model": "NVIDIA GeForce RTX 5060 Ti", "gpu_mem_mb": 16311,
             "driver": "595.91.07", "temp_c": 55.0, "power_w": 28.0, "util_pct": 0.0, "fan_pct": 0.0}
     monkeypatch.setattr(gpu, "_nvidia", lambda: [card])
+    monkeypatch.setattr(gpu, "read_amd", list)          # nicht vom Testrechner lesen (Server mit AMD-Karte)
     d = gpu.detect()
     assert d["gpu_model"] == "NVIDIA GeForce RTX 5060 Ti" and d["gpu_count"] == 1 and d["power_w"] == 28.0
 

@@ -1,5 +1,5 @@
 {
-  "_note": "Miner-Katalog — gemeinsame Quelle für Rig-Client UND Server (backend/catalog.py liest diese Datei). Der Rig baut den Startbefehl ausschließlich hieraus; der Server schickt nur coin/miner/algo. Hashes = sha256-Digest der offiziellen GitHub-Releases, am 03.10.2026 geprüft. Algo-Namen am 03.10. auf tills-master-wks (RTX 5060 Ti) gegen Kryptex getestet (Pool-Verbindung je Miner×Algo; Shares: rigel kawpow, srbminer pearlhash, lolminer octopus). Erweitert 03.10.2026 auf alle mit GPU schürfbaren Kryptex-Coins: qtc, xtm-c29 (Kryptex: gpu) sowie etc, ethw, octa, alph, xtm-sha3x (Kryptex: asic, aber von rigel/lolMiner/SRBMiner unterstützt — Algo-Namen aus rigel-README, lolMiner --list-algos, SRBMiner --list-algorithms; Ports aus /{coin}/api/v1/pool/info). Nicht machbar: kas (kHeavyHash), zec (Equihash 200,9), SHA256/Scrypt (ASIC), xmr/zeph/xtm-rx (CPU).",
+  "_note": "Miner-Katalog — gemeinsame Quelle für Rig-Client UND Server (backend/catalog.py liest diese Datei). Der Rig baut den Startbefehl ausschließlich hieraus; der Server schickt nur coin/miner/algo. Hashes = sha256-Digest der offiziellen GitHub-Releases, am 03.10.2026 geprüft (SRBMiner 3.8.8 am 14.11.2026; md5 aus dem Release gegengeprüft; ALPH nicht mehr über SRBMiner, 'blake3_an' gibt es seit 3.7.7 nicht mehr). Algo-Namen am 03.10. auf tills-master-wks (RTX 5060 Ti) gegen Kryptex getestet (Pool-Verbindung je Miner×Algo; Shares: rigel kawpow, srbminer pearlhash, lolminer octopus). Erweitert 03.10.2026 auf alle mit GPU schürfbaren Kryptex-Coins: qtc, xtm-c29 (Kryptex: gpu) sowie etc, ethw, octa, alph, xtm-sha3x (Kryptex: asic, aber von rigel/lolMiner/SRBMiner unterstützt — Algo-Namen aus rigel-README, lolMiner --list-algos, SRBMiner --list-algorithms; Ports aus /{coin}/api/v1/pool/info). Nicht machbar: kas (kHeavyHash), zec (Equihash 200,9), SHA256/Scrypt (ASIC), xmr/zeph/xtm-rx (CPU).",
   "miners": {
     "rigel": {
       "version": "1.23.2",
@@ -25,10 +25,10 @@
       ]
     },
     "srbminer": {
-      "version": "3.7.1",
-      "url": "https://github.com/doktor83/SRBMiner-Multi/releases/download/3.7.1/SRBMiner-Multi-3-7-1-Linux.tar.gz",
-      "sha256": "9d8699a9e3bbce5ba6aae30298be25eecee8cf5910abb65feee27f2b40762de9",
-      "binary": "SRBMiner-Multi-3-7-1/SRBMiner-MULTI",
+      "version": "3.8.8",
+      "url": "https://github.com/doktor83/SRBMiner-Multi/releases/download/3.8.8/SRBMiner-Multi-3-8-8-Linux.tar.gz",
+      "sha256": "c203e79e9dc467ec5daaa1e1771e08561a70d2c9dcc397364b8ae7ae558e50d8",
+      "binary": "SRBMiner-Multi-3-8-8/SRBMiner-MULTI",
       "vendors": [
         "nvidia",
         "amd"
@@ -427,20 +427,12 @@
           [
             "lolminer",
             "ALEPH"
-          ],
-          [
-            "srbminer",
-            "blake3_an"
           ]
         ],
         "amd": [
           [
             "lolminer",
             "ALEPH"
-          ],
-          [
-            "srbminer",
-            "blake3_an"
           ]
         ]
       }

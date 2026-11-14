@@ -19,7 +19,7 @@ _USER_RE = re.compile(r"^[A-Za-z0-9._@+\-]{1,128}$")
 API_PORT = 4068
 GROUP_PORTS = {"nvidia": 4068, "amd": 4069}
 # Nur auf den Karten der eigenen Gruppe schürfen (gemischte Rechner). rigel ist ohnehin nur NVIDIA.
-# AMD-Gruppe zusätzlich ohne CUDA: SRBMiner 3.7.1 schürft trotz --disable-gpu-nvidia auf der
+# AMD-Gruppe zusätzlich ohne CUDA: SRBMiner (gemessen mit 3.7.1) schürft trotz --disable-gpu-nvidia auf der
 # NVIDIA-Karte weiter (auf wks197 gemessen). AMD läuft über OpenCL/ROCm, braucht kein CUDA.
 GROUP_ENV = {"amd": {"CUDA_VISIBLE_DEVICES": ""}}
 # AMD ohne ROCm: Mesa-OpenCL (rusticl, Paket mesa-opencl-icd) meldet Grafikkarten nur mit

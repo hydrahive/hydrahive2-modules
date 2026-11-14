@@ -4,7 +4,7 @@ HydraHive verwaltet GPU-Rechner im Netz und lässt jeden auf dem gerade
 ertragreichsten Kryptex-Coin schürfen. Die Seite **Mining** zeigt die
 Live-Erträge je Coin und die gekoppelten Rechner.
 
-Stand 0.7.2 (Rechner-Client 0.4.2): Ertragstabelle mit 16 Coins, Rechner
+Stand 0.8.2 (Rechner-Client 0.4.3): Ertragstabelle mit 16 Coins, Rechner
 koppeln/freigeben/an/aus/sperren, echtes Schürfen mit Benchmark, automatischem
 Umschalten, Watchdog und Energie-Steuerung. Rechner mit AMD- und NVIDIA-Karten
 zugleich bekommen je Hersteller einen eigenen Miner. Neu: Clore-Probelauf (rechnet, ob sich
@@ -103,6 +103,7 @@ curl -fsSL https://raw.githubusercontent.com/hydrahive/hydrahive2-modules/main/m
 | ab 0.4.0 | zusätzlich ALPH, ETC, ETHW, OCTA, QTC, XTM (Cuckaroo29 und SHA3X); AMD + NVIDIA im selben Rechner |
 | ab 0.4.1 | bei einem Miner-Abbruch steht der Grund im Journal |
 | ab 0.4.2 | AMD: Mesa-OpenCL (`mesa-opencl-icd`) wird genutzt; fehlt OpenCL, zeigt HydraHive das statt zu messen; echte Kartennamen (z. B. „RX 470“ statt „0x67df“) und Lüfter |
+| ab 0.4.3 | SRBMiner 3.8.8 statt 3.7.1 (PRL/pearlhash auf RTX 50xx mit NVIDIA-Treiber ab 615); ALPH nur noch über rigel und lolMiner |
 
 Ein alter Client schürft weiter, bekommt aber nur die Coins, die er kennt.
 
@@ -239,6 +240,7 @@ Steuer-Werkzeuge nicht — sie prüfen das zusätzlich selbst.
 | „kein Kryptex-Benutzer eingetragen“ | Einstellungen → Kryptex-Benutzername |
 | Neue Coins werden nie gemessen | Alter Client → [Client aktualisieren](#client-aktualisieren) |
 | `job_rejected:unknown_coin` im Log | Alter Client an neuem Modul → [Client aktualisieren](#client-aktualisieren). Danach versucht HydraHive diese Coins neu |
+| Mining startet nicht, Rechner mit RTX 50xx und neuem NVIDIA-Treiber (ab 615), vor allem bei PRL | Alter Client mit SRBMiner 3.7.1 → [Client aktualisieren](#client-aktualisieren) (ab 0.4.3: SRBMiner 3.8.8) |
 | `watchdog:exited` im Log | Miner bricht ab. Ab Client 0.4.1 stehen direkt darunter seine letzten Zeilen: `sudo journalctl -u hydrahive-rig -n 40 --no-pager`. SRBMiner schreibt zusätzlich nach `/var/lib/hydrahive-rig/srbminer.log` |
 | `sha256_mismatch` im Log | Download beschädigt oder verändert → Rechner lädt beim nächsten Versuch neu |
 | Coin wird übersprungen (`failed`) | Miner lief auf dieser Karte nicht (z. B. zu wenig Speicher) → „Neu messen“ nach Treiber-Update |
