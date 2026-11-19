@@ -31,13 +31,37 @@ Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felde
 ## Bankimport-Inbox
 
 - `GET|POST /import-profiles`, `PUT|DELETE /import-profiles/{id}` verwalten haushaltsgebundene CSV-Mappings.
-- `POST /imports` ist Multipart mit `file`, `account_id`, `format=auto|camt|mt940|csv`, optional `mapping` als JSON und optional `profile_id`. CSV-Datumswerte im deutschen Punktformat akzeptieren pro Zelle sowohl zwei- als auch vierstellige Jahreszahlen.
+- `POST /imports` ist Multipart mit `file`, `account_id`, `format=auto|camt|mt940|csv|pdf|paypal`, optional `mapping` als JSON und optional `profile_id`. CSV-Datumswerte im deutschen Punktformat akzeptieren pro Zelle sowohl zwei- als auch vierstellige Jahreszahlen.
 - `GET /imports` liefert Paketzusammenfassungen; `GET /imports/{id}` zusätzlich normalisierte Zeilen.
 - `DELETE /imports/{id}?revision=n&rows_revision=n` löscht ausschließlich unveränderte, noch nicht gebuchte Entwürfe samt Zeilen; gebuchte Historie bleibt unveränderlich.
 - `PATCH /imports/{id}/rows/{row_id}` ändert Entscheidung, Kategorie und korrigierbare Metadaten mit `revision`.
 - `POST /imports/{id}/complete` mit `{revision}` bucht alle akzeptierten Zeilen atomar.
 - `POST /imports/{id}/reverse` mit `{revision}` storniert das gesamte Paket über Gegenbuchungen.
 - Uploads erzeugen ausschließlich Entwürfe. Fehlerzeilen bleiben sichtbar, starke Duplikate sind standardmäßig ausgeschlossen.
+
+### PDF-Kontoauszug und PayPal-CSV (V9 Phase 2)
+
+- `format=pdf` — Bank-Kontoauszug mit Textschicht. Auto-Erkennung an der Signatur `%PDF-`.
+  Extraktion ausschließlich über die lokale Sandbox (pdfinfo/pdftotext unter bwrap+prlimit),
+  kein ungesicherter Fallback. Maximal 50 Seiten. Fehlercodes (422): `pdf_no_text_layer`
+  (Scan-PDF ohne Text — Hinweis: Beleg-Erkennung oder CSV/CAMT-Export der Bank nutzen),
+  `pdf_unreadable` (beschädigt/verschlüsselt), `pdf_too_many_pages`, `pdf_no_transactions`
+  (Text vorhanden, aber keine Buchungszeile erkannt), `pdf_extraction_unavailable`
+  (Sandbox/pdftotext fehlt auf dem Server). Zeilen ohne eindeutiges Datum/Betrag erscheinen
+  als eigene Zeile mit `errors=["pdf_line_ambiguous"]` statt geraten zu werden; solche Zeilen
+  haben kein `bank_reference` (Fingerprint `weak`).
+- `format=paypal` — offizieller PayPal-Aktivitäten-CSV-Export. Auto-Erkennung an den
+  Header-Spalten (`Transaktionscode`/`Transaction ID` + `Brutto`/`Gross`). Deutsche und
+  englische Spaltennamen, Komma- oder Punkt-Dezimaltrennzeichen, Encoding `utf-8-sig` oder
+  `cp1252`. Brutto ist die Hauptzeile (`bank_reference` = Transaktionscode, Fingerprint
+  `strong`); eine Gebühr ≠ 0 erscheint als eigene Zeile (`purpose` „PayPal-Gebühr …“,
+  `bank_reference` „`<Transaktionscode>:fee`“). Währungsumrechnungszeilen („Allgemeine
+  Währungsumrechnung“/„General Currency Conversion“) werden verworfen und als Warnung
+  `paypal_currency_conversion_discarded` an der vorherigen Zeile vermerkt. Nur Status
+  „Abgeschlossen“/„Completed“ wird übernommen; andere Status ergeben eine Fehlerzeile mit
+  `errors=["paypal_status_not_completed"]`. Fehlercode (422): `paypal_header_invalid`
+  (Pflichtspalten fehlen). Fremdwährungszeilen behalten ihre Originalwährung; die bestehende
+  Kontowährungs-Prüfung (`account_currency_mismatch`) des Prüfbereichs greift unverändert.
 
 ## Kundenkarten-Fundament (V4.0)
 

@@ -7,7 +7,7 @@ from typing import Literal
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 MAX_RECORDS = 10_000
-ImportFormat = Literal["camt", "mt940", "csv"]
+ImportFormat = Literal["camt", "mt940", "csv", "pdf", "paypal"]
 
 
 class ImportParseError(ValueError):
@@ -72,16 +72,35 @@ def normalize_bank_reference(value: str | None) -> str | None:
     return None if sentinel in _EMPTY_REFERENCES else normalized
 
 
+_PAYPAL_HEADER_HINTS = (
+    ("transaktionscode", "brutto"),
+    ("transaction id", "gross"),
+)
+
+
+def _looks_like_paypal_header(text: str) -> bool:
+    lower = text.casefold()
+    first_line = lower.splitlines()[0] if lower.splitlines() else lower
+    return any(
+        reference in first_line and gross in first_line
+        for reference, gross in _PAYPAL_HEADER_HINTS
+    )
+
+
 def detect_format(data: bytes, filename: str = "") -> ImportFormat:
     _check_size(data)
     sample = data[:4096].lstrip()
     lower_name = filename.lower()
+    if sample.startswith(b"%PDF-"):
+        return "pdf"
     if sample.startswith(b"<"):
         return "camt"
     text = sample.decode("latin-1", errors="ignore")
     if re.search(r"(?m)^:(?:20|25|28C|60[FM]|61):", text):
         return "mt940"
     if lower_name.endswith(".csv") or any(char in text for char in (";", ",", "\t")):
+        if _looks_like_paypal_header(text):
+            return "paypal"
         return "csv"
     raise ImportParseError("unsupported_format")
 
@@ -109,6 +128,14 @@ def parse_import(
         from .import_csv import parse_csv
 
         records = parse_csv(data, csv_mapping)
+    elif selected == "pdf":
+        from .import_pdf import parse_pdf
+
+        records = parse_pdf(data)
+    elif selected == "paypal":
+        from .import_paypal import parse_paypal
+
+        records = parse_paypal(data)
     else:
         raise ImportParseError("unsupported_format")
     if len(records) > MAX_RECORDS:
