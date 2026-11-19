@@ -72,7 +72,7 @@ def test_trennen(client, admin_headers, clean):
     assert client.post(B + "/github/disconnect", headers=admin_headers, json={}).status_code == 200
 
 
-def test_einreichen_als_auftrag(client, admin_headers, clean, monkeypatch):
+def test_einreichen_als_auftrag(client, admin_headers, clean, monkeypatch, fake_incus):  # /state fragt incus ab
     got = {}
 
     async def fake_submit(target, title, body, *, report):
@@ -90,7 +90,7 @@ def test_einreichen_als_auftrag(client, admin_headers, clean, monkeypatch):
     assert s["error_code"] == ""
 
 
-def test_einreichen_fehler_mit_details(client, admin_headers, clean, monkeypatch):
+def test_einreichen_fehler_mit_details(client, admin_headers, clean, monkeypatch, fake_incus):  # /state fragt incus ab
     async def red(target, title, body, *, report):
         raise submit.SubmitError("labor_submit_protected", [".github/x.yml"])
     monkeypatch.setattr(submit, "submit", red)

@@ -5,7 +5,6 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from fastapi import status
-
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.api.middleware.errors import coded
 from hydrahive.db.connection import db
@@ -27,6 +26,36 @@ def _member_owner_valid(conn, household_id: int, member_id: int | None) -> None:
         raise coded(status.HTTP_404_NOT_FOUND, "member_not_found")
 
 
+def _account_dict(row: sqlite3.Row, principal: AuthPrincipal) -> dict:
+    result = as_dict(row)
+    linked_by_me = (
+        result["linked_user_id"] is not None and result["linked_user_id"] == principal.user_id
+    )
+    result["linked_by_me"] = linked_by_me
+    result["crypto_linked"] = result["linked_portfolio_id"] is not None
+    if not linked_by_me:
+        result["linked_portfolio_id"] = None
+    result.pop("linked_user_id", None)
+    return result
+
+
+def account_with_balance(conn, account_id: int, principal: AuthPrincipal) -> dict:
+    """Lädt ein einzelnes Konto inklusive balance_base (wie list_accounts).
+
+    Für Endpunkte außerhalb von assets.py (z.B. crypto_bridge.link_account/
+    unlink_account), deren UPDATE-Statement nur die Spalten der Tabelle
+    selbst zurückgibt, nicht den aggregierten Saldo.
+    """
+    row = conn.execute(
+        "SELECT a.*,COALESCE(SUM(p.base_amount),0) AS balance_base "
+        "FROM module_haushaltsbuch_accounts a "
+        "LEFT JOIN module_haushaltsbuch_postings p ON p.account_id=a.id "
+        "WHERE a.id=? GROUP BY a.id",
+        (account_id,),
+    ).fetchone()
+    return _account_dict(row, principal)
+
+
 def list_accounts(
     principal: AuthPrincipal, include_archived: bool = False
 ) -> list[dict]:
@@ -40,7 +69,7 @@ def list_accounts(
             + "GROUP BY a.id ORDER BY a.archived,a.name",
             (member["household_id"],),
         ).fetchall()
-    return [as_dict(row) for row in rows]
+    return [_account_dict(row, principal) for row in rows]
 
 
 def create_account(body, principal: AuthPrincipal) -> dict:
@@ -123,6 +152,9 @@ def create_account(body, principal: AuthPrincipal) -> dict:
             )
     result = as_dict(row)
     result["balance_base"] = body.opening_balance
+    result["linked_by_me"] = False
+    result["crypto_linked"] = False
+    result.pop("linked_user_id", None)
     return result
 
 
@@ -137,6 +169,11 @@ def update_account(account_id: int, body, principal: AuthPrincipal) -> dict:
             ).fetchone(),
             "account_not_found",
         )
+        if (
+            before["linked_portfolio_id"] is not None
+            and body.type != "wallet"
+        ):
+            raise coded(status.HTTP_409_CONFLICT, "crypto_account_linked")
         _member_owner_valid(conn, household_id, body.owner_member_id)
         try:
             cur = conn.execute(
@@ -169,7 +206,7 @@ def update_account(account_id: int, body, principal: AuthPrincipal) -> dict:
             before,
             after,
         )
-    return as_dict(after)
+    return _account_dict(after, principal)
 
 
 def _validate_parent(

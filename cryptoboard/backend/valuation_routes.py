@@ -6,7 +6,7 @@ Login-pflichtig, user-scoped (Bestände); Kurs-Cache ist global.
 """
 from __future__ import annotations
 
-from datetime import date, timezone, datetime
+from datetime import timezone, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends

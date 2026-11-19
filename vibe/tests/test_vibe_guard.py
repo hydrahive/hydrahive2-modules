@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from backend import container, guard, network, projects, state
+from backend import container, guard, network, projects
 
 MODEL = "claude-sonnet-4-6"
 GB = 1024 ** 3

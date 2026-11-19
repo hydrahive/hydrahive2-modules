@@ -3,6 +3,8 @@ import { ArrowLeft, Check, CheckCheck, Pencil, Save, Sparkles, Trash2, Wand2, X 
 import { AdminConfirmDialog } from "@/features/cockpit/admin/ui/AdminConfirmDialog"
 import { errorMessage, haushaltsbuchApi, isConflict } from "./api"
 import { formatMinorUnits, minorToInput, parseMinorUnits } from "./money"
+import { transferLabel } from "./cryptoBridge"
+import { importErrorText, importMessage, sourceFormatLabel } from "./importFormats"
 import type { Account, Category, ImportBatch, ImportRow, ImportRowStatus, ImportRowUpdate } from "./types"
 import { Button, EmptyState, ErrorState, Input, Select, Textarea, panel } from "./ui"
 
@@ -15,13 +17,11 @@ const FILTERS: { value: "all" | ImportRowStatus; label: string }[] = [
   { value: "accepted", label: "Angenommen" }, { value: "rejected", label: "Verworfen" },
   { value: "duplicate", label: "Duplikate" }, { value: "error", label: "Fehler" },
 ]
-const messageLabel = (value: string) => ({
-  possible_duplicate: "Mögliches Duplikat (schwacher Treffer)",
-  account_currency_mismatch: "Währung passt nicht zum Zielkonto",
-}[value] ?? value.replaceAll("_", " "))
+const messageLabel = importMessage
 
-function RowEditor({ batchId, row, accountCurrency, categories, readOnly, onUpdated }: {
+export function RowEditor({ batchId, row, accountCurrency, accounts, categories, readOnly, onUpdated }: {
   batchId: number
+  accounts: Account[]
   row: ImportRow
   accountCurrency: string
   categories: Category[]
@@ -38,7 +38,8 @@ function RowEditor({ batchId, row, accountCurrency, categories, readOnly, onUpda
   const [error, setError] = useState<unknown>()
   const matchingCategories = categories.filter((category) => !category.archived && category.kind === ((row.amount_minor ?? 0) > 0 ? "income" : "expense"))
   const suggestion = row.suggested_category_id !== null ? categories.find((category) => category.id === row.suggested_category_id) : undefined
-  const showSuggestion = !readOnly && row.category_id === null && suggestion !== undefined
+  const transfer = transferLabel(row, accounts)
+  const showSuggestion = !transfer && !readOnly && row.category_id === null && suggestion !== undefined
 
   async function patch(update: Omit<ImportRowUpdate, "revision">): Promise<boolean> {
     setBusy(true); setError(undefined)
@@ -76,12 +77,18 @@ function RowEditor({ batchId, row, accountCurrency, categories, readOnly, onUpda
       <Button disabled={busy} tone="primary" onClick={() => patch({ category_id: suggestion!.id, status: "accepted" })}><Check size={12} className="mr-1 inline" />Übernehmen</Button>
     </div>}
     {!readOnly && <div className="mt-4 grid gap-3 border-t border-[rgb(var(--hh-s-rand,38_50_71))] pt-3 lg:grid-cols-[minmax(12rem,1fr)_auto_auto]">
-      <Select aria-label="Kategorie" value={row.category_id ?? ""} disabled={busy} onChange={(event) => patch({ category_id: event.target.value ? Number(event.target.value) : null })}><option value="">Kategorie wählen …</option>{matchingCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select>
+      {transfer ? <p className="self-center text-sm font-semibold text-cyan-200" data-testid="transfer-label">{transfer}<span className="block text-xs font-normal text-[#9aa7bc]">Keine Kategorie nötig.</span></p> : <Select aria-label="Kategorie" value={row.category_id ?? ""} disabled={busy} onChange={(event) => patch({ category_id: event.target.value ? Number(event.target.value) : null })}><option value="">Kategorie wählen …</option>{matchingCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select>}
       <div className="flex gap-2"><Button disabled={busy || row.errors.length > 0} tone={row.status === "accepted" ? "primary" : "default"} onClick={() => patch({ status: "accepted" })}><Check size={13} className="mr-1 inline" />Annehmen</Button><Button disabled={busy} tone={row.status === "rejected" ? "danger" : "default"} onClick={() => patch({ status: "rejected" })}><X size={13} className="mr-1 inline" />Verwerfen</Button></div>
       <Button disabled={busy} onClick={() => setEditing(!editing)}><Pencil size={13} className="mr-1 inline" />Korrigieren</Button>
     </div>}
     {editing && !readOnly && <div className="mt-3 grid gap-3 rounded border border-[#33425a] bg-[rgb(var(--hh-s-tief,11_17_28))] p-3 sm:grid-cols-2"><Input aria-label="Buchungsdatum" type="date" value={date} onChange={(event) => setDate(event.target.value)} /><Input aria-label={`Betrag in ${currency}`} value={amount} onChange={(event) => setAmount(event.target.value)} /><Input aria-label="Währung" value={currency} readOnly /><Input aria-label="Gegenpartei" maxLength={240} value={counterparty} onChange={(event) => setCounterparty(event.target.value)} /><div className="sm:col-span-2"><Textarea aria-label="Verwendungszweck" rows={2} maxLength={500} value={purpose} onChange={(event) => setPurpose(event.target.value)} /></div><div className="flex gap-2 sm:col-span-2"><Button tone="primary" disabled={busy} onClick={save}><Save size={13} className="mr-1 inline" />Speichern</Button><Button disabled={busy} onClick={() => setEditing(false)}>Abbrechen</Button></div></div>}
   </article>
+}
+
+/** Fehler aus Abschluss/Löschen/Vorschlägen: bekannte Codes laienverständlich (sonst stünde z. B.
+ *  „crypto_wallet_not_linked“ roh da, weil der Kern dafür keinen i18n-Eintrag hat). */
+export function BatchError({ error }: { error: unknown }) {
+  return <ErrorState error={importErrorText(error, errorMessage)} conflict={isConflict(error)} />
 }
 
 export function ImportBatchView({ initialBatch, accounts, categories, onBack, onChanged, onDeleted }: {
@@ -104,8 +111,8 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   const account = accounts.find((item) => item.id === batch.account_id)
   const accepted = rows.filter((row) => row.status === "accepted")
   const acceptedSum = accepted.reduce((sum, row) => sum + (row.amount_minor ?? 0), 0)
-  const missingCategory = accepted.filter((row) => row.category_id === null).length
-  const uncategorized = rows.filter((row) => row.category_id === null && (row.status === "pending" || row.status === "duplicate"))
+  const missingCategory = accepted.filter((row) => row.category_id === null && row.counter_account_id === null).length
+  const uncategorized = rows.filter((row) => row.category_id === null && row.counter_account_id === null && (row.status === "pending" || row.status === "duplicate"))
   const openSuggestions = uncategorized.filter((row) => row.suggested_category_id !== null).length
 
   useEffect(() => {
@@ -165,10 +172,10 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   }
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-center gap-3"><Button onClick={onBack}><ArrowLeft size={13} className="mr-1 inline" />Zur Übersicht</Button><div className="min-w-0 flex-1"><h2 className="truncate font-bold text-[#e8eef8]">{batch.display_filename}</h2><p className="text-xs text-[#9aa7bc]">{batch.source_format.toUpperCase()} · {account?.name ?? `Konto #${batch.account_id}`} · Paket #{batch.id}</p></div>{batch.status === "draft" && <><Button tone="danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={13} className="mr-1 inline" />Entwurf löschen</Button><Button tone="primary" disabled={!accepted.length || missingCategory > 0 || busy} onClick={() => setConfirmComplete(true)}><CheckCheck size={13} className="mr-1 inline" />Import abschließen</Button></>}</div>
+    <div className="flex flex-wrap items-center gap-3"><Button onClick={onBack}><ArrowLeft size={13} className="mr-1 inline" />Zur Übersicht</Button><div className="min-w-0 flex-1"><h2 className="truncate font-bold text-[#e8eef8]">{batch.display_filename}</h2><p className="text-xs text-[#9aa7bc]">{sourceFormatLabel(batch.source_format)} · {account?.name ?? `Konto #${batch.account_id}`} · Paket #{batch.id}</p></div>{batch.status === "draft" && <><Button tone="danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={13} className="mr-1 inline" />Entwurf löschen</Button><Button tone="primary" disabled={!accepted.length || missingCategory > 0 || busy} onClick={() => setConfirmComplete(true)}><CheckCheck size={13} className="mr-1 inline" />Import abschließen</Button></>}</div>
     {batch.status === "imported" && <div className="rounded border border-emerald-500/35 bg-emerald-500/10 p-4 text-sm text-emerald-100" role="status"><strong>Import abgeschlossen.</strong> {rows.filter((row) => row.status === "imported").length} Zeilen wurden verbindlich gebucht.</div>}
     {batch.status === "reversed" && <div className="rounded border border-amber-500/35 bg-amber-500/10 p-4 text-sm text-amber-100" role="status"><strong>Import storniert.</strong> Die zugehörigen Buchungen wurden durch Gegenbuchungen aufgehoben.</div>}
-    {error !== undefined && <ErrorState error={errorMessage(error)} conflict={isConflict(error)} />}
+    {error !== undefined && <BatchError error={error} />}
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
       <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Zeilen</span><strong className="mt-1 block text-lg text-[#e8eef8]">{rows.length}</strong></div>
       <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Zeitraum</span><strong className="mt-1 block text-sm text-[#e8eef8]">{dates.length ? `${dates[0]} – ${dates[dates.length - 1]}` : "—"}</strong></div>
@@ -188,7 +195,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
     </div>}
     {batch.status === "draft" && <div className="flex flex-wrap items-center gap-2"><div className="mr-auto flex flex-wrap gap-1">{FILTERS.map((item) => <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded border px-2 py-1 text-xs font-bold ${filter === item.value ? "border-cyan-400/40 bg-cyan-400/15 text-cyan-200" : "border-[#33425a] text-[#9aa7bc]"}`}>{item.label}{item.value !== "all" ? ` (${counts[item.value] ?? 0})` : ` (${rows.length})`}</button>)}</div><Button disabled={busy} onClick={() => bulk("accepted")}>Alle gültigen annehmen</Button><Button disabled={busy} onClick={() => bulk("rejected")}>Alle gültigen verwerfen</Button></div>}
     {batch.status === "draft" && missingCategory > 0 && <p className="text-xs font-semibold text-amber-200">{missingCategory} angenommene Zeile(n) benötigen vor dem Abschluss eine passende Kategorie.</p>}
-    <div className="space-y-3">{visibleRows.map((row) => <RowEditor key={row.id} batchId={batch.id} row={row} accountCurrency={account?.currency ?? "EUR"} categories={categories} readOnly={batch.status !== "draft"} onUpdated={updateRow} />)}{!visibleRows.length && <EmptyState title="Keine Zeilen" text="Für diesen Filter sind keine Importzeilen vorhanden." />}</div>
+    <div className="space-y-3">{visibleRows.map((row) => <RowEditor key={row.id} batchId={batch.id} row={row} accounts={accounts} accountCurrency={account?.currency ?? "EUR"} categories={categories} readOnly={batch.status !== "draft"} onUpdated={updateRow} />)}{!visibleRows.length && <EmptyState title="Keine Zeilen" text="Für diesen Filter sind keine Importzeilen vorhanden." />}</div>
     {confirmComplete && <AdminConfirmDialog title="Import verbindlich abschließen?" confirmLabel={busy ? "Wird gebucht …" : "Verbindlich buchen"} cancelLabel="Weiter prüfen" confirmTone="primary" busy={busy} onClose={() => setConfirmComplete(false)} onConfirm={complete}>{accepted.length} Zeile(n) mit einer Summe von {formatMinorUnits(acceptedSum, account?.currency ?? accepted[0]?.currency ?? "EUR")} werden atomar gebucht. Dieser Schritt verändert das Ledger.</AdminConfirmDialog>}
     {confirmDelete && <AdminConfirmDialog title="Importentwurf löschen?" confirmLabel={busy ? "Wird gelöscht …" : "Entwurf endgültig löschen"} cancelLabel="Abbrechen" confirmTone="danger" busy={busy} onClose={() => setConfirmDelete(false)} onConfirm={deleteDraft}>„{batch.display_filename}“ und alle {rows.length} eingelesenen Zeilen werden gelöscht. Es wurden noch keine Buchungen erzeugt. Anschließend kannst du dieselbe Datei mit einer korrigierten CSV-Zuordnung erneut importieren.</AdminConfirmDialog>}
   </div>

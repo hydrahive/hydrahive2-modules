@@ -5,15 +5,16 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-
 from hydrahive.api.middleware.auth import require_auth
 
 from .lidl_config import enabled as lidl_enabled
+from .routes_crypto_bridge import router as crypto_bridge_router
 from .routes_household import router as household_router
 from .routes_imports import router as import_router
 from .routes_ledger import router as ledger_router
 from .routes_loyalty import router as loyalty_router
 from .routes_planning import router as planning_router
+from .routes_reports import router as reports_router
 
 router = APIRouter()
 
@@ -29,6 +30,7 @@ def status(auth: Annotated[tuple[str, str], Depends(require_auth)]) -> dict:
             "loyalty_foundation": "available",
             "lidl_plus": "experimental" if lidl_enabled() else "disabled",
             "payback": "planned",
+            "crypto_bridge": "available",
         },
     }
 
@@ -44,5 +46,7 @@ def register(ctx) -> None:
     ctx.register_router(import_router)
     ctx.register_router(ledger_router)
     ctx.register_router(loyalty_router)
+    ctx.register_router(crypto_bridge_router)
     ctx.register_router(planning_router)
+    ctx.register_router(reports_router)
     ctx.register_migrations("migrations")

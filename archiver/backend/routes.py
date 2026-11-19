@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 from hydrahive.db.connection import db
-from hydrahive.projects._paths import workspace_path, ensure_workspace
+from hydrahive.projects._paths import ensure_workspace
 
 from .drives import list_drives, mount_drive, unmount_drive, smart_drive, dmesg_drive
 from . import jobs as job_mgr

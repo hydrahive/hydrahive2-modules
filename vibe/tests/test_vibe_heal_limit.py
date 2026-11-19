@@ -62,7 +62,6 @@ def test_verbrauch_des_laufs_ohne_chat_davor():
 
 import asyncio                                                    # noqa: E402
 
-import pytest                                                     # noqa: E402
 
 
 class _Ev:

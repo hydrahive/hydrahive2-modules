@@ -1,17 +1,23 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { ArrowDownRight, ArrowUpRight, CalendarClock, Gauge, Landmark, TriangleAlert } from "lucide-react"
 import { errorMessage, haushaltsbuchApi, isConflict } from "./api"
 import { formatMinorUnits } from "./money"
 import type { Dashboard, Household } from "./types"
+import { DashboardReports } from "./DashboardReports"
 import { EmptyState, ErrorState, LoadingState, Progress, panel } from "./ui"
 
-export function DashboardView({ household, refreshKey = 0 }: { household: Household; refreshKey?: number }) {
+export function DashboardView({ household, refreshKey = 0, onOpenReports }: { household: Household; refreshKey?: number; onOpenReports?: () => void }) {
   const [data, setData] = useState<Dashboard>()
   const [error, setError] = useState<unknown>()
   const load = () => { setError(undefined); haushaltsbuchApi.dashboard().then(setData).catch(setError) }
   useEffect(load, [refreshKey])
   if (error) return <ErrorState error={errorMessage(error)} conflict={isConflict(error)} onRetry={load} />
   if (!data) return <LoadingState label="Übersicht wird berechnet …" />
+  return <DashboardContent data={data} household={household} reports={<DashboardReports household={household} refreshKey={refreshKey} onOpenReports={onOpenReports} />} />
+}
+
+/** Darstellung der Übersicht; die Mini-Auswertungen kommen als eigener Baustein hinein (Fehler dort bleiben lokal). */
+export function DashboardContent({ data, household, reports }: { data: Dashboard; household: Household; reports: ReactNode }) {
   const money = (value: number) => formatMinorUnits(value, household.base_currency)
   const budgetPercent = data.budget_amount ? data.budget_spent * 100 / data.budget_amount : 0
   return <div className="space-y-4">
@@ -22,6 +28,7 @@ export function DashboardView({ household, refreshKey = 0 }: { household: Househ
       <Metric icon={<ArrowDownRight size={17} />} label="Ausgaben diesen Monat" value={money(data.month_expense)} />
       <Metric icon={<Gauge size={17} />} label="90-Tage-Prognose" value={money(data.forecast_90.closing_balance)} hint={`${money(data.forecast_90.net_change)} Veränderung`} />
     </div>
+    {reports}
     <div className="grid gap-4 xl:grid-cols-2">
       <section className={`${panel} p-4`}><h2 className="mb-4 font-bold text-[#e8eef8]">Budgetverbrauch</h2>{data.budget_amount ? <><Progress value={budgetPercent} label={`${money(data.budget_spent)} von ${money(data.budget_amount)}`} /><p className="mt-3 text-xs text-[#9aa7bc]">Fortschritt wird zusätzlich als Prozentwert angezeigt und nicht nur farblich vermittelt.</p></> : <p className="text-sm text-[#9aa7bc]">Noch keine aktiven Budgets.</p>}</section>
       <section className={`${panel} p-4`}><h2 className="mb-3 flex items-center gap-2 font-bold text-[#e8eef8]"><CalendarClock size={17} className="text-cyan-300" />Nächste Zahlungen</h2>{data.upcoming.length ? <div className="divide-y divide-[rgb(var(--hh-s-rand,38_50_71))]">{data.upcoming.slice(0, 5).map((item, i) => <div key={`${item.rule_id}-${item.due_date}-${i}`} className="flex items-center gap-3 py-2 text-sm"><span className="w-24 text-[#9aa7bc]">{new Date(`${item.due_date}T12:00:00`).toLocaleDateString()}</span><span className="min-w-0 flex-1 truncate text-[#d4deeb]">{item.counterparty || "Ohne Vertragspartner"}</span><strong className={item.effect < 0 ? "text-rose-200" : "text-emerald-200"}>{money(item.effect)}</strong></div>)}</div> : <p className="text-sm text-[#9aa7bc]">Keine bestätigten Fälligkeiten.</p>}</section>

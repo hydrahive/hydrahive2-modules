@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest  # noqa: F401 - parametrize in einzelnen Tests
 
 from _bt_fake import A3, A4, RAPOO, FakeBluez, run, svc  # noqa: F401
-from renderer import bt_jobs, bt_service
+from renderer import bt_jobs
 
 
 def test_koppeln_klassisch_zuerst_dann_trust_connect_meldung(tmp_path):

@@ -200,17 +200,23 @@ verifizierten, zulässigen Zugriffspfad.
 Live-Implementierung nur bei erneuerbarer Sitzung ohne Passwortpersistenz,
 Schutzumgehung oder dauerhafte App-Credential-Extraktion.
 
-## Etappe 9 — Auswertungen und Exporte
+## Etappe 9 — Auswertungen, erweiterte Importe, Crypto-Brücke
 
-- Cashflow und Sparquote
-- Fixkosten/variable Kosten
-- Monats-/Jahresvergleich
-- Budgetabweichungen
-- Vermögensentwicklung
-- Händler- und Artikelanalyse
-- Coupon-/Punkte-Ersparnis
-- CSV- und PDF-Export
-- Jahresarchiv
+Vollständige Planung: `SPEC-V9-AUSWERTUNGEN-CRYPTO.md` und
+`PLAN-V9-AUSWERTUNGEN-CRYPTO.md`.
+
+- serverseitig vorberechnete Diagramme: Cashflow, Vermögensentwicklung,
+  Kategorieverteilung, Budget-Verlauf, Fixkosten-Anteil
+- Zeiträume 3/6/12/24 Monate sowie seit Haushaltsgründung, je Diagramm
+  textuelle/tabellarische Alternative und CSV-Export
+- zusätzliche Importformate: PDF-Kontoauszug (Textschicht, kein Bild-OCR)
+  und PayPal-CSV
+- read-only Brücke zu `cryptoboard`: verknüpfte Wallet-Konten zeigen den
+  Live-Portfoliowert, optionaler Trade-Import über denselben Importvertrag
+  wie Bankimporte, Kill-Switch bei deaktiviertem Modul
+- offene Punkte aus der ursprünglichen Etappe (Händler-/Artikelanalyse,
+  Coupon-/Punkte-Ersparnis, Jahresarchiv) bleiben bestehen und folgen nach
+  Abschluss von PLAN-V9
 
 ## Etappe 10 — optionale Bank-Synchronisation
 

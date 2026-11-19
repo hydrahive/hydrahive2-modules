@@ -1,10 +1,12 @@
-import { api } from "@/shared/api-client"
+import { api, buildErrorMessage } from "@/shared/api-client"
+import { useAuthStore } from "@/features/auth/useAuthStore"
+import { useVaultStore } from "@/features/vault/vaultStore"
 import type {
-  Account, AccountCreate, AccountUpdate, AuditEvent, Budget, BudgetCreate, BudgetUpdate,
-  Category, CategoryCreate, CategoryUpdate, Dashboard, Forecast, Household, HouseholdCreate,
+  Account, AccountCreate, AccountUpdate, AuditEvent, Budget, BudgetCreate, BudgetReport, BudgetUpdate,
+  CashflowReport, Category, CategoryCreate, CryptoBridgeStatus, CryptoTradeImportBody, CryptoValue, CategoryReport, CategoryUpdate, Dashboard, FixedCostReport, Forecast, Household, HouseholdCreate,
   ImportBatch, ImportProfile, ImportProfileCreate, ImportProfileUpdate, ImportRow,
-  ImportRowUpdate, ImportUpload, Invite, Member, RecurringCreate, RecurringRule,
-  RecurringUpdate, Transaction, TransactionCreate, TransactionFilters,
+  ImportRowUpdate, ImportUpload, Invite, Member, NetWorthReport, RecurringCreate, RecurringRule,
+  RecurringUpdate, ReportKind, ReportRange, Transaction, TransactionCreate, TransactionFilters,
 } from "./types"
 
 const BASE = "/modules/haushaltsbuch"
@@ -64,6 +66,12 @@ export const haushaltsbuchApi = {
   completeImport: (id: number, revision: number) => api.post<ImportBatch>(`${BASE}/imports/${id}/complete`, { revision }),
   reverseImport: (id: number, revision: number) => api.post<ImportBatch>(`${BASE}/imports/${id}/reverse`, { revision }),
 
+  cryptoStatus: () => api.get<CryptoBridgeStatus>(`${BASE}/crypto-bridge/status`),
+  linkCrypto: (id: number, portfolio_id: string, revision: number) => api.put<Account>(`${BASE}/accounts/${id}/crypto-link`, { portfolio_id, revision }),
+  unlinkCrypto: (id: number, revision: number) => api.delete<Account>(`${BASE}/accounts/${id}/crypto-link?revision=${revision}`),
+  cryptoValue: (id: number) => api.get<CryptoValue>(`${BASE}/accounts/${id}/crypto-value`),
+  createCryptoTradeImport: (body: CryptoTradeImportBody) => api.post<ImportBatch>(`${BASE}/crypto-bridge/trade-imports`, body),
+
   budgets: (active_only = true) => api.get<Budget[]>(`${BASE}/budgets${query({ active_only })}`),
   createBudget: (body: BudgetCreate) => api.post<Budget>(`${BASE}/budgets`, body),
   updateBudget: (id: number, body: BudgetUpdate) => api.put<Budget>(`${BASE}/budgets/${id}`, body),
@@ -73,6 +81,11 @@ export const haushaltsbuchApi = {
   updateRecurring: (id: number, body: RecurringUpdate) => api.put<RecurringRule>(`${BASE}/recurring/${id}`, body),
   forecast: (days: 30 | 90 | 365) => api.get<Forecast>(`${BASE}/forecast?days=${days}`),
   dashboard: () => api.get<Dashboard>(`${BASE}/dashboard`),
+  reportCashflow: (range: ReportRange) => api.get<CashflowReport>(`${BASE}/reports/cashflow${query({ range })}`),
+  reportNetWorth: (range: ReportRange) => api.get<NetWorthReport>(`${BASE}/reports/net-worth${query({ range })}`),
+  reportCategories: (range: ReportRange, parentId?: number) => api.get<CategoryReport>(`${BASE}/reports/categories${query({ range, parent_id: parentId })}`),
+  reportBudgets: (range: ReportRange) => api.get<BudgetReport>(`${BASE}/reports/budgets${query({ range })}`),
+  reportFixedCosts: (range: ReportRange) => api.get<FixedCostReport>(`${BASE}/reports/fixed-costs${query({ range })}`),
   audit: (limit = 100, offset = 0) => api.get<AuditEvent[]>(`${BASE}/audit?limit=${limit}&offset=${offset}`),
 }
 
@@ -84,4 +97,25 @@ export function isNotFound(error: unknown): boolean {
 }
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unbekannter Fehler"
+}
+
+/** Lädt einen Report als CSV (mit Anmeldung und Vault-Token) und stößt den Browser-Download an. */
+export async function downloadReportCsv(report: ReportKind, range: ReportRange, parentId?: number): Promise<void> {
+  const token = useAuthStore.getState().token
+  const vaultToken = useVaultStore.getState().token
+  const response = await fetch(`/api${BASE}/reports/${report}${query({ range, parent_id: parentId, format: "csv" })}`, {
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(vaultToken ? { "X-HH-Vault": vaultToken } : {}) },
+  })
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}))
+    throw new Error(buildErrorMessage(body, response.status))
+  }
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement("a")
+  link.href = url
+  link.download = `haushaltsbuch-${report}-${range}.csv`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }

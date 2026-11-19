@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 
@@ -25,7 +26,8 @@ def test_manifest_declares_internal_tickets_module():
     )
 
     assert manifest["id"] == "tickets"
-    assert manifest["version"] == "0.8.2"
+    # Semver statt fester Nummer: der Version-Bump-Guard hebt sie bei jeder Änderung an.
+    assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"])
     assert manifest["has_service"] is False
     assert manifest["min_core_version"] == "2.0.0"
 
