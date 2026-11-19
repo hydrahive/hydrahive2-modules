@@ -153,6 +153,57 @@ def _transfer_timestamp(transfer: dict) -> datetime | None:
         return None
 
 
+_MAX_PAGES_PER_DIRECTION = 200  # Sicherheitsgrenze gegen Endlos-Paging (kaputte Mocks/API)
+
+
+def _block_num(transfer: dict) -> int:
+    raw = transfer.get("blockNum")
+    if not raw:
+        return 0
+    try:
+        return int(str(raw), 16)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _transfer_identity(t: dict) -> tuple:
+    """Stabile Identität eines Transfers — dedupliziert Einträge, die BEIDE
+    Richtungs-Abfragen liefern (from==to==address, z. B. Selbst-Überweisung)."""
+    uid = t.get("uniqueId")
+    if uid:
+        return ("uid", uid)
+    raw = t.get("rawContract") or {}
+    return ("composite", t.get("hash"), t.get("category"), t.get("from"), t.get("to"),
+            raw.get("address"), raw.get("value"))
+
+
+async def _page_direction(chain: str, key: str, direction: str, address: str, to_block: str,
+                           cutoff: "datetime") -> list[dict]:
+    """Holt ALLE Seiten einer Richtung, bis pageKey endet ODER ein Transfer älter
+    als `cutoff` auftaucht (order=desc → alles Folgende ist noch älter, weiteres
+    Paging dieser Richtung lohnt sich nicht mehr). Die letzte Seite kann noch
+    Transfers enthalten, die älter als cutoff sind — die endgültige Alters-/
+    Count-Grenze zieht fetch_transfers über ALLE Blöcke BEIDER Richtungen
+    gemeinsam (K3-Fix), nicht pro Richtung einzeln."""
+    out: list[dict] = []
+    page_key = None
+    pages = 0
+    while True:
+        pages += 1
+        params = [_transfer_params(direction, address, to_block, page_key)]
+        result = await call(chain, key, "alchemy_getAssetTransfers", params)
+        batch = (result or {}).get("transfers") or []
+        out.extend(batch)
+        hit_cutoff = any(
+            (ts := _transfer_timestamp(t)) is not None and ts < cutoff
+            for t in batch
+        )
+        page_key = (result or {}).get("pageKey")
+        if hit_cutoff or not page_key or pages >= _MAX_PAGES_PER_DIRECTION:
+            break
+    return out
+
+
 async def fetch_transfers(
     chain: str,
     key: str,
@@ -162,47 +213,61 @@ async def fetch_transfers(
     max_transactions: int = MAX_TRANSACTIONS,
     max_age_years: int = MAX_AGE_YEARS,
 ) -> dict:
-    """Transfer-Historie einer Adresse — fromAddress UND toAddress getrennt,
-    über pageKey gepagt, bis max_transactions eindeutige Tx-Hashes ODER
-    max_age_years zurück erreicht sind (je nachdem was zuerst eintritt).
+    """Transfer-Historie einer Adresse — fromAddress UND toAddress bis zur
+    SELBEN Grenze (K3-Fix), über pageKey gepagt.
+
+    K3: Beide Richtungen werden vollständig geholt (nicht erst fromAddress bis
+    zum Abbruch, toAddress dann gar nicht mehr — das ließ Swaps am Rand als
+    "nur raus" erscheinen). Die Grenze (max_transactions eindeutige Tx-Hashes
+    ODER max_age_years zurück) wird an einer BLOCKGRENZE gezogen: alle
+    Transfers aus dem abschneidenden Block und älter werden verworfen, nie
+    mitten in einem Block geschnitten — jede zurückgegebene Tx (lebt in genau
+    einem Block) bleibt mit Transfers beider Richtungen vollständig erhalten.
 
     Rückgabe: {"transfers": [...], "truncated": bool, "before_block": str|None}.
-    `truncated=True` + `before_block` gesetzt → ein Folgelauf mit
-    `to_block=before_block` holt die nächste, ältere Tranche.
+    `truncated=True` + `before_block` gesetzt (Hex) → ein Folgelauf mit
+    `to_block=before_block` ist INKLUSIV und holt genau diesen Block vollständig
+    nach, ohne Lücke und ohne die bereits gelieferten Blöcke zu wiederholen.
     """
     if not enabled():
         raise AlchemyDisabled()
     cutoff = datetime.now(timezone.utc) - timedelta(days=365 * max_age_years)
-    seen_hashes: set[str] = set()
-    transfers: list[dict] = []
-    truncated = False
-    before_block: str | None = None
 
+    candidates: list[dict] = []
+    seen_identities: set[tuple] = set()
     for direction in ("fromAddress", "toAddress"):
-        if truncated:
+        for t in await _page_direction(chain, key, direction, address, to_block, cutoff):
+            identity = _transfer_identity(t)
+            if identity in seen_identities:
+                continue
+            seen_identities.add(identity)
+            candidates.append(t)
+
+    by_block: dict[int, list[dict]] = {}
+    for t in candidates:
+        by_block.setdefault(_block_num(t), []).append(t)
+
+    included_blocks: list[int] = []
+    seen_hashes: set[str] = set()
+    truncated = False
+    before_block: int | None = None
+    for block_num in sorted(by_block, reverse=True):
+        items = by_block[block_num]
+        block_ts = next((ts for t in items if (ts := _transfer_timestamp(t)) is not None), None)
+        block_hashes = {t["hash"] for t in items if t.get("hash")}
+        prospective = seen_hashes | block_hashes
+        too_old = block_ts is not None and block_ts < cutoff
+        too_many = len(prospective) > max_transactions
+        if too_old or too_many:
+            truncated = True
+            before_block = block_num
             break
-        page_key = None
-        while True:
-            params = [_transfer_params(direction, address, to_block, page_key)]
-            result = await call(chain, key, "alchemy_getAssetTransfers", params)
-            batch = (result or {}).get("transfers") or []
-            stop = False
-            for t in batch:
-                ts = _transfer_timestamp(t)
-                over_age = ts is not None and ts < cutoff
-                h = t.get("hash")
-                over_count = bool(h) and h not in seen_hashes and len(seen_hashes) >= max_transactions
-                if over_age or over_count:
-                    truncated = True
-                    before_block = t.get("blockNum")
-                    stop = True
-                    break
-                if h:
-                    seen_hashes.add(h)
-                transfers.append(t)
-            if stop:
-                break
-            page_key = (result or {}).get("pageKey")
-            if not page_key:
-                break
-    return {"transfers": transfers, "truncated": truncated, "before_block": before_block}
+        seen_hashes = prospective
+        included_blocks.append(block_num)
+
+    transfers = [t for b in included_blocks for t in by_block[b]]
+    return {
+        "transfers": transfers,
+        "truncated": truncated,
+        "before_block": hex(before_block) if before_block is not None else None,
+    }
