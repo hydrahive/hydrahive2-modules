@@ -15,8 +15,10 @@ export function percentLabel(basisPoints: number): string {
 
 /** Kurzform für Achsenbeschriftungen, z. B. „1,2 Tsd. €“. */
 export function compactMoney(amount: number, currency: string): string {
-  const format = new Intl.NumberFormat(locale(), { style: "currency", currency, notation: "compact" })
-  return format.format(amount / 10 ** (format.resolvedOptions().maximumFractionDigits ?? 2))
+  // Nachkommastellen der Währung OHNE notation: "compact" bestimmen – die Compact-Notation meldet
+  // maximumFractionDigits 0 und würde Minor-Units sonst um Faktor 100 zu groß anzeigen.
+  const digits = new Intl.NumberFormat(locale(), { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2
+  return new Intl.NumberFormat(locale(), { style: "currency", currency, notation: "compact" }).format(amount / 10 ** digits)
 }
 
 export const moneyFormatter = (currency: string) => (amount: number) => formatMinorUnits(amount, currency)
