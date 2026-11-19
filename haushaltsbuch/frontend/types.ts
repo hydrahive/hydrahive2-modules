@@ -42,6 +42,10 @@ export interface Account {
   balance_base: number
   archived: boolean
   revision: Revision
+  /** Crypto-Brücke (V9 Phase 3): Portfolio-ID nur für den, der verknüpft hat – sonst null. */
+  linked_portfolio_id: string | null
+  linked_by_me: boolean
+  crypto_linked: boolean
 }
 export interface AccountCreate {
   name: string
@@ -236,7 +240,8 @@ export interface AuditEvent {
 }
 
 export type ImportFormat = "auto" | "camt" | "mt940" | "csv" | "pdf" | "paypal"
-export type StoredImportFormat = Exclude<ImportFormat, "auto">
+// "crypto_trades" entsteht nur über die Crypto-Brücke (Phase 3) und ist im Upload-Dialog nicht wählbar.
+export type StoredImportFormat = Exclude<ImportFormat, "auto"> | "crypto_trades"
 export type ImportBatchStatus = "draft" | "imported" | "reversed"
 export type ImportRowStatus = "pending" | "accepted" | "rejected" | "duplicate" | "error" | "imported" | "reversed"
 export type CsvEncoding = "utf-8" | "utf-8-sig" | "cp1252" | "iso-8859-1"
@@ -295,6 +300,8 @@ export interface ImportRow {
   errors: string[]
   fingerprint_strength: "strong" | "weak"
   status: ImportRowStatus
+  /** Gesetzt bei Umbuchungen (Crypto-Trades): Gegenkonto statt Kategorie. */
+  counter_account_id: number | null
   category_id: number | null
   suggested_category_id: number | null
   suggestion_source: "history" | "llm" | null
@@ -320,6 +327,8 @@ export interface ImportBatch {
   completed_at: string | null
   reversed_at: string | null
   rows?: ImportRow[]
+  /** Nur in der Antwort von POST /crypto-bridge/trade-imports. */
+  warnings?: { skipped_transfers: number }
 }
 
 export interface ImportRowUpdate {
@@ -379,3 +388,23 @@ export type BudgetReport = ReportEnvelope<BudgetReportRow, { planned: number; sp
 
 export interface FixedCostRow { month: string; fixed: number; variable: number; total: number; fixed_bp: number }
 export type FixedCostReport = ReportEnvelope<FixedCostRow, { fixed: number; variable: number; total: number; fixed_bp: number }>
+
+// Crypto-Brücke (V9 Phase 3): Formen nach backend/crypto_bridge.py. Geld = Integer-Minor-Units.
+export interface CryptoPortfolio { id: string; label: string; currency: Currency }
+export interface CryptoBridgeStatus { available: boolean; reason: string | null; portfolios: CryptoPortfolio[] }
+export type CryptoValueState = "live" | "stale" | "hidden" | "unlinked"
+export interface CryptoValue {
+  account_id: number
+  state: CryptoValueState
+  value_minor: number | null
+  as_of: string | null
+  complete: boolean
+  booked_balance: number
+  reason: string | null
+}
+export interface CryptoTradeImportBody {
+  wallet_account_id: number
+  fiat_account_id: number
+  fee_category_id: number | null
+  since: IsoDate | null
+}

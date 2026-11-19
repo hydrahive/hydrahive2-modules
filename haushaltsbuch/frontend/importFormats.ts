@@ -1,4 +1,5 @@
 // Import-Formate (V9 Phase 2): Beschriftungen, Hinweise und laienverständliche Fehlermeldungen.
+import { CRYPTO_MESSAGES } from "./cryptoMessages"
 import type { ImportFormat, StoredImportFormat } from "./types"
 
 export const FORMAT_OPTIONS: { value: ImportFormat; label: string }[] = [
@@ -15,7 +16,7 @@ export const FORMAT_HINTS: Partial<Record<ImportFormat, string>> = {
   paypal: "Der Aktivitäten-Export aus deinem PayPal-Konto (CSV). Gebühren erscheinen als eigene Zeile, Währungsumrechnungen werden ausgeblendet.",
 }
 
-const SOURCE_LABELS: Partial<Record<StoredImportFormat, string>> = { pdf: "PDF", paypal: "PayPal" }
+const SOURCE_LABELS: Partial<Record<StoredImportFormat, string>> = { pdf: "PDF", paypal: "PayPal", crypto_trades: "Cryptoboard-Trades" }
 /** Kurzname des Quellformats für Listen und Kopfzeilen („PDF“, „PayPal“, sonst z. B. „CAMT“). */
 export const sourceFormatLabel = (format: StoredImportFormat): string => SOURCE_LABELS[format] ?? format.toUpperCase()
 
@@ -39,6 +40,7 @@ export const IMPORT_MESSAGES: Record<string, string> = {
   paypal_status_not_completed: "Diese PayPal-Zahlung ist noch nicht abgeschlossen (z. B. ausstehend oder abgelehnt). Sie kann erst importiert werden, wenn sie abgeschlossen ist.",
   possible_duplicate: "Mögliches Duplikat (schwacher Treffer)",
   account_currency_mismatch: "Währung passt nicht zum Zielkonto",
+  ...CRYPTO_MESSAGES,
 }
 
 /** Meldung zu einem Fehlercode; unbekannte Codes bleiben lesbar („foo_bar“ → „foo bar“). */
