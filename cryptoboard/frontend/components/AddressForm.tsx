@@ -2,6 +2,8 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { cryptoApi } from "../api"
 import type { WalletChain } from "../types"
+import { saveWallet } from "../walletConnect"
+import { WalletConnectButton } from "./WalletConnectButton"
 
 interface Props {
   onSaved: () => void
@@ -23,7 +25,7 @@ export function AddressForm({ onSaved, onCancel }: Props) {
     if (!address.trim()) { setErr(t("wl_err_address")); return }
     setBusy(true)
     try {
-      await cryptoApi.addWallet(chain, address.trim(), label.trim())
+      await saveWallet(cryptoApi.addWallet, chain, address, label)
       onSaved()
     } catch {
       setErr(t("wl_err_invalid"))
@@ -32,6 +34,7 @@ export function AddressForm({ onSaved, onCancel }: Props) {
     }
   }
 
+  const isEvm = chain === "base" || chain === "ethereum"
   const fieldCls = "w-full px-3 py-2 rounded-lg bg-[rgb(var(--hh-s-box,21_28_43)/0.7)] border border-[rgb(var(--hh-s-rand,42_54_75))] text-sm text-[#e8eef8] outline-none focus:border-[rgb(var(--hh-s-rand-hover,70_97_127))]"
 
   return (
@@ -49,6 +52,10 @@ export function AddressForm({ onSaved, onCancel }: Props) {
         <input value={address} onChange={(e) => setAddress(e.target.value)} className={`${fieldCls} font-mono text-xs`}
           placeholder={t(`wl_ph_${chain}`)} />
       </label>
+      {isEvm && (
+        <WalletConnectButton chain={chain} label={label} disabled={busy} onAddress={setAddress}
+          addWallet={cryptoApi.addWallet} onOfferSaved={onSaved} onOfferError={() => setErr(t("wl_err_invalid"))} />
+      )}
       <label className="space-y-1 block">
         <span className="text-xs text-[#9aa7bc]">{t("wl_label")} <span className="text-[#9aa7bc]">({t("tx_optional")})</span></span>
         <input value={label} onChange={(e) => setLabel(e.target.value)} className={fieldCls} maxLength={60} />
