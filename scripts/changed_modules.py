@@ -22,6 +22,7 @@ Läuft ohne HydraHive-Core: nur stdlib.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -31,6 +32,7 @@ from check_version_bump import changed_files, module_ids, touched_modules  # noq
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SHARED_PREFIXES = (".github/", "scripts/")
+_FFMPEG = re.compile(r"[\"'](ffmpeg|ffprobe)[\"']")
 
 
 def dependencies(module_id: str, root: Path = REPO_ROOT) -> list[str]:
@@ -65,6 +67,22 @@ def with_dependents(chosen: set[str], known: set[str], root: Path = REPO_ROOT) -
     return result
 
 
+def needs_ffmpeg(module_id: str, root: Path = REPO_ROOT) -> bool:
+    """Ruft der Modul-Code ffmpeg/ffprobe auf? Dann braucht die CI es wie jeder
+    HydraHive-Server (Kern-Installer). Befund 19.11.2026: GitHub-Runner haben
+    kein ffmpeg, studio/tonstudio/radiostream scheiterten dort."""
+    for path in (root / module_id).rglob("*.py"):
+        if "tests" in path.parts:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        if _FFMPEG.search(text):
+            return True
+    return False
+
+
 def module_info(module_id: str, root: Path = REPO_ROOT) -> dict:
     """Was hat das Modul zum Testen? (Backend-Tests, Frontend)."""
     base = root / module_id
@@ -76,6 +94,7 @@ def module_info(module_id: str, root: Path = REPO_ROOT) -> dict:
         "frontend": frontend.is_dir() and any(frontend.rglob("*.ts*")),
         "vitest": frontend.is_dir() and any(frontend.rglob("*.test.ts*")),
         "deps": " ".join(all_dependencies(module_id, root)),
+        "ffmpeg": needs_ffmpeg(module_id, root),
     }
 
 

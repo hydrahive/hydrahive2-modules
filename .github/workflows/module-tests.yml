@@ -67,6 +67,9 @@ jobs:
         run: |
           python -m pip install --quiet ruff
           ruff check --select F --line-length 120 --target-version py312 ${{ matrix.module }}/
+      - name: ffmpeg (wie auf jedem HydraHive-Server)
+        if: matrix.pytest && matrix.ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg
       - name: Kern- und Test-Abhängigkeiten
         if: matrix.pytest
         run: |
@@ -115,6 +118,9 @@ jobs:
           # Symlink statt Kopie: Vite löst ihn zum echten Pfad auf, so finden Tests
           # das Backend daneben (../backend/*.py, z. B. Fehlercode-Abgleich).
           ln -s "$GITHUB_WORKSPACE/${{ matrix.module }}/frontend" kern/frontend/src/modules/${{ matrix.module }}
+          # Node sucht Pakete ab dem echten Pfad (Modul-Repo) – dort die Kern-Pakete
+          # bereitstellen (sonst z. B. „Cannot find package @xyflow/react/…css“).
+          ln -s "$GITHUB_WORKSPACE/kern/frontend/node_modules" "$GITHUB_WORKSPACE/node_modules"
           # Abhängigkeiten (manifest „dependencies“) mit einhängen, sonst entfernt
           # gen-modules.mjs das Modul still (fehlender Import) und vitest testet nichts.
           for dep in ${{ matrix.deps }}; do

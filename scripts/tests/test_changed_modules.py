@@ -47,9 +47,9 @@ def test_module_info_detects_tests_and_frontend(tmp_path):
     (tmp_path / "m" / "frontend").mkdir()
     (tmp_path / "m" / "frontend" / "index.tsx").write_text("")
     info = cm.module_info("m", tmp_path)
-    assert info == {"module": "m", "pytest": True, "frontend": True, "vitest": False, "deps": ""}
+    assert info == {"module": "m", "pytest": True, "frontend": True, "vitest": False, "deps": "", "ffmpeg": False}
     (tmp_path / "n").mkdir()
-    assert cm.module_info("n", tmp_path) == {"module": "n", "pytest": False, "frontend": False, "vitest": False, "deps": ""}
+    assert cm.module_info("n", tmp_path) == {"module": "n", "pytest": False, "frontend": False, "vitest": False, "deps": "", "ffmpeg": False}
 
 
 def _manifest(root, module_id, deps=None):
@@ -98,3 +98,22 @@ def test_broken_or_odd_manifest_means_no_dependencies(tmp_path):
 
 def test_real_repo_atelier_depends_on_videoeditor():
     assert "videoeditor" in cm.module_info("atelier")["deps"]
+
+
+def test_ffmpeg_detected_only_in_module_code_not_tests(tmp_path):
+    # Befund 19.11.2026: GitHub-Runner ohne ffmpeg → studio/tonstudio/radiostream rot.
+    (tmp_path / "a" / "backend").mkdir(parents=True)
+    (tmp_path / "a" / "backend" / "x.py").write_text('cmd = ["ffprobe", "-v", "error"]\n')
+    (tmp_path / "b" / "tests").mkdir(parents=True)
+    (tmp_path / "b" / "tests" / "test_x.py").write_text('which("ffmpeg")\n')
+    (tmp_path / "c").mkdir()
+    (tmp_path / "c" / "x.py").write_text("# ffmpeg wird hier nur erwähnt\n")
+    assert cm.needs_ffmpeg("a", tmp_path) is True
+    assert cm.needs_ffmpeg("b", tmp_path) is False
+    assert cm.needs_ffmpeg("c", tmp_path) is False
+
+
+def test_real_repo_media_modules_need_ffmpeg():
+    for module_id in ("studio", "tonstudio", "radiostream"):
+        assert cm.module_info(module_id)["ffmpeg"] is True
+    assert cm.module_info("tickets")["ffmpeg"] is False

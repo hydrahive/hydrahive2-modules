@@ -78,6 +78,8 @@ def test_messen_mit_zeitgrenze_und_ohne_shell(monkeypatch):
         seen["cmd"], seen["kw"] = cmd, kw
         return subprocess.CompletedProcess(cmd, 0, "", _EBUR)
     monkeypatch.setattr(loudness.subprocess, "run", run)
+    # Unabhängig davon, ob der Testrechner ffmpeg hat (GitHub-Runner: nein).
+    monkeypatch.setattr(loudness.shutil, "which", lambda _n: "/usr/bin/ffmpeg")
     assert loudness.measure(io.BytesIO(b"daten"), "flac") == -12.1
     assert isinstance(seen["cmd"], list) and "shell" not in seen["kw"]
     assert seen["kw"]["timeout"] == loudness.TIMEOUT_S and seen["kw"]["input"] == b"daten"
