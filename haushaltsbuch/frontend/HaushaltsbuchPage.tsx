@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ComponentType } from "react"
-import { CalendarClock, CreditCard, FileInput, Gauge, Home, Landmark, ReceiptText, Users } from "lucide-react"
+import { CalendarClock, ChartColumn, CreditCard, FileInput, Gauge, Home, Landmark, ReceiptText, Users } from "lucide-react"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { AccountsView } from "./AccountsView"
@@ -11,13 +11,15 @@ import { HouseholdView } from "./HouseholdView"
 import { ImportsView } from "./ImportsView"
 import { LoyaltyView } from "./LoyaltyView"
 import { RecurringView } from "./RecurringView"
+import { ReportsView } from "./ReportsView"
 import { TransactionsView } from "./TransactionsView"
 import type { Household } from "./types"
 import { Button, ErrorState, LoadingState } from "./ui"
 
-type View = "dashboard" | "transactions" | "imports" | "loyalty" | "accounts" | "budgets" | "recurring" | "household"
+type View = "dashboard" | "reports" | "transactions" | "imports" | "loyalty" | "accounts" | "budgets" | "recurring" | "household"
 const TABS: { id: View; label: string; icon: ComponentType<{ size?: number }> }[] = [
   { id: "dashboard", label: "Übersicht", icon: Home },
+  { id: "reports", label: "Auswertungen", icon: ChartColumn },
   { id: "transactions", label: "Buchungen", icon: ReceiptText },
   { id: "imports", label: "Importe", icon: FileInput },
   { id: "loyalty", label: "Kundenkarten", icon: CreditCard },
@@ -56,7 +58,8 @@ export function HaushaltsbuchPage() {
   else content = <>
     <header className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-xl font-black tracking-tight text-[#e8eef8]">{household.name}</h1><p className="mt-1 text-sm text-[#9aa7bc]">{household.base_currency} · {household.timezone} · {household.current_role === "owner" ? "Eigentümer" : "Mitglied"}</p></div><Button onClick={loadHousehold}>Aktualisieren</Button></header>
     <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-[rgb(var(--hh-s-rand,38_50_71))] pb-px" aria-label="Haushaltsbuch-Bereiche">{TABS.map((tab) => { const Icon = tab.icon; return <button key={tab.id} type="button" onClick={() => setView(tab.id)} className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold transition ${view === tab.id ? "border-cyan-300 text-cyan-200" : "border-transparent text-[#9aa7bc] hover:text-[#d4deeb]"}`}><Icon size={14} />{tab.label}</button> })}</nav>
-    {view === "dashboard" && <DashboardView household={household} refreshKey={refreshKey} />}
+    {view === "dashboard" && <DashboardView household={household} refreshKey={refreshKey} onOpenReports={() => setView("reports")} />}
+    {view === "reports" && <ReportsView household={household} />}
     {view === "transactions" && <TransactionsView household={household} onChanged={changed} />}
     {view === "imports" && <ImportsView baseCurrency={household.base_currency} onChanged={changed} />}
     {view === "loyalty" && <LoyaltyView onChanged={changed} />}
