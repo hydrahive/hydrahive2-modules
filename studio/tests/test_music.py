@@ -70,7 +70,9 @@ def test_only_one_music_job_at_a_time(client, auth_headers, ws, monkeypatch) -> 
     monkeypatch.setattr("backend.music_provider.server_default_model", lambda: "m")
     assert client.post(M, headers=auth_headers, json={"description": "a", "seconds": 10}).status_code == 202
     assert _code(client.post(M, headers=auth_headers, json={"description": "b", "seconds": 10})) == "409 studio_music_running"
-    assert wait_job(client, auth_headers, TARGET)["status"] == "done"
+    _j = wait_job(client, auth_headers, TARGET)
+    _all = [(j["id"][:6], j["kind"], j["target"], j["status"], j.get("error"), j.get("created_at")) for j in client.get(f"{P}/jobs", headers=auth_headers).json()["jobs"]]
+    assert _j["status"] == "done", ("DIAG", _j.get("error"), _j["id"][:6], _all)
 
 
 def test_provider_errors_and_bad_audio(client, auth_headers, ws, monkeypatch) -> None:
