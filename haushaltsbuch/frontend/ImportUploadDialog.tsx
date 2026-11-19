@@ -6,6 +6,7 @@ import type {
   Account, CsvColumnMapping, CsvDelimiter, CsvEncoding, CsvImportMapping, ImportBatch,
   ImportFormat, ImportProfile, ImportProfileCreate,
 } from "./types"
+import { FORMAT_HINTS, FORMAT_OPTIONS, UPLOAD_ACCEPT, importErrorText, needsCsvMapping } from "./importFormats"
 import { Button, ErrorState, Field, Input, Select } from "./ui"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -61,18 +62,19 @@ function profileMapping(profile: ImportProfile): CsvImportMapping {
   return { ...EMPTY_MAPPING, ...profile.mapping, delimiter: profile.delimiter, encoding: profile.encoding, decimal_separator: profile.decimal_separator, date_format: profile.date_format }
 }
 
-export function ImportUploadDialog({ accounts, baseCurrency, profiles, onProfilesChanged, onClose, onCreated }: {
+export function ImportUploadDialog({ accounts, baseCurrency, profiles, onProfilesChanged, onClose, onCreated, initialFormat = "auto" }: {
   accounts: Account[]
   baseCurrency: string
   profiles: ImportProfile[]
   onProfilesChanged: () => Promise<void>
   onClose: () => void
   onCreated: (batch: ImportBatch) => void
+  initialFormat?: ImportFormat
 }) {
   const activeAccounts = accounts.filter((account) => !account.archived && account.currency === baseCurrency)
   const [accountId, setAccountId] = useState(String(activeAccounts[0]?.id ?? ""))
   const [file, setFile] = useState<File>()
-  const [format, setFormat] = useState<ImportFormat>("auto")
+  const [format, setFormat] = useState<ImportFormat>(initialFormat)
   const [mapping, setMapping] = useState<CsvImportMapping>(EMPTY_MAPPING)
   const [headers, setHeaders] = useState<string[]>([])
   const [previewError, setPreviewError] = useState<string>()
@@ -80,7 +82,7 @@ export function ImportUploadDialog({ accounts, baseCurrency, profiles, onProfile
   const [profileName, setProfileName] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
-  const csvSelected = format === "csv" || (format === "auto" && file?.name.toLowerCase().endsWith(".csv"))
+  const csvSelected = needsCsvMapping(format, file?.name)
 
   useEffect(() => {
     if (!file || !csvSelected) { setHeaders([]); setPreviewError(undefined); return }
@@ -147,11 +149,11 @@ export function ImportUploadDialog({ accounts, baseCurrency, profiles, onProfile
 
   return <AdminDialog title="Bankexport importieren" eyebrow="Haushaltsbuch · Importe" icon={<FileUp size={16} />} maxWidthClass="max-w-4xl" onClose={busy ? undefined : onClose} footer={<><Button onClick={onClose} disabled={busy}>Abbrechen</Button><Button tone="primary" type="submit" form="import-upload-form" disabled={busy}>{busy ? "Wird geprüft …" : "Als Entwurf hochladen"}</Button></>}>
     <form id="import-upload-form" onSubmit={submit} className="grid gap-5">
-      {error !== undefined && <ErrorState error={errorMessage(error)} />}
+      {error !== undefined && <ErrorState error={importErrorText(error, errorMessage)} />}
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Zielkonto" hint={`Etappe 2 unterstützt Konten in der Haushaltsbasiswährung ${baseCurrency}.`}><Select required value={accountId} onChange={(event) => setAccountId(event.target.value)}><option value="">Auswählen …</option>{activeAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} ({account.currency})</option>)}</Select></Field>
-        <Field label="Datei" hint="CAMT XML, MT940 oder CSV; maximal 10 MiB"><Input required type="file" accept=".xml,.mt940,.sta,.txt,.csv,text/csv,application/xml,text/xml" onChange={(event) => setFile(event.target.files?.[0])} /></Field>
-        <Field label="Format"><Select value={format} onChange={(event) => setFormat(event.target.value as ImportFormat)}><option value="auto">Automatisch erkennen</option><option value="camt">CAMT V2/V8 (XML)</option><option value="mt940">MT940</option><option value="csv">CSV</option></Select></Field>
+        <Field label="Datei" hint="CAMT XML, MT940, CSV, PDF-Kontoauszug oder PayPal-Export; maximal 10 MiB"><Input required type="file" accept={UPLOAD_ACCEPT} onChange={(event) => setFile(event.target.files?.[0])} /></Field>
+        <Field label="Format" hint={FORMAT_HINTS[format]}><Select value={format} onChange={(event) => setFormat(event.target.value as ImportFormat)}>{FORMAT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></Field>
       </div>
       {file && <p className={`text-xs ${file.size > MAX_FILE_SIZE ? "text-rose-200" : "text-[#9aa7bc]"}`}>{file.name} · {(file.size / 1024).toLocaleString("de-DE", { maximumFractionDigits: 1 })} KiB</p>}
       {csvSelected && <section className="grid gap-4 rounded-[6px] border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-tief,13_20_32))] p-4">

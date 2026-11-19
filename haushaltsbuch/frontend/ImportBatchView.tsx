@@ -3,6 +3,7 @@ import { ArrowLeft, Check, CheckCheck, Pencil, Save, Sparkles, Trash2, Wand2, X 
 import { AdminConfirmDialog } from "@/features/cockpit/admin/ui/AdminConfirmDialog"
 import { errorMessage, haushaltsbuchApi, isConflict } from "./api"
 import { formatMinorUnits, minorToInput, parseMinorUnits } from "./money"
+import { importMessage, sourceFormatLabel } from "./importFormats"
 import type { Account, Category, ImportBatch, ImportRow, ImportRowStatus, ImportRowUpdate } from "./types"
 import { Button, EmptyState, ErrorState, Input, Select, Textarea, panel } from "./ui"
 
@@ -15,10 +16,7 @@ const FILTERS: { value: "all" | ImportRowStatus; label: string }[] = [
   { value: "accepted", label: "Angenommen" }, { value: "rejected", label: "Verworfen" },
   { value: "duplicate", label: "Duplikate" }, { value: "error", label: "Fehler" },
 ]
-const messageLabel = (value: string) => ({
-  possible_duplicate: "Mögliches Duplikat (schwacher Treffer)",
-  account_currency_mismatch: "Währung passt nicht zum Zielkonto",
-}[value] ?? value.replaceAll("_", " "))
+const messageLabel = importMessage
 
 function RowEditor({ batchId, row, accountCurrency, categories, readOnly, onUpdated }: {
   batchId: number
@@ -165,7 +163,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   }
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-center gap-3"><Button onClick={onBack}><ArrowLeft size={13} className="mr-1 inline" />Zur Übersicht</Button><div className="min-w-0 flex-1"><h2 className="truncate font-bold text-[#e8eef8]">{batch.display_filename}</h2><p className="text-xs text-[#9aa7bc]">{batch.source_format.toUpperCase()} · {account?.name ?? `Konto #${batch.account_id}`} · Paket #{batch.id}</p></div>{batch.status === "draft" && <><Button tone="danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={13} className="mr-1 inline" />Entwurf löschen</Button><Button tone="primary" disabled={!accepted.length || missingCategory > 0 || busy} onClick={() => setConfirmComplete(true)}><CheckCheck size={13} className="mr-1 inline" />Import abschließen</Button></>}</div>
+    <div className="flex flex-wrap items-center gap-3"><Button onClick={onBack}><ArrowLeft size={13} className="mr-1 inline" />Zur Übersicht</Button><div className="min-w-0 flex-1"><h2 className="truncate font-bold text-[#e8eef8]">{batch.display_filename}</h2><p className="text-xs text-[#9aa7bc]">{sourceFormatLabel(batch.source_format)} · {account?.name ?? `Konto #${batch.account_id}`} · Paket #{batch.id}</p></div>{batch.status === "draft" && <><Button tone="danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={13} className="mr-1 inline" />Entwurf löschen</Button><Button tone="primary" disabled={!accepted.length || missingCategory > 0 || busy} onClick={() => setConfirmComplete(true)}><CheckCheck size={13} className="mr-1 inline" />Import abschließen</Button></>}</div>
     {batch.status === "imported" && <div className="rounded border border-emerald-500/35 bg-emerald-500/10 p-4 text-sm text-emerald-100" role="status"><strong>Import abgeschlossen.</strong> {rows.filter((row) => row.status === "imported").length} Zeilen wurden verbindlich gebucht.</div>}
     {batch.status === "reversed" && <div className="rounded border border-amber-500/35 bg-amber-500/10 p-4 text-sm text-amber-100" role="status"><strong>Import storniert.</strong> Die zugehörigen Buchungen wurden durch Gegenbuchungen aufgehoben.</div>}
     {error !== undefined && <ErrorState error={errorMessage(error)} conflict={isConflict(error)} />}

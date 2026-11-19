@@ -235,7 +235,7 @@ export interface AuditEvent {
   created_at: string
 }
 
-export type ImportFormat = "auto" | "camt" | "mt940" | "csv"
+export type ImportFormat = "auto" | "camt" | "mt940" | "csv" | "pdf" | "paypal"
 export type StoredImportFormat = Exclude<ImportFormat, "auto">
 export type ImportBatchStatus = "draft" | "imported" | "reversed"
 export type ImportRowStatus = "pending" | "accepted" | "rejected" | "duplicate" | "error" | "imported" | "reversed"
@@ -341,3 +341,41 @@ export interface ImportUpload {
   csv_mapping?: CsvImportMapping
   profile_id?: number
 }
+
+// Auswertungen (V9 Phase 1): Formen exakt nach backend/reports.py. Geld = Integer-Minor-Units in der
+// Haushaltswährung, Anteile = Basispunkte (10000 = 100 %).
+export type ReportRange = "3" | "6" | "12" | "24" | "all"
+export type ReportKind = "cashflow" | "net-worth" | "categories" | "budgets" | "fixed-costs"
+
+export interface ReportEnvelope<Row, Totals> {
+  report: ReportKind
+  range: ReportRange
+  currency: Currency
+  start_month: string
+  end_month: string
+  rows: Row[]
+  totals: Totals
+}
+
+export interface CashflowRow { month: string; income: number; expense: number; net: number }
+export type CashflowReport = ReportEnvelope<CashflowRow, { income: number; expense: number; net: number }>
+
+export interface NetWorthRow { month: string; balance: number }
+export type NetWorthReport = ReportEnvelope<NetWorthRow, { start_balance: number; end_balance: number; change: number }>
+
+export interface CategoryReportRow { category_id: number; name: string; amount: number; share_bp: number; has_children: boolean }
+export type CategoryReport = ReportEnvelope<CategoryReportRow, { expense: number }>
+
+export interface BudgetReportRow {
+  budget_id: number
+  name: string
+  month: string
+  planned: number
+  spent: number
+  remaining: number
+  used_bp: number
+}
+export type BudgetReport = ReportEnvelope<BudgetReportRow, { planned: number; spent: number }>
+
+export interface FixedCostRow { month: string; fixed: number; variable: number; total: number; fixed_bp: number }
+export type FixedCostReport = ReportEnvelope<FixedCostRow, { fixed: number; variable: number; total: number; fixed_bp: number }>

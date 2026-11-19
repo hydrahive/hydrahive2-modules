@@ -1,0 +1,50 @@
+{
+  "description": "Synthetische Mehrjahres-Buchungen für die Auswertungen (Phase 1). Wird über die bestehende API in einen frischen Testhaushalt gebucht (siehe tests/test_reports.py:load_multi_year_ledger). Alle Beträge in Minor-Units (Cent).",
+  "accounts": [
+    {"name": "Sparkonto", "type": "savings", "currency": "EUR", "opening_balance": 0}
+  ],
+  "categories": [
+    {"name": "Streaming", "kind": "expense", "parent_name": "Freizeit"}
+  ],
+  "recurring_rules": [
+    {
+      "category_name": "Wohnen",
+      "counterparty": "Vermieter",
+      "frequency": "monthly",
+      "amount": 80000,
+      "status": "confirmed",
+      "next_due_date_months_ago": 30
+    }
+  ],
+  "months_back": 26,
+  "monthly_pattern": [
+    {
+      "day": 1,
+      "counterparty": "Arbeitgeber",
+      "purpose": "Gehalt",
+      "income_category": "Gehalt",
+      "amount": 300000
+    },
+    {
+      "day": 1,
+      "counterparty": "Vermieter",
+      "purpose": "Miete",
+      "expense_category": "Wohnen",
+      "amount": 80000
+    },
+    {
+      "day": "last",
+      "counterparty": "Streaminganbieter",
+      "purpose": "Streaming-Abo",
+      "expense_category": "Streaming",
+      "amount": 1200
+    },
+    {
+      "day": 15,
+      "counterparty": "Supermarkt",
+      "purpose": "Einkauf",
+      "expense_category": "Lebensmittel",
+      "amount": 25000
+    }
+  ]
+}

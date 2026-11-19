@@ -73,13 +73,13 @@ PREFIX = "/api/modules/haushaltsbuch"
 def app() -> FastAPI:
     from backend import (
         household_router, import_router, ledger_router, loyalty_router,
-        planning_router, router,
+        planning_router, reports_router, router,
     )
 
     instance = FastAPI()
     for module_router in (
         router, household_router, import_router, ledger_router, loyalty_router,
-        planning_router,
+        planning_router, reports_router,
     ):
         instance.include_router(module_router, prefix=PREFIX)
     return instance
