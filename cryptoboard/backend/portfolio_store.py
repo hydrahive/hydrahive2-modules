@@ -12,7 +12,10 @@ _NOW = "strftime('%Y-%m-%dT%H:%M:%SZ','now')"
 _MAX = 5000
 KINDS = ("buy", "sell", "transfer_in", "transfer_out")
 
-_COLS = "id, coin_id, symbol, name, kind, quantity, price, fee, executed_at, note, created_at"
+_COLS = (
+    "id, coin_id, symbol, name, kind, quantity, price, fee, executed_at, note, "
+    "import_hash, created_at"
+)
 
 
 def list_for(user: str, coin_id: str | None = None) -> list[dict]:
