@@ -6,7 +6,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest registriert
+import bcrypt
+import pytest
+from _hh_isolation import (  # noqa: F401 - pytest-Hooks, über conftest registriert
     TEST_ROOT,
     isolated_root,
     only_own_files,
@@ -18,11 +20,8 @@ from _hh_isolation import (  # noqa: E402, F401 - pytest-Hooks, über conftest r
     pytest_unconfigure,
     remove_test_tree,
 )
-
-import bcrypt  # noqa: E402
-import pytest  # noqa: E402
-from fastapi import FastAPI  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 MODULE_DIR = Path(__file__).resolve().parents[1]
 CORE_SRC = MODULE_DIR.parents[1] / "hydrahive2" / "core" / "src"
@@ -72,14 +71,20 @@ PREFIX = "/api/modules/haushaltsbuch"
 @pytest.fixture(scope="session")
 def app() -> FastAPI:
     from backend import (
-        household_router, import_router, ledger_router, loyalty_router,
-        planning_router, reports_router, router,
+        crypto_bridge_router,
+        household_router,
+        import_router,
+        ledger_router,
+        loyalty_router,
+        planning_router,
+        reports_router,
+        router,
     )
 
     instance = FastAPI()
     for module_router in (
         router, household_router, import_router, ledger_router, loyalty_router,
-        planning_router, reports_router,
+        planning_router, reports_router, crypto_bridge_router,
     ):
         instance.include_router(module_router, prefix=PREFIX)
     return instance
