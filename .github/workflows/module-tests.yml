@@ -1,0 +1,147 @@
+name: Modul-Tests
+
+# Jedes Modul, das ein PR ändert, wird mit seiner eigenen Suite geprüft:
+# Backend (pytest), Ruff, Frontend (vitest) und TypeScript (tsc) mit dem Kern.
+# Vorher prüfte die CI fest nur zerlegewerkstatt/ — grüne Checks bei PRs auf
+# andere Module sagten nichts aus (Befund 19.11.2026, PR #399).
+# Push auf main und manueller Lauf prüfen alle Module.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  select:
+    name: Module ermitteln
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+      any: ${{ steps.pick.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Geänderte Module
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            m=$(python3 scripts/changed_modules.py "origin/${{ github.base_ref }}")
+          else
+            m=$(python3 scripts/changed_modules.py --all)
+          fi
+          echo "$m"
+          echo "matrix=$m" >> "$GITHUB_OUTPUT"
+          if [ "$(echo "$m" | python3 -c 'import json,sys;print(len(json.load(sys.stdin)["include"]))')" = "0" ]; then
+            echo "any=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "any=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Auswahl-Logik testen
+        run: |
+          python -m pip install --quiet pytest
+          python -m pytest scripts/tests/test_changed_modules.py -q
+
+  backend:
+    name: Backend ${{ matrix.module }}
+    needs: select
+    if: needs.select.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.select.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kern holen
+        if: matrix.pytest
+        uses: actions/checkout@v4
+        with:
+          repository: hydrahive/hydrahive2.0
+          path: kern
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Ruff (F)
+        run: |
+          python -m pip install --quiet ruff
+          ruff check --select F --line-length 120 --target-version py312 ${{ matrix.module }}/
+      - name: Kern- und Test-Abhängigkeiten
+        if: matrix.pytest
+        run: |
+          python -m pip install --quiet --upgrade pip
+          pip install --quiet -e kern/core/
+          pip install --quiet pytest pytest-asyncio bcrypt
+          # Zusatzpakete des Moduls (z. B. vitrine/renderer: pyusb). Eine Datei mit
+          # „nicht automatisch“ im Kopf (opentor) wird übersprungen.
+          for req in $(find ${{ matrix.module }} -name requirements.txt -not -path "*/node_modules/*"); do
+            if head -3 "$req" | grep -qi "nicht automatisch"; then echo "übersprungen: $req"; continue; fi
+            pip install --quiet -r "$req"
+          done
+      - name: pytest
+        if: matrix.pytest
+        run: |
+          cd ${{ matrix.module }}
+          PYTHONPATH=$GITHUB_WORKSPACE/kern/core/src:. python -m pytest tests -q --tb=short -p no:cacheprovider
+
+  frontend:
+    name: Frontend ${{ matrix.module }}
+    needs: select
+    if: needs.select.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.select.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        if: matrix.frontend
+      - uses: actions/setup-node@v4
+        if: matrix.frontend
+        with:
+          node-version: "22"
+      - name: Kern holen
+        if: matrix.frontend
+        uses: actions/checkout@v4
+        with:
+          repository: hydrahive/hydrahive2.0
+          path: kern
+      - name: Abhängigkeiten
+        if: matrix.frontend
+        run: cd kern/frontend && npm ci --no-audit --no-fund
+      - name: Modul-Frontend einhängen
+        if: matrix.frontend
+        run: |
+          # Symlink statt Kopie: Vite löst ihn zum echten Pfad auf, so finden Tests
+          # das Backend daneben (../backend/*.py, z. B. Fehlercode-Abgleich).
+          ln -s "$GITHUB_WORKSPACE/${{ matrix.module }}/frontend" kern/frontend/src/modules/${{ matrix.module }}
+          # Abhängigkeiten (manifest „dependencies“) mit einhängen, sonst entfernt
+          # gen-modules.mjs das Modul still (fehlender Import) und vitest testet nichts.
+          for dep in ${{ matrix.deps }}; do
+            ln -s "$GITHUB_WORKSPACE/$dep/frontend" "kern/frontend/src/modules/$dep"
+          done
+          cd kern/frontend && node scripts/gen-modules.mjs
+      - name: Vitest
+        if: matrix.vitest
+        run: cd kern/frontend && npx vitest run src/modules/${{ matrix.module }}/
+      - name: TypeScript
+        if: matrix.frontend
+        run: cd kern/frontend && npx tsc -b
+      - name: Kein Frontend
+        if: '!matrix.frontend'
+        run: echo "Modul ${{ matrix.module }} hat kein Frontend."
+
+  summary:
+    # Fester Check-Name für den PR (Matrix-Namen wechseln je PR).
+    name: Modul-Tests gesamt
+    needs: [select, backend, frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ergebnis
+        run: |
+          echo "Auswahl: ${{ needs.select.result }} · Backend: ${{ needs.backend.result }} · Frontend: ${{ needs.frontend.result }}"
+          if [ "${{ needs.select.result }}" != "success" ]; then exit 1; fi
+          for r in "${{ needs.backend.result }}" "${{ needs.frontend.result }}"; do
+            case "$r" in success|skipped) ;; *) exit 1 ;; esac
+          done

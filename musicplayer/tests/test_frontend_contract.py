@@ -20,8 +20,9 @@ def test_buddy_player_uses_the_new_cockpit_panel_contract():
     assert "w-60" not in player
     assert "w-full" in panel
     assert 'rounded-[4px]' in panel
-    assert "#151c2b" in panel
-    assert "#2a364b" in panel
+    # Seit 1.3.1 Farbstufen des Kerns mit Rückfallwert: Box = #151c2b, Rand = #2a364b.
+    assert "--hh-s-box,21_28_43" in panel
+    assert "--hh-s-rand,42_54_75" in panel
     assert "hh2.box.buddy-musicplayer" in panel
     assert "MEDIA" in panel
 
@@ -32,7 +33,7 @@ def test_admin_player_actions_use_cockpit_surfaces():
 
     for source in (upload, generated):
         assert 'rounded-[4px]' in source
-        assert "#2a364b" in source
+        assert "--hh-s-rand,42_54_75" in source  # Rand-Farbstufe, Rückfall #2a364b
         assert "rounded-lg" not in source
 
 

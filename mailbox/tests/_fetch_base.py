@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import pytest
 from _fake_imap import FakeIMAP, FakeServer
-from conftest import eml
 
 ACC = {"id": "acc1", "address": "till@example.net"}
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -34,8 +35,26 @@ def box(tmp_path: Path) -> dict:
     return {"tmp": tmp_path, "bin": b, "calls": calls}
 
 
+# Systemprogramme, die die Skripte brauchen. Nur diese kommen in den PATH — nicht
+# ganz /usr/bin, sonst findet `command -v openrgb` ein auf dem Testrechner
+# installiertes OpenRGB und „OpenRGB fehlt“ ist nicht testbar (CI-Befund 19.11.2026).
+_SYSTEM_TOOLS = ("bash", "env", "grep", "id", "printf", "true", "cat", "basename", "dirname",
+                 "sed", "tr", "head", "mkdir", "chmod", "ls", "sort", "touch")
+
+
+def _system_bin(tmp: Path) -> Path:
+    d = tmp / "sysbin"
+    if not d.exists():
+        d.mkdir()
+        for name in _SYSTEM_TOOLS:
+            found = shutil.which(name, path="/usr/bin:/bin")
+            if found:
+                (d / name).symlink_to(found)
+    return d
+
+
 def _run(box: dict, script: str = "light-install.sh", *, with_openrgb: bool = False, **env) -> subprocess.CompletedProcess:
-    path = f"{box['bin']}:/usr/bin:/bin"
+    path = f"{box['bin']}:{_system_bin(box['tmp'])}"
     if not with_openrgb:
         (box["bin"] / "openrgb").unlink(missing_ok=True)
     e = {**os.environ, "PATH": path, "VITRINE_LIGHT_RULE": str(box["tmp"] / "72.rules"), "USER_NAME": "hydrahive",

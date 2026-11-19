@@ -70,7 +70,7 @@ def test_migration_extends_check_and_keeps_existing_rows_and_fks():
             conn.execute(
                 "INSERT INTO module_haushaltsbuch_import_batches"
                 "(household_id,account_id,display_filename,source_format,file_hash,created_by) "
-                f"VALUES(1,1,'x.xyz',?,?,'u1')",
+                "VALUES(1,1,'x.xyz',?,?,'u1')",
                 (forbidden, "4" * 64),
             )
         except sqlite3.IntegrityError:

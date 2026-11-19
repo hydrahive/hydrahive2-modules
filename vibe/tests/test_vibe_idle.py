@@ -6,7 +6,6 @@ darum muss das Modul ihn vor jedem Agentenlauf wecken. Zeitlimit 60 s, danach `v
 from __future__ import annotations
 
 import asyncio
-import time
 from datetime import UTC, datetime, timedelta
 
 import pytest

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from hydrahive.db.connection import db
@@ -17,7 +18,8 @@ def _manifest() -> dict:
 def test_manifest_felder():
     m = _manifest()
     assert m["id"] == "vibe" and m["name"] == "Vibe"
-    assert m["version"] == "0.1.1"
+    # Semver statt fester Nummer: der Version-Bump-Guard hebt sie bei jeder Änderung an.
+    assert re.fullmatch(r"\d+\.\d+\.\d+", m["version"])
     assert m["nav_group"] == "working"
     assert m["has_service"] is False
     assert m["default_agent_tools"] is False       # Agenten bekommen die Vibe-Werkzeuge nicht von selbst
