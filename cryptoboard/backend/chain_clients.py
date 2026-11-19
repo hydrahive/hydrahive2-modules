@@ -38,6 +38,15 @@ _EVM = {
 }
 
 
+# WETH-Kontrakte (Wrapped ETH) je EVM-Chain — zentral, damit onchain_swaps.py
+# (Wrap/Unwrap-Erkennung) und onchain_resolve.py (coin_id-Auflösung, Teil B)
+# dieselbe Quelle nutzen statt zwei gepflegte Kopien.
+WETH_CONTRACTS = {
+    "base": "0x4200000000000000000000000000000000000006",
+    "ethereum": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+}
+
+
 def known_token(chain: str, contract: str) -> tuple[str, str, int] | None:
     """(symbol, coin_id, decimals) eines bekannten ERC20-Tokens, falls gelistet.
 

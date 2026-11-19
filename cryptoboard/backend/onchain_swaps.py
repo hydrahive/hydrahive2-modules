@@ -37,10 +37,6 @@ from typing import Any
 
 from . import chain_clients
 
-_WETH_CONTRACTS = {
-    "base": "0x4200000000000000000000000000000000000006",
-    "ethereum": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-}
 _NATIVE_ASSET_KEY = "__native__"
 # K1: beide Kategorien liefern natives ETH ohne rawContract.address.
 _NATIVE_CATEGORIES = ("external", "internal")
@@ -119,7 +115,7 @@ def _symbol(transfer: dict) -> str:
 
 
 def _is_weth_wrap_pair(chain: str, keys: set[str]) -> bool:
-    weth = _WETH_CONTRACTS.get(chain, "").lower()
+    weth = chain_clients.WETH_CONTRACTS.get(chain, "").lower()
     return keys == {weth, _NATIVE_ASSET_KEY}
 
 

@@ -48,6 +48,28 @@ def add(user: str, chain: str, address: str, label: str) -> int:
         return int(row[0]) if row else 0
 
 
+def get(user: str, addr_id: int) -> dict | None:
+    """Eine einzelne Adresse des Users (Ownership-Check für On-Chain-Import)."""
+    with db() as c:
+        row = c.execute(
+            'SELECT id, chain, address, label, added_at '
+            'FROM module_cryptoboard_addresses WHERE "user" = ? AND id = ?',
+            (user, addr_id),
+        ).fetchone()
+        return dict(row) if row else None
+
+
+def find(user: str, chain: str, address: str) -> dict | None:
+    """Adresse des Users über chain+address (Ownership-Check ohne bekannte ID)."""
+    with db() as c:
+        row = c.execute(
+            'SELECT id, chain, address, label, added_at '
+            'FROM module_cryptoboard_addresses WHERE "user" = ? AND chain = ? AND address = ?',
+            (user, chain, address),
+        ).fetchone()
+        return dict(row) if row else None
+
+
 def remove(user: str, addr_id: int) -> bool:
     with db() as c:
         cur = c.execute(
