@@ -70,7 +70,9 @@ def test_only_one_music_job_at_a_time(client, auth_headers, ws, monkeypatch) -> 
     monkeypatch.setattr("backend.music_provider.server_default_model", lambda: "m")
     assert client.post(M, headers=auth_headers, json={"description": "a", "seconds": 10}).status_code == 202
     assert _code(client.post(M, headers=auth_headers, json={"description": "b", "seconds": 10})) == "409 studio_music_running"
-    assert wait_job(client, auth_headers, TARGET)["status"] == "done"
+    job = wait_job(client, auth_headers, TARGET)
+    # Selten rot auf GitHub (19.11.2026, 1 von ~90 Läufen, Ursache offen) – bei Rot steht der Fehlercode im Bericht.
+    assert job["status"] == "done", job
 
 
 def test_provider_errors_and_bad_audio(client, auth_headers, ws, monkeypatch) -> None:
