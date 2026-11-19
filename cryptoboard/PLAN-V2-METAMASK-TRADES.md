@@ -16,18 +16,25 @@ Phase ist separat testbar und commitbar.
 
 ### Backend — On-Chain-Trade-Historie
 
-- `backend/onchain_trades.py` — holt Transaktionsliste einer Adresse je
-  EVM-Chain, erkennt Swaps über bekannte Router-Signaturen, übersetzt Treffer
-  in das bestehende Zwischenformat des CSV-Importers
-- `backend/dex_signatures.py` — Registry bekannter DEX-Router-/Methodensignaturen
-  (Uniswap V2/V3 zuerst), erweiterbar nach demselben Muster wie `_EVM` in
-  `chain_clients.py`
-- `backend/onchain_import_routes.py` — `/portfolio/import/onchain/preview` und
-  `/portfolio/import/onchain/commit`, gleicher Vertrag wie
-  `import_routes.py`, eigene Datenquelle
-- Erweiterung `backend/chain_clients.py` — Transaktionslisten-Fetcher ergänzen
-  (bestehende `_rpc`/`_get`-Helfer wiederverwenden, Netz-Calls weiterhin
-  gekapselt und mockbar)
+Datenquelle Alchemy (Till, 2026-11-19), Swap-Erkennung über Token-Bewegungen
+statt Router-Signaturen — **`dex_signatures.py` entfällt vollständig**
+(siehe SPEC, Abschnitt "Swap-Erkennung").
+
+- `backend/alchemy_key.py` — Key-Verwaltung pro Nutzer (Speichern mit
+  Vorab-Test, maskierter Status, Löschen) über
+  `hydrahive.credentials.store`, Credential-Name `cryptoboard-alchemy`
+- `backend/alchemy_key_routes.py` — Routen für die Key-Verwaltung
+  (PUT/POST/GET/DELETE), eingehängt wie `wallet_routes.py`/`import_routes.py`
+- `backend/alchemy_client.py` — Netz-Client gegen
+  `https://{chain}-mainnet.g.alchemy.com/v2/{key}`, Methoden-Allowlist (nur
+  lesend), Kill-Switch, `fetch_transfers()` mit Paging/Grenzen laut SPEC
+- `backend/onchain_swaps.py` — reine Funktionen: Transfers nach Tx-Hash
+  gruppieren, Netto-Bewegung je Asset, Swap-Regel, Wrap/Unwrap-Sonderfall,
+  unklare Transaktionen als Rohdaten-Liste. Kein Netzzugriff, keine
+  Preisauflösung (Teil B).
+- `backend/onchain_import_routes.py` *(Teil B)* — `/portfolio/import/onchain/preview`
+  und `/portfolio/import/onchain/commit`, gleicher Vertrag wie
+  `import_routes.py`, eigene Datenquelle (Alchemy statt Datei)
 
 ### Migrationen
 
@@ -55,12 +62,20 @@ Phase ist separat testbar und commitbar.
 
 ### Tests
 
-- `tests/test_dex_signatures.py` — Signaturerkennung, unbekannte Methoden
-  bleiben unbekannt statt falsch zugeordnet
-- `tests/test_onchain_trades.py` — Übersetzung Chain-Transaktion → Import-
-  Zwischenformat, Fee-Umlage, Dedup über Transaktionshash
-- `tests/test_onchain_import_routes.py` — Preview/Commit-Vertrag, Rate-Limit-
-  Begrenzung (max. Transaktionen pro Lauf)
+- `tests/test_alchemy_key.py` *(Teil A)* — Key setzen mit Vorab-Test (Erfolg,
+  401/403, Netzfehler), bei Fehler wird nichts gespeichert; Status nur
+  maskiert; Löschen; Key nie im Klartext in Fehlertexten/Logs
+- `tests/test_alchemy_client.py` *(Teil A)* — Methoden-Allowlist lehnt
+  schreibende Methoden ab (`eth_sendRawTransaction`, `eth_sendTransaction`,
+  `personal_sign`), Kill-Switch, Paging über `pageKey`, beide Grenzen
+  (1.000 Tx / 2 Jahre), Fortsetzungs-Merkmal
+- `tests/test_onchain_swaps.py` *(Teil A)* — Swap-Regel (genau 1 raus + genau
+  1 rein), Mehrdeutigkeit → "unklar", Wrap/Unwrap-Sonderfall, exaktes
+  Mengen-Parsing aus `rawContract.value`/`decimal` (Gegenbeispiel: Float-Feld
+  würde falsch runden)
+- `tests/test_onchain_import_routes.py` *(Teil B)* — Preview/Commit-Vertrag,
+  Preisauflösung inkl. `preis_fehlt` bei >365 Tagen, Gas-Fee-Umlage, Dedup
+  über Transaktionshash
 - Frontend: Test für `WalletConnectButton` mit gemocktem `window.ethereum`
   (kein echter Extension-Zugriff im Testlauf)
 
@@ -75,11 +90,11 @@ Chain Transaktionslisten liefert (z. B. publicnode RPC + `eth_getLogs` auf
 bekannte Router-Adressen für Base/Ethereum). Rate-Limits und Pagination-
 Verhalten dokumentieren, bevor Code entsteht.
 
-#### Task 0.2 — Router-Signatur-Liste Phase 1
+#### Task 0.2 — entfällt (Router-Signatur-Liste)
 
-Erste, bewusst kleine Liste bekannter Uniswap-V2/V3-Router auf Base und
-Ethereum für `dex_signatures.py`. Alles andere bleibt in Phase 1 explizit
-"unbekannt", nicht geraten.
+Entfällt vollständig: Swap-Erkennung läuft über Token-Bewegungen je
+Transaktion (siehe SPEC), nicht über eine Liste bekannter Router-Signaturen.
+Kein `dex_signatures.py`.
 
 ### Phase 1 — MetaMask-Connect (unabhängig von Phase 2)
 
@@ -94,32 +109,52 @@ Frontend-Test mit gemocktem Provider; manueller Test-Durchlauf mit echter
 MetaMask-Extension vor Merge (Dokumentation im PR, kein automatisierter
 Extension-Test nötig).
 
-### Phase 2 — On-Chain-Trade-Historie (nach Task 0.1/0.2)
+### Phase 2 — On-Chain-Trade-Historie
 
-#### Task 2.1 — Transaktionslisten-Fetcher
+Umgesetzt in zwei Etappen (TEIL A, TEIL B), siehe Auftragsbeschreibung
+"Cryptoboard Etappe 2, Phase 2a". Reihenfolge bewusst Backend-first, ohne
+Router-Signatur-Vorprüfung (entfällt, siehe oben).
 
-Erweiterung `chain_clients.py` um Transaktionslisten-Abruf je verknüpfter
-EVM-Adresse, Zeitraum-/Mengenbegrenzung laut Spec.
+#### TEIL A — Key-Verwaltung, Alchemy-Client, Swap-Erkennung (reine Funktionen)
 
-#### Task 2.2 — Swap-Erkennung
+- **Task A2** — `alchemy_key.py` + `alchemy_key_routes.py`: Key setzen
+  (Vorab-Test VOR dem Speichern, klare Fehlercodes für ungültig/Base nicht
+  freigegeben/Netzfehler), Status nur maskiert, Löschen. Key nie loggen, nie
+  in Fehlertexten (auch nicht über die URL in `raise_for_status`-Fehlern).
+- **Task A3** — `alchemy_client.py`: Netz-Call gekapselt (Muster
+  `chain_clients._rpc`), Methoden-Allowlist, Kill-Switch,
+  `fetch_transfers(chain, address, ...)` mit Paging (`pageKey`) und beiden
+  Grenzen (1.000 Tx / 2 Jahre), Fortsetzungs-Merkmal für Folgeläufe.
+- **Task A4** — `onchain_swaps.py`: reine Funktionen, Gruppierung nach
+  Tx-Hash, Netto-Bewegungs-Regel, Wrap/Unwrap-Sonderfall, "unklar"-Liste,
+  exaktes Mengen-Parsing (Integer-Basiseinheiten/Decimal, nicht das
+  Float-Feld). Noch ohne Preis-/coin_id-Auflösung — die liefert Teil B.
 
-`dex_signatures.py` + `onchain_trades.py`: bekannte Router-Treffer →
-`buy`/`sell`-Zwischenformat; unbekannte Treffer → eigene Liste, kein
-automatisches Raten.
+#### TEIL B — Preise, Gas, Preview/Commit, Migration (falls nötig)
 
-#### Task 2.3 — Preview/Commit-Endpunkte
-
-`onchain_import_routes.py`, Wiederverwendung des bestehenden Commit-Musters
-aus `import_routes.py` (Dedup über `import_hash`, `store.add`).
-
-#### Task 2.4 — Frontend-Import-Dialog
-
-`OnchainTradeImportDialog.tsx`, Einbindung in `WalletsView.tsx`.
-
-#### Task 2.5 — Tests Phase 2
-
-`test_dex_signatures.py`, `test_onchain_trades.py`,
-`test_onchain_import_routes.py`.
+- **Preisauflösung**: coin_id-Zuordnung der erkannten Token (Kontraktadresse
+  → bekannte `_EVM`-Token-Liste bzw. CoinGecko-Suche wie beim CSV-Import),
+  CoinGecko-Historienpreis zum Ausführungszeitpunkt; Trades älter als 365
+  Tage bekommen `preis_fehlt: true` statt eines automatischen Preises
+  (CoinGecko-Free-Grenze).
+- **Gas-Fee-Umlage**: Transaktionsgebühr (aus `eth_getTransactionReceipt`,
+  `gasUsed * effectiveGasPrice`) in EUR zum Ausführungszeitpunkt umgerechnet,
+  als anteilige Fee in die FIFO-Kostenbasis eingerechnet (`fifo.py`-Vertrag).
+- **Preview/Commit-Endpunkte**: `onchain_import_routes.py`
+  (`/portfolio/import/onchain/preview`, `.../commit`), Wiederverwendung des
+  bestehenden Commit-Musters aus `import_routes.py` (Dedup über
+  `import_hash`, `store.add`). Hier passiert die EINE Umwandlung von
+  Decimal/Integer-Basiseinheiten (Teil A) ins Ledger-Format
+  (REAL/float wie `migrations/002_portfolio.sql`, `portfolio_store.add`).
+- **Migration**: `migrations/007_onchain_import_hash.sql` NUR falls
+  `004_import_hash.sql` den On-Chain-`import_hash` nicht schon als
+  nicht-eindeutigen Index abdeckt — vor Neuanlage prüfen, nicht blind
+  anlegen.
+- **Frontend-Import-Dialog**: `OnchainTradeImportDialog.tsx`, Einbindung in
+  `WalletsView.tsx` (eigener, paralleler Auftrag
+  `cryptoboard-metamask-plan`/`cb-metamask-frontend`).
+- **Tests**: `test_onchain_import_routes.py` (Preview/Commit-Vertrag,
+  `preis_fehlt`, Gas-Fee-Umlage, Dedup).
 
 ### Phase 3 — Abschluss
 

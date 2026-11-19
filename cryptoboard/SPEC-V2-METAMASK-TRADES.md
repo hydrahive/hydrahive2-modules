@@ -56,15 +56,68 @@ Chains `base`/`ethereum`/`tron`/`bitcoin`) und zeigt davon nur den aktuellen
 
 ### On-Chain-Trade-Historie
 
-- Datenquelle: öffentliche Explorer-/RPC-APIs, analog zum bestehenden
-  `chain_clients.py`-Muster (keylos bevorzugt, ein optionaler API-Key pro
-  Chain als Fallback für höhere Rate-Limits, niemals Pflicht).
-- Erkennung von Swaps über bekannte DEX-Router-/Pool-Signaturen (z. B.
-  Uniswap-V2/V3-Router auf Ethereum/Base). Nicht erkannte Vertragsinteraktionen
-  werden **nicht** stillschweigend als Trade interpretiert, sondern als
-  "unbekannte Transaktion" mit Rohdaten im Preview sichtbar gemacht und
-  müssen vom Nutzer bewusst zugeordnet oder verworfen werden.
-- Jede erkannte Transaktion wird in das bestehende Zwischenformat des
+#### Datenquelle: Alchemy
+
+- **Entscheidung (Till, 2026-11-19):** Datenquelle ist **Alchemy**
+  (`alchemy_getAssetTransfers`) über den eigenen, kostenlosen Alchemy-Key
+  des jeweiligen Nutzers — kein gemeinsamer Server-Key, kein Fallback auf
+  einen anderen Explorer. Begründung: die zuvor geprüften keylosen
+  Alternativen für Base sind tot oder unzureichend (Blockscout 403,
+  Routescan ohne Unterstützung, Etherscan Base nur im Paid-Plan).
+- Der Alchemy-Key wird **pro Nutzer** im Credential-Vault gespeichert
+  (`hydrahive.credentials.store`, Name `cryptoboard-alchemy`, Typ `bearer`,
+  `url_pattern = "https://*.g.alchemy.com/*"`). Es gibt keinen Server-weiten
+  Key und keinen Fallback ohne Key — ohne gespeicherten, geprüften Key liefert
+  der On-Chain-Import `alchemy_key_missing`.
+- **Kill-Switch:** `HH_CRYPTOBOARD_ONCHAIN_ENABLED` (Konvention wie
+  `HH_HAUSHALTSBUCH_LIDL_ENABLED`, Default **an**, `0`/`false`/`no`/`off`
+  schaltet den gesamten On-Chain-Trade-Import ab — unabhängig vom
+  gespeicherten Key). Geprüft in `onchain_routes.py`, bevor ein
+  Alchemy-Call ausgelöst wird.
+- **Grenzen pro Lauf:** maximal **1.000 Transaktionen** (eindeutige
+  Tx-Hashes) ODER **2 Jahre** zurück, je nachdem was zuerst erreicht wird.
+  Ältere Historie wird **nicht** in diesem Lauf geholt — ein Folgelauf mit
+  explizitem "weiter zurück"-Parameter (`toBlock` auf den zuletzt erreichten
+  Block) holt die nächste Tranche. Das Ergebnis jedes Laufs trägt ein
+  Fortsetzungs-Merkmal (`truncated: bool`, `before_block: int | None`),
+  damit das Frontend "weitere Historie laden" anbieten kann.
+- **Kurse:** CoinGecko liefert im kostenlosen Plan nur **365 Tage**
+  historische Kurse. Trades, die älter sind, werden trotzdem importiert,
+  aber ohne automatisch aufgelösten Preis — Kennzeichnung `preis_fehlt:
+  true`, der Nutzer trägt den Preis im Preview-Schritt händisch nach (wie
+  beim CSV-Import mit unauflösbarem Symbol). Das betrifft ausschließlich die
+  **Preis**-Auflösung, nicht die Transaktionsgrenze von 2 Jahren oben.
+
+#### Swap-Erkennung: Token-Bewegungen statt Router-Signaturen
+
+- **Entscheidung (Till, 2026-11-19):** Swaps werden **nicht** über bekannte
+  DEX-Router-/Methodensignaturen erkannt (ein `dex_signatures.py` mit einer
+  Registry bekannter Router entfällt vollständig). Begründung: eine
+  Signaturliste deckt immer nur die Router ab, die man kennt, und veraltet
+  mit jedem neuen Aggregator/Router.
+- Stattdessen: **Swap-Erkennung über die tatsächlichen Token-Bewegungen**
+  einer Transaktion, unabhängig davon, welcher Vertrag sie ausgelöst hat.
+  Regel: Alle Transfers (`external`, `internal`, `erc20`) einer Transaktion
+  werden nach Tx-Hash gruppiert; je Asset wird die Netto-Bewegung relativ zur
+  betrachteten Adresse gebildet (negativ = Adresse ist `from`, positiv =
+  Adresse ist `to`). Ist **genau ein** Asset netto negativ und **genau ein
+  anderes** Asset netto positiv, ist das ein Swap (`sell(A)` + `buy(B)`).
+  Jede andere Konstellation (nur eine Richtung, mehrere Assets je Seite,
+  Approve ohne Transfer) wird **nicht geraten**, sondern als "unklare
+  Transaktion" mit den Rohdaten (Hash, Zeit, beteiligte Token/Mengen,
+  Richtung) im Preview gezeigt.
+- **Sonderfall Wrap/Unwrap (WETH↔ETH):** Eine Transaktion, die ausschließlich
+  natives ETH gegen WETH des bekannten Vertrags tauscht (Base
+  `0x4200000000000000000000000000000000000006`, Ethereum
+  `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2`), ist **kein Trade** (kein
+  Kursereignis) und wird als eigener Hinweistyp ausgegeben, nicht als
+  `buy`/`sell`.
+- Mengen werden ausschließlich aus `rawContract.value` (Hex) und
+  `rawContract.decimal`/`decimals` als Integer-Basiseinheiten bzw. `Decimal`
+  berechnet — **nicht** aus dem von Alchemy mitgelieferten gerundeten
+  Float-Feld `value` (das rundet bei hoher Dezimalstellenzahl/großen Beträgen
+  falsch).
+- Jede erkannte Swap-Transaktion wird in das bestehende Zwischenformat des
   CSV-Importers übersetzt (`coin_id`, `symbol`, `kind`, `quantity`, `price`,
   `fee`, `executed_at`, `hash`) und läuft durch **denselben**
   Preview/Commit-Vertrag wie der manuelle CSV-Import — keine neue,
@@ -74,12 +127,12 @@ Chains `base`/`ethereum`/`tron`/`bitcoin`) und zeigt davon nur den aktuellen
 - Gas-Fee der Transaktion wird als anteilige Fee in EUR zum Ausführungszeitpunkt
   umgerechnet und in die FIFO-Kostenbasis eingerechnet (`fifo.py`-Vertrag:
   Fee verteuert den Einstand).
-- Zeitraum/Umfang begrenzt (z. B. letzte 1.000 Transaktionen oder 2 Jahre pro
-  Lauf), um Explorer-Rate-Limits und Importgröße nicht zu sprengen; weitere
-  Läufe holen ältere Historie nach.
 - Nur Lesen bleibt absolute Grenze: Kein Provider-Call, der eine Transaktion
-  signiert oder sendet. Der gesamte Baustein bleibt im bestehenden
-  "NUR Lesen"-Vertrag des Moduls.
+  signiert oder sendet; der Alchemy-Client akzeptiert nur eine feste
+  Allowlist lesender Methoden (`alchemy_getAssetTransfers`,
+  `eth_getTransactionReceipt`, `eth_blockNumber`, `eth_getTransactionByHash`)
+  — jede andere Methode wird vor dem Netzaufruf abgelehnt. Der gesamte
+  Baustein bleibt im bestehenden "NUR Lesen"-Vertrag des Moduls.
 
 ## Nicht-Ziele dieser Etappe
 
