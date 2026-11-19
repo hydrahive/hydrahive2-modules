@@ -235,7 +235,7 @@ export interface AuditEvent {
   created_at: string
 }
 
-export type ImportFormat = "auto" | "camt" | "mt940" | "csv"
+export type ImportFormat = "auto" | "camt" | "mt940" | "csv" | "pdf" | "paypal"
 export type StoredImportFormat = Exclude<ImportFormat, "auto">
 export type ImportBatchStatus = "draft" | "imported" | "reversed"
 export type ImportRowStatus = "pending" | "accepted" | "rejected" | "duplicate" | "error" | "imported" | "reversed"
