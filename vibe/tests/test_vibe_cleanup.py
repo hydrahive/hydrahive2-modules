@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from backend import container, jobs, network, projects, state, versions, watcher
+from backend import container, jobs, network, projects, state, watcher
 
 MODEL = "claude-sonnet-4-6"
 

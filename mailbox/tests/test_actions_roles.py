@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from _fake_imap import FakeServer
-from _fake_imap_write import FakeIMAPW
 from test_actions import _mid, _run, _subjects, _sync
 
 

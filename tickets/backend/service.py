@@ -8,12 +8,13 @@ from __future__ import annotations
 import json
 import sqlite3
 from datetime import datetime, timezone
+from typing import Any
 from uuid import uuid4
 
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.db.connection import db
 
-from .audit import list_events, record_event
+from .audit import list_events, record_event  # noqa: F401  list_events: weitergereicht (routes.py, tools/read.py)
 from .models import TicketCreate, TicketUpdate
 from .notifications import notify_ticket
 from .sla import calculate_deadlines, effective_deadline, profile_from_row

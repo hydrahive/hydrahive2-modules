@@ -160,7 +160,8 @@ def test_zuruecksetzen_braucht_kein_wort_aber_dialog(client, admin_headers, clea
     assert client.post(f"{B}/reset", headers=admin_headers, json={"confirm": True}).status_code == 202
 
 
-def test_starten_und_stoppen(client, admin_headers, clean, monkeypatch):
+def test_starten_und_stoppen(client, admin_headers, clean, monkeypatch, fake_incus):
+    # fake_incus: /stop und /start lesen danach den Zustand – nie das echte incus des Rechners.
     from backend import container
     calls = []
 
