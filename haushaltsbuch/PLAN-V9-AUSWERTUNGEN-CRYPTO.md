@@ -157,6 +157,16 @@ Schmale, explizite Lese-Schnittstelle in `cryptoboard` ergänzen, falls kein
 geeigneter Port existiert. Eigener PR im Modul `cryptoboard`, bevor
 Haushaltsbuch darauf zugreift.
 
+Hinweis: Parallel dazu entsteht in `cryptoboard` unter
+`SPEC-V2-METAMASK-TRADES.md`/`PLAN-V2-METAMASK-TRADES.md` ein
+MetaMask-Connect-Button sowie ein On-Chain-Trade-Import (Swaps einer
+verknüpften Adresse werden in das FIFO-Ledger übernommen). Beide Vorhaben
+sind unabhängig voneinander, teilen sich aber dieselbe Datenbasis
+(`module_cryptoboard_addresses`, Portfolio/FIFO) — der hier benötigte
+Read-Port sollte deshalb so geschnitten werden, dass er auch nach
+Abschluss des Trade-Imports stabil bleibt (z. B. Bestand + Bewertung lesen,
+unabhängig davon, ob ein Lot aus CSV-, manuellem oder On-Chain-Import stammt).
+
 #### Task 3.2 — Crypto-Bridge-Backend
 
 `backend/crypto_bridge.py`, `backend/crypto_bridge_models.py`, Erweiterung
