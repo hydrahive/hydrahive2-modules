@@ -1,0 +1,28 @@
+name: PROBE studio (nicht mergen)
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  repeat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: hydrahive/hydrahive2.0
+          path: kern
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg
+      - run: |
+          pip install --quiet -e kern/core/ pytest pytest-asyncio bcrypt
+      - name: test_music 20x (einzeln) + ganze Suite 1x
+        working-directory: studio
+        run: |
+          for i in $(seq 1 20); do PYTHONPATH=.:../kern/core/src python -m pytest tests/test_music.py -q -p no:cacheprovider 2>&1 | grep -E "DIAG|passed|failed" | cut -c1-1500; done
+          PYTHONPATH=.:../kern/core/src python -m pytest tests -q -p no:cacheprovider 2>&1 | grep -E "DIAG|^FAILED|passed|failed" | cut -c1-1500
