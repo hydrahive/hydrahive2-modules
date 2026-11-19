@@ -38,6 +38,29 @@ _EVM = {
 }
 
 
+def known_token(chain: str, contract: str) -> tuple[str, str, int] | None:
+    """(symbol, coin_id, decimals) eines bekannten ERC20-Tokens, falls gelistet.
+
+    Öffentliche Fassade auf _EVM — für onchain_swaps.py (K2: decimals-Fallback,
+    Teil B: coin_id-Auflösung bekannter Token), ohne dass andere Module das
+    private _EVM-Dict direkt anfassen.
+    """
+    evm = _EVM.get(chain)
+    if not evm:
+        return None
+    contract_lower = contract.lower()
+    for addr, info in evm[3].items():
+        if addr.lower() == contract_lower:
+            return info
+    return None
+
+
+def native_coin_id(chain: str) -> str | None:
+    """coin_id des nativen Coins einer EVM-Chain (z. B. "ethereum" für ETH)."""
+    evm = _EVM.get(chain)
+    return evm[2] if evm else None
+
+
 async def _rpc(url: str, method: str, params: list) -> Any:
     async with httpx.AsyncClient(timeout=_TIMEOUT) as h:
         r = await h.post(url, json={"jsonrpc": "2.0", "method": method, "params": params, "id": 1})
