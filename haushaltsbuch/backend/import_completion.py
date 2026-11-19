@@ -4,7 +4,6 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from fastapi import status
-
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.api.middleware.errors import coded
 from hydrahive.db.connection import db
@@ -14,6 +13,7 @@ from .access import conflict, membership, require_row
 from .common import NOW
 from .import_persistence import _batch_dict
 from .models import PostingIn, TransactionCreate
+
 
 def complete_batch(batch_id: int, revision: int, principal: AuthPrincipal) -> dict:
     with db(immediate=True) as conn:
@@ -35,30 +35,52 @@ def complete_batch(batch_id: int, revision: int, principal: AuthPrincipal) -> di
             (batch["account_id"], member["household_id"]),
         ).fetchone(), "account_not_found")
         for row in rows:
-            if row["category_id"] is None:
-                raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "import_category_required")
             if (
                 row["booking_date"] is None
                 or row["amount_minor"] is None
                 or row["currency"] is None
             ):
                 raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "import_row_incomplete")
-            category = require_row(conn.execute(
-                "SELECT * FROM module_haushaltsbuch_categories WHERE id=? AND household_id=?",
-                (row["category_id"], member["household_id"]),
-            ).fetchone(), "category_not_found")
-            expected_kind = "income" if row["amount_minor"] > 0 else "expense"
-            if category["kind"] != expected_kind:
-                raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "import_category_kind_mismatch")
             amount = row["amount_minor"]
+            if row["counter_account_id"] is not None:
+                # Transfer-Zeile aus dem Crypto-Trade-Import (Konto<->Konto-
+                # Umbuchung): keine Kategorie nötig, stattdessen ein zweites
+                # Konto-Posting auf dem Gegenkonto.
+                counter_account = require_row(conn.execute(
+                    "SELECT * FROM module_haushaltsbuch_accounts WHERE id=? AND household_id=?",
+                    (row["counter_account_id"], member["household_id"]),
+                ).fetchone(), "account_not_found")
+                if batch["source_format"] == "crypto_trades":
+                    # Gleiche Bedingung wie beim Anlegen (crypto_bridge.preview_trade_import):
+                    # Wallet noch verknüpft, und zwar vom Abschließenden. Sonst würde ein vor dem
+                    # Trennen angelegter Entwurf auf ein unverknüpftes Wallet buchen (Review 19.11.).
+                    if counter_account["linked_portfolio_id"] is None:
+                        raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "crypto_wallet_not_linked")
+                    if counter_account["linked_user_id"] != principal.user_id:
+                        raise coded(status.HTTP_403_FORBIDDEN, "crypto_link_owner_only")
+                postings = [
+                    PostingIn(account_id=account["id"], original_amount=amount, currency=row["currency"], base_amount=amount),
+                    PostingIn(account_id=counter_account["id"], original_amount=-amount, currency=row["currency"], base_amount=-amount),
+                ]
+            else:
+                if row["category_id"] is None:
+                    raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "import_category_required")
+                category = require_row(conn.execute(
+                    "SELECT * FROM module_haushaltsbuch_categories WHERE id=? AND household_id=?",
+                    (row["category_id"], member["household_id"]),
+                ).fetchone(), "category_not_found")
+                expected_kind = "income" if row["amount_minor"] > 0 else "expense"
+                if category["kind"] != expected_kind:
+                    raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "import_category_kind_mismatch")
+                postings = [
+                    PostingIn(account_id=account["id"], original_amount=amount, currency=row["currency"], base_amount=amount),
+                    PostingIn(category_id=category["id"], original_amount=-amount, currency=row["currency"], base_amount=-amount),
+                ]
             body = TransactionCreate(
                 booking_date=row["booking_date"], value_date=row["value_date"],
                 counterparty=row["counterparty"], purpose=row["purpose"],
                 note=f"Import #{batch_id}, Zeile {row['source_line']}", source="import",
-                postings=[
-                    PostingIn(account_id=account["id"], original_amount=amount, currency=row["currency"], base_amount=amount),
-                    PostingIn(category_id=category["id"], original_amount=-amount, currency=row["currency"], base_amount=-amount),
-                ],
+                postings=postings,
             )
             transaction = ledger._insert(conn, member["household_id"], body, principal.user_id)
             conn.execute(

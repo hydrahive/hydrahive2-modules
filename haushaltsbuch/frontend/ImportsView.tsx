@@ -11,7 +11,7 @@ import { Button, EmptyState, ErrorState, LoadingState, panel } from "./ui"
 
 type Section = "inbox" | "history"
 
-export function ImportsView({ baseCurrency, onChanged }: { baseCurrency: string; onChanged: () => void }) {
+export function ImportsView({ baseCurrency, onChanged, initialBatchId }: { baseCurrency: string; onChanged: () => void; initialBatchId?: number }) {
   const [accounts, setAccounts] = useState<Account[]>()
   const [categories, setCategories] = useState<Category[]>()
   const [profiles, setProfiles] = useState<ImportProfile[]>()
@@ -31,6 +31,7 @@ export function ImportsView({ baseCurrency, onChanged }: { baseCurrency: string;
       ])
       const details = await Promise.all(summaries.map((batch) => haushaltsbuchApi.importBatch(batch.id)))
       setAccounts(nextAccounts); setCategories(nextCategories); setProfiles(nextProfiles); setBatches(details)
+      if (initialBatchId !== undefined) setSelected((current) => current ?? details.find((batch) => batch.id === initialBatchId))
     } catch (cause) { setError(cause) }
   }
   useEffect(() => { void load() }, [])

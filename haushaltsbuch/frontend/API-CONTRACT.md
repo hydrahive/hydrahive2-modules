@@ -63,6 +63,50 @@ Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felde
   (Pflichtspalten fehlen). Fremdwährungszeilen behalten ihre Originalwährung; die bestehende
   Kontowährungs-Prüfung (`account_currency_mismatch`) des Prüfbereichs greift unverändert.
 
+## Crypto-Brücke (V9 Phase 3)
+
+NUR lesend über den Cryptoboard-Read-Port. Kein Kurs-Client in diesem Modul, keine
+Cryptoboard-Interna. Geld ausschließlich Integer-Minor-Units; Krypto-Mengen bleiben Text
+(Decimal-String) in `purpose`, nie als eigenes Zahlenfeld.
+
+- `GET /crypto-bridge/status` → `{available, reason, portfolios}`. `reason` nur gesetzt wenn
+  `available=false` (`module_missing`/`module_not_loaded`/`port_incompatible`); `portfolios`
+  sind ausschließlich die eigenen des anfragenden Users, bei `unavailable` leer.
+- `GET /accounts` (bestehend) — jede Zeile zusätzlich: `linked_portfolio_id` (string|null,
+  nur befüllt wenn `linked_by_me`), `linked_by_me` (bool), `crypto_linked` (bool).
+- `PUT /accounts/{id}/crypto-link` body `{portfolio_id, revision}` → Account. Nur für
+  `type=wallet`, nicht archiviert, Portfolio-ID muss im eigenen `portfolios_for` enthalten
+  sein, ein Konto max. ein Portfolio. 422 `crypto_wallet_required`, 404
+  `crypto_portfolio_not_found`, 409 `crypto_account_linked`, 422
+  `crypto_currency_unsupported` (Haushalt oder Konto nicht EUR).
+- `DELETE /accounts/{id}/crypto-link?revision=n` → Account. Durch den Verknüpfer oder den
+  Haushalts-Owner; löscht den Snapshot, der gebuchte `balance_base` bleibt unverändert.
+- `GET /accounts/{id}/crypto-value` → `{account_id, state, value_minor, as_of, complete,
+  booked_balance, reason}`. `state`: `"unlinked"` | `"hidden"` (von einem anderen Mitglied
+  verknüpft — kein Live-Wert, Port wird nicht aufgerufen) | `"live"` (Port erfolgreich,
+  Snapshot aktualisiert) | `"stale"` (Port/Portfolio nicht verfügbar, letzter Snapshot,
+  `value_minor` ggf. `null`, `reason` gesetzt).
+- `POST /crypto-bridge/trade-imports` body `{wallet_account_id, fiat_account_id,
+  fee_category_id?, since?}` → ImportBatch wie `POST /imports` (Status `draft`,
+  `source_format="crypto_trades"`, `account_id=fiat_account_id`, `display_filename
+  ="Cryptoboard-Trades"`, zusätzlich `warnings.skipped_transfers`). Nur der Verknüpfer des
+  Wallets; `fiat_account_id` muss ein nicht-internes, nicht-wallet Konto sein;
+  `fee_category_id` (falls gesetzt) muss eine expense-Kategorie sein. Je Trade: `buy`/`sell`
+  erzeugen eine Transferzeile (`counter_account_id` = Wallet, `purpose` „Kauf/Verkauf <Menge>
+  <SYMBOL>“, `bank_reference=<ref>`) plus bei Gebühr ≠ 0 eine zweite Zeile
+  (`bank_reference=<ref>:fee`, `category_id=fee_category_id`); `transfer_in`/`transfer_out`
+  werden nicht importiert (zählen in `warnings.skipped_transfers`). 422
+  `crypto_wallet_not_linked`, 403 `crypto_link_owner_only`, 422
+  `crypto_fiat_account_invalid`, 422 `crypto_fee_category_invalid`, 404
+  `crypto_portfolio_not_found`, 422 `crypto_bridge_unavailable`.
+- Abschluss über das bestehende `POST /imports/{id}/complete`: Zeilen mit
+  `counter_account_id` werden als Konto↔Konto-Buchung gebucht (keine Kategorie nötig),
+  `POST /imports/{id}/reverse` storniert sie korrekt. `ImportRow`-JSON hat zusätzlich
+  `counter_account_id` (int|null).
+- Zugriffsschutz: Verknüpfte Konten anderer Mitglieder zeigen nie die Portfolio-ID oder einen
+  Live-Wert; der Port wird ausschließlich mit dem Username des verknüpfenden Users
+  aufgerufen, nie mit dem eines anderen Mitglieds.
+
 ## Kundenkarten-Fundament (V4.0)
 
 - `GET /loyalty/connections` listet für Mitglieder sichtbare Verbindungen. Private Verbindungen sind nur für den Besitzer und den Haushaltseigentümer sichtbar.

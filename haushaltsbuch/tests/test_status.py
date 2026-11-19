@@ -1,11 +1,9 @@
 from __future__ import annotations
 
+from backend import router
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
-from backend import router
 from hydrahive.api.middleware.auth import require_auth
-
 
 PREFIX = "/api/modules/haushaltsbuch"
 
@@ -37,5 +35,6 @@ def test_status_reports_bank_import_available() -> None:
             "loyalty_foundation": "available",
             "lidl_plus": "experimental",
             "payback": "planned",
+            "crypto_bridge": "available",
         },
     }

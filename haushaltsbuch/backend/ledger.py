@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import sqlite3
 from datetime import date, datetime
-from zoneinfo import ZoneInfo
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+from zoneinfo import ZoneInfo
 
 from fastapi import status
-
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.api.middleware.errors import coded
 from hydrahive.db.connection import db
@@ -22,6 +21,7 @@ def _validate_postings(
     postings,
     *,
     allow_archived: bool = False,
+    source: str = "manual",
 ) -> None:
     if len(postings) < 2 or sum(item.base_amount for item in postings) != 0:
         raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "unbalanced_postings")
@@ -44,13 +44,16 @@ def _validate_postings(
                 )
         if posting.account_id is not None:
             target = conn.execute(
-                "SELECT currency,archived FROM module_haushaltsbuch_accounts WHERE id=? AND household_id=?",
+                "SELECT currency,archived,linked_portfolio_id FROM module_haushaltsbuch_accounts "
+                "WHERE id=? AND household_id=?",
                 (posting.account_id, household_id),
             ).fetchone()
             if target is None:
                 raise coded(status.HTTP_404_NOT_FOUND, "account_not_found")
             if target["archived"] and not allow_archived:
                 raise coded(status.HTTP_409_CONFLICT, "account_archived")
+            if source == "manual" and target["linked_portfolio_id"] is not None:
+                raise coded(status.HTTP_409_CONFLICT, "crypto_account_linked")
             if posting.currency != target["currency"]:
                 raise coded(
                     status.HTTP_422_UNPROCESSABLE_ENTITY, "account_currency_mismatch"
@@ -77,7 +80,7 @@ def _validate_postings(
                     )
                 expected = int(
                     (Decimal(posting.original_amount) * rate).quantize(
-                        Decimal("1"), rounding=ROUND_HALF_UP
+                        Decimal(1), rounding=ROUND_HALF_UP
                     )
                 )
                 if expected != posting.base_amount:
@@ -125,7 +128,9 @@ def _insert(
     *,
     allow_archived: bool = False,
 ) -> sqlite3.Row:
-    _validate_postings(conn, household_id, body.postings, allow_archived=allow_archived)
+    _validate_postings(
+        conn, household_id, body.postings, allow_archived=allow_archived, source=body.source
+    )
     value_date = body.value_date or body.booking_date
     cur = conn.execute(
         "INSERT INTO module_haushaltsbuch_transactions"
@@ -268,6 +273,13 @@ def update_metadata(transaction_id: int, body, principal: AuthPrincipal) -> dict
             ).fetchone(),
             "transaction_not_found",
         )
+        if before["source"] == "manual" and conn.execute(
+            "SELECT 1 FROM module_haushaltsbuch_postings p "
+            "JOIN module_haushaltsbuch_accounts a ON a.id=p.account_id "
+            "WHERE p.transaction_id=? AND a.linked_portfolio_id IS NOT NULL",
+            (transaction_id,),
+        ).fetchone():
+            raise coded(status.HTTP_409_CONFLICT, "crypto_account_linked")
         if (
             before["booking_date"] != body.booking_date.isoformat()
             or before["value_date"] != body.value_date.isoformat()
