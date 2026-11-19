@@ -1,6 +1,9 @@
 """Read-Port für modulübergreifenden Lesezugriff (Haushaltsbuch V9 Task 3.1).
 
-Einzige Stelle, die andere Module importieren dürfen (CONTRACT.md Abschnitt A).
+Einzige Stelle, die andere Module importieren dürfen (vgl.
+haushaltsbuch/PLAN-V9-AUSWERTUNGEN-CRYPTO.md Task 3.1). Es gibt im Repo keine
+eigenständige CONTRACT.md für modulübergreifende Zugriffe — dieser Docstring
+IST der Vertrag.
 Keine Schreibfunktionen, keine Routen — reine Lese-Fassade über die bestehende
 Portfolio-/Wertverlauf-Logik (portfolio.py, valuation.py, portfolio_store.py,
 price_history_store.py). Schlüssel ist immer der Core-Username (require_auth

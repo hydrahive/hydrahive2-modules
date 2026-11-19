@@ -1,4 +1,4 @@
-"""Read-Port — schmale, explizite Lese-Fassade für andere Module (CONTRACT.md A).
+"""Read-Port — schmale, explizite Lese-Fassade für andere Module (siehe backend/read_port.py Docstring).
 
 Prüft: eigene Daten sichtbar, fremder User bekommt nie fremde Daten (leer/eigenes
 "default"), unbekannte portfolio_id -> PortfolioNotFound, Integer-Cent-Rundung
