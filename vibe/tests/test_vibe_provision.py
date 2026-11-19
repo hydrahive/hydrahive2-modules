@@ -237,7 +237,6 @@ def test_deps_skript_hat_keine_platzhalter():
 # Der Text allein sagt nicht, ob es sich richtig verhält. Hier läuft das echte Bash-Skript des Schritts `deps`; die
 # Ersatzprogramme steuern, wann `npm ci` etwas anlegt und wann die Ladeprüfung gelingt.
 
-import os
 import subprocess
 import textwrap
 

@@ -1,7 +1,6 @@
 """Smoke-Tests für FHIR-Import und Abfrage."""
 from __future__ import annotations
 
-import pytest
 
 
 def _bundle(resources: list[dict]) -> dict:

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from backend import jobs, service
+from backend import jobs
 
 
 @pytest.mark.asyncio

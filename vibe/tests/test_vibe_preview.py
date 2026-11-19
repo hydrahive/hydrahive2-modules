@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 
 import pytest
-from backend import container, network, preview_auth, preview_net, preview_site, provision, state
+from backend import container, network, preview_auth, preview_net, preview_site, state
 
 from test_vibe_routes_gui import B, MODEL, _create, _ready, env  # noqa: F401  (Fixture `env` und Hilfen der Oberfläche)
 

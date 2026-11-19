@@ -5,7 +5,7 @@ weiteren Bausteinen des Plans.
 """
 from __future__ import annotations
 
-from . import idle, jobs, watcher
+from . import idle, jobs, watcher  # noqa: F401  jobs: beim Laden registriert (watcher/routes nutzen es)
 from .routes import router
 from .routes_model import router as model_router
 from .routes_preview import device_open, device_router
