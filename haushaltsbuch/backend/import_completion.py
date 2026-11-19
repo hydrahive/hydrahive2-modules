@@ -50,6 +50,14 @@ def complete_batch(batch_id: int, revision: int, principal: AuthPrincipal) -> di
                     "SELECT * FROM module_haushaltsbuch_accounts WHERE id=? AND household_id=?",
                     (row["counter_account_id"], member["household_id"]),
                 ).fetchone(), "account_not_found")
+                if batch["source_format"] == "crypto_trades":
+                    # Gleiche Bedingung wie beim Anlegen (crypto_bridge.preview_trade_import):
+                    # Wallet noch verknüpft, und zwar vom Abschließenden. Sonst würde ein vor dem
+                    # Trennen angelegter Entwurf auf ein unverknüpftes Wallet buchen (Review 19.11.).
+                    if counter_account["linked_portfolio_id"] is None:
+                        raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "crypto_wallet_not_linked")
+                    if counter_account["linked_user_id"] != principal.user_id:
+                        raise coded(status.HTTP_403_FORBIDDEN, "crypto_link_owner_only")
                 postings = [
                     PostingIn(account_id=account["id"], original_amount=amount, currency=row["currency"], base_amount=amount),
                     PostingIn(account_id=counter_account["id"], original_amount=-amount, currency=row["currency"], base_amount=-amount),

@@ -687,3 +687,61 @@ def test_migration_010_preserves_existing_rows_and_extends_check():
     assert conn.execute(
         "SELECT * FROM module_haushaltsbuch_crypto_snapshots"
     ).fetchall() == []
+
+
+def _draft_trade_batch(client, headers, monkeypatch):
+    """Verknüpftes Wallet + Fiat-Konto + Trade-Entwurf mit allen Zeilen akzeptiert."""
+    port = FakePort()
+    port.portfolios["owner"] = [{"id": "default", "label": "Portfolio", "currency": "EUR"}]
+    port.trade_data["owner"] = [{
+        "ref": "cb:edge1", "kind": "buy", "coin_id": "btc", "symbol": "BTC",
+        "quantity": "0.01", "gross_minor": 50000, "fee_minor": 500,
+        "executed_at": "2026-01-10T10:00:00Z", "import_hash": None,
+    }]
+    _install_fake_port(monkeypatch, port)
+    wallet, fiat = _setup_linked_wallet_and_fiat(client, headers, port)
+    category = _expense_category(client, headers)
+    batch = client.post(f"{PREFIX}/crypto-bridge/trade-imports", headers=headers, json={
+        "wallet_account_id": wallet["id"], "fiat_account_id": fiat["id"],
+        "fee_category_id": category["id"], "since": None,
+    }).json()
+    for row in batch["rows"]:
+        patched = client.patch(f"{PREFIX}/imports/{batch['id']}/rows/{row['id']}", headers=headers,
+                               json={"revision": row["revision"], "status": "accepted"})
+        assert patched.status_code == 200, patched.text
+    return wallet, batch
+
+
+def _wallet(client, headers, wallet_id):
+    return next(a for a in client.get(f"{PREFIX}/accounts", headers=headers).json() if a["id"] == wallet_id)
+
+
+def test_trade_import_complete_rejected_after_wallet_unlinked(client, owner_headers, monkeypatch):
+    """Review-Befund 19.11.: Entwurf anlegen, Verknüpfung trennen, abschließen → darf NICHT auf das
+    nun unverknüpfte Wallet buchen. Der Vertrag verlangt beim Anlegen „Wallet muss verknüpft sein,
+    nur Verknüpfer"; dieselbe Bedingung muss beim Abschluss noch gelten."""
+    wallet, batch = _draft_trade_batch(client, owner_headers, monkeypatch)
+    unlinked = client.delete(
+        f"{PREFIX}/accounts/{wallet['id']}/crypto-link?revision={_wallet(client, owner_headers, wallet['id'])['revision']}",
+        headers=owner_headers)
+    assert unlinked.status_code == 200, unlinked.text
+
+    fresh = client.get(f"{PREFIX}/imports/{batch['id']}", headers=owner_headers).json()
+    completed = client.post(f"{PREFIX}/imports/{batch['id']}/complete", headers=owner_headers,
+                            json={"revision": fresh["revision"]})
+    assert completed.status_code == 422, completed.text
+    assert completed.json()["detail"]["code"] == "crypto_wallet_not_linked"
+    assert _wallet(client, owner_headers, wallet["id"])["balance_base"] == 0      # nichts gebucht
+    assert client.get(f"{PREFIX}/transactions", headers=owner_headers).json() == []
+    still = client.get(f"{PREFIX}/imports/{batch['id']}", headers=owner_headers).json()
+    assert still["status"] == "draft"                                             # Entwurf bleibt erhalten
+
+
+def test_trade_import_complete_still_works_while_linked(client, owner_headers, monkeypatch):
+    """Gegenstück: solange die Verknüpfung besteht, bucht der Abschluss wie bisher."""
+    wallet, batch = _draft_trade_batch(client, owner_headers, monkeypatch)
+    fresh = client.get(f"{PREFIX}/imports/{batch['id']}", headers=owner_headers).json()
+    completed = client.post(f"{PREFIX}/imports/{batch['id']}/complete", headers=owner_headers,
+                            json={"revision": fresh["revision"]})
+    assert completed.status_code == 200, completed.text
+    assert _wallet(client, owner_headers, wallet["id"])["balance_base"] == 50000

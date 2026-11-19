@@ -179,3 +179,17 @@ def test_foreign_household_gets_404_on_all_crypto_bridge_endpoints(
         )
         assert trade_response.status_code == 404
         assert trade_response.json()["detail"]["code"] == "household_not_found"
+
+
+def test_member_cannot_complete_owners_trade_import(client, owner_headers, member_headers, monkeypatch):
+    """Den Trade-Entwurf des Verknüpfers darf ein anderes Mitglied nicht abschließen
+    (gleiche Regel wie beim Anlegen: nur Verknüpfer). Review 19.11."""
+    from test_crypto_bridge import _draft_trade_batch
+    wallet, batch = _draft_trade_batch(client, owner_headers, monkeypatch)
+    _add_member(client, owner_headers, "member")
+    fresh = client.get(f"{PREFIX}/imports/{batch['id']}", headers=member_headers).json()
+    completed = client.post(f"{PREFIX}/imports/{batch['id']}/complete", headers=member_headers,
+                            json={"revision": fresh["revision"]})
+    assert completed.status_code == 403, completed.text
+    assert completed.json()["detail"]["code"] == "crypto_link_owner_only"
+    assert client.get(f"{PREFIX}/transactions", headers=owner_headers).json() == []

@@ -4,7 +4,7 @@ import { AdminConfirmDialog } from "@/features/cockpit/admin/ui/AdminConfirmDial
 import { errorMessage, haushaltsbuchApi, isConflict } from "./api"
 import { formatMinorUnits, minorToInput, parseMinorUnits } from "./money"
 import { transferLabel } from "./cryptoBridge"
-import { importMessage, sourceFormatLabel } from "./importFormats"
+import { importErrorText, importMessage, sourceFormatLabel } from "./importFormats"
 import type { Account, Category, ImportBatch, ImportRow, ImportRowStatus, ImportRowUpdate } from "./types"
 import { Button, EmptyState, ErrorState, Input, Select, Textarea, panel } from "./ui"
 
@@ -83,6 +83,12 @@ export function RowEditor({ batchId, row, accountCurrency, accounts, categories,
     </div>}
     {editing && !readOnly && <div className="mt-3 grid gap-3 rounded border border-[#33425a] bg-[rgb(var(--hh-s-tief,11_17_28))] p-3 sm:grid-cols-2"><Input aria-label="Buchungsdatum" type="date" value={date} onChange={(event) => setDate(event.target.value)} /><Input aria-label={`Betrag in ${currency}`} value={amount} onChange={(event) => setAmount(event.target.value)} /><Input aria-label="Währung" value={currency} readOnly /><Input aria-label="Gegenpartei" maxLength={240} value={counterparty} onChange={(event) => setCounterparty(event.target.value)} /><div className="sm:col-span-2"><Textarea aria-label="Verwendungszweck" rows={2} maxLength={500} value={purpose} onChange={(event) => setPurpose(event.target.value)} /></div><div className="flex gap-2 sm:col-span-2"><Button tone="primary" disabled={busy} onClick={save}><Save size={13} className="mr-1 inline" />Speichern</Button><Button disabled={busy} onClick={() => setEditing(false)}>Abbrechen</Button></div></div>}
   </article>
+}
+
+/** Fehler aus Abschluss/Löschen/Vorschlägen: bekannte Codes laienverständlich (sonst stünde z. B.
+ *  „crypto_wallet_not_linked“ roh da, weil der Kern dafür keinen i18n-Eintrag hat). */
+export function BatchError({ error }: { error: unknown }) {
+  return <ErrorState error={importErrorText(error, errorMessage)} conflict={isConflict(error)} />
 }
 
 export function ImportBatchView({ initialBatch, accounts, categories, onBack, onChanged, onDeleted }: {
@@ -169,7 +175,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
     <div className="flex flex-wrap items-center gap-3"><Button onClick={onBack}><ArrowLeft size={13} className="mr-1 inline" />Zur Übersicht</Button><div className="min-w-0 flex-1"><h2 className="truncate font-bold text-[#e8eef8]">{batch.display_filename}</h2><p className="text-xs text-[#9aa7bc]">{sourceFormatLabel(batch.source_format)} · {account?.name ?? `Konto #${batch.account_id}`} · Paket #{batch.id}</p></div>{batch.status === "draft" && <><Button tone="danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={13} className="mr-1 inline" />Entwurf löschen</Button><Button tone="primary" disabled={!accepted.length || missingCategory > 0 || busy} onClick={() => setConfirmComplete(true)}><CheckCheck size={13} className="mr-1 inline" />Import abschließen</Button></>}</div>
     {batch.status === "imported" && <div className="rounded border border-emerald-500/35 bg-emerald-500/10 p-4 text-sm text-emerald-100" role="status"><strong>Import abgeschlossen.</strong> {rows.filter((row) => row.status === "imported").length} Zeilen wurden verbindlich gebucht.</div>}
     {batch.status === "reversed" && <div className="rounded border border-amber-500/35 bg-amber-500/10 p-4 text-sm text-amber-100" role="status"><strong>Import storniert.</strong> Die zugehörigen Buchungen wurden durch Gegenbuchungen aufgehoben.</div>}
-    {error !== undefined && <ErrorState error={errorMessage(error)} conflict={isConflict(error)} />}
+    {error !== undefined && <BatchError error={error} />}
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
       <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Zeilen</span><strong className="mt-1 block text-lg text-[#e8eef8]">{rows.length}</strong></div>
       <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Zeitraum</span><strong className="mt-1 block text-sm text-[#e8eef8]">{dates.length ? `${dates[0]} – ${dates[dates.length - 1]}` : "—"}</strong></div>

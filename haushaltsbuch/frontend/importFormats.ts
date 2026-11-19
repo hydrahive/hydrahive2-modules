@@ -1,5 +1,5 @@
 // Import-Formate (V9 Phase 2): Beschriftungen, Hinweise und laienverständliche Fehlermeldungen.
-import { CRYPTO_MESSAGES } from "./cryptoMessages"
+import { CRYPTO_MESSAGES, STALE_REASONS } from "./cryptoMessages"
 import type { ImportFormat, StoredImportFormat } from "./types"
 
 export const FORMAT_OPTIONS: { value: ImportFormat; label: string }[] = [
@@ -49,7 +49,12 @@ export const importMessage = (code: string): string => IMPORT_MESSAGES[code] ?? 
 /** Fehlertext fürs Upload-Formular: bekannte Import-Codes übersetzen, sonst die normale Meldung. */
 export function importErrorText(error: unknown, fallback: (error: unknown) => string): string {
   if (error instanceof Error) {
-    const code = (error as Error & { code?: string }).code
+    const { code, params } = error as Error & { code?: string; params?: Record<string, unknown> }
+    // Cryptoboard nicht erreichbar: den genauen Grund nennen (nicht installiert / nicht aktiv / Version).
+    const reason = typeof params?.reason === "string" ? params.reason : null
+    if (code === "crypto_bridge_unavailable" && reason && STALE_REASONS[reason]) {
+      return `${STALE_REASONS[reason]} Die Verknüpfung mit Cryptoboard ist deshalb gerade nicht möglich.`
+    }
     if (code && IMPORT_MESSAGES[code]) return IMPORT_MESSAGES[code]
     if (IMPORT_MESSAGES[error.message]) return IMPORT_MESSAGES[error.message]
   }

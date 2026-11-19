@@ -15,11 +15,11 @@ import { AccountCard } from "./AccountCard"
 import { CryptoLinkBody } from "./CryptoLinkDialog"
 import { TRADE_IMPORT_HINT, TradeImportResult } from "./CryptoTradeImportDialog"
 import { CryptoValueView } from "./CryptoValueView"
-import { CRYPTO_MESSAGES } from "./cryptoMessages"
+import { CRYPTO_MESSAGES, STALE_REASONS } from "./cryptoMessages"
 import { fiatAccountOptions, feeCategoryOptions, transferLabel, tradeImportBody } from "./cryptoBridge"
 import { haushaltsbuchApi } from "./api"
 import { FORMAT_OPTIONS, importErrorText, sourceFormatLabel } from "./importFormats"
-import { RowEditor } from "./ImportBatchView"
+import { BatchError, RowEditor } from "./ImportBatchView"
 import type { Account, Category, CryptoBridgeStatus, CryptoValue, Household, ImportBatch, ImportRow } from "./types"
 
 const household = { id: 1, name: "Zuhause", base_currency: "EUR", current_role: "owner" } as Household
@@ -158,6 +158,25 @@ describe("Meldungen und Formate", () => {
       expect(CRYPTO_MESSAGES[code]).not.toMatch(/crypto_/)
       expect(importErrorText(codedError(code), () => "roh")).toBe(CRYPTO_MESSAGES[code])
     }
+  })
+  it("crypto_bridge_unavailable nennt den genauen Grund aus params.reason (Review 19.11.)", () => {
+    const err = Object.assign(codedError("crypto_bridge_unavailable"), { params: { reason: "module_missing" } })
+    const text = importErrorText(err, () => "roh")
+    // Genau der Grund, nicht der allgemeine Sammeltext („nicht installiert oder nicht aktiv“).
+    expect(text).toContain(STALE_REASONS.module_missing)
+    expect(text).not.toBe(CRYPTO_MESSAGES.crypto_bridge_unavailable)
+    expect(text).not.toContain("module_missing")
+    const notLoaded = Object.assign(codedError("crypto_bridge_unavailable"), { params: { reason: "module_not_loaded" } })
+    expect(importErrorText(notLoaded, () => "roh")).toContain(STALE_REASONS.module_not_loaded)
+    const unknown = Object.assign(codedError("crypto_bridge_unavailable"), { params: { reason: "irgendwas" } })
+    expect(importErrorText(unknown, () => "roh")).toBe(CRYPTO_MESSAGES.crypto_bridge_unavailable)
+    expect(importErrorText(codedError("crypto_bridge_unavailable"), () => "roh")).toBe(CRYPTO_MESSAGES.crypto_bridge_unavailable)
+  })
+  it("Abschluss nach Trennen: Prüfbereich zeigt Klartext statt rohem Code (Review 19.11.)", () => {
+    // Wie der Kern-Client den Fehler baut: message = roher Code, wenn i18n keinen Eintrag hat.
+    const html = renderToStaticMarkup(<BatchError error={Object.assign(new Error("crypto_wallet_not_linked"), { code: "crypto_wallet_not_linked", status: 422 })} />)
+    expect(html).toContain("nicht mit Cryptoboard verknüpft")
+    expect(html).not.toContain("crypto_wallet_not_linked")
   })
   it("crypto_trades: Anzeige „Cryptoboard-Trades“, aber nicht im Upload-Dialog wählbar", () => {
     expect(sourceFormatLabel("crypto_trades")).toBe("Cryptoboard-Trades")
