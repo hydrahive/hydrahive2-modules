@@ -59,4 +59,23 @@ Basis: `/api/modules/haushaltsbuch` (im Frontend-Client ohne `/api`). JSON-Felde
 - Der read-only Abruf sendet den aktuellen Android-Ticketvertrag mit realer Clientversion `16.43.4`, Android-Paket-/Geräteheadern und einer stabilen, nicht personenbezogenen Device-ID pro Verbindung. Ein Ticket-401 wird genau einmal mit frisch rotiertem Token wiederholt; nur eine Ablehnung am Tokenendpoint verlangt eine Neuanmeldung. Verbindungen mit dem alten generischen Zustand `reauth_required/auth_required` können genau einmal manuell über „Anmeldung erneut prüfen“ migriert werden.
 - Die Schnittstelle ist inoffiziell und experimentell. Es gibt keine Stabilitäts- oder Zulässigkeitszusage; CAPTCHA, WAF, Device Attestation und Rechtstextdialoge werden nicht automatisiert oder umgangen.
 
+## Auswertungen (V9 Phase 1)
+
+Reine Lese-Aggregate, read-only, keine neuen Felder in bestehenden Ressourcen. Alle Beträge
+Integer-Minor-Units, Prozentanteile Integer-Basispunkte (10000 = 100 %). Vertrag im Detail:
+`PHASE1-REPORTS-CONTRACT.md` (Orchestrierungs-Dokumentation außerhalb des Moduls).
+
+- `GET /reports/cashflow` — Einnahmen/Ausgaben je Monat.
+- `GET /reports/net-worth` — kumulierter Saldo aller nicht-internen Konten je Monatsende.
+- `GET /reports/categories` — Ausgaben-Verteilung je Hauptkategorie, mit `parent_id` Drilldown auf Unterkategorien.
+- `GET /reports/budgets` — Soll/Ist je aktivem Budget und Monat (dieselben Hilfen wie `GET /budgets`).
+- `GET /reports/fixed-costs` — feste vs. variable Ausgaben je Monat (Heuristik über `recurring`-Regeln).
+
+Gemeinsame Query-Parameter: `range=3|6|12|24|all` (Default `12`), `format=json|csv` (Default `json`).
+Ungültiger `range`-Wert → 422. CSV: Semikolon-getrennt, dieselben Zeilen wie `rows`, Minor-Units-Integer,
+`Content-Disposition: attachment`, CSV-Injection-Schutz für Textfelder. Jede JSON-Antwort hat den Rahmen
+`{report, range, currency, start_month, end_month, rows, totals}`; Monate ohne Daten erscheinen mit 0
+(lückenlose Zeitreihe). Noch nicht umgesetzt: PDF-Export, PayPal-Abgleich (Phase 2), Krypto-Erweiterung
+der Vermögensübersicht (Phase 3).
+
 Create/Update-Payloads und Responses sind in `types.ts` beziehungsweise `loyaltyTypes.ts` vollständig typisiert. Die Clients stehen in `api.ts` und `loyaltyApi.ts`.

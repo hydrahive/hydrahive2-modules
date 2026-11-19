@@ -14,6 +14,7 @@ from .routes_imports import router as import_router
 from .routes_ledger import router as ledger_router
 from .routes_loyalty import router as loyalty_router
 from .routes_planning import router as planning_router
+from .routes_reports import router as reports_router
 
 router = APIRouter()
 
@@ -45,4 +46,5 @@ def register(ctx) -> None:
     ctx.register_router(ledger_router)
     ctx.register_router(loyalty_router)
     ctx.register_router(planning_router)
+    ctx.register_router(reports_router)
     ctx.register_migrations("migrations")
