@@ -19,6 +19,9 @@ const FILTERS: { value: "all" | ImportRowStatus; label: string }[] = [
 ]
 const messageLabel = importMessage
 
+export const KI_OFFLINE_TEXT = "KI nicht erreichbar – nur Vorschläge aus deiner Historie. Die übrigen Zeilen bitte von Hand zuordnen."
+export function KiOfflineHint() { return <span role="status" className="block text-xs font-semibold text-amber-200">{KI_OFFLINE_TEXT}</span> }
+
 export function RowEditor({ batchId, row, accountCurrency, accounts, categories, readOnly, onUpdated }: {
   batchId: number
   accounts: Account[]
@@ -103,6 +106,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   const [filter, setFilter] = useState<"all" | ImportRowStatus>("all")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
+  const [kiOffline, setKiOffline] = useState(false)
   const [confirmComplete, setConfirmComplete] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [models, setModels] = useState<{ id: string; label: string }[]>([])
@@ -152,7 +156,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   }
   async function suggest() {
     setBusy(true); setError(undefined)
-    try { const next = await haushaltsbuchApi.suggestImportCategories(batch.id, model || undefined); setBatch(next); onChanged(next) }
+    try { const next = await haushaltsbuchApi.suggestImportCategories(batch.id, model || undefined); setKiOffline(next.suggestion_notice === "llm_unavailable"); setBatch(next); onChanged(next) }
     catch (cause) { setError(cause) } finally { setBusy(false) }
   }
   async function acceptSuggestions() {
@@ -188,6 +192,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
       <div className="mr-auto min-w-0">
         <strong className="block text-sm text-[#e8eef8]">Kategorien automatisch vorschlagen</strong>
         <span className="text-xs text-[#9aa7bc]">Erst aus deiner Historie, unbekannte Händler per KI. {uncategorized.length} Zeile(n) ohne Kategorie{openSuggestions > 0 ? ` · ${openSuggestions} offene(r) Vorschlag/Vorschläge` : ""}.</span>
+        {kiOffline && <KiOfflineHint />}
       </div>
       {models.length > 0 && <Select aria-label="KI-Modell" value={model} disabled={busy} onChange={(event) => setModel(event.target.value)} className="max-w-[16rem]">{models.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</Select>}
       <Button tone="primary" disabled={busy || uncategorized.length === 0} onClick={suggest}><Sparkles size={13} className="mr-1 inline" />Vorschlagen</Button>

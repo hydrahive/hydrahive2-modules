@@ -331,6 +331,8 @@ export interface ImportBatch {
   rows?: ImportRow[]
   /** Nur in der Antwort von POST /crypto-bridge/trade-imports. */
   warnings?: { skipped_transfers: number }
+  /** Nur in der Antwort von POST /imports/{id}/suggest-categories: KI war nicht erreichbar. */
+  suggestion_notice?: "llm_unavailable" | null
 }
 
 export interface ImportRowUpdate {
