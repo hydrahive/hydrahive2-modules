@@ -55,7 +55,7 @@ Legende Stand: ✅ geht schon · 🟡 teilweise · ❌ fehlt
 ### Etappe A – Kassenbuch-Grundlage
 | # | Till kann … | Prüfung (an echten Daten) | Stand |
 |---|---|---|---|
-| A1 | einen Haushalt mit seinen Konten haben: **Girokonto** + ein Konto je Krypto-Wallet (Tron TWgdiv…ZeyD, Base/Ethereum 0xa1aE…696E) | Haushaltsbuch → Konten zeigt diese Konten; DB: Konten vom Typ `wallet` mit Verknüpfung zur Cryptoboard-Adresse | ❌ |
+| A1 | einen Haushalt mit seinen Konten haben: **Girokonto** + ein Konto je Krypto-Wallet (Tron TWgdiv…ZeyD, Base/Ethereum 0xa1aE…696E, Bitcoin bc1qeq…7aar = BTC bei MetaMask) | Haushaltsbuch → Konten zeigt diese Konten; DB: Konten vom Typ `wallet` mit Verknüpfung zur Cryptoboard-Adresse | ❌ |
 | A3 | **Girokonto-Umsätze** per Kontoauszug-Import (CSV/PDF, vorhanden) einspielen | Import eines echten Auszugs, Buchungen erscheinen im Girokonto | 🟡 (Import da, Konto fehlt) |
 | A2 | je Krypto-Konto den **Bestand je Coin** und den **EUR-Wert** sehen, aktuell wie im Cryptoboard | Wert im Haushaltsbuch = Wert im Cryptoboard (± Kursrundung, gleiche Uhrzeit) | 🟡 (nur Gesamtwert eines Portfolios) |
 
@@ -97,6 +97,7 @@ Legende Stand: ✅ geht schon · 🟡 teilweise · ❌ fehlt
    Offen für D4: **Welche Bewertungsregel** soll gelten (mit Steuerberater klären)? Und ungefähres **Datum des
    Zuflusses**, falls bekannt (Haltedauer).
 3. ~~Girokonto~~ → **kommt mit rein** (A1/A3).
+   ~~Bitcoin-Adresse „BTC MM“~~ → bekommt ebenfalls ein Konto: BTC bei MetaMask (Till, 20.11.).
 4. **Die 3 ungepaarten TRX-Abgänge** (31.05. 1000, 03.08. 3500, 03.10. 450 TRX): Till prüft das.
 
 ## 7. Reihenfolge
