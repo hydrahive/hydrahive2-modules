@@ -1,5 +1,14 @@
 # Haushaltsbuch Etappe 9+ — Auswertungen, erweiterte Importe, Crypto-Brücke
 
+> **Vorrang-Hinweis (VERTRAG-B.md, 20.11.2026):** Das Zieldokument
+> `hydrahive2-modules/ziele/haushalt-krypto.md` erklärt Krypto-Trade-Buchungen im
+> Haushaltsbuch ausdrücklich NICHT mehr zum Nicht-Ziel (siehe unten "Kein automatisches
+> Trade-Tracking ... das Haushaltsbuch zeigt nur den aggregierten Vermögenswert und bietet
+> einen manuellen Trade-Import an"). Seit Etappe B gilt stattdessen: Swaps werden als
+> Umbuchungen zwischen Krypto-Konten gebucht, Krypto-Zahlungen (Kartenzahlung/Abgang) als
+> echte Ausgaben-Buchungen (`crypto_ledger_import.py`, `POST /crypto-bridge/ledger-imports`).
+> Kollidiert diese Spec mit dem Zieldokument, gilt das Zieldokument.
+
 ## Was
 
 Diese Spec konkretisiert die bisher nur stichwortartige Roadmap-Etappe 9

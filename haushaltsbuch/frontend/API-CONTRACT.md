@@ -184,3 +184,47 @@ Ungültiger `range`-Wert → 422. CSV: Semikolon-getrennt, dieselben Zeilen wie 
 der Vermögensübersicht (Phase 3).
 
 Create/Update-Payloads und Responses sind in `types.ts` beziehungsweise `loyaltyTypes.ts` vollständig typisiert. Die Clients stehen in `api.ts` und `loyaltyApi.ts`.
+
+## Crypto-Brücke v3 — Ledger-Import: Swaps/Kartenzahlungen/Abgänge (Etappe B)
+
+Zusätzlich zu Portfolio- (v1) und Adress-Verknüpfung (v2, beide funktionieren weiter):
+`POST /crypto-bridge/ledger-imports` übernimmt Swaps, Kartenzahlungen und Abgänge aus dem
+Cryptoboard-Ledger (`PORT_VERSION 3`, `ledger_moves`). Zieldokument Etappe B: Swaps sind
+Umbuchungen zwischen Tills eigenen Krypto-Konten (nie Einnahme/Ausgabe), Kartenzahlungen sind
+Ausgaben mit EUR-Wert am Tag, Till weist die Kategorie selbst zu. Ist der Port noch v2/v1 oder
+nicht erreichbar, fail-closed (`crypto_bridge_unavailable`) — kein Rückfall auf v1/v2-Daten.
+
+- `POST /crypto-bridge/ledger-imports` (kein Body) → ImportBatch wie `POST /imports` (Status
+  `draft`, `source_format="crypto_ledger"`, `display_filename="Cryptoboard-Ledger"`), zusätzlich
+  `groups`:
+  `{swaps:{count,sum_minor}, kartenzahlungen:{count,sum_minor}, abgaenge:{count,sum_minor},
+  unklar:[{id,reason}], duplicates:int}`. `sum_minor`/`count` zählen nur NEUE (nicht bereits
+  importierte/doppelte) Zeilen dieser Gruppe. Kontozuordnung über die Chain jedes Ledger-Eintrags:
+  genau EIN Konto mit verknüpfter Adresse dieser Chain (`PUT /accounts/{id}/crypto-addresses`,
+  v2) — mehrere oder keine Treffer ergeben eine `unklar`-Zeile (`reason` u. a.
+  `kein_eindeutiges_konto`, `value_minor_fehlt`, `swap_bein_fehlt`, `unbekannter_typ`), nie
+  geraten. 422 `crypto_wallet_not_linked` (kein eigenes Konto verknüpft), 422
+  `crypto_bridge_unavailable` (Port fehlt/falsche Version/Portfolio nicht verfügbar), 422
+  `no_records` (Ledger komplett leer).
+- Je Zeile: Swap → Transferzeile Von-Konto→Nach-Konto (`counter_account_id` gesetzt,
+  `purpose` „Swap <Symbol> → <Symbol>“, `bank_reference`=Cryptoboard-Swap-id). Kartenzahlung →
+  Ausgabe vom Krypto-Konto (`row_account_id`, `category_id=null`, Status `pending`).
+  Abgang → wie Kartenzahlung, aber Status direkt `rejected` (standardmäßig ausgeschlossen, Till
+  entscheidet) — über `PATCH /imports/{id}/rows/{row_id}` wie jede andere Zeile auf
+  `pending`/`accepted` umstellbar. `ImportRow`-JSON hat zusätzlich `row_account_id` (int|null):
+  überschreibt für diese Zeile das Batch-Konto (`account_id`), weil ein Ledger-Import mehrere
+  Kontopaare in einem Batch mischt (z. B. Kartenzahlung mal vom Base-, mal vom Ethereum-Konto).
+- Dedup: stabile Kennung = `ledger_moves`-Eintrag-`id` als Fingerprint (bestehender
+  Fingerprint-Mechanismus, `strong`); ein zweiter Import derselben Einträge liefert sie als
+  `duplicate` zurück, `groups.duplicates` zählt sie, `count`/`sum_minor` der Gruppen bleiben 0.
+- Abschluss über das bestehende `POST /imports/{id}/complete`: Transferzeilen (Swap) werden wie
+  beim Crypto-Trade-Import über zwei Konto-Postings gebucht — Prüfung aber über
+  `module_haushaltsbuch_account_crypto_addresses` (beide Konten über eigene Adressen verknüpft),
+  NICHT über `linked_portfolio_id` (das Konto trägt hier keine Portfolio-Verknüpfung). Zeilen
+  ohne Kategorie (Kartenzahlung/Abgang) werden auf die System-Ausgabenkategorie „Ohne Kategorie“
+  gebucht (`internal=true`, je Haushalt einmal angelegt, bleibt in `GET /categories` sichtbar und
+  wählbar — Till kann sie filtern und später umkategorisieren). Alle anderen Importquellen
+  verlangen weiterhin eine echte Kategorie (`import_category_required`).
+- Reports (`GET /reports/cashflow`, `GET /reports/categories`): Swap-Postings haben kein
+  `category_id` und zählen deshalb nie als Einnahme/Ausgabe; Kartenzahlungs-/Abgang-Postings auf
+  „Ohne Kategorie“ zählen wie jede andere `expense`-Kategorie.

@@ -1,13 +1,15 @@
 """Crypto-Brücke (Phase 3): Verknüpfung mit Cryptoboard (v1, Portfolio-ID) und
 Live-Wert. Trade-Import ist in crypto_trade_import.py ausgelagert
 (Dateigrößenlimit); die v2-Funktionen (Adressen statt Portfolio, Bestand je
-Coin) sind in crypto_addresses.py/crypto_holdings.py.
+Coin) sind in crypto_addresses.py/crypto_holdings.py; die v3-Funktion
+(ledger_moves, Etappe B) ist in crypto_ledger_import.py.
 
-NUR lesend über `cryptoboard/backend/read_port.py` (PORT_VERSION 2, siehe
-VERTRAG-PORT-V2.md). Keine Cryptoboard-Interna, kein Kurs-Client,
-cryptoboard-Code bleibt unverändert. Diese Datei nutzt weiterhin nur die
-v1-Funktionen (portfolios_for, portfolio_value); crypto_trade_import.py
-nutzt zusätzlich trades().
+NUR lesend über `cryptoboard/backend/read_port.py`. Aktuell erwartete
+PORT_VERSION: 3 (VERTRAG-B.md) - die v1/v2-Funktionen (portfolios_for,
+portfolio_value, wallet_addresses_for, wallet_holdings, trades) bleiben dabei
+unverändert nutzbar, der Port liefert sie weiterhin, nur eben zusätzlich
+`ledger_moves` und die höhere PORT_VERSION. Keine Cryptoboard-Interna, kein
+Kurs-Client, cryptoboard-Code bleibt unverändert.
 
 Port-Zugang: `_load_port()` lädt das Modul über die Core-Registry
 (`hydrahive.modules.registry.REGISTRY`) und validiert `PORT_VERSION`. Fehlt
@@ -40,7 +42,7 @@ from . import audit
 from .access import conflict, membership, require_row
 from .common import NOW
 
-PORT_VERSION = 2
+PORT_VERSION = 3
 _CRYPTO_CURRENCY = "EUR"
 _TRADE_LIMIT = 1000  # genutzt von crypto_trade_import.py (Trade-Vorschau)
 
