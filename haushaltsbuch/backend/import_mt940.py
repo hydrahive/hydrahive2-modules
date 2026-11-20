@@ -4,6 +4,7 @@ import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
+from .import_mt940_86 import parse as parse_86
 from .import_parsers import (
     ImportParseError,
     MAX_RECORDS,
@@ -73,19 +74,26 @@ def _parse_transaction(
         amount = -abs(amount)
     else:
         amount = abs(amount)
-    reference = normalize_bank_reference(
-        _structured(detail, "EREF") or (match.group("reference") or "").strip() or None
-    )
+    sub = parse_86(detail)
+    if sub is not None:  # ?-Subfelder (Sparkasse/DK-Standard), siehe import_mt940_86.py
+        counterparty, purpose, iban, eref, hint = (
+            sub.counterparty, sub.purpose, sub.counterparty_iban, sub.reference, sub.booking_text)
+    else:
+        counterparty, purpose, iban, eref, hint = (
+            _structured(detail, "NAME"), _structured(detail, "SVWZ") or (" ".join(detail.split()) or None),
+            _structured(detail, "IBAN"), _structured(detail, "EREF"), None)
+    reference = normalize_bank_reference(eref or (match.group("reference") or "").strip() or None)
     return NormalizedRecord(
         source_line=source_line,
         booking_date=booking_date,
         value_date=value_date,
         amount_minor=amount,
         currency=currency,
-        counterparty=_structured(detail, "NAME"),
-        purpose=_structured(detail, "SVWZ") or (" ".join(detail.split()) or None),
-        counterparty_identifier=mask_bank_identifier(_structured(detail, "IBAN")),
+        counterparty=counterparty,
+        purpose=purpose,
+        counterparty_identifier=mask_bank_identifier(iban),
         bank_reference=reference,
+        category_hint=hint,
     )
 
 
