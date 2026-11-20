@@ -1,0 +1,2 @@
+﻿Bezeichnung Auftragskonto;IBAN Auftragskonto;BIC Auftragskonto;Bankname Auftragskonto;Buchungstag;Valutadatum;Name Zahlungsbeteiligter;IBAN Zahlungsbeteiligter;BIC (SWIFT-Code) Zahlungsbeteiligter;Buchungstext;Verwendungszweck;Betrag;Waehrung;Saldo nach Buchung;Bemerkung;Gekennzeichneter Umsatz;Glaeubiger ID;Mandatsreferenz
+Testkonto;DE00000000000000000000;TESTDEFFXXX;Testbank eG;10.11.2026;10.11.2026;Test Partner;DE00000000000000000004;TESTDEFFXXX;Basislastschrift;Testabbuchung;-25,50;EUR;1000,00;;;;

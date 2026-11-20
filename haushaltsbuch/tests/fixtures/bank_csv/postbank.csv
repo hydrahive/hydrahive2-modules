@@ -1,0 +1,11 @@
+﻿Umsätze;;;;;;;;;;;;;;;;;
+Konto;Filial-/Kontonummer;IBAN;Währung;;;;;;;;;;;;;;
+Testkonto;123 0000000 00;DE00000000000000000000;EUR;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;
+1.11.2026 - 20.11.2026;;;;;;;;;;;;;;;;;
+Letzter Kontostand;;;;-100,00;EUR;;;;;;;;;;;;
+Vorgemerkte und noch nicht gebuchte Umsätze sind nicht Bestandteil dieser Übersicht.;;;;;;;;;;;;;;;;;
+Buchungstag;Wert;Umsatzart;Begünstigter / Auftraggeber;Verwendungszweck;IBAN / Kontonummer;BIC;Kundenreferenz;Mandatsreferenz;Gläubiger ID;Fremde Gebühren;Betrag;Abweichender Empfänger;Anzahl der Aufträge;Anzahl der Schecks;Soll;Haben;Währung
+2.11.2026;2.11.2026;SEPA Überweisung;Test Partner;Testzahlung;DE00000000000000000006;;NOTPROVIDED;;;;75;;;;;75;EUR
+9.11.2026;9.11.2026;Kartenzahlung;Testladen;Testkauf;DE00000000000000000007;;TESTREF9;;;;-9,99;;;;;-9,99;;EUR
+Kontostand;20.11.2026;;;-34,24;EUR;;;;;;;;;;;;

@@ -46,7 +46,7 @@ class CsvMapping:
     counterparty_identifier: str | None = None
     category_hint: str | None = None
     delimiter: Literal[";", ",", "\t"] = ";"
-    encoding: Literal["utf-8", "utf-8-sig", "cp1252", "iso-8859-1"] = "utf-8"
+    encoding: Literal["utf-8", "utf-8-sig", "cp1252", "iso-8859-1", "auto"] = "auto"
     decimal_separator: Literal[".", ","] = ","
     date_format: str = "%d.%m.%Y"
     default_currency: str = "EUR"

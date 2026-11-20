@@ -1,0 +1,14 @@
+Umsatzanzeige;Datei erstellt am: 20.11.2026 10:00
+
+IBAN;DE00000000000000000000
+Kontoname;Testkonto
+Bank;ING
+Kunde;Test Nutzer
+Zeitraum;01.11.2026 - 20.11.2026
+
+Sortierung;Datum absteigend
+
+In der CSV-Datei finden Sie alle bereits gebuchten Umsätze.
+
+Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Betrag;Währung
+10.11.2026;10.11.2026;Test Firma;Lastschrift;Testkauf;-19,99;EUR
