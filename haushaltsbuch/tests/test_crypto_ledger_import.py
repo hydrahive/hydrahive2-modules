@@ -12,7 +12,7 @@ from __future__ import annotations
 from backend import crypto_bridge
 from conftest import PREFIX
 from test_crypto_bridge import FakePort, _install_fake_port
-from test_v1_api import _create_account, _create_household
+from test_v1_api import _create_account, _create_household, _expense_category
 
 
 def _wallet_account(client, headers, name: str) -> dict:
@@ -234,30 +234,32 @@ def test_port_v2_is_fail_closed(client, owner_headers, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_counterproof_swap_booked_as_expense_fails_category_kind_mismatch(
+def test_counterproof_swap_as_category_posting_would_count_as_expense(
     client, owner_headers, monkeypatch
 ):
-    """Gegenprobe: Ein Swap darf NICHT wie eine normale Ausgabe mit Kategorie
-    gebucht werden - patcht man die counter_account_id weg und erzwingt eine
-    Kategorie, scheitert expected_kind (amount_minor<0 -> 'expense' nötig,
-    hier aber eine 'income'-Kategorie), weil Swap-Beträge beim Von-Konto
-    NEGATIV sind (Geld verlässt das Konto) - keine Einnahme-Kategorie passt."""
-    port = FakePort()
-    _install_fake_port(monkeypatch, port)
-    _setup_three_wallets(client, owner_headers, port)
-    port.ledger_moves_data["owner"] = _fixture_moves()[:1]
-    batch = _import(client, owner_headers).json()
-    swap_row = batch["rows"][0]
-    income_category = next(
-        item for item in client.get(f"{PREFIX}/categories", headers=owner_headers).json()
-        if item["kind"] == "income"
+    """Gegenprobe zu B1: Würde man einen Swap-Betrag (statt als Transfer
+    über counter_account_id) wie eine normale Ausgabe MIT Kategorie buchen,
+    zählte er im Cashflow-/Kategorien-Report als Ausgabe. Das belegt, dass
+    unser Swap NUR deshalb nicht als Ausgabe zählt, weil import_completion
+    ihn über counter_account_id (zwei Konto-Postings, keine Kategorie) statt
+    über eine Kategorie bucht - nicht weil der Betrag zufällig klein ist."""
+    _create_household(client, owner_headers)
+    account = _create_account(client, owner_headers, opening_balance=0)
+    category = _expense_category(client, owner_headers)
+    manual = client.post(
+        f"{PREFIX}/transactions",
+        headers=owner_headers,
+        json={
+            "booking_date": "2026-01-10", "source": "manual",
+            "postings": [
+                {"account_id": account["id"], "original_amount": -5000, "currency": "EUR", "base_amount": -5000},
+                {"category_id": category["id"], "original_amount": 5000, "currency": "EUR", "base_amount": 5000},
+            ],
+        },
     )
-    # Künstlich: counter_account_id entfernen geht über die API nicht (kein
-    # PATCH-Feld dafür) - die Gegenprobe zeigt daher die Kategorie-Pflicht
-    # bei echten Ausgaben-Importen (nächster Test), die für crypto_ledger-
-    # Swaps (counter_account_id gesetzt) nie einschlägt.
-    assert swap_row["counter_account_id"] is not None
-    assert income_category["id"] != swap_row["category_id"]
+    assert manual.status_code == 201, manual.text
+    cashflow = client.get(f"{PREFIX}/reports/cashflow?range=24", headers=owner_headers).json()
+    assert sum(row["expense"] for row in cashflow["rows"]) == 5000
 
 
 def test_counterproof_non_crypto_ledger_import_still_requires_category(
