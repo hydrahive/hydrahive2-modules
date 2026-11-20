@@ -81,6 +81,8 @@ export const haushaltsbuchApi = {
   unlinkCryptoAddresses: (id: number, revision: number) => api.delete<Account>(`${BASE}/accounts/${id}/crypto-addresses?revision=${revision}`),
   cryptoHoldings: (id: number) => api.get<CryptoHoldings>(`${BASE}/accounts/${id}/crypto-holdings`),
   createCryptoTradeImport: (body: CryptoTradeImportBody) => api.post<ImportBatch>(`${BASE}/crypto-bridge/trade-imports`, body),
+  /** Legt nur einen Entwurf an (Swaps/Kartenzahlungen/Abgänge aus dem Cryptoboard-Ledger) – gebucht wird erst mit completeImport. */
+  createCryptoLedgerImport: () => api.post<ImportBatch>(`${BASE}/crypto-bridge/ledger-imports`, {}),
 
   budgets: (active_only = true) => api.get<Budget[]>(`${BASE}/budgets${query({ active_only })}`),
   createBudget: (body: BudgetCreate) => api.post<Budget>(`${BASE}/budgets`, body),

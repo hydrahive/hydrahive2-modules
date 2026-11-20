@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { FileClock, FileUp, Inbox } from "lucide-react"
 import { errorMessage, haushaltsbuchApi } from "./api"
+import { CryptoLedgerButton } from "./CryptoLedgerButton"
 import { ImportBatchView } from "./ImportBatchView"
 import { ImportHistory } from "./ImportHistory"
 import { ImportUploadDialog } from "./ImportUploadDialog"
@@ -64,7 +65,7 @@ export function ImportsView({ baseCurrency, onChanged, initialBatchId }: { baseC
   const historical = batches.filter((batch) => batch.status !== "draft")
   return <div className="space-y-4">
     {error !== undefined && <ErrorState error={errorMessage(error)} onRetry={load} />}
-    <div className="flex flex-wrap items-center gap-2"><div className="mr-auto"><h2 className="flex items-center gap-2 font-bold text-[#e8eef8]"><Inbox size={17} className="text-cyan-300" />Bankimport-Inbox</h2><p className="mt-1 text-xs text-[#9aa7bc]">Bankexporte werden zuerst als persistente Entwürfe geprüft und erst nach Bestätigung gebucht.</p></div><Button tone="primary" onClick={() => setUpload(true)} disabled={!hasImportableAccount}><FileUp size={13} className="mr-1 inline" />Neuer Import</Button></div>
+    <div className="flex flex-wrap items-center gap-2"><div className="mr-auto"><h2 className="flex items-center gap-2 font-bold text-[#e8eef8]"><Inbox size={17} className="text-cyan-300" />Bankimport-Inbox</h2><p className="mt-1 text-xs text-[#9aa7bc]">Bankexporte werden zuerst als persistente Entwürfe geprüft und erst nach Bestätigung gebucht.</p></div><CryptoLedgerButton onCreated={created} /><Button tone="primary" onClick={() => setUpload(true)} disabled={!hasImportableAccount}><FileUp size={13} className="mr-1 inline" />Neuer Import</Button></div>
     {!hasImportableAccount && <ErrorState error={`Lege zuerst ein aktives Konto in der Haushaltsbasiswährung ${baseCurrency} an.`} />}
     <div className="flex gap-1 border-b border-[rgb(var(--hh-s-rand,38_50_71))]"><button type="button" onClick={() => setSection("inbox")} className={`flex items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold ${section === "inbox" ? "border-cyan-300 text-cyan-200" : "border-transparent text-[#9aa7bc]"}`}><Inbox size={14} />Inbox ({drafts.length})</button><button type="button" onClick={() => setSection("history")} className={`flex items-center gap-2 border-b-2 px-3 py-2 text-xs font-bold ${section === "history" ? "border-cyan-300 text-cyan-200" : "border-transparent text-[#9aa7bc]"}`}><FileClock size={14} />Historie ({historical.length})</button></div>
     {section === "inbox" && (drafts.length ? <div className="grid gap-3 lg:grid-cols-2">{drafts.map((batch) => {

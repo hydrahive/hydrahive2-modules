@@ -1,4 +1,13 @@
 // Crypto-Brücke (V9 Phase 3): laienverständliche Meldungen zu den Fehlercodes des Backends.
+// Gründe, warum ein Ledger-Eintrag „unklar“ bleibt (Backend crypto_ledger_rows.py) – nie geraten, nie gebucht.
+export const LEDGER_REASONS: Record<string, string> = {
+  kein_eindeutiges_konto: "Kein eindeutiges Konto: Die Chain gehört zu keinem oder zu mehreren deiner Krypto-Konten. Prüfe die verknüpften Adressen.",
+  value_minor_fehlt: "Der Euro-Wert am Tag fehlt – ohne ihn lässt sich nichts buchen.",
+  swap_bein_fehlt: "Zu diesem Swap fehlt ein Bein (Abgang oder Zugang) – er wird nicht gebucht.",
+  unbekannter_typ: "Unbekannter Buchungstyp im Cryptoboard – er wird nicht gebucht.",
+}
+export const ledgerReasonText = (reason: string): string => LEDGER_REASONS[reason] ?? reason.replaceAll("_", " ")
+
 export const CRYPTO_MESSAGES: Record<string, string> = {
   crypto_wallet_required: "Nur Konten vom Typ „PayPal/Wallet“ (nicht archiviert) lassen sich mit Cryptoboard verknüpfen.",
   crypto_portfolio_not_found: "Dieses Portfolio gibt es in deinem Cryptoboard nicht (mehr). Bitte wähle ein anderes Portfolio.",
@@ -15,6 +24,7 @@ export const CRYPTO_MESSAGES: Record<string, string> = {
   crypto_address_not_found: "Diese Adresse gibt es in deinem Cryptoboard nicht (mehr). Bitte lade die Liste neu und wähle erneut.",
   crypto_address_already_linked: "Mindestens eine dieser Adressen ist bereits mit einem anderen Konto verknüpft. Löse sie dort zuerst.",
   owner_only: "Nur wer die Verknüpfung angelegt hat oder der Haushaltseigentümer darf das.",
+  ...Object.fromEntries(Object.entries(LEDGER_REASONS).map(([reason, text]) => [`crypto_ledger_${reason}`, text])),
   no_records: "Es gibt keine passenden Einträge, die sich importieren lassen (bei Trades: keine Käufe oder Verkäufe im gewählten Zeitraum).",
 }
 

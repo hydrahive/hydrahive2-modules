@@ -243,7 +243,7 @@ export interface AuditEvent {
 
 export type ImportFormat = "auto" | "camt" | "mt940" | "csv" | "pdf" | "paypal"
 // "crypto_trades" entsteht nur über die Crypto-Brücke (Phase 3) und ist im Upload-Dialog nicht wählbar.
-export type StoredImportFormat = Exclude<ImportFormat, "auto"> | "crypto_trades"
+export type StoredImportFormat = Exclude<ImportFormat, "auto"> | "crypto_trades" | "crypto_ledger"
 export type ImportBatchStatus = "draft" | "imported" | "reversed"
 export type ImportRowStatus = "pending" | "accepted" | "rejected" | "duplicate" | "error" | "imported" | "reversed"
 export type CsvEncoding = "auto" | "utf-8" | "utf-8-sig" | "cp1252" | "iso-8859-1"
@@ -306,6 +306,8 @@ export interface ImportRow {
   status: ImportRowStatus
   /** Gesetzt bei Umbuchungen (Crypto-Trades): Gegenkonto statt Kategorie. */
   counter_account_id: number | null
+  /** Ledger-Import: Konto dieser Zeile (überschreibt das Batch-Konto); sonst null/fehlend. */
+  row_account_id?: number | null
   category_id: number | null
   suggested_category_id: number | null
   suggestion_source: "history" | "llm" | null
@@ -338,6 +340,18 @@ export interface ImportBatch {
   warnings?: { skipped_transfers: number }
   /** Nur in der Antwort von POST /imports/{id}/suggest-categories: KI war nicht erreichbar. */
   suggestion_notice?: "llm_unavailable" | null
+  /** Nur in der Antwort von POST /crypto-bridge/ledger-imports. */
+  groups?: LedgerGroups
+}
+
+/** Gruppen der Vorschau beim Ledger-Import; Summen in Cent, zählen nur NEUE (nicht doppelte) Zeilen. */
+export interface LedgerGroup { count: number; sum_minor: number }
+export interface LedgerGroups {
+  swaps: LedgerGroup
+  kartenzahlungen: LedgerGroup
+  abgaenge: LedgerGroup
+  unklar: { id: string; reason: string }[]
+  duplicates: number
 }
 
 export interface ImportRowUpdate {

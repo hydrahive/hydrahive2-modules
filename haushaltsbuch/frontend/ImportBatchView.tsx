@@ -3,6 +3,7 @@ import { ArrowLeft, Check, CheckCheck, Pencil, Save, Sparkles, Trash2, Wand2, X 
 import { AdminConfirmDialog } from "@/features/cockpit/admin/ui/AdminConfirmDialog"
 import { errorMessage, haushaltsbuchApi, isConflict } from "./api"
 import { formatMinorUnits, minorToInput, parseMinorUnits } from "./money"
+import { CryptoLedgerSummary } from "./CryptoLedgerSummary"
 import { transferLabel } from "./cryptoBridge"
 import { PENDING_LABEL, detectedInfo, importErrorText, importMessage, isPendingRow, sourceFormatLabel } from "./importFormats"
 import type { Account, Category, ImportBatch, ImportRow, ImportRowStatus, ImportRowUpdate } from "./types"
@@ -103,6 +104,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   onDeleted: (batchId: number) => void
 }) {
   const [batch, setBatch] = useState(initialBatch)
+  const [ledgerGroups] = useState(initialBatch.groups) // Antworten von Vorschlägen/Abschluss tragen keine groups mehr
   const [filter, setFilter] = useState<"all" | ImportRowStatus>("all")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>()
@@ -115,7 +117,8 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   const account = accounts.find((item) => item.id === batch.account_id)
   const accepted = rows.filter((row) => row.status === "accepted")
   const acceptedSum = accepted.reduce((sum, row) => sum + (row.amount_minor ?? 0), 0)
-  const missingCategory = accepted.filter((row) => row.category_id === null && row.counter_account_id === null).length
+  const ledger = batch.source_format === "crypto_ledger" // Ledger-Zeilen ohne Kategorie bucht das Backend auf „Ohne Kategorie“
+  const missingCategory = ledger ? 0 : accepted.filter((row) => row.category_id === null && row.counter_account_id === null).length
   const uncategorized = rows.filter((row) => row.category_id === null && row.counter_account_id === null && (row.status === "pending" || row.status === "duplicate"))
   const openSuggestions = uncategorized.filter((row) => row.suggested_category_id !== null).length
 
@@ -144,7 +147,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
     setBatch(nextBatch); onChanged(nextBatch)
   }
   async function bulk(status: "accepted" | "rejected") {
-    const candidates = rows.filter((row) => row.errors.length === 0 && row.status !== "duplicate" && row.status !== "imported" && row.status !== "reversed" && row.status !== status)
+    const candidates = rows.filter((row) => row.errors.length === 0 && row.status !== "duplicate" && row.status !== "imported" && row.status !== "reversed" && row.status !== status && !(ledger && status === "accepted" && row.status === "rejected"))
     if (!candidates.length) return
     setBusy(true); setError(undefined)
     try {
@@ -181,6 +184,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
     {batch.status === "imported" && <div className="rounded border border-emerald-500/35 bg-emerald-500/10 p-4 text-sm text-emerald-100" role="status"><strong>Import abgeschlossen.</strong> {rows.filter((row) => row.status === "imported").length} Zeilen wurden verbindlich gebucht.</div>}
     {batch.status === "reversed" && <div className="rounded border border-amber-500/35 bg-amber-500/10 p-4 text-sm text-amber-100" role="status"><strong>Import storniert.</strong> Die zugehörigen Buchungen wurden durch Gegenbuchungen aufgehoben.</div>}
     {error !== undefined && <BatchError error={error} />}
+    {ledgerGroups && batch.status === "draft" && <CryptoLedgerSummary groups={ledgerGroups} />}
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
       <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Zeilen</span><strong className="mt-1 block text-lg text-[#e8eef8]">{rows.length}</strong></div>
       <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Zeitraum</span><strong className="mt-1 block text-sm text-[#e8eef8]">{dates.length ? `${dates[0]} – ${dates[dates.length - 1]}` : "—"}</strong></div>
