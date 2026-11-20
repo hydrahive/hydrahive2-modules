@@ -61,7 +61,9 @@ function all(over: Partial<OnchainPreviewAll> = {}): OnchainPreviewAll {
 }
 
 const out = (c: string, over: Partial<OnchainEntry> = {}) =>
-  entry(`base:${EVM(c)}:transfer_out`, EVM(c), "transfer_out", { coin_id: "tron", symbol: "TRX", price: null, preis_fehlt: true, ...over })
+  entry(`base:${EVM(c)}:transfer_out`, EVM(c), "transfer_out", {
+    coin_id: "tron", symbol: "TRX", price: null, preis_fehlt: true, ...over,
+  })
 
 describe("Paare", () => {
   it("gruppiert sell+buy je Paar-id, sell zuerst", () => {
@@ -109,7 +111,8 @@ describe("Mehrdeutig", () => {
   })
   it("gleicher Kandidat nicht in zwei Gruppen", () => {
     const m2 = { ...m, tron_tx: H("b") }
-    expect(takenElsewhere({ mehrdeutig: [m, m2] }, { [m.tron_tx]: `base:${EVM("d")}` }, m2.tron_tx, `base:${EVM("d")}`)).toBe(true)
+    const k = `base:${EVM("d")}`
+    expect(takenElsewhere({ mehrdeutig: [m, m2] }, { [m.tron_tx]: k }, m2.tron_tx, k)).toBe(true)
   })
 })
 
@@ -152,7 +155,8 @@ describe("Spam, Leer-Zustand, Zahlen", () => {
   it("Zahlen-Strings bleiben exakt (Paar, Ausgabe)", () => {
     const p = pairOf("1", "b", { quantity: "2435.31", price: "0.000000000000000001" })
     const o = out("f", { quantity: "0.000000000000000001", price: "2435.31", preis_fehlt: false })
-    const pay = buildAllPayload(all({ pairs: [p], ausgaben: [o] }), new Set([...p.entries.map((e) => e.hash), o.hash]), {}, {})
+    const sel = new Set([...p.entries.map((e) => e.hash), o.hash])
+    const pay = buildAllPayload(all({ pairs: [p], ausgaben: [o] }), sel, {}, {})
     const buy = pay.find((t) => t.kind === "buy")
     expect(buy).toMatchObject({ quantity: "2435.31", price: "0.000000000000000001" })
     expect(pay.find((t) => t.kind === "transfer_out")).toMatchObject({ quantity: "0.000000000000000001", price: "2435.31" })

@@ -95,7 +95,9 @@ export function OnchainAllImportDialog({ onDone, onCancel }: Props) {
 
   return (
     <div className="space-y-3">
-      <p className="flex items-start gap-1.5 text-[11px] text-[#9aa7bc]"><Info size={12} className="mt-0.5 shrink-0" /> {t("oc_hint")}</p>
+      <p className="flex items-start gap-1.5 text-[11px] text-[#9aa7bc]">
+        <Info size={12} className="mt-0.5 shrink-0" /> {t("oc_hint")}
+      </p>
       {busy === "preview" && <p className="text-xs text-[#9aa7bc] text-center py-3">{t("oc_loading")}</p>}
       {preview && preview.addresses.length > 0 && <AddressStatusList addresses={preview.addresses} />}
       {preview?.kurs_abruf_fehlgeschlagen && <p className="text-[11px] text-amber-400">{t("oc_price_fetch_failed")}</p>}
@@ -113,14 +115,18 @@ export function OnchainAllImportDialog({ onDone, onCancel }: Props) {
           <p className="text-[11px] text-[#9aa7bc]">{t("oc_pairs_hint", { min: preview.window_minutes })}</p>
           <OnchainPreviewTable entries={preview.pairs.flatMap((p) => p.entries)} edits={edits} selected={selected}
             onToggle={toggle} onEdit={edit}
-            headerExtra={(id) => { const p = preview.pairs.find((x) => x.id === id); return p ? <PairHeader pair={p} /> : null }} />
+            headerExtra={(id) => {
+              const p = preview.pairs.find((x) => x.id === id)
+              return p ? <PairHeader pair={p} /> : null
+            }} />
         </section>
       )}
 
       {preview && preview.transactions.length > 0 && (
         <section className="space-y-1.5">
           <h4 className="text-xs font-medium text-[#c8d2df]">{t("oc_all_swaps_title")}</h4>
-          <OnchainPreviewTable entries={preview.transactions} edits={edits} selected={selected} onToggle={toggle} onEdit={edit} />
+          <OnchainPreviewTable entries={preview.transactions} edits={edits} selected={selected}
+            onToggle={toggle} onEdit={edit} />
         </section>
       )}
 
@@ -133,7 +139,8 @@ export function OnchainAllImportDialog({ onDone, onCancel }: Props) {
         <section className="space-y-1.5">
           <h4 className="text-xs font-medium text-amber-300">{t("oc_ausgaben_title")} ({preview.ausgaben.length})</h4>
           <p className="text-[11px] text-[#9aa7bc]">{t("oc_ausgaben_hint")}</p>
-          <OnchainPreviewTable entries={preview.ausgaben} edits={edits} selected={selected} onToggle={toggle} onEdit={edit} />
+          <OnchainPreviewTable entries={preview.ausgaben} edits={edits} selected={selected}
+            onToggle={toggle} onEdit={edit} />
         </section>
       )}
 
@@ -143,7 +150,9 @@ export function OnchainAllImportDialog({ onDone, onCancel }: Props) {
       {err && (
         <p className="text-xs text-rose-400">
           {err.text}{" "}
-          {err.keyMissing && <a href="#cryptoboard-alchemy-key" className="text-sky-300 hover:underline">{t("oc_goto_key")}</a>}
+          {err.keyMissing && (
+            <a href="#cryptoboard-alchemy-key" className="text-sky-300 hover:underline">{t("oc_goto_key")}</a>
+          )}
         </p>
       )}
 
@@ -169,7 +178,8 @@ export function OnchainAllImportDialog({ onDone, onCancel }: Props) {
             {busy === "commit" ? t("oc_booking") : `${t("oc_commit")} (${payload.length})`}
           </button>
         )}
-        <button onClick={onCancel} className={`${btn} bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df] hover:text-[#e8eef8]`}>
+        <button onClick={onCancel}
+          className={`${btn} bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df] hover:text-[#e8eef8]`}>
           {result ? t("oc_close") : t("tx_cancel")}
         </button>
       </div>

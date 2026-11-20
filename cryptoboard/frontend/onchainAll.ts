@@ -51,7 +51,9 @@ export function takenElsewhere(p: Pick<OnchainPreviewAll, "mehrdeutig">, choice:
 }
 
 /** Commit-Payload für EINEN Aufruf; nur gewählte + buchbare + erlaubte Einträge. */
-export function buildAllPayload(p: OnchainPreviewAll, selected: Set<string>, edits: Edits, choice: Choice): OnchainCommitTx[] {
+export function buildAllPayload(
+  p: OnchainPreviewAll, selected: Set<string>, edits: Edits, choice: Choice,
+): OnchainCommitTx[] {
   return buildCommitPayload(bookableEntries(p, choice), selected, edits)
 }
 
