@@ -4,7 +4,7 @@ import { useVaultStore } from "@/features/vault/vaultStore"
 import type {
   Account, AccountCreate, AccountUpdate, AuditEvent, Budget, BudgetCreate, BudgetReport, BudgetUpdate,
   CashflowReport, Category, CategoryCreate, CryptoBoardAddress, CryptoBridgeStatus, CryptoHoldings, CryptoTradeImportBody, CryptoValue, CategoryReport, CategoryUpdate, Dashboard, FixedCostReport, Forecast, Household, HouseholdCreate,
-  ImportBatch, ImportProfile, ImportProfileCreate, ImportProfileUpdate, ImportRow,
+  CsvPreview, ImportBatch, ImportProfile, ImportProfileCreate, ImportProfileUpdate, ImportRow,
   ImportRowUpdate, ImportUpload, Invite, Member, NetWorthReport, RecurringCreate, RecurringRule,
   RecurringUpdate, ReportKind, ReportRange, Transaction, TransactionCreate, TransactionFilters,
 } from "./types"
@@ -58,6 +58,12 @@ export const haushaltsbuchApi = {
     if (csv_mapping) form.append("mapping", JSON.stringify(csv_mapping))
     if (profile_id) form.append("profile_id", String(profile_id))
     return api.postForm<ImportBatch>(`${BASE}/imports`, form)
+  },
+  csvPreview: (file: File, accountId: number) => {
+    const form = new FormData()
+    form.append("file", file, file.name)
+    form.append("account_id", String(accountId))
+    return api.postForm<CsvPreview>(`${BASE}/imports/csv-preview`, form)
   },
   updateImportRow: (batchId: number, rowId: number, body: ImportRowUpdate) => api.patch<ImportRow>(`${BASE}/imports/${batchId}/rows/${rowId}`, body),
   llmModels: () => api.get<{ default: string; models: { id: string; label: string; is_free?: boolean }[] }>("/llm/models"),

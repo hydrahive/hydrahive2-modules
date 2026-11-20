@@ -4,7 +4,7 @@ import { AdminConfirmDialog } from "@/features/cockpit/admin/ui/AdminConfirmDial
 import { errorMessage, haushaltsbuchApi, isConflict } from "./api"
 import { formatMinorUnits, minorToInput, parseMinorUnits } from "./money"
 import { transferLabel } from "./cryptoBridge"
-import { importErrorText, importMessage, sourceFormatLabel } from "./importFormats"
+import { PENDING_LABEL, detectedInfo, importErrorText, importMessage, isPendingRow, sourceFormatLabel } from "./importFormats"
 import type { Account, Category, ImportBatch, ImportRow, ImportRowStatus, ImportRowUpdate } from "./types"
 import { Button, EmptyState, ErrorState, Input, Select, Textarea, panel } from "./ui"
 
@@ -66,13 +66,13 @@ export function RowEditor({ batchId, row, accountCurrency, accounts, categories,
   return <article className={`${panel} p-4`}>
     <div className="flex flex-wrap items-start gap-3">
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2"><strong className="text-sm text-[#e8eef8]">{row.counterparty || "Ohne Gegenpartei"}</strong><span className="rounded border border-[#40506a] px-2 py-0.5 text-[11px] font-bold text-[#c4cfdd]">{STATUS_LABEL[row.status]}</span>{row.fingerprint_strength === "weak" && row.warnings.includes("possible_duplicate") && <span className="text-[11px] font-bold text-amber-200">Schwaches Duplikat</span>}</div>
+        <div className="flex flex-wrap items-center gap-2"><strong className="text-sm text-[#e8eef8]">{row.counterparty || "Ohne Gegenpartei"}</strong><span className="rounded border border-[#40506a] px-2 py-0.5 text-[11px] font-bold text-[#c4cfdd]">{isPendingRow(row) ? PENDING_LABEL : STATUS_LABEL[row.status]}</span>{row.fingerprint_strength === "weak" && row.warnings.includes("possible_duplicate") && <span className="text-[11px] font-bold text-amber-200">Schwaches Duplikat</span>}</div>
         <p className="mt-1 break-words text-xs text-[#9aa7bc]">{row.purpose || "Kein Verwendungszweck"}</p>
         <p className="mt-2 text-[11px] text-[#9aa7bc]">{row.booking_date ?? "Ungültiges Datum"}{row.value_date ? ` · Valuta ${row.value_date}` : ""} · Quellzeile {row.source_line}{row.category_hint ? ` · Hinweis: ${row.category_hint}` : ""}</p>
       </div>
       <strong className={`tabular-nums ${(row.amount_minor ?? -1) >= 0 ? "text-emerald-200" : "text-[#e8eef8]"}`}>{row.amount_minor === null || row.currency === null ? "—" : formatMinorUnits(row.amount_minor, row.currency)}</strong>
     </div>
-    {(row.warnings.length > 0 || row.errors.length > 0) && <ul className="mt-3 space-y-1 text-xs">{row.warnings.map((warning) => <li key={`w-${warning}`} className="text-amber-200">Warnung: {messageLabel(warning)}</li>)}{row.errors.map((item) => <li key={`e-${item}`} className="text-rose-200">Fehler: {messageLabel(item)}</li>)}</ul>}
+    {(row.warnings.length > 0 || row.errors.length > 0) && <ul className="mt-3 space-y-1 text-xs">{row.warnings.map((warning) => <li key={`w-${warning}`} className="text-amber-200">Warnung: {messageLabel(warning)}</li>)}{row.errors.map((item) => item === "pending_transaction" ? <li key={`e-${item}`} className="text-amber-200">{messageLabel(item)}</li> : <li key={`e-${item}`} className="text-rose-200">Fehler: {messageLabel(item)}</li>)}</ul>}
     {error !== undefined && <div className="mt-3"><ErrorState error={errorMessage(error)} conflict={isConflict(error)} /></div>}
     {showSuggestion && <div className="mt-3 flex flex-wrap items-center gap-2 rounded border border-cyan-400/30 bg-cyan-400/10 p-2 text-xs">
       <Sparkles size={13} className="text-cyan-200" />
@@ -131,6 +131,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   }, [batch.status])
   const visibleRows = filter === "all" ? rows : rows.filter((row) => row.status === filter)
   const dates = rows.flatMap((row) => row.booking_date ? [row.booking_date] : []).sort()
+  const pendingCount = rows.filter(isPendingRow).length
   const counts = useMemo(() => rows.reduce<Partial<Record<ImportRowStatus, number>>>((result, row) => ({ ...result, [row.status]: (result[row.status] ?? 0) + 1 }), {}), [rows])
 
   function updateRow(next: ImportRow) {
@@ -176,7 +177,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
   }
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-center gap-3"><Button onClick={onBack}><ArrowLeft size={13} className="mr-1 inline" />Zur Übersicht</Button><div className="min-w-0 flex-1"><h2 className="truncate font-bold text-[#e8eef8]">{batch.display_filename}</h2><p className="text-xs text-[#9aa7bc]">{sourceFormatLabel(batch.source_format)} · {account?.name ?? `Konto #${batch.account_id}`} · Paket #{batch.id}</p></div>{batch.status === "draft" && <><Button tone="danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={13} className="mr-1 inline" />Entwurf löschen</Button><Button tone="primary" disabled={!accepted.length || missingCategory > 0 || busy} onClick={() => setConfirmComplete(true)}><CheckCheck size={13} className="mr-1 inline" />Import abschließen</Button></>}</div>
+    <div className="flex flex-wrap items-center gap-3"><Button onClick={onBack}><ArrowLeft size={13} className="mr-1 inline" />Zur Übersicht</Button><div className="min-w-0 flex-1"><h2 className="truncate font-bold text-[#e8eef8]">{batch.display_filename}</h2><p className="text-xs text-[#9aa7bc]">{[sourceFormatLabel(batch.source_format), ...detectedInfo(batch), account?.name ?? `Konto #${batch.account_id}`, `Paket #${batch.id}`].join(" · ")}</p></div>{batch.status === "draft" && <><Button tone="danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Trash2 size={13} className="mr-1 inline" />Entwurf löschen</Button><Button tone="primary" disabled={!accepted.length || missingCategory > 0 || busy} onClick={() => setConfirmComplete(true)}><CheckCheck size={13} className="mr-1 inline" />Import abschließen</Button></>}</div>
     {batch.status === "imported" && <div className="rounded border border-emerald-500/35 bg-emerald-500/10 p-4 text-sm text-emerald-100" role="status"><strong>Import abgeschlossen.</strong> {rows.filter((row) => row.status === "imported").length} Zeilen wurden verbindlich gebucht.</div>}
     {batch.status === "reversed" && <div className="rounded border border-amber-500/35 bg-amber-500/10 p-4 text-sm text-amber-100" role="status"><strong>Import storniert.</strong> Die zugehörigen Buchungen wurden durch Gegenbuchungen aufgehoben.</div>}
     {error !== undefined && <BatchError error={error} />}
@@ -185,7 +186,7 @@ export function ImportBatchView({ initialBatch, accounts, categories, onBack, on
       <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Zeitraum</span><strong className="mt-1 block text-sm text-[#e8eef8]">{dates.length ? `${dates[0]} – ${dates[dates.length - 1]}` : "—"}</strong></div>
       <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Gesamtsumme</span><strong className="mt-1 block text-sm text-[#e8eef8]">{formatMinorUnits(rows.reduce((sum, row) => sum + (row.amount_minor ?? 0), 0), account?.currency ?? rows.find((row) => row.currency)?.currency ?? "EUR")}</strong></div>
       <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Duplikate</span><strong className="mt-1 block text-lg text-amber-200">{counts.duplicate ?? 0}</strong></div>
-      <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Fehler</span><strong className="mt-1 block text-lg text-rose-200">{counts.error ?? 0}</strong></div>
+      <div className={`${panel} p-3`}><span className="text-xs text-[#9aa7bc]">Fehler</span><strong className="mt-1 block text-lg text-rose-200">{(counts.error ?? 0) - pendingCount}</strong>{pendingCount > 0 && <span className="mt-1 block text-[11px] text-amber-200">{pendingCount} vorgemerkt – noch nicht gebucht</span>}</div>
     </section>
     {batch.status === "draft" && <div className={`${panel} flex flex-wrap items-center gap-2 p-3`}>
       <Wand2 size={15} className="text-cyan-200" />
