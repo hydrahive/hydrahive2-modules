@@ -5,7 +5,13 @@ import { useTranslation } from "react-i18next"
 import { cryptoApi } from "../api"
 import type { SearchResult } from "../types"
 
-export function CoinSearch() {
+interface Props {
+  /** Gesetzt → Auswahl zurückgeben statt zur Coin-Seite zu navigieren (z. B. Coin zuordnen). */
+  onPick?: (coin: SearchResult) => void
+  placeholder?: string
+}
+
+export function CoinSearch({ onPick, placeholder }: Props = {}) {
   const { t } = useTranslation("cryptoboard")
   const nav = useNavigate()
   const [q, setQ] = useState("")
@@ -35,11 +41,12 @@ export function CoinSearch() {
     return () => document.removeEventListener("mousedown", onClick)
   }, [])
 
-  function pick(id: string) {
+  function pick(r: SearchResult) {
     setQ("")
     setResults([])
     setOpen(false)
-    nav(`/cryptoboard/coin/${id}`)
+    if (onPick) onPick(r)
+    else nav(`/cryptoboard/coin/${r.id}`)
   }
 
   return (
@@ -50,7 +57,7 @@ export function CoinSearch() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder={t("search_placeholder")}
+          placeholder={placeholder ?? t("search_placeholder")}
           className="flex-1 bg-transparent text-sm text-[#e8eef8] placeholder-[#9aa7bc] outline-none"
         />
         {q && (
@@ -64,7 +71,7 @@ export function CoinSearch() {
           {results.map((r) => (
             <button
               key={r.id}
-              onClick={() => pick(r.id)}
+              onClick={() => pick(r)}
               className="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-[rgb(var(--hh-s-hebung,27_37_54))] transition-colors"
             >
               {r.thumb && <img src={r.thumb} alt="" className="w-5 h-5 rounded-full" />}

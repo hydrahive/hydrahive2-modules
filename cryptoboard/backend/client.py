@@ -87,6 +87,22 @@ async def market_chart(coin_id: str, vs_currency: str, days: str) -> list[list[f
     return data.get("prices", []) if isinstance(data, dict) else []
 
 
+async def contract(platform: str, address: str) -> dict | None:
+    """CoinGecko-Kontraktsuche /coins/{platform}/contract/{address} — Token ->
+    {id, symbol, name}. `platform` ist der CoinGecko-Plattform-Slug ("base",
+    "ethereum"). Liefert None bei 404 (Token nicht bei CoinGecko gelistet) —
+    das ist ein normaler, erwarteter Fall (unresolved), kein Fehler."""
+    try:
+        data = await _get(f"/coins/{platform}/contract/{address.lower()}")
+    except httpx.HTTPStatusError as exc:
+        if exc.response is not None and exc.response.status_code == 404:
+            return None
+        raise
+    if not isinstance(data, dict) or not data.get("id"):
+        return None
+    return {"id": data.get("id"), "symbol": (data.get("symbol") or "").upper(), "name": data.get("name") or ""}
+
+
 async def coin_detail(coin_id: str, vs_currency: str) -> dict:
     data = await _get(
         f"/coins/{coin_id}",

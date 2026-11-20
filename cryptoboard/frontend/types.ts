@@ -322,3 +322,116 @@ export interface ImportResult {
   imported: number
   skipped: number
 }
+
+// ---- On-Chain-Trade-Import (Alchemy) ----
+// Zahlen (quantity/price/fee) kommen als exakte Dezimal-Strings und werden
+// unverändert zurückgeschickt — nie über Number() runden.
+export interface AlchemyKeyStatus {
+  set: boolean
+  masked: string | null
+}
+
+export interface OnchainEntry {
+  hash: string            // "{chain}:{tx_hash}:sell|buy" — unverändert zurückgeben
+  tx_hash: string
+  coin_id: string | null
+  symbol: string
+  name: string
+  kind: "sell" | "buy"
+  quantity: string
+  price: string | null
+  fee: string | null
+  executed_at: string | null
+  resolved: boolean
+  preis_fehlt: boolean
+  gebuehr_fehlt: boolean
+  duplicate: boolean
+}
+
+export interface OnchainWrap {
+  hash: string
+  executed_at: string | null
+  assets: { symbol: string | null; contract: string | null; direction: "raus" | "rein"; amount: string | null }[]
+}
+
+export interface OnchainUnklar {
+  hash: string
+  executed_at: string | null
+  reason: string
+  tokens: { symbol: string; contract: string | null; category: string | null; direction: "raus" | "rein" | "fremd"; amount: string | null }[]
+}
+
+export interface OnchainCounts {
+  swaps: number
+  transactions: number
+  wraps: number
+  unklar: number
+  duplicates: number
+  preis_fehlt: number
+  gebuehr_fehlt: number
+  unresolved: number
+}
+
+export interface OnchainPreview {
+  chain: string
+  address: string
+  transactions: OnchainEntry[]
+  wraps: OnchainWrap[]
+  unklar: OnchainUnklar[]
+  truncated: boolean
+  before_block: string | null
+  kurs_abruf_fehlgeschlagen: boolean
+  counts: OnchainCounts
+}
+
+export interface OnchainCommitTx {
+  coin_id: string
+  symbol: string
+  name: string
+  kind: "sell" | "buy"
+  quantity: string
+  price: string
+  fee: string | null
+  executed_at: string
+  hash: string
+}
+
+export interface OnchainCommitResult {
+  ok: boolean
+  imported: number
+  skipped: number
+  skipped_details: { hash: string; reason: string }[]
+}
+
+// ── Wallet-Connect (EIP-1193 / EIP-6963) — nur Lesen: einzige erlaubte Methode eth_requestAccounts ──
+export type WalletRequestMethod = "eth_requestAccounts"
+
+export interface Eip1193Provider {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>
+  on?: (event: string, handler: (...args: unknown[]) => void) => void
+  removeListener?: (event: string, handler: (...args: unknown[]) => void) => void
+}
+
+export interface Eip6963ProviderInfo {
+  uuid: string
+  name: string
+  icon: string
+  rdns?: string
+}
+
+export interface Eip6963ProviderDetail {
+  info: Eip6963ProviderInfo
+  provider: Eip1193Provider
+}
+
+export type EvmChain = "base" | "ethereum"
+
+export type WalletConnectFailure = "rejected" | "pending" | "error" | "no_account"
+export type WalletConnectResult =
+  | { ok: true; address: string }
+  | { ok: false; reason: WalletConnectFailure }
+
+export type ChainChangeOutcome =
+  | { kind: "same" }
+  | { kind: "offer"; chain: EvmChain }
+  | { kind: "unsupported" }
