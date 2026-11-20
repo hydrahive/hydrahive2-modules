@@ -1,6 +1,6 @@
 # Zieldokument: Haushaltsbuch + Krypto als ein Kassenbuch
 
-> **Status:** ENTWURF – wartet auf Tills Freigabe. Nichts bauen, bevor oben „FREIGEGEBEN“ steht.
+> **Status:** FREIGEGEBEN (Till, 20.11.2026)
 > **Verbindlich für:** jeden Auftrag an `haushaltsbuch` und `cryptoboard`, der dieses Ziel berührt.
 > **Regel:** Fertig ist ein Auftrag erst, wenn alle Abnahme-Punkte seiner Etappe **an Tills echten Daten** erfüllt sind.
 > Grüne Tests allein zählen nicht. Kollidiert ein älteres SPEC/PLAN-Dokument mit diesem hier, **gilt dieses**
