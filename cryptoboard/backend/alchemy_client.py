@@ -8,10 +8,10 @@ Grenze: kein Signieren, kein Senden.
 Kill-Switch HH_CRYPTOBOARD_ONCHAIN_ENABLED (Default an) — Konvention wie
 haushaltsbuch/backend/lidl_config.py (HH_HAUSHALTSBUCH_LIDL_ENABLED).
 
-Der Alchemy-Key taucht NIE in einer Exception-Message oder einem Log auf:
-httpx.HTTPStatusError.__str__() enthält die Request-URL (mit Key als
-Pfadsegment!) — deshalb wird bei einem HTTP-Fehler NIE str(exc) verwendet,
-nur exc.response.status_code.
+Der Alchemy-Key taucht NIE in einer URL, einem Log oder einer Exception auf:
+er geht nur im Header "Authorization: Bearer <key>" an https://<host>/v2.
+Fehler werden ohne __context__/__cause__ ausgelöst (keine httpx-Exception mit
+Request/Headern hängt daran).
 """
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ class AlchemyHttpError(RuntimeError):
     """HTTP-Fehlerstatus von Alchemy — NIE die Original-Exception/URL weiterreichen (Key!).
 
     `body` ist NUR der Response-Body (Alchemy-Fehlertext, z. B. Plan-Hinweis),
-    NIEMALS die Request-URL — die URL enthält den Key als Pfadsegment.
+    NIEMALS Request/Header (der Key steht im Authorization-Header).
     """
 
     def __init__(self, status_code: int, body: str = "") -> None:
@@ -87,29 +87,45 @@ def enabled() -> bool:
     return value.strip().lower() not in {"0", "false", "no", "off"}
 
 
-def chain_url(chain: str, key: str) -> str:
+def chain_url(chain: str) -> str:
+    """RPC-Endpunkt OHNE Key — der Key geht ausschließlich im Authorization-Header mit
+    (Alchemy: header-based API requests). So steht er in keiner URL, keinem httpx-Log
+    ("HTTP Request: POST <url>") und keinem Exception-Text, der die URL enthält."""
     host = _CHAIN_HOSTS.get(chain)
     if host is None:
         raise ChainNotSupported(chain)
-    return f"https://{host}/v2/{key}"
+    return f"https://{host}/v2"
 
 
-async def _rpc(url: str, method: str, params: list) -> Any:
-    """Gekapselter Netz-Call — in Tests per monkeypatch ersetzt, kein echter Traffic."""
+async def _rpc(url: str, key: str, method: str, params: list) -> Any:
+    """Gekapselter Netz-Call — in Tests per monkeypatch ersetzt, kein echter Traffic.
+
+    Fehler werden AUSSERHALB der except-Blöcke ausgelöst: so hängt keine httpx-Exception
+    (mit Request inkl. Header) als __context__/__cause__ an unserer Exception.
+    """
+    failure: Exception | None = None
+    payload: Any = None
+    headers = {"Authorization": f"Bearer {key}"}
+    body = {"jsonrpc": "2.0", "method": method, "params": params, "id": 1}
     async with httpx.AsyncClient(timeout=_TIMEOUT) as h:
-        r = await h.post(url, json={"jsonrpc": "2.0", "method": method, "params": params, "id": 1})
         try:
-            r.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            # exc.response.text ist der Alchemy-Fehlertext (kein Key) — str(exc)/exc selbst
-            # NIE weiterreichen, die enthält die Request-URL inkl. Key als Pfadsegment.
-            body = exc.response.text[:500] if exc.response is not None else ""
-            raise AlchemyHttpError(exc.response.status_code, body) from None
-        payload = r.json()
-        error = payload.get("error")
-        if error:
-            raise AlchemyApiError(error.get("code"), str(error.get("message") or ""))
-        return payload.get("result")
+            r = await h.post(url, json=body, headers=headers)
+        except httpx.HTTPError:
+            failure = AlchemyNetworkError()
+        else:
+            if r.status_code >= 400:
+                failure = AlchemyHttpError(r.status_code, r.text[:500])
+            else:
+                try:
+                    payload = r.json()
+                except ValueError:
+                    failure = AlchemyApiError(None, "invalid_json")
+    if failure is not None:
+        raise failure
+    error = payload.get("error") if isinstance(payload, dict) else None
+    if error:
+        raise AlchemyApiError(error.get("code"), str(error.get("message") or ""))
+    return payload.get("result") if isinstance(payload, dict) else None
 
 
 async def call(chain: str, key: str, method: str, params: list) -> Any:
@@ -118,14 +134,7 @@ async def call(chain: str, key: str, method: str, params: list) -> Any:
         raise AlchemyDisabled()
     if method not in ALLOWED_METHODS:
         raise MethodNotAllowed(method)
-    url = chain_url(chain, key)
-    try:
-        return await _rpc(url, method, params)
-    except httpx.HTTPError as exc:
-        if isinstance(exc, (AlchemyHttpError, AlchemyApiError)):
-            raise
-        # Timeouts/Verbindungsfehler: NICHT str(exc) — kann die URL (mit Key) enthalten.
-        raise AlchemyNetworkError() from None
+    return await _rpc(chain_url(chain), key, method, params)
 
 
 def _transfer_params(direction: str, address: str, to_block: str, page_key: str | None) -> dict:

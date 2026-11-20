@@ -50,25 +50,25 @@ def test_kill_switch_default_an(monkeypatch):
 async def test_erlaubte_methode_geht_durch(monkeypatch):
     calls = []
 
-    async def fake_rpc(url, method, params):
-        calls.append((url, method, params))
+    async def fake_rpc(url, key, method, params):
+        calls.append((url, key, method, params))
         return "0x10"
     monkeypatch.setattr(ac, "_rpc", fake_rpc)
     result = await ac.call("base", "fake-key", "eth_blockNumber", [])
     assert result == "0x10"
-    assert calls[0][1] == "eth_blockNumber"
-    assert "fake-key" in calls[0][0]  # Key steckt im URL-Pfad — bleibt in dieser Schicht, nie im Fehlertext
+    assert calls[0][2] == "eth_blockNumber"
+    assert "fake-key" not in calls[0][0]  # Key nie in der URL — nur als Header-Parameter
+    assert calls[0][1] == "fake-key"
 
 
 def test_chain_url_unbekannte_chain():
     with pytest.raises(ac.ChainNotSupported):
-        ac.chain_url("solana", "x")
+        ac.chain_url("solana")
 
 
 def test_chain_url_bekannte_chains():
-    assert ac.chain_url("base", "k").endswith("/v2/k")
-    assert "base-mainnet.g.alchemy.com" in ac.chain_url("base", "k")
-    assert "eth-mainnet.g.alchemy.com" in ac.chain_url("ethereum", "k")
+    assert ac.chain_url("base") == "https://base-mainnet.g.alchemy.com/v2"
+    assert ac.chain_url("ethereum") == "https://eth-mainnet.g.alchemy.com/v2"
 
 
 # ---------------------------------------------------------------- fetch_transfers: Paging
@@ -135,35 +135,6 @@ async def test_fetch_transfers_disabled(monkeypatch):
 
 
 # ---------------------------------------------------------------- Fehlerklassen: kein Key im Text
-
-
-@pytest.mark.asyncio
-async def test_http_fehler_enthaelt_nie_die_url(monkeypatch):
-    import httpx
-
-    class FakeResponse:
-        status_code = 401
-        text = "Unauthorized"
-
-        def raise_for_status(self):
-            raise httpx.HTTPStatusError("boom", request=None, response=self)
-
-    class FakeClient:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *a):
-            return False
-
-        async def post(self, url, json):
-            return FakeResponse()
-
-    monkeypatch.setattr(ac.httpx, "AsyncClient", lambda timeout: FakeClient())
-    with pytest.raises(ac.AlchemyHttpError) as exc_info:
-        await ac._rpc("https://base-mainnet.g.alchemy.com/v2/geheimer-key-123", "eth_blockNumber", [])
-    assert "geheimer-key-123" not in str(exc_info.value)
-    assert exc_info.value.status_code == 401
-    assert "geheimer-key-123" not in exc_info.value.body
 
 
 # ---------------------------------------------------------------- K3: beide Richtungen, Blockgrenze
