@@ -75,7 +75,7 @@ def get_crypto_holdings(account_id: int, principal: AuthPrincipal) -> dict:
     with db() as conn:
         member = membership(conn, principal)
         household_id = member["household_id"]
-        account = _require_wallet_owned_by(conn, household_id, account_id)
+        _require_wallet_owned_by(conn, household_id, account_id)
         booked_balance = _booked_balance(conn, account_id)
         links = _own_address_ids(conn, account_id)
         if not links:

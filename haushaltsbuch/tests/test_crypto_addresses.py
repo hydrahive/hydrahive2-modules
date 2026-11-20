@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from backend import crypto_bridge
 from conftest import PREFIX
-from test_crypto_bridge import FakePort, _fake_port_version, _install_fake_port, _wallet_account
+from test_crypto_bridge import FakePort, _install_fake_port, _wallet_account
 from test_v1_api import _create_account, _create_household
 
 

@@ -15,7 +15,6 @@ Haushaltsmitglieds (gleiche Regel wie crypto_bridge.py).
 
 from __future__ import annotations
 
-import json
 import sqlite3
 
 from fastapi import status
@@ -123,7 +122,7 @@ def unlink_addresses(account_id: int, revision: int, principal: AuthPrincipal) -
     with db(immediate=True) as conn:
         member = membership(conn, principal)
         household_id = member["household_id"]
-        account = _require_wallet_owned_by(conn, household_id, account_id)
+        _require_wallet_owned_by(conn, household_id, account_id)
         existing = _own_address_ids(conn, account_id)
         if not existing:
             raise coded(status.HTTP_409_CONFLICT, "crypto_account_not_linked")
