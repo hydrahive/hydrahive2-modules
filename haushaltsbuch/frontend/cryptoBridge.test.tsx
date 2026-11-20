@@ -23,11 +23,11 @@ import { BatchError, RowEditor } from "./ImportBatchView"
 import type { Account, Category, CryptoBridgeStatus, CryptoValue, Household, ImportBatch, ImportRow } from "./types"
 
 const household = { id: 1, name: "Zuhause", base_currency: "EUR", current_role: "owner" } as Household
-const acc = (over: Partial<Account> = {}): Account => ({ id: 5, name: "Mein Wallet", type: "wallet", owner_member_id: null, currency: "EUR", bank_identifier: null, balance_base: 10000, archived: false, revision: 3, linked_portfolio_id: null, linked_by_me: false, crypto_linked: false, ...over })
+const acc = (over: Partial<Account> = {}): Account => ({ id: 5, name: "Mein Wallet", type: "wallet", owner_member_id: null, currency: "EUR", bank_identifier: null, balance_base: 10000, archived: false, revision: 3, linked_portfolio_id: null, linked_by_me: false, crypto_linked: false, crypto_addresses: [], ...over })
 const value = (over: Partial<CryptoValue>): CryptoValue => ({ account_id: 5, state: "live", value_minor: 123456, as_of: "2026-11-19T10:00:00Z", complete: true, booked_balance: 10000, reason: null, ...over })
 const ok = (data: CryptoValue) => ({ ok: true as const, data })
 const view = (state: Parameters<typeof CryptoValueView>[0]["state"]) => renderToStaticMarkup(<CryptoValueView state={state} currency="EUR" />)
-const card = (account: Account) => renderToStaticMarkup(<AccountCard account={account} household={household} onEdit={() => undefined} onArchive={() => undefined} onLink={() => undefined} onTrades={() => undefined} />)
+const card = (account: Account) => renderToStaticMarkup(<AccountCard account={account} household={household} onEdit={() => undefined} onArchive={() => undefined} onLink={() => undefined} onAddresses={() => undefined} onTrades={() => undefined} />)
 const codedError = (code: string) => Object.assign(new Error(code), { code, status: 409 })
 
 describe("Live-Wert neben dem gebuchten Saldo", () => {

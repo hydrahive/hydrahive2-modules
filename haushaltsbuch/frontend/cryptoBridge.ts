@@ -1,5 +1,5 @@
 // Reine Hilfen der Crypto-Brücke (kein Rechnen mit Geld – Beträge werden nur formatiert angezeigt).
-import type { Account, Category, CryptoTradeImportBody, ImportRow } from "./types"
+import type { Account, Category, CryptoBoardAddress, CryptoTradeImportBody, ImportRow } from "./types"
 
 /** Manuelle Buchungen sind auf verknüpften Konten gesperrt (Live-Wert aus Cryptoboard). */
 export const isCryptoLocked = (account: Pick<Account, "crypto_linked">) => account.crypto_linked
@@ -27,3 +27,17 @@ export function isRevisionConflict(error: unknown, conflict: (e: unknown) => boo
   const code = error instanceof Error ? (error as Error & { code?: string }).code : undefined
   return conflict(error) && !(code ?? "").startsWith("crypto_")
 }
+
+const CHAIN_LABELS: Record<string, string> = { base: "Base", ethereum: "Ethereum", tron: "Tron", bitcoin: "Bitcoin" }
+export const chainLabel = (chain: string): string => CHAIN_LABELS[chain] ?? (chain ? chain[0].toUpperCase() + chain.slice(1) : chain)
+
+/** Kurzform wie im Backend: „0xa1aE…696E“ (kurze Adressen bleiben ganz). */
+export const shortAddress = (address: string): string => (address.length <= 10 ? address : `${address.slice(0, 6)}…${address.slice(-4)}`)
+
+/** Eine Adresse darf nur an einem Konto hängen: an ein ANDERES Konto gebunden → nicht wählbar. */
+export const lockedToOtherAccount = (address: Pick<CryptoBoardAddress, "linked_account_id">, accountId: number): boolean =>
+  address.linked_account_id !== null && address.linked_account_id !== accountId
+
+/** Gewählte IDs in der Reihenfolge der Adressliste – genau diese gehen an den Server. */
+export const selectedAddressIds = (addresses: Pick<CryptoBoardAddress, "id">[], selected: ReadonlySet<number>): number[] =>
+  addresses.filter((a) => selected.has(a.id)).map((a) => a.id)
