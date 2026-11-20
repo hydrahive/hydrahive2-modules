@@ -1,12 +1,14 @@
-"""Read-Port für modulübergreifenden Lesezugriff (Haushaltsbuch V9 Task 3.1).
+"""Read-Port für modulübergreifenden Lesezugriff (Haushaltsbuch V9 Task 3.1, v2: Etappe A2).
 
 Einzige Stelle, die andere Module importieren dürfen (vgl.
-haushaltsbuch/PLAN-V9-AUSWERTUNGEN-CRYPTO.md Task 3.1). Es gibt im Repo keine
-eigenständige CONTRACT.md für modulübergreifende Zugriffe — dieser Docstring
-IST der Vertrag.
+haushaltsbuch/PLAN-V9-AUSWERTUNGEN-CRYPTO.md Task 3.1 und
+VERTRAG-PORT-V2.md, Etappe A). Es gibt im Repo keine eigenständige
+CONTRACT.md für modulübergreifende Zugriffe — dieser Docstring IST der
+Vertrag.
 Keine Schreibfunktionen, keine Routen — reine Lese-Fassade über die bestehende
 Portfolio-/Wertverlauf-Logik (portfolio.py, valuation.py, portfolio_store.py,
-price_history_store.py). Schlüssel ist immer der Core-Username (require_auth
+price_history_store.py) UND über die Wallet-Logik (wallets.py,
+read_port_wallets.py). Schlüssel ist immer der Core-Username (require_auth
 liefert (username, role)); Cryptoboard hat genau EIN Ledger pro User und
 KEINEN Freigabe-Mechanismus — darum ist "default" die einzige gültige
 portfolio_id.
@@ -16,12 +18,18 @@ Geldbeträge ausschließlich Integer-Cent (ROUND_HALF_EVEN über Decimal(str(x))
 nie direkt über float, um Rundungs-Bias zu vermeiden). `quantity` bleibt als
 Decimal-String (Kryptomengen sind keine Cent-Beträge).
 
+v2 (Etappe A2, VERTRAG-PORT-V2.md): zusätzlich wallet_addresses_for() und
+wallet_holdings() — Bestand je Coin und EUR-Wert für EIGENE Adressen (nicht
+nur der Portfolio-Gesamtwert wie in v1). Implementiert in read_port_wallets.py
+(Datei-Größenlimit), hier nur re-exportiert/verdrahtet (EINE Einstiegsdatei
+bleibt bestehen; die Cent-Rundung _to_minor lebt weiterhin nur hier).
+
 Zugriff aus Haushaltsbuch: Der Kern lädt Modul-Backends als
 sys.modules["hhmod_<id>"]; Haushaltsbuch importiert
 importlib.import_module("hhmod_cryptoboard.read_port") NUR wenn
 hydrahive.modules.registry.REGISTRY.get("cryptoboard") existiert, .loaded
-True ist und PORT_VERSION == 1 passt. Sonst eigener Kill-Switch dort
-(CryptoBridgeUnavailable + letzter Snapshot), nicht hier.
+True ist und PORT_VERSION == 2 passt (v1: == 1). Sonst eigener Kill-Switch
+dort (CryptoBridgeUnavailable + letzter Snapshot), nicht hier.
 """
 from __future__ import annotations
 
@@ -30,8 +38,16 @@ from decimal import ROUND_HALF_EVEN, Decimal
 
 from . import portfolio, portfolio_store as store, valuation
 from . import price_history_store as price_store
+from .read_port_wallets import WalletAddressNotFound, wallet_addresses_for
+from .read_port_wallets import wallet_holdings as _wallet_holdings_impl
 
-PORT_VERSION = 1
+PORT_VERSION = 2
+
+__all__ = [
+    "PORT_VERSION", "PortfolioNotFound", "PortfolioUnavailable", "WalletAddressNotFound",
+    "portfolios_for", "portfolio_value", "trades", "value_series",
+    "wallet_addresses_for", "wallet_holdings",
+]
 
 _DEFAULT_PORTFOLIO_ID = "default"
 _CURRENCY = "EUR"
@@ -191,3 +207,17 @@ async def value_series(
         {"month": month, "value_minor": _to_minor(point["value"])}
         for month, point in sorted(by_month.items())
     ]
+
+
+async def wallet_holdings(username: str, address_ids: list[int]) -> dict:
+    """Bestand je Coin + EUR-Wert für EIGENE Adressen (v2). WalletAddressNotFound bei
+    fremder/unbekannter address_id, PortfolioUnavailable bei unerwartetem Abruf-Fehler;
+    ein bloßer Kursausfall einzelner Coins wird über complete=False abgebildet (wie
+    portfolio_value), keine Exception."""
+    try:
+        return await _wallet_holdings_impl(
+            username, address_ids, to_minor=_to_minor, quantity_str=_quantity_str, now_iso=_now_iso)
+    except WalletAddressNotFound:
+        raise
+    except Exception as exc:
+        raise PortfolioUnavailable(str(exc)) from exc

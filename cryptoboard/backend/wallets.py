@@ -42,10 +42,11 @@ def _asset_value(asset: dict, prices: dict[str, float], trx_eur: float) -> float
     return None
 
 
-async def balances(user: str) -> dict:
-    """Token-aggregierte + adressweise Wallet-Übersicht."""
-    addrs = store.list_for(user)
-
+async def balances_for_addresses(addrs: list[dict]) -> dict:
+    """Token-aggregierte + adressweise Wallet-Übersicht für eine GEGEBENE Adressliste
+    (Form wie addresses_store.list_for: id/chain/address/label). Kern von balances(user)
+    UND vom Read-Port (read_port_wallets.wallet_holdings) — EINE Bewertungslogik, nicht
+    zwei: Änderungen an Kurs-/Wert-Berechnung wirken sich garantiert auf beide Aufrufer aus."""
     per_addr: list[dict] = []
     coin_ids: list[str] = []
     for a in addrs:
@@ -100,3 +101,8 @@ async def balances(user: str) -> dict:
         "tokens": tokens,
         "addresses": addr_out,
     }
+
+
+async def balances(user: str) -> dict:
+    """Token-aggregierte + adressweise Wallet-Übersicht über ALLE Adressen des Users."""
+    return await balances_for_addresses(store.list_for(user))
