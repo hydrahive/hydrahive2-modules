@@ -1,7 +1,7 @@
 // Reine Logik für „Trades aller Adressen importieren“ (preview_all, Vertrag 1.7.0) — ohne React, ohne Netz.
 // Zahlen bleiben Strings (siehe onchainImport.ts). Spam kommt nie in den Commit; Mehrdeutiges nur nach Auswahl;
 // Ausgaben (transfer_out) nur, wenn der Nutzer sie anhakt.
-import { buildCommitPayload, defaultSelection, type Edits } from "./onchainImport"
+import { buildCommitPayload, defaultSelection, isBookable, type Edits } from "./onchainImport"
 import type {
   OnchainAllCounts, OnchainCandidate, OnchainCommitResult, OnchainCommitTx, OnchainEntry, OnchainMehrdeutig,
   OnchainPreviewAll,
@@ -96,4 +96,19 @@ export function hashLabel(hash: string): { tx: string; kind: string } {
   const parts = hash.split(":")
   const tx = parts[0] === "xchain" ? parts[1] : parts[1] ?? hash
   return { tx: `${tx.slice(0, 10)}…`, kind: parts[parts.length - 1] }
+}
+
+/** Alle buchbaren, noch nicht gebuchten Einträge einer Liste (für „Alle auswählen“). */
+export function selectableHashes(entries: OnchainEntry[], edits: Edits): string[] {
+  return entries.filter((e) => !e.duplicate && isBookable(e, edits[e.hash])).map((e) => e.hash)
+}
+
+/** Kopfzeile: was liegt zum Buchen bereit (ohne Duplikate). */
+export function bookingSummary(p: OnchainPreviewAll) {
+  const fresh = p.ausgaben.filter((e) => !e.duplicate)
+  return {
+    karten: fresh.filter((e) => e.art === "kartenzahlung").length,
+    abgaenge: fresh.filter((e) => e.art !== "kartenzahlung").length,
+    tausch: [...p.transactions, ...p.pairs.flatMap((x) => x.entries)].filter((e) => !e.duplicate).length,
+  }
 }

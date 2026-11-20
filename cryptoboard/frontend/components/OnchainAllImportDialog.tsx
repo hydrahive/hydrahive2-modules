@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { cryptoApi } from "../api"
 import {
-  applyChoice, buildAllPayload, chosenEntries, defaultSelectionAll, emptySummary, hashLabel, isEmptyResult, markBookedAll,
+  applyChoice, bookingSummary, buildAllPayload, chosenEntries, defaultSelectionAll, emptySummary, hashLabel, isEmptyResult,
+  markBookedAll, selectableHashes,
   type Choice,
 } from "../onchainAll"
 import { errorKey, isBookable, SKIP_REASONS, type Edits, type EntryEdit } from "../onchainImport"
@@ -50,6 +51,8 @@ export function OnchainAllImportDialog({ onDone, onCancel }: Props) {
 
   const toggle = (hash: string, on: boolean) =>
     setSelected((s) => { const n = new Set(s); if (on) n.add(hash); else n.delete(hash); return n })
+  const toggleMany = (hashes: string[], on: boolean) =>
+    setSelected((s) => { const n = new Set(s); for (const h of hashes) { if (on) n.add(h); else n.delete(h) } return n })
 
   const allEntries = preview ? [...preview.transactions, ...preview.pairs.flatMap((x) => x.entries),
     ...preview.mehrdeutig.flatMap((m) => m.candidates.flatMap((c) => c.entries)), ...preview.ausgaben] : []
@@ -101,6 +104,15 @@ export function OnchainAllImportDialog({ onDone, onCancel }: Props) {
       {busy === "preview" && <p className="text-xs text-[#9aa7bc] text-center py-3">{t("oc_loading")}</p>}
       {preview && preview.addresses.length > 0 && <AddressStatusList addresses={preview.addresses} />}
       {preview?.kurs_abruf_fehlgeschlagen && <p className="text-[11px] text-amber-400">{t("oc_price_fetch_failed")}</p>}
+      {preview && !result && (
+        <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-emerald-500/30 bg-[rgb(var(--hh-s-innen,17_24_39))] p-2.5">
+          <span className="text-xs text-[#c8d2df]">{t("oc_summary", bookingSummary(preview))}</span>
+          <button disabled={busy !== "" || payload.length === 0} onClick={commit}
+            className={`${btn} ml-auto bg-emerald-500/20 text-emerald-300 font-medium hover:bg-emerald-500/30`}>
+            {busy === "commit" ? t("oc_booking") : `${t("oc_commit")} (${payload.length})`}
+          </button>
+        </div>
+      )}
 
       {preview && empty && sum && (
         <div className={box}>
@@ -135,14 +147,27 @@ export function OnchainAllImportDialog({ onDone, onCancel }: Props) {
         <OnchainPreviewTable entries={chosen} edits={edits} selected={selected} onToggle={toggle} onEdit={edit} />
       )}
 
-      {preview && preview.ausgaben.length > 0 && (
-        <section className="space-y-1.5">
-          <h4 className="text-xs font-medium text-amber-300">{t("oc_ausgaben_title")} ({preview.ausgaben.length})</h4>
-          <p className="text-[11px] text-[#9aa7bc]">{t("oc_ausgaben_hint")}</p>
-          <OnchainPreviewTable entries={preview.ausgaben} edits={edits} selected={selected}
-            onToggle={toggle} onEdit={edit} />
-        </section>
-      )}
+      {preview && (["kartenzahlung", "abgang"] as const).map((art) => {
+        const list = preview.ausgaben.filter((e) => (e.art === "kartenzahlung" ? "kartenzahlung" : "abgang") === art)
+        if (list.length === 0) return null
+        const hashes = selectableHashes(list, edits)
+        const allOn = hashes.length > 0 && hashes.every((h) => selected.has(h))
+        return (
+          <section key={art} className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs font-medium text-amber-300">{t(`oc_ausgaben_${art}`)} ({list.length})</h4>
+              {hashes.length > 0 && (
+                <button onClick={() => toggleMany(hashes, !allOn)}
+                  className="ml-auto rounded-full border border-amber-400/30 px-2 py-0.5 text-[11px] text-amber-200 hover:bg-amber-400/10">
+                  {allOn ? t("oc_select_none") : t("oc_select_all", { n: hashes.length })}
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-[#9aa7bc]">{t(`oc_ausgaben_${art}_hint`)}</p>
+            <OnchainPreviewTable entries={list} edits={edits} selected={selected} onToggle={toggle} onEdit={edit} />
+          </section>
+        )
+      })}
 
       {preview && <SpamList items={preview.spam} />}
       {preview && <OnchainSideLists wraps={preview.wraps} unklar={preview.unklar} />}

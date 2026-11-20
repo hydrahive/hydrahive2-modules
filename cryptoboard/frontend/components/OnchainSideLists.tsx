@@ -39,7 +39,7 @@ export function OnchainSideLists({ wraps, unklar }: { wraps: OnchainWrap[]; unkl
         </details>
       )}
       {unklar.length > 0 && (
-        <details className={box} open>
+        <details className={box}>
           <summary className="cursor-pointer text-xs font-medium text-amber-300">{t("oc_unklar")} ({unklar.length})</summary>
           <p className="text-[11px] text-[#9aa7bc]">{t("oc_unklar_hint")}</p>
           {unklar.map((u) => (

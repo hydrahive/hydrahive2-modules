@@ -14,8 +14,8 @@ vi.mock("@/shared/api-client", () => {
 
 import { cryptoApi } from "./api"
 import {
-  applyChoice, buildAllPayload, defaultSelectionAll, emptySummary, formatDelay, isEmptyResult, markBookedAll,
-  takenElsewhere, type Choice,
+  applyChoice, bookingSummary, buildAllPayload, defaultSelectionAll, emptySummary, formatDelay, isEmptyResult, markBookedAll,
+  selectableHashes, takenElsewhere, type Choice,
 } from "./onchainAll"
 import { errorKey, groupPairs, isBookable, KNOWN_ERRORS, UNKLAR_REASONS } from "./onchainImport"
 import type { OnchainAllCounts, OnchainEntry, OnchainPreviewAll } from "./types"
@@ -199,5 +199,29 @@ describe("API & Texte", () => {
     expect(de.length).toBeGreaterThan(60)
     expect(en).toEqual(de)
     for (const k of KNOWN_ERRORS) expect(de).toContain(`oc_err_${k}`)
+  })
+})
+
+describe("Kartenzahlungen buchen (Till 21.11.: „Buchen nicht zu finden“)", () => {
+  it("Payload enthält art, sonst bucht das Backend jede Kartenzahlung als Abgang", () => {
+    const k = out("k", { art: "kartenzahlung" }), a = out("a", { art: "abgang" })
+    const pay = buildAllPayload(all({ ausgaben: [k, a] }), new Set([k.hash, a.hash]), {}, {})
+    expect(pay.find((x) => x.hash === k.hash)?.art).toBe("kartenzahlung")
+    expect(pay.find((x) => x.hash === a.hash)?.art).toBe("abgang")
+  })
+  it("Swaps bekommen kein art", () => {
+    const p = pairOf("1", "b")
+    const pay = buildAllPayload(all({ pairs: [p] }), new Set(p.entries.map((e) => e.hash)), {}, {})
+    expect(pay.every((x) => x.art === undefined)).toBe(true)
+  })
+  it("„Alle auswählen“ nimmt nur buchbare, nicht schon gebuchte", () => {
+    const ok = out("1", { art: "kartenzahlung" }), dup = out("2", { art: "kartenzahlung", duplicate: true })
+    const bad = out("3", { art: "kartenzahlung", coin_id: null, resolved: false })
+    expect(selectableHashes([ok, dup, bad], {})).toEqual([ok.hash])
+  })
+  it("Zusammenfassung zählt Kartenzahlungen, Abgänge und Tausch ohne Duplikate", () => {
+    const p = all({ ausgaben: [out("1", { art: "kartenzahlung" }), out("2", { art: "abgang" }),
+      out("3", { art: "kartenzahlung", duplicate: true })], pairs: [pairOf("9", "z")] })
+    expect(bookingSummary(p)).toEqual({ karten: 1, abgaenge: 1, tausch: 2 })
   })
 })

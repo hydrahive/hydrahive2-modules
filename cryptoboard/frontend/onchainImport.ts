@@ -101,6 +101,8 @@ export function buildCommitPayload(entries: OnchainEntry[], selected: Set<string
       fee: eff.fee,
       executed_at: e.executed_at as string,
       hash: e.hash,
+      // Ohne art bucht das Backend jede Ausgabe als „Abgang“ – Kartenzahlungen gingen dem Haushaltsbuch verloren.
+      ...(e.kind === "transfer_out" && e.art ? { art: e.art } : {}),
     })
   }
   return out
