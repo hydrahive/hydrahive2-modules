@@ -1,14 +1,17 @@
 """Crypto-Brücke (Phase 3): Verknüpfung mit Cryptoboard, Live-Wert, Trade-Import.
 
-NUR lesend über `cryptoboard/backend/read_port.py` (PORT_VERSION 1). Keine
-Cryptoboard-Interna, kein Kurs-Client, cryptoboard-Code bleibt unverändert.
+NUR lesend über `cryptoboard/backend/read_port.py` (PORT_VERSION 2, siehe
+VERTRAG-PORT-V2.md). Keine Cryptoboard-Interna, kein Kurs-Client,
+cryptoboard-Code bleibt unverändert. Diese Datei nutzt weiterhin nur die
+v1-Funktionen (portfolios_for, portfolio_value, trades); die v2-Funktionen
+(wallet_addresses_for, wallet_holdings) nutzt `crypto_addresses.py`.
 
 Port-Zugang: `_load_port()` lädt das Modul über die Core-Registry
 (`hydrahive.modules.registry.REGISTRY`) und validiert `PORT_VERSION`. Fehlt
-das Modul, ist es nicht geladen, oder passt die Portversion nicht, wirft
-`_load_port()` `CryptoBridgeUnavailable` - fail-closed, kein ungesicherter
-Fallback. In Tests wird `_load_port` per monkeypatch durch einen Fake-Port
-ersetzt.
+das Modul, ist es nicht geladen, oder passt die Portversion nicht (z.B. noch
+PORT_VERSION 1), wirft `_load_port()` `CryptoBridgeUnavailable` - fail-closed,
+kein ungesicherter Fallback. In Tests wird `_load_port` per monkeypatch durch
+einen Fake-Port ersetzt.
 
 Der Port wird IMMER nur mit `principal.username` des anfragenden Users
 aufgerufen, und nur wenn `principal.user_id == accounts.linked_user_id` -
@@ -35,7 +38,7 @@ from .import_inbox import insert_import_rows
 from .import_parsers import NormalizedRecord
 from .import_persistence import _batch_dict
 
-PORT_VERSION = 1
+PORT_VERSION = 2
 _CRYPTO_CURRENCY = "EUR"
 _TRADE_LIMIT = 1000
 
@@ -80,6 +83,17 @@ def _require_wallet_owned_by(conn: sqlite3.Connection, household_id: int, accoun
             (account_id, household_id),
         ).fetchone(),
         "account_not_found",
+    )
+
+
+def _booked_balance(conn: sqlite3.Connection, account_id: int) -> int:
+    """Gebuchter Saldo (Summe der Postings) eines Kontos - geteilt zwischen
+    get_crypto_value (v1) und crypto_addresses.get_crypto_holdings (v2)."""
+    return int(
+        conn.execute(
+            "SELECT COALESCE(SUM(base_amount),0) FROM module_haushaltsbuch_postings WHERE account_id=?",
+            (account_id,),
+        ).fetchone()[0]
     )
 
 
@@ -208,10 +222,7 @@ def get_crypto_value(account_id: int, principal: AuthPrincipal) -> dict:
         member = membership(conn, principal)
         household_id = member["household_id"]
         account = _require_wallet_owned_by(conn, household_id, account_id)
-        booked_balance = conn.execute(
-            "SELECT COALESCE(SUM(base_amount),0) FROM module_haushaltsbuch_postings WHERE account_id=?",
-            (account_id,),
-        ).fetchone()[0]
+        booked_balance = _booked_balance(conn, account_id)
         if account["linked_portfolio_id"] is None:
             return {
                 "account_id": account_id, "state": "unlinked", "value_minor": None,
