@@ -65,6 +65,7 @@ def setup_test_env():
         from backend.valuation_routes import router as valuation_router
         from backend.wallet_routes import router as wallet_router
         from backend.alchemy_key_routes import router as alchemy_key_router
+        from backend.onchain_import_routes import router as onchain_import_router
         main.app.include_router(market_router, prefix=MOD_PREFIX)
         main.app.include_router(watchlist_router, prefix=MOD_PREFIX)
         main.app.include_router(portfolio_router, prefix=MOD_PREFIX)
@@ -74,6 +75,7 @@ def setup_test_env():
         main.app.include_router(valuation_router, prefix=MOD_PREFIX)
         main.app.include_router(wallet_router, prefix=MOD_PREFIX)
         main.app.include_router(alchemy_key_router, prefix=MOD_PREFIX)
+        main.app.include_router(onchain_import_router, prefix=MOD_PREFIX)
         yield tmp_path
 
 

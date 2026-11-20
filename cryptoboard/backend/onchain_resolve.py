@@ -85,6 +85,11 @@ def _day(executed_at: str | None) -> str | None:
         return None
 
 
+def day_of(executed_at: str | None) -> str | None:
+    """Öffentlich: UTC-Tag eines Ausführungszeitpunkts (für Preis- und Gas-Tag)."""
+    return _day(executed_at)
+
+
 def _day_price(coin_id: str | None, day: str | None) -> Decimal | None:
     if not coin_id or not day:
         return None

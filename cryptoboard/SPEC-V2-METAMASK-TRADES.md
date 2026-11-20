@@ -122,8 +122,16 @@ Chains `base`/`ethereum`/`tron`/`bitcoin`) und zeigt davon nur den aktuellen
   `fee`, `executed_at`, `hash`) und läuft durch **denselben**
   Preview/Commit-Vertrag wie der manuelle CSV-Import — keine neue,
   parallele Ledger-Schreibroute.
-- Fingerprint/Dedup: Transaktionshash der Chain ist der stabile `import_hash`
-  (stärker als der CSV-Fingerprint, da eindeutig und nicht manipulierbar).
+- Fingerprint/Dedup: `import_hash` = `{chain}:{txhash}:sell` bzw. `:buy`
+  (je Swap zwei Ledger-Einträge), Dedup über vorhandene Hashes wie beim CSV-Import.
+- Endpunkte: `POST /portfolio/import/onchain/preview` `{address_id, to_block?}`
+  → `transactions` (sell+buy je Swap, Zahlen als exakte Strings, Flags
+  `resolved`/`preis_fehlt`/`gebuehr_fehlt`/`duplicate`), `wraps`, `unklar`,
+  `truncated`, `before_block`, `counts`; `POST /portfolio/import/onchain/commit`
+  `{transactions}` → `{imported, skipped, skipped_details}`. Einträge ohne Preis
+  oder coin_id werden nicht gebucht.
+- Der Alchemy-Key steht nie in einer URL: er geht nur im Header
+  `Authorization: Bearer <key>`.
 - Gas-Fee der Transaktion wird als anteilige Fee in EUR zum Ausführungszeitpunkt
   umgerechnet und in die FIFO-Kostenbasis eingerechnet (`fifo.py`-Vertrag:
   Fee verteuert den Einstand).

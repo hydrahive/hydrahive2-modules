@@ -40,6 +40,21 @@ async def test_is_sender_fallback_ueber_tx_hash_bei_nur_erc20(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_is_sender_erc20_plus_internal_eth_fragt_tx_from_nach(monkeypatch):
+    # Token -> ETH über Router: erc20 raus + internal-ETH rein, kein external-Transfer.
+    # Der Absender steht in keinem Transfer → muss per Tx-Hash nachgeschlagen werden.
+    calls = []
+
+    async def fake_call(chain, key, method, params):
+        calls.append(method)
+        return {"from": "0xaa"}
+    monkeypatch.setattr(ac, "call", fake_call)
+    txs = [_tx("erc20", "0xaa", "0xpool"), _tx("internal", "0xrouter", "0xaa")]
+    assert await gas.is_sender("base", "k", "0xaa", "0xh1", txs) is True
+    assert calls == ["eth_getTransactionByHash"]
+
+
+@pytest.mark.asyncio
 async def test_is_sender_fallback_liefert_false_bei_anderem_absender(monkeypatch):
     async def fake_call(chain, key, method, params):
         return {"from": "0xandererabsender"}

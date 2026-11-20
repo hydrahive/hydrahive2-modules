@@ -26,21 +26,28 @@ statt Router-Signaturen — **`dex_signatures.py` entfällt vollständig**
 - `backend/alchemy_key_routes.py` — Routen für die Key-Verwaltung
   (PUT/POST/GET/DELETE), eingehängt wie `wallet_routes.py`/`import_routes.py`
 - `backend/alchemy_client.py` — Netz-Client gegen
-  `https://{chain}-mainnet.g.alchemy.com/v2/{key}`, Methoden-Allowlist (nur
+  `https://{chain}-mainnet.g.alchemy.com/v2` mit Key NUR im Header
+  `Authorization: Bearer <key>` (nie in der URL → nie in httpx-Logs/Exceptions),
+  Methoden-Allowlist (nur
   lesend), Kill-Switch, `fetch_transfers()` mit Paging/Grenzen laut SPEC
 - `backend/onchain_swaps.py` — reine Funktionen: Transfers nach Tx-Hash
   gruppieren, Netto-Bewegung je Asset, Swap-Regel, Wrap/Unwrap-Sonderfall,
   unklare Transaktionen als Rohdaten-Liste. Kein Netzzugriff, keine
   Preisauflösung (Teil B).
-- `backend/onchain_import_routes.py` *(Teil B)* — `/portfolio/import/onchain/preview`
-  und `/portfolio/import/onchain/commit`, gleicher Vertrag wie
-  `import_routes.py`, eigene Datenquelle (Alchemy statt Datei)
+- `backend/onchain_resolve.py` / `backend/onchain_gas.py` — coin_id-Auflösung,
+  EUR-Tageskurs (Stable > ETH/WETH > sonst), Gas nur als Absender (+ l1Fee Base)
+- `backend/onchain_import.py` — Preview-Aufbau und Commit-Logik (Decimal intern,
+  EINE float-Grenze direkt vor `store.add`)
+- `backend/onchain_import_routes.py` — `POST /portfolio/import/onchain/preview`
+  `{address_id, to_block?}` und `POST /portfolio/import/onchain/commit`
+  `{transactions:[…]}`, gleicher Vertrag wie `import_routes.py`
 
 ### Migrationen
 
-- `migrations/007_onchain_import_hash.sql` — eigener Index/Constraint für
-  On-Chain-Transaktionshashes als `import_hash`, falls nicht schon durch
-  `004_import_hash.sql` abgedeckt (prüfen vor Neuanlage)
+- **Keine.** `004_import_hash.sql` (nicht-eindeutiger Index `user, import_hash`)
+  reicht; Dedup wie beim CSV-Import über `existing_hashes` + innerhalb des
+  Requests. Ein UNIQUE-Index wäre auf Bestandsdaten nicht sicher anlegbar.
+  Restrisiko: zwei exakt gleichzeitige Commits desselben Nutzers.
 
 ### Frontend — MetaMask-Connect
 
@@ -146,10 +153,11 @@ Router-Signatur-Vorprüfung (entfällt, siehe oben).
   `import_hash`, `store.add`). Hier passiert die EINE Umwandlung von
   Decimal/Integer-Basiseinheiten (Teil A) ins Ledger-Format
   (REAL/float wie `migrations/002_portfolio.sql`, `portfolio_store.add`).
-- **Migration**: `migrations/007_onchain_import_hash.sql` NUR falls
-  `004_import_hash.sql` den On-Chain-`import_hash` nicht schon als
-  nicht-eindeutigen Index abdeckt — vor Neuanlage prüfen, nicht blind
-  anlegen.
+- **Migration**: geprüft → keine (siehe „Migrationen“).
+- **Stand 20.11.2026**: umgesetzt. `import_hash` = `{chain}:{txhash}:sell|buy`;
+  Flags je Eintrag `resolved`, `preis_fehlt`, `gebuehr_fehlt`, `duplicate`;
+  Commit überspringt mit Grund (`duplikat`, `preis_fehlt`, `coin_id_fehlt`,
+  `hash_ungueltig`, `zeit_ungueltig`, `ledger_full`); fee null → 0.
 - **Frontend-Import-Dialog**: `OnchainTradeImportDialog.tsx`, Einbindung in
   `WalletsView.tsx` (eigener, paralleler Auftrag
   `cryptoboard-metamask-plan`/`cb-metamask-frontend`).

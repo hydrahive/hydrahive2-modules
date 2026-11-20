@@ -24,14 +24,17 @@ from . import price_history_store as price_store
 MAX_RECEIPTS_PER_RUN = 200
 
 
-def _is_sender(address: str, txs: list[dict]) -> bool:
-    """Tx-from aus einem nativen Transfer (external/internal) dieser Gruppe."""
+def _external_sender(address: str, txs: list[dict]) -> bool | None:
+    """Tx-from aus dem external-Transfer (Top-Level-Wert der Tx: dessen from IST tx.from).
+
+    None = nicht entscheidbar (kein external-Transfer). internal-Transfers sagen
+    NICHTS über den Absender (Router/Kontrakt zahlt aus) — die zählen hier nicht.
+    """
+    externals = [t for t in txs if t.get("category") == "external"]
+    if not externals:
+        return None
     address_lower = address.lower()
-    for t in txs:
-        if t.get("category") in ("external", "internal"):
-            if str(t.get("from") or "").lower() == address_lower:
-                return True
-    return False
+    return any(str(t.get("from") or "").lower() == address_lower for t in externals)
 
 
 async def _tx_from_via_hash(chain: str, key: str, tx_hash: str) -> str | None:
@@ -47,15 +50,16 @@ async def _tx_from_via_hash(chain: str, key: str, tx_hash: str) -> str | None:
 
 
 async def is_sender(chain: str, key: str, address: str, tx_hash: str, txs: list[dict]) -> bool:
-    """Ist `address` die sendende (gas-zahlende) Adresse dieser Transaktion?"""
-    if _is_sender(address, txs):
-        return True
-    if any(t.get("category") == "erc20" for t in txs) and not any(
-        t.get("category") in ("external", "internal") for t in txs
-    ):
-        frm = await _tx_from_via_hash(chain, key, tx_hash)
-        return frm == address.lower()
-    return False
+    """Ist `address` die sendende (gas-zahlende) Adresse dieser Transaktion?
+
+    external-Transfer vorhanden → eindeutig. Sonst (nur erc20/internal) → Tx-from
+    per eth_getTransactionByHash; schlägt das fehl → False (kein Gas, nichts geraten).
+    """
+    decided = _external_sender(address, txs)
+    if decided is not None:
+        return decided
+    frm = await _tx_from_via_hash(chain, key, tx_hash)
+    return frm == address.lower()
 
 
 def _hex_to_int(value) -> int | None:
