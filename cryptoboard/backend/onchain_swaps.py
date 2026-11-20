@@ -181,8 +181,22 @@ def classify_transaction(chain: str, address: str, tx_hash: str, txs: list[dict]
     out_assets = {k: v for k, v in movements.items() if v["net"] < 0}
     in_assets = {k: v for k, v in movements.items() if v["net"] > 0}
 
+    # Genaue Abgrenzung (Review 2026-11-20): "mehrdeutige_bewegung" deckte bisher
+    # auch die häufigen, eindeutigen Fälle "nur raus" / "nur rein" ab (z. B. ein
+    # reiner USDC-Zahlungsabgang ohne Gegenleistung in derselben Tx) -- das ist
+    # keine Mehrdeutigkeit, sondern eine klare, einseitige Bewegung. Neu:
+    #   nur_raus        — genau 1 Asset raus, 0 rein
+    #   nur_rein         — 0 raus, genau 1 Asset rein
+    #   mehrere_assets  — mehrere Assets auf (mindestens) einer Seite (echte
+    #                     Mehrdeutigkeit: welches Paar soll das sein?)
+    if len(out_assets) == 1 and not in_assets:
+        return {**base, "type": "unklar", "reason": "nur_raus", "raw": txs,
+                "out_assets": out_assets, "in_assets": in_assets}
+    if not out_assets and len(in_assets) == 1:
+        return {**base, "type": "unklar", "reason": "nur_rein", "raw": txs,
+                "out_assets": out_assets, "in_assets": in_assets}
     if len(out_assets) != 1 or len(in_assets) != 1:
-        return {**base, "type": "unklar", "reason": "mehrdeutige_bewegung", "raw": txs,
+        return {**base, "type": "unklar", "reason": "mehrere_assets", "raw": txs,
                 "out_assets": out_assets, "in_assets": in_assets}
 
     (sell_key, sell), = out_assets.items()

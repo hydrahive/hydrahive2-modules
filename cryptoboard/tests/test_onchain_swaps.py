@@ -46,7 +46,15 @@ def test_nur_raus_ist_unklar():
     out = sw.detect_swaps("base", ADDR, txs)
     assert out["swaps"] == []
     assert len(out["unklar"]) == 1
-    assert out["unklar"][0]["reason"] == "mehrdeutige_bewegung"
+    assert out["unklar"][0]["reason"] == "nur_raus"
+
+
+def test_nur_rein_ist_unklar():
+    txs = [_erc20("0xdrop", ADDR.lower(), USDC_BASE, hex(500 * 10**6), "0x6")]
+    out = sw.detect_swaps("base", ADDR, txs)
+    assert out["swaps"] == []
+    assert len(out["unklar"]) == 1
+    assert out["unklar"][0]["reason"] == "nur_rein"
 
 
 def test_mehrere_assets_je_seite_ist_unklar():
@@ -58,6 +66,7 @@ def test_mehrere_assets_je_seite_ist_unklar():
     out = sw.detect_swaps("base", ADDR, txs)
     assert out["swaps"] == []
     assert len(out["unklar"]) == 1
+    assert out["unklar"][0]["reason"] == "mehrere_assets"
 
 
 def test_approve_ohne_transfer_ist_unklar():
