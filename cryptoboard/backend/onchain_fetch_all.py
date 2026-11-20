@@ -71,9 +71,13 @@ def _generic_unklar(chain: str, address: str, detected: dict) -> list[dict]:
             if u.get("reason") not in ("nur_raus", "nur_rein")]
 
 
-async def _split_unklar(chain: str, detected: dict) -> tuple[list[dict], list[dict], list[dict]]:
-    """EVM-"unklar"-Items einer Adresse -> (ausgaben, candidates, spam). Items mit anderem reason
-    (mehrere_assets, decimals_fehlt, keine_nettobewegung) bleiben außen vor (siehe _generic_unklar)."""
+async def _split_unklar(chain: str, key: str, detected: dict, *, lookups_used: int,
+                         ) -> tuple[list[dict], list[dict], list[dict], int]:
+    """EVM-"unklar"-Items einer Adresse -> (ausgaben, candidates, spam, lookups_used_neu). Items mit
+    anderem reason (mehrere_assets, decimals_fehlt, keine_nettobewegung) bleiben außen vor (siehe
+    _generic_unklar). Spam wird auf BEIDEN Seiten geprüft (nur_raus UND nur_rein, Till 20.11.2026) —
+    nie in ausgaben/candidates, nur in spam. `lookups_used` zählt eth_getTransactionByHash-Abrufe für
+    die Kartenzahlungs-Erkennung über ALLE Adressen hinweg (siehe onchain_card_detect)."""
     from . import xchain_build as xb
 
     ausgaben: list[dict] = []
@@ -81,11 +85,12 @@ async def _split_unklar(chain: str, detected: dict) -> tuple[list[dict], list[di
     spam: list[dict] = []
     for item in detected["unklar"]:
         if item.get("reason") == "nur_raus":
-            ausgaben.append(await xb.build_ausgabe(chain, item))
+            kind, payload, lookups_used = await xb.classify_outgoing(chain, key, item, lookups_used=lookups_used)
+            (spam if kind == "spam" else ausgaben).append(payload)
         elif item.get("reason") == "nur_rein":
             kind, payload = await xb.classify_incoming(chain, item)
             (spam if kind == "spam" else candidates).append(payload)
-    return ausgaben, candidates, spam
+    return ausgaben, candidates, spam, lookups_used
 
 
 async def collect_all(user: str, key: str, evm_chains: tuple[str, ...]) -> dict:
@@ -100,6 +105,7 @@ async def collect_all(user: str, key: str, evm_chains: tuple[str, ...]) -> dict:
         "generic_unklar": [], "wraps": [], "tron_sells": [], "tron_unklar": [],
         "own_addresses": {a["address"].lower() for a in addrs},
     }
+    lookups_used = 0
     for addr in addrs:
         if addr["chain"] in evm_chains:
             res = await fetch_evm_address(addr["chain"], addr["address"], key)
@@ -114,7 +120,8 @@ async def collect_all(user: str, key: str, evm_chains: tuple[str, ...]) -> dict:
             out["detected"].append((addr["chain"], addr["address"], detected, grouped))
             out["wraps"].extend(oi.compact_wrap(w) for w in detected["wraps"])
             out["generic_unklar"].extend(_generic_unklar(addr["chain"], addr["address"], detected))
-            ausgaben, candidates, spam = await _split_unklar(addr["chain"], detected)
+            ausgaben, candidates, spam, lookups_used = await _split_unklar(
+                addr["chain"], key, detected, lookups_used=lookups_used)
             out["ausgaben"].extend(ausgaben)
             out["candidates"].extend(candidates)
             out["spam"].extend(spam)

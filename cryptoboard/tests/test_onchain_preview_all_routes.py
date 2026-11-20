@@ -21,7 +21,8 @@ SERVICE = "0x" + "b" * 40  # fremder Dienst-Absender auf Base, Ziel des TRX-Pair
 USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 DAY = "2026-11-18"
 TS = f"{DAY}T12:00:00.000Z"
-H_SWAP, H_PAIR, H_SPAM, H_OUT = (("0x" + c * 64) for c in "1234")
+H_SWAP, H_PAIR, H_SPAM, H_OUT, H_SPAM_OUT = (("0x" + c * 64) for c in "12345")
+FAKE_USDC_CONTRACT = "0x" + "9" * 40  # fremder Kontrakt, NICHT die echte USDC-Adresse
 
 
 def _erc20(h, frm, to, contract, value, dec, sym):
@@ -44,6 +45,9 @@ TRANSFERS_BASE_1 = [
            1_000_000 * 10**18, 18, "ꓴ឵ՏᎠ"),
     _eth(H_OUT, ADDR_BASE, "0xsink0000000000000000000000000000000000", 2 * 10**17),
     _erc20(H_PAIR, SERVICE, ADDR_BASE, USDC, 2435310000, 6, "USDC"),
+    # Fake-"USDC" (fremder Kontrakt) RAUS -> muss Spam sein, nie Ausgabe (Till 20.11.2026).
+    _erc20(H_SPAM_OUT, ADDR_BASE, "0xecca0000000000000000000000000000000000", FAKE_USDC_CONTRACT,
+           500 * 10**18, 18, "USDC"),
 ]
 
 
@@ -64,7 +68,10 @@ def setup(client, monkeypatch):
         if method == "eth_getTransactionReceipt":
             return {"gasUsed": hex(100000), "effectiveGasPrice": hex(10**9), "l1Fee": hex(0)}
         if method == "eth_getTransactionByHash":
-            return {"from": ADDR_BASE}
+            # from: für onchain_gas.is_sender (Gas-Zahler). to: für onchain_card_detect
+            # (Kartenzahlungs-Erkennung) -- je Tx-Hash passend zum jeweiligen Test-Transfer.
+            to_by_hash = {H_OUT.lower(): "0xsink0000000000000000000000000000000000"}
+            return {"from": ADDR_BASE, "to": to_by_hash.get(str(params[0]).lower())}
         raise AssertionError(method)
 
     async def fake_contract(platform, address):
@@ -129,12 +136,30 @@ def test_swap_auf_erster_adresse_erkannt(client, auth_headers, setup):
 
 def test_spam_eingang_landet_in_spam_nicht_in_unklar_oder_transactions(client, auth_headers, setup):
     data = _preview_all(client, auth_headers)
-    assert len(data["spam"]) == 1
-    spam = data["spam"][0]
-    assert spam["hash"] == H_SPAM.lower()
+    assert len(data["spam"]) == 2  # Spam-Eingang (dieser Test) + Spam-Abgang (eigener Test)
+    spam = next(s for s in data["spam"] if s["hash"] == H_SPAM.lower())
     assert spam["grund"] == "symbol_nicht_ascii"
     assert all(t["hash"] != f"base:{H_SPAM}:buy" for t in data["transactions"])
     assert all(str(u.get("hash")).lower() != H_SPAM.lower() for u in data["unklar"])
+
+
+def test_spam_abgang_landet_in_spam_nie_in_ausgaben(client, auth_headers, setup):
+    """Fake-"USDC" (fremder Kontrakt) als Abgang -> spam, NIE ausgaben (Till 20.11.2026)."""
+    data = _preview_all(client, auth_headers)
+    spam_hashes = {s["hash"] for s in data["spam"]}
+    assert H_SPAM_OUT.lower() in spam_hashes
+    spam_out = next(s for s in data["spam"] if s["hash"] == H_SPAM_OUT.lower())
+    assert spam_out["grund"] == "unbekannter_token"
+    assert spam_out["contract"] == FAKE_USDC_CONTRACT
+    assert all(a["hash"] != f"base:{H_SPAM_OUT}:transfer_out" for a in data["ausgaben"])
+
+
+def test_echtes_usdc_bleibt_ausgabe_gegenprobe(client, auth_headers, setup):
+    """Gegenprobe zum Spam-Abgang: ECHTES USDC (bekannter Kontrakt) bleibt ganz normal Ausgabe."""
+    data = _preview_all(client, auth_headers)
+    out_hashes = {a["hash"] for a in data["ausgaben"]}
+    assert f"base:{H_OUT}:transfer_out" in out_hashes
+    assert all(s["hash"] != H_OUT.lower() for s in data["spam"])
 
 
 def test_reine_ausgabe_wird_transfer_out(client, auth_headers, setup):
@@ -146,6 +171,32 @@ def test_reine_ausgabe_wird_transfer_out(client, auth_headers, setup):
     assert out["coin_id"] == "ethereum"
     assert out["price"] == "2000"
     assert out["quantity"] == "0.2"
+
+
+def test_ausgabe_ohne_konfigurierten_card_kontrakt_ist_abgang(client, auth_headers, setup, monkeypatch):
+    """Chain ohne Eintrag in METAMASK_CARD_CONTRACTS -> jede Ausgabe ist "abgang" (kein falscher Treffer)."""
+    from backend import onchain_card_detect as card
+
+    monkeypatch.delitem(card.METAMASK_CARD_CONTRACTS, "base", raising=False)
+    card.clear_cache()
+    data = _preview_all(client, auth_headers)
+    out = data["ausgaben"][0]
+    assert out["art"] == "abgang"
+    assert out["art_unklar"] is False
+
+
+def test_ausgabe_mit_konfiguriertem_card_kontrakt_wird_kartenzahlung(client, auth_headers, setup, monkeypatch):
+    """Mit konfiguriertem Card-Kontrakt (Ziel der Ausgabe = Card) -> art kartenzahlung."""
+    from backend import onchain_card_detect as card
+
+    card_contract = "0xsink0000000000000000000000000000000000"  # Ziel von H_OUT (siehe TRANSFERS_BASE_1)
+    monkeypatch.setitem(card.METAMASK_CARD_CONTRACTS, "base", card_contract)
+    card.clear_cache()
+    data = _preview_all(client, auth_headers)
+    out = next(a for a in data["ausgaben"] if a["hash"] == f"base:{H_OUT}:transfer_out")
+    assert out["art"] == "kartenzahlung"
+    assert out["art_unklar"] is False
+    card.clear_cache()
 
 
 def test_tron_base_paar_erkannt_mit_preis_und_gebuehr(client, auth_headers, setup):
@@ -172,7 +223,7 @@ def test_counts_und_buchbar(client, auth_headers, setup):
     c = data["counts"]
     assert c["swaps"] == 1
     assert c["pairs"] == 1
-    assert c["spam"] == 1
+    assert c["spam"] == 2  # ein Spam-Eingang + ein Spam-Abgang
     assert c["ausgaben"] == 1
     assert c["mehrdeutig"] == 0
     assert c["buchbar"] > 0

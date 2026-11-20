@@ -24,12 +24,17 @@ nur der Portfolio-Gesamtwert wie in v1). Implementiert in read_port_wallets.py
 (Datei-Größenlimit), hier nur re-exportiert/verdrahtet (EINE Einstiegsdatei
 bleibt bestehen; die Cent-Rundung _to_minor lebt weiterhin nur hier).
 
+v3 (Etappe B, VERTRAG-B.md Punkt 3): zusätzlich ledger_moves() — Swap-/
+Zahlungs-Bewegungen aus dem bestehenden On-Chain-Ledger (Umbuchung Tron->EVM
+bzw. Kartenzahlung/Abgang), für das Haushaltsbuch. Implementiert in
+read_port_moves.py (Datei-Größenlimit), hier nur re-exportiert/verdrahtet.
+
 Zugriff aus Haushaltsbuch: Der Kern lädt Modul-Backends als
 sys.modules["hhmod_<id>"]; Haushaltsbuch importiert
 importlib.import_module("hhmod_cryptoboard.read_port") NUR wenn
 hydrahive.modules.registry.REGISTRY.get("cryptoboard") existiert, .loaded
-True ist und PORT_VERSION == 2 passt (v1: == 1). Sonst eigener Kill-Switch
-dort (CryptoBridgeUnavailable + letzter Snapshot), nicht hier.
+True ist und PORT_VERSION == 3 passt (v2: == 2, v1: == 1). Sonst eigener
+Kill-Switch dort (CryptoBridgeUnavailable + letzter Snapshot), nicht hier.
 """
 from __future__ import annotations
 
@@ -38,14 +43,15 @@ from decimal import ROUND_HALF_EVEN, Decimal
 
 from . import portfolio, portfolio_store as store, valuation
 from . import price_history_store as price_store
+from .read_port_moves import ledger_moves as _ledger_moves_impl
 from .read_port_wallets import WalletAddressNotFound, wallet_addresses_for
 from .read_port_wallets import wallet_holdings as _wallet_holdings_impl
 
-PORT_VERSION = 2
+PORT_VERSION = 3
 
 __all__ = [
     "PORT_VERSION", "PortfolioNotFound", "PortfolioUnavailable", "WalletAddressNotFound",
-    "portfolios_for", "portfolio_value", "trades", "value_series",
+    "ledger_moves", "portfolios_for", "portfolio_value", "trades", "value_series",
     "wallet_addresses_for", "wallet_holdings",
 ]
 
@@ -221,3 +227,9 @@ async def wallet_holdings(username: str, address_ids: list[int]) -> dict:
         raise
     except Exception as exc:
         raise PortfolioUnavailable(str(exc)) from exc
+
+
+def ledger_moves(username: str, *, since: str | None = None, limit: int = 5000) -> list[dict]:
+    """Swap-/Zahlungs-Bewegungen aus dem On-Chain-Ledger (v3). Reine Lese-Funktion, kein Netz —
+    Fehler im Ledger-Zugriff selbst sind ein Programmierfehler, keine erwartete Ausnahme."""
+    return _ledger_moves_impl(username, since=since, limit=limit, to_minor=_to_minor, quantity_str=_quantity_str)

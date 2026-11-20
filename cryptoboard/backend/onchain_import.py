@@ -25,15 +25,17 @@ from .onchain_entries import (
 )
 
 NOTE = "On-Chain-Import"
+NOTE_KARTENZAHLUNG = "On-Chain-Import Kartenzahlung"
+NOTE_ABGANG = "On-Chain-Import Abgang"
 CHAINS = ("base", "ethereum")
 # Zwei Hash-Formate laut VERTRAG.md:
 #   base/ethereum:tx:sell|buy|transfer_out   — Swap/Ausgabe innerhalb einer Chain
 #   xchain:tron_tx:evm_chain:evm_tx:sell|buy — chain-übergreifendes Paar
 
 __all__ = [
-    "CHAINS", "HASH_RE", "NOTE", "XCHAIN_HASH_RE", "build_entry", "build_preview", "commit_entries",
-    "compact_unklar", "compact_wrap", "dec_str", "direction", "import_hash", "normalize_ts",
-    "process_swaps", "qty",
+    "CHAINS", "HASH_RE", "NOTE", "NOTE_ABGANG", "NOTE_KARTENZAHLUNG", "XCHAIN_HASH_RE", "build_entry",
+    "build_preview", "commit_entries", "compact_unklar", "compact_wrap", "dec_str", "direction",
+    "import_hash", "normalize_ts", "process_swaps", "qty",
 ]
 
 
@@ -113,6 +115,15 @@ async def build_preview(user: str, chain: str, address: str, key: str, to_block:
     }
 
 
+def _note_for(t: Any) -> str:
+    """note je Eintrag: transfer_out unterscheidet Kartenzahlung/Abgang (VERTRAG-B.md Punkt 2),
+    buy/sell (Swaps) bleiben bei der bisherigen generischen note."""
+    if getattr(t, "kind", None) != "transfer_out":
+        return NOTE
+    art = getattr(t, "art", None)
+    return NOTE_KARTENZAHLUNG if art == "kartenzahlung" else NOTE_ABGANG
+
+
 def commit_entries(user: str, transactions: list[Any]) -> dict:
     """Bestätigte Einträge ins Ledger — Dedup über existing_hashes + innerhalb des Requests."""
     already = store.existing_hashes(user, [t.hash for t in transactions])
@@ -129,7 +140,7 @@ def commit_entries(user: str, transactions: list[Any]) -> dict:
                     user, coin_id=t.coin_id.strip().lower(), symbol=t.symbol.strip().upper(),
                     name=t.name.strip(), kind=t.kind, quantity=float(t.quantity),
                     price=float(price), fee=float(fee), executed_at=t.executed_at.strip(),
-                    note=NOTE, import_hash=t.hash,
+                    note=_note_for(t), import_hash=t.hash,
                 )
                 imported += 1
                 already.add(t.hash)

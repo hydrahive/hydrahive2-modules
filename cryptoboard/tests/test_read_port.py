@@ -228,7 +228,7 @@ async def test_value_series_ohne_transaktionen_leer(client):
 
 
 # ---------------------------------------------------------------- PORT_VERSION
-def test_port_version_ist_2():
-    # v2 (Etappe A2, VERTRAG-PORT-V2.md): wallet_addresses_for/wallet_holdings kamen hinzu,
-    # alle v1-Funktionen bleiben unveraendert (siehe restliche Tests in dieser Datei).
-    assert read_port.PORT_VERSION == 2
+def test_port_version_ist_3():
+    # v3 (Etappe B, VERTRAG-B.md Punkt 3): ledger_moves kam hinzu, v1/v2-Funktionen
+    # bleiben unveraendert (siehe restliche Tests in dieser Datei + test_read_port_wallets.py).
+    assert read_port.PORT_VERSION == 3

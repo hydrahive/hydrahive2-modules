@@ -2,7 +2,7 @@
 
 Prüft: eigene Adressen sichtbar, fremde address_id -> WalletAddressNotFound,
 Gesamtwert identisch zu wallets.balances für dieselben Adressen, complete=False
-bei fehlendem Kurs, Netzfehler -> PortfolioUnavailable, PORT_VERSION == 2.
+bei fehlendem Kurs, Netzfehler -> PortfolioUnavailable, PORT_VERSION == 3 (v2-Verhalten unveraendert).
 
 Netz (chain_clients.fetch_balance, CoinGecko-Kurse) gemockt wie in test_wallets.py.
 """
@@ -151,5 +151,5 @@ async def test_wallet_holdings_netzfehler_wirft_unavailable(client, two_addresse
 
 
 # ---------------------------------------------------------------- PORT_VERSION
-def test_port_version_ist_2():
-    assert read_port.PORT_VERSION == 2
+def test_port_version_ist_3():
+    assert read_port.PORT_VERSION == 3
