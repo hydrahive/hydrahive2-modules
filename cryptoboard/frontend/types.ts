@@ -402,3 +402,36 @@ export interface OnchainCommitResult {
   skipped: number
   skipped_details: { hash: string; reason: string }[]
 }
+
+// ── Wallet-Connect (EIP-1193 / EIP-6963) — nur Lesen: einzige erlaubte Methode eth_requestAccounts ──
+export type WalletRequestMethod = "eth_requestAccounts"
+
+export interface Eip1193Provider {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>
+  on?: (event: string, handler: (...args: unknown[]) => void) => void
+  removeListener?: (event: string, handler: (...args: unknown[]) => void) => void
+}
+
+export interface Eip6963ProviderInfo {
+  uuid: string
+  name: string
+  icon: string
+  rdns?: string
+}
+
+export interface Eip6963ProviderDetail {
+  info: Eip6963ProviderInfo
+  provider: Eip1193Provider
+}
+
+export type EvmChain = "base" | "ethereum"
+
+export type WalletConnectFailure = "rejected" | "pending" | "error" | "no_account"
+export type WalletConnectResult =
+  | { ok: true; address: string }
+  | { ok: false; reason: WalletConnectFailure }
+
+export type ChainChangeOutcome =
+  | { kind: "same" }
+  | { kind: "offer"; chain: EvmChain }
+  | { kind: "unsupported" }
