@@ -129,12 +129,15 @@ async def build_preview(user: str, chain: str, address: str, key: str, to_block:
         r_buy = await rs.resolve_coin_id(chain, swap["buy"]["contract"], swap["buy"]["symbol"])
         resolved.append((swap, r_sell, r_buy))
 
-    coin_ids = [r["coin_id"] for _, a, b in resolved for r in (a, b) if r["coin_id"]]
-    if resolved:
-        coin_ids.append("ethereum")  # Gas-Umrechnung
+    needed: dict[str, str | None] = {}  # coin_id → jüngster Swap-Tag (Cache muss mindestens bis dahin reichen)
+    for swap, a, b in resolved:
+        day = rs.day_of(swap.get("executed_at"))
+        for coin_id in [r["coin_id"] for r in (a, b) if r["coin_id"]] + ["ethereum"]:  # ethereum: Gas-Umrechnung
+            prev = needed.get(coin_id)
+            needed[coin_id] = day if prev is None or (day is not None and day > prev) else prev
     kurs_abruf_fehlgeschlagen = False
     try:
-        await rs.ensure_prices_cached(coin_ids)
+        await rs.ensure_prices_cached(needed)
     except Exception:  # CoinGecko-Fehler → fehlende Kurse werden als preis_fehlt markiert
         kurs_abruf_fehlgeschlagen = True
 

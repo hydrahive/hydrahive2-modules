@@ -16,8 +16,9 @@ B2 — EUR-Preis:
   Kein Kurs auf keiner Seite (z. B. älter als die 365-Tage-CoinGecko-Historie)
   -> beide Seiten price=None, flag "preis_fehlt".
 
-  Netz-Abrufe begrenzt: price_history.ensure_coins() lädt pro coin_id EINMAL
-  die komplette 365-Tage-Historie (kein Abruf je Tag).
+  Netz-Abrufe begrenzt: je Coin höchstens ein Abruf der 365-Tage-Historie pro
+  Lauf, und nur wenn der Cache fehlt oder älter ist als der jüngste Swap-Tag
+  (stale_coins; Till 20.11.2026: immer nachladen statt „preis_fehlt“).
 """
 from __future__ import annotations
 
@@ -106,11 +107,30 @@ def _preference_rank(coin_id: str | None) -> int:
     return 2
 
 
-async def ensure_prices_cached(coin_ids: list[str]) -> None:
-    """B2: EINMAL pro coin_id die 365-Tage-Historie laden (falls noch nicht gecacht)."""
-    ids = sorted({c for c in coin_ids if c})
-    if ids:
-        await price_history.ensure_coins(ids)
+def stale_coins(needed: dict[str, str | None]) -> list[str]:
+    """Coins, deren Kurs-Cache fehlt oder älter ist als der jüngste benötigte Tag.
+
+    `needed` = {coin_id: jüngster Swap-Tag (YYYY-MM-DD) oder None}. Till 20.11.2026:
+    immer nachladen, wenn ein Trade neuer ist als der gespeicherte Kurs – sonst
+    bekämen Swaps von heute/gestern „preis_fehlt“, obwohl CoinGecko den Kurs hat.
+    """
+    out = []
+    for coin_id, day in sorted(needed.items()):
+        if not coin_id:
+            continue
+        latest = price_store.latest_day(coin_id)
+        if latest is None or (day is not None and latest < day):
+            out.append(coin_id)
+    return out
+
+
+async def ensure_prices_cached(needed: dict[str, str | None]) -> None:
+    """B2: Kurse für alle benötigten Coins bereitstellen – fehlende laden, veraltete neu laden.
+
+    Ein CoinGecko-Abruf je Coin und Lauf, nur wenn nötig (aktueller Cache = kein Abruf)."""
+    stale = stale_coins(needed)
+    if stale:
+        await price_history.ensure_coins(stale, force=True)
 
 
 def price_pair(sell_coin_id: str | None, sell_qty: Decimal, buy_coin_id: str | None, buy_qty: Decimal,
