@@ -28,13 +28,14 @@ class FakeWalletAddressNotFound(LookupError):
 class FakePort:
     """Fake-Implementierung des Read-Ports mit demselben Interface wie
     cryptoboard/backend/read_port.py (PORT_VERSION, portfolios_for,
-    portfolio_value, trades, PortfolioNotFound, PortfolioUnavailable) UND den
+    portfolio_value, trades, PortfolioNotFound, PortfolioUnavailable), den
     v2-Funktionen (wallet_addresses_for, wallet_holdings, WalletAddressNotFound,
-    VERTRAG-PORT-V2.md). PORT_VERSION 2, weil crypto_bridge/crypto_addresses v2
-    erwarten - die v1-Funktionen bleiben dabei unverändert (Vertrag: "v1 bleibt
-    funktionsfähig")."""
+    VERTRAG-PORT-V2.md) UND der v3-Funktion (ledger_moves, VERTRAG-B.md).
+    PORT_VERSION 3, weil crypto_bridge/crypto_addresses/crypto_ledger_import
+    v3 erwarten - die v1/v2-Funktionen bleiben dabei unverändert nutzbar
+    (Vertrag: "v1/v2 bleiben funktionsfähig")."""
 
-    PORT_VERSION = 2
+    PORT_VERSION = 3
     PortfolioNotFound = FakePortfolioNotFound
     PortfolioUnavailable = FakePortfolioUnavailable
     WalletAddressNotFound = FakeWalletAddressNotFound
@@ -46,6 +47,7 @@ class FakePort:
         self.trade_data: dict[str, list[dict]] = {}
         self.addresses: dict[str, list[dict]] = {}
         self.holdings: dict[str, dict] = {}
+        self.ledger_moves_data: dict[str, list[dict]] = {}
         self.fail_with: Exception | None = None
 
     def portfolios_for(self, username: str) -> list[dict]:
@@ -82,6 +84,15 @@ class FakePort:
             if aid not in own_ids:
                 raise FakeWalletAddressNotFound(aid)
         return self.holdings[username]
+
+    def ledger_moves(self, username: str, *, since=None, limit: int = 5000) -> list[dict]:
+        self.calls.append(("ledger_moves", username))
+        if self.fail_with is not None:
+            raise self.fail_with
+        rows = self.ledger_moves_data.get(username, [])
+        if since:
+            rows = [r for r in rows if r["executed_at"] >= since]
+        return rows[:limit]
 
 
 def _fake_port_version(version: int):
@@ -153,6 +164,40 @@ def test_status_unavailable_port_version_mismatch(client, owner_headers, monkeyp
     response = client.get(f"{PREFIX}/crypto-bridge/status", headers=owner_headers)
     assert response.status_code == 200
     assert response.json()["reason"] == "port_incompatible"
+
+
+def test_load_port_rejects_old_port_version_2_fail_closed(monkeypatch):
+    """_load_port() selbst (nicht der monkeypatch-Fake) muss PORT_VERSION 3
+    verlangen: liefert das echte cryptoboard-Modul noch v2 (noch nicht auf
+    Etappe B aktualisiert), ist das fail-closed - port_incompatible, kein
+    Fallback auf die alten v1/v2-Funktionen des Ports."""
+    import importlib
+    import types
+
+    class _Entry:
+        loaded = True
+
+    class _Registry:
+        def get(self, module_id):
+            assert module_id == "cryptoboard"
+            return _Entry()
+
+    fake_port_module = types.SimpleNamespace(PORT_VERSION=2)
+
+    def _fake_import_module(name):
+        assert name == "hhmod_cryptoboard.read_port"
+        return fake_port_module
+
+    import hydrahive.modules.registry as registry_module
+
+    monkeypatch.setattr(registry_module, "REGISTRY", _Registry())
+    monkeypatch.setattr(importlib, "import_module", _fake_import_module)
+
+    try:
+        crypto_bridge._load_port()
+        raise AssertionError("sollte CryptoBridgeUnavailable werfen")
+    except crypto_bridge.CryptoBridgeUnavailable as exc:
+        assert exc.reason == "port_incompatible"
 
 
 def test_status_available_returns_own_portfolios(client, owner_headers, monkeypatch):
