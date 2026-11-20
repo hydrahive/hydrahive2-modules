@@ -322,3 +322,83 @@ export interface ImportResult {
   imported: number
   skipped: number
 }
+
+// ---- On-Chain-Trade-Import (Alchemy) ----
+// Zahlen (quantity/price/fee) kommen als exakte Dezimal-Strings und werden
+// unverändert zurückgeschickt — nie über Number() runden.
+export interface AlchemyKeyStatus {
+  set: boolean
+  masked: string | null
+}
+
+export interface OnchainEntry {
+  hash: string            // "{chain}:{tx_hash}:sell|buy" — unverändert zurückgeben
+  tx_hash: string
+  coin_id: string | null
+  symbol: string
+  name: string
+  kind: "sell" | "buy"
+  quantity: string
+  price: string | null
+  fee: string | null
+  executed_at: string | null
+  resolved: boolean
+  preis_fehlt: boolean
+  gebuehr_fehlt: boolean
+  duplicate: boolean
+}
+
+export interface OnchainWrap {
+  hash: string
+  executed_at: string | null
+  assets: { symbol: string | null; contract: string | null; direction: "raus" | "rein"; amount: string | null }[]
+}
+
+export interface OnchainUnklar {
+  hash: string
+  executed_at: string | null
+  reason: string
+  tokens: { symbol: string; contract: string | null; category: string | null; direction: "raus" | "rein" | "fremd"; amount: string | null }[]
+}
+
+export interface OnchainCounts {
+  swaps: number
+  transactions: number
+  wraps: number
+  unklar: number
+  duplicates: number
+  preis_fehlt: number
+  gebuehr_fehlt: number
+  unresolved: number
+}
+
+export interface OnchainPreview {
+  chain: string
+  address: string
+  transactions: OnchainEntry[]
+  wraps: OnchainWrap[]
+  unklar: OnchainUnklar[]
+  truncated: boolean
+  before_block: string | null
+  kurs_abruf_fehlgeschlagen: boolean
+  counts: OnchainCounts
+}
+
+export interface OnchainCommitTx {
+  coin_id: string
+  symbol: string
+  name: string
+  kind: "sell" | "buy"
+  quantity: string
+  price: string
+  fee: string | null
+  executed_at: string
+  hash: string
+}
+
+export interface OnchainCommitResult {
+  ok: boolean
+  imported: number
+  skipped: number
+  skipped_details: { hash: string; reason: string }[]
+}

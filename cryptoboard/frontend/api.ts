@@ -1,7 +1,8 @@
 import { api } from "@/shared/api-client"
 import type {
-  Alert, AlertEventsResponse, AlertInput, ChartResponse, CoinDetail, CoinPnl,
+  AlchemyKeyStatus, Alert, AlertEventsResponse, AlertInput, ChartResponse, CoinDetail, CoinPnl,
   ImportPreview, ImportResult, ImportTx, IndicatorData, MarketRow, NewsItem,
+  OnchainCommitResult, OnchainCommitTx, OnchainPreview,
   PortfolioStats, PortfolioSummary, SearchResult, Sentiment, Transaction,
   TxInput, ValueHistory, WalletAddress, WalletBalances, WatchItem,
 } from "./types"
@@ -114,4 +115,21 @@ export const cryptoApi = {
 
   walletBalances: (): Promise<WalletBalances> =>
     api.get<WalletBalances>(`${BASE}/wallets/balances`),
+
+  // ---- Alchemy-Key (nur Status/Setzen/Löschen — der Key wird NIE zurückgelesen) ----
+  alchemyKeyStatus: (): Promise<AlchemyKeyStatus> => api.get<AlchemyKeyStatus>(`${BASE}/alchemy-key`),
+
+  // Einzige Stelle, an der der Key das Frontend verlässt.
+  setAlchemyKey: (key: string): Promise<AlchemyKeyStatus> =>
+    api.put<AlchemyKeyStatus>(`${BASE}/alchemy-key`, { key }),
+
+  deleteAlchemyKey: (): Promise<{ ok: boolean }> => api.delete<{ ok: boolean }>(`${BASE}/alchemy-key`),
+
+  // ---- On-Chain-Trade-Import ----
+  onchainPreview: (address_id: number, to_block?: string | null): Promise<OnchainPreview> =>
+    api.post<OnchainPreview>(`${BASE}/portfolio/import/onchain/preview`,
+      to_block ? { address_id, to_block } : { address_id }),
+
+  onchainCommit: (transactions: OnchainCommitTx[]): Promise<OnchainCommitResult> =>
+    api.post<OnchainCommitResult>(`${BASE}/portfolio/import/onchain/commit`, { transactions }),
 }
