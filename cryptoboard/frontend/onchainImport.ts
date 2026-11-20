@@ -1,7 +1,7 @@
 // Reine Logik des On-Chain-Trade-Imports (ohne React, ohne Netz) — testbar ohne jsdom.
 // Zahlen bleiben Strings: Mengen/Preise/Gebühren werden NIE über Number() gerundet,
 // sondern exakt so an den Commit gereicht, wie Backend oder Nutzer sie liefern.
-import type { OnchainCommitTx, OnchainCounts, OnchainEntry, OnchainPreview } from "./types"
+import type { OnchainCommitResult, OnchainCommitTx, OnchainCounts, OnchainEntry, OnchainPreview } from "./types"
 
 /** Nutzer-Ergänzungen je Eintrag (Schlüssel: entry.hash). */
 export interface EntryEdit {
@@ -134,6 +134,15 @@ export function mergePreview(prev: OnchainPreview, next: OnchainPreview): Onchai
     kurs_abruf_fehlgeschlagen: prev.kurs_abruf_fehlgeschlagen || next.kurs_abruf_fehlgeschlagen,
   }
   return { ...merged, counts: countsOf(merged) }
+}
+
+/** Nach dem Commit: gebuchte und als Duplikat übersprungene Einträge als duplicate markieren. */
+export function markBooked(p: OnchainPreview, sent: OnchainCommitTx[], res: OnchainCommitResult) {
+  const failed = new Set(res.skipped_details.filter((d) => d.reason !== "duplikat").map((d) => d.hash))
+  const booked = new Set(sent.map((t) => t.hash).filter((h) => !failed.has(h)))
+  const transactions = p.transactions.map((e) => (booked.has(e.hash) ? { ...e, duplicate: true } : e))
+  const merged = { ...p, transactions }
+  return { preview: { ...merged, counts: countsOf(merged) }, booked }
 }
 
 /** Fehlercodes, für die es einen eigenen Klartext gibt (sonst Backend-Meldung). */

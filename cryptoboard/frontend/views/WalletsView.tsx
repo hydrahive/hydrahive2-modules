@@ -1,15 +1,19 @@
-import { ChevronDown, ChevronRight, Coins, Plus, ShieldCheck, Trash2, Wallet } from "lucide-react"
+import { ChevronDown, ChevronRight, Coins, History, Plus, ShieldCheck, Trash2, Wallet } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { CollapsibleBox } from "@/shared/CollapsibleBox"
 import { cryptoApi } from "../api"
 import { AddressForm } from "../components/AddressForm"
+import { AlchemyKeyBox } from "../components/AlchemyKeyBox"
+import { OnchainTradeImportDialog } from "../components/OnchainTradeImportDialog"
 import { fmtPrice, fmtQty } from "../format"
-import type { WalletBalances, WalletTokenAgg } from "../types"
+import type { WalletBalanceRow, WalletBalances, WalletTokenAgg } from "../types"
 import { EmptyHint } from "../components/EmptyHint"
 
 const C = "105 215 255"
 const VS = "eur"
+// Chains mit On-Chain-Trade-Import (Alchemy).
+const TRADE_CHAINS = new Set(["base", "ethereum"])
 
 function shorten(addr: string): string {
   return addr.length > 16 ? `${addr.slice(0, 8)}…${addr.slice(-6)}` : addr
@@ -71,6 +75,7 @@ export function WalletsView() {
   const [data, setData] = useState<WalletBalances | null>(null)
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
+  const [importFor, setImportFor] = useState<WalletBalanceRow | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -117,6 +122,16 @@ export function WalletsView() {
         </div>
       )}
 
+      {importFor && (
+        <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] p-4">
+          <h3 className="text-sm font-semibold text-[#e8eef8] mb-3">
+            {t("oc_title")} · {t(`wl_chain_${importFor.chain}`)} {importFor.label || shorten(importFor.address)}
+          </h3>
+          <OnchainTradeImportDialog key={importFor.id} address={importFor}
+            onDone={() => { void load() }} onCancel={() => setImportFor(null)} />
+        </div>
+      )}
+
       {/* Token-zentrierte Hauptansicht — über alle Wallets aggregiert */}
       <CollapsibleBox boxId="cryptoboard-tokens" color={C} icon={<Coins size={14} />} title={t("wl_tokens")}>
         <div className="box-b">
@@ -146,8 +161,14 @@ export function WalletsView() {
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[rgb(var(--hh-s-innen,17_24_39))] text-[#c8d2df] uppercase">{t(`wl_chain_${r.chain}`)}</span>
                     {r.label && <span className="text-sm text-[#e8eef8]">{r.label}</span>}
                     <span className="text-[11px] text-[#9aa7bc] font-mono">{shorten(r.address)}</span>
+                    {TRADE_CHAINS.has(r.chain) && (
+                      <button onClick={() => setImportFor(r)}
+                        className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded text-[11px] text-sky-300 hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
+                        <History size={12} /> {t("oc_action")}
+                      </button>
+                    )}
                     <button onClick={() => del(r.id)} aria-label="delete"
-                      className="ml-auto p-1 text-[#9aa7bc] hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      className={`${TRADE_CHAINS.has(r.chain) ? "" : "ml-auto "}p-1 text-[#9aa7bc] hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity`}>
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -172,6 +193,8 @@ export function WalletsView() {
           )}
         </div>
       </CollapsibleBox>
+
+      <AlchemyKeyBox />
 
       <p className="text-[11px] text-[#9aa7bc] px-1">{t("wl_disclaimer")}</p>
     </div>

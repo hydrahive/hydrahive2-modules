@@ -1,9 +1,9 @@
 import { History, Info } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { cryptoApi } from "../api"
 import {
-  buildCommitPayload, defaultSelection, errorKey, isBookable, mergePreview, SKIP_REASONS,
+  buildCommitPayload, defaultSelection, errorKey, isBookable, markBooked, mergePreview, SKIP_REASONS,
   type Edits, type EntryEdit,
 } from "../onchainImport"
 import type { OnchainCommitResult, OnchainPreview, WalletAddress } from "../types"
@@ -26,6 +26,9 @@ export function OnchainTradeImportDialog({ address, onDone, onCancel }: Props) {
   const [busy, setBusy] = useState<"" | "preview" | "more" | "commit">("")
   const [err, setErr] = useState<{ text: string; keyMissing: boolean } | null>(null)
   const [result, setResult] = useState<OnchainCommitResult | null>(null)
+  // Aktueller Stand für „Ältere nachladen“, ohne load bei jeder Änderung neu zu erzeugen.
+  const current = useRef<OnchainPreview | null>(null)
+  useEffect(() => { current.current = preview }, [preview])
 
   const fail = useCallback((e: unknown) => {
     const key = errorKey(e)
@@ -37,17 +40,13 @@ export function OnchainTradeImportDialog({ address, onDone, onCancel }: Props) {
     setBusy(toBlock ? "more" : "preview")
     try {
       const next = await cryptoApi.onchainPreview(address.id, toBlock)
-      setPreview((prev) => {
-        const merged = prev && toBlock ? mergePreview(prev, next) : next
-        // Neu hinzugekommene buchbare Einträge vorwählen, bestehende Auswahl behalten.
-        setSelected((sel) => {
-          const out = new Set(sel)
-          const known = new Set(prev && toBlock ? prev.transactions.map((e) => e.hash) : [])
-          for (const h of defaultSelection(merged.transactions.filter((e) => !known.has(e.hash)))) out.add(h)
-          return out
-        })
-        return merged
-      })
+      const prev = toBlock ? current.current : null
+      const merged = prev ? mergePreview(prev, next) : next
+      // Neu hinzugekommene buchbare Einträge vorwählen, bestehende Auswahl behalten.
+      const known = new Set(prev ? prev.transactions.map((e) => e.hash) : [])
+      const fresh = defaultSelection(merged.transactions.filter((e) => !known.has(e.hash)))
+      setSelected((sel) => new Set([...(prev ? sel : []), ...fresh]))
+      setPreview(merged)
     } catch (e) {
       fail(e)
     } finally {
@@ -77,6 +76,10 @@ export function OnchainTradeImportDialog({ address, onDone, onCancel }: Props) {
     try {
       const res = await cryptoApi.onchainCommit(payload)
       setResult(res)
+      // Gebuchtes (und vom Backend als Duplikat erkanntes) sofort sperren – kein Doppel-Klick-Risiko.
+      const done = markBooked(preview, payload, res)
+      setPreview(done.preview)
+      setSelected((sel) => new Set([...sel].filter((h) => !done.booked.has(h))))
       if (res.imported > 0) onDone(res.imported)
     } catch (e) {
       fail(e)
