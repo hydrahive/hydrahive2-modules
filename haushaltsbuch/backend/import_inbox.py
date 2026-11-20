@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import sqlite3
+from pathlib import PurePath
 
 from fastapi import status
 from hydrahive.api.middleware.auth import AuthPrincipal
@@ -18,6 +20,14 @@ from .import_parsers import (
     parse_import,
 )
 from .import_persistence import _batch_dict, _display_filename, _fingerprint, _safe_text
+
+logger = logging.getLogger(__name__)
+
+
+def _file_extension(filename: str | None) -> str:
+    """Nur die Endung fürs Log (Vertrag: kein Dateiinhalt, kein voller
+    Dateiname) - z.B. ".csv", oder "" wenn keine Endung erkennbar ist."""
+    return PurePath(filename or "").suffix.lower()
 
 
 def _csv_mapping(config: dict) -> CsvMapping:
@@ -73,6 +83,19 @@ def insert_import_rows(
         )
 
 
+def log_rejected_import(code: str, import_format: str, filename: str | None) -> None:
+    """Fehlergrund ins Server-Log (Vertrag) - OHNE Dateiinhalt, Dateiname nur
+    als Endung (kein voller Name, keine IBAN/Beträge aus dem Inhalt). Von der
+    Route POST /imports für JEDEN abgelehnten Import aufgerufen (ImportParseError
+    UND coded()-Fehler: account_not_found/account_archived/
+    import_base_currency_account_required/invalid_csv_mapping/
+    duplicate_import_file/import_profile_not_found)."""
+    logger.warning(
+        "haushaltsbuch import abgelehnt: code=%s format=%s datei_endung=%s",
+        code, import_format, _file_extension(filename) or "(keine)",
+    )
+
+
 def create_batch(
     data: bytes,
     filename: str | None,
@@ -92,17 +115,26 @@ def create_batch(
             (account_id, member["household_id"]),
         ).fetchone(), "account_not_found")
         if account["currency"] != account["base_currency"]:
+            log_rejected_import("import_base_currency_account_required", import_format, filename)
             raise coded(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
                 "import_base_currency_account_required",
             )
-        selected = detect_format(data, filename or "") if import_format == "auto" else import_format.lower()
+        try:
+            selected = detect_format(data, filename or "") if import_format == "auto" else import_format.lower()
+        except ImportParseError as exc:
+            log_rejected_import(str(exc), import_format, filename)
+            raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
         csv_config = mapping
         if profile_id is not None:
-            profile = require_row(conn.execute(
-                "SELECT * FROM module_haushaltsbuch_import_profiles WHERE id=? AND household_id=?",
-                (profile_id, member["household_id"]),
-            ).fetchone(), "import_profile_not_found")
+            try:
+                profile = require_row(conn.execute(
+                    "SELECT * FROM module_haushaltsbuch_import_profiles WHERE id=? AND household_id=?",
+                    (profile_id, member["household_id"]),
+                ).fetchone(), "import_profile_not_found")
+            except Exception:
+                log_rejected_import("import_profile_not_found", selected, filename)
+                raise
             profile_config = {
                 **json.loads(profile["mapping_json"]),
                 "delimiter": profile["delimiter"],
@@ -114,23 +146,35 @@ def create_batch(
         if csv_config is not None:
             csv_config = {**csv_config, "default_currency": account["currency"]}
         csv_mapping = _csv_mapping(csv_config) if selected == "csv" and csv_config else None
+        detected: dict = {}
         try:
-            records = parse_import(data, selected, csv_mapping, filename=filename or "")
+            records = parse_import(data, selected, csv_mapping, filename=filename or "", detected=detected)
         except ImportParseError as exc:
+            log_rejected_import(str(exc), selected, filename)
             raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
         file_hash = hashlib.sha256(data).hexdigest()
         if conn.execute(
             "SELECT 1 FROM module_haushaltsbuch_import_batches WHERE household_id=? AND file_hash=?",
             (member["household_id"], file_hash),
         ).fetchone():
+            log_rejected_import("duplicate_import_file", selected, filename)
             raise coded(status.HTTP_409_CONFLICT, "duplicate_import_file")
+        detected_bank = detected.get("bank")
         try:
             cursor = conn.execute(
                 "INSERT INTO module_haushaltsbuch_import_batches"
-                "(household_id,account_id,profile_id,display_filename,source_format,file_hash,created_by) VALUES(?,?,?,?,?,?,?)",
-                (member["household_id"], account_id, profile_id, _display_filename(filename), selected, file_hash, principal.user_id),
+                "(household_id,account_id,profile_id,display_filename,source_format,file_hash,created_by,"
+                "detected_bank_id,detected_bank_label,detected_encoding) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                (
+                    member["household_id"], account_id, profile_id, _display_filename(filename), selected,
+                    file_hash, principal.user_id,
+                    detected_bank["id"] if detected_bank else None,
+                    detected_bank["label"] if detected_bank else None,
+                    detected.get("encoding"),
+                ),
             )
         except sqlite3.IntegrityError as exc:
+            log_rejected_import("duplicate_import_file", selected, filename)
             raise coded(status.HTTP_409_CONFLICT, "duplicate_import_file") from exc
         batch_id = int(cursor.lastrowid)
         insert_import_rows(conn, member["household_id"], batch_id, account_id, account["currency"], records)

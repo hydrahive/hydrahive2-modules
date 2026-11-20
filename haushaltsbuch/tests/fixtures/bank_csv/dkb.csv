@@ -1,0 +1,8 @@
+﻿"Girokonto";"DE00000000000000000000"
+
+"Kontostand vom 20.11.2026:";"1.000,00 €"
+""
+"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige*r";"Zahlungsempfänger*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag (€)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"
+"10.11.26";"10.11.26";"Gebucht";"Test Nutzer";"Test Nutzer";"Testgutschrift";"Eingang";"DE00000000000000000000";"200";"";"";""
+"11.11.26";"11.11.26";"Gebucht";"Test Nutzer";"Testfirma";"Testlastschrift";"Ausgang";"DE00000000000000000000";"-33,21";"DE00ZZZ00000000005";"MANDATTEST2";"KUNDREF2"
+"12.11.26";"12.11.26";"Vorgemerkt";"Test Nutzer";"Testfirma2";"Nicht gebucht";"Ausgang";"DE00000000000000000000";"-5,00";"";"";""

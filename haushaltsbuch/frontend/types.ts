@@ -246,7 +246,9 @@ export type ImportFormat = "auto" | "camt" | "mt940" | "csv" | "pdf" | "paypal"
 export type StoredImportFormat = Exclude<ImportFormat, "auto"> | "crypto_trades"
 export type ImportBatchStatus = "draft" | "imported" | "reversed"
 export type ImportRowStatus = "pending" | "accepted" | "rejected" | "duplicate" | "error" | "imported" | "reversed"
-export type CsvEncoding = "utf-8" | "utf-8-sig" | "cp1252" | "iso-8859-1"
+export type CsvEncoding = "auto" | "utf-8" | "utf-8-sig" | "cp1252" | "iso-8859-1"
+/** Gespeicherte Profile verlangen einen festen Zeichensatz (Backend kennt dort kein „auto“). */
+export type ProfileEncoding = Exclude<CsvEncoding, "auto">
 export type CsvDelimiter = ";" | "," | "\t"
 
 export interface CsvColumnMapping {
@@ -274,7 +276,7 @@ export interface ImportProfile {
   id: number
   name: string
   delimiter: CsvDelimiter
-  encoding: CsvEncoding
+  encoding: ProfileEncoding
   decimal_separator: "." | ","
   date_format: string
   mapping: CsvColumnMapping
@@ -329,6 +331,9 @@ export interface ImportBatch {
   completed_at: string | null
   reversed_at: string | null
   rows?: ImportRow[]
+  /** Von der Bank-CSV-Erkennung (nur Info für die Anzeige); bei anderen Formaten null/fehlend. */
+  detected_bank?: { id: string; label: string } | null
+  detected_encoding?: string | null
   /** Nur in der Antwort von POST /crypto-bridge/trade-imports. */
   warnings?: { skipped_transfers: number }
   /** Nur in der Antwort von POST /imports/{id}/suggest-categories: KI war nicht erreichbar. */
@@ -345,6 +350,16 @@ export interface ImportRowUpdate {
   currency?: Currency | null
   counterparty?: string | null
   purpose?: string | null
+}
+
+/** Antwort von POST /imports/csv-preview (schreibt nichts). */
+export interface CsvPreview {
+  encoding: string
+  delimiter: CsvDelimiter
+  header: string[]
+  header_line: number
+  bank: { id: string; label: string } | null
+  sample_rows: string[][]
 }
 
 export interface ImportUpload {

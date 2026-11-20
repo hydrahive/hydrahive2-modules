@@ -1,0 +1,2 @@
+﻿"Auftragskonto";"Buchungstag";"Valutadatum";"Buchungstext";"Verwendungszweck";"Glaeubiger ID";"Mandatsreferenz";"Kundenreferenz (End-to-End)";"Sammlerreferenz";"Lastschrift Ursprungsbetrag";"Auslagenersatz Ruecklastschrift";"Beguenstigter/Zahlungspflichtiger";"Kontonummer/IBAN";"BIC (SWIFT-Code)";"Betrag";"Waehrung";"Info"
+"DE00000000000000000000";"10.11.26";"10.11.26";"FOLGELASTSCHRIFT";"Testmiete";"DE00ZZZ00000000001";"MANDATTEST1";"REFTEST1";"";"";"";"Vermieter GmbH";"DE00000000000000000003";"TESTDEFFXXX";"-500,00";"EUR";"Umsatz gebucht"

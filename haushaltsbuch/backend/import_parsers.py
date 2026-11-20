@@ -46,7 +46,7 @@ class CsvMapping:
     counterparty_identifier: str | None = None
     category_hint: str | None = None
     delimiter: Literal[";", ",", "\t"] = ";"
-    encoding: Literal["utf-8", "utf-8-sig", "cp1252", "iso-8859-1"] = "utf-8"
+    encoding: Literal["utf-8", "utf-8-sig", "cp1252", "iso-8859-1", "auto"] = "auto"
     decimal_separator: Literal[".", ","] = ","
     date_format: str = "%d.%m.%Y"
     default_currency: str = "EUR"
@@ -90,7 +90,7 @@ def _looks_like_paypal_header(text: str) -> bool:
 
 
 def detect_format(data: bytes, filename: str = "") -> ImportFormat:
-    _check_size(data)
+    check_file_size(data)
     sample = data[:4096].lstrip()
     lower_name = filename.lower()
     if sample.startswith(b"%PDF-"):
@@ -113,8 +113,13 @@ def parse_import(
     csv_mapping: CsvMapping | None = None,
     *,
     filename: str = "",
+    detected: dict | None = None,
 ) -> list[NormalizedRecord]:
-    _check_size(data)
+    """`detected` (optional, wird befüllt): {"bank": {"id","label"}|None,
+    "encoding": str|None} - für die Batch-Antwort (detected_bank/
+    detected_encoding, Vertrag hb-bank-csv-notes.md). Nur beim CSV-Pfad
+    gesetzt, sonst unverändert (leer) gelassen."""
+    check_file_size(data)
     selected = detect_format(data, filename) if import_format == "auto" else import_format.lower()
     if selected == "camt":
         from .import_camt import parse_camt
@@ -125,11 +130,28 @@ def parse_import(
 
         records = parse_mt940(data)
     elif selected == "csv":
-        if csv_mapping is None:
-            raise ImportParseError("csv_mapping_required")
-        from .import_csv import parse_csv
+        from .import_csv import detect_encoding, parse_csv
 
-        records = parse_csv(data, csv_mapping)
+        if csv_mapping is None:
+            from .import_bank_csv_rewrite import parse_bank_csv
+
+            bank_result = parse_bank_csv(data)
+            if bank_result is None:
+                raise ImportParseError("csv_mapping_required")
+            records, template, encoding = bank_result
+            if detected is not None:
+                detected["bank"] = {"id": template.id, "label": template.label}
+                detected["encoding"] = encoding
+        else:
+            records = parse_csv(data, csv_mapping)
+            if detected is not None:
+                detected["bank"] = None
+                try:
+                    detected["encoding"] = (
+                        detect_encoding(data) if csv_mapping.encoding in ("auto", "", None) else csv_mapping.encoding
+                    )
+                except ImportParseError:
+                    detected["encoding"] = None
     elif selected == "pdf":
         from .import_pdf import parse_pdf
 
@@ -147,6 +169,6 @@ def parse_import(
     return records
 
 
-def _check_size(data: bytes) -> None:
+def check_file_size(data: bytes) -> None:
     if len(data) > MAX_FILE_SIZE:
         raise ImportParseError("file_too_large")

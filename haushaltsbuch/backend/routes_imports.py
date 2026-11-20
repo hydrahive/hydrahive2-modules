@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, File, Form, Header, Query, UploadFile, status
+from fastapi import APIRouter, File, Form, Header, HTTPException, Query, UploadFile, status
 
 from hydrahive.api.middleware.errors import coded
 
@@ -66,9 +66,19 @@ async def create_import(
     profile_id: int | None = Form(default=None),
     content_length: int | None = Header(default=None, alias="Content-Length"),
 ) -> dict:
+    """Ablehnungen VOR create_batch (file_too_large, validate_upload_target,
+    Mapping-JSON-Parsing) werden hier geloggt; alles, was create_batch selbst
+    wirft (ImportParseError bzw. dessen coded()-Fehler), loggt create_batch
+    mit dem tatsächlich ERKANNTEN Format (Vertrag: Fehlergrund ins
+    Server-Log, kein Dateiinhalt, Dateiname nur als Endung)."""
     if content_length is not None and content_length > MAX_FILE_SIZE + 1024 * 1024:
+        import_service.log_rejected_import("file_too_large", format, file.filename)
         raise coded(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large")
-    import_service.validate_upload_target(account_id, principal)
+    try:
+        import_service.validate_upload_target(account_id, principal)
+    except HTTPException as exc:
+        _log_http_exception(exc, format, file.filename)
+        raise
     data = await _read_limited(file)
     parsed_mapping = None
     if mapping is not None:
@@ -77,11 +87,31 @@ async def create_import(
             if not isinstance(parsed_mapping, dict):
                 raise ValueError
         except (json.JSONDecodeError, ValueError) as exc:
+            import_service.log_rejected_import("invalid_csv_mapping", format, file.filename)
             raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "invalid_csv_mapping") from exc
     return import_service.create_batch(
         data, file.filename, account_id, format, principal,
         mapping=parsed_mapping, profile_id=profile_id,
     )
+
+
+def _log_http_exception(exc: HTTPException, import_format: str, filename: str | None) -> None:
+    code = exc.detail.get("code") if isinstance(exc.detail, dict) else None
+    if code:
+        import_service.log_rejected_import(code, import_format, filename)
+
+
+@router.post("/imports/csv-preview")
+async def preview_csv_upload(
+    principal: Principal,
+    file: UploadFile = File(...),
+    account_id: int = Form(..., gt=0),
+) -> dict:
+    """Zeigt erkannte Spalten/Zeichensatz/Bank einer CSV OHNE etwas zu
+    schreiben - Vorbelegung für den Zuordnungsdialog unbekannter Banken
+    (Vertrag hb-bank-csv-notes.md)."""
+    data = await _read_limited(file)
+    return import_service.preview_csv(account_id, data, principal)
 
 
 @router.get("/imports")

@@ -1,0 +1,3 @@
+﻿Buchungstag;Wertstellung;Umsatzart;Buchungstext;Betrag;Währung;IBAN Kontoinhaber;Kategorie
+10.11.2026;10.11.2026;Lastschrift;Testabbuchung Testfirma Mandatsref: TESTM1 Gläubiger-ID: DE00TEST00000001;-18,50;EUR;DE00000000000000000000;
+20.11.2026;20.11.2026;Zinsen/Entgelte;Kontoführung Konto Testkonto EUR Grundpreis 9,90- EUR;0;EUR;DE00000000000000000000;

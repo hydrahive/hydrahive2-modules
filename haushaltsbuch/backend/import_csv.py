@@ -88,9 +88,35 @@ def _parse_row(
     )
 
 
+_AUTO_ENCODINGS = ("utf-8-sig", "utf-8", "cp1252")
+
+
+def detect_encoding(data: bytes) -> str:
+    """Erste passende Kodierung aus _AUTO_ENCODINGS (utf-8-sig -> utf-8 ->
+    cp1252). cp1252 deckt praktisch jede Bytefolge ab (Single-Byte-Kodierung)
+    und steht deshalb zuletzt - nur wenn utf-8(-sig) nicht passt (z.B. echte
+    Umlaute in ISO-8859-1/Windows-1252-Dateien wie dem Sparkassen-CSV-Export).
+    Wirft ImportParseError("invalid_encoding"), wenn selbst cp1252 scheitert
+    (kommt praktisch nicht vor, aber zur Vollständigkeit)."""
+    for encoding in _AUTO_ENCODINGS:
+        try:
+            data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+        return encoding
+    raise ImportParseError("invalid_encoding")
+
+
 def parse_csv(data: bytes, mapping: CsvMapping) -> list[NormalizedRecord]:
+    """mapping.encoding == "auto" (oder fehlend/leer): Zeichensatz wird aus
+    den Bytes erkannt (utf-8-sig -> utf-8 -> cp1252). Ein EXPLIZIT gewählter
+    Zeichensatz (z.B. aus einem gespeicherten Import-Profil oder einer
+    manuellen Zuordnung) bleibt dagegen verbindlich und wird nicht
+    überschrieben - schlägt er fehl, ist das ein Fehler des Nutzers/Profils,
+    kein Erkennungsfall."""
+    encoding = detect_encoding(data) if mapping.encoding in ("auto", "", None) else mapping.encoding
     try:
-        text = data.decode(mapping.encoding)
+        text = data.decode(encoding)
     except (UnicodeDecodeError, LookupError) as exc:
         raise ImportParseError("invalid_encoding") from exc
     reader = csv.DictReader(io.StringIO(text), delimiter=mapping.delimiter)
