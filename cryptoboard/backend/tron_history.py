@@ -13,7 +13,10 @@ Geprüfte Felder (curl, SUCCESS-Response, normale Wallet-Adresse):
   data[].timestamp    int,  Millisekunden seit Epoch
   data[].ownerAddress str,  Absender (Base58, T…)
   data[].toAddress    str,  Empfänger (Base58, T…)
-  data[].contractType int,  1 = natives TRX-Transfer (TransferContract)
+  data[].contractType int,  1 = natives TRX-Transfer (TransferContract);
+                            31 = TriggerSmartContract – nur mit contractData.call_value > 0
+                            (TRX an einen Kontrakt, z. B. swapEth): Menge = call_value,
+                            Ziel = contractData.contract_address
   data[].confirmed    bool
   data[].contractRet  str,  "SUCCESS" bei erfolgreicher Ausführung
   data[].amount       str,  SUN als Dezimalstring, 1 TRX = 10**6 SUN (exakt int)
@@ -52,6 +55,9 @@ MAX_AGE_YEARS = 2
 
 _SUCCESS = "SUCCESS"
 _NATIVE_TRANSFER_TYPE = 1
+# TriggerSmartContract: zählt NUR mit TRX-callValue > 0 (z. B. Swap-Dienst "swapEth"),
+# dann als TRX-Abgang an den Kontrakt. Reine Kontraktaufrufe ohne TRX bleiben draußen.
+_TRIGGER_CONTRACT_TYPE = 31
 SUN_PER_TRX = 10**6
 
 
@@ -95,12 +101,24 @@ def _ts_to_iso(ms: int) -> str:
     return datetime.fromtimestamp(ms / 1000.0, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _call_value_sun(tx: dict) -> int | None:
+    """TRX-callValue (SUN) eines TriggerSmartContract-Aufrufs, sonst None."""
+    data = tx.get("contractData") if isinstance(tx.get("contractData"), dict) else {}
+    raw = data.get("call_value")
+    try:
+        value = int(str(raw)) if raw is not None else 0
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
+
+
 def _is_eligible(tx: dict) -> bool:
-    return (
-        tx.get("confirmed") is True
-        and tx.get("contractRet") == _SUCCESS
-        and tx.get("contractType") == _NATIVE_TRANSFER_TYPE
-    )
+    if tx.get("confirmed") is not True or tx.get("contractRet") != _SUCCESS:
+        return False
+    ctype = tx.get("contractType")
+    if ctype == _NATIVE_TRANSFER_TYPE:
+        return True
+    return ctype == _TRIGGER_CONTRACT_TYPE and _call_value_sun(tx) is not None
 
 
 def _normalize(tx: dict) -> dict | None:
@@ -108,6 +126,12 @@ def _normalize(tx: dict) -> dict | None:
     tx_hash = tx.get("hash")
     ts = tx.get("timestamp")
     amount_raw = tx.get("amount")
+    to_addr = tx.get("toAddress")
+    if tx.get("contractType") == _TRIGGER_CONTRACT_TYPE:
+        # Menge = TRX-callValue, Ziel = aufgerufener Kontrakt (nicht das evtl. abweichende Top-Level-amount).
+        amount_raw = _call_value_sun(tx)
+        data = tx.get("contractData") if isinstance(tx.get("contractData"), dict) else {}
+        to_addr = data.get("contract_address") or to_addr
     if not tx_hash or ts is None or amount_raw is None:
         return None
     try:
@@ -126,7 +150,7 @@ def _normalize(tx: dict) -> dict | None:
         "executed_at": _ts_to_iso(ts_ms),
         "timestamp_ms": ts_ms,
         "from": str(tx.get("ownerAddress") or "").strip(),
-        "to": str(tx.get("toAddress") or "").strip(),
+        "to": str(to_addr or "").strip(),
         "amount_sun": amount_sun,
         "fee_sun": fee_sun,
     }

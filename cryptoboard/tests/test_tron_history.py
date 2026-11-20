@@ -1,4 +1,4 @@
-"""tron_history — Paging, Grenzen (1000 Tx / 2 Jahre), Filter (confirmed/SUCCESS/contractType 1)."""
+"""tron_history — Paging, Grenzen (1000 Tx / 2 Jahre), Filter (confirmed/SUCCESS/contractType 1 bzw. 31 mit callValue)."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -167,3 +167,63 @@ async def test_http_fehler_wird_zu_festem_code_ohne_rohtext(monkeypatch):
         await th.fetch_transfers(ADDR)
     assert "geheimer rohtext" not in str(exc_info.value)
     assert exc_info.value.status_code == 500
+
+
+# ---------------------------------------------------------------- contractType 31 (TriggerSmartContract) mit TRX-callValue
+SWAP_CONTRACT = "TJ4KeiGTvTX4wRUgLARiwr8rGLaurmVkdZ"
+
+
+def _trigger_row(hash_, ts, owner, call_value, *, method="swapEth", amount=None, fee=345_000):
+    """Rohformat wie tronscan /api/transaction bei Tills swapEth-Aufruf (03.11. 14:54)."""
+    data: dict = {"owner_address": owner, "contract_address": SWAP_CONTRACT}
+    if call_value is not None:
+        data["call_value"] = call_value
+    return {
+        "hash": hash_, "timestamp": int(ts.timestamp() * 1000),
+        "ownerAddress": owner, "toAddress": SWAP_CONTRACT, "contractType": 31,
+        "confirmed": True, "contractRet": "SUCCESS",
+        "amount": str(call_value if amount is None else amount),
+        "contractData": data, "trigger_info": {"methodName": method},
+        "cost": {"fee": fee},
+    }
+
+
+@pytest.mark.asyncio
+async def test_trigger_contract_mit_call_value_ist_trx_abgang(monkeypatch):
+    rows = [_trigger_row("s1", NOW, ADDR, 2_000_000_000)]
+
+    async def fake_get(params):
+        return {"total": 1, "data": rows}
+    monkeypatch.setattr(th, "_get", fake_get)
+    out = await th.fetch_transfers(ADDR)
+    assert len(out["transfers"]) == 1
+    t = out["transfers"][0]
+    assert t["amount_sun"] == 2_000_000_000
+    assert th.sun_to_trx(t["amount_sun"]) == Decimal("2000")
+    assert t["from"] == ADDR
+    assert t["to"] == SWAP_CONTRACT
+    assert t["fee_sun"] == 345_000
+
+
+@pytest.mark.asyncio
+async def test_trigger_contract_menge_kommt_aus_call_value(monkeypatch):
+    # Top-Level-amount weicht ab → maßgeblich ist contractData.call_value.
+    rows = [_trigger_row("s2", NOW, ADDR, 5_998_000_000, amount=0)]
+
+    async def fake_get(params):
+        return {"total": 1, "data": rows}
+    monkeypatch.setattr(th, "_get", fake_get)
+    out = await th.fetch_transfers(ADDR)
+    assert [t["amount_sun"] for t in out["transfers"]] == [5_998_000_000]
+
+
+@pytest.mark.parametrize("call_value", [None, 0, "0", "kaputt"])
+@pytest.mark.asyncio
+async def test_trigger_contract_ohne_call_value_wird_ignoriert(monkeypatch, call_value):
+    rows = [_trigger_row("s3", NOW, ADDR, call_value, method="transfer", amount=0)]
+
+    async def fake_get(params):
+        return {"total": 1, "data": rows}
+    monkeypatch.setattr(th, "_get", fake_get)
+    out = await th.fetch_transfers(ADDR)
+    assert out["transfers"] == []

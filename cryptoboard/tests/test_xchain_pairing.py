@@ -136,3 +136,41 @@ def test_match_candidates_liefert_rohdaten_fuer_weiterverarbeitung():
     assert len(out["matched"]) == 1
     assert out["ambiguous"] == []
     assert out["unmatched"] == []
+
+
+@pytest.mark.asyncio
+async def test_swapeth_kontraktaufruf_wird_gepaart(monkeypatch):
+    """Tills Muster 03.11. 14:54: TRX geht per swapEth (contractType 31, call_value) an einen Kontrakt,
+    kurz danach kommt USDC auf Base – muss ein Paar ergeben, nicht 'nur_raus' + 'nur_rein'."""
+    from datetime import datetime, timezone
+
+    from backend import tron_history as th
+    from backend import xchain_build as xb
+
+    ts = datetime(2026, 11, 3, 14, 54, tzinfo=timezone.utc)
+    raw = {
+        "hash": "ab" * 32, "timestamp": int(ts.timestamp() * 1000),
+        "ownerAddress": TRON_ADDR, "toAddress": "TJ4KeiGTvTX4wRUgLARiwr8rGLaurmVkdZ",
+        "contractType": 31, "confirmed": True, "contractRet": "SUCCESS", "amount": "2000000000",
+        "contractData": {"call_value": 2000000000, "contract_address": "TJ4KeiGTvTX4wRUgLARiwr8rGLaurmVkdZ",
+                         "owner_address": TRON_ADDR},
+        "trigger_info": {"methodName": "swapEth"}, "cost": {"fee": 0},
+    }
+
+    async def fake_get(params):
+        return {"total": 1, "data": [raw]}
+    monkeypatch.setattr(th, "_get", fake_get)
+    monkeypatch.setattr(th, "datetime", type("D", (), {
+        "now": staticmethod(lambda tz=None: datetime(2026, 11, 20, tzinfo=timezone.utc)),
+        "fromtimestamp": staticmethod(datetime.fromtimestamp)}))
+    fetched = await th.fetch_transfers(TRON_ADDR)
+    sells = [xb.tron_sell_from_transfer(t) for t in fetched["transfers"] if t["from"] == TRON_ADDR]
+    assert len(sells) == 1
+
+    ps.upsert_series("usd-coin", {"2026-11-03": 0.9})
+    cand = _cand("0xe3", "2026-11-03T14:55:30Z", 635_100_000, 6, "usd-coin", "USDC")
+    out = xp.pair_all(sells, [cand], {TRON_ADDR.lower(), EVM_ADDR.lower()})
+    assert len(out["pairs"]) == 1 and out["unklar_tron"] == []
+    sell_e, buy_e = out["pairs"][0]["entries"]
+    assert sell_e["quantity"] == "2000" and buy_e["quantity"] == "635.1"
+    assert out["pairs"][0]["delay_seconds"] == 90
