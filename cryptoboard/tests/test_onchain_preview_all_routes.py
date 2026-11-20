@@ -133,9 +133,8 @@ def test_swap_auf_erster_adresse_erkannt(client, auth_headers, setup):
 
 def test_spam_eingang_landet_in_spam_nicht_in_unklar_oder_transactions(client, auth_headers, setup):
     data = _preview_all(client, auth_headers)
-    assert len(data["spam"]) == 1
-    spam = data["spam"][0]
-    assert spam["hash"] == H_SPAM.lower()
+    assert len(data["spam"]) == 2  # Spam-Eingang (dieser Test) + Spam-Abgang (eigener Test)
+    spam = next(s for s in data["spam"] if s["hash"] == H_SPAM.lower())
     assert spam["grund"] == "symbol_nicht_ascii"
     assert all(t["hash"] != f"base:{H_SPAM}:buy" for t in data["transactions"])
     assert all(str(u.get("hash")).lower() != H_SPAM.lower() for u in data["unklar"])
