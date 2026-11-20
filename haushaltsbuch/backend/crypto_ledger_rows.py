@@ -71,6 +71,10 @@ def classify_move(conn: sqlite3.Connection, household_id: int, user_id: str, mov
             return {"group": "unklar", "id": move_id, "reason": "kein_eindeutiges_konto"}
         if value_minor is None:
             return {"group": "unklar", "id": move_id, "reason": "value_minor_fehlt"}
+        if value_minor == 0:
+            # z. B. 0,002466 USDC (Karten-Prüfbuchung): unter 1 Cent, als Buchung nicht annehmbar
+            # (invalid_amount) - sichtbar als unklar statt still verschluckt (Live-Probe 21.11.2026).
+            return {"group": "unklar", "id": move_id, "reason": "betrag_unter_1_cent"}
         label = "Kartenzahlung" if move_type == "kartenzahlung" else "Abgang"
         record = NormalizedRecord(
             source_line=0, booking_date=booking_date, value_date=booking_date,

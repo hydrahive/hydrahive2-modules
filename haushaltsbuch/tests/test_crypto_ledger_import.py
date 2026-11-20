@@ -362,3 +362,45 @@ def test_counterproof_report_categories_excludes_swap_includes_kartenzahlung(
     assert no_category_row["amount"] == 2000 + 2001 + 2002
     imported_count = sum(1 for row in completed["rows"] if row["status"] == "imported")
     assert imported_count == 5
+
+
+def _accept_all_and_complete(client, headers, batch: dict) -> None:
+    for row in batch["rows"]:
+        if row["status"] != "pending":
+            continue
+        patched = client.patch(f"{PREFIX}/imports/{batch['id']}/rows/{row['id']}", headers=headers,
+                               json={"revision": row["revision"], "status": "accepted"})
+        assert patched.status_code == 200, patched.text
+    done = client.post(f"{PREFIX}/imports/{batch['id']}/complete", headers=headers,
+                       json={"revision": batch["revision"]})
+    assert done.status_code == 200, done.text
+
+
+def test_second_import_after_accept_and_complete_is_fully_duplicate(client, owner_headers, monkeypatch):
+    """Live-Probe 21.11.2026: Nach Annehmen + Buchen kamen beim zweiten Import alle
+    Kartenzahlungen (Base-Konto, Batch auf Tron-Konto) erneut als neu - update_row bildete
+    die Kennung über das Batch-Konto statt über das Konto der Zeile."""
+    port = FakePort()
+    _install_fake_port(monkeypatch, port)
+    _setup_three_wallets(client, owner_headers, port)
+    port.ledger_moves_data["owner"] = _fixture_moves()
+
+    _accept_all_and_complete(client, owner_headers, _import(client, owner_headers).json())
+    second = _import(client, owner_headers).json()
+    assert second["groups"]["kartenzahlungen"]["count"] == 0
+    assert second["groups"]["swaps"]["count"] == 0
+    assert not [r for r in second["rows"] if r["status"] == "pending"]
+
+
+def test_payment_below_one_cent_is_unklar_not_pending(client, owner_headers, monkeypatch):
+    """0,002466 USDC -> 0 Cent: als Buchung nicht annehmbar, darum sichtbar 'unklar'."""
+    port = FakePort()
+    _install_fake_port(monkeypatch, port)
+    _setup_three_wallets(client, owner_headers, port)
+    tiny = {"type": "kartenzahlung", "id": "base:0xtiny:transfer_out", "executed_at": "2026-11-05T10:00:00Z",
+            "chain": "base", "symbol": "USDC", "coin_id": "usd-coin", "quantity": "0.002466",
+            "value_minor": 0, "ref": "cb:tiny"}
+    port.ledger_moves_data["owner"] = [*_fixture_moves(), tiny]
+    groups = _import(client, owner_headers).json()["groups"]
+    assert groups["kartenzahlungen"]["count"] == 3
+    assert {"id": "base:0xtiny:transfer_out", "reason": "betrag_unter_1_cent"} in groups["unklar"]
