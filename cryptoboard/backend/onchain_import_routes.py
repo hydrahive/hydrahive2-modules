@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import addresses_store, alchemy_client as ac, alchemy_key, onchain_import
+from . import addresses_store, alchemy_client as ac, alchemy_key, onchain_import, onchain_preview_all
 
 router = APIRouter()
 
@@ -35,6 +35,7 @@ _STATUS_BY_CODE = {
     "cryptoboard_onchain_disabled": status.HTTP_503_SERVICE_UNAVAILABLE,
 }
 _BLOCK_RE = r"^0x[0-9a-fA-F]{1,16}$"
+_WINDOW_MAX = 24 * 60  # 24h — großzügige Obergrenze gegen Fehleingaben, Default bleibt 15 min (xchain_pairing)
 
 
 def _fail(code: str):
@@ -44,6 +45,10 @@ def _fail(code: str):
 class OnchainPreviewIn(BaseModel):
     address_id: int = Field(gt=0)
     to_block: str | None = Field(default=None, pattern=_BLOCK_RE)
+
+
+class OnchainPreviewAllIn(BaseModel):
+    window_minutes: int = Field(default=15, ge=1, le=_WINDOW_MAX)
 
 
 class OnchainCommitTx(BaseModel):
@@ -96,6 +101,23 @@ async def onchain_preview(body: OnchainPreviewIn, auth: Auth) -> dict:
         code = _alchemy_code(exc)
     # außerhalb des except: keine Exception-Kette an der HTTP-Antwort
     raise _fail(code)
+
+
+@router.post("/portfolio/import/onchain/preview_all")
+async def onchain_preview_all_route(body: OnchainPreviewAllIn, auth: Auth) -> dict:
+    """Alle verknüpften Adressen (Base/Ethereum/Tron) in einem Preview, inkl. chain-
+    übergreifender Paare. Eine kaputte Adresse scheitert NICHT die ganze Antwort —
+    sie landet in addresses[].status="fehler"; nur fehlender/ungültiger Alchemy-Key
+    oder ausgeschalteter Kill-Switch lassen die ganze Route scheitern (ohne Key/mit
+    Kill-Switch kann KEINE EVM-Adresse abgerufen werden, Tron allein ist nie der
+    Grund für den Alle-Adressen-Import)."""
+    user, _ = auth
+    if not ac.enabled():
+        raise _fail("cryptoboard_onchain_disabled")
+    key = alchemy_key.get_key(user)
+    if not key:
+        raise _fail("alchemy_key_missing")
+    return await onchain_preview_all.preview_all(user, key, window_minutes=body.window_minutes)
 
 
 @router.post("/portfolio/import/onchain/commit")
