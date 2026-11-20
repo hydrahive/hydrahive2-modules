@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 
-from . import addresses_store, alchemy_client as ac, alchemy_key, onchain_import
+from . import addresses_store, alchemy_client as ac, alchemy_key, onchain_import, onchain_preview_all
 
 router = APIRouter()
 
@@ -35,6 +35,7 @@ _STATUS_BY_CODE = {
     "cryptoboard_onchain_disabled": status.HTTP_503_SERVICE_UNAVAILABLE,
 }
 _BLOCK_RE = r"^0x[0-9a-fA-F]{1,16}$"
+_WINDOW_MAX = 24 * 60  # 24h — großzügige Obergrenze gegen Fehleingaben, Default bleibt 15 min (xchain_pairing)
 
 
 def _fail(code: str):
@@ -46,16 +47,20 @@ class OnchainPreviewIn(BaseModel):
     to_block: str | None = Field(default=None, pattern=_BLOCK_RE)
 
 
+class OnchainPreviewAllIn(BaseModel):
+    window_minutes: int = Field(default=15, ge=1, le=_WINDOW_MAX)
+
+
 class OnchainCommitTx(BaseModel):
     coin_id: str | None = Field(default=None, max_length=80)
     symbol: str = Field(default="", max_length=20)
     name: str = Field(default="", max_length=120)
-    kind: str = Field(pattern=r"^(buy|sell)$")
+    kind: str = Field(pattern=r"^(buy|sell|transfer_out)$")
     quantity: Decimal = Field(gt=0)
     price: Decimal | None = Field(default=None, ge=0)
     fee: Decimal | None = Field(default=None, ge=0)
     executed_at: str = Field(min_length=1, max_length=40)
-    hash: str = Field(min_length=1, max_length=120)
+    hash: str = Field(min_length=1, max_length=180)  # xchain:64hex:chain:0x64hex:kind kann >120 Zeichen sein
 
 
 class OnchainCommitIn(BaseModel):
@@ -96,6 +101,23 @@ async def onchain_preview(body: OnchainPreviewIn, auth: Auth) -> dict:
         code = _alchemy_code(exc)
     # außerhalb des except: keine Exception-Kette an der HTTP-Antwort
     raise _fail(code)
+
+
+@router.post("/portfolio/import/onchain/preview_all")
+async def onchain_preview_all_route(body: OnchainPreviewAllIn, auth: Auth) -> dict:
+    """Alle verknüpften Adressen (Base/Ethereum/Tron) in einem Preview, inkl. chain-
+    übergreifender Paare. Eine kaputte Adresse scheitert NICHT die ganze Antwort —
+    sie landet in addresses[].status="fehler"; nur fehlender/ungültiger Alchemy-Key
+    oder ausgeschalteter Kill-Switch lassen die ganze Route scheitern (ohne Key/mit
+    Kill-Switch kann KEINE EVM-Adresse abgerufen werden, Tron allein ist nie der
+    Grund für den Alle-Adressen-Import)."""
+    user, _ = auth
+    if not ac.enabled():
+        raise _fail("cryptoboard_onchain_disabled")
+    key = alchemy_key.get_key(user)
+    if not key:
+        raise _fail("alchemy_key_missing")
+    return await onchain_preview_all.preview_all(user, key, window_minutes=body.window_minutes)
 
 
 @router.post("/portfolio/import/onchain/commit")

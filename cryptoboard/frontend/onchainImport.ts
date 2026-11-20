@@ -67,7 +67,8 @@ export function missing(e: OnchainEntry, edit: EntryEdit | undefined): Missing[]
   const eff = effective(e, edit)
   const out: Missing[] = []
   if (!eff.coin_id) out.push("coin")
-  if (eff.price == null) out.push("price")
+  // transfer_out: Preis nur zur Information, ohne Preis buchbar (Backend bucht 0).
+  if (eff.price == null && e.kind !== "transfer_out") out.push("price")
   if (eff.feeInvalid) out.push("fee_invalid")
   if (!e.executed_at) out.push("time")
   return out
@@ -96,7 +97,7 @@ export function buildCommitPayload(entries: OnchainEntry[], selected: Set<string
       name: eff.name,
       kind: e.kind,
       quantity: e.quantity,
-      price: eff.price as string,
+      price: eff.price,
       fee: eff.fee,
       executed_at: e.executed_at as string,
       hash: e.hash,
@@ -149,7 +150,7 @@ export function markBooked(p: OnchainPreview, sent: OnchainCommitTx[], res: Onch
 export const KNOWN_ERRORS = [
   "address_not_found", "onchain_chain_not_supported", "alchemy_key_missing", "alchemy_key_invalid",
   "alchemy_base_not_enabled", "alchemy_network_error", "alchemy_fetch_failed", "alchemy_test_failed",
-  "alchemy_key_empty", "cryptoboard_onchain_disabled",
+  "alchemy_key_empty", "cryptoboard_onchain_disabled", "tron_network_error", "tron_fetch_failed",
 ] as const
 
 export function errorKey(err: unknown): string | null {
@@ -158,7 +159,9 @@ export function errorKey(err: unknown): string | null {
 }
 
 export const SKIP_REASONS = ["duplikat", "preis_fehlt", "coin_id_fehlt", "hash_ungueltig", "zeit_ungueltig", "ledger_full", "ungueltig"]
-export const UNKLAR_REASONS = ["keine_nettobewegung", "mehrdeutige_bewegung", "decimals_fehlt"]
+export const UNKLAR_REASONS = [
+  "keine_nettobewegung", "mehrdeutige_bewegung", "decimals_fehlt", "nur_raus", "nur_rein", "mehrere_assets",
+]
 
 /** Nur für die Anzeige (Formatierer erwarten Zahlen) — nie für Payloads verwenden. */
 export function displayNum(s: string | null | undefined): number | null {

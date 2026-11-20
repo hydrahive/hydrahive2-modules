@@ -163,6 +163,21 @@ def _net_movements(chain: str, address: str, txs: list[dict]) -> tuple[dict[str,
     return {k: v for k, v in movements.items() if v["net"] != 0}, decimals_missing
 
 
+def _counterparty(address: str, txs: list[dict], direction: str) -> str | None:
+    """Gegenpartei-Adresse einer einseitigen Bewegung ("raus": die Adresse, an die
+    gesendet wurde; "rein": die Adresse, von der empfangen wurde) — für Pairing
+    (xchain_pairing: Absender darf keine eigene Adresse sein) und Ausgaben-Anzeige."""
+    address_lower = address.lower()
+    for t in txs:
+        frm = str(t.get("from") or "").lower()
+        to = str(t.get("to") or "").lower()
+        if direction == "raus" and frm == address_lower and to:
+            return to
+        if direction == "rein" and to == address_lower and frm:
+            return frm
+    return None
+
+
 def classify_transaction(chain: str, address: str, tx_hash: str, txs: list[dict]) -> dict:
     """Ein Tx-Hash -> {"type": "swap"|"wrap"|"unklar", ...}. Reine Funktion, kein Raten."""
     movements, decimals_missing = _net_movements(chain, address, txs)
@@ -181,8 +196,28 @@ def classify_transaction(chain: str, address: str, tx_hash: str, txs: list[dict]
     out_assets = {k: v for k, v in movements.items() if v["net"] < 0}
     in_assets = {k: v for k, v in movements.items() if v["net"] > 0}
 
+    # Genaue Abgrenzung (Review 2026-11-20): "mehrdeutige_bewegung" deckte bisher
+    # auch die häufigen, eindeutigen Fälle "nur raus" / "nur rein" ab (z. B. ein
+    # reiner USDC-Zahlungsabgang ohne Gegenleistung in derselben Tx) -- das ist
+    # keine Mehrdeutigkeit, sondern eine klare, einseitige Bewegung. Neu:
+    #   nur_raus        — genau 1 Asset raus, 0 rein
+    #   nur_rein         — 0 raus, genau 1 Asset rein
+    #   mehrere_assets  — mehrere Assets auf (mindestens) einer Seite (echte
+    #                     Mehrdeutigkeit: welches Paar soll das sein?)
+    if len(out_assets) == 1 and not in_assets:
+        (_k, only), = out_assets.items()
+        counterparty = _counterparty(address, txs, "raus")
+        return {**base, "type": "unklar", "reason": "nur_raus", "raw": txs,
+                "out_assets": out_assets, "in_assets": in_assets,
+                "asset": only, "counterparty": counterparty}
+    if not out_assets and len(in_assets) == 1:
+        (_k, only), = in_assets.items()
+        counterparty = _counterparty(address, txs, "rein")
+        return {**base, "type": "unklar", "reason": "nur_rein", "raw": txs,
+                "out_assets": out_assets, "in_assets": in_assets,
+                "asset": only, "counterparty": counterparty}
     if len(out_assets) != 1 or len(in_assets) != 1:
-        return {**base, "type": "unklar", "reason": "mehrdeutige_bewegung", "raw": txs,
+        return {**base, "type": "unklar", "reason": "mehrere_assets", "raw": txs,
                 "out_assets": out_assets, "in_assets": in_assets}
 
     (sell_key, sell), = out_assets.items()
