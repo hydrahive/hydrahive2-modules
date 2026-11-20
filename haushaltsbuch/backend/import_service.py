@@ -8,6 +8,8 @@ from .categorize_service import suggest_categories as suggest_categories
 from .import_completion import complete_batch as complete_batch
 from .import_completion import reverse_batch as reverse_batch
 from .import_inbox import create_batch as create_batch
+from .import_inbox import log_rejected_import as log_rejected_import
+from .import_csv_preview import preview_csv as preview_csv
 from .import_inbox import delete_batch as delete_batch
 from .import_inbox import get_batch as get_batch
 from .import_inbox import list_batches as list_batches
@@ -20,6 +22,8 @@ from .import_persistence import validate_upload_target as validate_upload_target
 
 __all__ = [
     "accept_suggestions",
+    "log_rejected_import",
+    "preview_csv",
     "complete_batch",
     "create_batch",
     "create_profile",

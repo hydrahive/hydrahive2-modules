@@ -76,6 +76,10 @@ def _row_dict(row: sqlite3.Row) -> dict:
 def _batch_dict(conn: sqlite3.Connection, row: sqlite3.Row, include_rows: bool = False) -> dict:
     result = as_dict(row)
     result.pop("file_hash", None)
+    bank_id = result.pop("detected_bank_id", None)
+    bank_label = result.pop("detected_bank_label", None)
+    result["detected_bank"] = {"id": bank_id, "label": bank_label} if bank_id else None
+    result["detected_encoding"] = result.pop("detected_encoding", None)
     result["rows_revision"] = conn.execute(
         "SELECT COALESCE(SUM(revision),0) "
         "FROM module_haushaltsbuch_import_rows WHERE batch_id=?",
