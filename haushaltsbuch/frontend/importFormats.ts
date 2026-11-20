@@ -20,7 +20,7 @@ export const FORMAT_HINTS: Partial<Record<ImportFormat, string>> = {
   paypal: "Der Aktivitäten-Export aus deinem PayPal-Konto (CSV). Gebühren erscheinen als eigene Zeile, Währungsumrechnungen werden ausgeblendet.",
 }
 
-const SOURCE_LABELS: Partial<Record<StoredImportFormat, string>> = { pdf: "PDF", paypal: "PayPal", crypto_trades: "Cryptoboard-Trades" }
+const SOURCE_LABELS: Partial<Record<StoredImportFormat, string>> = { pdf: "PDF", paypal: "PayPal", crypto_trades: "Cryptoboard-Trades", crypto_ledger: "Cryptoboard-Ledger" }
 /** Kurzname des Quellformats für Listen und Kopfzeilen („PDF“, „PayPal“, sonst z. B. „CAMT“). */
 export const sourceFormatLabel = (format: StoredImportFormat): string => SOURCE_LABELS[format] ?? format.toUpperCase()
 
