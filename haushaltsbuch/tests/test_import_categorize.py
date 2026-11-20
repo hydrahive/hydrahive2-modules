@@ -214,3 +214,42 @@ def test_suggest_rejects_non_draft_and_foreign_household(client, owner_headers, 
     )
     assert conflict.status_code == 409
     assert completed["status"] == "imported"
+
+
+def test_llm_ausfall_liefert_historie_trotzdem(client, owner_headers, monkeypatch):
+    """Till 20.11.2026: „was ist, wenn LLMs ausfallen?“ – Vorher brach der ganze Klick mit 500 ab und
+    auch die Historien-Vorschläge gingen verloren. Jetzt: Historie bleibt, Hinweis „KI nicht erreichbar“."""
+    _create_household(client, owner_headers)
+    account = _create_account(client, owner_headers, opening_balance=100_000)
+    category = _expense_category(client, owner_headers)
+    _book_history(client, owner_headers, account, category, counterparty="REWE", amount=-500)
+
+    async def _offline(*_args, **_kwargs):
+        raise RuntimeError("Alle Modelle der Kette fehlgeschlagen")
+
+    monkeypatch.setattr("backend.categorize_llm.complete", _offline)
+    payload = "Datum;Betrag;Empfaenger;Zweck\n10.02.2025;-19,99;REWE;Einkauf\n11.02.2025;-5,00;Unbekannt GmbH;X".encode()
+    batch = _upload_csv(client, owner_headers, account["id"], payload).json()
+
+    res = client.post(f"{PREFIX}/imports/{batch['id']}/suggest-categories", headers=owner_headers, json={})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    rows = {r["counterparty"]: r for r in body["rows"]}
+    assert rows["REWE"]["suggested_category_id"] == category["id"]
+    assert rows["REWE"]["suggestion_source"] == "history"
+    assert rows["Unbekannt GmbH"]["suggested_category_id"] is None
+    assert body["suggestion_notice"] == "llm_unavailable"
+
+
+def test_ohne_ausfall_kein_hinweis(client, owner_headers, monkeypatch):
+    _create_household(client, owner_headers)
+    account = _create_account(client, owner_headers, opening_balance=100_000)
+    _expense_category(client, owner_headers)
+
+    async def _leer(*_args, **_kwargs):
+        return "[]"
+
+    monkeypatch.setattr("backend.categorize_llm.complete", _leer)
+    batch = _upload_csv(client, owner_headers, account["id"], "Datum;Betrag;Empfaenger;Zweck\n10.02.2025;-1,00;X;Y".encode()).json()
+    res = client.post(f"{PREFIX}/imports/{batch['id']}/suggest-categories", headers=owner_headers, json={})
+    assert res.status_code == 200 and res.json()["suggestion_notice"] is None

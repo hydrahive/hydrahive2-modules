@@ -11,6 +11,8 @@ erst dann greift der bestehende complete-Flow. Nichts wird automatisch gebucht.
 """
 from __future__ import annotations
 
+import logging
+
 import sqlite3
 
 from fastapi import status
@@ -23,6 +25,8 @@ from . import audit, categorize_history, categorize_llm
 from .access import conflict, membership, require_row
 from .common import NOW
 from .import_persistence import _batch_dict
+
+logger = logging.getLogger(__name__)
 
 
 def _require_draft(conn: sqlite3.Connection, batch_id: int, household_id: int) -> sqlite3.Row:
@@ -63,8 +67,14 @@ async def suggest_categories(
     # 2) LLM nur für Zeilen ohne Historie-Treffer (ein Batch-Call, async).
     remaining = [row for row in open_rows if row["id"] not in history]
     llm: dict[int, tuple[int, float]] = {}
+    notice: str | None = None
     if remaining and categories:
-        llm = await categorize_llm.suggest(remaining, categories, model=model)
+        try:
+            llm = await categorize_llm.suggest(remaining, categories, model=model)
+        except Exception:  # KI aus/kein Modell/Netz: Historie zählt trotzdem (Till 20.11.2026)
+            logger.warning("Kategorie-Vorschläge: KI nicht erreichbar, nur Historie (Batch %s)", batch_id,
+                           exc_info=True)
+            notice = "llm_unavailable"
 
     # 3) Schreiben: Vorschläge persistieren (nur solange Batch noch Draft ist).
     suggestions: dict[int, tuple[int, float, str]] = {}
@@ -96,12 +106,14 @@ async def suggest_categories(
                 "from_history": len(history),
                 "from_llm": len(llm),
                 "model": model,
+                "notice": notice,
             },
         )
         batch = conn.execute(
             "SELECT * FROM module_haushaltsbuch_import_batches WHERE id=?", (batch_id,)
         ).fetchone()
         result = _batch_dict(conn, batch, True)
+    result["suggestion_notice"] = notice
     return result
 
 
