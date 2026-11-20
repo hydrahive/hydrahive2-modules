@@ -5,18 +5,20 @@ Reihenfolge je EVM-Adresse (siehe onchain_preview_all.py):
   nur_raus  -> coin_id auflösen, dann Spam-Prüfung (xchain_spam, Till 20.11.2026:
                Spam gilt auch bei Abgängen — gleiche Regeln, Kontrakt entscheidet).
                Spam -> Spam-Eintrag (nie Ausgabe). Sonst -> Ausgabe (kind
-               transfer_out) — nie Pairing-Kandidat, da Pairing nur TRX-Abgang
-               <-> EVM-EINGANG kennt.
+               transfer_out) mit `art` kartenzahlung|abgang (onchain_card_detect,
+               VERTRAG-B.md Punkt 2) — nie Pairing-Kandidat, da Pairing nur
+               TRX-Abgang <-> EVM-EINGANG kennt.
   nur_rein  -> coin_id auflösen, dann Spam-Prüfung (xchain_spam). Spam -> Spam-
                Eintrag. Sonst -> Pairing-Kandidat für xchain_pairing.
-Alle Netz-/DB-Zugriffe (resolve_coin_id, Tageskurs) laufen über die
-bestehenden Module (onchain_resolve) — diese Datei selbst ruft nie das Netz
-direkt auf.
+Alle Netz-/DB-Zugriffe (resolve_coin_id, Tageskurs, eth_getTransactionByHash)
+laufen über die bestehenden Module (onchain_resolve, onchain_card_detect) —
+diese Datei selbst ruft nie das Netz direkt auf.
 """
 from __future__ import annotations
 
 from decimal import Decimal
 
+from . import onchain_card_detect as card
 from . import onchain_import as oi
 from . import onchain_resolve as rs
 from . import xchain_spam as spam
@@ -35,12 +37,13 @@ def _spam_entry(chain: str, tx_hash: str, item: dict, asset: dict, symbol: str, 
     }
 
 
-async def classify_outgoing(chain: str, item: dict) -> tuple[str, dict]:
-    """nur_raus-Item -> ("spam", spam_entry) oder ("ausgabe", ausgabe_entry).
+async def classify_outgoing(chain: str, key: str, item: dict, *, lookups_used: int) -> tuple[str, dict, int]:
+    """nur_raus-Item -> ("spam", spam_entry, lookups_used) oder ("ausgabe", ausgabe_entry, lookups_used).
 
     Spiegelbild von classify_incoming: dieselben Spam-Regeln (xchain_spam,
     Kontrakt entscheidet immer) gelten auch für Abgänge (Till 20.11.2026) —
     ein Fake-Token verlässt die Wallet genauso "spam" wie er sie betritt.
+    Spam-Items bekommen KEINEN Card-Lookup (nie anzeigen, art ist irrelevant).
     """
     asset = item["asset"]
     tx_hash = item["hash"]
@@ -50,7 +53,9 @@ async def classify_outgoing(chain: str, item: dict) -> tuple[str, dict]:
     name = res.get("name") or ""
     grund = spam.classify_incoming(chain, contract, symbol, name, resolved=not res["unresolved"])
     if grund is not None:
-        return "spam", _spam_entry(chain, tx_hash, item, asset, symbol, contract, grund)
+        return "spam", _spam_entry(chain, tx_hash, item, asset, symbol, contract, grund), lookups_used
+
+    art, art_unklar, lookups_used = await card.classify_art(chain, key, tx_hash, lookups_used=lookups_used)
 
     executed_at = oi.normalize_ts(item.get("executed_at"))
     qty = Decimal(int(asset["net"])).copy_abs() / (Decimal(10) ** int(asset["decimals"]))
@@ -71,8 +76,10 @@ async def classify_outgoing(chain: str, item: dict) -> tuple[str, dict]:
         "preis_fehlt": price is None,
         "gebuehr_fehlt": False,
         "duplicate": False,
+        "art": art,
+        "art_unklar": art_unklar,
     }
-    return "ausgabe", ausgabe
+    return "ausgabe", ausgabe, lookups_used
 
 
 async def classify_incoming(chain: str, item: dict) -> tuple[str, dict]:

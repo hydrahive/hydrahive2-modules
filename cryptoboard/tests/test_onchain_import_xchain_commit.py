@@ -73,6 +73,41 @@ def test_transfer_out_ohne_preis_wird_nicht_abgelehnt():
     assert r["imported"] == 1 and r["skipped"] == 0
 
 
+# ---------------------------------------------------------------- art -> note (VERTRAG-B.md Punkt 2)
+def test_transfer_out_art_kartenzahlung_setzt_passende_note():
+    t = _tx(kind="transfer_out", coin_id="usd-coin", price=None, fee=None,
+             hash=f"base:{BASE_TX}:transfer_out", art="kartenzahlung")
+    r = oi.commit_entries(USER, [t])
+    assert r["imported"] == 1
+    assert store.list_for(USER)[0]["note"] == oi.NOTE_KARTENZAHLUNG
+
+
+def test_transfer_out_art_abgang_setzt_passende_note():
+    t = _tx(kind="transfer_out", coin_id="usd-coin", price=None, fee=None,
+             hash=f"base:{BASE_TX}:transfer_out", art="abgang")
+    r = oi.commit_entries(USER, [t])
+    assert r["imported"] == 1
+    assert store.list_for(USER)[0]["note"] == oi.NOTE_ABGANG
+
+
+def test_transfer_out_ohne_art_defaultet_auf_abgang_note():
+    """art ist optional (VERTRAG-B.md) — fehlt es, gilt wie "abgang"."""
+    t = _tx(kind="transfer_out", coin_id="usd-coin", price=None, fee=None,
+             hash=f"base:{BASE_TX}:transfer_out")
+    r = oi.commit_entries(USER, [t])
+    assert r["imported"] == 1
+    assert store.list_for(USER)[0]["note"] == oi.NOTE_ABGANG
+
+
+def test_swap_note_bleibt_generisch_auch_mit_art_feld():
+    """art ist nur für transfer_out relevant — buy/sell behalten die generische note,
+    selbst wenn (versehentlich) ein art-Feld mitgeschickt wird."""
+    t = _tx(art="kartenzahlung")  # kind=sell per Default in _tx
+    r = oi.commit_entries(USER, [t])
+    assert r["imported"] == 1
+    assert store.list_for(USER)[0]["note"] == oi.NOTE
+
+
 def test_buy_sell_ohne_preis_bleibt_abgelehnt():
     """Der alte Weg (buy/sell ohne price -> preis_fehlt) bleibt unveraendert."""
     t = _tx(kind="sell", price=None)

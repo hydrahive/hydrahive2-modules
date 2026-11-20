@@ -68,7 +68,10 @@ def setup(client, monkeypatch):
         if method == "eth_getTransactionReceipt":
             return {"gasUsed": hex(100000), "effectiveGasPrice": hex(10**9), "l1Fee": hex(0)}
         if method == "eth_getTransactionByHash":
-            return {"from": ADDR_BASE}
+            # from: für onchain_gas.is_sender (Gas-Zahler). to: für onchain_card_detect
+            # (Kartenzahlungs-Erkennung) -- je Tx-Hash passend zum jeweiligen Test-Transfer.
+            to_by_hash = {H_OUT.lower(): "0xsink0000000000000000000000000000000000"}
+            return {"from": ADDR_BASE, "to": to_by_hash.get(str(params[0]).lower())}
         raise AssertionError(method)
 
     async def fake_contract(platform, address):
@@ -168,6 +171,30 @@ def test_reine_ausgabe_wird_transfer_out(client, auth_headers, setup):
     assert out["coin_id"] == "ethereum"
     assert out["price"] == "2000"
     assert out["quantity"] == "0.2"
+
+
+def test_ausgabe_ohne_konfigurierten_card_kontrakt_ist_abgang(client, auth_headers, setup):
+    """Ohne Eintrag in METAMASK_CARD_CONTRACTS (Platzhalter, siehe onchain_card_detect.py) ist
+    jede Ausgabe "abgang" — kein falscher Treffer, solange die echte Adresse nicht verifiziert ist."""
+    data = _preview_all(client, auth_headers)
+    out = data["ausgaben"][0]
+    assert out["art"] == "abgang"
+    assert out["art_unklar"] is False
+
+
+def test_ausgabe_mit_konfiguriertem_card_kontrakt_wird_kartenzahlung(client, auth_headers, setup, monkeypatch):
+    """Mit konfiguriertem Card-Kontrakt (Ziel der Ausgabe = Card) -> art kartenzahlung."""
+    from backend import onchain_card_detect as card
+
+    card_contract = "0xsink0000000000000000000000000000000000"  # Ziel von H_OUT (siehe TRANSFERS_BASE_1)
+    monkeypatch.setitem(card.METAMASK_CARD_CONTRACTS, "base", card_contract)
+    card.clear_cache()
+    data = _preview_all(client, auth_headers)
+    out = next(a for a in data["ausgaben"] if a["hash"] == f"base:{H_OUT}:transfer_out")
+    assert out["art"] == "kartenzahlung"
+    assert out["art_unklar"] is False
+    card.METAMASK_CARD_CONTRACTS.pop("base", None)
+    card.clear_cache()
 
 
 def test_tron_base_paar_erkannt_mit_preis_und_gebuehr(client, auth_headers, setup):
