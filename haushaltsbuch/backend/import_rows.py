@@ -119,8 +119,12 @@ def update_row(
                 "category_not_found",
             )
 
+        # Kennung über das Konto der ZEILE (Krypto-Ledger: Kartenzahlung liegt auf dem
+        # Base-Konto, der Batch auf dem Tron-Konto) - genau wie insert_import_rows sie beim
+        # Anlegen gebildet hat. Sonst erkennt der nächste Import angenommene Zeilen nicht
+        # als Duplikat (Live-Probe Etappe B, 21.11.2026: 78 Kartenzahlungen doppelt).
         fingerprint, strength = _fingerprint(
-            batch["account_id"], _record(values, errors)
+            before["row_account_id"] or batch["account_id"], _record(values, errors)
         )
         duplicate = conn.execute(
             "SELECT 1 FROM module_haushaltsbuch_import_rows "
