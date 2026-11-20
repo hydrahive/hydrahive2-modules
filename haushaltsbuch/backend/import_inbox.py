@@ -115,17 +115,26 @@ def create_batch(
             (account_id, member["household_id"]),
         ).fetchone(), "account_not_found")
         if account["currency"] != account["base_currency"]:
+            log_rejected_import("import_base_currency_account_required", import_format, filename)
             raise coded(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
                 "import_base_currency_account_required",
             )
-        selected = detect_format(data, filename or "") if import_format == "auto" else import_format.lower()
+        try:
+            selected = detect_format(data, filename or "") if import_format == "auto" else import_format.lower()
+        except ImportParseError as exc:
+            log_rejected_import(str(exc), import_format, filename)
+            raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
         csv_config = mapping
         if profile_id is not None:
-            profile = require_row(conn.execute(
-                "SELECT * FROM module_haushaltsbuch_import_profiles WHERE id=? AND household_id=?",
-                (profile_id, member["household_id"]),
-            ).fetchone(), "import_profile_not_found")
+            try:
+                profile = require_row(conn.execute(
+                    "SELECT * FROM module_haushaltsbuch_import_profiles WHERE id=? AND household_id=?",
+                    (profile_id, member["household_id"]),
+                ).fetchone(), "import_profile_not_found")
+            except Exception:
+                log_rejected_import("import_profile_not_found", selected, filename)
+                raise
             profile_config = {
                 **json.loads(profile["mapping_json"]),
                 "delimiter": profile["delimiter"],
@@ -141,12 +150,14 @@ def create_batch(
         try:
             records = parse_import(data, selected, csv_mapping, filename=filename or "", detected=detected)
         except ImportParseError as exc:
+            log_rejected_import(str(exc), selected, filename)
             raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
         file_hash = hashlib.sha256(data).hexdigest()
         if conn.execute(
             "SELECT 1 FROM module_haushaltsbuch_import_batches WHERE household_id=? AND file_hash=?",
             (member["household_id"], file_hash),
         ).fetchone():
+            log_rejected_import("duplicate_import_file", selected, filename)
             raise coded(status.HTTP_409_CONFLICT, "duplicate_import_file")
         detected_bank = detected.get("bank")
         try:
@@ -163,6 +174,7 @@ def create_batch(
                 ),
             )
         except sqlite3.IntegrityError as exc:
+            log_rejected_import("duplicate_import_file", selected, filename)
             raise coded(status.HTTP_409_CONFLICT, "duplicate_import_file") from exc
         batch_id = int(cursor.lastrowid)
         insert_import_rows(conn, member["household_id"], batch_id, account_id, account["currency"], records)
