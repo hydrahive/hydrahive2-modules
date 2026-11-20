@@ -38,8 +38,15 @@
   (Cashflow, Vermögen, Kategorien, Budgets, Fixkosten), Crypto-Brücke (liest nur buy/sell, ignoriert transfer_*).
   **Tills Haushalt hat noch keine eigenen Konten und keine Buchungen.**
 - Belege gibt es nur für Lidl-Kassenbons (Loyalty), **keine Belege/Anhänge an beliebigen Buchungen**.
-- **Bekannter Fehler:** Cryptoboard zeigt +18.164 € realisierten TRX-Gewinn – falsch, weil die TRX-Einstände fehlen
-  (CSV-Import: transfer_in mit Preis 0). Nicht steuerlich verwenden, bis Etappe D erledigt ist.
+- **Zahlungsdienst:** Die USDC-Abgänge über `0xdabd…67f8` sind die **MetaMask Card** (direkt mit USDC gekoppelt).
+  Zahlungen erfolgen also mit USDC direkt aus Tills Wallet (Till, 20.11.).
+- **Herkunft der TRX (Till, 20.11.):** uralte TRX, **nicht gekauft**, vor vielen Jahren erhalten, ~8 Jahre auf
+  Freewallet gelegen, dann auf die eigene Tron-Adresse umgebucht. Es gibt **keine Kaufbelege**.
+- **Bekannter Fehler:** Cryptoboard zeigt +18.164 € realisierten TRX-Gewinn. Ursache: Die TRX stehen nur als
+  transfer_in mit Preis 0 im Ledger; FIFO kennt **kein Erwerbsdatum** (Lot = Menge + Stückkosten), also auch keine
+  Haltedauer. Wie solche Bestände richtig bewertet werden (Einstand 0 € vs. Wert bei Zufluss, Haltedauer >1 Jahr),
+  ist eine **steuerliche Frage, die ich nicht beurteilen kann** → Till klärt sie mit Steuerberater (siehe D4).
+  Bis dahin die Gewinnzahl **nicht** steuerlich verwenden.
 
 ## 4. Abnahme (pro Punkt: Was Till sieht/tut + wie es geprüft wird)
 
@@ -48,14 +55,15 @@ Legende Stand: ✅ geht schon · 🟡 teilweise · ❌ fehlt
 ### Etappe A – Kassenbuch-Grundlage
 | # | Till kann … | Prüfung (an echten Daten) | Stand |
 |---|---|---|---|
-| A1 | einen Haushalt mit seinen Konten haben: mindestens Girokonto + ein Konto je Krypto-Wallet (Tron TWgdiv…ZeyD, Base/Ethereum 0xa1aE…696E) | Haushaltsbuch → Konten zeigt diese Konten; DB: Konten vom Typ `wallet` mit Verknüpfung zur Cryptoboard-Adresse | ❌ |
+| A1 | einen Haushalt mit seinen Konten haben: **Girokonto** + ein Konto je Krypto-Wallet (Tron TWgdiv…ZeyD, Base/Ethereum 0xa1aE…696E) | Haushaltsbuch → Konten zeigt diese Konten; DB: Konten vom Typ `wallet` mit Verknüpfung zur Cryptoboard-Adresse | ❌ |
+| A3 | **Girokonto-Umsätze** per Kontoauszug-Import (CSV/PDF, vorhanden) einspielen | Import eines echten Auszugs, Buchungen erscheinen im Girokonto | 🟡 (Import da, Konto fehlt) |
 | A2 | je Krypto-Konto den **Bestand je Coin** und den **EUR-Wert** sehen, aktuell wie im Cryptoboard | Wert im Haushaltsbuch = Wert im Cryptoboard (± Kursrundung, gleiche Uhrzeit) | 🟡 (nur Gesamtwert eines Portfolios) |
 
 ### Etappe B – Krypto-Buchungen übernehmen
 | # | Till kann … | Prüfung | Stand |
 |---|---|---|---|
 | B1 | die **17 Swaps** als **Umbuchungen** TRX-Konto → USDC-Konto sehen, **nicht** als Ausgaben | Report „Kategorien/Cashflow“ zählt sie nicht als Ausgabe; Liste zeigt 17 Umbuchungen mit Datum und EUR-Wert | ❌ |
-| B2 | die **102 USDC-Zahlungen** als **Ausgaben** sehen (Datum, USDC-Betrag, EUR-Wert am Tag) | Haushaltsbuch → Buchungen: 102 Ausgaben vom USDC-Konto; Summe EUR = Summe der Tageswerte | ❌ |
+| B2 | die **102 USDC-Zahlungen** (MetaMask Card) als **Ausgaben** sehen (Datum, USDC-Betrag, EUR-Wert am Tag) | Haushaltsbuch → Buchungen: 102 Ausgaben vom USDC-Konto; Summe EUR = Summe der Tageswerte | ❌ |
 | B3 | erneut importieren, **ohne Doppelungen** | zweiter Import: 0 neue Buchungen | ❌ |
 | B4 | in der Import-Vorschau sehen, **was** übernommen wird (Swaps/Zahlungen getrennt) und es **bestätigen** | Vorschau zeigt zwei Gruppen mit Anzahl und Summe; ohne Bestätigung wird nichts gebucht | ❌ |
 
@@ -72,7 +80,7 @@ Legende Stand: ✅ geht schon · 🟡 teilweise · ❌ fehlt
 | D1 | **Einnahmen/Ausgaben je Monat** über **alle** Konten (Bank + Krypto) sehen | Cashflow-Report Juni–Nov enthält die Krypto-Ausgaben; Swaps nicht | 🟡 (Report da, Krypto fehlt) |
 | D2 | **Ausgaben je Kategorie** über alle Konten sehen | Kategorien-Report enthält die kategorisierten Krypto-Ausgaben | 🟡 |
 | D3 | **Vermögensentwicklung** inklusive Krypto über die Zeit sehen | Net-Worth-Report enthält Krypto-Konten mit Monatswerten | 🟡 |
-| D4 | im Cryptoboard einen **korrekten** Gewinn/Verlust sehen | TRX-Einstände nachgetragen (Quelle klären), realisierter Gewinn plausibel statt +18.164 € | ❌ |
+| D4 | im Cryptoboard für **Altbestände ohne Kauf** (Tills TRX) einen Einstand und ein **Erwerbsdatum** hinterlegen, sodass Gewinn/Verlust und **Haltedauer** nachvollziehbar sind | Bewertungsregel von Till/Steuerberater vorgegeben; FIFO speichert Erwerbsdatum je Lot; Anzeige der Haltedauer je Verkauf | ❌ (Regel offen, FIFO ohne Datum) |
 
 ## 5. Was ausdrücklich NICHT Teil dieses Ziels ist
 - Steuerbericht/Steuerformulare (eigenes Vorhaben, setzt D4 voraus).
@@ -82,10 +90,14 @@ Legende Stand: ✅ geht schon · 🟡 teilweise · ❌ fehlt
 - Schreibzugriff des Haushaltsbuchs auf Cryptoboard-Daten (Cryptoboard bleibt Quelle).
 
 ## 6. Offene Fragen an Till
-1. **Zahlungsdienst:** Welcher Dienst/welche Karte steckt hinter den USDC-Abgängen? Gibt es dort einen Export (CSV/PDF)? (Hilft später beim Zuordnen von Belegen; für B2 nicht nötig.)
-2. **TRX-Einstände (D4):** Woher kamen die TRX ursprünglich (Börse? Mining? Kauf)? Gibt es Belege/Exporte mit Kaufpreis?
-3. **Girokonto (A1):** Soll das Girokonto gleich mit rein (Kontoauszug-Import CSV/PDF ist vorhanden)?
-4. **Die 3 ungepaarten TRX-Abgänge** (31.05. 1000, 03.08. 3500, 03.10. 450 TRX): Was waren die?
+1. ~~Zahlungsdienst~~ → **MetaMask Card**, direkt mit USDC gekoppelt (20.11.).
+   Offen: Gibt es in der MetaMask-Card-App einen **Export** der Zahlungen mit Händlername? Dann können Händler und
+   Belege automatisch zugeordnet werden statt nur über Datum und Betrag.
+2. ~~TRX-Herkunft~~ → Altbestand, kein Kauf, ~8 Jahre auf Freewallet (20.11.).
+   Offen für D4: **Welche Bewertungsregel** soll gelten (mit Steuerberater klären)? Und ungefähres **Datum des
+   Zuflusses**, falls bekannt (Haltedauer).
+3. ~~Girokonto~~ → **kommt mit rein** (A1/A3).
+4. **Die 3 ungepaarten TRX-Abgänge** (31.05. 1000, 03.08. 3500, 03.10. 450 TRX): Till prüft das.
 
 ## 7. Reihenfolge
 A → B → C → D. Jede Etappe ist einzeln abnehmbar. Gebaut wird erst, wenn **die Kern-Arbeitsweise steht**
