@@ -349,6 +349,9 @@ export interface OnchainEntry {
   /** Backend-Urteil nach derselben Regel wie der Commit (1.7.0, nur Info – das UI rechnet selbst). */
   buchbar?: boolean
   nicht_buchbar_grund?: string | null
+  /** Nur bei Ausgaben (transfer_out): MetaMask-Card-Zahlung oder sonstiger Abgang (VERTRAG-B Punkt 2). */
+  art?: "kartenzahlung" | "abgang"
+  art_unklar?: boolean
 }
 
 export interface OnchainWrap {
@@ -398,6 +401,8 @@ export interface OnchainCommitTx {
   fee: string | null
   executed_at: string
   hash: string
+  /** Pflicht für Kartenzahlungen: ohne `art` bucht das Backend „Abgang“ (Haushaltsbuch verwirft ihn). */
+  art?: "kartenzahlung" | "abgang"
 }
 
 // ---- Trades aller Adressen (preview_all, Vertrag 1.7.0) ----
