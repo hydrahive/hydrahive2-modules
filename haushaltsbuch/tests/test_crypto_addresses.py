@@ -268,3 +268,40 @@ def test_holdings_foreign_address_id_not_found(client, owner_headers, monkeypatc
     response = _holdings(client, owner_headers, linked["id"])
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "crypto_address_not_found"
+
+
+def test_holdings_member_sees_hidden_without_calling_port_for_member(
+    client, owner_headers, member_headers
+):
+    """Mitglied sieht hidden für ein vom Owner verknüpftes Wallet - der Port
+    wird NICHT mit dem Usernamen des Mitglieds für ein fremdes Konto
+    aufgerufen (gleiche Regel wie bei crypto-value, hier für crypto-holdings)."""
+    from test_crypto_bridge_permissions import _add_member
+
+    _create_household(client, owner_headers)
+    _add_member(client, owner_headers, "member")
+    wallet = _wallet_account(client, owner_headers)
+    port = FakePort()
+    port.addresses["owner"] = [{"id": 2, "chain": "base", "address": "0xa1aE0000000000000000000000000000000696E", "label": "Base"}]
+    port.holdings["owner"] = _basic_holdings_result()
+
+    import pytest
+
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        _install_fake_port(monkeypatch, port)
+        linked = _link_addr(client, owner_headers, wallet, [2]).json()
+
+        accounts_as_member = client.get(f"{PREFIX}/accounts", headers=member_headers).json()
+        member_view = next(a for a in accounts_as_member if a["id"] == linked["id"])
+        assert member_view["crypto_addresses"] == []  # keine fremde Adresse sichtbar
+
+        calls_before = list(port.calls)
+        response = _holdings(client, member_headers, linked["id"])
+        assert response.status_code == 200
+        body = response.json()
+        assert body["state"] == "hidden"
+        assert body["value_minor"] is None
+        assert body["holdings"] == []
+        # Der Port darf für Bs Anfrage NICHT aufgerufen worden sein - insbesondere
+        # nie mit "owner" als Argument im Namen von "member".
+        assert port.calls == calls_before

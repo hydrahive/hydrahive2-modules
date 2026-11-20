@@ -33,11 +33,16 @@ def _short_address(address: str) -> str:
     return f"{address[:6]}…{address[-4:]}"
 
 
-def _crypto_addresses_for(conn: sqlite3.Connection, account_id: int) -> list[dict]:
+def _crypto_addresses_for(conn: sqlite3.Connection, account_id: int, linked_user_id: str) -> list[dict]:
+    """Verknüpfte Adressen eines Wallet-Kontos - NUR wenn `linked_user_id` den
+    anfragenden Principal betrifft (Aufrufer übergibt dafür bereits dessen
+    user_id oder None). Verhindert, dass Mitglied B die Adressen sieht, die
+    Mitglied A an ein gemeinsames Haushaltskonto gebunden hat (gleiche Regel
+    wie linked_portfolio_id: nur sichtbar wenn linked_by_me)."""
     rows = conn.execute(
         "SELECT address_id,chain,address FROM module_haushaltsbuch_account_crypto_addresses "
-        "WHERE account_id=? ORDER BY id",
-        (account_id,),
+        "WHERE account_id=? AND linked_user_id=? ORDER BY id",
+        (account_id, linked_user_id),
     ).fetchall()
     return [
         {"address_id": row["address_id"], "chain": row["chain"], "address_short": _short_address(row["address"])}
@@ -55,8 +60,8 @@ def _account_dict(row: sqlite3.Row, principal: AuthPrincipal, conn: sqlite3.Conn
     if not linked_by_me:
         result["linked_portfolio_id"] = None
     result.pop("linked_user_id", None)
-    if result["type"] == "wallet" and conn is not None:
-        result["crypto_addresses"] = _crypto_addresses_for(conn, result["id"])
+    if result["type"] == "wallet" and conn is not None and linked_by_me:
+        result["crypto_addresses"] = _crypto_addresses_for(conn, result["id"], principal.user_id)
     else:
         result["crypto_addresses"] = []
     return result
