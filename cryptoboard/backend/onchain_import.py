@@ -25,7 +25,11 @@ from .validators import ID_RE, ISO_RE
 
 NOTE = "On-Chain-Import"
 CHAINS = ("base", "ethereum")
-HASH_RE = re.compile(r"^(base|ethereum):0x[0-9a-f]{64}:(sell|buy)$")
+# Zwei Hash-Formate laut VERTRAG.md:
+#   base/ethereum:tx:sell|buy|transfer_out   — Swap/Ausgabe innerhalb einer Chain
+#   xchain:tron_tx:evm_chain:evm_tx:sell|buy — chain-übergreifendes Paar
+HASH_RE = re.compile(r"^(base|ethereum):0x[0-9a-f]{64}:(sell|buy|transfer_out)$")
+XCHAIN_HASH_RE = re.compile(r"^xchain:[0-9a-f]{64}:(base|ethereum):0x[0-9a-f]{64}:(sell|buy)$")
 _MAX_RAW_TOKENS = 20
 
 
@@ -180,14 +184,23 @@ async def build_preview(user: str, chain: str, address: str, key: str, to_block:
     }
 
 
+def _hash_matches_kind(hash_: str, kind: str) -> bool:
+    """Beide erlaubten Hash-Formate (base/ethereum:… und xchain:…), Suffix muss zum kind passen."""
+    if not hash_.endswith(f":{kind}"):
+        return False
+    return bool(HASH_RE.match(hash_) or XCHAIN_HASH_RE.match(hash_))
+
+
 def _skip_reason(t: Any, already: set[str]) -> str | None:
-    if not HASH_RE.match(t.hash) or not t.hash.endswith(f":{t.kind}"):
+    if not _hash_matches_kind(t.hash, t.kind):
         return "hash_ungueltig"
     if t.hash in already:
         return "duplikat"
     if not t.coin_id or not ID_RE.match(t.coin_id.strip().lower()):
         return "coin_id_fehlt"
-    if t.price is None:
+    # transfer_out ohne Preis ist kein Fehler (VERTRAG.md) — wird als 0 gebucht;
+    # buy/sell ohne Preis bleibt ein Blocker wie bisher.
+    if t.kind != "transfer_out" and t.price is None:
         return "preis_fehlt"
     if not ISO_RE.match(t.executed_at.strip()):
         return "zeit_ungueltig"
@@ -203,12 +216,13 @@ def commit_entries(user: str, transactions: list[Any]) -> dict:
         reason = _skip_reason(t, already)
         if reason is None:
             fee = t.fee if t.fee is not None else Decimal(0)
+            price = t.price if t.price is not None else Decimal(0)  # transfer_out ohne Preis -> 0
             try:
                 # EINZIGE Decimal→float-Grenze: das Ledger speichert REAL.
                 store.add(
                     user, coin_id=t.coin_id.strip().lower(), symbol=t.symbol.strip().upper(),
                     name=t.name.strip(), kind=t.kind, quantity=float(t.quantity),
-                    price=float(t.price), fee=float(fee), executed_at=t.executed_at.strip(),
+                    price=float(price), fee=float(fee), executed_at=t.executed_at.strip(),
                     note=NOTE, import_hash=t.hash,
                 )
                 imported += 1

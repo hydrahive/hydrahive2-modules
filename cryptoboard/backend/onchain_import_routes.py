@@ -50,12 +50,12 @@ class OnchainCommitTx(BaseModel):
     coin_id: str | None = Field(default=None, max_length=80)
     symbol: str = Field(default="", max_length=20)
     name: str = Field(default="", max_length=120)
-    kind: str = Field(pattern=r"^(buy|sell)$")
+    kind: str = Field(pattern=r"^(buy|sell|transfer_out)$")
     quantity: Decimal = Field(gt=0)
     price: Decimal | None = Field(default=None, ge=0)
     fee: Decimal | None = Field(default=None, ge=0)
     executed_at: str = Field(min_length=1, max_length=40)
-    hash: str = Field(min_length=1, max_length=120)
+    hash: str = Field(min_length=1, max_length=180)  # xchain:64hex:chain:0x64hex:kind kann >120 Zeichen sein
 
 
 class OnchainCommitIn(BaseModel):
