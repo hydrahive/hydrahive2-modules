@@ -201,3 +201,19 @@ Status wird nie ausschließlich über Farbe vermittelt.
 - Importregeln und Split-Vorlagen
 - Hintergrundjobs
 - dauerhafte Speicherung von Originaldateien
+
+## Nachtrag 1.13.0 (20.11.2026): Bank-CSV automatisch erkennen
+
+Till: „Felder zuordnen ist grausam, dann invalid-Fehler.“ Deutsche Bank-CSVs sind nicht genormt, aber je Bank fest.
+- Format „Automatisch“: Kopfzeile wird gegen feste Vorlagen geprüft (kein LLM): Sparkasse CSV-MT940 und CSV-CAMT,
+  Volksbank/Raiffeisen/Sparda/GLS, ING, DKB, Commerzbank, Postbank (`backend/import_bank_csv.py`; Spaltenaufbau
+  belegt über github.com/nicolettas-muggelbude/RechnungsFee/blob/main/vorlagen/bank-csv/README.md und
+  onetwoapps.de/deutsch/mein-haushaltsbuch/csv-dateien). Erkannte Bank wird am Entwurf gespeichert (Migration 012).
+- Zeichensatz automatisch (UTF-8 mit/ohne BOM, sonst Windows-1252).
+- Unbekannte Bank: Zuordnungsdialog wie bisher, mit Vorschau der erkannten Spalten (`POST /imports/csv-preview`).
+- Alle Import-Fehlercodes haben einen deutschen Text (`frontend/importMessages.ts`); der Server loggt den Code
+  (ohne Bankdaten).
+- CAMT unverändert: deutsche Banken liefern camt.053.001.08 und .02 (beide angenommen); camt.052 sind untertägige
+  Vormerkposten und gehören nicht ins Kassenbuch.
+- Vorgemerkte Umsätze („Umsatz vorgemerkt“) erscheinen als markierte Fehlerzeile (`pending_transaction`), nicht
+  als Buchung: sie können sich noch ändern. Nach dem Buchungstag neu exportieren.
