@@ -2,7 +2,7 @@ import { api } from "@/shared/api-client"
 import type {
   AlchemyKeyStatus, Alert, AlertEventsResponse, AlertInput, ChartResponse, CoinDetail, CoinPnl,
   ImportPreview, ImportResult, ImportTx, IndicatorData, MarketRow, NewsItem,
-  OnchainCommitResult, OnchainCommitTx, OnchainPreview,
+  OnchainCommitResult, OnchainCommitTx, OnchainPreview, OnchainPreviewAll,
   PortfolioStats, PortfolioSummary, SearchResult, Sentiment, Transaction,
   TxInput, ValueHistory, WalletAddress, WalletBalances, WatchItem,
 } from "./types"
@@ -129,6 +129,11 @@ export const cryptoApi = {
   onchainPreview: (address_id: number, to_block?: string | null): Promise<OnchainPreview> =>
     api.post<OnchainPreview>(`${BASE}/portfolio/import/onchain/preview`,
       to_block ? { address_id, to_block } : { address_id }),
+
+  // Alle Adressen (Base/Ethereum/Tron), inkl. chain-übergreifender Paare.
+  onchainPreviewAll: (window_minutes?: number): Promise<OnchainPreviewAll> =>
+    api.post<OnchainPreviewAll>(`${BASE}/portfolio/import/onchain/preview_all`,
+      window_minutes ? { window_minutes } : {}),
 
   onchainCommit: (transactions: OnchainCommitTx[]): Promise<OnchainCommitResult> =>
     api.post<OnchainCommitResult>(`${BASE}/portfolio/import/onchain/commit`, { transactions }),

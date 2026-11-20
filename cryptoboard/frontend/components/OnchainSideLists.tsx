@@ -45,6 +45,7 @@ export function OnchainSideLists({ wraps, unklar }: { wraps: OnchainWrap[]; unkl
           {unklar.map((u) => (
             <div key={u.hash} className="text-[11px] border-t border-[rgb(var(--hh-s-rand,42_54_75))] pt-1">
               <span className="text-[#9aa7bc] tabular-nums mr-2">{u.executed_at ?? "—"}</span>
+              {u.chain && <span className="text-[#9aa7bc] uppercase mr-2">{t(`wl_chain_${u.chain}`, { defaultValue: u.chain })}</span>}
               <span className="font-mono text-[#9aa7bc] mr-2">{shortHash(u.hash)}</span>
               <span className="text-amber-300">
                 {UNKLAR_REASONS.includes(u.reason) ? t(`oc_reason_${u.reason}`) : u.reason}
