@@ -173,9 +173,12 @@ def test_reine_ausgabe_wird_transfer_out(client, auth_headers, setup):
     assert out["quantity"] == "0.2"
 
 
-def test_ausgabe_ohne_konfigurierten_card_kontrakt_ist_abgang(client, auth_headers, setup):
-    """Ohne Eintrag in METAMASK_CARD_CONTRACTS (Platzhalter, siehe onchain_card_detect.py) ist
-    jede Ausgabe "abgang" — kein falscher Treffer, solange die echte Adresse nicht verifiziert ist."""
+def test_ausgabe_ohne_konfigurierten_card_kontrakt_ist_abgang(client, auth_headers, setup, monkeypatch):
+    """Chain ohne Eintrag in METAMASK_CARD_CONTRACTS -> jede Ausgabe ist "abgang" (kein falscher Treffer)."""
+    from backend import onchain_card_detect as card
+
+    monkeypatch.delitem(card.METAMASK_CARD_CONTRACTS, "base", raising=False)
+    card.clear_cache()
     data = _preview_all(client, auth_headers)
     out = data["ausgaben"][0]
     assert out["art"] == "abgang"
@@ -193,7 +196,6 @@ def test_ausgabe_mit_konfiguriertem_card_kontrakt_wird_kartenzahlung(client, aut
     out = next(a for a in data["ausgaben"] if a["hash"] == f"base:{H_OUT}:transfer_out")
     assert out["art"] == "kartenzahlung"
     assert out["art_unklar"] is False
-    card.METAMASK_CARD_CONTRACTS.pop("base", None)
     card.clear_cache()
 
 

@@ -25,9 +25,8 @@ def _reset():
 
 @pytest.fixture
 def with_card_contract(monkeypatch):
-    monkeypatch.setitem(card.METAMASK_CARD_CONTRACTS, CHAIN, CARD_CONTRACT)
+    monkeypatch.setitem(card.METAMASK_CARD_CONTRACTS, CHAIN, CARD_CONTRACT)  # monkeypatch stellt den echten Wert wieder her
     yield
-    card.METAMASK_CARD_CONTRACTS.pop(CHAIN, None)
 
 
 async def test_treffer_ist_kartenzahlung(monkeypatch, with_card_contract):
@@ -58,6 +57,7 @@ async def test_ohne_konfigurierten_kontrakt_kein_lookup_abgang(monkeypatch):
         return {"to": OTHER_CONTRACT}
 
     monkeypatch.setattr(ac, "call", fake_call)
+    monkeypatch.delitem(card.METAMASK_CARD_CONTRACTS, CHAIN, raising=False)
     art, art_unklar, used = await card.classify_art(CHAIN, KEY, TX_OTHER, lookups_used=0)
     assert art == "abgang" and art_unklar is False
     assert calls == []
@@ -107,3 +107,12 @@ async def test_cache_verhindert_zweiten_netzabruf(monkeypatch, with_card_contrac
     assert art1 == art2 == "kartenzahlung"
     assert len(calls) == 1  # zweiter Aufruf kam aus dem Cache, kein zweiter Netz-Call
     assert used1 == 1 and used2 == 2  # Zähler steigt trotzdem je Aufruf (Grenze bleibt wirksam)
+
+
+def test_echte_metamask_card_adresse_ist_konfiguriert():
+    """Zieldokument §3 + Live-Lesung 20.11.2026: volle Base-Adresse, 40 Hex-Zeichen, nicht abgekürzt."""
+    from backend import onchain_card_detect as card_mod
+
+    addr = card_mod.METAMASK_CARD_CONTRACTS["base"]
+    assert addr == "0xdabdafc43b2bc1c7d10c2bbce950a8cad4a367f8"
+    assert len(addr) == 42 and addr.startswith("0xdabd") and addr.endswith("67f8")

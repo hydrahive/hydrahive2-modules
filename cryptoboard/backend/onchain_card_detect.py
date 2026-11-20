@@ -12,18 +12,10 @@ Obergrenze MAX_LOOKUPS_PER_RUN pro Lauf: darüber hinaus art="abgang" +
 art_unklar=True (nicht raten, Grenze sichtbar machen statt stillschweigend
 falsch zu klassifizieren).
 
-WICHTIG — NOCH NICHT VERIFIZIERT (20.11.2026): Die volle MetaMask-Card-
-Kontraktadresse auf Base konnte in dieser Session NICHT nur-lesend von
-einem Live-System mit Tills echten Daten ermittelt werden (der im Auftrag
-genannte Server 192.168.178.216 war nicht erreichbar, die erreichbare
-Instanz 192.168.178.197 hat keine Cryptoboard-Nutzdaten). Der Vertrag
-(VERTRAG-B.md, Befund) nennt nur die VERKÜRZTE Form "0xdabd…67f8" — das
-reicht NICHT für einen exakten Vergleich (40 Hex-Zeichen nötig). Die
-Konstante unten ist daher ein PLATZHALTER mit denselben bekannten Rand-
-Zeichen, NICHT die verifizierte volle Adresse — vor dem Merge MUSS sie
-durch die echte, von Till/aus Tills Live-preview_all gelesene Adresse
-ersetzt werden. Quelle laut Zieldokument §3 (Till, 20.11.2026): die USDC-
-Abgänge über 0xdabd…67f8 sind die MetaMask Card.
+Kontrakt der MetaMask Card auf Base: 0xdabdafc43b2bc1c7d10c2bbce950a8cad4a367f8.
+Quelle: Zieldokument §3 (Till, 20.11.2026: USDC-Abgänge über 0xdabd…67f8 sind die
+MetaMask Card) und Live-Lesung am 20.11.2026 (eth_getTransactionByHash.to von 12/12
+Stichproben aus Tills Base-USDC-Abgängen = diese Adresse).
 """
 from __future__ import annotations
 
@@ -31,10 +23,9 @@ from . import alchemy_client as ac
 
 MAX_LOOKUPS_PER_RUN = 300
 
-# TODO(bevor Merge): PLATZHALTER — volle Adresse noch nicht live verifiziert (siehe Docstring).
-# Quelle: Zieldokument §3, Till 20.11.2026 (dort nur verkürzt "0xdabd…67f8" genannt).
+# Quelle: Zieldokument §3 + Live-Lesung 20.11.2026 (siehe Docstring). Kleinschreibung, Vergleich case-insensitiv.
 METAMASK_CARD_CONTRACTS: dict[str, str] = {
-    # "base": "0xdabd0000000000000000000000000000067f8",  # NICHT verifiziert, Platzhalter-Länge falsch
+    "base": "0xdabdafc43b2bc1c7d10c2bbce950a8cad4a367f8",
 }
 
 _cache: dict[tuple[str, str], str | None] = {}
