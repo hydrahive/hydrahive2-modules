@@ -73,7 +73,9 @@ def _generic_unklar(chain: str, address: str, detected: dict) -> list[dict]:
 
 async def _split_unklar(chain: str, detected: dict) -> tuple[list[dict], list[dict], list[dict]]:
     """EVM-"unklar"-Items einer Adresse -> (ausgaben, candidates, spam). Items mit anderem reason
-    (mehrere_assets, decimals_fehlt, keine_nettobewegung) bleiben außen vor (siehe _generic_unklar)."""
+    (mehrere_assets, decimals_fehlt, keine_nettobewegung) bleiben außen vor (siehe _generic_unklar).
+    Spam wird auf BEIDEN Seiten geprüft (nur_raus UND nur_rein, Till 20.11.2026) — nie in ausgaben/
+    candidates, nur in spam."""
     from . import xchain_build as xb
 
     ausgaben: list[dict] = []
@@ -81,7 +83,8 @@ async def _split_unklar(chain: str, detected: dict) -> tuple[list[dict], list[di
     spam: list[dict] = []
     for item in detected["unklar"]:
         if item.get("reason") == "nur_raus":
-            ausgaben.append(await xb.build_ausgabe(chain, item))
+            kind, payload = await xb.classify_outgoing(chain, item)
+            (spam if kind == "spam" else ausgaben).append(payload)
         elif item.get("reason") == "nur_rein":
             kind, payload = await xb.classify_incoming(chain, item)
             (spam if kind == "spam" else candidates).append(payload)

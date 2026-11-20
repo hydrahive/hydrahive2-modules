@@ -21,7 +21,8 @@ SERVICE = "0x" + "b" * 40  # fremder Dienst-Absender auf Base, Ziel des TRX-Pair
 USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 DAY = "2026-11-18"
 TS = f"{DAY}T12:00:00.000Z"
-H_SWAP, H_PAIR, H_SPAM, H_OUT = (("0x" + c * 64) for c in "1234")
+H_SWAP, H_PAIR, H_SPAM, H_OUT, H_SPAM_OUT = (("0x" + c * 64) for c in "12345")
+FAKE_USDC_CONTRACT = "0x" + "9" * 40  # fremder Kontrakt, NICHT die echte USDC-Adresse
 
 
 def _erc20(h, frm, to, contract, value, dec, sym):
@@ -44,6 +45,9 @@ TRANSFERS_BASE_1 = [
            1_000_000 * 10**18, 18, "ꓴ឵ՏᎠ"),
     _eth(H_OUT, ADDR_BASE, "0xsink0000000000000000000000000000000000", 2 * 10**17),
     _erc20(H_PAIR, SERVICE, ADDR_BASE, USDC, 2435310000, 6, "USDC"),
+    # Fake-"USDC" (fremder Kontrakt) RAUS -> muss Spam sein, nie Ausgabe (Till 20.11.2026).
+    _erc20(H_SPAM_OUT, ADDR_BASE, "0xecca0000000000000000000000000000000000", FAKE_USDC_CONTRACT,
+           500 * 10**18, 18, "USDC"),
 ]
 
 
@@ -137,6 +141,25 @@ def test_spam_eingang_landet_in_spam_nicht_in_unklar_oder_transactions(client, a
     assert all(str(u.get("hash")).lower() != H_SPAM.lower() for u in data["unklar"])
 
 
+def test_spam_abgang_landet_in_spam_nie_in_ausgaben(client, auth_headers, setup):
+    """Fake-"USDC" (fremder Kontrakt) als Abgang -> spam, NIE ausgaben (Till 20.11.2026)."""
+    data = _preview_all(client, auth_headers)
+    spam_hashes = {s["hash"] for s in data["spam"]}
+    assert H_SPAM_OUT.lower() in spam_hashes
+    spam_out = next(s for s in data["spam"] if s["hash"] == H_SPAM_OUT.lower())
+    assert spam_out["grund"] == "unbekannter_token"
+    assert spam_out["contract"] == FAKE_USDC_CONTRACT
+    assert all(a["hash"] != f"base:{H_SPAM_OUT}:transfer_out" for a in data["ausgaben"])
+
+
+def test_echtes_usdc_bleibt_ausgabe_gegenprobe(client, auth_headers, setup):
+    """Gegenprobe zum Spam-Abgang: ECHTES USDC (bekannter Kontrakt) bleibt ganz normal Ausgabe."""
+    data = _preview_all(client, auth_headers)
+    out_hashes = {a["hash"] for a in data["ausgaben"]}
+    assert f"base:{H_OUT}:transfer_out" in out_hashes
+    assert all(s["hash"] != H_OUT.lower() for s in data["spam"])
+
+
 def test_reine_ausgabe_wird_transfer_out(client, auth_headers, setup):
     data = _preview_all(client, auth_headers)
     assert len(data["ausgaben"]) == 1
@@ -172,7 +195,7 @@ def test_counts_und_buchbar(client, auth_headers, setup):
     c = data["counts"]
     assert c["swaps"] == 1
     assert c["pairs"] == 1
-    assert c["spam"] == 1
+    assert c["spam"] == 2  # ein Spam-Eingang + ein Spam-Abgang
     assert c["ausgaben"] == 1
     assert c["mehrdeutig"] == 0
     assert c["buchbar"] > 0
