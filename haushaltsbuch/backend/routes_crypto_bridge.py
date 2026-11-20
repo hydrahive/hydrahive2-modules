@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query, status
 
-from . import crypto_addresses, crypto_bridge, crypto_holdings
+from . import crypto_addresses, crypto_bridge, crypto_holdings, crypto_trade_import
 from .access import Principal
 from .crypto_bridge_models import CryptoAddressLinkCreate, CryptoLinkCreate, CryptoTradeImportRequest
 
@@ -35,7 +35,7 @@ def get_crypto_value(account_id: int, principal: Principal) -> dict:
 
 @router.post("/crypto-bridge/trade-imports", status_code=status.HTTP_201_CREATED)
 def create_trade_import(body: CryptoTradeImportRequest, principal: Principal) -> dict:
-    return crypto_bridge.preview_trade_import(body, principal)
+    return crypto_trade_import.preview_trade_import(body, principal)
 
 
 @router.get("/crypto-bridge/addresses")
