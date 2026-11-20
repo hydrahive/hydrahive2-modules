@@ -28,7 +28,7 @@ def _holdings(client, headers, account_id: int):
 def _basic_holdings_result(username: str = "owner") -> dict:
     return {
         "currency": "EUR", "as_of": "2026-11-20T10:00:00Z", "complete": True, "value_minor": 123456,
-        "addresses": [{"id": 2, "chain": "base", "address": "0xa1aE696E", "label": "Base"}],
+        "addresses": [{"id": 2, "chain": "base", "address": "0xa1aE0000000000000000000000000000000696E", "label": "Base"}],
         "holdings": [
             {"chain": "base", "address_id": 2, "symbol": "USDC", "coin_id": "usd-coin",
              "quantity": "100.5", "value_minor": 100500, "verified": True},
@@ -46,8 +46,8 @@ def test_get_addresses_marks_linked_account(client, owner_headers, monkeypatch):
     wallet = _wallet_account(client, owner_headers)
     port = FakePort()
     port.addresses["owner"] = [
-        {"id": 2, "chain": "base", "address": "0xa1aE696E", "label": "Base"},
-        {"id": 3, "chain": "tron", "address": "TWgdivZeyD", "label": "Tron"},
+        {"id": 2, "chain": "base", "address": "0xa1aE0000000000000000000000000000000696E", "label": "Base"},
+        {"id": 3, "chain": "tron", "address": "TWgdiv1234567890123456789ZeyD", "label": "Tron"},
     ]
     _install_fake_port(monkeypatch, port)
 
@@ -97,8 +97,8 @@ def test_link_two_addresses_same_user_one_account_base_ethereum(client, owner_he
     wallet = _wallet_account(client, owner_headers, name="Base/Ethereum")
     port = FakePort()
     port.addresses["owner"] = [
-        {"id": 2, "chain": "base", "address": "0xa1aE696E", "label": "Base"},
-        {"id": 7, "chain": "ethereum", "address": "0xa1aE696E", "label": "Ethereum"},
+        {"id": 2, "chain": "base", "address": "0xa1aE0000000000000000000000000000000696E", "label": "Base"},
+        {"id": 7, "chain": "ethereum", "address": "0xa1aE0000000000000000000000000000000696E", "label": "Ethereum"},
     ]
     _install_fake_port(monkeypatch, port)
 
@@ -132,7 +132,7 @@ def test_replace_addresses_then_unlink(client, owner_headers, monkeypatch):
     _install_fake_port(monkeypatch, port)
 
     linked = _link_addr(client, owner_headers, wallet, [2]).json()
-    replaced = _link_addr(client, owner_headers, wallet, [3]).json()
+    replaced = _link_addr(client, owner_headers, linked, [3]).json()
     assert {a["address_id"] for a in replaced["crypto_addresses"]} == {3}
 
     unlinked = client.delete(
@@ -160,7 +160,7 @@ def test_account_list_shows_linked_addresses_for_wallet(client, owner_headers, m
     wallet = _wallet_account(client, owner_headers)
     checking = _create_account(client, owner_headers)
     port = FakePort()
-    port.addresses["owner"] = [{"id": 3, "chain": "tron", "address": "TWgdivZeyD", "label": ""}]
+    port.addresses["owner"] = [{"id": 3, "chain": "tron", "address": "TWgdiv1234567890123456789ZeyD", "label": ""}]
     _install_fake_port(monkeypatch, port)
     _link_addr(client, owner_headers, wallet, [3])
 

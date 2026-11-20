@@ -25,7 +25,8 @@ from hydrahive.db.connection import db
 
 from . import audit
 from .access import conflict, membership
-from .crypto_bridge import CryptoBridgeUnavailable, _booked_balance, _load_port, _require_wallet_owned_by
+from . import crypto_bridge
+from .crypto_bridge import CryptoBridgeUnavailable, _require_wallet_owned_by
 
 
 def get_addresses(principal: AuthPrincipal) -> list[dict]:
@@ -44,7 +45,7 @@ def get_addresses(principal: AuthPrincipal) -> list[dict]:
             ).fetchall()
         }
     try:
-        port = _load_port()
+        port = crypto_bridge._load_port()
     except CryptoBridgeUnavailable as exc:
         raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "crypto_bridge_unavailable", reason=exc.reason) from exc
     if not hasattr(port, "wallet_addresses_for"):
@@ -75,7 +76,7 @@ def link_addresses(account_id: int, body, principal: AuthPrincipal) -> dict:
         if not body.address_ids:
             raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "crypto_addresses_required")
         try:
-            port = _load_port()
+            port = crypto_bridge._load_port()
         except CryptoBridgeUnavailable as exc:
             raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "crypto_bridge_unavailable", reason=exc.reason) from exc
         if not hasattr(port, "wallet_addresses_for"):

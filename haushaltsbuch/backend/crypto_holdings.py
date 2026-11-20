@@ -19,7 +19,8 @@ from hydrahive.db.connection import db
 
 from .access import membership
 from .crypto_addresses import _own_address_ids
-from .crypto_bridge import CryptoBridgeUnavailable, _booked_balance, _load_port, _require_wallet_owned_by
+from . import crypto_bridge
+from .crypto_bridge import CryptoBridgeUnavailable, _booked_balance, _require_wallet_owned_by
 
 
 def _store_holdings_snapshot(
@@ -92,7 +93,7 @@ def get_crypto_holdings(account_id: int, principal: AuthPrincipal) -> dict:
         address_ids = [row["address_id"] for row in links]
 
     try:
-        port = _load_port()
+        port = crypto_bridge._load_port()
     except CryptoBridgeUnavailable as exc:
         return _stale_holdings_result(account_id, snapshot, booked_balance, exc.reason)
     if not hasattr(port, "wallet_holdings"):
