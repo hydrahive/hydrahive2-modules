@@ -28,6 +28,7 @@ class NormalizedRecord:
     category_hint: str | None = None
     counter_account_id: int | None = None
     category_id: int | None = None
+    row_account_id: int | None = None
     warnings: tuple[str, ...] = field(default_factory=tuple)
     errors: tuple[str, ...] = field(default_factory=tuple)
 

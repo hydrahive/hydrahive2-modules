@@ -70,8 +70,8 @@ def insert_import_rows(
             row_status = "error"
         conn.execute(
             "INSERT INTO module_haushaltsbuch_import_rows"
-            "(household_id,batch_id,source_line,booking_date,value_date,amount_minor,currency,counterparty,purpose,counterparty_identifier,bank_reference,category_hint,counter_account_id,category_id,warnings_json,errors_json,fingerprint,fingerprint_strength,status) "
-            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "(household_id,batch_id,source_line,booking_date,value_date,amount_minor,currency,counterparty,purpose,counterparty_identifier,bank_reference,category_hint,counter_account_id,category_id,row_account_id,warnings_json,errors_json,fingerprint,fingerprint_strength,status) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (household_id, batch_id, record.source_line,
              record.booking_date.isoformat() if record.booking_date else None,
              record.value_date.isoformat() if record.value_date else None,
@@ -79,6 +79,7 @@ def insert_import_rows(
              _safe_text(record.counterparty, 240), _safe_text(record.purpose, 500),
              _safe_text(record.counterparty_identifier, 32), _safe_text(record.bank_reference, 240),
              _safe_text(record.category_hint, 120), record.counter_account_id, record.category_id,
+             record.row_account_id,
              json.dumps(warnings), json.dumps(errors), fingerprint, strength, row_status),
         )
 
