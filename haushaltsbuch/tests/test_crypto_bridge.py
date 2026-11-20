@@ -21,20 +21,31 @@ class FakePortfolioUnavailable(RuntimeError):
     pass
 
 
+class FakeWalletAddressNotFound(LookupError):
+    pass
+
+
 class FakePort:
     """Fake-Implementierung des Read-Ports mit demselben Interface wie
     cryptoboard/backend/read_port.py (PORT_VERSION, portfolios_for,
-    portfolio_value, trades, PortfolioNotFound, PortfolioUnavailable)."""
+    portfolio_value, trades, PortfolioNotFound, PortfolioUnavailable) UND den
+    v2-Funktionen (wallet_addresses_for, wallet_holdings, WalletAddressNotFound,
+    VERTRAG-PORT-V2.md). PORT_VERSION 2, weil crypto_bridge/crypto_addresses v2
+    erwarten - die v1-Funktionen bleiben dabei unverändert (Vertrag: "v1 bleibt
+    funktionsfähig")."""
 
-    PORT_VERSION = 1
+    PORT_VERSION = 2
     PortfolioNotFound = FakePortfolioNotFound
     PortfolioUnavailable = FakePortfolioUnavailable
+    WalletAddressNotFound = FakeWalletAddressNotFound
 
     def __init__(self):
         self.calls: list[tuple[str, str]] = []  # (method, username)
         self.portfolios: dict[str, list[dict]] = {}
         self.values: dict[str, dict] = {}
         self.trade_data: dict[str, list[dict]] = {}
+        self.addresses: dict[str, list[dict]] = {}
+        self.holdings: dict[str, dict] = {}
         self.fail_with: Exception | None = None
 
     def portfolios_for(self, username: str) -> list[dict]:
@@ -57,6 +68,20 @@ class FakePort:
         if since:
             rows = [r for r in rows if r["executed_at"] >= since]
         return rows[:limit]
+
+    def wallet_addresses_for(self, username: str) -> list[dict]:
+        self.calls.append(("wallet_addresses_for", username))
+        return self.addresses.get(username, [])
+
+    async def wallet_holdings(self, username: str, address_ids: list[int]) -> dict:
+        self.calls.append(("wallet_holdings", username))
+        if self.fail_with is not None:
+            raise self.fail_with
+        own_ids = {a["id"] for a in self.addresses.get(username, [])}
+        for aid in address_ids:
+            if aid not in own_ids:
+                raise FakeWalletAddressNotFound(aid)
+        return self.holdings[username]
 
 
 def _fake_port_version(version: int):

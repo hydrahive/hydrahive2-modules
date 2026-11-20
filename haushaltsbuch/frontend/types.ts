@@ -46,6 +46,8 @@ export interface Account {
   linked_portfolio_id: string | null
   linked_by_me: boolean
   crypto_linked: boolean
+  /** Crypto-Brücke v2: verknüpfte Cryptoboard-Adressen – nur für den Verknüpfer gefüllt, sonst leer. */
+  crypto_addresses: CryptoAddressRef[]
 }
 export interface AccountCreate {
   name: string
@@ -407,4 +409,20 @@ export interface CryptoTradeImportBody {
   fiat_account_id: number
   fee_category_id: number | null
   since: IsoDate | null
+}
+
+// Crypto-Brücke v2 (Etappe A1/A2): Adressen statt Portfolio, Bestand je Coin. Menge = Decimal-String, Geld = Integer-Cent.
+export interface CryptoAddressRef { address_id: number; chain: string; address_short: string }
+export interface CryptoBoardAddress { id: number; chain: string; address: string; label: string | null; linked_account_id: number | null }
+export interface CryptoHolding { chain: string; address_id: number; symbol: string; coin_id: string; quantity: string; value_minor: number | null; verified: boolean }
+export interface CryptoHoldings {
+  account_id: number
+  state: CryptoValueState
+  value_minor: number | null
+  as_of: string | null
+  complete: boolean
+  holdings: CryptoHolding[]
+  addresses: { id: number; chain: string; address: string; label: string | null }[]
+  booked_balance: number
+  reason: string | null
 }

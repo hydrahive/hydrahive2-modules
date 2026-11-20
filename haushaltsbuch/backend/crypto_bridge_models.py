@@ -17,3 +17,11 @@ class CryptoTradeImportRequest(BaseModel):
     fiat_account_id: int = Field(gt=0)
     fee_category_id: int | None = Field(default=None, gt=0)
     since: date | None = None
+
+
+class CryptoAddressLinkCreate(BaseModel):
+    """PUT /accounts/{id}/crypto-addresses (v2, VERTRAG-PORT-V2.md): ersetzt
+    die Adressliste eines Wallet-Kontos."""
+
+    address_ids: list[int] = Field(min_length=1)
+    revision: int = Field(ge=1)

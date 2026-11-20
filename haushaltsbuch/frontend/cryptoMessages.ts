@@ -11,6 +11,9 @@ export const CRYPTO_MESSAGES: Record<string, string> = {
   crypto_fiat_account_invalid: "Bitte wähle ein normales Konto (z. B. Girokonto) in Euro, das nicht archiviert und kein Wallet ist.",
   crypto_fee_category_invalid: "Als Gebühren-Kategorie ist nur eine Ausgaben-Kategorie erlaubt.",
   crypto_bridge_unavailable: "Cryptoboard ist gerade nicht erreichbar (nicht installiert oder nicht aktiv). Bitte versuche es später noch einmal.",
+  crypto_addresses_required: "Bitte wähle mindestens eine Adresse aus. Zum Entfernen aller Adressen nutze „Alle Adressen lösen“.",
+  crypto_address_not_found: "Diese Adresse gibt es in deinem Cryptoboard nicht (mehr). Bitte lade die Liste neu und wähle erneut.",
+  crypto_address_already_linked: "Mindestens eine dieser Adressen ist bereits mit einem anderen Konto verknüpft. Löse sie dort zuerst.",
   owner_only: "Nur wer die Verknüpfung angelegt hat oder der Haushaltseigentümer darf das.",
   no_records: "Es gibt keine passenden Einträge, die sich importieren lassen (bei Trades: keine Käufe oder Verkäufe im gewählten Zeitraum).",
 }

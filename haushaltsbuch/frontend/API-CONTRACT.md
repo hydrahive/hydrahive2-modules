@@ -107,6 +107,43 @@ Cryptoboard-Interna. Geld ausschließlich Integer-Minor-Units; Krypto-Mengen ble
   Live-Wert; der Port wird ausschließlich mit dem Username des verknüpfenden Users
   aufgerufen, nie mit dem eines anderen Mitglieds.
 
+## Crypto-Brücke v2 — Adressen statt Portfolio, Bestand je Coin (Etappe A1/A2)
+
+Zusätzlich zur Portfolio-Verknüpfung oben (die weiter funktioniert): ein Wallet-Konto kann
+an eine oder mehrere eigene Cryptoboard-ADRESSEN gebunden werden (z. B. Base + Ethereum mit
+derselben 0x-Adresse als EIN Konto). Erfordert Cryptoboard-Read-Port `PORT_VERSION 2`
+(`wallet_addresses_for`, `wallet_holdings`); ist der Port noch v1 oder nicht erreichbar,
+liefern die Endpunkte unten fail-closed einen Fehler bzw. (bei `crypto-holdings`) den
+letzten Bestands-Snapshot (`state="stale"`) — wie bei `crypto-value`.
+
+- `GET /crypto-bridge/addresses` → Liste der eigenen Cryptoboard-Adressen
+  `{id, chain, address, label, linked_account_id}`. `linked_account_id` ist die ID des
+  Kontos DIESES Haushalts, an das die Adresse bereits gebunden ist, sonst `null`.
+- `GET /accounts` (bestehend) — jede Wallet-Zeile zusätzlich: `crypto_addresses`
+  (`[{address_id, chain, address_short}]`, `address_short` wie `"0xa1aE…696E"`/
+  `"TWgdiv…ZeyD"`, leer bei nicht-Wallet-Konten oder ohne Verknüpfung).
+- `PUT /accounts/{id}/crypto-addresses` body `{address_ids:[int], revision}` → Account
+  (inkl. `crypto_addresses`). Ersetzt die komplette Adressliste des Kontos (nicht additiv).
+  Nur für `type=wallet`, nicht archiviert; alle `address_ids` müssen im eigenen
+  `wallet_addresses_for` enthalten sein; eine Adresse darf nur an einem Konto hängen.
+  Fehlercodes (422): `crypto_wallet_required`, `crypto_addresses_required` (leere Liste),
+  `crypto_bridge_unavailable` (Port fehlt/falsche Version); 404 `crypto_address_not_found`
+  (fremde/unbekannte address_id, kein Existenz-Leak); 409 `crypto_address_already_linked`
+  (Adresse hängt schon an einem anderen Konto), `revision_conflict`.
+- `DELETE /accounts/{id}/crypto-addresses?revision=n` → Account. Löst ALLE Adressen des
+  Kontos und löscht den Holdings-Snapshot. Durch den Verknüpfer oder den Haushalts-Owner
+  (403 `owner_only` sonst); 409 `crypto_account_not_linked` wenn nichts verknüpft ist.
+- `GET /accounts/{id}/crypto-holdings` → `{account_id, state, value_minor, as_of, complete,
+  holdings, addresses, booked_balance, reason}`. `state` wie bei `crypto-value`:
+  `"unlinked"` | `"hidden"` (von einem anderen Mitglied verknüpft, Port wird nicht
+  aufgerufen) | `"live"` | `"stale"` (Port/Portfolio nicht verfügbar oder noch v1 — letzter
+  Snapshot inkl. `holdings`/`addresses`, `reason` gesetzt). `holdings` ist
+  `[{chain, address_id, symbol, coin_id, quantity, value_minor, verified}]` — `quantity` ist
+  IMMER ein Decimal-String (nie eine Zahl), `value_minor` Integer-Cent oder `null` wenn für
+  diesen Coin kein Kurs vorliegt (dann ist `complete=false`). `addresses` ist
+  `[{id, chain, address, label}]` der an das Konto gebundenen Adressen. 404
+  `crypto_address_not_found` falls der Port eine verknüpfte address_id nicht mehr kennt.
+
 ## Kundenkarten-Fundament (V4.0)
 
 - `GET /loyalty/connections` listet für Mitglieder sichtbare Verbindungen. Private Verbindungen sind nur für den Besitzer und den Haushaltseigentümer sichtbar.

@@ -4,7 +4,7 @@ import type { CryptoValue } from "./types"
 import { Button } from "./ui"
 import type { ReportResult } from "./useReport"
 
-const asOfLabel = (asOf: string): string => {
+export const asOfLabel = (asOf: string): string => {
   const date = new Date(asOf)
   return Number.isNaN(date.getTime()) ? asOf : date.toLocaleString(navigator.language, { dateStyle: "medium", timeStyle: "short" })
 }

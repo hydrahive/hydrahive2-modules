@@ -26,7 +26,31 @@ def _member_owner_valid(conn, household_id: int, member_id: int | None) -> None:
         raise coded(status.HTTP_404_NOT_FOUND, "member_not_found")
 
 
-def _account_dict(row: sqlite3.Row, principal: AuthPrincipal) -> dict:
+def _short_address(address: str) -> str:
+    """Kurzform wie im Zieldokument (z.B. "0xa1aE…696E", "TWgdiv…ZeyD")."""
+    if len(address) <= 10:
+        return address
+    return f"{address[:6]}…{address[-4:]}"
+
+
+def _crypto_addresses_for(conn: sqlite3.Connection, account_id: int, linked_user_id: str) -> list[dict]:
+    """Verknüpfte Adressen eines Wallet-Kontos - NUR wenn `linked_user_id` den
+    anfragenden Principal betrifft (Aufrufer übergibt dafür bereits dessen
+    user_id oder None). Verhindert, dass Mitglied B die Adressen sieht, die
+    Mitglied A an ein gemeinsames Haushaltskonto gebunden hat (gleiche Regel
+    wie linked_portfolio_id: nur sichtbar wenn linked_by_me)."""
+    rows = conn.execute(
+        "SELECT address_id,chain,address FROM module_haushaltsbuch_account_crypto_addresses "
+        "WHERE account_id=? AND linked_user_id=? ORDER BY id",
+        (account_id, linked_user_id),
+    ).fetchall()
+    return [
+        {"address_id": row["address_id"], "chain": row["chain"], "address_short": _short_address(row["address"])}
+        for row in rows
+    ]
+
+
+def _account_dict(row: sqlite3.Row, principal: AuthPrincipal, conn: sqlite3.Connection | None = None) -> dict:
     result = as_dict(row)
     linked_by_me = (
         result["linked_user_id"] is not None and result["linked_user_id"] == principal.user_id
@@ -36,6 +60,10 @@ def _account_dict(row: sqlite3.Row, principal: AuthPrincipal) -> dict:
     if not linked_by_me:
         result["linked_portfolio_id"] = None
     result.pop("linked_user_id", None)
+    if result["type"] == "wallet" and conn is not None and linked_by_me:
+        result["crypto_addresses"] = _crypto_addresses_for(conn, result["id"], principal.user_id)
+    else:
+        result["crypto_addresses"] = []
     return result
 
 
@@ -53,7 +81,7 @@ def account_with_balance(conn, account_id: int, principal: AuthPrincipal) -> dic
         "WHERE a.id=? GROUP BY a.id",
         (account_id,),
     ).fetchone()
-    return _account_dict(row, principal)
+    return _account_dict(row, principal, conn)
 
 
 def list_accounts(
@@ -69,7 +97,7 @@ def list_accounts(
             + "GROUP BY a.id ORDER BY a.archived,a.name",
             (member["household_id"],),
         ).fetchall()
-    return [_account_dict(row, principal) for row in rows]
+        return [_account_dict(row, principal, conn) for row in rows]
 
 
 def create_account(body, principal: AuthPrincipal) -> dict:
@@ -154,6 +182,7 @@ def create_account(body, principal: AuthPrincipal) -> dict:
     result["balance_base"] = body.opening_balance
     result["linked_by_me"] = False
     result["crypto_linked"] = False
+    result["crypto_addresses"] = []
     result.pop("linked_user_id", None)
     return result
 
@@ -206,7 +235,8 @@ def update_account(account_id: int, body, principal: AuthPrincipal) -> dict:
             before,
             after,
         )
-    return _account_dict(after, principal)
+        result = _account_dict(after, principal, conn)
+    return result
 
 
 def _validate_parent(

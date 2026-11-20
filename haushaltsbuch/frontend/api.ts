@@ -3,7 +3,7 @@ import { useAuthStore } from "@/features/auth/useAuthStore"
 import { useVaultStore } from "@/features/vault/vaultStore"
 import type {
   Account, AccountCreate, AccountUpdate, AuditEvent, Budget, BudgetCreate, BudgetReport, BudgetUpdate,
-  CashflowReport, Category, CategoryCreate, CryptoBridgeStatus, CryptoTradeImportBody, CryptoValue, CategoryReport, CategoryUpdate, Dashboard, FixedCostReport, Forecast, Household, HouseholdCreate,
+  CashflowReport, Category, CategoryCreate, CryptoBoardAddress, CryptoBridgeStatus, CryptoHoldings, CryptoTradeImportBody, CryptoValue, CategoryReport, CategoryUpdate, Dashboard, FixedCostReport, Forecast, Household, HouseholdCreate,
   ImportBatch, ImportProfile, ImportProfileCreate, ImportProfileUpdate, ImportRow,
   ImportRowUpdate, ImportUpload, Invite, Member, NetWorthReport, RecurringCreate, RecurringRule,
   RecurringUpdate, ReportKind, ReportRange, Transaction, TransactionCreate, TransactionFilters,
@@ -70,6 +70,10 @@ export const haushaltsbuchApi = {
   linkCrypto: (id: number, portfolio_id: string, revision: number) => api.put<Account>(`${BASE}/accounts/${id}/crypto-link`, { portfolio_id, revision }),
   unlinkCrypto: (id: number, revision: number) => api.delete<Account>(`${BASE}/accounts/${id}/crypto-link?revision=${revision}`),
   cryptoValue: (id: number) => api.get<CryptoValue>(`${BASE}/accounts/${id}/crypto-value`),
+  cryptoAddresses: () => api.get<CryptoBoardAddress[]>(`${BASE}/crypto-bridge/addresses`),
+  linkCryptoAddresses: (id: number, address_ids: number[], revision: number) => api.put<Account>(`${BASE}/accounts/${id}/crypto-addresses`, { address_ids, revision }),
+  unlinkCryptoAddresses: (id: number, revision: number) => api.delete<Account>(`${BASE}/accounts/${id}/crypto-addresses?revision=${revision}`),
+  cryptoHoldings: (id: number) => api.get<CryptoHoldings>(`${BASE}/accounts/${id}/crypto-holdings`),
   createCryptoTradeImport: (body: CryptoTradeImportBody) => api.post<ImportBatch>(`${BASE}/crypto-bridge/trade-imports`, body),
 
   budgets: (active_only = true) => api.get<Budget[]>(`${BASE}/budgets${query({ active_only })}`),
