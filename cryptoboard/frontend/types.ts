@@ -346,6 +346,9 @@ export interface OnchainEntry {
   preis_fehlt: boolean
   gebuehr_fehlt: boolean
   duplicate: boolean
+  /** Backend-Urteil nach derselben Regel wie der Commit (1.7.0, nur Info – das UI rechnet selbst). */
+  buchbar?: boolean
+  nicht_buchbar_grund?: string | null
 }
 
 export interface OnchainWrap {

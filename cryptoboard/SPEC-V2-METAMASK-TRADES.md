@@ -142,6 +142,46 @@ Chains `base`/`ethereum`/`tron`/`bitcoin`) und zeigt davon nur den aktuellen
   — jede andere Methode wird vor dem Netzaufruf abgelehnt. Der gesamte
   Baustein bleibt im bestehenden "NUR Lesen"-Vertrag des Moduls.
 
+### Chain-übergreifende Swaps (1.7.0)
+
+Tills Swaps laufen über einen Dienst: TRX geht auf Tron raus, 1–3 Minuten später kommt
+z. B. USDC auf seiner Base-Adresse von der Adresse des Dienstes rein. Innerhalb einer
+einzelnen Transaktion ist das nicht erkennbar, deshalb paart 1.7.0 über Chains hinweg.
+
+- **Einstieg:** `POST /portfolio/import/onchain/preview_all {window_minutes?}` liest ALLE
+  verknüpften Adressen (Base/Ethereum über Alchemy, Tron über tronscan; Bitcoin wird
+  übersprungen). Ein Fehler einer Adresse bricht den Lauf nicht ab (`addresses[].status`).
+  Antwort: `transactions`, `pairs`, `mehrdeutig`, `ausgaben`, `spam`, `wraps`, `unklar`,
+  `counts` (Vertrag: `_work/cb-crosschain-notes/VERTRAG.md`). Der Einzel-Endpunkt bleibt.
+- **Tron-Quelle:** tronscan `/api/transaction` (keylos, nur lesend, Paging über `start`,
+  Grenzen 1000 Tx / 2 Jahre). Gezählt werden nur bestätigte, erfolgreiche Vorgänge:
+  `contractType 1` (TRX-Transfer, Menge `amount` in SUN) und `contractType 31`
+  (TriggerSmartContract, z. B. `swapEth`) NUR mit `contractData.call_value > 0`
+  (Menge = call_value, Ziel = `contractData.contract_address`). Netzgebühr aus `cost.fee`.
+- **Paarungsregeln** (`xchain_pairing`): TRX-Abgänge chronologisch; Kandidat ist ein
+  Eingang auf einer EVM-Adresse des Nutzers NACH dem Abgang im Fenster (Default 15 min),
+  dessen Absender KEINE eigene Adresse ist. Kein Kandidat → `unklar` (`nur_raus`, Tron).
+  Mehrere → der zeitlich nächste. Zwei gleich nahe → kein Auto-Paar, `mehrdeutig` mit
+  beiden zur Auswahl. Jeder Eingang wird höchstens einmal gepaart. Paar = sell TRX +
+  buy Coin; EUR-Wert über die Stablecoin-Seite am Tag des TRX-Abgangs, TRX-Preis =
+  Wert/Menge (Decimal), Tron-Gebühr auf den sell-Eintrag.
+  `import_hash` = `xchain:{tron_tx}:{evm_chain}:{evm_tx}:sell|buy`.
+- **Spam** (`xchain_spam`): eingehende ERC20 mit Symbol außerhalb `[A-Za-z0-9]{1,15}`,
+  mit URL/Domain in Symbol oder Name oder ohne bekannten Token/CoinGecko-Treffer → nur
+  in `spam`, nie buchbar, nie unter `unklar`. Der Kontrakt entscheidet: echtes USDC ist
+  nie Spam, ein fremder Kontrakt mit Symbol „USDC“ schon.
+- **Ausgaben:** Abgänge ohne Gegenleistung (z. B. USDC über einen Zahlungsdienst) stehen
+  in `ausgaben` als `transfer_out` (`{chain}:{tx}:transfer_out`), nicht als Verkauf.
+  Im Dialog standardmäßig NICHT angehakt; ohne Preis buchbar (0). Ob das steuerlich ein
+  Verkauf ist, entscheidet der Nutzer.
+- **Buchbar:** Eine gemeinsame Regel (`onchain_rules.skip_reason`) für Preview und
+  Commit: gültiger Hash passend zum kind, nicht schon gebucht, coin_id vorhanden,
+  Preis vorhanden (außer `transfer_out`), gültiger Zeitpunkt. Jeder Eintrag trägt
+  `buchbar` und `nicht_buchbar_grund`; `counts.buchbar` zählt sofort buchbare Swaps
+  und Paare.
+- **Unklar-Gründe:** `nur_raus`, `nur_rein`, `mehrere_assets`, `keine_nettobewegung`,
+  `decimals_fehlt`.
+
 ## Nicht-Ziele dieser Etappe
 
 - Kein automatischer, ungeprüfter Import — jede erkannte Transaktion läuft
