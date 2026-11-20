@@ -99,6 +99,11 @@ def _day_price(coin_id: str | None, day: str | None) -> Decimal | None:
     return Decimal(str(price)) if price is not None else None
 
 
+def day_price(coin_id: str | None, day: str | None) -> Decimal | None:
+    """Öffentliche Fassade auf _day_price — für xchain_pairing.py (TRX-Gebühr in EUR)."""
+    return _day_price(coin_id, day)
+
+
 def _preference_rank(coin_id: str | None) -> int:
     if coin_id in _STABLE_COIN_IDS:
         return 0
