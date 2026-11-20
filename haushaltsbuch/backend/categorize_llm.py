@@ -77,26 +77,28 @@ def _parse(text: str):
     try:
         return json.loads(text)
     except (ValueError, TypeError):
-        return []
+        return None  # ungültig/abgeschnitten – Aufrufer meldet das (nicht still „keine Vorschläge“)
 
 
-def _build_prompt(groups: dict[str, dict], categories: list[sqlite3.Row]) -> str:
-    cat_lines = [
-        f'{c["id"]}: {c["name"]} ({c["kind"]})'
-        for c in categories
-        if not c["archived"]
-    ]
-    merchant_lines = [
-        f'{gid} :: {data["kind"]} :: {data["label"]}'
-        for gid, data in groups.items()
-    ]
+_BATCH = 40          # Händler je KI-Aufruf: Antwort bleibt klein, nichts wird abgeschnitten
+_MAX_TOKENS = 4096
+
+
+def _build_prompt(groups: dict[str, dict], categories: list[sqlite3.Row], short: dict[str, str]) -> str:
+    """Prompt mit KURZEN Händler-IDs (m1, m2 …): die KI muss keine langen Schlüssel zurückschreiben.
+
+    Befund 20.11.2026 (Tills Sparkassen-Import, 66 Händler): Die KI sollte den vollen
+    merchant_key (bis 180 Zeichen Rohtext) wiederholen; die Antwort brach bei
+    max_tokens ab, das JSON war ungültig, es gab 0 Vorschläge ohne Meldung."""
+    cat_lines = [f'{c["id"]}: {c["name"]} ({c["kind"]})' for c in categories if not c["archived"]]
+    merchant_lines = [f'{short[gid]} :: {data["kind"]} :: {data["label"]}' for gid, data in groups.items()]
     return (
         "Verfügbare Kategorien (category_id: Name (Art)):\n"
         + "\n".join(cat_lines)
-        + "\n\nHändler (merchant_key :: erwartete Art :: Beschreibung):\n"
+        + "\n\nHändler (id :: erwartete Art :: Beschreibung):\n"
         + "\n".join(merchant_lines)
         + '\n\nGib ein JSON-Array zurück. Jedes Element: '
-        '{"merchant_key": "<merchant_key>", "category_id": <int>, "confidence": <0..1>}. '
+        '{"id": "<id>", "category_id": <int>, "confidence": <0..1>}. '
         "Wähle nur category_id-Werte, deren Art zur erwarteten Art des Händlers passt. "
         "Wenn unsicher, wähle die plausibelste Kategorie mit niedrigerer confidence."
     )
@@ -121,32 +123,36 @@ async def suggest(
         if not cat["archived"]:
             valid_by_kind[cat["kind"]].add(cat["id"])
 
-    prompt = _build_prompt(groups, categories)
-    raw = await complete(
-        [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": prompt}],
-        model=model,
-        temperature=0.0,
-        max_tokens=2048,
-        **_role_kw(model, "modul-schnell"),
-    )
-    parsed = _parse(raw)
-    if not isinstance(parsed, list):
-        return {}
-
     result: dict[int, tuple[int, float]] = {}
-    for item in parsed:
-        if not isinstance(item, dict):
-            continue
-        group_key = item.get("merchant_key")
-        group = groups.get(group_key) if isinstance(group_key, str) else None
-        category_id = item.get("category_id")
-        if group is None or not isinstance(category_id, int):
-            continue
-        if category_id not in valid_by_kind.get(group["kind"], set()):
-            continue
-        confidence = item.get("confidence")
-        confidence = float(confidence) if isinstance(confidence, (int, float)) else 0.5
-        confidence = min(max(confidence, 0.0), 1.0)
-        for row_id in group["row_ids"]:
-            result[row_id] = (category_id, confidence)
+    keys = list(groups)
+    for start in range(0, len(keys), _BATCH):
+        part = {k: groups[k] for k in keys[start:start + _BATCH]}
+        short = {gid: f"m{n}" for n, gid in enumerate(part, start + 1)}
+        raw = await complete(
+            [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": _build_prompt(part, categories, short)}],
+            model=model,
+            temperature=0.0,
+            max_tokens=_MAX_TOKENS,
+            **_role_kw(model, "modul-schnell"),
+        )
+        parsed = _parse(raw)
+        if not isinstance(parsed, list):
+            # Antwort unbrauchbar (z. B. abgeschnitten) – laut melden statt still 0 Vorschläge.
+            raise ValueError("KI-Antwort war kein gültiges JSON-Array")
+        by_short = {v: k for k, v in short.items()}
+        for item in parsed:
+            if not isinstance(item, dict):
+                continue
+            ident = item.get("id", item.get("merchant_key"))
+            group = part.get(by_short.get(ident, ident)) if isinstance(ident, str) else None
+            category_id = item.get("category_id")
+            if group is None or not isinstance(category_id, int):
+                continue
+            if category_id not in valid_by_kind.get(group["kind"], set()):
+                continue
+            confidence = item.get("confidence")
+            confidence = float(confidence) if isinstance(confidence, (int, float)) else 0.5
+            confidence = min(max(confidence, 0.0), 1.0)
+            for row_id in group["row_ids"]:
+                result[row_id] = (category_id, confidence)
     return result

@@ -253,3 +253,41 @@ def test_ohne_ausfall_kein_hinweis(client, owner_headers, monkeypatch):
     batch = _upload_csv(client, owner_headers, account["id"], "Datum;Betrag;Empfaenger;Zweck\n10.02.2025;-1,00;X;Y".encode()).json()
     res = client.post(f"{PREFIX}/imports/{batch['id']}/suggest-categories", headers=owner_headers, json={})
     assert res.status_code == 200 and res.json()["suggestion_notice"] is None
+
+
+def test_viele_haendler_werden_aufgeteilt_und_kurze_ids_genuegen(client, owner_headers, monkeypatch):
+    """Befund 20.11.2026: 66 Händler in EINEM Aufruf, die KI sollte lange Schlüssel zurückschreiben,
+    die Antwort brach ab → 0 Vorschläge. Jetzt: Blöcke à 40, Antwort nur mit kurzen IDs."""
+    _create_household(client, owner_headers)
+    account = _create_account(client, owner_headers, opening_balance=0)
+    category = _expense_category(client, owner_headers)
+    calls: list[str] = []
+
+    async def _fake(messages, **_kw):
+        prompt = messages[-1]["content"]
+        calls.append(prompt)
+        ids = [line.split(" :: ")[0] for line in prompt.splitlines() if " :: " in line and not line.startswith("Händler")]
+        assert ids and all(len(i) <= 4 for i in ids)           # kurze IDs, kein Rohtext
+        return json.dumps([{"id": i, "category_id": category["id"], "confidence": 0.7} for i in ids])
+
+    monkeypatch.setattr("backend.categorize_llm.complete", _fake)
+    lines = "\n".join(f"01.03.2025;-{n},00;Haendler {n} mit sehr langem Namen und Zusatz;Zweck" for n in range(1, 56))
+    batch = _upload_csv(client, owner_headers, account["id"], f"Datum;Betrag;Empfaenger;Zweck\n{lines}".encode()).json()
+    body = client.post(f"{PREFIX}/imports/{batch['id']}/suggest-categories", headers=owner_headers, json={}).json()
+    assert len(calls) == 2
+    assert sum(r["suggested_category_id"] == category["id"] for r in body["rows"]) == 55
+    assert body["suggestion_notice"] is None
+
+
+def test_abgeschnittene_ki_antwort_wird_gemeldet_nicht_verschwiegen(client, owner_headers, monkeypatch):
+    _create_household(client, owner_headers)
+    account = _create_account(client, owner_headers, opening_balance=0)
+    _expense_category(client, owner_headers)
+
+    async def _abgeschnitten(*_a, **_kw):
+        return '[\n{"id": "m1", "category_id": 1, "conf'
+
+    monkeypatch.setattr("backend.categorize_llm.complete", _abgeschnitten)
+    batch = _upload_csv(client, owner_headers, account["id"], "Datum;Betrag;Empfaenger;Zweck\n01.03.2025;-1,00;X;Y".encode()).json()
+    body = client.post(f"{PREFIX}/imports/{batch['id']}/suggest-categories", headers=owner_headers, json={}).json()
+    assert body["suggestion_notice"] == "llm_unavailable"
