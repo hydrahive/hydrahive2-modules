@@ -5,6 +5,7 @@ import { CollapsibleBox } from "@/shared/CollapsibleBox"
 import { cryptoApi } from "../api"
 import { AddressForm } from "../components/AddressForm"
 import { AlchemyKeyBox } from "../components/AlchemyKeyBox"
+import { OnchainAllImportDialog } from "../components/OnchainAllImportDialog"
 import { OnchainTradeImportDialog } from "../components/OnchainTradeImportDialog"
 import { fmtPrice, fmtQty } from "../format"
 import type { WalletBalanceRow, WalletBalances, WalletTokenAgg } from "../types"
@@ -76,6 +77,7 @@ export function WalletsView() {
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
   const [importFor, setImportFor] = useState<WalletBalanceRow | null>(null)
+  const [importAll, setImportAll] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -132,6 +134,13 @@ export function WalletsView() {
         </div>
       )}
 
+      {importAll && (
+        <div className="rounded-xl border border-[rgb(var(--hh-s-rand,42_54_75))] bg-[rgb(var(--hh-s-innen,17_24_39))] p-4">
+          <h3 className="text-sm font-semibold text-[#e8eef8] mb-3">{t("oc_all_title")}</h3>
+          <OnchainAllImportDialog onDone={() => { void load() }} onCancel={() => setImportAll(false)} />
+        </div>
+      )}
+
       {/* Token-zentrierte Hauptansicht — über alle Wallets aggregiert */}
       <CollapsibleBox boxId="cryptoboard-tokens" color={C} icon={<Coins size={14} />} title={t("wl_tokens")}>
         <div className="box-b">
@@ -151,6 +160,12 @@ export function WalletsView() {
       {/* Adress-Verwaltung (Hinzufügen/Löschen + Roh-Bestände pro Adresse) */}
       <CollapsibleBox boxId="cryptoboard-wallets" color={C} icon={<Wallet size={14} />} title={t("wl_addresses")}>
         <div className="box-b">
+          {rows.length > 0 && !importAll && (
+            <button onClick={() => { setImportFor(null); setImportAll(true) }}
+              className="mb-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-sky-300 bg-[rgb(var(--hh-s-innen,17_24_39))] hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
+              <History size={13} /> {t("oc_all_action")}
+            </button>
+          )}
           {rows.length === 0 ? (
             <EmptyHint text={t("wl_empty")} />
           ) : (
@@ -162,7 +177,7 @@ export function WalletsView() {
                     {r.label && <span className="text-sm text-[#e8eef8]">{r.label}</span>}
                     <span className="text-[11px] text-[#9aa7bc] font-mono">{shorten(r.address)}</span>
                     {TRADE_CHAINS.has(r.chain) && (
-                      <button onClick={() => setImportFor(r)}
+                      <button onClick={() => { setImportAll(false); setImportFor(r) }}
                         className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded text-[11px] text-sky-300 hover:bg-[rgb(var(--hh-s-hebung,27_37_54))]">
                         <History size={12} /> {t("oc_action")}
                       </button>

@@ -1,4 +1,5 @@
 import { AlertTriangle, Copy, X } from "lucide-react"
+import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { fmtPrice, fmtQty } from "../format"
 import { displayNum, effective, groupPairs, missing, type Edits, type EntryEdit } from "../onchainImport"
@@ -11,9 +12,11 @@ interface Props {
   selected: Set<string>
   onToggle: (hash: string, on: boolean) => void
   onEdit: (hash: string, edit: EntryEdit) => void
+  /** Optionaler Zusatz in der Kopfzeile einer Gruppe (z. B. Chains + Verzögerung bei Paaren). */
+  headerExtra?: (txHash: string) => ReactNode
 }
 
-const KIND_STYLE: Record<string, string> = { buy: "text-emerald-400", sell: "text-rose-400" }
+const KIND_STYLE: Record<string, string> = { buy: "text-emerald-400", sell: "text-rose-400", transfer_out: "text-amber-300" }
 const input = "w-24 px-1.5 py-0.5 rounded bg-[rgb(var(--hh-s-box,21_28_43)/0.7)] border border-[rgb(var(--hh-s-rand,42_54_75))] text-xs text-right tabular-nums text-[#e8eef8] outline-none"
 
 function Row({ e, edit, checked, onToggle, onEdit }: {
@@ -59,7 +62,7 @@ function Row({ e, edit, checked, onToggle, onEdit }: {
             <input value={edit?.price ?? ""} inputMode="decimal" placeholder="€" aria-label={t("tx_col_price")}
               onChange={(ev) => onEdit(e.hash, { ...edit, price: ev.target.value })}
               className={`${input} ${eff.priceInvalid ? "border-rose-400" : "border-amber-400/70"}`} />
-            <div className="text-[10px] text-amber-400">{t("oc_price_required")}</div>
+            <div className="text-[10px] text-amber-400">{t(e.kind === "transfer_out" ? "oc_price_optional" : "oc_price_required")}</div>
           </>
         ) : (
           <span className="tabular-nums text-[#c8d2df]" title={e.price ?? ""}>{fmtPrice(displayNum(e.price), "eur")}</span>
@@ -89,7 +92,7 @@ function Row({ e, edit, checked, onToggle, onEdit }: {
 
 // Vorschau der erkannten Swaps: je Transaktion sell + buy zusammen, Pflichtfelder
 // (Preis, Coin) direkt in der Zeile. Duplikate ausgegraut und nicht wählbar.
-export function OnchainPreviewTable({ entries, edits, selected, onToggle, onEdit }: Props) {
+export function OnchainPreviewTable({ entries, edits, selected, onToggle, onEdit, headerExtra }: Props) {
   const { t } = useTranslation("cryptoboard")
   const pairs = groupPairs(entries)
   return (
@@ -111,7 +114,8 @@ export function OnchainPreviewTable({ entries, edits, selected, onToggle, onEdit
             <tr className="bg-[rgb(var(--hh-s-innen,17_24_39))]">
               <td colSpan={7} className="px-2 py-1 text-[10px] text-[#9aa7bc]">
                 <span className="tabular-nums">{p.executed_at ?? "—"}</span>
-                <span className="ml-2 font-mono">{p.tx_hash.slice(0, 10)}…{p.tx_hash.slice(-6)}</span>
+                {headerExtra ? headerExtra(p.tx_hash)
+                  : <span className="ml-2 font-mono">{p.tx_hash.slice(0, 10)}…{p.tx_hash.slice(-6)}</span>}
               </td>
             </tr>
             {p.entries.map((e) => (

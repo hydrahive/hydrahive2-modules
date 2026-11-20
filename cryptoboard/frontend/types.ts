@@ -337,7 +337,7 @@ export interface OnchainEntry {
   coin_id: string | null
   symbol: string
   name: string
-  kind: "sell" | "buy"
+  kind: "sell" | "buy" | "transfer_out"
   quantity: string
   price: string | null
   fee: string | null
@@ -356,6 +356,7 @@ export interface OnchainWrap {
 
 export interface OnchainUnklar {
   hash: string
+  chain?: string          // nur bei „alle Adressen“
   executed_at: string | null
   reason: string
   tokens: { symbol: string; contract: string | null; category: string | null; direction: "raus" | "rein" | "fremd"; amount: string | null }[]
@@ -388,12 +389,87 @@ export interface OnchainCommitTx {
   coin_id: string
   symbol: string
   name: string
-  kind: "sell" | "buy"
+  kind: "sell" | "buy" | "transfer_out"
   quantity: string
-  price: string
+  price: string | null    // transfer_out darf ohne Preis gebucht werden (Backend: 0)
   fee: string | null
   executed_at: string
   hash: string
+}
+
+// ---- Trades aller Adressen (preview_all, Vertrag 1.7.0) ----
+export interface OnchainAddressStatus {
+  id: number
+  chain: string
+  address: string
+  label: string | null
+  status: "ok" | "fehler"
+  error: string | null
+  truncated: boolean
+  before_block: string | null
+}
+
+export interface OnchainXPair {
+  id: string              // xchain:{tron_tx}:{evm_chain}:{evm_tx} = tx_hash beider Einträge
+  tron_tx: string
+  evm_chain: string
+  evm_tx: string
+  sell_at: string | null
+  buy_at: string | null
+  delay_seconds: number
+  entries: OnchainEntry[] // sell TRX, buy z. B. USDC
+}
+
+export interface OnchainCandidate {
+  evm_chain: string
+  evm_tx: string
+  executed_at: string | null
+  symbol: string
+  amount: string
+  delay_seconds: number
+  entries: OnchainEntry[]
+}
+
+export interface OnchainMehrdeutig {
+  tron_tx: string
+  executed_at: string | null
+  symbol: string
+  amount: string
+  candidates: OnchainCandidate[]
+}
+
+export type OnchainSpamGrund = "symbol_nicht_ascii" | "url_im_namen" | "unbekannter_token"
+
+export interface OnchainSpam {
+  hash: string
+  chain: string
+  executed_at: string | null
+  symbol: string
+  contract: string | null
+  amount: string | null
+  grund: OnchainSpamGrund | string
+}
+
+export interface OnchainAllCounts extends OnchainCounts {
+  pairs: number
+  mehrdeutig: number
+  ausgaben: number
+  spam: number
+  buchbar: number
+}
+
+export interface OnchainPreviewAll {
+  addresses: OnchainAddressStatus[]
+  transactions: OnchainEntry[]
+  pairs: OnchainXPair[]
+  mehrdeutig: OnchainMehrdeutig[]
+  ausgaben: OnchainEntry[]
+  spam: OnchainSpam[]
+  wraps: OnchainWrap[]
+  unklar: OnchainUnklar[]
+  kurs_abruf_fehlgeschlagen: boolean
+  window_minutes: number
+  counts: OnchainAllCounts
 }
 
 export interface OnchainCommitResult {
