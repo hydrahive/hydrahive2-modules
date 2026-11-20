@@ -30,6 +30,7 @@ from __future__ import annotations
 from . import onchain_import as oi, onchain_resolve as rs, portfolio_store as store
 from . import xchain_pairing as xp
 from .onchain_fetch_all import collect_all
+from .onchain_rules import mark_bookable
 
 EVM_CHAINS = oi.CHAINS  # ("base", "ethereum")
 
@@ -84,26 +85,10 @@ async def _resolve_prices(data: dict, key: str) -> tuple[list[dict], bool]:
     return transactions, kurs_abruf_fehlgeschlagen
 
 
-def _mark_duplicates(user: str, transactions: list[dict], pairs_out: list[dict],
-                      mehrdeutig: list[dict], ausgaben: list[dict]) -> None:
-    all_hashes = (
-        [e["hash"] for e in transactions]
-        + [e["hash"] for pr in pairs_out for e in pr["entries"]]
-        + [e["hash"] for m in mehrdeutig for c in m["candidates"] for e in c["entries"]]
-        + [e["hash"] for e in ausgaben]
-    )
-    already = store.existing_hashes(user, all_hashes)
-    for e in transactions:
-        e["duplicate"] = e["hash"] in already
-    for pr in pairs_out:
-        for e in pr["entries"]:
-            e["duplicate"] = e["hash"] in already
-    for m in mehrdeutig:
-        for c in m["candidates"]:
-            for e in c["entries"]:
-                e["duplicate"] = e["hash"] in already
-    for e in ausgaben:
-        e["duplicate"] = e["hash"] in already
+def _all_entries(transactions: list[dict], pairs_out: list[dict], mehrdeutig: list[dict],
+                 ausgaben: list[dict]) -> list[dict]:
+    return (transactions + [e for pr in pairs_out for e in pr["entries"]]
+            + [e for m in mehrdeutig for c in m["candidates"] for e in c["entries"]] + ausgaben)
 
 
 async def preview_all(user: str, key: str, *, window_minutes: int = xp.DEFAULT_WINDOW_MINUTES) -> dict:
@@ -113,11 +98,15 @@ async def preview_all(user: str, key: str, *, window_minutes: int = xp.DEFAULT_W
     paired = xp.pair_all(data["tron_sells"], data["candidates"], data["own_addresses"],
                           window_minutes=window_minutes)
     consumed = paired["consumed"]
+    # Spam steht NUR in "spam" – nie zusätzlich unter "unklar".
+    spam_keys = {(sp["chain"], str(sp["hash"]).lower()) for sp in data["spam"]}
     unconsumed_generic = [
         oi.compact_unklar(chain, address, item)
         for chain, address, detected, _grouped in data["detected"]
         for item in detected["unklar"]
-        if item.get("reason") == "nur_rein" and (chain, str(item["hash"]).lower()) not in consumed
+        if item.get("reason") == "nur_rein"
+        and (chain, str(item["hash"]).lower()) not in consumed
+        and (chain, str(item["hash"]).lower()) not in spam_keys
     ]
 
     transactions, kurs_abruf_fehlgeschlagen = await _resolve_prices(data, key)
@@ -130,12 +119,11 @@ async def preview_all(user: str, key: str, *, window_minutes: int = xp.DEFAULT_W
     ]
     unklar_all = data["generic_unklar"] + unconsumed_generic + data["tron_unklar"] + paired["unklar_tron"]
 
-    _mark_duplicates(user, transactions, pairs_out, paired["mehrdeutig"], data["ausgaben"])
-
-    buchbar = sum(
-        1 for e in transactions + [e for pr in pairs_out for e in pr["entries"]]
-        if not e["duplicate"] and e["price"] is not None
-    )
+    everything = _all_entries(transactions, pairs_out, paired["mehrdeutig"], data["ausgaben"])
+    # Dieselbe Regel wie der Commit (onchain_rules.skip_reason) – setzt duplicate, buchbar, nicht_buchbar_grund.
+    mark_bookable(everything, store.existing_hashes(user, [e["hash"] for e in everything]))
+    # counts.buchbar: sofort buchbare Swaps/Paare (Ausgaben und Mehrdeutiges sind Opt-in, zählen nicht mit).
+    buchbar = sum(1 for e in transactions + [e for pr in pairs_out for e in pr["entries"]] if e["buchbar"])
 
     return {
         "addresses": data["address_status"],

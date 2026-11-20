@@ -134,6 +134,7 @@ def test_spam_eingang_landet_in_spam_nicht_in_unklar_oder_transactions(client, a
     assert spam["hash"] == H_SPAM.lower()
     assert spam["grund"] == "symbol_nicht_ascii"
     assert all(t["hash"] != f"base:{H_SPAM}:buy" for t in data["transactions"])
+    assert all(str(u.get("hash")).lower() != H_SPAM.lower() for u in data["unklar"])
 
 
 def test_reine_ausgabe_wird_transfer_out(client, auth_headers, setup):
