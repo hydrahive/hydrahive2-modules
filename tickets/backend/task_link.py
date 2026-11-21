@@ -9,6 +9,7 @@ from pydantic import Field
 from hydrahive.api.middleware.auth import AuthPrincipal
 from hydrahive.db.connection import db
 
+from . import catalog
 from .audit import record_event
 from .models import StrictModel
 from .notifications import notify_ticket
@@ -60,4 +61,5 @@ def create_linked_task(
         )
         notify_ticket(conn, request.ticket_id, principal.user_id, "task_created")
         row = conn.execute("SELECT * FROM module_tasks WHERE id=?", (task_id,)).fetchone()
+    catalog.changed(catalog.TASK_KIND, principal.username, task_id)  # erst nach dem Commit
     return dict(row)
