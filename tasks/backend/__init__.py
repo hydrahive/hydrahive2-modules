@@ -4,9 +4,11 @@ register(ctx) →
   - Router   /api/modules/tasks/tasks/*
   - Tools    task_write, task_list, task_read, task_delete
   - Migrationen 001_tasks.sql, 002_task_history.sql, 003_task_source.sql
+  - Katalog-Quelle kind="task" (Föderations-Katalog), nur wenn der Kern sie kennt
 """
 from __future__ import annotations
 
+from . import catalog
 from .routes import router
 from .tools import task_write, task_list, task_read, task_delete
 
@@ -18,3 +20,4 @@ def register(ctx) -> None:
     ctx.register_tool(task_read.TOOL)
     ctx.register_tool(task_delete.TOOL)
     ctx.register_migrations("migrations")
+    catalog.bind(ctx)
