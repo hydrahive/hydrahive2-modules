@@ -17,7 +17,7 @@ import sqlite3
 
 from hydrahive.db.connection import db
 
-from . import notes, store
+from . import catalog, notes, store
 
 BOARDS_TABLE = "module_blueprint_boards"
 MAX_BOARDS = 200  # wie blueprint/backend/store.py
@@ -109,4 +109,6 @@ def create(username: str, idea_id: str) -> tuple[dict, bool] | None:
                 (board_id, stamp, username, idea_id),
             )
             notes.insert(conn, idea_id, author="system", body=f"Board angelegt: ID {board_id}", stamp=stamp)
+    if created:
+        catalog.changed(username, idea_id)
     return store.get(username, idea_id), created  # type: ignore[return-value]

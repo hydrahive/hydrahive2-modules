@@ -5,6 +5,7 @@ from typing import Any
 
 from hydrahive.db.connection import db
 
+from . import catalog
 from .store import IdeaError, now
 
 AUTHORS = ("agent", "system")
@@ -32,7 +33,9 @@ def add(username: str, idea_id: str, *, author: str, body: Any, agent_name: str 
     with db(immediate=True) as conn:
         if not _owned(conn, username, idea_id):
             return None
-        return insert(conn, idea_id, author=author, body=text, agent_name=agent_name, stamp=now())
+        note = insert(conn, idea_id, author=author, body=text, agent_name=agent_name, stamp=now())
+    catalog.changed(username, idea_id)  # die Anmerkung setzt updated_at der Idee
+    return note
 
 
 def insert(conn, idea_id: str, *, author: str, body: str, stamp: str, agent_name: str | None = None) -> dict:

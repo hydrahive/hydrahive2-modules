@@ -12,6 +12,8 @@ from typing import Any
 
 from hydrahive.db.connection import db
 
+from . import catalog
+
 STATUSES = ("new", "review", "planned", "parked", "done", "dropped")
 OPEN_STATUSES = ("new", "review", "planned")
 ORIGINS = ("user", "agent")
@@ -144,6 +146,7 @@ def create(username: str, *, title: Any, body: Any = "", project_id: str | None 
             "VALUES (?, ?, ?, ?, ?, 'new', ?, ?, ?)",
             (new_id, username, project_id or None, title, body, origin, stamp, stamp),
         )
+    catalog.changed(username, new_id)
     return get(username, new_id)  # type: ignore[return-value]
 
 
@@ -176,6 +179,7 @@ def update(username: str, idea_id: str, *, title: Any = UNSET, body: Any = UNSET
         )
         if cur.rowcount == 0:
             return None
+    catalog.changed(username, idea_id)
     return get(username, idea_id)
 
 
@@ -183,4 +187,7 @@ def delete(username: str, idea_id: str) -> bool:
     """Idee samt Anmerkungen entfernen. Verknüpfter Task und Board bleiben bestehen."""
     with db() as conn:
         cur = conn.execute(f"DELETE FROM {_TABLE} WHERE username = ? AND id = ?", (username, idea_id))
-        return cur.rowcount > 0
+        deleted = cur.rowcount > 0
+    if deleted:
+        catalog.changed(username, idea_id)
+    return deleted

@@ -6,7 +6,7 @@ from typing import Any
 
 from hydrahive.db.connection import db
 
-from . import _history
+from . import _history, catalog
 
 VALID_STATUSES = {"open", "in_progress", "done", "cancelled"}
 VALID_PRIORITIES = {"low", "medium", "high"}
@@ -87,6 +87,7 @@ def create_task(
             """,
             (task_id, username, project_id, session_id, title, description, priority),
         )
+    catalog.changed(username, task_id)
     return get_task(username, task_id)  # type: ignore[return-value]
 
 
@@ -134,6 +135,7 @@ def update_task(
             " WHERE id = ? AND username = ?",
             [*fields.values(), task_id, username],
         )
+    catalog.changed(username, task_id)
     return get_task(username, task_id)
 
 
@@ -164,4 +166,7 @@ def delete_task(username: str, task_id: str) -> bool:
             "DELETE FROM module_tasks WHERE id = ? AND username = ?",
             (task_id, username),
         )
-        return cur.rowcount > 0
+        deleted = cur.rowcount > 0
+    if deleted:
+        catalog.changed(username, task_id)
+    return deleted

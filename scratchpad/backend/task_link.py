@@ -17,7 +17,7 @@ import uuid
 
 from hydrahive.db.connection import db
 
-from . import notes, render, store
+from . import catalog, notes, render, store
 
 TASKS_TABLE = "module_tasks"
 _IDEAS = "module_scratchpad_ideas"
@@ -133,4 +133,6 @@ def create(username: str, idea_id: str) -> dict | None:
         if idea["status"] != _PLANNED:
             line += f". Status: {render.status_label(idea['status'])} → {render.status_label(_PLANNED)}"
         notes.insert(conn, idea_id, author="system", body=line, stamp=stamp)
+    catalog.changed(username, task_id, catalog.TASK_KIND)  # neuer Task im Tasks-Modul
+    catalog.changed(username, idea_id)  # Idee: Verweis, Status, updated_at
     return store.get(username, idea_id)
