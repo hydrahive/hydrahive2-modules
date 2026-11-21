@@ -404,3 +404,52 @@ def test_payment_below_one_cent_is_unklar_not_pending(client, owner_headers, mon
     groups = _import(client, owner_headers).json()["groups"]
     assert groups["kartenzahlungen"]["count"] == 3
     assert {"id": "base:0xtiny:transfer_out", "reason": "betrag_unter_1_cent"} in groups["unklar"]
+
+
+def test_accept_all_suggestions_never_rebooks_duplicates(client, owner_headers, monkeypatch):
+    """Till 21.11.2026 (Batch 6): Vorschlagen + „Alle Vorschläge übernehmen“ setzte die 17 schon
+    gebuchten Swaps (Status 'duplicate') auf 'accepted' -> zweites Mal gebucht."""
+    port = FakePort()
+    _install_fake_port(monkeypatch, port)
+    tron, base, _eth = _setup_three_wallets(client, owner_headers, port)
+    port.ledger_moves_data["owner"] = _fixture_moves()
+    _accept_all_and_complete(client, owner_headers, _import(client, owner_headers).json())
+    tron_before = next(a for a in client.get(f"{PREFIX}/accounts", headers=owner_headers).json() if a["id"] == tron["id"])
+
+    port.ledger_moves_data["owner"] = [*_fixture_moves(), {
+        "type": "kartenzahlung", "id": "base:0xneu:transfer_out", "executed_at": "2026-05-01T12:00:00Z",
+        "chain": "base", "symbol": "USDC", "coin_id": "usd-coin", "quantity": "5", "value_minor": 500, "ref": "cb:neu"}]
+    batch = _import(client, owner_headers).json()
+    sonstiges = _expense_category(client, owner_headers)
+
+    async def _alles_sonstiges(messages, **_kw):
+        import json as _json
+        keys = [line.split(" :: ")[0] for line in messages[-1]["content"].splitlines() if " :: " in line]
+        return _json.dumps([{"id": k, "category_id": sonstiges["id"], "confidence": 0.9} for k in keys])
+
+    monkeypatch.setattr("backend.categorize_llm.complete", _alles_sonstiges)
+    assert client.post(f"{PREFIX}/imports/{batch['id']}/suggest-categories", headers=owner_headers, json={}).status_code == 200
+    rev = client.get(f"{PREFIX}/imports/{batch['id']}", headers=owner_headers).json()["revision"]
+    accepted = client.post(f"{PREFIX}/imports/{batch['id']}/accept-suggestions", headers=owner_headers,
+                           json={"revision": rev}).json()
+    assert not [r for r in accepted["rows"] if r["status"] == "accepted" and r["bank_reference"].startswith("xchain:")]
+
+    tron_after = next(a for a in client.get(f"{PREFIX}/accounts", headers=owner_headers).json() if a["id"] == tron["id"])
+    assert tron_after["balance_base"] == tron_before["balance_base"]
+
+
+def test_complete_refuses_row_already_booked_elsewhere(client, owner_headers, monkeypatch):
+    """Letzte Sicherung: auch wenn eine schon gebuchte Kennung auf 'accepted' steht, wird nicht gebucht."""
+    port = FakePort()
+    _install_fake_port(monkeypatch, port)
+    _setup_three_wallets(client, owner_headers, port)
+    port.ledger_moves_data["owner"] = _fixture_moves()
+    _accept_all_and_complete(client, owner_headers, _import(client, owner_headers).json())
+    second = _import(client, owner_headers).json()
+    from hydrahive.db.connection import db as _db
+    with _db() as conn:   # simuliert einen alten/fremden Weg, der 'duplicate' auf 'accepted' setzt
+        conn.execute("UPDATE module_haushaltsbuch_import_rows SET status='accepted' WHERE batch_id=? AND status='duplicate'",
+                     (second["id"],))
+    done = client.post(f"{PREFIX}/imports/{second['id']}/complete", headers=owner_headers,
+                       json={"revision": second["revision"]})
+    assert done.status_code == 409 and done.json()["detail"]["code"] == "duplicate_import_row"

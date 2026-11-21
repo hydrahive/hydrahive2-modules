@@ -42,6 +42,11 @@ def _require_draft(conn: sqlite3.Connection, batch_id: int, household_id: int) -
     return batch
 
 
+# Nur OFFENE Zeilen bekommen Vorschläge bzw. werden übernommen. Bis 1.14.2 auch 'duplicate':
+# „Alle Vorschläge übernehmen“ setzte damit schon gebuchte Zeilen auf 'accepted' – Till buchte
+# am 21.11.2026 so seine 17 Krypto-Swaps ein zweites Mal (Batch 6).
+
+
 async def suggest_categories(
     batch_id: int, principal: AuthPrincipal, *, model: str | None = None
 ) -> dict:
@@ -53,7 +58,7 @@ async def suggest_categories(
         open_rows = conn.execute(
             "SELECT * FROM module_haushaltsbuch_import_rows "
             "WHERE batch_id=? AND household_id=? AND category_id IS NULL "
-            "AND suggested_category_id IS NULL AND status IN ('pending','duplicate') "
+            "AND suggested_category_id IS NULL AND status='pending' "
             "ORDER BY id",
             (batch_id, household_id),
         ).fetchall()
@@ -94,7 +99,7 @@ async def suggest_categories(
                 f"SET suggested_category_id=?,suggestion_source=?,suggestion_confidence=?,"
                 f"updated_at={NOW} "
                 "WHERE id=? AND household_id=? AND batch_id=? AND category_id IS NULL "
-                "AND status IN ('pending','duplicate')",
+                "AND status='pending'",
                 (category_id, source, confidence, row_id, household_id, batch_id),
             )
             applied += cursor.rowcount
@@ -136,7 +141,7 @@ def accept_suggestions(
             "JOIN module_haushaltsbuch_categories c "
             "  ON c.id = r.suggested_category_id AND c.household_id = r.household_id "
             "WHERE r.batch_id=? AND r.household_id=? AND r.suggested_category_id IS NOT NULL "
-            "AND r.category_id IS NULL AND r.status IN ('pending','duplicate') "
+            "AND r.category_id IS NULL AND r.status='pending' "
             "AND c.archived=0"
         )
         params: list = [batch_id, household_id]

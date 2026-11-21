@@ -53,6 +53,21 @@ def _require_own_crypto_account(conn, household_id: int, account_id: int, user_i
         raise coded(status.HTTP_403_FORBIDDEN, "crypto_link_owner_only")
 
 
+def _refuse_already_booked(conn, household_id: int, batch_id: int, rows) -> None:
+    """Letzte Sicherung: dieselbe starke Kennung ist schon aus einem ANDEREN Import gebucht
+    -> nichts buchen (egal, welcher Weg die Zeile auf 'accepted' gesetzt hat)."""
+    strong = [row["fingerprint"] for row in rows if row["fingerprint_strength"] == "strong"]
+    if not strong:
+        return
+    hit = conn.execute(
+        "SELECT 1 FROM module_haushaltsbuch_import_rows WHERE household_id=? AND batch_id<>? "
+        "AND status='imported' AND fingerprint IN (" + ",".join("?" * len(strong)) + ") LIMIT 1",
+        (household_id, batch_id, *strong),
+    ).fetchone()
+    if hit:
+        raise coded(status.HTTP_409_CONFLICT, "duplicate_import_row")
+
+
 def complete_batch(batch_id: int, revision: int, principal: AuthPrincipal) -> dict:
     with db(immediate=True) as conn:
         member = membership(conn, principal)
@@ -69,6 +84,7 @@ def complete_batch(batch_id: int, revision: int, principal: AuthPrincipal) -> di
         ).fetchall()
         if not rows:
             raise coded(status.HTTP_422_UNPROCESSABLE_ENTITY, "no_accepted_import_rows")
+        _refuse_already_booked(conn, household_id, batch_id, rows)
         for row in rows:
             if (
                 row["booking_date"] is None
