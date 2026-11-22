@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { projectsApi } from "@/features/projects/api"
 import { ideasApi } from "./api"
+import { splitList } from "./foreign"
 import { sortIdeas, toListItem, upsertIdea } from "./ideaView"
 import type { Idea, IdeaChanges, IdeaListItem, ProjectRef } from "./types"
 
-/** Lädt Ideen und Projekte und hält Liste und ausgewählte Idee nach jeder Änderung in Deckung. */
-export function useIdeas() {
+/** Lädt Ideen und Projekte und hält Liste und ausgewählte Idee nach jeder Änderung in Deckung.
+ *  includeForeign: zusätzlich die Ideen anderer Instanzen (Gemeinsame Taskpflege), nur lesen. */
+export function useIdeas(includeForeign = false) {
   const [ideas, setIdeas] = useState<IdeaListItem[]>([])
   const [projects, setProjects] = useState<ProjectRef[]>([])
   const [active, setActive] = useState<Idea | null>(null)
@@ -17,18 +19,21 @@ export function useIdeas() {
 
   const reload = useCallback(async () => {
     try {
-      const data = await ideasApi.list()
-      setIdeas(sortIdeas(data.ideas))
+      const rows = includeForeign ? splitList((await ideasApi.listWithForeign()).ideas) : (await ideasApi.list()).ideas
+      setIdeas(sortIdeas(rows))
       setLoadFailed(false)
     } catch {
       setLoadFailed(true)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [includeForeign])
 
   useEffect(() => {
     queueMicrotask(() => { void reload() })
+  }, [reload])
+
+  useEffect(() => {
     // Ohne Projektliste bleibt die Seite benutzbar: Ideen ohne Projekt gehen immer.
     projectsApi.list()
       .then((list) => setProjects(list.map((project) => ({ id: project.id, name: project.name }))))
@@ -37,7 +42,7 @@ export function useIdeas() {
     ideasApi.meta()
       .then((meta) => { setTasksInstalled(meta.tasks_installed); setBlueprintInstalled(meta.blueprint_installed) })
       .catch(() => { setTasksInstalled(false); setBlueprintInstalled(false) })
-  }, [reload])
+  }, [])
 
   const show = useCallback((idea: Idea) => {
     wanted.current = idea.id

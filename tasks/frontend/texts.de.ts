@@ -36,6 +36,18 @@ export const de = {
   prompt_status: "Zeige mir den Status von Task: \"{{title}}\"",
   prompt_all: "Zeige mir alle offenen Aufgaben",
   prompt_overview: "Welche Aufgaben sind noch offen? Gib mir eine kurze Übersicht.",
+  instances_all: "Alle Instanzen",
+  instances_local: "Nur diese Instanz",
+  instances_hint: "Tasks anderer gekoppelter Instanzen anzeigen oder ausblenden",
+  foreign_badge_tip: "Stand vom {{stand}}, zuletzt gesehen am {{seen}}",
+  foreign_stale: "nicht aktuell",
+  foreign_owned_by: "gehört zu {{name}}",
+  foreign_detail_loading: "Volltext wird geladen…",
+  foreign_detail_error: "Volltext nicht ladbar",
+  foreign_hub_unreachable: "Hub nicht erreichbar",
+  foreign_snapshot: "Stand vom {{stand}}",
+  foreign_last_seen: "{{name}} zuletzt gesehen am {{seen}}",
+  foreign_no_description: "Keine Beschreibung",
 }
 
 export type TextKey = keyof typeof de

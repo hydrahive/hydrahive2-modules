@@ -5,10 +5,11 @@ register(ctx) →
   - Tools    task_write, task_list, task_read, task_delete
   - Migrationen 001_tasks.sql, 002_task_history.sql, 003_task_source.sql
   - Katalog-Quelle kind="task" (Föderations-Katalog), nur wenn der Kern sie kennt
+  - Fremde Tasks anderer Instanzen (Gemeinsame Taskpflege), nur wenn der Kern sie kennt
 """
 from __future__ import annotations
 
-from . import catalog
+from . import catalog, foreign
 from .routes import router
 from .tools import task_write, task_list, task_read, task_delete
 
@@ -21,3 +22,4 @@ def register(ctx) -> None:
     ctx.register_tool(task_delete.TOOL)
     ctx.register_migrations("migrations")
     catalog.bind(ctx)
+    foreign.bind(ctx)

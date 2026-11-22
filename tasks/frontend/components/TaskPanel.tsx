@@ -1,22 +1,34 @@
 import { useState, type CSSProperties } from "react"
 import { CheckSquare, Plus } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { loadScope, saveScope, type InstanceScope } from "../foreign"
 import { useTasks } from "../useTasks"
-import type { TaskStatus, TaskPriority } from "../types"
+import { isForeign, type TaskStatus, type TaskPriority } from "../types"
+import { ForeignTaskRow } from "./ForeignTaskRow"
+import { InstanceChip } from "./InstanceChip"
 import { NewTaskForm } from "./NewTaskForm"
 import { TaskRow } from "./TaskRow"
 
 const FILTERS: Array<TaskStatus | "all"> = ["all", "open", "in_progress", "done", "cancelled"]
 
-export function TaskPanel() {
+export function TaskPanel({ projectId }: { projectId?: string | null } = {}) {
   const { t } = useTranslation("tasks")
   const [filter, setFilter] = useState<TaskStatus | "all">("all")
   const [showForm, setShowForm] = useState(false)
+  // Gemeinsame Taskpflege: Standard „Alle Instanzen“, Auswahl gemerkt (Spec §Oberfläche, AK G18).
+  const [scope, setScope] = useState<InstanceScope>(() => loadScope())
 
-  const { tasks, loading, error, createTask, updateTask, deleteTask } = useTasks({
+  const { items, loading, error, createTask, updateTask, deleteTask } = useTasks({
     status: filter === "all" ? undefined : filter,
     pollMs: 5000,
+    includeForeign: scope === "all",
+    foreignProjectId: projectId ?? null,
   })
+
+  function changeScope(next: InstanceScope) {
+    setScope(next)
+    saveScope(next)
+  }
 
   async function handleCreate(title: string, priority: TaskPriority) {
     await createTask({ title, priority })
@@ -46,6 +58,7 @@ export function TaskPanel() {
             </button>
           ))}
         </div>
+        <InstanceChip scope={scope} onChange={changeScope} />
         <button
           onClick={() => setShowForm((v) => !v)}
           className="flex-shrink-0 text-[#9aa7bc] hover:text-[#69d7ff] transition-colors"
@@ -63,19 +76,21 @@ export function TaskPanel() {
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto py-1">
-        {loading && tasks.length === 0 && (
+        {loading && items.length === 0 && (
           <p className="text-[11px] text-[#9aa7bc] px-3 py-2">{t("loading")}</p>
         )}
         {error !== null && (
           <p className="text-[11px] text-rose-500 px-3 py-2">{error || t("load_error")}</p>
         )}
-        {!loading && tasks.length === 0 && (
+        {!loading && items.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
             <CheckSquare size={24} className="text-[#46617f]" />
             <p className="text-[11px] text-[#9aa7bc]">{t("empty")}</p>
           </div>
         )}
-        {tasks.map((task) => (
+        {items.map((task) => isForeign(task) ? (
+          <ForeignTaskRow key={`f:${task.origin_fp}:${task.item_id}`} task={task} />
+        ) : (
           <TaskRow
             key={task.id}
             task={task}

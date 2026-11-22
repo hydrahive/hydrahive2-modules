@@ -1,15 +1,21 @@
 import { api } from "@/shared/api-client"
-import type { Task, TaskStatus, TaskPriority, TaskVersion } from "./types"
+import type { AnyTask, ForeignTaskFull, Task, TaskStatus, TaskPriority, TaskVersion } from "./types"
 
 const BASE = "/modules/tasks/tasks"
 
 export const tasksApi = {
-  list(params?: { status?: TaskStatus; project_id?: string }): Promise<Task[]> {
+  list(params?: { status?: TaskStatus; project_id?: string; include_foreign?: boolean }): Promise<AnyTask[]> {
     const qs = new URLSearchParams()
     if (params?.status) qs.set("status", params.status)
     if (params?.project_id) qs.set("project_id", params.project_id)
+    if (params?.include_foreign) qs.set("include_foreign", "1")
     const q = qs.toString()
-    return api.get<Task[]>(`${BASE}${q ? `?${q}` : ""}`)
+    return api.get<AnyTask[]>(`${BASE}${q ? `?${q}` : ""}`)
+  },
+
+  /** Volltext eines fremden Tasks über den Hub (Gemeinsame Taskpflege). */
+  foreign(originFp: string, itemId: string): Promise<ForeignTaskFull> {
+    return api.get<ForeignTaskFull>(`${BASE}/foreign/${encodeURIComponent(originFp)}/${encodeURIComponent(itemId)}`)
   },
 
   create(data: {
