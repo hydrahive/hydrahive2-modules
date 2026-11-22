@@ -176,3 +176,9 @@ def test_register_bindet_nur_neuen_kern():
 
     register(NewCtx())
     assert foreign.available()
+
+
+def test_volltext_ohne_owner_verworfen(client, alice):
+    item = {k: v for k, v in _item("f-1").items() if k != "owner"}
+    foreign.bind(FakeCtx(full={"item": item, "content": {}, "source": "live"}))
+    assert client.get(f"{BASE}/foreign/{FP}/f-1", headers=alice).status_code == 404

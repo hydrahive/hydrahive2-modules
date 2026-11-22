@@ -74,7 +74,7 @@ async def get_foreign(username: str, origin_fp: str, item_id: str) -> dict[str, 
         return None
     if not isinstance(full, dict) or not isinstance(full.get("item"), dict):
         return None
-    if full["item"].get("owner") not in (None, username):
+    if full["item"].get("owner") != username:            # zweite Schranke, auch ohne owner (Review #456)
         return None
     return full
 
