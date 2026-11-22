@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from pydantic import BaseModel, Field
 
 from hydrahive.api.middleware.auth import require_auth
 
-from . import service
+from . import foreign, service
 
 router = APIRouter()
 
@@ -36,10 +36,28 @@ def list_tasks(
     auth: Auth,
     status: str | None = None,
     project_id: str | None = None,
+    include_foreign: bool = False,
 ) -> list[dict[str, Any]]:
     tasks = service.list_tasks(auth[0], status=status, project_id=project_id)
     counts = service.history_counts(auth[0])
-    return [{**t, "history_count": counts.get(t["id"], 0)} for t in tasks]
+    own = [{**t, "history_count": counts.get(t["id"], 0)} for t in tasks]
+    if not include_foreign:                       # ältere Oberflächen: Antwort wie bisher
+        return own
+    # Gemeinsame Taskpflege: Nutzername immer vom angemeldeten Nutzer, nie aus dem Request.
+    return foreign.merge(own, foreign.list_foreign(auth[0], project_id=project_id, status=status))
+
+
+@router.get("/tasks/foreign/{origin_fp}/{item_id}")
+async def foreign_task(
+    origin_fp: Annotated[str, Path(min_length=1, max_length=128)],
+    item_id: Annotated[str, Path(min_length=1, max_length=128)],
+    auth: Auth,
+) -> dict[str, Any]:
+    """Volltext eines fremden Tasks über den Hub (live, Snapshot oder nur Metadaten)."""
+    full = await foreign.get_foreign(auth[0], origin_fp, item_id)
+    if full is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Task nicht gefunden")
+    return full
 
 
 @router.post("/tasks", status_code=status.HTTP_201_CREATED)
