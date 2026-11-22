@@ -72,11 +72,11 @@ erstellen können.
 
 Agenten haben drei Werkzeuge:
 
-- **diagramm_hilfe** zeigt dem Agenten die Arten und für jede Art Aufbau und Beispiel.
-- **diagramm_erstellen** zeichnet und speichert ein Diagramm. Es erscheint im Chat und in der Sammlung.
+- `diagramm_hilfe` zeigt dem Agenten die Arten und für jede Art Aufbau und Beispiel.
+- `diagramm_erstellen` zeichnet und speichert ein Diagramm. Es erscheint im Chat und in der Sammlung.
   Mit Bezug auf ein vorhandenes Diagramm entsteht eine neue Fassung, die alte bleibt.
   Liegt Code im Projekt, kann der Agent einen Ordner daraus angeben und auf die gelesenen Stellen verweisen.
-- **diagramm_liste** zeigt die gespeicherten Diagramme (je Diagramm die neueste Fassung, höchstens 30),
+- `diagramm_liste` zeigt die gespeicherten Diagramme (je Diagramm die neueste Fassung, höchstens 30),
   auf Wunsch nach Titel oder nur aus dem aktuellen Projekt.
 
 Das kannst du zum Beispiel fragen:
@@ -92,17 +92,17 @@ Das geht nicht:
 
 ## Gut zu wissen
 
-- **Sehen dürfen:** du selbst, Admins und Mitglieder des Projekts, in dem das Diagramm entstanden ist.
-- **Ändern dürfen:** In den Papierkorb werfen, wiederherstellen und endgültig löschen darf nur, wer das Diagramm
+- Sehen dürfen: du selbst, Admins und Mitglieder des Projekts, in dem das Diagramm entstanden ist.
+- Ändern dürfen: In den Papierkorb werfen, wiederherstellen und endgültig löschen darf nur, wer das Diagramm
   erstellt hat, oder ein Admin. Projekt-Mitglieder dürfen nur ansehen und herunterladen.
-- **Kosten:** Die Diagramme entstehen auf deinem Server mit dem freien Werkzeug Archify, ohne Bezahldienst.
+- Kosten: Die Diagramme entstehen auf deinem Server mit dem freien Werkzeug Archify, ohne Bezahldienst.
   Nur der Agent verbraucht beim Beschreiben wie gewohnt Tokens.
-- **Abgeschottet:** Ein Diagramm ist eine kleine Webseite, die ein Agent gebaut hat. Sie läuft abgeschirmt:
+- Abgeschottet: Ein Diagramm ist eine kleine Webseite, die ein Agent gebaut hat. Sie läuft abgeschirmt:
   Sie kann nichts nachladen, nichts senden und kommt nicht an deine Anmeldung.
-- **Vorschaubilder** brauchen einen Chromium-Browser auf dem Server. Fehlt er, steht in der Kachel **Keine Vorschau**.
+- Vorschaubilder brauchen einen Chromium-Browser auf dem Server. Fehlt er, steht in der Kachel **Keine Vorschau**.
   Das Diagramm selbst funktioniert trotzdem.
-- **Grenzen:** Die Beschreibung eines Diagramms darf höchstens 512 KB groß sein. Das Zeichnen bricht nach drei Minuten ab.
-- **Typische Meldungen:**
+- Grenzen: Die Beschreibung eines Diagramms darf höchstens 512 KB groß sein. Das Zeichnen bricht nach drei Minuten ab.
+- Typische Meldungen:
   - „Die Beschreibung ist zu groß.“ – das Diagramm ist zu umfangreich, lieber aufteilen.
   - „Das Erstellen hat zu lange gedauert.“ – der Agent soll es kleiner noch einmal versuchen.
   - „Auf dem Server fehlt ein Programm zum Erstellen.“ – auf dem Server fehlt Node. Das muss ein Admin beheben.
