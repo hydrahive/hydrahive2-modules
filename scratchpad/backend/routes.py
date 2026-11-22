@@ -8,12 +8,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 from hydrahive.api.middleware.auth import require_auth
 from hydrahive.api.middleware.errors import coded
 from pydantic import BaseModel, Field
 
-from . import access, board_link, legacy_import, meta, notes, store, task_link
+from . import access, board_link, foreign, legacy_import, meta, notes, store, task_link
 
 router = APIRouter()
 
@@ -76,16 +76,35 @@ def list_ideas(
     auth: Auth,
     project_id: Annotated[str | None, Query(max_length=64)] = None,
     status_filter: Annotated[str, Query(alias="status", max_length=32)] = "all",
+    include_foreign: bool = False,
 ) -> dict:
     user, _ = auth
     statuses = _statuses(status_filter)
     legacy_import.import_for(user)
     task_link.backfill(user)
     project = project_id or None
-    return {
-        "ideas": store.list_ideas(user, project=project, statuses=statuses),
-        "counts": store.count_by_status(user, project=project),
-    }
+    ideas = store.list_ideas(user, project=project, statuses=statuses)
+    counts = store.count_by_status(user, project=project)
+    if not include_foreign:                       # ältere Oberflächen: Antwort wie bisher
+        return {"ideas": ideas, "counts": counts}
+    # Gemeinsame Taskpflege: Nutzername immer vom angemeldeten Nutzer, nie aus dem Request.
+    # Zähler wie bei den eigenen nur nach Projekt, die Liste zusätzlich nach Status.
+    others = foreign.list_foreign(user, project=project, statuses=None)
+    shown = [o for o in others if statuses is None or o.get("status") in statuses]
+    return {"ideas": foreign.merge(ideas, shown), "counts": foreign.add_counts(counts, others)}
+
+
+@router.get("/ideas/foreign/{origin_fp}/{item_id}")
+async def foreign_idea(
+    auth: Auth,
+    origin_fp: Annotated[str, Path(min_length=1, max_length=128)],
+    item_id: Annotated[str, Path(min_length=1, max_length=128)],
+) -> dict:
+    """Volltext einer fremden Idee über den Hub: Text und Anmerkungen, live oder Snapshot."""
+    full = await foreign.get_foreign(auth[0], origin_fp, item_id)
+    if full is None:
+        raise _not_found()
+    return full
 
 
 @router.post("/ideas", status_code=status.HTTP_201_CREATED)
