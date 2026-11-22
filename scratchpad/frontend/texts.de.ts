@@ -80,6 +80,17 @@ export const de = {
   board_proposal: "Vorschlag offen",
   blueprint_missing_error: "Das Blueprint-Modul ist nicht installiert.",
   boards_full_error: "Die Obergrenze für Boards ist erreicht. Lösch zuerst alte Boards.",
+  instances_all: "Alle Instanzen",
+  instances_local: "Nur diese Instanz",
+  instances_hint: "Ideen anderer gekoppelter Instanzen anzeigen oder ausblenden",
+  foreign_badge_tip: "Stand vom {{stand}}, zuletzt gesehen am {{seen}}",
+  foreign_stale: "nicht aktuell",
+  foreign_owned_by: "gehört zu {{name}}",
+  foreign_detail_loading: "Ideentext wird geladen …",
+  foreign_detail_error: "Ideentext nicht ladbar",
+  foreign_hub_unreachable: "Hub nicht erreichbar",
+  foreign_snapshot: "Stand vom {{stand}}",
+  foreign_last_seen: "{{name}} zuletzt gesehen am {{seen}}",
 }
 
 export type TextKey = keyof typeof de

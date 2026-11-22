@@ -1,7 +1,10 @@
 import { Bot, CheckSquare, MessageSquare, PenTool } from "lucide-react"
+import { isForeignItem, type InstanceScope } from "../foreign"
 import { countByStatus, filterIdeas, groupByProject, openCount, relativeTime } from "../ideaView"
 import type { T } from "../texts.de"
 import { STATUSES, type IdeaListItem, type ProjectFilter, type ProjectRef, type StatusFilter } from "../types"
+import { ForeignBadge } from "./ForeignBadge"
+import { InstanceChip } from "./InstanceChip"
 import { BADGE, BUTTON, LABEL, SELECT, STATUS_BADGE } from "./styles"
 
 interface Props {
@@ -16,6 +19,9 @@ interface Props {
   onProject: (project: ProjectFilter) => void
   onStatus: (status: StatusFilter) => void
   onSelect: (id: string) => void
+  /** Gemeinsame Taskpflege: Chip „Nur diese / Alle Instanzen“. Fehlt er, gibt es keinen Chip. */
+  scope?: InstanceScope
+  onScope?: (scope: InstanceScope) => void
 }
 
 const CHIP = "inline-flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[11px] font-semibold transition-colors " +
@@ -35,6 +41,12 @@ function Row({ idea, active, locale, t, onSelect }: {
         <span className={`${BADGE} ${STATUS_BADGE[idea.status]}`}>{t(`status_${idea.status}`)}</span>
       </span>
       {idea.body_preview && <span className="mt-1 line-clamp-2 block text-[12px] leading-snug text-[#9aa7bc]">{idea.body_preview}</span>}
+      {isForeignItem(idea) && (
+        <span className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-[#9aa7bc]">
+          <ForeignBadge idea={idea.foreign} locale={locale} t={t} />
+          <span>{t("foreign_owned_by", { name: idea.foreign.origin_name || idea.foreign.origin_fp.slice(0, 12) })}</span>
+        </span>
+      )}
       <span className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-[#9aa7bc]">
         {idea.origin === "agent" && <span className="inline-flex items-center gap-1 text-[#9fe6ff]"><Bot size={11} aria-hidden />{t("origin_agent")}</span>}
         {idea.note_count > 0 && (
@@ -52,7 +64,9 @@ function Row({ idea, active, locale, t, onSelect }: {
 }
 
 /** Liste mit Projekt- und Statusfilter. Bei „Alle Projekte“ nach Projekt gruppiert. */
-export function IdeaList({ ideas, projects, project, status, activeId, loading, locale, t, onProject, onStatus, onSelect }: Props) {
+export function IdeaList({
+  ideas, projects, project, status, activeId, loading, locale, t, onProject, onStatus, onSelect, scope, onScope,
+}: Props) {
   const counts = countByStatus(ideas, project)
   const total = STATUSES.reduce((sum, key) => sum + counts[key], 0)
   const visible = filterIdeas(ideas, project, status)
@@ -77,6 +91,7 @@ export function IdeaList({ ideas, projects, project, status, activeId, loading, 
         </select>
       </div>
       <div className="flex flex-wrap gap-1.5">
+        {scope && onScope && <InstanceChip scope={scope} t={t} onChange={onScope} />}
         {chips.map(([key, label, count]) => (
           <button key={key} type="button" onClick={() => onStatus(key)} aria-pressed={status === key}
             className={`${CHIP} ${status === key ? CHIP_ON : CHIP_OFF} ${count === 0 && status !== key ? "opacity-60" : ""}`}>

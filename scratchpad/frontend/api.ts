@@ -1,5 +1,5 @@
 import { api } from "@/shared/api-client"
-import type { Idea, IdeaChanges, IdeaListItem, IdeaMeta, StatusCounts } from "./types"
+import type { ForeignIdea, ForeignIdeaFull, Idea, IdeaChanges, IdeaListItem, IdeaMeta, StatusCounts } from "./types"
 
 const BASE = "/modules/scratchpad"
 
@@ -8,10 +8,21 @@ export interface IdeaListResponse {
   counts: StatusCounts
 }
 
+/** Mit include_foreign: eigene und fremde Ideen gemischt (fremde mit foreign: true). */
+export interface IdeaListResponseWithForeign {
+  ideas: Array<IdeaListItem | ForeignIdea>
+  counts: StatusCounts
+}
+
 export const ideasApi = {
   meta: () => api.get<IdeaMeta>(`${BASE}/meta`),
   /** Alle Ideen des Nutzers. Gefiltert und gezählt wird in der Oberfläche (ideaView.ts). */
   list: () => api.get<IdeaListResponse>(`${BASE}/ideas`),
+  /** Eigene und fremde Ideen (Gemeinsame Taskpflege). Filter bleiben in der Oberfläche. */
+  listWithForeign: () => api.get<IdeaListResponseWithForeign>(`${BASE}/ideas?include_foreign=1`),
+  /** Volltext einer fremden Idee über den Hub: Text und Anmerkungen. */
+  foreign: (originFp: string, itemId: string) =>
+    api.get<ForeignIdeaFull>(`${BASE}/ideas/foreign/${encodeURIComponent(originFp)}/${encodeURIComponent(itemId)}`),
   get: (id: string) => api.get<Idea>(`${BASE}/ideas/${encodeURIComponent(id)}`),
   create: (data: { title: string; body: string; project_id: string | null }) =>
     api.post<Idea>(`${BASE}/ideas`, data),

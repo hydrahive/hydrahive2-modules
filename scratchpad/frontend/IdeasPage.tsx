@@ -4,14 +4,16 @@ import { useSearchParams } from "react-router-dom"
 import { CockpitShell } from "@/features/cockpit/CockpitShell"
 import { CockpitTopbar } from "@/features/cockpit/CockpitTopbar"
 import { HelpButton } from "@/i18n/HelpButton"
+import { ForeignIdeaDetail } from "./components/ForeignIdeaDetail"
 import { IdeaDetail } from "./components/IdeaDetail"
 import { IdeaForm } from "./components/IdeaForm"
 import { IdeaList } from "./components/IdeaList"
 import { BUTTON, ERROR_BOX, PANEL } from "./components/styles"
+import { isForeignId, isForeignItem, loadScope, saveScope, type InstanceScope } from "./foreign"
 import { filterIdeas, linkedIdea, projectShowing, statusShowing, toListItem } from "./ideaView"
 import { errorText } from "./saveState"
 import type { T } from "./texts.de"
-import type { ProjectFilter, StatusFilter } from "./types"
+import type { ForeignIdea, ProjectFilter, StatusFilter } from "./types"
 import { useIdeas } from "./useIdeas"
 
 /** Seite „Ideen“ unter /scratchpad: oben festhalten, links die Liste, rechts die ausgewählte Idee.
@@ -19,10 +21,13 @@ import { useIdeas } from "./useIdeas"
 export function IdeasPage() {
   const { t: translate, i18n } = useTranslation("scratchpad")
   const t: T = useCallback((key, vars) => String(translate(key, vars)), [translate])
+  // Gemeinsame Taskpflege: Standard „Alle Instanzen“, Auswahl gemerkt (Spec §Oberfläche, AK G18).
+  const [scope, setScope] = useState<InstanceScope>(() => loadScope())
+  const [foreignActive, setForeignActive] = useState<ForeignIdea | null>(null)
   const {
     ideas, projects, active, loading, loadFailed, tasksInstalled, blueprintInstalled,
     reload, select, create, update, createTask, createBoard, remove, removeNote, forget,
-  } = useIdeas()
+  } = useIdeas(scope === "all")
   const [project, setProject] = useState<ProjectFilter>("all")
   const [status, setStatus] = useState<StatusFilter>("open")
   const [selectError, setSelectError] = useState<string | null>(null)
@@ -34,6 +39,7 @@ export function IdeasPage() {
 
   async function onCreate(data: { title: string; body: string; project_id: string | null }) {
     const idea = await create(data)
+    setForeignActive(null)
     // Die neue Idee soll in der Liste zu sehen sein, auch wenn der Filter sie gerade ausblenden würde.
     if (filterIdeas([toListItem(idea)], project, status).length === 0) {
       setProject("all")
@@ -41,9 +47,17 @@ export function IdeasPage() {
     }
   }
 
+  function changeScope(next: InstanceScope) {
+    setScope(next)
+    saveScope(next)
+    if (next === "local") setForeignActive(null)
+  }
+
   /** Idee öffnen. Bei einem Direktlink gehen die Filter so weit auf, dass sie auch in der Liste steht. */
   const openIdea = useCallback(async (id: string, viaLink = false) => {
     setSelectError(null)
+    if (isForeignId(id)) return
+    setForeignActive(null)
     try {
       const idea = await select(id)
       if (viaLink && idea) {
@@ -57,6 +71,19 @@ export function IdeasPage() {
       if ((problem as { status?: number }).status === 404) forget(id)
     }
   }, [select, forget, errorOf])
+
+  /** Fremde Idee: nur lesend anzeigen, nie über die Routen der eigenen Ideen laden. */
+  function openRow(id: string) {
+    const row = ideas.find((idea) => idea.id === id)
+    if (row && isForeignItem(row)) {
+      setSelectError(null)
+      void select(null)
+      setForeignActive(row.foreign)
+      return
+    }
+    setForeignActive(null)
+    void openIdea(id)
+  }
 
   useEffect(() => {
     if (linkParam === null) {
@@ -98,11 +125,15 @@ export function IdeasPage() {
           {selectError && <p role="alert" className={ERROR_BOX}>{selectError}</p>}
 
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-            <IdeaList ideas={ideas} projects={projects} project={project} status={status} activeId={active?.id ?? null}
+            <IdeaList ideas={ideas} projects={projects} project={project} status={status}
+              activeId={foreignActive ? `f:${foreignActive.origin_fp}:${foreignActive.item_id}` : active?.id ?? null}
               loading={loading} locale={i18n.language} t={t} onProject={setProject} onStatus={setStatus}
-              onSelect={(id) => void openIdea(id)} />
+              onSelect={openRow} scope={scope} onScope={changeScope} />
             <div ref={detailRef} className="min-w-0 scroll-mt-4">
-              {active ? (
+              {foreignActive ? (
+                <ForeignIdeaDetail key={`${foreignActive.origin_fp}:${foreignActive.item_id}`} idea={foreignActive}
+                  locale={i18n.language} t={t} />
+              ) : active ? (
                 <IdeaDetail key={active.id} idea={active} projects={projects} locale={i18n.language} t={t}
                   onUpdate={update} onRemove={remove} onRemoveNote={removeNote} tasksInstalled={tasksInstalled}
                   onCreateTask={createTask} blueprintInstalled={blueprintInstalled} onCreateBoard={createBoard}

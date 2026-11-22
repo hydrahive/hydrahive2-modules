@@ -79,3 +79,34 @@ export interface IdeaChanges {
   status?: IdeaStatus
   project_id?: string | null
 }
+
+/** Idee einer anderen Instanz (Gemeinsame Taskpflege, Spec federation-shared-tasks.md). Nur lesen. */
+export interface ForeignIdea {
+  foreign: true
+  origin_fp: string
+  origin_name: string | null
+  item_id: string
+  owner: string
+  title: string
+  status: IdeaStatus
+  /** Ursprungsprojekt beim Ursprung (nicht die eigene ID). */
+  project_id: string | null
+  project_name: string | null
+  /** Eigenes Projekt nach Zuordnung oder null. */
+  local_project_id: string | null
+  created_at: string
+  updated_at: string
+  origin_last_seen: string | null
+  stale: boolean
+}
+
+/** Volltext einer fremden Idee (GET /ideas/foreign/{origin_fp}/{item_id}). */
+export interface ForeignIdeaFull {
+  item: Partial<ForeignIdea>
+  content: { body?: string; notes?: Array<Pick<IdeaNote, "author" | "agent_name" | "body" | "created_at">> } | null
+  source: "live" | "snapshot" | "none" | "metadata"
+  origin_offline: boolean
+  snapshot_at: string | null
+  last_seen: string | null
+  hub_unreachable: boolean
+}
