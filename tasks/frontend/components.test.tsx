@@ -11,7 +11,7 @@ vi.mock("@/shared/CollapsibleBox", () => ({
 }))
 const tasksState = vi.hoisted(() => ({ tasks: [] as unknown[], loading: false, error: null as string | null }))
 vi.mock("./useTasks", () => ({
-  useTasks: () => ({ ...tasksState, complete: () => undefined, createTask: () => undefined, updateTask: () => undefined, deleteTask: () => undefined }),
+  useTasks: () => ({ ...tasksState, items: tasksState.tasks, complete: () => undefined, createTask: () => undefined, updateTask: () => undefined, deleteTask: () => undefined }),
 }))
 import { NewTaskForm } from "./components/NewTaskForm"
 import { TaskBuddyBox } from "./components/TaskBuddyBox"

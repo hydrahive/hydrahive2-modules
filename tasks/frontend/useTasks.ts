@@ -1,31 +1,40 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { tasksApi } from "./api"
-import type { Task, TaskStatus, TaskPriority } from "./types"
+import { mergeSorted } from "./foreign"
+import { isForeign, type AnyTask, type Task, type TaskStatus, type TaskPriority } from "./types"
 
 interface UseTasksOptions {
   status?: TaskStatus
   projectId?: string
   /** Poll interval in ms when panel is visible. Default: 5000 */
   pollMs?: number
+  /** Fremde Tasks anderer Instanzen mitladen (Gemeinsame Taskpflege). Standard: nein. */
+  includeForeign?: boolean
+  /** Projekt, auf dessen Zuordnung die fremden Tasks beschränkt werden (Reiter im Projekt). */
+  foreignProjectId?: string | null
 }
 
 export function useTasks(opts: UseTasksOptions = {}) {
-  const { status, projectId, pollMs = 5000 } = opts
-  const [tasks, setTasks] = useState<Task[]>([])
+  const { status, projectId, pollMs = 5000, includeForeign = false, foreignProjectId = null } = opts
+  const [all, setAll] = useState<AnyTask[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const data = await tasksApi.list({ status, project_id: projectId })
-      setTasks(data)
+      const own = await tasksApi.list({ status, project_id: projectId })
+      // Fremde nur, wenn gewünscht; im Projekt auf dessen Zuordnung beschränkt (foreignProjectId).
+      const foreign = includeForeign
+        ? (await tasksApi.list({ status, project_id: foreignProjectId ?? undefined, include_foreign: true })).filter(isForeign)
+        : []
+      setAll(foreign.length ? mergeSorted(own, foreign) : own)
       setError(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : "")
     } finally {
       setLoading(false)
     }
-  }, [status, projectId])
+  }, [status, projectId, includeForeign, foreignProjectId])
 
   useEffect(() => {
     load()
@@ -40,7 +49,7 @@ export function useTasks(opts: UseTasksOptions = {}) {
 
   const complete = useCallback(async (taskId: string) => {
     await tasksApi.update(taskId, { status: "done" })
-    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: "done" } : t))
+    setAll((prev) => prev.map((t) => !isForeign(t) && t.id === taskId ? { ...t, status: "done" } : t))
   }, [])
 
   const updateTask = useCallback(async (taskId: string, data: {
@@ -50,13 +59,13 @@ export function useTasks(opts: UseTasksOptions = {}) {
     priority?: TaskPriority
   }) => {
     const updated = await tasksApi.update(taskId, data)
-    setTasks((prev) => prev.map((t) => t.id === taskId ? updated : t))
+    setAll((prev) => prev.map((t) => !isForeign(t) && t.id === taskId ? updated : t))
     return updated
   }, [])
 
   const deleteTask = useCallback(async (taskId: string) => {
     await tasksApi.delete(taskId)
-    setTasks((prev) => prev.filter((t) => t.id !== taskId))
+    setAll((prev) => prev.filter((t) => isForeign(t) || t.id !== taskId))
   }, [])
 
   const createTask = useCallback(async (data: {
@@ -66,9 +75,11 @@ export function useTasks(opts: UseTasksOptions = {}) {
     project_id?: string
   }) => {
     const created = await tasksApi.create(data)
-    setTasks((prev) => [created, ...prev])
+    setAll((prev) => [created, ...prev])
     return created
   }, [])
 
-  return { tasks, loading, error, refresh: load, complete, updateTask, deleteTask, createTask }
+  // tasks: nur eigene (Buddy-Box, Zähler); items: eigene und fremde zusammen (TaskPanel).
+  const tasks = useMemo(() => all.filter((t): t is Task => !isForeign(t)), [all])
+  return { tasks, items: all, loading, error, refresh: load, complete, updateTask, deleteTask, createTask }
 }
