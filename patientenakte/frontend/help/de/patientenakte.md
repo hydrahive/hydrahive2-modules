@@ -2,7 +2,7 @@
 
 **Meine Akte** ist deine persönliche, strukturierte Patientenakte. Du pflegst darin Diagnosen, Medikamente, Laborwerte, Allergien, Arztbesuche und Dokumente. Du kannst die Gesundheitsakte deiner Krankenkasse importieren und Verläufe aus Apple Health ansehen.
 
-> **Wichtig:** Die Akte ist ein Ablage- und Übersichts-Werkzeug, kein Diagnose-System. Sie ersetzt keine ärztliche Beratung.
+> Wichtig: Die Akte ist ein Ablage- und Übersichts-Werkzeug, kein Diagnose-System. Sie ersetzt keine ärztliche Beratung.
 
 ## So startest du
 1. Ein Admin installiert das Modul. Danach steht **Meine Akte** in der Navigation.
@@ -50,7 +50,7 @@ Das Modul bringt zwei Werkzeuge mit, die nur lesen:
 
 Im Buddy-Fenster gibt es die Box **Gesundheit** mit drei fertigen Fragen: **Tagesauswertung**, **Wochentrend** und **Schlafqualität**. Du kannst auch frei fragen, etwa „Wie viele Schritte hatte ich in den letzten 7 Tagen?“ oder „Welche Arztbesuche stehen in meinem Import?“.
 
-Was **nicht** geht:
+Was nicht geht:
 - Die Werkzeuge liefern nur Daten, solange dein Vault in HydraHive entsperrt ist. Sonst antworten sie mit „Vault gesperrt – bitte in HydraHive entsperren.“
 - Deine selbst gepflegten Einträge und den Import über **TK-eGA-ZIP** lesen die Werkzeuge nicht.
 - Agenten können nichts ändern und nichts löschen. Löschen geht nur unter **Daten löschen**.
