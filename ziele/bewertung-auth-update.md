@@ -1,0 +1,51 @@
+# Zieldokument: Auth-Wächter für alle API-Routen + Update mit Sicherung und Rückweg
+
+> **Status:** FREIGEGEBEN (Till, 23.11.2026: „ok mache das“)
+> **Auslöser:** Externe Bewertung vom 23.11.2026, Sammel-Task `f9b63a15`.
+> **Tasks:** `589ff768` (Auth-Wächter), `5b8ad460` (Update mit Rückweg)
+> **Repo:** Kern `hydrahive2`
+
+## 1. Auth-Wächter (Task 589ff768)
+Befund vom 23.11.2026 (Kern 7aacae35): Die App hat 542 API-Routen. 14 davon haben keine Auth-Abhängigkeit, und das ist bei allen 14 Absicht, weil sie selbst prüfen:
+- `/api/auth/login`, `/api/health`
+- `/api/files` mit Token im Link (`get_current_user_optional` + `resolve_credential`)
+- `/api/agentlink/dashboard-auth` (Cookie-Prüfung für nginx)
+- Butler-Webhook, WhatsApp-Eingang, Compute-Enroll
+- 7× `/api/peering/*` (Ed25519-Signatur)
+
+Bisher hindert nichts daran, dass eine neue Route ohne Auth dazukommt.
+
+Regeln:
+1. Ein Test im Kern-CI läuft über `app.routes` (die echte App mit geladenen Modulen, soweit das in der CI möglich ist). Für jede API-Route prüft er rekursiv die Abhängigkeitskette auf eine Auth-Abhängigkeit (require_auth, require_principal, require_admin o. ä.; die echte Liste steht im Code).
+2. Ausnahmen stehen in einer Liste mit Methode, Pfad und Begründung. Gibt es eine Route ohne Auth, die nicht auf der Liste steht, wird der Test rot und die Meldung nennt Pfad und Methode.
+3. Auf der Liste steht nur, was wirklich offen sein muss. Ein Eintrag ohne Begründung ist ein Fehler. Ein Listeneintrag, zu dem es keine Route mehr gibt, ist ebenfalls ein Fehler (damit die Liste nicht veraltet).
+4. Jede Ausnahme bekommt einen Test, der zeigt, dass sie ohne gültige Anmeldung bzw. Signatur nichts preisgibt (401/403/404 oder leere/feste Antwort). Login und Health sind davon ausgenommen.
+5. Module-Routen: Wenn die Kern-CI die Module nicht lädt, soll der Wächter als wiederverwendbare Funktion bereitstehen, damit `hydrahive2-modules` ihn später nutzen kann. Ein Folge-Task reicht dafür, Umsetzung im Modul-Repo ist nicht Teil dieses Auftrags.
+
+## 2. Update mit Sicherung und Rückweg (Task 5b8ad460)
+Befund: `installer/update.sh` (919 Zeilen) und `installer/update-mac.sh` legen keine Sicherung an und haben keinen Rückweg. Scheitert der Bau, eine Migration oder der Start, bleibt der Server auf einem halben Stand stehen.
+
+Vorgehen in zwei Schritten:
+1. **Spec zuerst:** `docs/specs/update-rollback.md`, dazu ein Bestandsbild. Was ändert ein Update heute alles (git, venv, npm-Build, Modul-Kopien, systemd-Units, nginx, Migrationen in den DBs beim Start)? Was lässt sich zurückdrehen und was nicht (z. B. apt-Pakete, Container)? Welche DBs, wie groß sind sie, und wie viel kostet eine Sicherung an Zeit und Platz? Rollback-Ablauf, Fehlerfälle, Mac-Unterschiede, Aufbewahrung (z. B. die letzten 2 Sicherungen). **Till gibt die Spec frei, bevor gebaut wird.**
+2. **Danach umsetzen** in kleinen Etappen laut Spec.
+
+Rahmen für die Spec:
+- Vor dem Update: alten Commit merken und die Kern-DBs konsistent sichern (`sqlite3 .backup` oder Python `backup()`, nicht `cp` bei laufendem Dienst). Die Konfiguration unter `/etc/hydrahive2` ebenfalls sichern. Ist nicht genug Platz frei, bricht das Update vor jeder Änderung mit einer klaren Meldung ab.
+- Nach dem Update: Dienst aktiv, `/api/health` ok, Migrationen durchgelaufen. Erst danach gilt das Update als erfolgreich.
+- Bei Fehlschlag automatisch zurück: alter Commit, alter Build, DB-Sicherung wieder einspielen, Dienst starten. Das Update-Fenster zeigt `HH-UPDATE-ENDE: fehler <Grund> – auf <alter Commit> zurückgesetzt`.
+- Der Rückweg selbst darf nie zu Datenverlust führen: Bevor die Sicherung eingespielt wird, kommt der kaputte Stand zur Seite und wird nicht gelöscht.
+- Modul-Updates: Die alte Modulversion bleibt erhalten, bis die neue läuft.
+
+## 3. Nicht-Ziele
+- Keine Prozess-Isolation von Modulen (Idee `dea1413d`).
+- Kein Commit-Pinning bzw. keine Signatur für Updates (Task `2c73f4b5`).
+- Keine Umstellung der Legacy-Routen auf principal (Task `19699ab0`).
+
+## 4. Abnahme-Punkte
+| # | Prüfung |
+|---|---|
+| W1 | Auth-Wächter-Test im Kern: geht über alle API-Routen der echten App, Ausnahmeliste mit Begründung je Eintrag. Gegenprobe: eine Test-Route ohne Auth wird hinzugefügt → Test rot mit Pfad und Methode in der Meldung (im PR belegt) |
+| W2 | Veraltete Listeneinträge (Route existiert nicht mehr) oder Einträge ohne Begründung → Test rot |
+| W3 | Für jede Ausnahme außer Login/Health ein Test: ohne gültige Anmeldung/Signatur keine Daten |
+| W4 | PR mit grüner CI, Review durch hydrahive-reviewer und hydrahive-security-reviewer, per Merge-Commit auf main |
+| U1 | Spec `docs/specs/update-rollback.md` mit Bestandsbild (was ändert ein Update, was ist umkehrbar, DB-Größen/Zeit), Ablauf, Fehlerfällen, Mac-Unterschieden; als PR eingereicht und Till zur Freigabe vorgelegt |
