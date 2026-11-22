@@ -35,6 +35,13 @@ export function isForeignItem(item: IdeaListItem): item is ForeignListItem {
   return (item as ForeignListItem).foreign !== undefined
 }
 
+/** Geöffnete fremde Idee steht nicht mehr in der Liste (gelöscht oder nicht mehr sichtbar). */
+export function foreignMissing(open: ForeignIdea | null, list: readonly IdeaListItem[]): boolean {
+  if (open === null) return false
+  return !list.some((row) => isForeignItem(row)
+    && row.foreign.origin_fp === open.origin_fp && row.foreign.item_id === open.item_id)
+}
+
 /** Eigene Ideen nie mit einer fremden verwechseln: eigene IDs haben kein Präfix. */
 export function isForeignId(id: string | null | undefined): boolean {
   return !!id && id.startsWith(PREFIX)

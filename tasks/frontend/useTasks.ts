@@ -14,6 +14,16 @@ interface UseTasksOptions {
   foreignProjectId?: string | null
 }
 
+/** Fremde Tasks laden; bei Fehler leer, damit die eigenen sichtbar bleiben. */
+export async function loadForeign(status: TaskStatus | undefined, projectId: string | null): Promise<AnyTask[]> {
+  try {
+    const rows = await tasksApi.list({ status, project_id: projectId ?? undefined, include_foreign: true })
+    return rows.filter(isForeign)
+  } catch {
+    return []
+  }
+}
+
 export function useTasks(opts: UseTasksOptions = {}) {
   const { status, projectId, pollMs = 5000, includeForeign = false, foreignProjectId = null } = opts
   const [all, setAll] = useState<AnyTask[]>([])
@@ -24,9 +34,8 @@ export function useTasks(opts: UseTasksOptions = {}) {
     try {
       const own = await tasksApi.list({ status, project_id: projectId })
       // Fremde nur, wenn gewünscht; im Projekt auf dessen Zuordnung beschränkt (foreignProjectId).
-      const foreign = includeForeign
-        ? (await tasksApi.list({ status, project_id: foreignProjectId ?? undefined, include_foreign: true })).filter(isForeign)
-        : []
+      // Scheitert nur dieser Teil, bleiben die eigenen Tasks sichtbar (Review #456).
+      const foreign = includeForeign ? await loadForeign(status, foreignProjectId) : []
       setAll(foreign.length ? mergeSorted(own, foreign) : own)
       setError(null)
     } catch (e) {

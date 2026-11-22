@@ -9,7 +9,7 @@ import { IdeaDetail } from "./components/IdeaDetail"
 import { IdeaForm } from "./components/IdeaForm"
 import { IdeaList } from "./components/IdeaList"
 import { BUTTON, ERROR_BOX, PANEL } from "./components/styles"
-import { isForeignId, isForeignItem, loadScope, saveScope, type InstanceScope } from "./foreign"
+import { foreignMissing, isForeignId, isForeignItem, loadScope, saveScope, type InstanceScope } from "./foreign"
 import { filterIdeas, linkedIdea, projectShowing, statusShowing, toListItem } from "./ideaView"
 import { errorText } from "./saveState"
 import type { T } from "./texts.de"
@@ -71,6 +71,13 @@ export function IdeasPage() {
       if ((problem as { status?: number }).status === 404) forget(id)
     }
   }, [select, forget, errorOf])
+
+  // Ist die geöffnete fremde Idee nach dem Neuladen nicht mehr in der Liste (gelöscht, nicht mehr
+  // sichtbar), die Ansicht schließen (Review #456).
+  const foreignGone = !loading && foreignMissing(foreignActive, ideas)
+  useEffect(() => {
+    if (foreignGone) queueMicrotask(() => setForeignActive(null))
+  }, [foreignGone])
 
   /** Fremde Idee: nur lesend anzeigen, nie über die Routen der eigenen Ideen laden. */
   function openRow(id: string) {

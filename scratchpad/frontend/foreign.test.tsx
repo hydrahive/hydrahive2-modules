@@ -9,7 +9,7 @@ vi.mock("@/features/chat/Markdown", () => ({ Markdown: ({ text }: { text: string
 import { ForeignBadge } from "./components/ForeignBadge"
 import { ForeignIdeaDetail } from "./components/ForeignIdeaDetail"
 import { IdeaList } from "./components/IdeaList"
-import { SCOPE_KEY, detailState, isForeignId, loadScope, saveScope, splitList, toForeignItem } from "./foreign"
+import { SCOPE_KEY, detailState, foreignMissing, isForeignId, loadScope, saveScope, splitList, toForeignItem } from "./foreign"
 import { countByStatus, filterIdeas, sortIdeas } from "./ideaView"
 import { de, type T } from "./texts.de"
 import { en } from "./texts.en"
@@ -103,6 +103,16 @@ describe("Fremde Ideen in der Liste", () => {
     expect(rows.map((r) => r.id)).toEqual(["a1b2c3d4", "f:fp-home:f-1"])     // gleiche Sekunde: eigene mit Mikrosekunden zuerst
     expect(isForeignId(rows[1].id)).toBe(true)
     expect(isForeignId(rows[0].id)).toBe(false)
+  })
+})
+
+describe("Geöffnete fremde Idee verschwindet aus der Liste (Review #456)", () => {
+  it("erkannt, wenn sie nach dem Neuladen fehlt, nicht solange sie da ist", () => {
+    const open = foreign()
+    expect(foreignMissing(open, [own("a1b2c3d4"), toForeignItem(foreign())])).toBe(false)
+    expect(foreignMissing(open, [own("a1b2c3d4"), toForeignItem(foreign({ item_id: "f-2" }))])).toBe(true)
+    expect(foreignMissing(open, [own("f-1")])).toBe(true)                 // eigene mit gleicher ID zählt nicht
+    expect(foreignMissing(null, [])).toBe(false)
   })
 })
 
