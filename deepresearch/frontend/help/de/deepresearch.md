@@ -44,6 +44,8 @@ Stand: ⏳ wartet, ⋯ läuft, ✓ fertig, ✕ fehlgeschlagen.
 - Ein Klick auf eine Frage öffnet den Lauf.
 - Fährst du mit der Maus über einen Eintrag, erscheint rechts ein ✕ (**Löschen**). Ein Klick entfernt den Lauf
   sofort, ohne Rückfrage.
+- Löschen hält einen laufenden Lauf nicht an. Er verschwindet aus der Liste, rechnet im Hintergrund aber zu Ende
+  und hält so lange die Warteschlange besetzt.
 
 Du siehst nur deine eigenen Recherchen. Die Liste zeigt die letzten 50.
 
@@ -59,6 +61,9 @@ führt ein Inhaltsverzeichnis durch die Abschnitte. Die Bilder stammen aus den g
   speichern“.
 - **HTML laden** speichert den Bericht als einzelne Datei, die du auch ohne HydraHive öffnen kannst.
 - **Im neuen Tab öffnen ↗** zeigt den Bericht groß in einem eigenen Tab.
+
+Im Bericht selbst steht oben rechts noch ein Knopf „⤓ Export ▾“. Innerhalb von HydraHive reagiert er nicht. Nimm
+dafür die drei Knöpfe darüber.
 
 ## Mit Buddy und Agenten
 
