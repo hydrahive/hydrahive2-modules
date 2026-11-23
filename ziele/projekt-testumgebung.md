@@ -85,17 +85,17 @@ Die Oberfläche zeigt, welcher Weg auf diesem Server geht, und graut Weg A aus, 
 - Kein Ersatz für Vibe; Vibe darf später auf dieselbe Durchreiche umziehen, muss aber nicht.
 
 ## 7. Etappen
-- **T0 Messung (vor dem Bau):** Auf einer echten WSL (Tester) prüfen, ob incus installierbar ist und ein Container
+- **E0 Messung (vor dem Bau):** Auf einer echten WSL (Tester) prüfen, ob incus installierbar ist und ein Container
   eine IPv4 bekommt; auf Ubuntu 26.04 dasselbe (Vibe-Befund 5.11.: Image `ubuntu/26.04` bekam unter incus 6.0.0 keine
   IPv4, `24.04` schon). Ergebnis entscheidet, ob Weg A unter WSL angeboten wird.
-- **T1** Port-Zuteilung + Durchreiche + Knopf (Weg B zuerst, weil überall möglich).
-- **T2** Container-Testumgebung per Klick (Weg A), Sperre kennt den Ausführungsort.
-- **T3** Hilfe-Artikel, Live-Test auf Linux und WSL.
+- **E1** Port-Zuteilung + Durchreiche + Knopf (Weg B zuerst, weil überall möglich).
+- **E2** Container-Testumgebung per Klick (Weg A), Sperre kennt den Ausführungsort.
+- **E3** Hilfe-Artikel, Live-Test auf Linux und WSL.
 
 ## 8. Abnahme-Punkte
 | # | Prüfung |
 |---|---|
-| T1 | Messung T0 dokumentiert (WSL + Ubuntu 26.04): incus ja/nein, Container-IPv4 ja/nein, mit Befehlen und Ausgabe |
+| T1 | Messung E0 dokumentiert (WSL + Ubuntu 26.04): incus ja/nein, Container-IPv4 ja/nein, mit Befehlen und Ausgabe |
 | T2 | Weg B: Projekt-Agent (echter Lauf, ohne incus) startet eine Testseite auf `HH_PREVIEW_PORT`, Knopf erscheint, Seite öffnet sich im Browser; Linux UND WSL |
 | T3 | Durchreiche: ohne Ticket/Cookie 401/403; Cookie von Projekt X öffnet Projekt Y nicht; Cookie öffnet keine HydraHive-API (Tests + Live-Probe) |
 | T4 | Weg A: Klick legt unprivilegierten Container an (`security.privileged=false`, `security.nesting=false` am echten Container belegt) und setzt den Container-Modus; Agent installiert im Container mit `apt-get`, Testseite öffnet sich |
