@@ -36,6 +36,17 @@ Rahmen für die Spec:
 - Der Rückweg selbst darf nie zu Datenverlust führen: Bevor die Sicherung eingespielt wird, kommt der kaputte Stand zur Seite und wird nicht gelöscht.
 - Modul-Updates: Die alte Modulversion bleibt erhalten, bis die neue läuft.
 
+## 2b. Butler-Webhook ohne Secret (Task 44fffa23)
+> Freigegeben von Till am 23.11.2026, Variante **b** (Secret automatisch erzeugen).
+
+Befund: `api/routes/butler.py:116` prüft `X-Webhook-Secret` nur, wenn das Projekt ein `webhook_secret` hat. Neue Projekte bekommen bereits eines (`projects/config.py:58`), Altprojekte ohne Secret nehmen aber jeden POST an.
+
+Regeln:
+1. Eine einmalige, idempotente Migration beim Start erzeugt für jedes Projekt ohne `webhook_secret` eines (`secrets.token_urlsafe(32)`) und schreibt einen Audit-Eintrag (`webhook_secret_generated`).
+2. Fehlt dem Projekt trotzdem ein Secret (Race, kaputte Konfig), lehnt die Route ab (401 `webhook_secret_required`). Ungeprüft durch geht nichts mehr. Der Kommentar zum alten „insecure Modus“ wird entfernt.
+3. Im Butler/Projekt-Cockpit gibt es einen Hinweis für betroffene Projekte: Ein Secret wurde automatisch erzeugt, externe Absender müssen den Header `X-Webhook-Secret` setzen. Das Secret lässt sich dort anzeigen und kopieren, der vorhandene Knopf zum Neu-Erzeugen bleibt.
+4. Das xfail im Test `test_butler_webhook_projekt_ohne_secret` wird entfernt, der Test ist jetzt grün und prüft die Ablehnung.
+
 ## 3. Nicht-Ziele
 - Keine Prozess-Isolation von Modulen (Idee `dea1413d`).
 - Kein Commit-Pinning bzw. keine Signatur für Updates (Task `2c73f4b5`).
@@ -49,3 +60,7 @@ Rahmen für die Spec:
 | W3 | Für jede Ausnahme außer Login/Health ein Test: ohne gültige Anmeldung/Signatur keine Daten |
 | W4 | PR mit grüner CI, Review durch hydrahive-reviewer und hydrahive-security-reviewer, per Merge-Commit auf main |
 | U1 | Spec `docs/specs/update-rollback.md` mit Bestandsbild (was ändert ein Update, was ist umkehrbar, DB-Größen/Zeit), Ablauf, Fehlerfällen, Mac-Unterschieden; als PR eingereicht und Till zur Freigabe vorgelegt |
+| B1 | Migration: Projekt ohne Secret bekommt beim Start eines, zweiter Lauf ändert nichts, Audit-Eintrag vorhanden (Test) |
+| B2 | Webhook auf Projekt ohne Secret → 401, mit falschem → 403, mit richtigem → 202 (Test); das xfail ist entfernt |
+| B3 | Hinweis im Cockpit für Projekte mit automatisch erzeugtem Secret, Secret kopierbar (Frontend, i18n de/en) |
+| B4 | PR mit grüner CI, Review durch hydrahive-reviewer und hydrahive-security-reviewer, per Merge-Commit auf main |
