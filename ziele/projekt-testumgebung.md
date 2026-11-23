@@ -1,6 +1,6 @@
 # Zieldokument: Projekt-Agent baut eine Testinstallation, die der Nutzer im Browser ausprobiert
 
-> **Status:** ENTWURF – wartet auf Tills Freigabe
+> **Status:** FREIGEGEBEN (Till, 23.11.2026: „ok sehr gut, so machen wir das“)
 > **Repo:** hydrahive2 (Kern); Hilfe-Artikel im Kern
 > **Auslöser:** Till, 23.11.2026: Bei einem Nutzer (Windows/WSL) soll ein Projekt-Agent eine Testinstallation des
 > Projekts (eine Webseite) bauen, die der Nutzer testen kann. Das geht nicht. „Es sollte auch bei Linux gehen, nicht
