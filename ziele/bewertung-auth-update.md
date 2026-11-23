@@ -64,3 +64,5 @@ Regeln:
 | B2 | Webhook auf Projekt ohne Secret → 401, mit falschem → 403, mit richtigem → 202 (Test); das xfail ist entfernt |
 | B3 | Hinweis im Cockpit für Projekte mit automatisch erzeugtem Secret, Secret kopierbar (Frontend, i18n de/en) |
 | B4 | PR mit grüner CI, Review durch hydrahive-reviewer und hydrahive-security-reviewer, per Merge-Commit auf main |
+| R1 | Spec-PR #753 (update-rollback, von Till am 23.11.2026 freigegeben: „alle Vorschläge ok“) mit main aktualisiert, von hydrahive-reviewer gesichtet, CI grün, per Merge-Commit auf main |
+| U2 | Etappe U2 laut `docs/specs/update-rollback.md` §7: Frontend-Bau in `dist.neu` + atomarer Tausch (Linux `update.sh`, Mac `update-mac.sh`, `_frontend_build` der Module). Test: Bau scheitert → `dist` unverändert, laufendes Frontend heil. PR mit grüner CI, Review hydrahive-reviewer, Merge-Commit auf main |
