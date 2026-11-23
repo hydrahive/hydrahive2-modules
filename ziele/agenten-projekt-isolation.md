@@ -40,6 +40,20 @@
    Dienstbenutzer (wie heute). Empfehlung: Buddy-Befehle im Projektkontext ebenfalls als Projektbenutzer, nur
    ausdrückliche Admin-Aufgaben als Dienstbenutzer.
 
+## 2a. Ohne Handarbeit (Till, 23.11.2026: „das kann kein normaler User, der es gerade mal schafft, HydraHive zu installieren“)
+- **Kein Nutzer legt Benutzer, Gruppen oder Netzregeln von Hand an.** Alles richtet HydraHive selbst ein:
+  - **Neuinstallation:** der Installer (läuft als root) legt Grundgerüst, Rechte und Netzregeln an.
+  - **Bestehende Installationen:** das normale Update (`update.sh` über `hydrahive2-update.timer`, läuft als root)
+    zieht dasselbe nach – idempotent, ohne Rückfrage.
+  - **Neues Projekt in der Oberfläche:** Projektbenutzer/-gruppe entstehen automatisch über einen schmalen Root-Helfer
+    nach dem Vorbild `hh-portforward` (eigene sudoers-Zeile nur für genau diesen Helfer; der Helfer prüft jede Eingabe
+    selbst, z. B. nur Projekt-IDs im erwarteten Format, nur Benutzer mit Präfix `hhp-`). Löschen eines Projekts
+    entfernt Benutzer und Gruppe wieder.
+  - Alternative ohne dauerhafte Benutzerkonten (systemd `DynamicUser`, `systemd-run --property=DynamicUser=yes`,
+    bubblewrap): in B0 prüfen – wenn sie dasselbe Schutzniveau ohne Helfer erreicht, ist sie vorzuziehen.
+- Schlägt die Einrichtung fehl, läuft HydraHive weiter wie bisher und zeigt im Cockpit einen deutlichen Hinweis
+  („Projekt-Isolation nicht aktiv“) – kein stilles Zurückfallen.
+
 ## 3. Etappen
 | Etappe | Inhalt |
 |---|---|
@@ -60,4 +74,5 @@
 | P4 | Normale Projektarbeit läuft: git, gh, Tests, npm ci/.venv, Modul-Container-Arbeiten, die das Projekt braucht |
 | P5 | Oberfläche (Dateien, Cockpit) liest/schreibt Workspaces weiter |
 | P6 | Keine Geheimnisse, keine Symlinks nach außen in Workspaces (Prüfskript in CI/Installer) |
+| P8 | Neuinstallation und Update auf einer frischen VM ohne jede Handarbeit: Projekt anlegen in der Oberfläche → Projektbenutzer existiert, Agent läuft als dieser; Projekt löschen → Benutzer weg; Fehlschlag sichtbar im Cockpit |
 | P7 | Live: der Angriff vom 20.11. (ssh + sudo + cat pg_mirror.dsn) und der Download vom 22.11. als Projekt-Agent nachgestellt → scheitert, auch verschleiert |
