@@ -59,7 +59,7 @@ Ohne diesen Schalter verhält sich die Vitrine **genau wie heute** (sddm bleibt,
   → der Installer wechselt auf lightdm (sddm kann Autologin nicht je Arbeitsplatz), aus → zurück auf sddm. lightdm wird
   nur dann installiert (Modul-Installer, wie heute schon openbox/evdi), nie für Ein-Arbeitsplatz-Nutzer, nie von einem
   Agenten.
-- **Ein Arbeitsplatz bleibt Standard;** der Fall „echter Monitor angeschlossen → kein Kiosk“ bleibt wie heute, außer
+- **Ein Arbeitsplatz bleibt Standard** (überholt durch §7 Nachtrag 24.11.2026); der Fall „echter Monitor angeschlossen → kein Kiosk“ bleibt wie heute, außer
   der Monitor ist ausdrücklich dem zweiten Arbeitsplatz zugewiesen.
 - `kiosk-session.sh` schaltet nur Ausgänge **seines** Arbeitsplatzes ab, nie die des zweiten.
 - Deutsche Texte; jede Meldung sagt, was der Nutzer tun kann. Hilfe-Artikel der Vitrine wird ergänzt.
@@ -92,3 +92,26 @@ Ohne diesen Schalter verhält sich die Vitrine **genau wie heute** (sddm bleibt,
 | MS6 | `kiosk-session.sh` schaltet nur Ausgänge von seat0 ab (Test mit zwei Arbeitsplätzen) |
 | MS7 | Live am Server mit Till: Vitrine auf dem Gehäuse-Display, Anmeldebildschirm am Fernseher, Till meldet sich an, Ton am Fernseher; Neustart des Servers → beides wieder da; Schalter aus → Zustand wie vorher |
 | MS8 | Hilfe-Artikel der Vitrine beschreibt Schalter, Auswahl, Rückbau; gegen Code geprüft |
+
+## 7. Nachtrag 24.11.2026 – „Vitrine und Desktop immer“ (Till freigegeben)
+Till: „vitrine und desktop sollen immer gehen, wenn vitrine installiert ist ist immer ein usb angeschlossen.“
+Belegt (Live-Test 1, 18:41/18:54): Mit angeschlossenem Fernseher schreibt jedes Update die Unit ohne Dashboard
+(install.sh „Monitor → kein Kiosk“). Die Regel einfach zu streichen geht nicht: Mit EINEM Arbeitsplatz meldet sddm den
+Kiosk an und `kiosk-session.sh` schaltet jeden Nicht-EVDI-Ausgang ab → Fernseher schwarz, keine Anmeldung möglich.
+Beides gleichzeitig = zwei Arbeitsplätze. Daher, abweichend von §3 „Ein Arbeitsplatz bleibt Standard“:
+- **N1** Der Kiosk wird immer eingerichtet; der Zweig „echter Monitor → kein Kiosk“ entfällt.
+- **N2** Ist ein echter Monitor an einer anderen Grafikkarte als dem USB-Display angeschlossen und gibt es eine
+  gespeicherte, gültige Zuordnung (seats.json), schaltet Installation/Update den zweiten Arbeitsplatz automatisch
+  ein – über multiseat-apply.sh mit Sicherung, Prüfung und Rückbau-Timer. Ohne gültige Zuordnung: Vitrine-Kiosk wie
+  heute ohne Monitor-Abschaltung des zweiten Bildschirms **nicht** möglich → Kiosk wird eingerichtet, aber
+  kiosk-session.sh schaltet fremde Ausgänge NICHT ab, solange ein Monitor erkannt und kein Multiseat aktiv ist
+  (Fernseher bleibt nutzbar als gespiegelte/zusätzliche Anzeige), und die Oberfläche zeigt „Zweiter Bildschirm
+  erkannt – als eigenen Arbeitsplatz einrichten?“.
+- **N3** „Zweiten Arbeitsplatz ausschalten“ bleibt; wer bewusst ausschaltet, wird nicht beim nächsten Update wieder
+  eingeschaltet (Vermerk in seats.json: `auto: false`).
+- **Reihenfolge:** N1–N3 werden erst gebaut, wenn der zweite Live-Test (0.17.8, Knopf) bestanden ist.
+
+| # | Prüfung |
+|---|---|
+| MS10 | Update mit angeschlossenem Monitor und gültiger Zuordnung schaltet automatisch ein (Ersatzprogramme); mit `auto: false` nicht; ohne Zuordnung Kiosk ohne Abschalten fremder Ausgänge + Hinweis |
+| MS11 | Live: Update auf die neue Version mit Fernseher am Server → Vitrine-Dashboard UND Anmeldebildschirm am Fernseher ohne Klick |
