@@ -73,9 +73,10 @@ describe("Karte „Zweiter Arbeitsplatz“ (Multiseat M1)", () => {
     expect(h).not.toContain('data-action="apply"')
   })
 
-  it("ehrlicher Hinweis „Umschalten kommt im nächsten Schritt“ immer sichtbar", () => {
-    expect(html(view())).toContain('data-hint="later"')
-    expect(seatsI18n.de.seats_later).toContain("Umschalten kommt im nächsten Schritt")
+  it("Satz „Umschalten kommt im nächsten Schritt“ ist weg, Hinweis zum Rückbau da", () => {
+    expect(html(view())).not.toContain("seats_later")
+    expect(JSON.stringify(seatsI18n)).not.toContain("nächsten Schritt")
+    expect(html(view())).toContain('data-hint="switch"')
     expect(seatsI18n.de.seats_monitor_hint).toBe("Zweiter Bildschirm erkannt – als eigenen Arbeitsplatz einrichten?")
   })
 
