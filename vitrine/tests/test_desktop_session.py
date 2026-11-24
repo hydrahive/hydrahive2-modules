@@ -92,9 +92,18 @@ def test_reiner_wm_nur_als_letzter_ausweg(tmp_path):
 
 
 def test_ungueltiger_name_wird_ignoriert(tmp_path):
-    root = _sys(tmp_path, ["Lubuntu"], xsm="/usr/bin/startlxqt", xdg=["Lubuntu"])
-    (root / "usr/share/xsessions/bö se;x.desktop").write_text(DESK["Lubuntu"])
-    assert desktop_session.find(root)["name"] == "Lubuntu"
+    """Ohne xdg-Vorzug gewänne alphabetisch „A b;x“ – der Name ist ungültig und darf gar nicht Kandidat sein."""
+    root = _sys(tmp_path, ["Lubuntu"], xsm="/usr/bin/startlxqt")
+    (root / "usr/share/xsessions/A b;x.desktop").write_text(DESK["Lubuntu"])
+    r = desktop_session.find(root)
+    assert r["name"] == "Lubuntu" and r["candidates"] == ["Lubuntu"]
+
+
+def test_platzhalter_mit_exec_default_unter_anderem_namen(tmp_path):
+    """Manche Distributionen nennen den Platzhalter anders (z. B. xsession.desktop, Exec=default)."""
+    root = _sys(tmp_path, ["gnome"])
+    (root / "usr/share/xsessions/xsession.desktop").write_text("[Desktop Entry]\nName=Xsession\nExec=default\n")
+    assert desktop_session.find(root) == {"name": "gnome", "reason": "only_desktop", "candidates": ["gnome"]}
 
 
 # --- Plan und lightdm-Datei --------------------------------------------------------------------------------------
