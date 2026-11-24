@@ -27,6 +27,8 @@ XORG_CONF="${ROOT_DIR}/etc/X11/xorg.conf.d/90-hydrahive-vitrine-seat0.conf"
 DDM="${ROOT_DIR}/etc/X11/default-display-manager"
 SDDM_CONF="${ROOT_DIR}/etc/sddm.conf"
 DM_LINK="${ROOT_DIR}/etc/systemd/system/display-manager.service"
+VITRINE_UNIT=hydrahive2-vitrine
+DROPIN="${ROOT_DIR}/etc/systemd/system/${VITRINE_UNIT}.service.d/50-hydrahive-multiseat.conf"
 TIMER=hydrahive2-vitrine-multiseat-revert
 REVERT="${CONF}/multiseat-revert.sh"
 
@@ -65,6 +67,7 @@ mkdir -p "${BK}"
 backup() { if [ -f "$2" ]; then cp -a "$2" "${BK}/$1"; else : > "${BK}/$1.fehlt"; fi; }
 backup default-display-manager "${DDM}"
 backup sddm.conf "${SDDM_CONF}"
+backup vitrine-dropin.conf "${DROPIN}"            # vermerkt auch, ob der Drop-in vorher fehlte (.fehlt)
 printf '%s\n' "${dm_unit}" > "${BK}/dm-unit"
 for f in "${LIGHTDM_DIR}"/50-hydrahive*.conf; do [ -f "${f}" ] && cp -a "${f}" "${BK}/lightdm-${f##*/}"; done
 ls -1 "${ROOT_DIR}/etc/udev/rules.d/" 2>/dev/null | grep '^72-seat-' > "${BK}/udev-72-seat.liste" || true
@@ -97,6 +100,16 @@ fail() {
   exit 1
 }
 
+# --- 5b. Dashboard des Vitrine-Dienstes sicher an. Live-Test 24.11.2026: ein Update mit angeschlossenem Fernseher hatte
+# die Unit ohne VITRINE_KIOSK_DISPLAY geschrieben (Zweig „Monitor → kein Kiosk“ in install.sh) → EVDI blieb aus und die
+# Prüfung unten konnte nie bestehen. Eigener Drop-in statt die Unit zu ändern; revert nimmt ihn zurück.
+# :0 ist das Display von seat0 laut lightdm.log im Live-Test; garantiert ist die Nummer nicht → M3.
+install -d -m 755 "$(dirname "${DROPIN}")"
+printf '%s\n' '[Service]' 'Environment=VITRINE_KIOSK_DISPLAY=:0' 'SupplementaryGroups=video' \
+  'BindReadOnlyPaths=-/tmp/.X11-unix' > "${DROPIN}"
+chmod 644 "${DROPIN}"
+"${SYSTEMCTL}" daemon-reload || fail "systemd lädt den Vitrine-Drop-in nicht"
+
 # --- 6. Geräte an seat1 ---
 for p in "${ATTACH[@]}"; do
   "${LOGINCTL}" attach seat1 "${p}" || fail "loginctl attach ${p} fehlgeschlagen"
@@ -110,6 +123,8 @@ fi
 "${SYSTEMCTL}" enable --force lightdm.service >/dev/null || fail "lightdm ließ sich nicht aktivieren"
 [ "${dm_unit}" != "lightdm.service" ] && "${SYSTEMCTL}" stop "${dm_unit}"
 "${SYSTEMCTL}" restart lightdm.service || fail "lightdm startet nicht"
+# Dashboard an das neue X von seat0 hängen (der Drop-in wirkt erst mit dem Neustart)
+"${SYSTEMCTL}" restart "${VITRINE_UNIT}" || fail "Vitrine-Dienst startet nicht"
 
 # --- 8. Prüfung: Kiosk NUR auf seat0, Anmeldung (nicht Kiosk) auf seat1, USB-Display an, Kiosk-Firefox läuft ---
 evdi_card="$(basename "$(readlink -f "${ROOT_DIR}${KMSDEV}")")"

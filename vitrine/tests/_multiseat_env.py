@@ -25,12 +25,17 @@ R="$HH_MULTISEAT_ROOT"
 case "$(basename "$0") $1" in
   "loginctl attach") mkdir -p "$R/etc/udev/rules.d"; echo "$3" >> "$R/etc/udev/rules.d/72-seat-hh.rules" ;;
   "loginctl flush-devices") rm -f "$R"/etc/udev/rules.d/72-seat-*.rules ;;
-  "loginctl list-sessions") cat "$HH_FAKE_SESSIONS" 2>/dev/null ;;
+  "loginctl list-sessions")   # sessions.retry gilt ab dem 2. Neustart von sddm (Wiederholung im Rückbau)
+    if [ -f "$HH_FAKE_SESSIONS.retry" ] && [ "$(grep -c '^systemctl restart sddm.service$' "$HH_FAKE_LOG")" -ge 2 ]; then
+      cat "$HH_FAKE_SESSIONS.retry"; else cat "$HH_FAKE_SESSIONS" 2>/dev/null; fi ;;
+  "loginctl list-seats")      # seat1 meldet sich noch so oft, wie in seat1.count steht (udev/logind langsam)
+    echo "seat0"; c="$(cat "$HH_FAKE_SEAT1" 2>/dev/null || echo 0)"
+    if [ "$c" -gt 0 ]; then echo "seat1"; echo $((c - 1)) > "$HH_FAKE_SEAT1"; fi ;;
   "pgrep "*) [ -f "$HH_FAKE_FIREFOX" ] ;;
   "apt-get "*) [ ! -f "$HH_FAKE_APT_FAIL" ] ;;
 esac
 """
-FAKES = ("systemctl", "systemd-run", "loginctl", "apt-get", "pgrep", "lightdm", "sleep")
+FAKES = ("systemctl", "systemd-run", "loginctl", "apt-get", "pgrep", "lightdm", "sleep", "udevadm")
 PLAIN = ("# vorher\n[Autologin]\nUser=hydrahive-kiosk\nSession=hydrahive-vitrine-kiosk\nRelogin=true\n")
 
 
@@ -44,6 +49,7 @@ def tills_plan(sys_root: Path) -> dict:
 
 class Env:
     def __init__(self, tmp: Path):
+        self.tmp = tmp
         self.root = build(tmp / "root")
         self.bin = tmp / "bin"
         self.bin.mkdir()
@@ -55,6 +61,7 @@ class Env:
         self.sessions = tmp / "sessions"
         self.firefox = tmp / "firefox.on"
         self.apt_fail = tmp / "apt.fail"
+        self.seat1 = tmp / "seat1.count"
         r = self.root
         # USB-Gerätebaum (Fixture kennt nur /proc), USB-Display-Gerät, EVDI-Ausgang an
         for p in tills_plan(r)["attach"]:
@@ -89,7 +96,7 @@ class Env:
             self.firefox.unlink()
         env = {**os.environ, "PATH": f"{self.bin}:{os.environ['PATH']}", "HH_MULTISEAT_ROOT": str(self.root),
                "HH_FAKE_LOG": str(self.log), "HH_FAKE_SESSIONS": str(self.sessions), "HH_FAKE_FIREFOX": str(self.firefox),
-               "HH_FAKE_APT_FAIL": str(self.apt_fail), "HH_MULTISEAT_CHECK_SECONDS": "3"}
+               "HH_FAKE_APT_FAIL": str(self.apt_fail), "HH_FAKE_SEAT1": str(self.seat1), "HH_MULTISEAT_CHECK_SECONDS": "3"}
         return subprocess.run(["bash", str(EXT / script), *args], env=env, capture_output=True, text=True, timeout=60,
                               check=False)
 
