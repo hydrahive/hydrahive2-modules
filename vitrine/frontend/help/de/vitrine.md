@@ -110,7 +110,17 @@ Arbeitsplatz** den Hinweis „Zweiter Bildschirm erkannt – als eigenen Arbeits
   Gerät zugeordnet ist, das USB-Display bei der Vitrine bleibt und jeder Arbeitsplatz genau eine eigene Grafikkarte hat.
 - Fehlt das USB-Display, gibt es nur eine Grafikkarte oder keinen angeschlossenen Bildschirm, zeigt die Karte den Grund
   statt der Auswahl.
-- Umschalten kommt im nächsten Schritt: Die Zuordnung wird nur gespeichert, am Rechner ändert sich noch nichts.
+- **Zweiten Arbeitsplatz einschalten** (erscheint nach dem Übernehmen) stellt den Rechner um. Vorher fragt die Vitrine
+  nach: Beide Bildschirme werden kurz schwarz. Danach meldet sich die Vitrine wie gewohnt selbst an, am zweiten
+  Bildschirm erscheint ein normaler Anmeldebildschirm. Dafür richtet die Vitrine im Hintergrund einen anderen
+  Anmeldedienst (lightdm) ein. Rechner mit nur einem Arbeitsplatz bekommen ihn nie.
+- Vor dem Umschalten sichert die Vitrine die betroffenen Einstellungen. Klappt etwas nicht, stellt sie den Stand von
+  vorher sofort wieder her, spätestens aber nach 5 Minuten von selbst, auch wenn das Umschalten hängen bleibt.
+- **Zweiten Arbeitsplatz ausschalten** stellt den Stand von vorher wieder her (ein Arbeitsplatz, bisheriger
+  Anmeldedienst).
+- Solange der zweite Arbeitsplatz an ist, ändern Updates der Vitrine nichts an der Anmeldung.
+- Wird die Vitrine deinstalliert, schaltet sie den zweiten Arbeitsplatz vorher aus.
+- Bluetooth-Geräte hängen am Funkchip des Rechners und bleiben bei der Vitrine.
 
 ## Mit Buddy und Agenten
 
@@ -147,4 +157,4 @@ schalten. Einblendungen sind reiner Text. Zu lange Texte werden mit „…“ ge
 - „Die Einstellungen der Vitrine konnten nicht geladen werden.“: Die Seite hat keine Verbindung zum Modul.
   Seite neu laden.
 
-*Stand: Vitrine 0.17.6, 24.11.2026*
+*Stand: Vitrine 0.17.7, 24.11.2026*

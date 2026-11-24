@@ -1,5 +1,5 @@
-"""Multiseat M1: GET/PUT /seats (nur Admin). Zeigt Geräte, Vorschlag und Hinweis; speichert die vom Admin bestätigte
-Zuordnung in <daten>/seats.json. Angewendet wird sie erst mit M2 (Installer) – hier wird nichts umgeschaltet."""
+"""Multiseat M1: GET/PUT /seats (nur Admin). Zeigt Geräte, Vorschlag, Hinweis und den Schaltzustand (M2); speichert die
+vom Admin bestätigte Zuordnung in <daten>/seats.json. Umgeschaltet wird nur über seat_apply_routes (POST apply/revert)."""
 from __future__ import annotations
 
 import json
@@ -41,11 +41,29 @@ def _saved() -> dict | None:
     return raw if isinstance(raw, dict) else None
 
 
+def _switch() -> dict:
+    from .seat_apply_routes import status       # Zustand des Ein-/Ausschaltens (Marker, laufender Lauf, letzter Lauf)
+    return status()
+
+
+def _saved_error(snap: dict, saved: dict | None) -> str | None:
+    """Gilt die gespeicherte Zuordnung noch für die Geräte von jetzt? (Knopf „einschalten“ nur dann)."""
+    from . import seat_plan
+    if not saved:
+        return "vitrine_seat_not_saved"
+    try:
+        seat_plan.build_plan(snap, seats.validate(snap, saved.get("assignment")))
+    except seats.SeatError as e:
+        return e.code
+    return None
+
+
 @router.get("/seats")
 def get_seats() -> dict:
     snap = snapshot()
+    saved = _saved()
     return {"devices": {k: snap[k] for k in ("gpus", "sound", "inputs")}, "seats": snap["seats"],
-            **seats.suggest(snap), "saved": _saved(), "applied": False}
+            **seats.suggest(snap), "saved": saved, "saved_error": _saved_error(snap, saved), **_switch()}
 
 
 class SeatsIn(BaseModel):
@@ -64,4 +82,4 @@ def put_seats(body: SeatsIn) -> dict:
     tmp = d / "seats.json.tmp"
     tmp.write_text(json.dumps(data, indent=2))
     tmp.replace(d / "seats.json")
-    return {**data, "applied": False}
+    return {**data, **_switch()}

@@ -9,6 +9,9 @@ VENV="${DATA}/venv"
 USER_NAME="$(id -un)"
 UNIT=hydrahive2-vitrine
 RULE=/etc/udev/rules.d/71-hydrahive2-vitrine.rules
+# Multiseat (M2): Zweiter Arbeitsplatz eingeschaltet → lightdm meldet den Kiosk an; sddm und dessen Datei bleiben unberührt.
+# Der Ordner ist für alle lesbar (kiosk-install.sh: install -d -m 755), der Marker 644 → Prüfung ohne root.
+MULTISEAT=""; [ -f /etc/hydrahive2-vitrine/multiseat.aktiv ] && MULTISEAT=1
 
 mkdir -p "${DATA}/videos" "${DATA}/cache"
 
@@ -47,18 +50,18 @@ for st in /sys/class/drm/card*-*/status; do
 done
 if [ -f "${DATA}/kiosk.off" ]; then
   echo "Vitrine-Kiosk: abgeschaltet (${DATA}/kiosk.off)"
-elif [ -n "${_monitor}" ]; then
+elif [ -n "${_monitor}" ] && [ -z "${MULTISEAT}" ]; then   # Multiseat: der Monitor gehört dem zweiten Arbeitsplatz
   echo "Vitrine-Kiosk: nicht eingerichtet – Monitor ${_monitor} angeschlossen (Anmeldebildschirm bleibt)"
-elif command -v apt-get >/dev/null && command -v sddm >/dev/null && command -v firefox >/dev/null; then
+elif command -v apt-get >/dev/null && { [ -n "${MULTISEAT}" ] || command -v sddm >/dev/null; } && command -v firefox >/dev/null; then
   [ -s "${DATA}/kiosk.key" ] || (umask 077 && head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "${DATA}/kiosk.key")
   _port="${HH_PORT:-$(systemctl show hydrahive2 -p Environment --value 2>/dev/null | tr ' ' '\n' | sed -n 's/^HH_PORT=//p')}"
   _url="http://127.0.0.1:${_port:-8001}/api/module-device/vitrine/kiosk?k=$(cat "${DATA}/kiosk.key")"
   # Nur `sudo -n bash` ist erlaubt (sudoers des Installers). Der HydraHive-Dienst läuft mit ProtectHome=read-only, und
   # sudo erbt das → Kiosk-Teil (legt /home/hydrahive-kiosk an) über systemd-run außerhalb der Sandbox (am Gerät belegt).
-  _before="$(sudo -n bash -c 'cat /etc/sddm.conf' 2>/dev/null || true)"
+  [ -z "${MULTISEAT}" ] && _before="$(sudo -n bash -c 'cat /etc/sddm.conf' 2>/dev/null || true)"
   if sudo -n bash -c "systemd-run --quiet --wait --pipe --collect /bin/bash '${MODULE_ROOT}/extension/kiosk-install.sh' '${MODULE_ROOT}' '${USER_NAME}' '${_url}'"; then
     sudo -n bash -c "install -m 755 '${MODULE_ROOT}/extension/kiosk-uninstall.sh' /etc/hydrahive2-vitrine/kiosk-uninstall.sh"
-    [ "${_before}" != "$(sudo -n bash -c 'cat /etc/sddm.conf')" ] && KIOSK_RESTART_SDDM=1
+    if [ -z "${MULTISEAT}" ] && [ "${_before}" != "$(sudo -n bash -c 'cat /etc/sddm.conf')" ]; then KIOSK_RESTART_SDDM=1; fi
     KIOSK_ENV="Environment=VITRINE_KIOSK_DISPLAY=:0
 SupplementaryGroups=video
 BindReadOnlyPaths=-/tmp/.X11-unix"

@@ -7,6 +7,16 @@ KIOSK=hydrahive-kiosk
 CONF=/etc/hydrahive2-vitrine
 SDDM=/etc/sddm.conf
 
+# Multiseat (M2): Zweiter Arbeitsplatz an → ZUERST ausschalten (lightdm aus, Geräte zurück, Anmeldedienst wie vorher).
+# Sonst bliebe nach dem Deinstallieren lightdm mit Kiosk-Autologin stehen. Die Kiosk-Nachprüfung ist hier überflüssig.
+if [ -f "${CONF}/multiseat.aktiv" ]; then
+  if [ -f "${CONF}/multiseat-revert.sh" ]; then
+    HH_MULTISEAT_CHECK_SECONDS=1 bash "${CONF}/multiseat-revert.sh" || true
+  else
+    echo "Vitrine-Kiosk: zweiter Arbeitsplatz war an, Rückbau-Skript fehlt – Anmeldedienst bitte von Hand prüfen" >&2
+  fi
+fi
+
 if [ -f "${CONF}/sddm.conf.vor-vitrine" ]; then
   if [ -s "${CONF}/sddm.conf.vor-vitrine" ]; then cp -a "${CONF}/sddm.conf.vor-vitrine" "${SDDM}"; else rm -f "${SDDM}"; fi
 fi

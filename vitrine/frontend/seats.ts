@@ -1,5 +1,5 @@
-/** Multiseat M1: Zeilen und Prüfung für die Karte „Zweiter Arbeitsplatz“ (ohne Browser testbar). */
-import type { SeatId, SeatsView } from "./api"
+/** Multiseat M1/M2: Zeilen, Prüfung und Schaltknöpfe der Karte „Zweiter Arbeitsplatz“ (ohne Browser testbar). */
+import type { SeatAction, SeatId, SeatsView } from "./api"
 
 export interface SeatRow { id: string; kind: "gpu" | "sound" | "input"; label: string; detail: string }
 
@@ -33,3 +33,19 @@ export function choiceErrors(v: SeatsView, c: Record<string, SeatId | null>): st
 
 export const complete = (c: Record<string, SeatId | null>): Record<string, SeatId> =>
   Object.fromEntries(Object.entries(c).filter((e): e is [string, SeatId] => e[1] !== null))
+
+/** Welcher Schaltknopf erscheint: einschalten nur mit gespeicherter, gültiger Zuordnung; ausschalten nur wenn an. */
+export function switchAction(v: SeatsView): SeatAction | null {
+  if (v.running) return null
+  if (v.applied) return "revert"
+  return v.saved && !v.saved_error ? "apply" : null
+}
+
+/** Ergebnis des letzten Laufs: Schlüssel für den Text + die letzten Zeilen bei Fehler. */
+export function runResult(v: SeatsView): { msgKey: string; ok: boolean; detail: string } | null {
+  const r = v.last_run
+  if (!r || v.running) return null
+  const msgKey = r.ok ? `seats_run_ok_${r.action}` : r.action === "apply" && r.exit === 1 ? "seats_run_reverted"
+    : r.action === "apply" && r.exit === 2 ? "seats_run_rejected" : `seats_run_fail_${r.action}`
+  return { msgKey, ok: r.ok, detail: r.ok ? "" : r.lines.slice(-6).join("\n") }
+}

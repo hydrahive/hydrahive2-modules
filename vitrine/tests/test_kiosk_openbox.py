@@ -79,7 +79,9 @@ def _run_install_tail(tmp_path, procs: list[str]) -> list[str]:
     """Nur den Neustart-Teil des Installers mit gefälschtem pgrep/systemctl ausführen; liefert die systemctl-Aufrufe."""
     import re
     inst = (EXT / "kiosk-install.sh").read_text()
-    block = re.search(r'(if pgrep -u "\$\{KIOSK\}" -x openbox.*?\nfi)', inst, re.S).group(1)
+    # Seit Multiseat M2b steht davor `[ -z "${MULTISEAT}" ] &&` (zweiter Arbeitsplatz an → sddm nicht neu starten).
+    # Hier läuft der Fall OHNE Marker, also MULTISEAT leer; der Fall MIT Marker steht in test_install_multiseat.py.
+    block = re.search(r'(if (?:\[ -z "\$\{MULTISEAT\}" \] && )?pgrep -u "\$\{KIOSK\}" -x openbox.*?\nfi)', inst, re.S).group(1)
     bindir = tmp_path / "bin"
     bindir.mkdir(parents=True)
     (tmp_path / "procs").write_text("\n".join(procs) + "\n")
@@ -93,7 +95,7 @@ if [ "$3" = "-x" ]; then grep -q "^$4\\b" "$PROCS"; else pat="${@: -1}"; grep -q
     calls = tmp_path / "calls"
     calls.write_text("")
     env = {"PATH": f"{bindir}:/usr/bin:/bin", "PROCS": str(tmp_path / "procs"), "CALLS": str(calls)}
-    subprocess.run(["bash", "-c", 'KIOSK=hydrahive-kiosk\n' + block], env=env, check=True)
+    subprocess.run(["bash", "-c", 'KIOSK=hydrahive-kiosk\nMULTISEAT=""\n' + block], env=env, check=True)
     return [ln for ln in calls.read_text().splitlines() if ln]
 
 

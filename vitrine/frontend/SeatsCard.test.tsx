@@ -47,7 +47,7 @@ describe("Karte „Zweiter Arbeitsplatz“ (Multiseat M1)", () => {
     const c = initialChoice(v)
     expect(c["input:usb:1-5"]).toBeNull()
     expect(choiceErrors(v, c)).toContain("seats_err_open")
-    expect(html(v)).toMatch(/disabled=""[^>]*data-action="apply"/)
+    expect(html(v)).toMatch(/disabled=""[^>]*data-action="save"/)
     const ok = { ...c, "input:usb:1-5": "seat1" as const }
     expect(choiceErrors(v, ok)).toEqual([])
     expect(complete(ok)["input:usb:1-5"]).toBe("seat1")
@@ -70,12 +70,14 @@ describe("Karte „Zweiter Arbeitsplatz“ (Multiseat M1)", () => {
     const h = html(view({ feasible: false, reasons: ["one_gpu"], assignment: {} }))
     expect(h).toContain('data-part="not-feasible"')
     expect(h).toContain("seats_reason_one_gpu")
+    expect(h).not.toContain('data-action="save"')
     expect(h).not.toContain('data-action="apply"')
   })
 
-  it("ehrlicher Hinweis „Umschalten kommt im nächsten Schritt“ immer sichtbar", () => {
-    expect(html(view())).toContain('data-hint="later"')
-    expect(seatsI18n.de.seats_later).toContain("Umschalten kommt im nächsten Schritt")
+  it("Satz „Umschalten kommt im nächsten Schritt“ ist weg, Hinweis zum Rückbau da", () => {
+    expect(html(view())).not.toContain("seats_later")
+    expect(JSON.stringify(seatsI18n)).not.toContain("nächsten Schritt")
+    expect(html(view())).toContain('data-hint="switch"')
     expect(seatsI18n.de.seats_monitor_hint).toBe("Zweiter Bildschirm erkannt – als eigenen Arbeitsplatz einrichten?")
   })
 
