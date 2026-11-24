@@ -23,8 +23,25 @@ _FAKE = r"""#!/bin/bash
 echo "$(basename "$0") $*" >> "$HH_FAKE_LOG"
 R="$HH_MULTISEAT_ROOT"
 case "$(basename "$0") $1" in
-  "loginctl attach") mkdir -p "$R/etc/udev/rules.d"; echo "$3" >> "$R/etc/udev/rules.d/72-seat-hh.rules" ;;
-  "loginctl flush-devices") rm -f "$R"/etc/udev/rules.d/72-seat-*.rules ;;
+  "loginctl attach") mkdir -p "$R/etc/udev/rules.d"; echo "$3" >> "$R/etc/udev/rules.d/72-seat-hh.rules"
+    rm -f "$R/.udev-geladen" ;;                                # neue Regel: udev kennt sie erst nach --reload
+  "loginctl flush-devices") rm -f "$R"/etc/udev/rules.d/72-seat-*.rules "$R/.udev-geladen" ;;
+  "udevadm control") [ "$2" = "--reload" ] && touch "$R/.udev-geladen" ;;
+  "udevadm info")   # Eigenschaften: udev.props des Geräts + ID_SEAT=seat1, solange das Gerät so markiert ist
+    for a in "$@"; do case "$a" in --path=*) d="$R${a#--path=}" ;; esac; done
+    [ -f "$d/uevent" ] || exit 1
+    cat "$d/udev.props" 2>/dev/null; [ -f "$d/.seat1" ] && echo "ID_SEAT=seat1"; exit 0 ;;
+  "udevadm trigger")   # wirkt nur mit geladenen Regeln; ohne --parent-match nur das Gerät selbst, nicht die Kinder
+    [ -f "$R/.udev-geladen" ] || exit 0
+    for a in "$@"; do case "$a" in --parent-match=*) t="${a#--parent-match=}"; deep=1 ;; /sys/*) t="$a"; deep=0 ;; esac; done
+    if [ "$deep" = 1 ]; then list="$(find "$R$t" -name uevent -type f -printf '%h\n')"; else list="$R$t"; fi
+    rules="$(cat "$R"/etc/udev/rules.d/72-seat-*.rules 2>/dev/null)"
+    while IFS= read -r d; do
+      [ -f "$d/uevent" ] || continue
+      grep -q ':seat:' "$d/udev.props" 2>/dev/null || continue
+      hit=0; while IFS= read -r r; do [ -n "$r" ] && case "${d#$R}/" in "$r"/*) hit=1 ;; esac; done <<<"$rules"
+      if [ "$hit" = 1 ]; then touch "$d/.seat1"; else rm -f "$d/.seat1"; fi
+    done <<<"$list" ;;
   "loginctl list-sessions")   # sessions.retry gilt ab dem 2. Neustart von sddm (Wiederholung im Rückbau)
     if [ -f "$HH_FAKE_SESSIONS.retry" ] && [ "$(grep -c '^systemctl restart sddm.service$' "$HH_FAKE_LOG")" -ge 2 ]; then
       cat "$HH_FAKE_SESSIONS.retry"; else cat "$HH_FAKE_SESSIONS" 2>/dev/null; fi ;;
@@ -36,7 +53,29 @@ case "$(basename "$0") $1" in
 esac
 """
 FAKES = ("systemctl", "systemd-run", "loginctl", "apt-get", "pgrep", "lightdm", "sleep", "udevadm")
+SEAT1_MARK = ".seat1"
 PLAIN = ("# vorher\n[Autologin]\nUser=hydrahive-kiosk\nSession=hydrahive-vitrine-kiosk\nRelogin=true\n")
+
+
+def udev_tree(root: Path, attach: list[str]) -> dict[str, bool]:
+    """udev-Geräte unter den attach-Pfaden (uevent + udev.props): Pfad → seat-getaggt. Kinder wie am Server 24.11.:
+    Grafik → drm-Karte (seat) + Ausgang (ohne seat); USB-Empfänger → Schnittstelle (ohne), input/event/hidraw (seat)."""
+    gpu, snd, usb = attach
+    kids = {gpu: [("drm/cardX", True), ("drm/cardX/cardX-HDMI-A-1", False)],
+            snd: [("controlC0", False)],
+            usb: [("1-5:1.0", False), ("1-5:1.0/0003:24AE:1008.000B/input/input31", True),
+                  ("1-5:1.0/0003:24AE:1008.000B/input/input31/event16", True),
+                  ("1-5:1.0/0003:24AE:1008.000B/hidraw/hidraw0", True)]}
+    out: dict[str, bool] = {}
+    for p in attach:
+        for rel, seat in [("", True), *kids[p]]:
+            path = f"{p}/{rel}" if rel else p
+            d = root / path.lstrip("/")
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "uevent").write_text("")
+            (d / "udev.props").write_text("TAGS=:seat:uaccess:\nCURRENT_TAGS=:seat:uaccess:\n" if seat else "TAGS=:power-switch:\n")
+            out[path] = seat
+    return out
 
 
 def tills_plan(sys_root: Path) -> dict:
@@ -66,6 +105,7 @@ class Env:
         # USB-Gerätebaum (Fixture kennt nur /proc), USB-Display-Gerät, EVDI-Ausgang an
         for p in tills_plan(r)["attach"]:
             (r / p.lstrip("/")).mkdir(parents=True, exist_ok=True)
+        self.udev_devices = udev_tree(r, tills_plan(r)["attach"])
         (r / "dev/dri/by-path").mkdir(parents=True)
         (r / "dev/dri/card1").write_text("")
         (r / "dev/dri/by-path/platform-evdi.0-card").symlink_to("../card1")

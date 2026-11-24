@@ -33,6 +33,23 @@ restore() {   # <Sicherungsname> <Ziel>: Datei zurück, oder entfernen, wenn sie
   elif [ -f "${BK}/$1.fehlt" ]; then rm -f "$2"; fi
 }
 
+BK_ATTACH=()   # Geräte des zweiten Arbeitsplatzes laut Sicherung (vor rm -rf der Sicherung gelesen, für die Wiederholung)
+if [ -f "${BK}/attach.liste" ]; then mapfile -t BK_ATTACH < "${BK}/attach.liste"; fi
+
+# Nach flush-devices: udev-Event für genau diese Geräte und ihre Kinder, damit ID_SEAT=seat1 verschwindet (Live-Test 2:
+# ohne change-Event behalten Geräte ihre Zuordnung). Pfade aus der Sicherung, nochmals geprüft wie in apply.
+retrigger() {
+  local p
+  [ "${#BK_ATTACH[@]}" -gt 0 ] || return 0
+  "${UDEVADM}" control --reload >/dev/null 2>&1 || true
+  for p in "${BK_ATTACH[@]}"; do
+    [[ "${p}" =~ ^/sys/devices/[A-Za-z0-9:._/-]+$ ]] || continue
+    case "/${p}/" in */../*|*/./*) continue ;; esac
+    "${UDEVADM}" trigger --action=change --settle "${p}" >/dev/null 2>&1 || true
+    "${UDEVADM}" trigger --action=change --settle --parent-match="${p}" >/dev/null 2>&1 || true
+  done
+}
+
 seat1_gone() {
   [ -z "$("${LOGINCTL}" list-seats --no-legend 2>/dev/null | awk '$1 == "seat1"')" ]
 }
@@ -42,6 +59,7 @@ seat1_gone() {
 # wie M0-Probe C), der Kiosk landete auf seat1. Ein zweites flush-devices hat geholfen.
 release_devices() {
   "${LOGINCTL}" flush-devices >/dev/null 2>&1 || echo "Vitrine-Multiseat: loginctl flush-devices fehlgeschlagen" >&2
+  retrigger
   "${UDEVADM}" settle --timeout=15 >/dev/null 2>&1 || true
   for _ in $(seq 1 "${SEAT_WAIT}"); do
     seat1_gone && return 0
@@ -49,6 +67,7 @@ release_devices() {
   done
   echo "Vitrine-Multiseat: zweiter Arbeitsplatz nach ${SEAT_WAIT} s noch da – Geräte noch einmal zurückgeben" >&2
   "${LOGINCTL}" flush-devices >/dev/null 2>&1 || true
+  retrigger
   "${UDEVADM}" settle --timeout=15 >/dev/null 2>&1 || true
   "${SLEEP}" 2
   seat1_gone && return 0

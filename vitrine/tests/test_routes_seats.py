@@ -13,8 +13,11 @@ from _seats_fixture import NV, build
 
 @pytest.fixture
 def sysroot(tmp_path, monkeypatch):
-    from backend import seat_routes
+    from backend import seat_apply_routes, seat_routes
     monkeypatch.setattr(seat_routes, "SYS_ROOT", build(tmp_path))
+    # Marker-Ordner nicht vom echten Rechner lesen (dort kann der zweite Arbeitsplatz eingeschaltet sein)
+    (tmp_path / "etc-vitrine").mkdir()
+    monkeypatch.setattr(seat_apply_routes, "ETC", tmp_path / "etc-vitrine")
     yield tmp_path
 
 
