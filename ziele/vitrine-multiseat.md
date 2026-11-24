@@ -100,13 +100,13 @@ Belegt (Live-Test 1, 18:41/18:54): Mit angeschlossenem Fernseher schreibt jedes 
 Kiosk an und `kiosk-session.sh` schaltet jeden Nicht-EVDI-Ausgang ab → Fernseher schwarz, keine Anmeldung möglich.
 Beides gleichzeitig = zwei Arbeitsplätze. Daher, abweichend von §3 „Ein Arbeitsplatz bleibt Standard“:
 - **N1** Der Kiosk wird immer eingerichtet; der Zweig „echter Monitor → kein Kiosk“ entfällt.
-- **N2** Ist ein echter Monitor an einer anderen Grafikkarte als dem USB-Display angeschlossen und gibt es eine
-  gespeicherte, gültige Zuordnung (seats.json), schaltet Installation/Update den zweiten Arbeitsplatz automatisch
-  ein – über multiseat-apply.sh mit Sicherung, Prüfung und Rückbau-Timer. Ohne gültige Zuordnung: Vitrine-Kiosk wie
-  heute ohne Monitor-Abschaltung des zweiten Bildschirms **nicht** möglich → Kiosk wird eingerichtet, aber
-  kiosk-session.sh schaltet fremde Ausgänge NICHT ab, solange ein Monitor erkannt und kein Multiseat aktiv ist
-  (Fernseher bleibt nutzbar als gespiegelte/zusätzliche Anzeige), und die Oberfläche zeigt „Zweiter Bildschirm
-  erkannt – als eigenen Arbeitsplatz einrichten?“.
+- **N2** Ist ein echter Monitor an einer anderen Grafikkarte als dem USB-Display angeschlossen:
+  - mit gespeicherter, gültiger Zuordnung (seats.json) schaltet Installation/Update den zweiten Arbeitsplatz
+    automatisch ein – über multiseat-apply.sh mit Sicherung, Prüfung und Rückbau-Timer;
+  - ohne gültige Zuordnung wird der Kiosk eingerichtet, `kiosk-session.sh` schaltet den fremden Ausgang dabei
+    **nicht** ab (Fernseher bleibt an, zeigt dann aber nur den erweiterten Kiosk-Desktop, keine eigene Anmeldung –
+    ehrlicher Zwischenzustand), und die Oberfläche zeigt „Zweiter Bildschirm erkannt – als eigenen Arbeitsplatz
+    einrichten?“. Erst mit „Übernehmen“ wird daraus der Normalfall.
 - **N3** „Zweiten Arbeitsplatz ausschalten“ bleibt; wer bewusst ausschaltet, wird nicht beim nächsten Update wieder
   eingeschaltet (Vermerk in seats.json: `auto: false`).
 - **Reihenfolge:** N1–N3 werden erst gebaut, wenn der zweite Live-Test (0.17.8, Knopf) bestanden ist.
