@@ -14,11 +14,13 @@ from renderer import preview as display_preview
 from . import state, videos
 from .bt_routes import cockpit_router as _bt_cockpit
 from .light_routes import router as _light
+from .seat_routes import router as _seats
 from .schemas import Config, MessageIn, PreviewIn, SimulateIn
 
 router = APIRouter()
 router.include_router(_bt_cockpit)        # S7: Bluetooth (Login + Recht über das Modul-Tor)
 router.include_router(_light)             # S8: Mainboard-Licht (Stand, Vorschau)
+router.include_router(_seats)             # Multiseat M1: Erkennung + Vorschlag (nur Admin, kein Umschalten)
 
 
 def data_dir():

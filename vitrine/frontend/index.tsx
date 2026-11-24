@@ -1,5 +1,6 @@
 import { VitrinePage } from "./VitrinePage"
 import { lightI18n } from "./lightI18n"
+import { seatsI18n } from "./seatsI18n"
 
 export const routes = [{ path: "/vitrine", element: <VitrinePage /> }]
 export const nav = [
@@ -10,6 +11,7 @@ export const i18n = {
   de: {
     vitrine: {
       ...lightI18n.de,
+      ...seatsI18n.de,
       vitrine: "Vitrine", title: "Vitrine", eyebrow: "Gehäuse-Display",
       save: "Speichern", saving: "Speichert…", saved: "Gespeichert – das Display übernimmt es in wenigen Sekunden.",
       load_error: "Die Einstellungen der Vitrine konnten nicht geladen werden.",
@@ -76,6 +78,7 @@ export const i18n = {
   en: {
     vitrine: {
       ...lightI18n.en,
+      ...seatsI18n.en,
       vitrine: "Vitrine", title: "Vitrine", eyebrow: "Case display",
       save: "Save", saving: "Saving…", saved: "Saved – the display picks it up within a few seconds.",
       load_error: "Vitrine settings could not be loaded.",

@@ -13,6 +13,7 @@ import { SettingsCard } from "./SettingsCard"
 import { SimulateCard } from "./SimulateCard"
 import { MessagesCard } from "./MessagesCard"
 import { BluetoothCard } from "./BluetoothCard"
+import { SeatsCard } from "./SeatsCard"
 import { LightCard } from "./LightCard"
 import { VitrineHeader } from "./VitrineHeader"
 import { VitrineTabs } from "./VitrineTabs"
@@ -88,6 +89,7 @@ export function VitrinePage() {
             {tab === "dashboard" && config && <DashboardCard config={config} onChange={change} />}
             {tab === "light" && config && <LightCard light={config.light} status={light} onChange={(l) => change({ ...config, light: l })} />}
             {tab === "bluetooth" && <BluetoothCard />}
+            {tab === "seats" && <SeatsCard />}
           </div>
         </div>
       </main>

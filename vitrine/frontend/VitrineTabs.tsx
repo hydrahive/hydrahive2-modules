@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next"
-import { Bluetooth, CalendarDays, Gauge, LayoutDashboard, Lightbulb, SlidersHorizontal } from "lucide-react"
+import { Bluetooth, CalendarDays, Gauge, LayoutDashboard, Lightbulb, MonitorSmartphone, SlidersHorizontal } from "lucide-react"
 import { TABS, type TabId } from "./tabs"
 
 const ICONS: Record<TabId, typeof Gauge> = {
-  overview: Gauge, program: CalendarDays, display: SlidersHorizontal, dashboard: LayoutDashboard, light: Lightbulb, bluetooth: Bluetooth,
+  overview: Gauge, program: CalendarDays, display: SlidersHorizontal, dashboard: LayoutDashboard, light: Lightbulb, bluetooth: Bluetooth, seats: MonitorSmartphone,
 }
 
 /** Reiterleiste. Punkt: gelb = ungespeichert, rot = ungültig. Pfeiltasten wechseln (Tastatur). */

@@ -96,6 +96,22 @@ der Server wieder unsichtbar. Gefundene Geräte koppelst du mit **Koppeln**. Fra
 tippst du ihn auf der Tastatur ein und drückst Enter. **Entfernen** löst ein Gerät wieder, es muss dann neu
 gekoppelt werden.
 
+### Arbeitsplätze
+Hängt neben dem Gehäuse-Display ein normaler Bildschirm an einer eigenen Grafikkarte (zum Beispiel ein Fernseher),
+kann der Rechner später zwei Arbeitsplätze haben: die Vitrine auf dem Gehäuse-Display und einen zweiten Arbeitsplatz
+mit eigenem Bildschirm, Ton, Tastatur und Maus. Ist so ein Bildschirm angeschlossen, zeigt die Karte **Zweiter
+Arbeitsplatz** den Hinweis „Zweiter Bildschirm erkannt – als eigenen Arbeitsplatz einrichten?“.
+- Die Vitrine liest Grafikkarten, Bildschirme, Ton und Eingabegeräte selbst aus und schlägt eine Zuordnung vor: Das
+  USB-Display und eine Grafikkarte ohne Bildschirm bleiben bei der **Vitrine**, die Grafikkarte mit dem Bildschirm und
+  ihr Ton gehen an **Zweiter Arbeitsplatz**.
+- Bei Tastatur und Maus rät die Vitrine nicht, wenn sie es nicht sicher weiß. Dann steht dort „– bitte wählen –“ und
+  du ordnest sie selbst zu.
+- Jedes Gerät lässt sich in der Liste umstellen. **Übernehmen** speichert die Zuordnung. Das geht erst, wenn jedes
+  Gerät zugeordnet ist, das USB-Display bei der Vitrine bleibt und jeder Arbeitsplatz genau eine eigene Grafikkarte hat.
+- Fehlt das USB-Display, gibt es nur eine Grafikkarte oder keinen angeschlossenen Bildschirm, zeigt die Karte den Grund
+  statt der Auswahl.
+- Umschalten kommt im nächsten Schritt: Die Zuordnung wird nur gespeichert, am Rechner ändert sich noch nichts.
+
 ## Mit Buddy und Agenten
 
 Die Vitrine bringt das Werkzeug `display_message` mit. Es ist nicht automatisch an: Du gibst es einem Agenten
@@ -131,4 +147,4 @@ schalten. Einblendungen sind reiner Text. Zu lange Texte werden mit „…“ ge
 - „Die Einstellungen der Vitrine konnten nicht geladen werden.“: Die Seite hat keine Verbindung zum Modul.
   Seite neu laden.
 
-*Stand: Vitrine 0.17.3, 22.11.2026*
+*Stand: Vitrine 0.17.5, 24.11.2026*
