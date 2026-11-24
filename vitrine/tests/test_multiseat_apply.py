@@ -188,14 +188,22 @@ def test_apt_fehler_schaltet_nichts_um(env):
 
 # --- Plan-Prüfung im Skript (vor jeder Änderung) ----------------------------------------------------------------
 
-@pytest.mark.parametrize("bad", ["/etc/passwd", "/sys/devices/../../etc/passwd", "/sys/devices/pci0000:00/x;reboot",
-                                 "/sys/devices/pci0000:00/$(id)", "/sys/devices/pci 00", "/sys/devices/gibtsnicht",
-                                 "/sys/class/drm/card9"])
-def test_apply_lehnt_schlechte_pfade_ab(env, bad):
+@pytest.mark.parametrize("bad, why", [
+    ("/etc/passwd", "unerlaubten Zeichen"),
+    ("/sys/devices/../devices/pci0000:00", "../"),                       # existiert – nur die ../-Regel hält es auf
+    ("/sys/devices/pci0000:00/./x", "../"),
+    ("/sys/devices/pci0000:00/x;reboot", "unerlaubten Zeichen"),
+    ("/sys/devices/pci0000:00/$(id)", "unerlaubten Zeichen"),
+    ("/sys/devices/pci 00", "unerlaubten Zeichen"),
+    ("/sys/devices/gibtsnicht", "nicht gefunden"),
+    ("/sys/class/drm/card9", "unerlaubten Zeichen")])
+def test_apply_lehnt_schlechte_pfade_ab(env, bad, why):
+    (env.root / "sys/devices/pci0000:00/x;reboot").mkdir(parents=True)  # existiert – nur die Zeichen-Regel hält es auf
+    (env.root / "sys/devices/pci 00").mkdir(parents=True)
     plan = tills_plan(env.root)
     plan["attach"] = [*plan["attach"], bad]
     r = env.run("multiseat-apply.sh", *env.write_plan(plan))
-    assert r.returncode == 2, r.stderr
+    assert r.returncode == 2 and why in r.stderr, r.stderr
     assert env.calls() == [] and not env.etc(BK).exists() and not env.etc(LIGHTDM).exists()
 
 
@@ -203,7 +211,8 @@ def test_apply_lehnt_symlink_aus_sys_devices_hinaus_ab(env):
     (env.root / "sys/devices/raus").symlink_to(env.root / "etc")
     plan = tills_plan(env.root)
     plan["attach"].append("/sys/devices/raus")
-    assert env.run("multiseat-apply.sh", *env.write_plan(plan)).returncode == 2 and env.calls() == []
+    r = env.run("multiseat-apply.sh", *env.write_plan(plan))
+    assert r.returncode == 2 and "hinaus" in r.stderr and env.calls() == []
 
 
 @pytest.mark.parametrize("key, val", [("seat0_busid", "PCI:13:0:0\nX"), ("seat0_busid", "13:0:0"),
