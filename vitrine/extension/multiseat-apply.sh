@@ -33,7 +33,7 @@ REVERT="${CONF}/multiseat-revert.sh"
 die() { echo "Vitrine-Multiseat: $*" >&2; exit 2; }
 
 # --- 1. Plan lesen und SELBST prüfen (vor jeder Änderung) ---
-mapfile -t P < <("${PYTHON}" - "${PLAN}" <<'PY'
+_plan="$("${PYTHON}" - "${PLAN}" <<'PY'
 import json, sys
 p = json.load(open(sys.argv[1]))
 vals = [p["seat0_busid"], p["evdi_kmsdev"], p["kiosk_user"], *p["attach"]]
@@ -41,17 +41,19 @@ if not all(isinstance(v, str) and v.isprintable() for v in vals):
     sys.exit(2)
 print("\n".join(vals))
 PY
-) || die "Plan ${PLAN} nicht lesbar – Zuordnung in der Vitrine neu speichern."
+)" || die "Plan ${PLAN} nicht lesbar – Zuordnung in der Vitrine neu speichern."
+mapfile -t P <<<"${_plan}"
 [ "${#P[@]}" -ge 4 ] || die "Plan enthält keine Geräte für den zweiten Arbeitsplatz."
 BUSID="${P[0]}"; KMSDEV="${P[1]}"; KIOSK_USER="${P[2]}"; ATTACH=("${P[@]:3}")
 [[ "${BUSID}" =~ ^PCI:[0-9]+(@[0-9]+)?:[0-9]+:[0-9]+$ ]] || die "ungültige BusID im Plan: ${BUSID}"
 [[ "${KMSDEV}" =~ ^/dev/dri/[A-Za-z0-9:._/-]+$ && "${KMSDEV}" != *..* ]] || die "ungültiges USB-Display-Gerät im Plan"
 [[ "${KIOSK_USER}" =~ ^[a-z_][a-z0-9_-]*$ ]] || die "ungültiger Kiosk-Nutzer im Plan"
+_root=""; [ -n "${ROOT_DIR}" ] && _root="$(readlink -f -- "${ROOT_DIR}")"
 for p in "${ATTACH[@]}"; do
   [[ "${p}" =~ ^/sys/devices/[A-Za-z0-9:._/-]+$ ]] || die "Gerätepfad mit unerlaubten Zeichen abgelehnt: ${p}"
   case "/${p}/" in */../*|*/./*) die "Gerätepfad mit ../ abgelehnt: ${p}" ;; esac
   real="$(readlink -e -- "${ROOT_DIR}${p}")" || die "Gerät nicht gefunden: ${p} – Geräte neu einlesen und Zuordnung speichern."
-  [[ "${real}" == "${ROOT_DIR}/sys/devices/"* ]] || die "Gerätepfad zeigt aus /sys/devices hinaus: ${p}"
+  [[ "${real}" == "${_root}/sys/devices/"* ]] || die "Gerätepfad zeigt aus /sys/devices hinaus: ${p}"
 done
 [ -f "${LIGHTDM_IN}" ] && [ -f "${XORG_IN}" ] || die "Konfigurationsdateien fehlen."
 [ -d "${BK}" ] && die "Zweiter Arbeitsplatz ist schon eingeschaltet (Sicherung vorhanden) – erst ausschalten."

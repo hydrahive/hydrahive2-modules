@@ -1,7 +1,7 @@
 """Multiseat M2: Aus Snapshot (M1) und geprüfter Zuordnung (seats.validate) den Plan für multiseat-apply.sh bauen.
 
 Rein und testbar. Der Plan enthält nur Werte aus dem Snapshot (nie freie Nutzereingaben):
-- `seat0_busid`: Haupt-GPU der Vitrine im Xorg-Format, DEZIMAL (sysfs 0000:0d:00.0 → PCI:13:0:0; M0, Probe D/E)
+- `seat0_busid`: Haupt-GPU der Vitrine im Xorg-Format; sysfs zählt hexadezimal, Xorg DEZIMAL (M0, Probe D/E)
 - `evdi_kmsdev`: EVDI-Gerät über den stabilen by-path-Namen (Kartennummern wechseln nach Neustart)
 - `attach`: sysfs-Pfade für `loginctl attach seat1` – PCI-Funktion der GPU, Tonkarte, USB-GERÄT der Eingabe (M0)
 `render_lightdm` / `render_xorg` erzeugen die Dateien; das Skript prüft alle Werte zusätzlich selbst.
