@@ -12,6 +12,8 @@ HOME_DIR="/home/${KIOSK}"
 CONF=/etc/hydrahive2-vitrine
 SDDM=/etc/sddm.conf
 SESSION=/usr/share/xsessions/hydrahive-vitrine-kiosk.desktop
+# Multiseat (M2): Zweiter Arbeitsplatz an → lightdm meldet den Kiosk auf seat0 an; sddm und /etc/sddm.conf nicht anfassen
+MULTISEAT=""; [ -f "${CONF}/multiseat.aktiv" ] && MULTISEAT=1
 
 # --- Pakete (EVDI vom Ubuntu-Kernel, signiert; Openbox; Werkzeuge für xrandr/xset/xhost) ---
 DEBIAN_FRONTEND=noninteractive apt-get -qq install -y --no-install-recommends \
@@ -78,6 +80,7 @@ cat > /etc/firefox/policies/policies.json <<'EOF'
 }}
 EOF
 
+if [ -z "${MULTISEAT}" ]; then   # Multiseat: sddm-Teil ganz auslassen
 # --- sddm: /etc/sddm.conf hat Vorrang vor sddm.conf.d (am Gerät geprüft) → ersetzen, Original einmalig sichern ---
 [ -f "${SDDM}" ] && [ ! -f "${CONF}/sddm.conf.vor-vitrine" ] && cp -a "${SDDM}" "${CONF}/sddm.conf.vor-vitrine"
 [ -f "${CONF}/sddm.conf.vor-vitrine" ] || : > "${CONF}/sddm.conf.vor-vitrine"
@@ -88,14 +91,19 @@ User=${KIOSK}
 Session=hydrahive-vitrine-kiosk
 Relogin=true
 EOF
+fi
 # --- laufenden Kiosk-Firefox beenden: die Sitzungsschleife startet ihn sofort neu → neue Seite nach Modul-Update ---
 pkill -u "${KIOSK}" -f "firefox --kiosk" 2>/dev/null || true
 # Openbox liest seine Konfiguration nur beim Start. Läuft noch eines OHNE die eigene Datei (Standard-Menü mit Terminal),
 # sddm neu starten → Autologin startet die Sitzung frisch. NICHT `loginctl terminate-user`: das beendet auch den
 # sddm-helper, sddm meldet dann „Process crashed“ und meldet nicht neu an (19.10.2026 17:24 auf .2, Display schwarz).
 # Läuft Openbox schon mit der Datei, bleibt die Sitzung (kein Schwarzbild bei jedem Update).
-if pgrep -u "${KIOSK}" -x openbox >/dev/null 2>&1 \
+if [ -z "${MULTISEAT}" ] && pgrep -u "${KIOSK}" -x openbox >/dev/null 2>&1 \
    && ! pgrep -u "${KIOSK}" -f -- "--config-file /etc/hydrahive2-vitrine/openbox.xml" >/dev/null 2>&1; then
   systemctl restart sddm 2>/dev/null || true
 fi
-echo "Vitrine-Kiosk eingerichtet (Nutzer ${KIOSK}, Sitzung hydrahive-vitrine-kiosk) – wirksam nach Neustart von sddm"
+if [ -n "${MULTISEAT}" ]; then
+  echo "Vitrine-Kiosk eingerichtet (Nutzer ${KIOSK}) – zweiter Arbeitsplatz ist an, Anmeldung über lightdm bleibt unverändert"
+else
+  echo "Vitrine-Kiosk eingerichtet (Nutzer ${KIOSK}, Sitzung hydrahive-vitrine-kiosk) – wirksam nach Neustart von sddm"
+fi
