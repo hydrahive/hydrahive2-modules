@@ -38,20 +38,22 @@ udevadm control --reload-rules && udevadm trigger --subsystem-match=usb --attr-m
 USER_NAME="${USER_NAME}" DATA="${DATA}" bash "${MODULE_ROOT}/extension/light-install.sh" || true
 
 # --- Kiosk (Statuszentrale per Maus, SPEC-STATUSZENTRALE.md) ---
-# Nur unter Linux mit apt + sddm + Firefox und nur, wenn kein echter Monitor angeschlossen ist (dann gehört der
-# Anmeldebildschirm niemandem). Abschalten: Datei ${DATA}/kiosk.off anlegen.
+# Nur unter Linux mit apt + sddm + Firefox. Abschalten: Datei ${DATA}/kiosk.off anlegen.
+# §7 N1 (0.18.0): auch mit angeschlossenem Monitor. Ohne zweiten Arbeitsplatz lässt kiosk-session.sh den fremden
+# Bildschirm dann an (Marker monitor-an, N2b); mit gespeicherter Zuordnung schaltet unten die Automatik ein (N2a).
 KIOSK_ENV=""
 sudo -n bash -c 'systemctl stop hydrahive2-vitrine-kiosk-cleanup.timer' >/dev/null 2>&1 || true   # Update: Rückbau abbrechen
 _monitor=""
 for st in /sys/class/drm/card*-*/status; do
   [ -r "${st}" ] || continue
-  drv="$(basename "$(readlink -f "$(dirname "${st}")/device/driver" 2>/dev/null)" 2>/dev/null || true)"
+  # Ausgang → device = Karte → device = Gerät → driver (am Server: card1-DVI-I-1/device → card1). Bis 0.17.9 wurde nur
+  # device/driver gelesen; das gibt es bei Ausgängen nicht, ein verbundenes USB-Display galt dann als „echter Monitor“.
+  drv="$(basename "$(readlink -f "$(dirname "${st}")/device/device/driver" 2>/dev/null)" 2>/dev/null || true)"
+  [ "${drv}" = "evdi" ] || drv="$(basename "$(readlink -f "$(dirname "${st}")/device/driver" 2>/dev/null)" 2>/dev/null || true)"
   [ "${drv}" != "evdi" ] && [ "$(cat "${st}")" = "connected" ] && _monitor="$(basename "$(dirname "${st}")")"
 done
 if [ -f "${DATA}/kiosk.off" ]; then
   echo "Vitrine-Kiosk: abgeschaltet (${DATA}/kiosk.off)"
-elif [ -n "${_monitor}" ] && [ -z "${MULTISEAT}" ]; then   # Multiseat: der Monitor gehört dem zweiten Arbeitsplatz
-  echo "Vitrine-Kiosk: nicht eingerichtet – Monitor ${_monitor} angeschlossen (Anmeldebildschirm bleibt)"
 elif command -v apt-get >/dev/null && { [ -n "${MULTISEAT}" ] || command -v sddm >/dev/null; } && command -v firefox >/dev/null; then
   [ -s "${DATA}/kiosk.key" ] || (umask 077 && head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "${DATA}/kiosk.key")
   _port="${HH_PORT:-$(systemctl show hydrahive2 -p Environment --value 2>/dev/null | tr ' ' '\n' | sed -n 's/^HH_PORT=//p')}"
@@ -59,7 +61,8 @@ elif command -v apt-get >/dev/null && { [ -n "${MULTISEAT}" ] || command -v sddm
   # Nur `sudo -n bash` ist erlaubt (sudoers des Installers). Der HydraHive-Dienst läuft mit ProtectHome=read-only, und
   # sudo erbt das → Kiosk-Teil (legt /home/hydrahive-kiosk an) über systemd-run außerhalb der Sandbox (am Gerät belegt).
   [ -z "${MULTISEAT}" ] && _before="$(sudo -n bash -c 'cat /etc/sddm.conf' 2>/dev/null || true)"
-  if sudo -n bash -c "systemd-run --quiet --wait --pipe --collect /bin/bash '${MODULE_ROOT}/extension/kiosk-install.sh' '${MODULE_ROOT}' '${USER_NAME}' '${_url}'"; then
+  _mon_arg=""; [ -n "${_monitor}" ] && _mon_arg=" '${_monitor}'"     # N2b: kiosk-session lässt den Monitor dann an
+  if sudo -n bash -c "systemd-run --quiet --wait --pipe --collect /bin/bash '${MODULE_ROOT}/extension/kiosk-install.sh' '${MODULE_ROOT}' '${USER_NAME}' '${_url}'${_mon_arg}"; then
     sudo -n bash -c "install -m 755 '${MODULE_ROOT}/extension/kiosk-uninstall.sh' /etc/hydrahive2-vitrine/kiosk-uninstall.sh"
     if [ -z "${MULTISEAT}" ] && [ "${_before}" != "$(sudo -n bash -c 'cat /etc/sddm.conf')" ]; then KIOSK_RESTART_SDDM=1; fi
     KIOSK_ENV="Environment=VITRINE_KIOSK_DISPLAY=:0
@@ -107,6 +110,13 @@ systemctl daemon-reload && systemctl enable --now ${UNIT} >/dev/null && systemct
 # Erst nach dem Dienst (stellt den virtuellen Monitor bereit): Anmeldebildschirm → Kiosk-Sitzung, nur beim ersten Mal
 if [ "${KIOSK_RESTART_SDDM:-0}" = 1 ]; then
   sudo -n bash -c 'systemctl restart sddm' && echo "Vitrine-Kiosk: Anmeldung auf Kiosk umgestellt"
+fi
+
+# §7 N2a: Monitor an anderer Grafikkarte + gespeicherte, gültige Zuordnung + nicht bewusst ausgeschaltet + noch nicht
+# an → zweiten Arbeitsplatz einschalten. Gleicher Weg wie der Knopf (backend/seat_auto.py → multiseat-apply.sh mit
+# Sicherung, Prüfung, Rückbau-Timer). Darf die Installation nie abbrechen.
+if [ -n "${_monitor}" ] && [ -z "${MULTISEAT}" ] && [ -n "${KIOSK_ENV}" ]; then
+  (cd "${MODULE_ROOT}" && "${VENV}/bin/python" -m backend.seat_auto "${DATA}") || true
 fi
 
 echo "Vitrine-Dienst eingerichtet (${UNIT}); Videos nach ${DATA}/videos"

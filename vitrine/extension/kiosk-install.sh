@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Vitrine-Kiosk einrichten (Statuszentrale, SPEC-STATUSZENTRALE.md). Aufruf aus install.sh, läuft als root (sudo -n bash).
-# Argumente: <Modulordner> <Dienst-Nutzer> <Kiosk-URL>
+# Argumente: <Modulordner> <Dienst-Nutzer> <Kiosk-URL> [<echter Monitor, z. B. card2-HDMI-A-1>]
 # Idempotent: zweimal ausführen ergibt denselben Zustand. Rückbau: kiosk-uninstall.sh.
 set -euo pipefail
 
 MODULE_ROOT="$1"
 SERVICE_USER="$2"
 URL="$3"
+MONITOR="${4:-}"
 KIOSK=hydrahive-kiosk
 HOME_DIR="/home/${KIOSK}"
 CONF=/etc/hydrahive2-vitrine
@@ -39,6 +40,8 @@ systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || true
 # Argument (sonst sieht sie jeder per ps), sondern über eine lokale Startseite, die weiterleitet.
 install -d -m 755 "${CONF}"
 printf '%s\n' "${SERVICE_USER}" > "${CONF}/service-user"
+# §7 N2b: echter Monitor an einer anderen Grafikkarte → kiosk-session.sh lässt fremde Ausgänge an (Fernseher bleibt an)
+if [ -n "${MONITOR}" ]; then printf '%s\n' "${MONITOR}" > "${CONF}/monitor-an"; else rm -f "${CONF}/monitor-an"; fi
 install -d -m 700 -o "${KIOSK}" -g "${KIOSK}" "${HOME_DIR}/vitrine"
 _esc="$(printf '%s' "${URL}" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g')"   # HTML-Attribut
 (umask 077 && cat > "${HOME_DIR}/vitrine/start.html" <<EOF

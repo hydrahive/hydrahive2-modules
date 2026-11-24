@@ -11,23 +11,19 @@ kommen aus dem Modul bzw. dem Datenordner, nie aus der Anfrage. Ein Lauf gleichz
 """
 from __future__ import annotations
 
-import json
-import shlex
-import subprocess
+import subprocess  # noqa: F401 – Tests ersetzen subprocess.run (seat_auto nutzt dasselbe Modul)
 import threading
-import time
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from hydrahive.api.middleware.auth import require_admin
 
-from . import seat_plan, seats
+from . import seat_auto, seat_plan, seats
 from .seat_routes import _saved, data_dir, snapshot
 
 router = APIRouter(dependencies=[Depends(require_admin)])
 MODULE_ROOT = Path(__file__).resolve().parents[1]
 ETC = Path("/etc/hydrahive2-vitrine")
-TIMEOUT = 900                         # apply: apt + Prüfung 90 s; der Rückbau-Timer greift nach 300 s ohnehin
 _lock = threading.Lock()
 _running: dict[str, str | None] = {"action": None}
 
@@ -44,13 +40,11 @@ def revert_script() -> Path:
     return ETC / "multiseat-revert.sh"
 
 
-def root_cmd(script: Path, *args: Path) -> list[str]:
-    """Root-Weg wie install.sh:59 – systemd-run, damit das Skript außerhalb der Dienst-Sandbox läuft."""
-    inner = " ".join(["systemd-run --quiet --wait --pipe --collect /bin/bash", *(shlex.quote(str(p)) for p in (script, *args))])
-    return ["sudo", "-n", "bash", "-c", inner]
+root_cmd = seat_auto.root_cmd          # derselbe Root-Weg wie die Automatik beim Update (§7 N2a)
 
 
 def last_run() -> dict | None:
+    import json
     try:
         raw = json.loads((run_dir() / "last-run.json").read_text())
     except (OSError, ValueError):
@@ -62,26 +56,9 @@ def status() -> dict:
     return {"applied": marker().is_file(), "running": _running["action"], "last_run": last_run()}
 
 
-def _write(path: Path, text: str) -> None:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(text)
-    tmp.chmod(0o644)
-    tmp.replace(path)
-
-
 def _execute(action: str, cmd: list[str]) -> None:
-    started = int(time.time())
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT, check=False)
-        code, out = r.returncode, (r.stdout or "") + (r.stderr or "")
-    except subprocess.TimeoutExpired:
-        code, out = -1, "Zeitüberschreitung – der Rückbau-Timer stellt den Stand von vorher wieder her."
-    except OSError as e:
-        code, out = -1, f"Start fehlgeschlagen: {e}"
-    res = {"action": action, "started": started, "finished": int(time.time()), "exit": code,
-           "ok": code == 0, "lines": out.splitlines()[-40:]}
-    try:
-        _write(run_dir() / "last-run.json", json.dumps(res, indent=2))
+        seat_auto.execute(action, cmd, run_dir())
     finally:
         _running["action"] = None
         _lock.release()
@@ -112,12 +89,8 @@ def apply_seats() -> dict:
         raise HTTPException(status_code=422, detail={"code": e.code}) from None
     _claim("apply")
     try:
-        d = run_dir()
-        d.mkdir(parents=True, exist_ok=True)
-        files = (d / "plan.json", d / "lightdm.conf", d / "xorg.conf")
-        _write(files[0], seat_plan.plan_json(plan))
-        _write(files[1], seat_plan.render_lightdm(plan))
-        _write(files[2], seat_plan.render_xorg(plan))
+        seat_auto.set_auto(data_dir(), True)            # N3: bewusst eingeschaltet → Updates dürfen wieder einschalten
+        files = seat_auto.write_plan_files(run_dir(), plan)
         _start("apply", root_cmd(MODULE_ROOT / "extension" / "multiseat-apply.sh", *files))
     except BaseException:
         _running["action"] = None
@@ -132,6 +105,7 @@ def revert_seats() -> dict:
         raise HTTPException(status_code=409, detail={"code": "vitrine_seat_not_on"})
     _claim("revert")
     try:
+        seat_auto.set_auto(data_dir(), False)           # N3: bewusst ausgeschaltet → das nächste Update schaltet nicht ein
         _start("revert", root_cmd(revert_script()))
     except BaseException:
         _running["action"] = None
