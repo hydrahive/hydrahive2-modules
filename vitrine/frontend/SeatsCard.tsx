@@ -67,7 +67,7 @@ export function SeatsPanel({ v, choice, saving, msg, onPick, onSave, confirming 
           </table>
           {errs.length > 0 && <ul className="list-disc pl-5 text-xs text-amber-200">{errs.map((e) => <li key={e}>{t(e)}</li>)}</ul>}
           <div className="flex items-center gap-3">
-            <button type="button" onClick={onSave} disabled={saving || errs.length > 0} data-action="apply"
+            <button type="button" onClick={onSave} disabled={saving || errs.length > 0} data-action="save"
               className="flex items-center gap-2 rounded-[4px] border border-[#69d7ff]/50 bg-[#69d7ff]/15 px-3 py-1.5 text-sm font-semibold text-[#69d7ff] disabled:opacity-40">
               {saving && <Loader2 size={13} className="animate-spin" />}{t("seats_apply")}
             </button>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Openbox für die Vitrine-Kiosk-Sitzung (vom Installer nach /etc/hydrahive2-vitrine/openbox.xml).
+     Absichtlich leer: keine Tastenkürzel, keine Maus-Aktionen, kein Menü. Die Standard-Konfiguration öffnet per
+     Rechtsklick ein Menü mit einem Terminal – mit einer Tastatur wäre das eine Shell an der Statuszentrale vorbei.
+     Einziges Fenster ist Firefox im Kiosk-Modus: ohne Rahmen, Vollbild. -->
+<openbox_config xmlns="http://openbox.org/3.4/rc">
+  <resistance><strength>0</strength><screen_edge_strength>0</screen_edge_strength></resistance>
+  <focus><focusNew>yes</focusNew><followMouse>no</followMouse></focus>
+  <placement><policy>Smart</policy></placement>
+  <theme><name>Clearlooks</name><titleLayout></titleLayout></theme>
+  <desktops><number>1</number><firstdesk>1</firstdesk><popupTime>0</popupTime></desktops>
+  <margins><top>0</top><bottom>0</bottom><left>0</left><right>0</right></margins>
+  <keyboard><chainQuitKey>Escape</chainQuitKey></keyboard>
+  <mouse><dragThreshold>8</dragThreshold><doubleClickTime>500</doubleClickTime><screenEdgeWarpTime>0</screenEdgeWarpTime></mouse>
+  <menu></menu>
+  <applications>
+    <application class="*">
+      <decor>no</decor>
+      <fullscreen>yes</fullscreen>
+      <maximized>yes</maximized>
+      <focus>yes</focus>
+      <desktop>1</desktop>
+    </application>
+  </applications>
+</openbox_config>

@@ -47,7 +47,7 @@ describe("Karte „Zweiter Arbeitsplatz“ (Multiseat M1)", () => {
     const c = initialChoice(v)
     expect(c["input:usb:1-5"]).toBeNull()
     expect(choiceErrors(v, c)).toContain("seats_err_open")
-    expect(html(v)).toMatch(/disabled=""[^>]*data-action="apply"/)
+    expect(html(v)).toMatch(/disabled=""[^>]*data-action="save"/)
     const ok = { ...c, "input:usb:1-5": "seat1" as const }
     expect(choiceErrors(v, ok)).toEqual([])
     expect(complete(ok)["input:usb:1-5"]).toBe("seat1")
@@ -70,6 +70,7 @@ describe("Karte „Zweiter Arbeitsplatz“ (Multiseat M1)", () => {
     const h = html(view({ feasible: false, reasons: ["one_gpu"], assignment: {} }))
     expect(h).toContain('data-part="not-feasible"')
     expect(h).toContain("seats_reason_one_gpu")
+    expect(h).not.toContain('data-action="save"')
     expect(h).not.toContain('data-action="apply"')
   })
 

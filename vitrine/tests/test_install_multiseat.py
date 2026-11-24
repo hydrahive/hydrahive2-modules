@@ -24,7 +24,13 @@ def test_ms2_ohne_marker_wie_0176(tmp_path, kw, openbox):
     r_old, r_new = old.run(openbox=openbox), new.run(openbox=openbox)
     assert r_old.returncode == 0 and r_new.returncode == 0, r_new.stderr
     assert new.calls() == old.calls()
-    assert new.files() == old.files()
+    # Einzige gewollte Abweichung: die nach /etc kopierte kiosk-uninstall.sh schaltet in M2b zuerst den zweiten
+    # Arbeitsplatz aus (eigener Test unten). Alles andere muss identisch zu 0.17.6 sein.
+    uninstall = "etc/hydrahive2-vitrine/kiosk-uninstall.sh"
+    f_new, f_old = new.files(), old.files()
+    assert (uninstall in f_new) == (uninstall in f_old)
+    f_new.pop(uninstall, None), f_old.pop(uninstall, None)
+    assert f_new == f_old
     assert new.out(r_new) == old.out(r_old)
 
 
