@@ -49,6 +49,7 @@ def tills_plan(sys_root: Path) -> dict:
 
 class Env:
     def __init__(self, tmp: Path):
+        self.tmp = tmp
         self.root = build(tmp / "root")
         self.bin = tmp / "bin"
         self.bin.mkdir()
