@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 
+from .desktop_session import NAME as SESSION_NAME
 from .seats import SeatError
 
 KIOSK_USER = "hydrahive-kiosk"
@@ -68,12 +69,19 @@ def build_plan(snapshot: dict, assignment: dict[str, str]) -> dict:
         raise SeatError("vitrine_seat_plan_usb_shared")         # Vitrine-Gerät hängt unter einem seat1-USB-Gerät
     if not attach:
         raise SeatError("vitrine_seat_empty")
-    return {"version": 1, "seat0_busid": xorg_busid(real0[0]["pci"]), "seat0_driver": XORG_DRIVERS.get(real0[0].get("driver") or "", "modesetting"),
+    ds = snapshot.get("desktop_session") or {}
+    session = ds.get("name") if isinstance(ds.get("name"), str) and SESSION_NAME.match(ds["name"]) else None
+    return {"version": 1, "user_session": session, "user_session_reason": str(ds.get("reason") or "unknown"),
+            "seat0_busid": xorg_busid(real0[0]["pci"]), "seat0_driver": XORG_DRIVERS.get(real0[0].get("driver") or "", "modesetting"),
             "evdi_kmsdev": f"/dev/dri/by-path/platform-{evdi_name}-card", "attach": sorted(dict.fromkeys(attach)),
             "kiosk_user": KIOSK_USER, "kiosk_session": KIOSK_SESSION}
 
 
 def render_lightdm(plan: dict) -> str:
+    """seat1: Anmeldebildschirm + Standard-Desktop des Systems (user-session), wenn eindeutig ermittelt. user-session
+    gilt nur für Nutzer ohne eigene gespeicherte Wahl (lightdm: ~/.dmrc bzw. AccountsService) – die bleibt unberührt."""
+    session = plan.get("user_session")
+    line = f"user-session={session}\n" if isinstance(session, str) and SESSION_NAME.match(session) else ""
     return (
         "# Von HydraHive Vitrine geschrieben (Zweiter Arbeitsplatz). Rückbau: multiseat-revert.sh\n"
         "[Seat:seat0]\n"
@@ -83,6 +91,7 @@ def render_lightdm(plan: dict) -> str:
         "\n"
         "[Seat:seat1]\n"
         f"greeter-session={GREETER}\n"
+        f"{line}"
     )
 
 

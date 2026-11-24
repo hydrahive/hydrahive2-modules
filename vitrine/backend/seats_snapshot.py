@@ -129,6 +129,8 @@ def seats() -> list[str]:
 
 
 def read(sys_root: Path = Path("/"), *, vitrine_bt: list[str] | None = None) -> dict:
+    from . import desktop_session
     proc = _read(sys_root / "proc/bus/input/devices") or ""
     return {"gpus": gpus(sys_root), "sound": sound(sys_root), "inputs": inputs(proc),
-            "seats": seats() if sys_root == Path("/") else [], "vitrine_bt": [a.lower() for a in vitrine_bt or []]}
+            "seats": seats() if sys_root == Path("/") else [], "vitrine_bt": [a.lower() for a in vitrine_bt or []],
+            "desktop_session": desktop_session.find(sys_root)}
