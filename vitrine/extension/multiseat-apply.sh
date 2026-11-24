@@ -16,6 +16,7 @@ APT_GET="${APT_GET:-apt-get}"
 PGREP="${PGREP:-pgrep}"
 PYTHON="${PYTHON:-python3}"
 SLEEP="${SLEEP:-sleep}"
+UDEVADM="${UDEVADM:-udevadm}"
 CHECK_SECONDS="${HH_MULTISEAT_CHECK_SECONDS:-90}"
 REVERT_AFTER="${HH_MULTISEAT_REVERT_AFTER:-300}"
 CONF="${ROOT_DIR}/etc/hydrahive2-vitrine"
@@ -68,6 +69,7 @@ backup() { if [ -f "$2" ]; then cp -a "$2" "${BK}/$1"; else : > "${BK}/$1.fehlt"
 backup default-display-manager "${DDM}"
 backup sddm.conf "${SDDM_CONF}"
 backup vitrine-dropin.conf "${DROPIN}"            # vermerkt auch, ob der Drop-in vorher fehlte (.fehlt)
+printf '%s\n' "${ATTACH[@]}" > "${BK}/attach.liste"   # revert gibt genau diese Geräte per udev-Event an seat0 zurück
 printf '%s\n' "${dm_unit}" > "${BK}/dm-unit"
 for f in "${LIGHTDM_DIR}"/50-hydrahive*.conf; do [ -f "${f}" ] && cp -a "${f}" "${BK}/lightdm-${f##*/}"; done
 ls -1 "${ROOT_DIR}/etc/udev/rules.d/" 2>/dev/null | grep '^72-seat-' > "${BK}/udev-72-seat.liste" || true
@@ -115,6 +117,33 @@ for p in "${ATTACH[@]}"; do
   "${LOGINCTL}" attach seat1 "${p}" || fail "loginctl attach ${p} fehlgeschlagen"
 done
 
+# --- 6b. udev die neuen Regeln anwenden lassen – auf jedes Gerät UND seine Kinder. Live-Test 2 (24.11.2026): die
+# 72-seat-Regeln lagen richtig, aber nur die Grafikkarte hatte ID_SEAT=seat1; Maus-Empfänger (USB), dessen input/
+# hidraw-Kinder und die Tonkarten nicht → Xorg von seat0 übernahm die Maus. Die Kinder erben ID_SEAT per
+# IMPORT{parent} (73-seat-late.rules) und brauchen deshalb ein eigenes change-Event nach dem Elternteil.
+"${UDEVADM}" control --reload >/dev/null 2>&1 || true
+for p in "${ATTACH[@]}"; do
+  "${UDEVADM}" trigger --action=change --settle "${p}" >/dev/null 2>&1 || true
+  "${UDEVADM}" trigger --action=change --settle --parent-match="${p}" >/dev/null 2>&1 || true
+done
+# Prüfung: jedes Gerät und jedes seat-getaggte Kind trägt ID_SEAT=seat1 (gibt das erste falsche Gerät aus)
+seat_devices_bad() {
+  local p d props
+  for p in "${ATTACH[@]}"; do
+    while IFS= read -r d; do
+      props="$("${UDEVADM}" info -q property --path="${d}" 2>/dev/null)"
+      if [ "${d}" = "${p}" ] || grep -Eq '^(CURRENT_)?TAGS=.*:seat:' <<<"${props}"; then
+        grep -qx 'ID_SEAT=seat1' <<<"${props}" || { printf '%s\n' "${d}"; return 0; }
+      fi
+    done < <(printf '%s\n' "${p}"; find "${ROOT_DIR}${p}" -mindepth 2 -name uevent -type f 2>/dev/null \
+             | sed -e 's#/uevent$##' -e "s#^${ROOT_DIR}##" | sort)
+  done
+  return 1
+}
+if bad="$(seat_devices_bad)"; then
+  fail "Gerät ${bad} ist nach der Zuordnung nicht beim zweiten Arbeitsplatz (udev ID_SEAT fehlt)"
+fi
+
 # --- 7. Anmeldedienst wechseln (Pfad aus dem System, nicht geraten) ---
 printf '%s\n' "${LIGHTDM_BIN}" > "${DDM}"
 if [ "${dm_unit}" != "lightdm.service" ]; then
@@ -135,6 +164,7 @@ check() {
   awk -v u="${KIOSK_USER}" '$3 != u && $4 == "seat1" {f=1} END {exit !f}' <<<"${s}" || return 1
   grep -qx enabled "${ROOT_DIR}/sys/class/drm/${evdi_card}"-*/enabled 2>/dev/null || return 1
   "${PGREP}" -u "${KIOSK_USER}" -f "firefox --kiosk" >/dev/null 2>&1 || return 1
+  ! seat_devices_bad >/dev/null || return 1        # Geräte sind (noch) beim zweiten Arbeitsplatz
 }
 ok=0
 for _ in $(seq 1 $(( (CHECK_SECONDS + 2) / 3 ))); do
