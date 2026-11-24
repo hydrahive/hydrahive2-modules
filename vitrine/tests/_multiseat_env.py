@@ -12,7 +12,6 @@ import subprocess
 from pathlib import Path
 
 from _seats_fixture import NV, build
-
 from backend import seat_plan, seats, seats_snapshot
 
 EXT = Path(__file__).resolve().parents[1] / "extension"
@@ -91,7 +90,8 @@ class Env:
         env = {**os.environ, "PATH": f"{self.bin}:{os.environ['PATH']}", "HH_MULTISEAT_ROOT": str(self.root),
                "HH_FAKE_LOG": str(self.log), "HH_FAKE_SESSIONS": str(self.sessions), "HH_FAKE_FIREFOX": str(self.firefox),
                "HH_FAKE_APT_FAIL": str(self.apt_fail), "HH_MULTISEAT_CHECK_SECONDS": "3"}
-        return subprocess.run(["bash", str(EXT / script), *args], env=env, capture_output=True, text=True, timeout=60)
+        return subprocess.run(["bash", str(EXT / script), *args], env=env, capture_output=True, text=True, timeout=60,
+                              check=False)
 
     def calls(self) -> list[str]:
         return self.log.read_text().splitlines()

@@ -10,9 +10,16 @@ import re
 import subprocess
 
 import pytest
-from _multiseat_env import EXT, PLAIN, SESS_KIOSK_BOTH, SESS_NO_SEAT1, SESS_OK, Env, tills_plan
+from _multiseat_env import (
+    EXT,
+    PLAIN,
+    SESS_KIOSK_BOTH,
+    SESS_NO_SEAT1,
+    SESS_OK,
+    Env,
+    tills_plan,
+)
 from _seats_fixture import build
-
 from backend import seat_plan
 from backend.seats import SeatError
 
@@ -96,7 +103,6 @@ def test_ms3_keine_festen_geraetepfade_im_code():
 
 def test_plan_lehnt_bluetooth_an_seat1_ab(tmp_path):
     from _seats_fixture import BT_KB, K400, NV, RAPOO
-
     from backend import seats, seats_snapshot
     snap = seats_snapshot.read(build(tmp_path, inputs=BT_KB + K400 + RAPOO))
     a = {d["id"]: "seat0" for k in ("gpus", "sound", "inputs") for d in snap[k]}
