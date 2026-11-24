@@ -98,9 +98,12 @@ gekoppelt werden.
 
 ### Arbeitsplätze
 Hängt neben dem Gehäuse-Display ein normaler Bildschirm an einer eigenen Grafikkarte (zum Beispiel ein Fernseher),
-kann der Rechner später zwei Arbeitsplätze haben: die Vitrine auf dem Gehäuse-Display und einen zweiten Arbeitsplatz
+kann der Rechner zwei Arbeitsplätze haben: die Vitrine auf dem Gehäuse-Display und einen zweiten Arbeitsplatz
 mit eigenem Bildschirm, Ton, Tastatur und Maus. Ist so ein Bildschirm angeschlossen, zeigt die Karte **Zweiter
 Arbeitsplatz** den Hinweis „Zweiter Bildschirm erkannt – als eigenen Arbeitsplatz einrichten?“.
+- Die Vitrine läuft immer, auch wenn ein Bildschirm angeschlossen ist. Solange noch keine Zuordnung gespeichert ist,
+  bleibt der Bildschirm an und zeigt eine Erweiterung der Vitrine-Oberfläche, aber noch keine eigene Anmeldung. Ordne
+  die Geräte zu und klicke **Übernehmen**, dann **Zweiten Arbeitsplatz einschalten**.
 - Die Vitrine liest Grafikkarten, Bildschirme, Ton und Eingabegeräte selbst aus und schlägt eine Zuordnung vor: Das
   USB-Display und eine Grafikkarte ohne Bildschirm bleiben bei der **Vitrine**, die Grafikkarte mit dem Bildschirm und
   ihr Ton gehen an **Zweiter Arbeitsplatz**.
@@ -119,6 +122,11 @@ Arbeitsplatz** den Hinweis „Zweiter Bildschirm erkannt – als eigenen Arbeits
 - **Zweiten Arbeitsplatz ausschalten** stellt den Stand von vorher wieder her (ein Arbeitsplatz, bisheriger
   Anmeldedienst).
 - Solange der zweite Arbeitsplatz an ist, ändern Updates der Vitrine nichts an der Anmeldung.
+- Ist eine Zuordnung gespeichert und der Bildschirm angeschlossen, schaltet jede Installation und jedes Update der
+  Vitrine den zweiten Arbeitsplatz selbst ein, mit derselben Sicherung und Rücknahme wie beim Knopf. Das Ergebnis
+  steht danach in der Karte.
+- Hast du den zweiten Arbeitsplatz mit **Zweiten Arbeitsplatz ausschalten** bewusst ausgeschaltet, bleibt er auch nach
+  Updates aus, bis du ihn wieder einschaltest. **Übernehmen** ändert daran nichts.
 - Wird die Vitrine deinstalliert, schaltet sie den zweiten Arbeitsplatz vorher aus.
 - Bluetooth-Geräte hängen am Funkchip des Rechners und bleiben bei der Vitrine.
 
@@ -147,8 +155,8 @@ schalten. Einblendungen sind reiner Text. Zu lange Texte werden mit „…“ ge
 - Fehler aus HydraHive erscheinen höchstens alle 10 Minuten je Quelle und höchstens 6 pro Stunde.
 - Die Status-Leiste unten zeigt den Zustand von HydraHive, Last, Arbeitsspeicher, GPU-Temperatur, laufende
   Agenten und Fehler der letzten Stunde, soweit verfügbar.
-- Die Statuszentrale per Maus wird bei der Installation nur eingerichtet, wenn kein normaler Monitor am Rechner
-  hängt und Firefox und der Anmeldebildschirm SDDM vorhanden sind.
+- Die Statuszentrale per Maus wird bei der Installation eingerichtet, wenn Firefox und der Anmeldebildschirm SDDM
+  vorhanden sind, auch wenn ein normaler Monitor am Rechner hängt (siehe **Arbeitsplätze**).
 - Die Beleuchtung braucht OpenRGB und einen unterstützten Licht-Chip. Fehlt das, steht dort „Noch kein Stand vom
   Vitrine-Dienst (OpenRGB fehlt oder Dienst startet).“ oder „Beleuchtung nicht gefunden“. Die übrige Vitrine
   läuft trotzdem.
