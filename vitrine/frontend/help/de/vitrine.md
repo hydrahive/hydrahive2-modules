@@ -157,4 +157,4 @@ schalten. Einblendungen sind reiner Text. Zu lange Texte werden mit „…“ ge
 - „Die Einstellungen der Vitrine konnten nicht geladen werden.“: Die Seite hat keine Verbindung zum Modul.
   Seite neu laden.
 
-*Stand: Vitrine 0.17.9, 24.11.2026*
+*Stand: Vitrine 0.18.0, 24.11.2026*

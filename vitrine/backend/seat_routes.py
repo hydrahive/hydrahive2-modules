@@ -77,6 +77,9 @@ def put_seats(body: SeatsIn) -> dict:
     except seats.SeatError as e:
         raise HTTPException(status_code=422, detail={"code": e.code}) from None
     data = {"assignment": ok, "saved_at": int(time.time())}
+    old = _saved() or {}
+    if isinstance(old.get("auto"), bool):
+        data["auto"] = old["auto"]                      # N3: „Übernehmen“ behält den Vermerk ein/aus
     d = data_dir()
     d.mkdir(parents=True, exist_ok=True)
     tmp = d / "seats.json.tmp"

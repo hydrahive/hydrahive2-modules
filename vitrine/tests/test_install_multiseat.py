@@ -17,19 +17,22 @@ def _pair(tmp_path, **kw):
     return old, new
 
 
-@pytest.mark.parametrize("kw, openbox", [({}, False), ({}, True), ({"monitor": True}, False), ({"sddm": False}, False)],
-                         ids=["kiosk", "kiosk-openbox-alt", "monitor-kein-kiosk", "ohne-sddm"])
+@pytest.mark.parametrize("kw, openbox", [({}, False), ({}, True), ({"sddm": False}, False)],
+                         ids=["kiosk", "kiosk-openbox-alt", "ohne-sddm"])
 def test_ms2_ohne_marker_wie_0176(tmp_path, kw, openbox):
+    """Ohne Monitor und ohne Marker wie 0.17.6. Den Fall „Monitor angeschlossen“ ändert §7 N1 bewusst
+    (test_multiseat_immer.py::test_n1_monitor_kiosk_wie_ohne_monitor)."""
     old, new = _pair(tmp_path, **kw)
     r_old, r_new = old.run(openbox=openbox), new.run(openbox=openbox)
     assert r_old.returncode == 0 and r_new.returncode == 0, r_new.stderr
     assert new.calls() == old.calls()
-    # Einzige gewollte Abweichung: die nach /etc kopierte kiosk-uninstall.sh schaltet in M2b zuerst den zweiten
-    # Arbeitsplatz aus (eigener Test unten). Alles andere muss identisch zu 0.17.6 sein.
-    uninstall = "etc/hydrahive2-vitrine/kiosk-uninstall.sh"
+    # Gewollte Abweichungen nur im Inhalt zweier nach /etc kopierter Skripte: kiosk-uninstall.sh schaltet seit M2b
+    # zuerst den zweiten Arbeitsplatz aus (eigener Test unten); kiosk-session.sh lässt seit §7 N2b einen fremden
+    # Monitor an, wenn monitor-an gesetzt ist (test_multiseat_immer.py). Alles andere muss identisch zu 0.17.6 sein.
     f_new, f_old = new.files(), old.files()
-    assert (uninstall in f_new) == (uninstall in f_old)
-    f_new.pop(uninstall, None), f_old.pop(uninstall, None)
+    for script in ("etc/hydrahive2-vitrine/kiosk-uninstall.sh", "etc/hydrahive2-vitrine/kiosk-session.sh"):
+        assert (script in f_new) == (script in f_old)
+        f_new.pop(script, None), f_old.pop(script, None)
     assert f_new == f_old
     assert new.out(r_new) == old.out(r_old)
 

@@ -7,7 +7,8 @@ exec >"${HOME}/kiosk.log" 2>&1
 
 START="file://${HOME}/vitrine/start.html"   # leitet auf die Kiosk-Seite weiter (Schlüssel nicht in ps). KEIN Punkt-Ordner:
 #                                          Firefox-Snap darf versteckte Ordner im Home nicht lesen (19.10. auf .2).
-SERVICE_USER="$(cat /etc/hydrahive2-vitrine/service-user 2>/dev/null || echo hydrahive)"
+CONF="${VITRINE_CONF:-/etc/hydrahive2-vitrine}"
+SERVICE_USER="$(cat "${CONF}/service-user" 2>/dev/null || echo hydrahive)"
 
 xhost "+SI:localuser:${SERVICE_USER}" >/dev/null      # nur der Vitrine-Dienst darf Leerlauf/Zeiger abfragen
 xset s off -dpms s noblank
@@ -20,6 +21,10 @@ output_on() {
   o="$(xrandr | awk '/^DVI-I-[0-9-]+ connected/ {print $1}' | head -1)"
   [ -n "${o}" ] || return 1
   xrandr --output "${o}" --mode 1080x1920 --pos 0x0 --primary
+  # §7 N2b: hängt ein echter Monitor an und ist KEIN zweiter Arbeitsplatz eingerichtet, bleibt er an (sonst wäre der
+  # Fernseher schwarz und niemand könnte sich anmelden). Mit zweitem Arbeitsplatz gehört er seat1 und ist hier gar
+  # nicht sichtbar; ohne Monitor wie bisher alles außer dem USB-Display aus.
+  if [ -f "${CONF}/monitor-an" ] && [ ! -f "${CONF}/multiseat.aktiv" ]; then return 0; fi
   for other in $(xrandr | awk '/ connected/ && !/^DVI-I/ {print $1}'); do
     xrandr --output "${other}" --off
   done

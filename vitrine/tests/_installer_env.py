@@ -61,7 +61,8 @@ class Installer:
         venv = tmp / "data/vitrine/venv/bin"
         venv.mkdir(parents=True)
         py = venv / "python"
-        py.write_text('#!/bin/bash\n[ "$1" = "-c" ] && { echo 3.12; exit 0; }\nexit 0\n')
+        py.write_text('#!/bin/bash\n[ "$1" = "-c" ] && { echo 3.12; exit 0; }\n'
+                      '[ "$1" = "-m" ] && [ "$2" != pip ] && echo "venv-python $*" >> "$HH_FAKE_LOG"\nexit 0\n')
         py.chmod(0o755)
         base = self.bin / "python3"
         base.write_text('#!/bin/bash\n[ "$1" = "-c" ] && { echo 3.12; exit 0; }\nexit 0\n')
