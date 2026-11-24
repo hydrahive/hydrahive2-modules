@@ -24,6 +24,14 @@ def _read(p: Path) -> str | None:
         return None
 
 
+def _sysfs(p: Path, sys_root: Path) -> str | None:
+    """Echter sysfs-Pfad (/sys/devices/…) relativ zur Systemwurzel – für `loginctl attach` (Multiseat M2)."""
+    try:
+        return "/" + str(p.resolve().relative_to(sys_root.resolve()))
+    except (OSError, ValueError):
+        return None
+
+
 def _pci_of(device: Path) -> str | None:
     name = device.resolve().name
     return name if _PCI.match(name) else None
@@ -46,7 +54,7 @@ def gpus(sys_root: Path) -> list[dict]:
         vendor = _read(dev / "vendor") or ""
         out.append({"id": gid, "card": card.name, "pci": pci, "driver": driver, "evdi": evdi,
                     "vendor": VENDORS.get(vendor, driver or "?"), "boot_vga": _read(dev / "boot_vga") == "1",
-                    "outputs": outputs})
+                    "outputs": outputs, "sysfs": _sysfs(dev, sys_root)})
     return out
 
 
@@ -55,7 +63,8 @@ def sound(sys_root: Path) -> list[dict]:
     for card in sorted((sys_root / "sys/class/sound").glob("card[0-9]*")):
         pci = _pci_of(card / "device")
         if pci:
-            out.append({"id": f"sound:pci:{pci}", "card": card.name, "pci": pci, "name": _read(card / "id") or card.name})
+            out.append({"id": f"sound:pci:{pci}", "card": card.name, "pci": pci, "name": _read(card / "id") or card.name,
+                        "sysfs": _sysfs(card, sys_root)})
     return out
 
 
@@ -76,6 +85,13 @@ def _usb_parts(sysfs: str) -> list[str]:
     return [p for p in sysfs.split("/") if _USB_DEV.match(p)]
 
 
+def _usb_device(sysfs: str) -> str | None:
+    """sysfs-Pfad des USB-GERÄTS (…/usbX/X-Y), nicht des input-Kinds – so wurde in M0 per `loginctl attach` zugeordnet."""
+    parts = sysfs.split("/")
+    idx = [i for i, p in enumerate(parts) if _USB_DEV.match(p)]
+    return "/sys" + "/".join(parts[: idx[-1] + 1]) if idx and sysfs.startswith("/devices/") else None
+
+
 def inputs(proc_text: str) -> list[dict]:
     """Tastaturen und Mäuse an USB oder Bluetooth, je physischem Gerät eine Zeile (Funk-Empfänger melden Tastatur und Maus als mehrere Knoten)."""
     groups: dict[str, dict] = {}
@@ -93,7 +109,8 @@ def inputs(proc_text: str) -> list[dict]:
         else:
             continue
         g = groups.setdefault(gid, {"id": gid, "names": [], "kinds": set(), "usb": port,
-                                     "branch": usb[0] if usb else None, "bt": uniq if gid.startswith("input:bt:") else None})
+                                     "branch": usb[0] if usb else None, "bt": uniq if gid.startswith("input:bt:") else None,
+                                     "usb_sysfs": None if gid.startswith("input:bt:") else _usb_device(sysfs)})
         g["names"].append(b.get("Name", "?"))
         g["kinds"] |= kinds
     return [{**{k: v for k, v in g.items() if k != "names"}, "name": min(g["names"], key=len), "kinds": sorted(g["kinds"])}
