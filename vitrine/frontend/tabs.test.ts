@@ -14,7 +14,7 @@ const copy = () => structuredClone(base)
 
 describe("Reiter der Vitrine-Seite", () => {
   it("feste Reihenfolge, unbekannt → Übersicht", () => {
-    expect(TABS).toEqual(["overview", "program", "display", "dashboard", "light", "bluetooth"])
+    expect(TABS).toEqual(["overview", "program", "display", "dashboard", "light", "bluetooth", "seats"])
     expect(tabFromParam("light")).toBe("light")
     expect(tabFromParam(null)).toBe("overview")
     expect(tabFromParam("<script>")).toBe("overview")

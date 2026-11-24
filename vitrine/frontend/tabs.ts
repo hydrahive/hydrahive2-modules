@@ -4,7 +4,7 @@ import { layoutErrors, normalizeDashboard } from "./dashLayout"
 import { lightErrors, normalizeLight } from "./light"
 import { ruleErrors } from "./rules"
 
-export const TABS = ["overview", "program", "display", "dashboard", "light", "bluetooth"] as const
+export const TABS = ["overview", "program", "display", "dashboard", "light", "bluetooth", "seats"] as const
 export type TabId = (typeof TABS)[number]
 
 /** Felder der Einstellung → Reiter. Übersicht und Bluetooth haben keine gespeicherten Felder. */

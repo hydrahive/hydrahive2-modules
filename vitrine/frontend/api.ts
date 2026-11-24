@@ -103,6 +103,24 @@ export interface BtView {
   error: string | null
 }
 
+/** Multiseat M1: Geräte aus dem System, Vorschlag und gespeicherte Zuordnung (GET/PUT /seats, nur Admin). */
+export type SeatId = "seat0" | "seat1"
+export interface SeatGpu { id: string; card: string; pci: string | null; driver: string; evdi: boolean; vendor: string;
+  boot_vga: boolean; outputs: { name: string; connected: boolean }[] }
+export interface SeatSound { id: string; card: string; pci: string; name: string }
+export interface SeatInput { id: string; name: string; kinds: string[]; usb: string | null; branch: string | null; bt: string | null }
+export interface SeatsView {
+  devices: { gpus: SeatGpu[]; sound: SeatSound[]; inputs: SeatInput[] }
+  seats: string[]
+  feasible: boolean
+  reasons: string[]
+  monitor_detected: boolean
+  inputs_unclear: boolean
+  assignment: Record<string, SeatId | null>
+  saved: { assignment: Record<string, SeatId>; saved_at: number } | null
+  applied: boolean
+}
+
 export const vitrineApi = {
   status: () => api.get<VitrineStatus>(`${BASE}/status`),
   config: () => api.get<VitrineConfig>(`${BASE}/config`),
@@ -124,6 +142,8 @@ export const vitrineApi = {
   btScan: () => api.post<{ started: boolean }>(`${BASE}/bluetooth/scan`, {}),
   btPair: (address: string) => api.post<void>(`${BASE}/bluetooth/pair`, { address }),
   btRemove: (address: string) => api.delete<void>(`${BASE}/bluetooth/${encodeURIComponent(address)}`),
+  seats: () => api.get<SeatsView>(`${BASE}/seats`),
+  saveSeats: (assignment: Record<string, SeatId>) => api.put<{ assignment: Record<string, SeatId> }>(`${BASE}/seats`, { assignment }),
   light: () => api.get<LightStatus>(`${BASE}/light`),
   /** Licht zeigt 15 s diesen Zustand. */
   lightPreview: (state: string) => api.post<{ state: string; seconds: number }>(`${BASE}/light/preview`, { state }),
