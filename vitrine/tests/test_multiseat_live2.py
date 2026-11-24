@@ -59,7 +59,7 @@ def test_kind_ohne_seat1_prueffehler_rueckbau(env, tmp_path):
     fake.write_text(fake.read_text().replace('"udevadm trigger")', '"udevadm trigger")\n    case "$*" in *parent-match=*usb*) exit 0;; esac'))
     r = env.run("multiseat-apply.sh", *env.write_plan())
     assert r.returncode == 1, r.stderr
-    assert "nicht beim zweiten Arbeitsplatz" in r.stderr and "/input/input31" in r.stderr
+    assert "nicht beim zweiten Arbeitsplatz" in r.stderr and "/usb1/1-5/1-5:1.0/" in r.stderr   # ein Kind, nicht das Gerät
     c = env.calls()
     assert not any(x == "systemctl enable --force lightdm.service" for x in c)   # vor dem DM-Wechsel abgebrochen
     assert "loginctl flush-devices" in c and not env.etc(BK).exists()
