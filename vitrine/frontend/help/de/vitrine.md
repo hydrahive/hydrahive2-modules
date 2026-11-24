@@ -127,6 +127,9 @@ Arbeitsplatz** den Hinweis „Zweiter Bildschirm erkannt – als eigenen Arbeits
   steht danach in der Karte.
 - Hast du den zweiten Arbeitsplatz mit **Zweiten Arbeitsplatz ausschalten** bewusst ausgeschaltet, bleibt er auch nach
   Updates aus, bis du ihn wieder einschaltest. **Übernehmen** ändert daran nichts.
+- Am zweiten Arbeitsplatz startet nach der Anmeldung der normale Desktop des Rechners (zum Beispiel Lubuntu). Die
+  Vitrine liest ihn aus dem System. Wer eine andere Sitzung möchte, wählt sie im Anmeldebildschirm oben rechts; der
+  Anmeldebildschirm merkt sich diese Wahl für den Nutzer und nimmt sie beim nächsten Mal wieder.
 - Wird die Vitrine deinstalliert, schaltet sie den zweiten Arbeitsplatz vorher aus.
 - Bluetooth-Geräte hängen am Funkchip des Rechners und bleiben bei der Vitrine.
 
@@ -165,4 +168,4 @@ schalten. Einblendungen sind reiner Text. Zu lange Texte werden mit „…“ ge
 - „Die Einstellungen der Vitrine konnten nicht geladen werden.“: Die Seite hat keine Verbindung zum Modul.
   Seite neu laden.
 
-*Stand: Vitrine 0.18.0, 24.11.2026*
+*Stand: Vitrine 0.18.1, 24.11.2026*
