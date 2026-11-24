@@ -1,0 +1,13 @@
+13:	(WW) warning, (EE) error, (NI) not implemented, (??) unknown.
+133:[  3370.564] (II) FBDEV: driver for framebuffer: fbdev
+135:[  3370.565] (EE) [drm] Failed to open DRM device for pci:0000:01:00.0: -2
+146:[  3370.566] (EE) [drm] Failed to open DRM device for (null): -22
+148:[  3370.566] (EE) Screen 0 deleted because of no matching config section.
+150:[  3370.566] (EE) 
+151:Fatal server error:
+152:[  3370.566] (EE) Cannot run in framebuffer mode. Please specify busIDs        for all framebuffer devices
+153:[  3370.566] (EE) 
+154:[  3370.566] (EE) 
+158:[  3370.566] (EE) Please also check the log file at "/var/log/Xorg.0.log" for additional information.
+159:[  3370.566] (EE) 
+160:[  3370.566] (EE) Server terminated with error (1). Closing log file.
