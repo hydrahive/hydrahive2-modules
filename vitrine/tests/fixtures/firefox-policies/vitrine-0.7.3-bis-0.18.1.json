@@ -1,0 +1,5 @@
+{"policies": {
+  "WebsiteFilter": {"Block": ["<all_urls>"], "Exceptions": ["http://127.0.0.1/*", "http://127.0.0.1:*/*", "file:///home/hydrahive-kiosk/vitrine/*"]},
+  "DisableAppUpdate": true, "DisableTelemetry": true, "DontCheckDefaultBrowser": true,
+  "OverrideFirstRunPage": "", "OverridePostUpdatePage": "", "DisableDeveloperTools": true
+}}

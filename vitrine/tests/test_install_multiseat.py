@@ -26,13 +26,20 @@ def test_ms2_ohne_marker_wie_0176(tmp_path, kw, openbox):
     r_old, r_new = old.run(openbox=openbox), new.run(openbox=openbox)
     assert r_old.returncode == 0 and r_new.returncode == 0, r_new.stderr
     assert new.calls() == old.calls()
-    # Gewollte Abweichungen nur im Inhalt zweier nach /etc kopierter Skripte: kiosk-uninstall.sh schaltet seit M2b
-    # zuerst den zweiten Arbeitsplatz aus (eigener Test unten); kiosk-session.sh lässt seit §7 N2b einen fremden
-    # Monitor an, wenn monitor-an gesetzt ist (test_multiseat_immer.py). Alles andere muss identisch zu 0.17.6 sein.
+    # Gewollte Abweichungen (alles andere muss identisch zu 0.17.6 sein):
+    # - Inhalt zweier nach /etc kopierter Skripte: kiosk-uninstall.sh schaltet seit M2b zuerst den zweiten Arbeitsplatz
+    #   aus (eigener Test unten); kiosk-session.sh lässt seit §7 N2b einen fremden Monitor an (test_multiseat_immer.py).
+    # - MS12 (0.18.2): die Website-Sperre steht nicht mehr systemweit in /etc/firefox/policies/policies.json, sondern
+    #   nur im user.js des Kiosk-Profils (test_firefox_sperre.py). Die alte Datei fehlt also, user.js ist länger.
     f_new, f_old = new.files(), old.files()
     for script in ("etc/hydrahive2-vitrine/kiosk-uninstall.sh", "etc/hydrahive2-vitrine/kiosk-session.sh"):
         assert (script in f_new) == (script in f_old)
         f_new.pop(script, None), f_old.pop(script, None)
+    policy, userjs = "etc/firefox/policies/policies.json", "home/hydrahive-kiosk/firefox/user.js"
+    assert policy in f_old and policy not in f_new
+    f_old.pop(policy)
+    assert f_new[userjs].startswith(f_old[userjs]) and 'user_pref("network.proxy.type", 1);' in f_new[userjs]
+    f_new.pop(userjs), f_old.pop(userjs)
     assert f_new == f_old
     assert new.out(r_new) == old.out(r_old)
 
