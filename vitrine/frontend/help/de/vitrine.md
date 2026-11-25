@@ -158,6 +158,9 @@ schalten. Einblendungen sind reiner Text. Zu lange Texte werden mit „…“ ge
 - Fehler aus HydraHive erscheinen höchstens alle 10 Minuten je Quelle und höchstens 6 pro Stunde.
 - Die Status-Leiste unten zeigt den Zustand von HydraHive, Last, Arbeitsspeicher, GPU-Temperatur, laufende
   Agenten und Fehler der letzten Stunde, soweit verfügbar.
+- Der Browser der Statuszentrale erreicht nur die Seiten der Vitrine. Diese Sperre gilt nur für ihn: Alle anderen
+  Benutzer am Rechner, auch am zweiten Arbeitsplatz, surfen mit Firefox ganz normal. Eine Sperre aus älteren
+  Versionen (bis 0.18.1), die für alle galt, entfernt das Update; eigene Firefox-Richtlinien bleiben unangetastet.
 - Die Statuszentrale per Maus wird bei der Installation eingerichtet, wenn Firefox und der Anmeldebildschirm SDDM
   vorhanden sind, auch wenn ein normaler Monitor am Rechner hängt (siehe **Arbeitsplätze**).
 - Die Beleuchtung braucht OpenRGB und einen unterstützten Licht-Chip. Fehlt das, steht dort „Noch kein Stand vom
@@ -168,4 +171,4 @@ schalten. Einblendungen sind reiner Text. Zu lange Texte werden mit „…“ ge
 - „Die Einstellungen der Vitrine konnten nicht geladen werden.“: Die Seite hat keine Verbindung zum Modul.
   Seite neu laden.
 
-*Stand: Vitrine 0.18.1, 24.11.2026*
+*Stand: Vitrine 0.18.2, 25.11.2026*

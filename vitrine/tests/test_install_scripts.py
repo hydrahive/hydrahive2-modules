@@ -75,4 +75,4 @@ def test_startseite_nicht_in_verstecktem_ordner():
     uses = [ln for ln in text.splitlines() if "/.vitrine" in ln and not ln.lstrip().startswith("rm ")]
     assert not uses, f"Startseite nicht in einem Punkt-Ordner (nur Aufräumen erlaubt): {uses}"
     assert "${HOME_DIR}/vitrine" in text and "${HOME}/vitrine/start.html" in text
-    assert "file:///home/hydrahive-kiosk/vitrine/*" in text, "Richtlinie erlaubt genau diesen Ordner"
+    assert "${HOME}/firefox" in text, "Kiosk-Firefox mit eigenem Profil (dort liegt die Sperre, MS12)"

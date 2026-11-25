@@ -61,7 +61,13 @@ Exec=${CONF}/kiosk-session.sh
 Type=Application
 EOF
 
-# --- Firefox: nur lokale Seiten, keine Erstlauf-/Update-Seiten ---
+# --- Firefox: nur lokale Seiten, keine Erstlauf-/Update-Seiten – NUR im Kiosk-Profil (MS12) ---
+# Die Sperre steckt in den Einstellungen des eigenen Profils (Start mit --profile, kiosk-session.sh): fester Proxy auf
+# einen Anschluss, an dem nichts lauscht. Firefox schickt Loopback (127.0.0.1, localhost) nie an einen Proxy
+# (nsProtocolProxyService.cpp, allow_hijacking_localhost=false) und file:// sowieso nicht → Vitrine-Seiten gehen, alles
+# andere endet mit „Proxy-Server verweigert die Verbindung“. Fester Proxy statt PAC-Datei: Firefox geht bei nicht
+# ladbarer PAC-Datei DIRECT (fail-open), beim festen Proxy nicht. failover_direct=false verhindert den direkten
+# Rückfall auch für Systemanfragen. Andere Benutzer und Profile bleiben unberührt.
 install -d -o "${KIOSK}" -g "${KIOSK}" "${HOME_DIR}/firefox"
 cat > "${HOME_DIR}/firefox/user.js" <<'EOF'
 user_pref("browser.shell.checkDefaultBrowser", false);
@@ -72,16 +78,40 @@ user_pref("toolkit.telemetry.reportingpolicy.firstRun", false);
 user_pref("app.update.enabled", false);
 user_pref("browser.sessionstore.resume_from_crash", false);
 user_pref("security.fileuri.strict_origin_policy", true);
+user_pref("network.proxy.type", 1);
+user_pref("network.proxy.http", "127.0.0.1");
+user_pref("network.proxy.http_port", 65535);
+user_pref("network.proxy.ssl", "127.0.0.1");
+user_pref("network.proxy.ssl_port", 65535);
+user_pref("network.proxy.share_proxy_settings", true);
+user_pref("network.proxy.socks", "");
+user_pref("network.proxy.no_proxies_on", "localhost, 127.0.0.1");
+user_pref("network.proxy.allow_hijacking_localhost", false);
+user_pref("network.proxy.failover_direct", false);
+user_pref("media.peerconnection.enabled", false);
+user_pref("network.trr.mode", 5);
+user_pref("datareporting.healthreport.uploadEnabled", false);
+user_pref("toolkit.telemetry.enabled", false);
+user_pref("toolkit.telemetry.unified", false);
+user_pref("toolkit.telemetry.archive.enabled", false);
+user_pref("startup.homepage_welcome_url", "");
+user_pref("startup.homepage_override_url", "");
+user_pref("devtools.policy.disabled", true);
+user_pref("devtools.chrome.enabled", false);
 EOF
 chown "${KIOSK}:${KIOSK}" "${HOME_DIR}/firefox/user.js"
-mkdir -p /etc/firefox/policies
-cat > /etc/firefox/policies/policies.json <<'EOF'
-{"policies": {
-  "WebsiteFilter": {"Block": ["<all_urls>"], "Exceptions": ["http://127.0.0.1/*", "http://127.0.0.1:*/*", "file:///home/hydrahive-kiosk/vitrine/*"]},
-  "DisableAppUpdate": true, "DisableTelemetry": true, "DontCheckDefaultBrowser": true,
-  "OverrideFirstRunPage": "", "OverridePostUpdatePage": "", "DisableDeveloperTools": true
-}}
-EOF
+# Früher (bis 0.18.1) stand die Website-Sperre SYSTEMWEIT in /etc/firefox/policies/policies.json – damit konnte niemand
+# am Rechner mehr surfen (25.11.2026, zweiter Arbeitsplatz). Entfernen, aber NUR wenn die Datei exakt eine unserer
+# Fassungen ist (sha256 aus der Git-Historie: 0.7.0 und 0.7.3–0.18.1); fremde Richtlinien bleiben unangetastet.
+FF_POLICY=/etc/firefox/policies/policies.json
+FF_OURS="0eb5dbc14674fa208767929ee0af43ca241e8f284023cd4ee1953962e9ebfd60 0893f0b5f9f5150f792619b0209e2ee3f0916669b73fe0c1a35de2b78d4dd656"
+if [ -f "${FF_POLICY}" ]; then
+  _ff_sum="$(sha256sum "${FF_POLICY}" | cut -d' ' -f1)"
+  case " ${FF_OURS} " in
+    *" ${_ff_sum} "*) rm -f "${FF_POLICY}"; rmdir "$(dirname "${FF_POLICY}")" 2>/dev/null || true
+                      echo "Vitrine-Kiosk: alte systemweite Firefox-Sperre entfernt – alle Benutzer surfen wieder normal" ;;
+  esac
+fi
 
 if [ -z "${MULTISEAT}" ]; then   # Multiseat: sddm-Teil ganz auslassen
 # --- sddm: /etc/sddm.conf hat Vorrang vor sddm.conf.d (am Gerät geprüft) → ersetzen, Original einmalig sichern ---
