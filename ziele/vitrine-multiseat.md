@@ -115,3 +115,4 @@ Beides gleichzeitig = zwei Arbeitsplätze. Daher, abweichend von §3 „Ein Arbe
 |---|---|
 | MS10 | Update mit angeschlossenem Monitor und gültiger Zuordnung schaltet automatisch ein (Ersatzprogramme); mit `auto: false` nicht; ohne Zuordnung Kiosk ohne Abschalten fremder Ausgänge + Hinweis |
 | MS11 | Live: Update auf die neue Version mit Fernseher am Server → Vitrine-Dashboard UND Anmeldebildschirm am Fernseher ohne Klick |
+| MS12 | Der Desktop am zweiten Arbeitsplatz ist voll nutzbar: Kiosk-Einschränkungen (z. B. Firefox-Website-Sperre) gelten nur für den Kiosk-Benutzer, nie systemweit; jeder andere Benutzer surft normal (Till 25.11.: „dass ich den Desktop vollwertig benutzen kann“) |
