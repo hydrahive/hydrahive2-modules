@@ -36,10 +36,11 @@ def test_ms2_ohne_marker_wie_0176(tmp_path, kw, openbox):
         assert (script in f_new) == (script in f_old)
         f_new.pop(script, None), f_old.pop(script, None)
     policy, userjs = "etc/firefox/policies/policies.json", "home/hydrahive-kiosk/firefox/user.js"
-    assert policy in f_old and policy not in f_new
-    f_old.pop(policy)
-    assert f_new[userjs].startswith(f_old[userjs]) and 'user_pref("network.proxy.type", 1);' in f_new[userjs]
-    f_new.pop(userjs), f_old.pop(userjs)
+    assert policy not in f_new and (policy in f_old) == (userjs in f_old) == (userjs in f_new)   # nur mit Kiosk
+    if userjs in f_old:
+        f_old.pop(policy)
+        assert f_new[userjs].startswith(f_old[userjs]) and 'user_pref("network.proxy.type", 1);' in f_new[userjs]
+        f_new.pop(userjs), f_old.pop(userjs)
     assert f_new == f_old
     assert new.out(r_new) == old.out(r_old)
 
