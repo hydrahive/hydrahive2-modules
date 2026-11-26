@@ -24,6 +24,10 @@ Spec und Plan sind verbindlich. Dieses Dokument nennt nur, was je Auftrag abgeno
 - **KA3** Tests aus Plan Aufgabe 1 Schritt 1 grün, vorher rot. Die bestehenden Tests laut Plan Schritt 4 sind grün.
 - **KA4** PR offen, CI grün, Link im Bericht.
 
+**Stand:** Auftrag 1 gemergt (#781, Merge 780f8340, 26.11.). Aus dem Review für spätere Aufträge:
+- Auftrag 4/6: weitere Leser von `agent.get("tools")` umstellen bzw. prüfen – `agentlink/runtime_profiles.py:270` (`can_delegate`), `harness_doctor/collector.py:33/109`, Modul `blueprint/backend/chat.py:48`.
+- Auftrag 6: **genau eine** Pool-Quelle (`agents/tool_pools.py`, Lesefunktion `tool_pool_for(agent)`), Schreiben nur dort mit E5/S5-Prüfung; Test „`PATCH {tool_pool}` über die Agenten-API wird abgelehnt“; `possible_tool_names` und `effective_tool_names` nutzen dieselbe Quelle.
+
 ### Auftrag 2 – Plan-Aufgabe 2: `run_tool`
 - **RT1** `run_tool` wird in `_runner_tools` als erste Handlung ausgepackt, vor Bestätigung, `vault_gate`, `tool_denied` und `execute_tool`.
 - **RT2** Alle 9 Tests aus Plan Aufgabe 2 Schritt 1 (K10/K11) grün, vorher rot.
@@ -51,6 +55,7 @@ Spec und Plan sind verbindlich. Dieses Dokument nennt nur, was je Auftrag abgeno
 ### Auftrag 6 – Plan-Aufgabe 6: Pool, Besitzer-Freigabe, Zuweisung
 - **KP1** Migration 068, `agents/tool_pools.py` und die API laut Plan. Ohne Besitzer-Freigabe kann ein Nicht-Admin nichts vergeben (E5).
 - **KP2** Alle 10 Tests aus Plan Aufgabe 6 Schritt 1 grün, vorher rot (K5, K13, K14, K16).
+- **KP5** Genau eine Pool-Quelle (`tool_pool_for`), `PATCH {tool_pool}` über die Agenten-API → abgelehnt (Test); `can_delegate` berücksichtigt den Pool.
 - **KP3** `ask_agent` nimmt `tools`/`skills` an: Zuweisung = Anfrage ∩ Pool, sie kommt zu den eigenen Tools dazu. Föderierte Ziele werden mit Fehler abgelehnt.
 - **KP4** Oberfläche (de/en) für Agenten-Pool und Besitzer-Freigabe. PR(s) offen, CI grün.
 
