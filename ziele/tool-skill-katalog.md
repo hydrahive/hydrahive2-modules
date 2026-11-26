@@ -46,6 +46,8 @@ Spec und Plan sind verbindlich. Dieses Dokument nennt nur, was je Auftrag abgeno
 - **KK3** `find_skills` liefert keine fremden Skills, und 5 Anfragen treffen jeweils unter den ersten 3.
 - **KK4** PR offen, CI grün.
 
+**Stand:** Auftrag 2 (#782), 3 (#783), 4 (#784, Merge siehe Task 2da6ec55) gemergt. Kategorien heißen wie `Tool.category` (englisch, Till 26.11.); deutsche Kurzbeschreibungen in `catalog.categories.CATEGORY_LABELS` für die Prompt-Zeilen. Die Katalog-Werkzeuge stehen zentral in `catalog.CATALOG_TOOLS`.
+
 ### Auftrag 5 – Plan-Aufgabe 5: `tool_mode: catalog`
 - **KM1** Das Feld `tool_mode` ist da, Standard `classic`. Der Payload eines classic-Agenten ist identisch mit dem vorherigen Stand (Snapshot-Test, K7).
 - **KM2** Im catalog-Modus gehen nur Kern ∩ Freigabe, angeheftete und vorgemerkte Tools ans Modell (K1). Die Tool-Liste ist im Lauf byte-gleich, auch mit `run_tool` (K4).
@@ -55,6 +57,7 @@ Spec und Plan sind verbindlich. Dieses Dokument nennt nur, was je Auftrag abgeno
 ### Auftrag 6 – Plan-Aufgabe 6: Pool, Besitzer-Freigabe, Zuweisung
 - **KP1** Migration 068, `agents/tool_pools.py` und die API laut Plan. Ohne Besitzer-Freigabe kann ein Nicht-Admin nichts vergeben (E5).
 - **KP2** Alle 10 Tests aus Plan Aufgabe 6 Schritt 1 grün, vorher rot (K5, K13, K14, K16).
+- **KP6** (aus Review #784) Agenten-Editor zeigt `kategorie:x`-Einträge und erlaubt sie zu entfernen; `bounded_tools` löst Kategorien des Erzeugers auf (sonst kann ein Erzeuger mit nur `kategorie:files` kein `file_read` einzeln weitergeben); `approve()` bekommt eine Admin-Route (Identität aus dem Token, nicht aus dem Body) mit Widerruf und Audit; `harness_doctor` zählt über `effective_tool_names`.
 - **KP5** Genau eine Pool-Quelle (`tool_pool_for`), `PATCH {tool_pool}` über die Agenten-API → abgelehnt (Test); `can_delegate` berücksichtigt den Pool.
 - **KP3** `ask_agent` nimmt `tools`/`skills` an: Zuweisung = Anfrage ∩ Pool, sie kommt zu den eigenen Tools dazu. Föderierte Ziele werden mit Fehler abgelehnt.
 - **KP4** Oberfläche (de/en) für Agenten-Pool und Besitzer-Freigabe. PR(s) offen, CI grün.
