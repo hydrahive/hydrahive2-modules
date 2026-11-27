@@ -62,6 +62,15 @@ Spec und Plan sind verbindlich. Dieses Dokument nennt nur, was je Auftrag abgeno
 - **KP3** `ask_agent` nimmt `tools`/`skills` an: Zuweisung = Anfrage ∩ Pool, sie kommt zu den eigenen Tools dazu. Föderierte Ziele werden mit Fehler abgelehnt.
 - **KP4** Oberfläche (de/en) für Agenten-Pool und Besitzer-Freigabe. PR(s) offen, CI grün.
 
+**Stand 27.11.:** Aufträge 1–6 (Backend) gemergt (#781–#786). Erprobung auf .4 (Buddy, 5 echte Aufgaben, Kopie des Projekt-Agenten, claude-sonnet-5-5): Prompt+Cache −51 %, Kosten −32 %, gleiche Antworten; Grundlast Buddy 28.030 → 4.680 Tokens, Projekt-Agent 15.902 → 4.709 Tokens. Details `_work/katalog-probe/`.
+
+### Auftrag 6b – Oberfläche und Admin-Routen (KP4, KP6)
+- **KO1** Agenten-Editor: Schalter `tool_mode` (classic/catalog), angeheftete Tools und Skills, Freigabe-Pool des Agenten (nur Besitzer/Admin, Fehler aus der API in de/en), `kategorie:x`-Einträge sichtbar und entfernbar.
+- **KO2** Admin → Nutzer: Besitzer-Freigabe je Nutzer (Tools/Kategorien) setzen; Projekt-Einstellungen: Projekt-Pool (Projektrolle admin).
+- **KO3** Admin-Route + Oberfläche für Kategorie-Bestätigungen (`approve`) mit Widerruf; Identität aus dem Token. Pool-, Freigabe- und Bestätigungsänderungen landen im Audit-Log.
+- **KO4** Aus Review #786: Ablehnungstext von ask_agent nennt nur die abgelehnten Namen; `GET /api/admin/tool-grants/{unbekannt}` → 404; `tool_pools.py` unter ~200 Zeilen (remove_*/Hilfen abspalten); `bounded_tools` löst Kategorien des Erzeugers auf; `harness_doctor` zählt über `effective_tool_names`.
+- **KO5** Tests für alles Neue (Backend), Frontend `npm run build` grün; PR offen, CI grün.
+
 ### Auftrag 7 – Plan-Aufgabe 7: Messung
 - **KX1** `catalog/metrics.py`, Migration 069 und die Route `GET /api/catalog/metrics` (nur Besitzer oder Admin). Die Tests aus Plan Aufgabe 7 sind grün.
 - **KX2** PR offen, CI grün.
