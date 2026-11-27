@@ -19,7 +19,7 @@ Spec und Plan sind verbindlich. Dieses Dokument nennt nur, was je Auftrag abgeno
 ## Abnahme-Punkte
 - **AB1** `agents/areas.py`: 28 Bereiche in 9 Gruppen (inkl. Discord, Gruppe „Nachrichten“) wie Spec 3.2, `BASE_TOOLS`, `tools_of`. Wächter-Test: Jedes Kern-Tool liegt in genau einem Bereich oder in `BASE_TOOLS`. (Plan-Aufgabe 1)
 - **AB2** Manifest-Feld `agent_areas` (Zuordnung oder neuer Bereich, Kern-Bereiche nicht überschreibbar). `all_areas`, `area_of`, `unassigned`. `GET /api/agent-areas`, `unassigned` nur für Admins. (Plan-Aufgabe 2)
-- **AB3** Status und Umschalten: `area_states`, `toggle` (fremde Tools bleiben), `GET /api/agents/{id}/areas`, und `agent_tools_forbidden` nennt Bereiche (Plan-Aufgabe 3). Editor-Reiter „Was darf der Agent?“ mit Gruppen, Zeichen, an/aus/teilweise, Expertenansicht zugeklappt, de/en (Plan-Aufgabe 4).
+- **AB3** Status und Umschalten: `area_states`, `toggle` (fremde Tools bleiben), `GET /api/agents/{id}/areas` mit `editable` (nur Admin speichert, Spec 4.8) (Plan-Aufgabe 3). Editor-Reiter „Was darf der Agent?“ mit Gruppen, Zeichen, an/aus/teilweise, Expertenansicht zugeklappt, de/en (Plan-Aufgabe 4).
 - **AB4** „N neue Werkzeuge – übernehmen?“ erscheint nur für Tools, die beim letzten Speichern noch nicht existierten (`area_seen`). Absichtlich entfernte Tools lösen ihn nie aus. Ohne Klick ändert sich nichts.
 - **AB5** Zweck-Vorschlag: `POST /api/agents/{id}/area-suggestion`, nur Admin (wer bearbeiten darf, Spec 4.8), Ausgabe gefiltert, speichert nichts, Fehler des Modells → leere Liste statt 500. (Plan-Aufgabe 5)
 - **AB6** `catalog/auto_pin.py`: höchstens 8, 30 Tage, nur wirksame Tools, beim Laufstart. Die Tool-Liste bleibt im Lauf gleich. (Plan-Aufgabe 6)
