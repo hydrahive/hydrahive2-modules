@@ -17,7 +17,7 @@ Spec und Plan sind verbindlich. Dieses Dokument nennt nur, was je Auftrag abgeno
 - PR-Beschreibung auf Deutsch, ohne @-Mentions.
 
 ## Abnahme-Punkte
-- **AB1** `agents/areas.py`: 26 Bereiche in 9 Gruppen wie Spec 3.2, `BASE_TOOLS`, `tools_of`. Wächter-Test: Jedes Kern-Tool liegt in genau einem Bereich oder in `BASE_TOOLS`. (Plan-Aufgabe 1)
+- **AB1** `agents/areas.py`: 28 Bereiche in 9 Gruppen (inkl. Discord, Gruppe „Nachrichten“) wie Spec 3.2, `BASE_TOOLS`, `tools_of`. Wächter-Test: Jedes Kern-Tool liegt in genau einem Bereich oder in `BASE_TOOLS`. (Plan-Aufgabe 1)
 - **AB2** Manifest-Feld `agent_areas` (Zuordnung oder neuer Bereich, Kern-Bereiche nicht überschreibbar). `all_areas`, `area_of`, `unassigned`. `GET /api/agent-areas`, `unassigned` nur für Admins. (Plan-Aufgabe 2)
 - **AB3** Status und Umschalten: `area_states`, `toggle` (fremde Tools bleiben), `GET /api/agents/{id}/areas`, und `agent_tools_forbidden` nennt Bereiche (Plan-Aufgabe 3). Editor-Reiter „Was darf der Agent?“ mit Gruppen, Zeichen, an/aus/teilweise, Expertenansicht zugeklappt, de/en (Plan-Aufgabe 4).
 - **AB4** „N neue Werkzeuge – übernehmen?“ erscheint nur bei neu hinzugekommenen Tools eines Bereichs. Ohne Klick ändert sich nichts.
