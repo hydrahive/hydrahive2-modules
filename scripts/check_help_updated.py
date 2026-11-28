@@ -24,7 +24,7 @@ _MOD = r"([A-Za-z0-9_.-]+)"
 _VISIBLE = (
     re.compile(rf"^{_MOD}/frontend/.+\.tsx$"),
     # Deutsche Texte, so wie sie im Repo liegen: frontend/i18n.ts, i18n.de.ts, i18n_<teil>.ts, texts.de.ts
-    # (nicht *.en.ts, z. B. i18n.en.ts, i18n.add.en.ts). Das frühere Muster frontend/i18n/de* traf keine echte Datei (Review #478).
+    # (nicht *.en.ts, z. B. i18n.add.en.ts). Das frühere Muster frontend/i18n/de* traf keine Datei (Review #478).
     re.compile(rf"^{_MOD}/frontend/(?:.+/)?(?![^/]*\.en\.ts$)i18n[^/]*\.ts$"),
     re.compile(rf"^{_MOD}/frontend/(?:.+/)?texts\.de\.ts$"),
 )
