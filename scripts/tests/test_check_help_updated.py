@@ -329,6 +329,21 @@ def test_e2e_manifest_nur_bei_routes_nav_settings(repo):
     assert "atelier/manifest.json" in bad.stdout
 
 
+def test_e2e_manifest_vergleich_gegen_merge_base_nicht_gegen_base_spitze(repo):
+    # main ändert nach dem Abzweigen die routes; der PR hebt nur die Version. Gegen die Spitze von main
+    # verglichen sähe das nach einer routes-Änderung durch den PR aus (Fehlalarm).
+    repo_dir, fork = repo
+    _git(repo_dir, "checkout", "-q", "-b", "pr")
+    _write(repo_dir, "atelier/manifest.json", json.dumps({"id": "atelier", "version": "1.0.1", "nav_group": "working"}))
+    head = _commit(repo_dir, "bump")
+    _git(repo_dir, "checkout", "-q", "main")
+    _write(repo_dir, "atelier/manifest.json",
+           json.dumps({"id": "atelier", "version": "1.0.0", "nav_group": "working", "routes": ["/a"]}))
+    main_tip = _commit(repo_dir, "main ändert routes")
+    result = _run(repo_dir, main_tip, head, mode="block")
+    assert result.returncode == 0 and "Regel greift nicht" in result.stdout
+
+
 def test_e2e_neues_modul_mit_routes_im_manifest(repo):
     repo_dir, base = repo
     _write(repo_dir, "neu/manifest.json", json.dumps({"id": "neu", "version": "0.1.0", "routes": ["/neu"]}))
