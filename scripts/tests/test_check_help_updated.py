@@ -33,6 +33,8 @@ def _help(module):
     ("vibe/frontend/i18n.de.ts", "vibe"),
     ("legal/frontend/i18n_admin.ts", "legal"),
     ("studio/frontend/views/texts.de.ts", "studio"),
+    ("storyteller/frontend/texts.ghost.de.ts", "storyteller"),   # Teildatei (Review #479)
+    ("vitrine/frontend/seatsI18n.ts", "vitrine"),                # I18n nicht am Namensanfang
 ])
 def test_nutzersichtbar_wird_erkannt(path, module):
     result = _eval([path])
@@ -50,6 +52,8 @@ def test_nutzersichtbar_wird_erkannt(path, module):
     "atelier/frontend/styles.css",
     "atelier/frontend/i18n.en.ts",                     # nur Deutsch
     "tvwerkstatt/frontend/i18n.add.en.ts",             # englische Teildatei
+    "storyteller/frontend/texts.ghost.en.ts",
+    "vitrine/frontend/seatsI18n.en.ts",
     "atelier/frontend/texts.en.ts",
     "atelier/backend/routes.py",
     "atelier/SPEC.md",                                 # Doku allein löst nichts aus

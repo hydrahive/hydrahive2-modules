@@ -23,10 +23,10 @@ from dataclasses import dataclass, field
 _MOD = r"([A-Za-z0-9_.-]+)"
 _VISIBLE = (
     re.compile(rf"^{_MOD}/frontend/.+\.tsx$"),
-    # Deutsche Texte, so wie sie im Repo liegen: frontend/i18n.ts, i18n.de.ts, i18n_<teil>.ts, texts.de.ts
+    # Deutsche Texte, so wie sie im Repo liegen: i18n.ts, i18n_<teil>.ts, <name>I18n.ts, texts.de.ts, texts.<teil>.de.ts
     # (nicht *.en.ts, z. B. i18n.add.en.ts). Das frühere Muster frontend/i18n/de* traf keine Datei (Review #478).
-    re.compile(rf"^{_MOD}/frontend/(?:.+/)?(?![^/]*\.en\.ts$)i18n[^/]*\.ts$"),
-    re.compile(rf"^{_MOD}/frontend/(?:.+/)?texts\.de\.ts$"),
+    re.compile(rf"^{_MOD}/frontend/(?:.+/)?(?![^/]*\.en\.ts$)[^/]*(?:i18n|I18n)[^/]*\.ts$"),   # auch seatsI18n.ts
+    re.compile(rf"^{_MOD}/frontend/(?:.+/)?texts(?:\.[^/]+)?\.de\.ts$"),                     # auch texts.ghost.de.ts
 )
 _MANIFEST = re.compile(rf"^{_MOD}/manifest\.json$")
 _TEST = re.compile(r"(^|/)((tests?|__tests__)/.+|[^/]+\.(test|spec)\.[^/]+)$")
