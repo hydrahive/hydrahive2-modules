@@ -23,13 +23,17 @@ from dataclasses import dataclass, field
 _MOD = r"([A-Za-z0-9_.-]+)"
 _VISIBLE = (
     re.compile(rf"^{_MOD}/frontend/.+\.tsx$"),
-    re.compile(rf"^{_MOD}/frontend/i18n/de(?:[^/]*|/.+)$"),     # frontend/i18n/de*  (de.ts, de-extra.ts, de/x.json)
+    # Deutsche Texte, so wie sie im Repo liegen: i18n.ts, i18n_<teil>.ts, <name>I18n.ts, texts.de.ts, texts.<teil>.de.ts
+    # (nicht *.en.ts, z. B. i18n.add.en.ts). Das frühere Muster frontend/i18n/de* traf keine Datei (Review #478).
+    re.compile(rf"^{_MOD}/frontend/(?:.+/)?(?![^/]*\.en\.ts$)[^/]*(?:i18n|I18n)[^/]*\.ts$"),   # auch seatsI18n.ts
+    re.compile(rf"^{_MOD}/frontend/(?:.+/)?texts(?:\.[^/]+)?\.de\.ts$"),                     # auch texts.ghost.de.ts
 )
 _MANIFEST = re.compile(rf"^{_MOD}/manifest\.json$")
 _TEST = re.compile(r"(^|/)((tests?|__tests__)/.+|[^/]+\.(test|spec)\.[^/]+)$")
 _HELP_FILE = re.compile(rf"^{_MOD}/frontend/help/de/[^/]+\.md$")
-# Manifest zählt nur, wenn sich eines dieser Felder ändert (Spec §2).
-_MANIFEST_UI_KEYS = ("routes", "nav", "settings")
+# Manifest zählt nur, wenn sich ein in der Oberfläche sichtbares Feld ändert (Spec §2). routes/nav/settings gibt es
+# im Manifest nicht (core modules/manifest.py) – Review #478.
+_MANIFEST_UI_KEYS = ("name", "description", "icon", "nav_group", "vault", "agent_areas")
 # Eigene Zeile; [ \t] statt \s, damit der Grund nicht aus der Folgezeile geholt wird.
 _EXEMPTION = re.compile(r"^[ \t]*Keine Hilfe nötig:[ \t]*(.*?)[ \t]*$", re.IGNORECASE | re.MULTILINE)
 _PLACEHOLDER = "<Begründung>"      # Platzhalter aus der Fehlermeldung zählt nicht als Begründung
@@ -80,7 +84,7 @@ def _visible_module(path: str, ui_manifests: set[str]) -> str | None:
 
 
 def manifest_ui_changed(base_text: str | None, head_text: str | None) -> bool:
-    """True, wenn sich routes, nav oder settings im Manifest ändern. Neues Modul: base fehlt (= keine Felder).
+    """True, wenn sich ein sichtbares Manifest-Feld (_MANIFEST_UI_KEYS) ändert. Neues Modul: base fehlt (= keine Felder).
     Gelöschtes oder unlesbares Manifest löst nichts aus."""
     if head_text is None:
         return False

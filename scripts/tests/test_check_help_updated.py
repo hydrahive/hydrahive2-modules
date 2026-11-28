@@ -29,9 +29,12 @@ def _help(module):
     ("atelier/frontend/AtelierPage.tsx", "atelier"),
     ("studio/frontend/components/Panel.tsx", "studio"),
     ("storyteller/frontend/views/deep/Tab.tsx", "storyteller"),
-    ("vibe/frontend/i18n/de.ts", "vibe"),
-    ("vibe/frontend/i18n/de/labels.json", "vibe"),
-    ("vibe/frontend/i18n/de-extra.ts", "vibe"),
+    ("vibe/frontend/i18n.ts", "vibe"),                   # echte Lage der Texte (Review #478)
+    ("vibe/frontend/i18n.de.ts", "vibe"),
+    ("legal/frontend/i18n_admin.ts", "legal"),
+    ("studio/frontend/views/texts.de.ts", "studio"),
+    ("storyteller/frontend/texts.ghost.de.ts", "storyteller"),   # Teildatei (Review #479)
+    ("vitrine/frontend/seatsI18n.ts", "vitrine"),                # I18n nicht am Namensanfang
 ])
 def test_nutzersichtbar_wird_erkannt(path, module):
     result = _eval([path])
@@ -47,11 +50,14 @@ def test_nutzersichtbar_wird_erkannt(path, module):
     "atelier/frontend/Panel.spec.tsx",
     "atelier/frontend/api.ts",                         # nur .tsx zählt
     "atelier/frontend/styles.css",
-    "atelier/frontend/i18n/en.ts",                     # nur Deutsch
-    "atelier/frontend/i18n.ts",                        # Spec nennt frontend/i18n/de*, nicht i18n.ts
+    "atelier/frontend/i18n.en.ts",                     # nur Deutsch
+    "tvwerkstatt/frontend/i18n.add.en.ts",             # englische Teildatei
+    "storyteller/frontend/texts.ghost.en.ts",
+    "vitrine/frontend/seatsI18n.en.ts",
+    "atelier/frontend/texts.en.ts",
     "atelier/backend/routes.py",
     "atelier/SPEC.md",                                 # Doku allein löst nichts aus
-    "atelier/manifest.json",                           # Manifest ohne routes/nav/settings-Änderung
+    "atelier/manifest.json",                           # Manifest ohne Änderung eines sichtbaren Felds
     "atelier/frontend/help/de/atelier.md",             # Hilfe selbst ist nicht „sichtbar“
     "README.md",
     "scripts/check_help_updated.py",
@@ -69,7 +75,7 @@ def test_tests_und_doku_zusammen_loesen_nichts_aus():
     assert _eval(["atelier/frontend/A.test.tsx", "atelier/SPEC.md", "atelier/tests/test_a.py"]).ok
 
 
-# --- Manifest nur bei routes / nav / settings -----------------------------------------------------------------------
+# --- Manifest nur bei sichtbaren Feldern -----------------------------------------------------------------------------
 
 def test_manifest_zaehlt_nur_wenn_freigegeben():
     assert _eval(["atelier/manifest.json"]).ok
@@ -82,7 +88,7 @@ def test_manifest_freigabe_gilt_nur_fuer_das_eigene_modul():
     assert _eval(["studio/manifest.json"], ui_manifests=["atelier"]).ok
 
 
-@pytest.mark.parametrize("key", ["routes", "nav", "settings"])
+@pytest.mark.parametrize("key", ["name", "description", "icon", "nav_group", "vault", "agent_areas"])
 @pytest.mark.parametrize(("base", "head"), [
     ({}, {"x": 1}),                      # Wert neu
     ({"x": 1}, {"x": 2}),                # Wert geändert
@@ -96,24 +102,32 @@ def test_manifest_ui_aenderung_wird_erkannt(key, base, head):
 
 
 @pytest.mark.parametrize(("base", "head"), [
-    ({"version": "1.0.0", "routes": [1]}, {"version": "1.0.1", "routes": [1]}),           # nur Version
-    ({"nav_group": "working"}, {"nav_group": "media"}),                                   # kein nav/settings
-    ({"description": "a", "nav": {"a": 1}}, {"description": "b", "nav": {"a": 1}}),
-    ({"routes": [1], "nav": 2, "settings": 3}, {"settings": 3, "nav": 2, "routes": [1]}),  # nur Reihenfolge der Schlüssel
+    ({"version": "1.0.0", "icon": "A"}, {"version": "1.0.1", "icon": "A"}),               # nur Version
+    ({"permissions": ["a"]}, {"permissions": ["a", "b"]}),                                # nicht sichtbar
+    ({"min_core_version": "2.0.0", "has_service": False}, {"min_core_version": "2.1.0", "has_service": True}),
+    ({"icon": "A", "nav_group": "w", "vault": True}, {"vault": True, "nav_group": "w", "icon": "A"}),  # nur Reihenfolge
 ])
 def test_manifest_ohne_ui_aenderung(base, head):
     assert not guard.manifest_ui_changed(json.dumps(base), json.dumps(head))
 
 
 def test_manifest_neues_modul_mit_oder_ohne_ui_felder():
-    assert guard.manifest_ui_changed(None, json.dumps({"routes": []}))
+    assert guard.manifest_ui_changed(None, json.dumps({"name": "Neu"}))
     assert not guard.manifest_ui_changed(None, json.dumps({"version": "0.1.0"}))
 
 
+def test_manifest_felder_passen_zum_kern_schema():
+    """Review #478: Die Liste darf nur Felder enthalten, die das Modul-Manifest wirklich kennt (core manifest.py)."""
+    real = {"id", "name", "version", "description", "icon", "nav_group", "permissions", "has_service",
+            "default_agent_tools", "min_core_version", "dependencies", "persistent_paths", "capabilities",
+            "sensitive_tools", "vault", "templates", "agent_areas"}
+    assert set(guard._MANIFEST_UI_KEYS) <= real
+
+
 def test_manifest_geloescht_oder_kaputt_loest_nichts_aus():
-    assert not guard.manifest_ui_changed(json.dumps({"routes": [1]}), None)
+    assert not guard.manifest_ui_changed(json.dumps({"icon": "A"}), None)
     assert not guard.manifest_ui_changed("{kaputt", "{auch kaputt")
-    assert not guard.manifest_ui_changed(json.dumps({"routes": [1]}), json.dumps([1, 2]))
+    assert not guard.manifest_ui_changed(json.dumps({"icon": "A"}), json.dumps([1, 2]))
 
 
 # --- Hilfe desselben Moduls -----------------------------------------------------------------------------------------
@@ -199,7 +213,7 @@ def test_ausnahme_mit_windows_zeilenende():
 # --- Meldung (Spec §4, Modul-Variante) ------------------------------------------------------------------------------
 
 def test_meldung_ein_modul_wie_im_kern():
-    text = guard.message(_eval(["atelier/frontend/A.tsx", "atelier/frontend/i18n/de.ts"]))
+    text = guard.message(_eval(["atelier/frontend/A.tsx", "atelier/frontend/i18n.ts"]))
     assert text.startswith("Hilfe fehlt: 2 nutzersichtbare Datei(en) geändert (")
     assert "atelier/frontend/A.tsx" in text and "keine Hilfe-Datei." in text
     assert "WARUM: Wiki und PDF-Handbuch entstehen aus den Hilfe-Artikeln" in text
@@ -316,37 +330,38 @@ def test_e2e_hilfe_desselben_moduls_ok_anderes_modul_nicht(repo):
     assert result.returncode == 0 and "Hilfe geändert" in result.stdout
 
 
-def test_e2e_manifest_nur_bei_routes_nav_settings(repo):
+def test_e2e_manifest_nur_bei_sichtbaren_feldern(repo):
     repo_dir, base = repo
-    _write(repo_dir, "atelier/manifest.json", json.dumps({"id": "atelier", "version": "1.0.1", "nav_group": "media"}))
+    _write(repo_dir, "atelier/manifest.json", json.dumps({"id": "atelier", "version": "1.0.1", "nav_group": "working",
+                                                          "permissions": ["x"]}))
     bump = _commit(repo_dir, "bump")
     ok = _run(repo_dir, base, bump, mode="block")
     assert ok.returncode == 0 and "Regel greift nicht" in ok.stdout
-    _write(repo_dir, "atelier/manifest.json", json.dumps({"id": "atelier", "version": "1.0.2", "nav": {"label": "A"}}))
-    nav = _commit(repo_dir, "nav")
+    _write(repo_dir, "atelier/manifest.json", json.dumps({"id": "atelier", "version": "1.0.2", "nav_group": "media"}))
+    nav = _commit(repo_dir, "nav_group")
     bad = _run(repo_dir, base, nav, mode="block")
     assert bad.returncode == 1
     assert "atelier/manifest.json" in bad.stdout
 
 
 def test_e2e_manifest_vergleich_gegen_merge_base_nicht_gegen_base_spitze(repo):
-    # main ändert nach dem Abzweigen die routes; der PR hebt nur die Version. Gegen die Spitze von main
-    # verglichen sähe das nach einer routes-Änderung durch den PR aus (Fehlalarm).
+    # main ändert nach dem Abzweigen nav_group; der PR hebt nur die Version. Gegen die Spitze von main
+    # verglichen sähe das nach einer nav_group-Änderung durch den PR aus (Fehlalarm).
     repo_dir, fork = repo
     _git(repo_dir, "checkout", "-q", "-b", "pr")
     _write(repo_dir, "atelier/manifest.json", json.dumps({"id": "atelier", "version": "1.0.1", "nav_group": "working"}))
     head = _commit(repo_dir, "bump")
     _git(repo_dir, "checkout", "-q", "main")
     _write(repo_dir, "atelier/manifest.json",
-           json.dumps({"id": "atelier", "version": "1.0.0", "nav_group": "working", "routes": ["/a"]}))
-    main_tip = _commit(repo_dir, "main ändert routes")
+           json.dumps({"id": "atelier", "version": "1.0.0", "nav_group": "media"}))
+    main_tip = _commit(repo_dir, "main ändert nav_group")
     result = _run(repo_dir, main_tip, head, mode="block")
     assert result.returncode == 0 and "Regel greift nicht" in result.stdout
 
 
-def test_e2e_neues_modul_mit_routes_im_manifest(repo):
+def test_e2e_neues_modul_mit_sichtbarem_manifest(repo):
     repo_dir, base = repo
-    _write(repo_dir, "neu/manifest.json", json.dumps({"id": "neu", "version": "0.1.0", "routes": ["/neu"]}))
+    _write(repo_dir, "neu/manifest.json", json.dumps({"id": "neu", "version": "0.1.0", "name": "Neu"}))
     head = _commit(repo_dir)
     result = _run(repo_dir, base, head, mode="block")
     assert result.returncode == 1 and "neu/manifest.json" in result.stdout
